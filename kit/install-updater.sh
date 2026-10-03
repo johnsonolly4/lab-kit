@@ -3,7 +3,7 @@
 #  Lab notebook kit: one-time install of the Lab Kit plugin (updater)
 # ---------------------------------------------------------------------
 #  Copies the 3 plugin files from this kit folder into your vault's
-#  .obsidian/plugins/lab-calc/ folder. The old plugin files are backed
+#  .obsidian/plugins/lab-kit/ folder. The old plugin files are backed
 #  up first. Nothing else in your vault is touched.
 #
 #  Run from Git Bash (or WSL):
@@ -46,7 +46,7 @@ while true; do
   echo "  Pick the vault's top folder: the one you chose when you opened the vault in Obsidian."
 done
 
-DEST="$VAULT/.obsidian/plugins/lab-calc"
+DEST="$VAULT/.obsidian/plugins/lab-kit"
 echo
 echo "Will copy ${FILES[*]}"
 echo "  from: $SRC"
@@ -56,7 +56,7 @@ read -r -p "Go ahead? [y/N] " OK
 
 mkdir -p "$DEST"
 if compgen -G "$DEST/*" >/dev/null; then
-  BACKUP="$VAULT/Extras/kit-backups/$(date '+%Y-%m-%d %H%M') before updater install/.obsidian/plugins/lab-calc"
+  BACKUP="$VAULT/Extras/kit-backups/$(date '+%Y-%m-%d %H%M') before updater install/.obsidian/plugins/lab-kit"
   mkdir -p "$BACKUP"
   cp -p "$DEST"/* "$BACKUP"/ 2>/dev/null || true
   echo "Backed up old plugin files to: $BACKUP"
@@ -65,5 +65,10 @@ for f in "${FILES[@]}"; do cp "$SRC/$f" "$DEST/$f"; done
 
 echo
 echo "Done ✔  Now in Obsidian:"
-echo "  1. Settings → Community plugins → turn Lab Calc off and on (it's now 'Lab Kit')"
+echo "  1. Settings → Community plugins → turn on 'Lab Kit' (reload plugins first if it isn't listed)"
+if [[ -d "$VAULT/.obsidian/plugins/lab-calc" ]]; then
+  echo "  Old 'Lab Calc' plugin found: turn it off, then delete its folder:"
+  echo "     $VAULT/.obsidian/plugins/lab-calc"
+  echo "     (its settings are not carried over: set the Update folder again below)"
+fi
 echo "  2. Settings → Lab Kit → Check now → review the locations → Install v0.3.0"

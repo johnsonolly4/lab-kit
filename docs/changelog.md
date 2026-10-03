@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased (v0.4)
+- **Plugin folder is now `lab-kit`** (was `lab-calc`): `install-updater.ps1` / `.sh` install there. If you have the old plugin, turn **Lab Calc** off, delete `.obsidian/plugins/lab-calc`, turn **Lab Kit** on and set the Update folder again (old settings are not carried over)
 - **Install opens this changelog**; the tutorial is on GitHub: [Lab Kit tutorial](https://github.com/johnsonolly4/lab-kit/blob/main/docs/tutorial.md)
 - **Hazard header is now part of the plugin** (```` ```lab-header ```` block, no Dataview needed):
   - redraws only when this note's Chemicals or a linked chemical note changes (fixes the stutter)

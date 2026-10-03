@@ -91,23 +91,23 @@ export class CalcRenderer {
     entry.parsed = self;
 
     el.empty();
-    el.addClass("lab-calc");
+    el.addClass("lab-kit");
 
     // ----- Caption: icon, title, name, then tools (kept left, clear of Obsidian's </> button) -----
-    const cap = el.createDiv({ cls: "lab-calc-caption" });
-    const ic = cap.createSpan({ cls: "lab-calc-icon" });
+    const cap = el.createDiv({ cls: "lab-kit-caption" });
+    const ic = cap.createSpan({ cls: "lab-kit-icon" });
     const svg = getIcon(opts.icon || "table-2") ?? getIcon("table");
     if (svg) ic.appendChild(svg);
-    cap.createSpan({ cls: "lab-calc-title", text: opts.title || opts.name || "Calculation" });
-    if (self.name) cap.createEl("code", { cls: "lab-calc-name", text: self.name });
-    const tools = cap.createSpan({ cls: "lab-calc-tools" });
-    const mkBtn = (text: string, label: string): HTMLButtonElement => tools.createEl("button", { cls: "lab-calc-btn", text, attr: { "aria-label": label } });
+    cap.createSpan({ cls: "lab-kit-title", text: opts.title || opts.name || "Calculation" });
+    if (self.name) cap.createEl("code", { cls: "lab-kit-name", text: self.name });
+    const tools = cap.createSpan({ cls: "lab-kit-tools" });
+    const mkBtn = (text: string, label: string): HTMLButtonElement => tools.createEl("button", { cls: "lab-kit-btn", text, attr: { "aria-label": label } });
     const addBtn = mkBtn("+ Row", "Add a row (formulas fill down)");
     const gridBtn = mkBtn("A1", "Show cell letters and row numbers");
     const copyBtn = mkBtn("Copy", opts.copy ? "Copy as one column for Excel" : "Copy results for Excel");
 
     const nCols = Math.max(0, ...self.cells.map(r => r.length));
-    const scroller = el.createDiv({ cls: "lab-calc-scroll" });
+    const scroller = el.createDiv({ cls: "lab-kit-scroll" });
     const table = scroller.createEl("table");
     let showGrid = /^(true|yes|1|on)$/i.test(opts.grid ?? "") || entry.grid === true;
 
@@ -124,14 +124,14 @@ export class CalcRenderer {
       table.toggleClass("show-grid", showGrid);
       const head = table.createEl("thead");
       if (showGrid) {
-        const gr = head.createEl("tr", { cls: "lab-calc-grid-row" });
-        gr.createEl("th", { cls: "lab-calc-corner" });
-        for (let c = 0; c < nCols; c++) gr.createEl("th", { cls: "lab-calc-col", text: indexToCol(c) });
+        const gr = head.createEl("tr", { cls: "lab-kit-grid-row" });
+        gr.createEl("th", { cls: "lab-kit-corner" });
+        for (let c = 0; c < nCols; c++) gr.createEl("th", { cls: "lab-kit-col", text: indexToCol(c) });
       }
       const body = table.createEl("tbody");
       self.cells.forEach((row, r) => {
         const tr = (r === 0 ? head : body).createEl("tr");
-        if (showGrid) tr.createEl(r === 0 ? "th" : "td", { cls: "lab-calc-rownum", text: String(r + 1) });
+        if (showGrid) tr.createEl(r === 0 ? "th" : "td", { cls: "lab-kit-rownum", text: String(r + 1) });
         if (r > 0) tr.addEventListener("contextmenu", (ev) => this.rowMenu(ev, entry, r));
         for (let c = 0; c < nCols; c++) {
           const cell = row[c] ?? { raw: "", kind: "blank" as const };
@@ -238,7 +238,7 @@ export class CalcRenderer {
     if (td.querySelector("input")) return;
     td.empty();
     td.addClass("is-editing");
-    const input = td.createEl("input", { cls: "lab-calc-input", attr: { type: "text" } });
+    const input = td.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
     input.focus(); input.select();
     let done = false;

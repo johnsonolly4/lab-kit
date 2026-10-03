@@ -22,7 +22,7 @@ fs.mkdirSync(path.join(PACK, "Lab notebook kit v0.2"));                      // 
 
 // --- fake vault laid out like a real one (v0.1 installed by hand) ---
 const put = (p: string, txt: string) => { const f = path.join(VAULT, p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, txt); };
-put(".obsidian/plugins/lab-calc/main.js", "// old v1.0");
+put(".obsidian/plugins/lab-kit/main.js", "// old v1.0");
 put(".obsidian/snippets/tabs-mermaid-scroll.css", "/* old */");
 put(".obsidian/snippets/adhd-reading-focus.css", "/* mine */");
 put("Extras/scripts/lab-config.json", '{"initials":"ABC","dataRoots":{"windows":"C:/my/real/path"}}');
@@ -68,7 +68,7 @@ describe("kit updater", () => {
     assert.ok(kitCompare("0.3.0", "0.2.9") > 0 && kitCompare("0.10.0", "0.9.1") > 0 && kitCompare("1.0", "1.0.0") === 0);
 
     // 1. Detection
-    const roles = kitDetectRoles(app({ templates_folder: "Extras/Templates", user_scripts_folder: "" }), ".obsidian/plugins/lab-calc", null, kit.manifest);
+    const roles = kitDetectRoles(app({ templates_folder: "Extras/Templates", user_scripts_folder: "" }), ".obsidian/plugins/lab-kit", null, kit.manifest);
     assert.deepStrictEqual(
       [roles.scripts, roles.userScripts, roles.templates, roles.docs, roles.backups],
       ["Extras/scripts", "Extras/scripts/templater", "Extras/Templates", "Extras/Lab notebook kit", "Extras/kit-backups"]);
@@ -90,11 +90,11 @@ describe("kit updater", () => {
     assert.ok(!fs.existsSync(path.join(VAULT, ".obsidian/snippets/tabs-mermaid-scroll.css")));
     assert.ok(fs.existsSync(path.join(VAULT, "Extras/Templates/Snippets/13 Blank calc table.md")));
     assert.strictEqual(fs.readFileSync(path.join(VAULT, "Lab Book/Notes/0014 - Test.md"), "utf8"), "my note");
-    assert.strictEqual(fs.readFileSync(path.join(VAULT, ".obsidian/plugins/lab-calc/main.js"), "utf8"), PLUGIN_BUILD);
+    assert.strictEqual(fs.readFileSync(path.join(VAULT, ".obsidian/plugins/lab-kit/main.js"), "utf8"), PLUGIN_BUILD);
 
     // 4. Second run: everything up to date
     const rec = res.record;
-    items = await kitPlan(adapter, kit, kitDetectRoles(app({ templates_folder: "Extras/Templates", user_scripts_folder: "Extras/scripts/templater" }), ".obsidian/plugins/lab-calc", rec, kit.manifest), rec, readSrc(kit));
+    items = await kitPlan(adapter, kit, kitDetectRoles(app({ templates_folder: "Extras/Templates", user_scripts_folder: "Extras/scripts/templater" }), ".obsidian/plugins/lab-kit", rec, kit.manifest), rec, readSrc(kit));
     const statuses = [...new Set(items.map(i => i.status))].sort();
     assert.deepStrictEqual(statuses, ["keep", "same"]);
 

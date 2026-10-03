@@ -43,7 +43,7 @@ class KitUpdateModal extends Modal {
     // ----- Locations -----
     new Setting(contentEl).setName("Where things go").setDesc("Detected from your vault. Edit a line if it's wrong, then press Recheck.").setHeading();
     const used = [...new Set([...m.files.map(f => f.role), ...(m.delete ?? []).map(d => d.role), ...(this.makeBackups ? ["backups"] : [])])];
-    const labels: Record<string, string> = { plugin: "Lab Calc plugin", cssSnippets: "CSS snippets", scripts: "Shared scripts", userScripts: "Templater user scripts",
+    const labels: Record<string, string> = { plugin: "Lab Kit plugin", cssSnippets: "CSS snippets", scripts: "Shared scripts", userScripts: "Templater user scripts",
       templates: "Templates", docs: "Kit notes", backups: "Backups" };
     for (const r of used) {
       new Setting(contentEl).setName(labels[r] ?? r).addText(t => {

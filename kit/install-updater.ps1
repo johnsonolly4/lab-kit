@@ -2,7 +2,7 @@
 #  Lab notebook kit: one-time install of the Lab Kit plugin (updater)
 # ---------------------------------------------------------------------
 #  Copies the 3 plugin files from this kit folder into your vault's
-#  .obsidian\plugins\lab-calc\ folder (replacing the old ones).
+#  .obsidian\plugins\lab-kit\ folder (replacing the old ones).
 #  Nothing else in your vault is touched.
 #
 #  Run: right-click this file → "Run with PowerShell"
@@ -31,7 +31,7 @@ while ($true) {
     Write-Host "  Pick the vault's top folder: the one you chose when you opened the vault in Obsidian."
 }
 
-$dest = Join-Path $vault ".obsidian\plugins\lab-calc"
+$dest = Join-Path $vault ".obsidian\plugins\lab-kit"
 Write-Host ""
 Write-Host "Will copy $($files -join ', ')"
 Write-Host "  from: $src"
@@ -44,6 +44,11 @@ foreach ($f in $files) { Copy-Item -Force (Join-Path $src $f) (Join-Path $dest $
 
 Write-Host ""
 Write-Host "Done. Now in Obsidian:" -ForegroundColor Green
-Write-Host "  1. Settings > Community plugins > turn Lab Calc off and on (it's now 'Lab Kit')"
+Write-Host "  1. Settings > Community plugins > turn on 'Lab Kit' (reload plugins first if it isn't listed)"
+if (Test-Path (Join-Path $vault ".obsidian\plugins\lab-calc")) {
+    Write-Host "  Old 'Lab Calc' plugin found: turn it off, then delete its folder:" -ForegroundColor Yellow
+    Write-Host "     $(Join-Path $vault '.obsidian\plugins\lab-calc')"
+    Write-Host "     (its settings are not carried over: set the Update folder again below)"
+}
 Write-Host "  2. Settings > Lab Kit > Check now > review the locations > Install v0.3.0"
 Read-Host "Press Enter to close"

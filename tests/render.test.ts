@@ -25,7 +25,7 @@ describe("render", () => {
     await renderer.render(entry);
     const tds = [...el.querySelectorAll("tbody td")].map((t: any) => t.textContent);
     assert.strictEqual(tds[1], "10", "cross-block calc failed");
-    assert.ok(el.querySelector(".lab-calc-caption").textContent.length > 0);
+    assert.ok(el.querySelector(".lab-kit-caption").textContent.length > 0);
 
     // simulate editing A2 = 3
     assert.ok(parseBlock(entry.source).cells.length > 0);
@@ -33,12 +33,12 @@ describe("render", () => {
     assert.ok(fileText.includes("| 3 | =A2*b!B2 |"), "write-back failed");
 
     // grid toggle, copy, then +Row
-    const btns = el.querySelectorAll(".lab-calc-btn");
+    const btns = el.querySelectorAll(".lab-kit-btn");
     btns[1].dispatch("click"); btns[2].dispatch("click");
     btns[0].dispatch("click"); await new Promise(r => setTimeout(r, 10));
     assert.ok(fileText.includes("|  | =A3*b!B3 |"), "+Row failed");
     await new Promise(r => setTimeout(r, 10));
     assert.ok(clip.length > 0, "nothing copied");
-    assert.ok([...el.querySelectorAll(".lab-calc-grid-row th")].map((t: any) => t.textContent).join(" ").includes("A"), "grid header missing");
+    assert.ok([...el.querySelectorAll(".lab-kit-grid-row th")].map((t: any) => t.textContent).join(" ").includes("A"), "grid header missing");
   });
 });

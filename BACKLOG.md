@@ -38,11 +38,13 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 
 ## Repo / release
 - [x] Packaging script (`npm run package`): assemble `dist/lab-kit-<v>/` (kit/ + built plugin + docs, as listed in kit-manifest.json) and zip it; used by `/release`
-- [ ] Plugin id `lab-calc` → `lab-kit`: migrate the installed folder and data.json (updater record) without losing settings
+- [x] Plugin id `lab-calc` → `lab-kit`: installers write to `lab-kit`, CSS classes renamed. Decision: start fresh, no data.json migration (delete the old folder, re-enter the Update folder)
 - [x] Port `legacy/main.js` → TypeScript in `src/` (no behaviour change; existing tests must pass)
 - [x] Split the updater from the calc/header code (Node APIs desktop-only)
 - [x] Remove private API use or isolate it (Templater settings, `app.plugins`, `app.customCss`): isolated in `src/kit/obsidian-private.ts`, not removed
 - [ ] **Changelog as a popup, not a note**: after an update, show the changelog in a temporary popup window (modal), also reachable from the settings page (e.g. a "What's new" button). Replaces `openAfter` opening a whole note (`Lab notebook kit - changelog.md`); then drop the changelog/tutorial copies from the package if nothing else needs them
+- [ ] Leftover "Lab Calc" wording after the id migration (decide per item): `docs/tutorial.md` (lines 191, 234), `kit/Extras/scripts/excel_to_calc.py` (lines 6, 40, 93, 145: the plugin is now "Lab Kit"), `styles.css` header comment (line 1), changelog history lines (keep: they describe past versions)
+- [ ] `legacy/main.js` (git-ignored, never committed) still has the old `lab-calc` classes; keep a safe copy or delete it
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac)
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] Community store submission checklist
