@@ -1,6 +1,6 @@
 // Kit updater UI: the update window, the settings tab and the controller that wires them into the plugin.
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
-import { Modal, Notice, Platform, PluginSettingTab, Setting, type App, type ButtonComponent, type Plugin } from "obsidian";
+import { Modal, Notice, Platform, PluginSettingTab, Setting, type App, type ButtonComponent, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import {
   KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitPlan, kitReadSource, kitScan,
   type Kit, type KitData, type PlanItem, type Roles
@@ -142,37 +142,47 @@ class KitUpdateModal extends Modal {
 class KitSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) { super(app, plugin); }
 
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-    new Setting(containerEl).setName("Lab notebook").setHeading();
-    new Setting(containerEl).setName("Initials")
-      .setDesc("Used in sample codes, for example ABC0014-A. Read by the Alt+S snippets.")
-      .addText(t => t.setValue(this.ctl.kit.initials).onChange(async v => { this.ctl.kit.initials = v.trim(); await this.ctl.save(); }));
-    new Setting(containerEl).setName("Kit updates").setHeading();
-    new Setting(containerEl).setName("Update folder")
-      .setDesc("Folder on this computer where new kit versions arrive (each in its own subfolder with kit-manifest.json).")
-      .addText(t => { t.setValue(this.ctl.kit.source).onChange(async v => { this.ctl.kit.source = v.trim(); await this.ctl.save(); }); t.inputEl.addClass("lab-kit-wide-input"); });
-    new Setting(containerEl).setName("Check when Obsidian starts")
-      .addToggle(t => t.setValue(this.ctl.kit.checkOnStartup).onChange(async v => { this.ctl.kit.checkOnStartup = v; await this.ctl.save(); }));
-    new Setting(containerEl).setName("Back up replaced files")
-      .setDesc("Copy files to a kit-backups folder before an update replaces or removes them. Off by default.")
-      .addToggle(t => t.setValue(!!this.ctl.kit.makeBackups).onChange(async v => { this.ctl.kit.makeBackups = v; await this.ctl.save(); }));
-    const inst = this.ctl.kit.installed;
-    new Setting(containerEl).setName("Installed version")
-      .setDesc(inst ? `v${inst.version} · ${Object.keys(inst.files ?? {}).length} files tracked · ${inst.installedAt}` : "Nothing installed by the updater yet")
-      .addButton(b => b.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew()))
-      .addButton(b => b.setButtonText("Check now").setCta().onClick(() => this.ctl.check(true)));
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    const kit = this.ctl.kit;
+    const inst = kit.installed;
+    const notebook: SettingGroupItem[] = [
+      { name: "Initials", desc: "Used in sample codes, for example ABC0014-A. Read by the Alt+S snippets.",
+        render: b => { b.addText(t => t.setValue(kit.initials).onChange(async v => { kit.initials = v.trim(); await this.ctl.save(); })); } }
+    ];
+    const updates: SettingGroupItem[] = [
+      { name: "Update folder", desc: "Folder on this computer where new kit versions arrive (each in its own subfolder with kit-manifest.json).",
+        render: b => { b.addText(t => { t.setValue(kit.source).onChange(async v => { kit.source = v.trim(); await this.ctl.save(); }); t.inputEl.addClass("lab-kit-wide-input"); }); } },
+      { name: "Check when Obsidian starts",
+        render: b => { b.addToggle(t => t.setValue(kit.checkOnStartup).onChange(async v => { kit.checkOnStartup = v; await this.ctl.save(); })); } },
+      { name: "Back up replaced files", desc: "Copy files to a kit-backups folder before an update replaces or removes them. Off by default.",
+        render: b => { b.addToggle(t => t.setValue(!!kit.makeBackups).onChange(async v => { kit.makeBackups = v; await this.ctl.save(); })); } },
+      { name: "Installed version",
+        desc: inst ? `v${inst.version} · ${Object.keys(inst.files ?? {}).length} files tracked · ${inst.installedAt}` : "Nothing installed by the updater yet",
+        render: b => {
+          b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew()))
+            .addButton(btn => btn.setButtonText("Check now").setCta().onClick(() => this.ctl.check(true)));
+        } }
+    ];
     if (inst?.roles) {
-      const det = containerEl.createEl("details");
-      det.createEl("summary", { text: "Install locations" });
-      const ul = det.createEl("ul");
-      for (const [k, v] of Object.entries(inst.roles)) ul.createEl("li", { text: `${k}: ${v}` });
+      const roles = Object.entries(inst.roles);
+      updates.push({ name: "Install locations", render: b => {
+        const det = b.descEl.createEl("details");
+        det.createEl("summary", { text: "Show" });
+        const ul = det.createEl("ul");
+        for (const [k, v] of roles) ul.createEl("li", { text: `${k}: ${v}` });
+      } });
     }
-    new Setting(containerEl).setName("Forget install record")
-      .setDesc("Use if you moved things outside Obsidian. Next update re-detects locations; files you edited are then not recognised as edited.")
-      .addButton(b => b.setButtonText("Forget").setWarning().onClick(async () => { this.ctl.kit.installed = null; await this.ctl.save(); this.display(); }));
-    this.header.display(containerEl);
+    updates.push({ name: "Forget install record",
+      desc: "Use if you moved things outside Obsidian. Next update re-detects locations; files you edited are then not recognised as edited.",
+      render: b => {
+        b.addButton(btn => btn.setButtonText("Forget").setDestructive()
+          .onClick(async () => { kit.installed = null; await this.ctl.save(); this.update(); }));
+      } });
+    return [
+      { type: "group", heading: "Lab notebook", items: notebook },
+      { type: "group", heading: "Kit updates", items: updates },
+      ...this.header.definitions()
+    ];
   }
 }
 
@@ -197,7 +207,7 @@ export class KitController {
   setup(): void {
     const plugin = this.plugin;
     plugin.addSettingTab(new KitSettingTab(this.app, plugin, this, this.header));
-    plugin.addCommand({ id: "kit-update", name: "Check for lab kit updates", callback: () => this.check(true) });
+    plugin.addCommand({ id: "kit-update", name: "Check for updates", callback: () => this.check(true) });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {

@@ -48,25 +48,29 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] `npm run lint` runs: `eslint.config.mjs` (store plugin `eslint-plugin-obsidianmd` recommended config) + devDependencies. It reports 81 problems (34 errors, 47 warnings) in `src/`, none fixed yet
 - [ ] **Fix lint findings** (`npm run lint`; group by rule, fix each group in its own commit, run `npm test` after):
   - [x] `no-base-to-string` (new `text()` helper in `calc/engine.ts`, used in `calc/render.ts`, `header/hazards.ts`; `kitVersionText` in `kit/updater.ts`)
-  - [ ] `no-require-imports` ×9 errors + `no-nodejs-modules` ×8 + `no-undef` ×16 (`require`, `process`, `Buffer`): `kit/datafolder.ts:6-19`, `kit/updater.ts:36,65,72,99,112,119,176,189,190`. Desktop-only by design (`.claude/rules/obsidian-plugin.md`); probably an eslint override for `src/kit/` (node globals, `require` allowed) plus lazy loading, to agree before the store submission
+  - [x] `no-require-imports`, `no-nodejs-modules`, `no-undef` (Node globals): `eslint.config.mjs` override for `src/kit/**` (code unchanged, already desktop-guarded). Store reviewers may still query Node use with `isDesktopOnly: false`
   - [x] `no-unnecessary-type-assertion`
   - [x] `no-plugin-as-component` (`MarkdownRenderChild` in `calc/render.ts` `fillText`; `Component` owned by `WhatsNewModal`)
   - [x] `no-misused-promises`, `no-redundant-type-constituents`
   - [x] `no-unsupported-api` (`getAbstractFileByPath` + `instanceof TFile` in `header/hazards.ts`, so `minAppVersion` stays 1.5.0)
   - [x] `no-tfile-tfolder-cast`, `prefer-window-timers`, `no-unused-vars` (tests now give the renderer real `TFile` objects: `tests/helpers/obsidian-stub.ts`)
-  - [ ] `ui/sentence-case` ×7: **changes user-facing text, ask first**: `header/settings.ts:131,136,138`, `kit/datafolder.ts:10`, `kit/ui.ts:46,92`, `whatsnew.ts:24`. Plugin name "Lab Kit" in text is flagged too
-  - [ ] `no-plugin-name-in-command-name` `kit/ui.ts:200` (command text, ask first); `no-deprecated` `kit/ui.ts:174` (`setWarning`, and `display()` → `getSettingDefinitions()` is a 1.13-only API: check `minAppVersion` before adopting); `prefer-setting-definitions` `kit/ui.ts:142`
+  - [ ] `ui/sentence-case` ×4 warnings left, **user chose to leave them** (the rule misreads proper nouns: wants 'lab kit', 'templater'): `kit/datafolder.ts:10`, `kit/ui.ts:46,92`, `whatsnew.ts:27` (the 3 in `header/settings.ts` stopped being flagged once the strings moved into definitions). Revisit if the store review bot complains
+  - [x] `no-plugin-name-in-command-name`: command now "Check for updates" (`kit/ui.ts:200`, tutorial line 212, changelog)
+  - [x] **Adopt the settings definitions API**: `KitSettingTab.getSettingDefinitions()` (`kit/ui.ts`), `HeaderStore.definitions()` (`header/settings.ts`), `setDestructive`, `manifest.json` `minAppVersion` 1.13.0. API notes: `docs/reference/settings-definitions.md`. Lint 0 errors, 4 warnings
+  - [ ] Add `"0.4.0": "1.13.0"` to `versions.json` at release (`/release` step 4); `0.3.0` stays `1.5.0`
+  - [ ] Optional later: move simple rows (toggles, dropdown, plain texts) to `control` entries with `getControlValue` / `setControlValue` overrides mapping onto `kit` / `header`. Not done: `control` rows can't take the `lab-kit-wide-input` class and `data.json` keys stay nested
 - [x] Commit the lint setup (`eslint.config.mjs`, `package.json`, `package-lock.json`): committed on `whats-new-popup`, not pushed
 - [ ] `npm audit`: 8 vulnerabilities (6 moderate, 1 high, 1 critical) reported after installing eslint; not looked at. Check whether they are dev-only (esbuild, vitest, eslint chain) and whether `npm audit fix` is safe
 - [ ] `eslint-plugin-obsidianmd` has peer `obsidian@1.8.7` and `@eslint/json@0.14.0` (pinned); repo uses `obsidian@latest` (1.13.1). Decide: pin `obsidian` to match the store's lint, or keep latest (affects which APIs `no-unsupported-api` and `minAppVersion` allow)
 - [ ] `npm run lint` only lints `src`; `eslint.config.mjs` is the only other file covered. Decide whether `tests/` and `scripts/` should be linted too (store review looks at the plugin source only)
-- [ ] `no-undef` warnings for Node globals (`require`, `process`, `Buffer`) are a config gap, not code: add a `src/kit/**` override with Node globals (see the `no-require-imports` item above)
+- [x] `no-undef` warnings for Node globals: done with the `src/kit/**` override
 - [ ] Re-run `npm run lint` before store submission and in `/release` (add a step to the release skill): must end with 0 errors
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac)
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] Community store submission checklist
 
 ## Not yet tested by the user
+- [ ] Settings page on the declarative API, in Obsidian 1.13+: every row in the old order, values persist after reload, Forget button refreshes the tab, global settings search finds e.g. "legend", the two extra look changes ("Per-note options" row, "Install locations" → "Show") are acceptable (`src/kit/ui.ts` `getSettingDefinitions`, `src/header/settings.ts` `definitions`). Not run in Obsidian at all
 - [ ] Lint-fix refactors not seen in Obsidian: calc tables still refresh/edit/copy, a cell with a `[[link]]` still renders (now via `MarkdownRenderChild`, `src/calc/render.ts` `fillText`), hazard header still draws (`src/header/hazards.ts` `collectHazards`), What's new popup renders (`src/whatsnew.ts`)
 - [ ] Initials box in Settings → Lab Kit: set it, run Alt+S Sample list, codes use it; clear it and a notice appears with `XX` codes. `test-vault/Extras/scripts/templater/labSnippets.js` and `test-vault/Templates/` are hand copies and stale until recopied
 - [ ] Empty forms inside Obsidian (placeholders show; an untouched solution / recipe / RAFT / matrix form inserts nothing), new emoji headings in a new note, taller empty cells (`styles.css` `.is-blank`)

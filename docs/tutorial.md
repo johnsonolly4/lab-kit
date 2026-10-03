@@ -209,7 +209,7 @@ flowchart LR
 
 ## 7. Updating the kit
 
-New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Check for lab kit updates** from the command palette, or use **Settings → Lab Kit → Check now**.
+New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Lab Kit: Check for updates** from the command palette, or use **Settings → Lab Kit → Check now**.
 
 The update window shows:
 1. **Where things go**: detected from your vault; edit a line if it's wrong, then **Recheck**

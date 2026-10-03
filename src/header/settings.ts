@@ -1,6 +1,6 @@
 // Settings for the ```lab-header block, saved under the `header` key of data.json (the updater keeps `kit`).
 // Every hazard option can also be set for one note, as `key: value` lines inside the block.
-import { Setting, type Plugin } from "obsidian";
+import type { Plugin, SettingDefinition, SettingDefinitionItem } from "obsidian";
 
 /** How the hazards look and behave. Names match the options of the old Dataview script. */
 export interface HazardView {
@@ -109,48 +109,58 @@ export class HeaderStore {
     this.onChange();
   }
 
-  private toggle(el: HTMLElement, key: keyof HazardView, name: string, desc: string): void {
+  private toggle(key: keyof HazardView, name: string, desc: string): SettingDefinition {
     const s = this.settings as unknown as Record<string, boolean>;
-    new Setting(el).setName(name).setDesc(desc)
-      .addToggle(t => t.setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); }));
+    return { name, desc, render: b => { b.addToggle(t => t.setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); })); } };
   }
 
-  private text(el: HTMLElement, key: "chemicalsProperty" | "classProperty" | "hideForClasses", name: string, desc: string): void {
+  private text(key: "chemicalsProperty" | "classProperty" | "hideForClasses", name: string, desc: string): SettingDefinition {
     const s = this.settings;
-    new Setting(el).setName(name).setDesc(desc)
-      .addText(t => t.setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); }));
+    return { name, desc, render: b => { b.addText(t => t.setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); })); } };
   }
 
-  display(containerEl: HTMLElement): void {
+  private root(key: "dataRootWindows" | "dataRootMac", name: string, desc: string): SettingDefinition {
     const s = this.settings;
-    new Setting(containerEl).setName("Lab header").setHeading();
-    new Setting(containerEl).setName("Data folder root (Windows)")
-      .setDesc("Each note gets a subfolder named after it here. Empty: the button asks you to set this.")
-      .addText(t => { t.setValue(s.dataRootWindows).onChange(async v => { s.dataRootWindows = v.trim(); await this.save(); }); t.inputEl.addClass("lab-kit-wide-input"); });
-    new Setting(containerEl).setName("Data folder root (macOS or Linux)")
-      .setDesc("Same, for a Mac or Linux computer. The button creates the note's folder when you press it.")
-      .addText(t => { t.setValue(s.dataRootMac).onChange(async v => { s.dataRootMac = v.trim(); await this.save(); }); t.inputEl.addClass("lab-kit-wide-input"); });
+    return { name, desc, render: b => {
+      b.addText(t => {
+        t.setValue(s[key]).onChange(async v => { s[key] = v.trim(); await this.save(); });
+        t.inputEl.addClass("lab-kit-wide-input");
+      });
+    } };
+  }
 
-    new Setting(containerEl).setName("Hazards").setHeading();
-    containerEl.createEl("p", { cls: "setting-item-description",
-      text: "Any option can be set for one note with a line inside the block, e.g. collapsed: false (names are in the tutorial)." });
-    new Setting(containerEl).setName("Layout")
-      .setDesc("Chips: one row per chemical with a coloured chip for each H-code. Table: the two-column table.")
-      .addDropdown(d => d.addOption("chips", "Chips").addOption("table", "Table").setValue(s.layout)
-        .onChange(async v => { s.layout = v === "table" ? "table" : "chips"; await this.save(); }));
-    this.text(containerEl, "chemicalsProperty", "Chemicals property", "The note property that lists the chemicals.");
-    this.text(containerEl, "classProperty", "Class property", "The note property that holds the experiment class.");
-    this.text(containerEl, "hideForClasses", "No hazards for", "Class values that hide the hazards, separated by commas.");
-    this.toggle(containerEl, "collapsed", "Collapsible", "Put the hazards behind a clickable one-line summary.");
-    this.toggle(containerEl, "startOpen", "Start open", "The summary starts expanded (only when collapsible).");
-    this.toggle(containerEl, "showSummaryCounts", "Summary counts", "Show e.g. Severe 1, High 2 in the summary line.");
-    this.toggle(containerEl, "showLegend", "Legend", "Show the colour key under the hazards.");
-    this.toggle(containerEl, "legendDetails", "Legend details", "Show the GHS categories under each legend item.");
-    this.toggle(containerEl, "sortByWorstHazard", "Most hazardous first", "Off sorts the chemicals A to Z.");
-    this.toggle(containerEl, "highlightWholePhrase", "Colour the whole phrase", "Off colours just the H-code.");
-    this.toggle(containerEl, "showCategoryLabels", "Category labels", "Add the GHS category (e.g. Cat 2) after each code.");
-    this.toggle(containerEl, "shadeChemicalCell", "Shade chemical names", "Colour the chemical name with its worst hazard.");
-    this.toggle(containerEl, "centreChemicalCell", "Centre chemical names", "Table layout only.");
-    this.toggle(containerEl, "showMissing", "Show missing data", "List chemicals that have no note or no H_Phrase.");
+  /** The "Lab header" and "Hazards" sections of the settings tab. */
+  definitions(): SettingDefinitionItem[] {
+    const s = this.settings;
+    return [
+      { type: "group", heading: "Lab header", items: [
+      this.root("dataRootWindows", "Data folder root (Windows)",
+        "Each note gets a subfolder named after it here. Empty: the button asks you to set this."),
+      this.root("dataRootMac", "Data folder root (macOS or Linux)",
+        "Same, for a Mac or Linux computer. The button creates the note's folder when you press it.")
+      ] },
+      { type: "group", heading: "Hazards", items: [
+      { name: "Per-note options", desc: "Any option can be set for one note with a line inside the block, e.g. collapsed: false (names are in the tutorial)." },
+      { name: "Layout", desc: "Chips: one row per chemical with a coloured chip for each H-code. Table: the two-column table.",
+        render: b => {
+          b.addDropdown(d => d.addOption("chips", "Chips").addOption("table", "Table").setValue(s.layout)
+            .onChange(async v => { s.layout = v === "table" ? "table" : "chips"; await this.save(); }));
+        } },
+      this.text("chemicalsProperty", "Chemicals property", "The note property that lists the chemicals."),
+      this.text("classProperty", "Class property", "The note property that holds the experiment class."),
+      this.text("hideForClasses", "No hazards for", "Class values that hide the hazards, separated by commas."),
+      this.toggle("collapsed", "Collapsible", "Put the hazards behind a clickable one-line summary."),
+      this.toggle("startOpen", "Start open", "The summary starts expanded (only when collapsible)."),
+      this.toggle("showSummaryCounts", "Summary counts", "Show e.g. Severe 1, High 2 in the summary line."),
+      this.toggle("showLegend", "Legend", "Show the colour key under the hazards."),
+      this.toggle("legendDetails", "Legend details", "Show the GHS categories under each legend item."),
+      this.toggle("sortByWorstHazard", "Most hazardous first", "Off sorts the chemicals A to Z."),
+      this.toggle("highlightWholePhrase", "Colour the whole phrase", "Off colours just the H-code."),
+      this.toggle("showCategoryLabels", "Category labels", "Add the GHS category (e.g. Cat 2) after each code."),
+      this.toggle("shadeChemicalCell", "Shade chemical names", "Colour the chemical name with its worst hazard."),
+      this.toggle("centreChemicalCell", "Centre chemical names", "Table layout only."),
+      this.toggle("showMissing", "Show missing data", "List chemicals that have no note or no H_Phrase.")
+      ] }
+    ];
   }
 }
