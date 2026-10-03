@@ -41,4 +41,34 @@ describe("render", () => {
     assert.ok(clip.length > 0, "nothing copied");
     assert.ok([...el.querySelectorAll(".lab-kit-grid-row th")].map((t: any) => t.textContent).join(" ").includes("A"), "grid header missing");
   });
+
+  it("moves from one edited cell to the next with a single click", async () => {
+    let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => ({ path: "n.md" }), cachedRead: async () => fileText,
+      process: async (_f: unknown, fn: (d: string) => string) => { fileText = fn(fileText); } } }, registerEvent() { /* unused */ } };
+    const renderer = new CalcRenderer(plugin);
+    const el = new El("div");
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const entry: CalcEntry = { el, ctx, source: "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |" };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    for (const typed of ["3", "2"]) { // changed value (saves + redraws), then unchanged (redraws only)
+      const a = entry.tds!.get("1|0")!;
+      a.dispatch("click");
+      const input = a.querySelector("input");
+      assert.ok(input, "editor did not open");
+      input.value = typed;
+      const b = entry.tds!.get("1|1")!;
+      b.dispatch("mousedown"); // pressing the next cell blurs the editor, which redraws the table
+      input.dispatch("blur");
+      await new Promise(r => setTimeout(r, 10));
+      assert.ok(fileText.includes(`| ${typed} | 5 |`), "edit not saved");
+      const b2 = entry.tds!.get("1|1")!;
+      assert.notStrictEqual(b2, b, "table was not redrawn");
+      assert.ok(b2.querySelector("input"), "second cell did not open after one click");
+      b2.querySelector("input").dispatch("keydown", { key: "Escape" });
+      await new Promise(r => setTimeout(r, 10));
+    }
+  });
 });

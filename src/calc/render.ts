@@ -14,11 +14,17 @@ export interface CalcEntry {
   source: string;
   parsed?: ParsedBlock;
   grid?: boolean;
+  /** Body cells of the current render, keyed `row|col`, so a click can be carried over a re-render. */
+  tds?: Map<string, HTMLElement>;
 }
 
 export class CalcRenderer {
   /** Rendered blocks per note path, so edits to the note refresh them. */
   live = new Map<string, Set<CalcEntry>>();
+  /** The cell being edited, if any (one at a time). */
+  private editor: { entry: CalcEntry } | null = null;
+  /** Cell clicked while another was being edited: opened once the save and redraw are done. */
+  private pending: { entry: CalcEntry; r: number; c: number } | null = null;
 
   constructor(private plugin: Plugin) {}
 
@@ -59,15 +65,16 @@ export class CalcRenderer {
     };
   }
 
-  async refreshFile(path: string): Promise<void> {
+  async refreshFile(path: string, known?: string): Promise<void> {
     const set = this.live.get(path); if (!set) return;
     const file = this.app.vault.getAbstractFileByPath(path); if (!file) return;
-    const text = await this.app.vault.cachedRead(file as TFile);
+    const text = known ?? await this.app.vault.cachedRead(file as TFile);
     const blocks = extractBlocks(text);
     for (const entry of [...set]) {
       if (!entry.el.isConnected) { set.delete(entry); continue; }
       const info = entry.ctx.getSectionInfo(entry.el);
       if (info) { const blk = blocks.find(b => b.lineStart === info.lineStart); if (blk) entry.source = blk.source; }
+      if (this.editor?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
       await this.render(entry, text);
     }
     if (!set.size) this.live.delete(path);
@@ -127,6 +134,7 @@ export class CalcRenderer {
 
     const build = (): void => {
       table.empty();
+      entry.tds = new Map();
       table.toggleClass("show-grid", showGrid);
       const head = table.createEl("thead");
       if (showGrid) {
@@ -170,8 +178,17 @@ export class CalcRenderer {
           }
           if (r > 0) {
             td.addClass("is-editable");
+            entry.tds?.set(`${r}|${c}`, td);
+            // Pressing here blurs the open editor, whose save redraws the table before the click lands
+            td.addEventListener("mousedown", (ev) => {
+              const t = ev.target as HTMLElement;
+              if (t.closest("a") || t.closest("input")) return;
+              if (this.editor) this.pending = { entry, r, c };
+            });
             td.addEventListener("click", (ev) => {
               if ((ev.target as HTMLElement).closest("a")) return;
+              const p = this.pending;
+              if (p && p.entry === entry && p.r === r && p.c === c) return; // opened after the save
               this.editCell(entry, r, c, td, cell.raw);
             });
           }
@@ -242,17 +259,23 @@ export class CalcRenderer {
   /** Click-to-edit for any body cell (values and formulas). */
   editCell(entry: CalcEntry, r: number, c: number, td: HTMLElement, current: string): void {
     if (td.querySelector("input")) return;
+    td.setCssProps({ "--lab-kit-cell-w": `${td.offsetWidth}px` }); // keeps the column from widening
     td.empty();
     td.addClass("is-editing");
     const input = td.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
+    const mine = { entry };
+    this.editor = mine;
     input.focus(); input.select();
     let done = false;
     const finish = async (save: boolean): Promise<void> => {
       if (done) return; done = true;
+      if (this.editor === mine) this.editor = null;
       const val = input.value.trim();
-      if (!save || val === current) { await this.render(entry); return; }
-      await this.writeCell(entry, r, c, val);
+      try {
+        if (!save || val === current) await this.render(entry);
+        else await this.refreshFile(entry.ctx.sourcePath, await this.writeCell(entry, r, c, val));
+      } finally { this.openPending(); }
     };
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); void finish(true); }
@@ -262,11 +285,22 @@ export class CalcRenderer {
     input.addEventListener("click", (e) => e.stopPropagation());
   }
 
-  async writeCell(entry: CalcEntry, r: number, c: number, val: string): Promise<void> {
+  /** Opens the cell the user clicked while another one was being saved. */
+  private openPending(): void {
+    const p = this.pending; this.pending = null;
+    const td = p?.entry.tds?.get(`${p.r}|${p.c}`);
+    if (!p || !td || !td.isConnected || this.editor) return;
+    this.editCell(p.entry, p.r, p.c, td, p.entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
+  }
+
+  /** Writes one cell back into the note; returns the new note text (undefined if it couldn't). */
+  async writeCell(entry: CalcEntry, r: number, c: number, val: string): Promise<string | undefined> {
     const { el, ctx } = entry;
     const info = ctx.getSectionInfo(el);
     const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
-    if (!info || !file) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return; }
-    await this.app.vault.process(file as TFile, (data) => writeCellText(data, info.lineStart, r, c, val));
+    if (!info || !file) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return undefined; }
+    let out: string | undefined;
+    await this.app.vault.process(file as TFile, (data) => (out = writeCellText(data, info.lineStart, r, c, val)));
+    return out;
   }
 }

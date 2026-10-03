@@ -8,7 +8,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] Duplicate table names: warn on both tables and make refs to the shared name `#REF!` instead of silently using the first (done: `Workbook.dupNames` in `src/calc/engine.ts`, warning in `src/calc/render.ts`, tests in `tests/duplicate-names.test.ts`; not checked inside Obsidian yet)
 - [x] **NMR/GPC/DLS don't pick up codes from `samples2`**: fixed with the item above (codes now come from `samples`, `sample`, `samples2`… combined).
 - [x] **Tutorial renders as Dataview errors** (done in `docs/tutorial.md` lines 92, 95-102, 157: formulas shown without the leading `=` in inline code; untested in Obsidian with Dataview on): inline code starting with `=` is a Dataview inline query.
-- [ ] **Click-to-edit**: the cell widens while editing (keep the width fixed); moving from one cell to another takes two clicks (make it one).
+- [x] **Click-to-edit**: cell keeps its width while editing, moving to another cell takes one click (done in `src/calc/render.ts` `editCell` / `openPending`, `styles.css` `.is-editing`; test in `tests/render.test.ts`; not seen in Obsidian yet)
 - [ ] **RAFT mol fractions not summing to 1**: normalise by `SUM(fractions)`; remove the tip callout.
 
 ## v0.4 quick changes
@@ -52,6 +52,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 ## Not yet tested by the user
 - Excel → calc converter (`kit/Extras/scripts/excel_to_calc.py`)
 - Updater change preview
+- [ ] Click-to-edit inside Obsidian: width stays fixed while editing (cells narrower than 4em widen to 4em, `styles.css` `.is-editing`), one click moves to the next cell (also across two tables), Enter/Tab/Escape still work, typing is not wiped by the delayed redraw (`src/calc/render.ts` `refreshFile`)
 - [ ] Duplicate table name warning inside Obsidian: two tables with the same `name:` show the red warning, refs give `#REF!` (`src/calc/render.ts` caption, `styles.css` `.lab-kit-warn`)
 - [ ] Snippet scripts (`kit/Extras/scripts/templater/labSnippets.js`) still union tables by name and know nothing about duplicate names; check what a duplicated `samples` does there
 - [ ] What's new popup not seen inside Obsidian yet: shows once after the plugin reloads with a new version, "What's new" button (`src/kit/ui.ts` settings tab), command, GitHub link, rendering (`src/whatsnew.ts`)

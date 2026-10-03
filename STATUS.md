@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Merge PR 1, then retarget PR 2 to `main` and merge it. Then candidates: the next v0.4 bug (click-to-edit cell width, see BACKLOG) or fixing `npm run lint`. The tutorial fix is committed and pushed on `whats-new-popup` (PR 2).
+**Next:** user's call. Click-to-edit fix is committed and pushed on `whats-new-popup` (PR 2). Merge PR 1, then retarget PR 2 to `main` and merge it. Then candidates: the next v0.4 bug (RAFT mol fractions, see BACKLOG) or fixing `npm run lint`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,16 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (commit tutorial fix)
+## Last session (commit click-to-edit)
+- Committed and pushed the click-to-edit fix below to `whats-new-popup` (PR 2). `npm test`: 53 pass. No code changes
+
+## Earlier session (click-to-edit)
+- Cell width: `editCell` sets `--lab-kit-cell-w` (the cell's width before editing) via `setCssProps`; `styles.css` `.is-editing` fixes the cell to it (floor 4em), input has `min-width: 0`
+- One click: pressing another cell while editing now records it (`pending`); the blur saves/redraws, then `openPending()` opens it. `writeCell` returns the new note text and the save redraws at once (`refreshFile(path, text)`); the delayed modify redraw skips a table being edited
+- Test: new case in `tests/render.test.ts`; `tests/helpers/minidom.cjs` got `setCssProps`, `offsetWidth`, event extras. `npm test`: 53 pass; `npm run build` clean
+- Not seen in Obsidian: BACKLOG (Not yet tested). Changelog line added
+
+## Earlier session (commit tutorial fix)
 - Committed and pushed the tutorial fix below, plus STATUS/BACKLOG. No code changes, tests not rerun
 
 ## Earlier session (tutorial Dataview errors)
