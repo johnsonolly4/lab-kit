@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** duplicate-name warning committed on branch `duplicate-table-names`, **PR open**: https://github.com/johnsonolly4/lab-kit/pull/1 (not merged). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Merge the PR (after checking the warning in Obsidian if wanted), then candidates: the changelog popup, the next v0.4 bug (tutorial renders as Dataview errors), or fixing `npm run lint`.
+**Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** user's call. Lint is down to 44 problems (9 errors), all needing a decision (BACKLOG, Repo / release): Node modules in `src/kit/`, sentence case, command name, deprecated API. Also: merge PR 1, retarget PR 2 to `main`, merge it; v0.4 items (sample-list toggle label, snippet icons).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -10,9 +10,74 @@
 - Analysis methods + machines in settings: design to agree
 - Sample creation workflow: to discuss
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
-- `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
+- `npm run lint` reports 44 problems (9 errors, all `no-require-imports`): decisions in BACKLOG.md (Repo / release)
 
-## Last session (duplicate table names)
+## Last session (commit + push lint fixes)
+- Committed the lint fixes below (15 tracked files, incl. STATUS/BACKLOG) on `whats-new-popup` and pushed, so PR 2 includes them. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+
+## Earlier session (lint fixes)
+- Fixed the behaviour-neutral lint groups: 81 → 44 problems. `text()` helper (`src/calc/engine.ts`) for `no-base-to-string`; `instanceof TFile` instead of casts; `window.setTimeout`; `MarkdownRenderChild` / own `Component` for `MarkdownRenderer`; unused catch variables, redundant assertions, async click handler
+- `hazards.ts` uses `getAbstractFileByPath` + `instanceof TFile` (was `getFileByPath`), so `minAppVersion` stays 1.5.0. `WhatsNewModal` constructor lost its `plugin` argument
+- Tests: stub got `TFile(init)`, `MarkdownRenderChild`, `Component.load/unload`, `window`; mocks now return real `TFile`s. `npm test`: 59 pass; `npm run build` clean. Not committed. Not seen in Obsidian (the changed code: calc refresh/render/copy, hazard header, What's new popup)
+- Left on purpose: user-facing text (sentence case ×7, command name), Node modules / `require` in `src/kit/`, deprecated `setWarning` / `display()`, settings definitions
+
+## Earlier session (push lint commit)
+- Pushed `a502df9` (eslint setup) to `whats-new-popup`, so PR 2 includes it. No code changes, tests not rerun
+
+## Earlier session (commit lint setup)
+- Committed `eslint.config.mjs`, `package.json`, `package-lock.json`, STATUS and BACKLOG on `whats-new-popup`. Not pushed. No code changes, tests not rerun
+
+## Earlier session (lint setup)
+- Added devDependencies `eslint@9`, `eslint-plugin-obsidianmd`, `@eslint/js`, `@eslint/json`, `typescript-eslint`, and `eslint.config.mjs` (store plugin's `recommended` config, type-checked via `projectService`). `npm run lint` now runs on `src/`
+- Result: 81 problems (34 errors, 47 warnings). **Nothing fixed on purpose**: several change user-facing text (sentence case, command name) or need a decision (Node APIs in `src/kit/`, `minAppVersion`). Grouped list with file:line pointers is in BACKLOG.md
+- `npm test`: 59 pass; `npm run build` clean. Not committed
+- Note: `npm install` warns of 8 vulnerabilities (dev dependencies, not checked) and the plugin's peer `obsidian@1.8.7` while the repo uses `obsidian@latest` (1.13.1); lint still works
+
+## Earlier session (commit + push v0.4 batch)
+- Committed the batch below (tracked changes + `tests/snippets-defaults.test.ts`) and pushed to `whats-new-popup`. `test-vault/` hand copies left untracked on purpose. `npm test`: 59 pass. No code changes
+
+## Earlier session (quick changes batch 1 + initials)
+- New emoji in the template headings; `is-blank` class + `.lab-kit td.is-blank { height: 2em }` for empty body cells (all tables)
+- Forms: reagents, RAFT names, matrix items and the NMR dataset start empty with placeholders (`labSnippets.js`). Solvents, eluent, ratios, dead volume left as they were (user's choice)
+- Initials: `kit.initials` (`KitData`, `src/kit/updater.ts`), Settings → Lab Kit → Initials (`src/kit/ui.ts`). `labSnippets.js` reads `.obsidian/plugins/lab-kit/data.json`, falls back to `lab-config.json`, then `XX` with a notice (samples / timetable / matrix only)
+- Tests: new `tests/snippets-defaults.test.ts` (5), render test for `is-blank`, matrix test now passes its items. `npm test`: 59 pass; `npm run build` clean; `kit-manifest.json` unchanged on regeneration. Changelog + tutorial line updated
+- Not seen in Obsidian, test-vault copies stale, leftover items (sample-list toggle label, other defaults): all in BACKLOG.md
+
+## Earlier session (commit RAFT fix)
+- Committed and pushed the RAFT fix below, plus STATUS/BACKLOG/changelog. `npm test`: 53 pass. No code changes
+
+## Earlier session (RAFT mol fractions)
+- `raft()` in `kit/Extras/scripts/templater/labSnippets.js`: monomer mol = total mol × fraction / `SUM(fractions)`; "Total monomer (mol)" and "Theoretical Mn" use the fraction-weighted mean MW divided by `SUM(fractions)`. Tip callout removed
+- Test: 3-monomer case in `tests/snippets.test.ts` (monomer masses sum to 2.5 g, Mn exact; old script fails it). `npm test`: 53 pass; 0005 Mn 19990.14 still holds; `npm run build` clean. Changelog line added; `kit-manifest.json` unchanged on regeneration
+- Not seen in Obsidian, test-vault copy of the script is stale: both in BACKLOG (Not yet tested)
+
+## Earlier session (commit click-to-edit)
+- Committed and pushed the click-to-edit fix below to `whats-new-popup` (PR 2). `npm test`: 53 pass. No code changes
+
+## Earlier session (click-to-edit)
+- Cell width: `editCell` sets `--lab-kit-cell-w` (the cell's width before editing) via `setCssProps`; `styles.css` `.is-editing` fixes the cell to it (floor 4em), input has `min-width: 0`
+- One click: pressing another cell while editing now records it (`pending`); the blur saves/redraws, then `openPending()` opens it. `writeCell` returns the new note text and the save redraws at once (`refreshFile(path, text)`); the delayed modify redraw skips a table being edited
+- Test: new case in `tests/render.test.ts`; `tests/helpers/minidom.cjs` got `setCssProps`, `offsetWidth`, event extras. `npm test`: 53 pass; `npm run build` clean
+- Not seen in Obsidian: BACKLOG (Not yet tested). Changelog line added
+
+## Earlier session (commit tutorial fix)
+- Committed and pushed the tutorial fix below, plus STATUS/BACKLOG. No code changes, tests not rerun
+
+## Earlier session (tutorial Dataview errors)
+- `docs/tutorial.md` (lines 92, 95-102, 157): inline code no longer starts with `=` (Dataview treats it as an inline query). Section 3.3 says formulas start with an equals sign and that the examples leave it off. Docs only, no code or tests touched
+- Not seen in Obsidian with Dataview on: BACKLOG (Not yet tested). Changelog not changed (docs-only)
+
+## Earlier session (push + PR)
+- Pushed `whats-new-popup` and opened PR 2 against `duplicate-table-names` (so the diff shows only the popup). No code changes, tests not rerun
+
+## Earlier session (What's new popup)
+- New `src/whatsnew.ts`: `latestSection()` (newest `## ` section of `docs/changelog.md`), `sectionHeading()`, `WhatsNewModal` (renders the section, link to the full changelog on GitHub). Changelog is bundled into `main.js` (`loader: { ".md": "text" }` in `esbuild.config.mjs`, `src/md.d.ts`)
+- `src/kit/ui.ts`: shown once on the first start after the heading changes (`kit.seenChangelog` in data.json, new `KitData` field), command "Show what's new", "What's new" button in Settings → Lab Kit. The *reloaded* plugin shows it, because the running one still has the old changelog
+- `openAfter` removed (`updater.ts`, `ui.ts`, `package-kit.mjs`, `kit-manifest.json`); the tutorial and changelog note copies are no longer packaged or installed (`kit-manifest.mjs`, manifest regenerated, 26 files). Existing copies in vaults are left alone
+- Tests: new `tests/whatsnew.test.ts` (3); `package-kit` and `updater` tests adjusted. `npm test`: 52 pass; `npm run build` and `npm run package` clean, zip has no `Lab notebook kit - *.md`
+- Changelog line reworded (under Unreleased). Open points are in BACKLOG.md (Not yet tested)
+
+## Earlier session (duplicate table names)
 - Two `calc` tables with the same `name:` now both show a red "⚠ name used twice" in the caption; name-qualified refs to that name give `#REF!` ("table name "x" is used by more than one table"). Own unqualified refs still work
 - `src/calc/engine.ts`: `Workbook.dupNames`, `isDuplicate()`, `badTable()`; `blockIndex` returns -1 for duplicates. `src/calc/render.ts`: no longer drops same-named blocks from the workbook (old filter hid duplicates); with `getSectionInfo` null only the first block equal to this one's source is dropped. `styles.css`: `.lab-kit-warn`
 - Side effect: XLOOKUP now returns an error in its lookup range (was a silent `#N/A`), so a missing / duplicate table there shows `#REF!`

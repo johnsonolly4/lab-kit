@@ -1,6 +1,9 @@
 // Runtime stand-in for the "obsidian" package (which ships types only). vitest aliases "obsidian" to this file.
 // Tests reach into these exports to set up the situation they need (e.g. Platform.isDesktopApp).
-export class Component {}
+// Popout-window code calls window.setTimeout; under node the global object stands in for the window.
+(globalThis as any).window ??= globalThis;
+export class Component { load(): void { /* nothing */ } unload(): void { /* nothing */ } }
+export class MarkdownRenderChild extends Component { constructor(public containerEl: unknown) { super(); } }
 export class Plugin extends Component {
   app: any;
   manifest: any = { id: "lab-kit" };
@@ -20,7 +23,10 @@ export class Menu { addItem(): this { return this; } showAtMouseEvent(): void { 
 export class Modal { constructor(public app: any) {} open(): void { /* ignored */ } close(): void { /* ignored */ } }
 export class Setting { constructor(_el: unknown) {} }
 export class PluginSettingTab { constructor(public app: any, public plugin: any) {} }
-export class TFile {}
+export class TFile {
+  path = ""; basename = "";
+  constructor(init?: { path?: string; basename?: string }) { Object.assign(this, init); }
+}
 export const Platform = { isDesktopApp: true };
 export const getIcon = (_name: string): SVGElement | null => null;
 export const MarkdownRenderer = {

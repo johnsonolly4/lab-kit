@@ -1,5 +1,5 @@
 // Assembles the kit the updater installs from: dist/lab-kit-<version>/ and dist/lab-kit-<version>.zip
-// (kit/ + built plugin + docs, exactly as listed in kit/kit-manifest.json).
+// (kit/ + built plugin, exactly as listed in kit/kit-manifest.json).
 // Usage: npm run package   (builds main.js first)
 import { readFileSync, writeFileSync, existsSync, mkdirSync, rmSync, cpSync, copyFileSync, readdirSync, statSync } from "fs";
 import { join, relative, sep, resolve } from "path";
@@ -8,10 +8,6 @@ import { zipSync } from "fflate";
 
 const ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const PLUGIN_DIR = ".obsidian/plugins/lab-kit";
-const DOCS = [
-  ["docs/tutorial.md", "Lab notebook kit - tutorial.md"],
-  ["docs/changelog.md", "Lab notebook kit - changelog.md"],
-];
 
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const walk = (dir) => readdirSync(dir).flatMap((n) => {
@@ -36,13 +32,8 @@ export function buildKitFolder({ outDir, mainJs = join(ROOT, "main.js"), root = 
   mkdirSync(pluginDest, { recursive: true });
   copyFileSync(mainJs, join(pluginDest, "main.js"));
   for (const f of ["manifest.json", "styles.css"]) copyFileSync(join(root, f), join(pluginDest, f));
-  for (const [from, to] of DOCS) copyFileSync(join(root, from), join(dir, to));
 
   const missing = kitManifest.files.map((f) => f.src).filter((src) => !existsSync(join(dir, ...src.split("/"))));
-  const open = kitManifest.openAfter;
-  if (open && !kitManifest.files.some((f) => f.role === open.role && f.path === open.path)) {
-    missing.push(`openAfter: ${open.role}/${open.path} is not one of the shipped files`);
-  }
   if (missing.length) throw new Error(`kit-manifest.json lists files that are not in the package:\n  ${missing.join("\n  ")}\nRun npm run kit:manifest.`);
   return { dir, version: kitManifest.version };
 }

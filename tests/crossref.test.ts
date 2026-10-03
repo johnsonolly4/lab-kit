@@ -2,6 +2,7 @@
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
+import { TFile } from "obsidian";
 import { CalcRenderer, type CalcEntry } from "../src/calc/render";
 import { extractBlocks } from "../src/calc/engine";
 
@@ -10,7 +11,7 @@ const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
 const NOTE = "intro\n```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | =A2*b!B2 |\n```\n\n```calc\nname: b\n| P | Q |\n| q | 5 |\n```\n";
 
 function setup(text: string) {
-  const file = { path: "n.md" };
+  const file = new TFile({ path: "n.md" });
   const plugin: any = { app: { vault: { getAbstractFileByPath: () => file, cachedRead: async () => text } }, registerEvent() { /* unused */ } };
   return new CalcRenderer(plugin);
 }

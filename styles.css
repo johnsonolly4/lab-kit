@@ -35,9 +35,14 @@
 
 /* Every body cell can be clicked to edit */
 .lab-kit td.is-editable { cursor: text; }
+/* Empty cells: tall enough to click easily */
+.lab-kit td.is-blank { height: 2em; }
 .lab-kit td.is-editable:hover { outline: 1px dashed var(--interactive-accent); outline-offset: -2px; }
-.lab-kit td.is-editing { padding: 0 !important; }
-.lab-kit-input { width: 100%; min-width: 6em; font: inherit; padding: 2px 4px; }
+.lab-kit td.is-editing {
+  padding: 0 !important; box-sizing: border-box;
+  width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
+}
+.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; padding: 2px 4px; }
 
 /* A1 grid labels */
 .lab-kit .lab-kit-grid-row th,
@@ -49,6 +54,8 @@
 /* Lab Kit updater window */
 .lab-kit-modal { max-height: 70vh; overflow-y: auto; }
 .lab-kit-notes { margin: 0 0 8px; padding-left: 1.2em; font-size: 0.9em; }
+.lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
+.lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .lab-kit-group { margin: 4px 0; font-size: 0.88em; }
 .lab-kit-group summary { cursor: pointer; font-weight: 600; }
 .lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }

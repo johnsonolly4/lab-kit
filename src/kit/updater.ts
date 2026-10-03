@@ -23,12 +23,11 @@ export interface KitManifest {
   templater?: { userScripts?: boolean };
   enableCss?: string[];
   disableCss?: string[];
-  openAfter?: { role: string; path: string };
 }
 export interface Kit { dir: string; folder: string; manifest: KitManifest }
 export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
 /** What the plugin remembers about the updater (the `kit` key of data.json). */
-export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null }
+export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null; seenChangelog: string; initials: string }
 export interface PlanItem {
   kind: "file" | "delete";
   src?: string;
@@ -49,11 +48,12 @@ export interface ApplyResult {
 }
 
 const KIT_TEXT_EXT = /\.(md|js|json|css|py|txt|csv)$/i;
-export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null };
+export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "" };
 
+const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {
-  const pa = String(a ?? "0").split(".").map(n => parseInt(n, 10) || 0);
-  const pb = String(b ?? "0").split(".").map(n => parseInt(n, 10) || 0);
+  const pa = kitVersionText(a).split(".").map(n => parseInt(n, 10) || 0);
+  const pb = kitVersionText(b).split(".").map(n => parseInt(n, 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const d = (pa[i] ?? 0) - (pb[i] ?? 0);
     if (d) return d;
@@ -64,7 +64,7 @@ export const kitJoin = (...parts: (string | null | undefined)[]): string => part
 export const kitParent = (p: string): string => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
 export function kitHash(buf: Uint8Array): string {
   try { return (require("crypto") as typeof import("crypto")).createHash("sha1").update(buf).digest("hex"); }
-  catch (e) {                                     // fallback: FNV-1a
+  catch {                                         // fallback: FNV-1a
     let h = 0x811c9dc5; const b = new Uint8Array(buf);
     for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193) >>> 0; }
     return h.toString(16);

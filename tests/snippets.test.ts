@@ -82,6 +82,16 @@ describe("snippets", () => {
     ev = evalNote();
     close(ev.g("raft_r", "F3"), 0.3125, 1e-3); close(ev.g("raft_r", "F5"), 11.259, 1e-3); close(ev.g("raft", "B7"), 19990.14, 1e-5);
 
+    // Three monomers: rounded fractions (0.333 x 3) must still be normalised, so the monomer masses add up to the total
+    r = await run("raft", { monomers: "DMAm, DAAm, Lipoic Acid", cta: "PABTC", init: "VA-044", solvent: "Water" });
+    assert.ok(!r.md.includes("[!tip]"), "tip callout removed");
+    note = note.replace("| Total monomer mass (g) |  |", "| Total monomer mass (g) | 2.5 |").replace("| Target DP |  |", "| Target DP | 105 |");
+    ev = evalNote();
+    const mean = (99.13 + 169.23 + 206.32) / 3;
+    close(ev.g("raft2_r", "F2") + ev.g("raft2_r", "F3") + ev.g("raft2_r", "F4"), 2.5, 1e-9);
+    close(ev.g("raft2", "B6"), 2.5 / mean, 1e-9);
+    close(ev.g("raft2", "B7"), 105 * mean + 238.39, 1e-9);
+
     // Sample list + NMR/GPC + results
     r = await run("samples", { codes: "", count: "3", nmr: true, gpc: true, results: true });
     note = note.replace("| 1 | ABC0016-A | CDCl3 | 1H |  |  |", "| 1 | ABC0016-A | CDCl3 | 1H | 42 |  |")
@@ -103,7 +113,7 @@ describe("snippets", () => {
     assert.ok(r.md.includes("name: nmr2") && r.md.includes("ABC0016-A"), r.md);
 
     // Variant matrix
-    r = await run("matrix"); assert.ok(r.md.includes("copy: list") && r.md.includes("ABC0016-D"));
+    r = await run("matrix", { rows: "Lipoic acid, Acetic acid", cols: "Benzyl alcohol, Methanol" }); assert.ok(r.md.includes("copy: list") && r.md.includes("ABC0016-D"));
     // Column + RT linked
     r = await run("column", { density: "1.325" });
     note = note.replace("| Empty column (blanking plugs, glass wool) (g) |  |", "| Empty column (blanking plugs, glass wool) (g) | 111.076 |")

@@ -1,8 +1,8 @@
 // Renders ```calc blocks as live tables: click-to-edit, + Row, A1 grid, Copy, row menu.
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
-import { MarkdownRenderer, Menu, Notice, getIcon, type App, type MarkdownPostProcessorContext, type Plugin, type TFile } from "obsidian";
+import { MarkdownRenderChild, MarkdownRenderer, Menu, Notice, TFile, getIcon, type App, type MarkdownPostProcessorContext, type Plugin } from "obsidian";
 import {
-  ERR, cleanLink, colToIndex, extractBlocks, formatValue, indexToCol, isErr, parseBlock, Workbook,
+  ERR, cleanLink, colToIndex, extractBlocks, formatValue, indexToCol, isErr, parseBlock, text, Workbook,
   type Env, type ParsedBlock, type Value
 } from "./engine";
 import { autoInsertIndex, editRows, writeCellText } from "./rewrite";
@@ -14,11 +14,17 @@ export interface CalcEntry {
   source: string;
   parsed?: ParsedBlock;
   grid?: boolean;
+  /** Body cells of the current render, keyed `row|col`, so a click can be carried over a re-render. */
+  tds?: Map<string, HTMLElement>;
 }
 
 export class CalcRenderer {
   /** Rendered blocks per note path, so edits to the note refresh them. */
   live = new Map<string, Set<CalcEntry>>();
+  /** The cell being edited, if any (one at a time). */
+  private editor: { entry: CalcEntry } | null = null;
+  /** Cell clicked while another was being edited: opened once the save and redraw are done. */
+  private pending: { entry: CalcEntry; r: number; c: number } | null = null;
 
   constructor(private plugin: Plugin) {}
 
@@ -33,11 +39,11 @@ export class CalcRenderer {
       await this.render(entry);
     });
 
-    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const timers = new Map<string, number>();
     this.plugin.registerEvent(this.app.vault.on("modify", (file) => {
       if (!this.live.has(file.path)) return;
-      clearTimeout(timers.get(file.path));
-      timers.set(file.path, setTimeout(() => void this.refreshFile(file.path), 250));
+      window.clearTimeout(timers.get(file.path));
+      timers.set(file.path, window.setTimeout(() => void this.refreshFile(file.path), 250));
     }));
   }
 
@@ -53,21 +59,22 @@ export class CalcRenderer {
         if (key == null || fm[key] == null || fm[key] === "") return ERR("#PROP?", `"${note}" has no ${isMW ? "MW" : keys[0]} property`);
         const v = fm[key];
         if (typeof v === "number") return v;
-        const num = parseFloat(String(v).replace(",", "."));
-        return isMW ? (isNaN(num) ? ERR("#PROP?", `MW of "${note}" isn't a number`) : num) : (isNaN(num) ? String(v) : num);
+        const num = parseFloat(text(v).replace(",", "."));
+        return isMW ? (isNaN(num) ? ERR("#PROP?", `MW of "${note}" isn't a number`) : num) : (isNaN(num) ? text(v) : num);
       }
     };
   }
 
-  async refreshFile(path: string): Promise<void> {
+  async refreshFile(path: string, known?: string): Promise<void> {
     const set = this.live.get(path); if (!set) return;
-    const file = this.app.vault.getAbstractFileByPath(path); if (!file) return;
-    const text = await this.app.vault.cachedRead(file as TFile);
+    const file = this.app.vault.getAbstractFileByPath(path); if (!(file instanceof TFile)) return;
+    const text = known ?? await this.app.vault.cachedRead(file);
     const blocks = extractBlocks(text);
     for (const entry of [...set]) {
       if (!entry.el.isConnected) { set.delete(entry); continue; }
       const info = entry.ctx.getSectionInfo(entry.el);
       if (info) { const blk = blocks.find(b => b.lineStart === info.lineStart); if (blk) entry.source = blk.source; }
+      if (this.editor?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
       await this.render(entry, text);
     }
     if (!set.size) this.live.delete(path);
@@ -79,13 +86,13 @@ export class CalcRenderer {
     let others: ParsedBlock[] = [];
     try {
       const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
-      const text = fileText ?? (file ? await this.app.vault.cachedRead(file as TFile) : "");
+      const text = fileText ?? (file instanceof TFile ? await this.app.vault.cachedRead(file) : "");
       const info = ctx.getSectionInfo(el);
       const blocks = extractBlocks(text);
       // Without section info, drop only the first block that is this one (not every same-named block).
       const selfAt = info ? blocks.findIndex(b => b.lineStart === info.lineStart) : blocks.findIndex(b => b.source === entry.source);
       others = blocks.filter((_, i) => i !== selfAt).map(b => parseBlock(b.source));
-    } catch (e) { /* evaluate on its own */ }
+    } catch { /* evaluate on its own */ }
     const wb = new Workbook([self, ...others], this.env(ctx.sourcePath));
     const opts = self.opts;
     entry.parsed = self;
@@ -127,6 +134,7 @@ export class CalcRenderer {
 
     const build = (): void => {
       table.empty();
+      entry.tds = new Map();
       table.toggleClass("show-grid", showGrid);
       const head = table.createEl("thead");
       if (showGrid) {
@@ -164,14 +172,24 @@ export class CalcRenderer {
             }
           } else {
             if (cell.kind === "number") td.addClass("is-number");
+            if (r > 0 && cell.kind === "blank") td.addClass("is-blank");
             if (r > 0 && cell.kind === "blank" && needed.has(`0|${r}|${c}`)) td.addClass("is-needed");
             this.fillText(td, cell.raw, ctx);
             if (r > 0) td.setAttr("title", `${addr}  click to edit`);
           }
           if (r > 0) {
             td.addClass("is-editable");
+            entry.tds?.set(`${r}|${c}`, td);
+            // Pressing here blurs the open editor, whose save redraws the table before the click lands
+            td.addEventListener("mousedown", (ev) => {
+              const t = ev.target as HTMLElement;
+              if (t.closest("a") || t.closest("input")) return;
+              if (this.editor) this.pending = { entry, r, c };
+            });
             td.addEventListener("click", (ev) => {
               if ((ev.target as HTMLElement).closest("a")) return;
+              const p = this.pending;
+              if (p && p.entry === entry && p.r === r && p.c === c) return; // opened after the save
               this.editCell(entry, r, c, td, cell.raw);
             });
           }
@@ -183,8 +201,7 @@ export class CalcRenderer {
     const stop = (e: Event): void => { e.preventDefault(); e.stopPropagation(); };
     gridBtn.addEventListener("click", (e) => { stop(e); showGrid = !showGrid; entry.grid = showGrid; build(); });
     addBtn.addEventListener("click", (e) => { stop(e); void this.structural(entry, "insert", autoInsertIndex(self)); });
-    copyBtn.addEventListener("click", async (e) => {
-      stop(e);
+    const copy = async (): Promise<void> => {
       const val = (r: number, c: number): string => {
         const cell = self.cells[r]?.[c];
         if (!cell) return "";
@@ -204,7 +221,8 @@ export class CalcRenderer {
       }
       try { await navigator.clipboard.writeText(text); new Notice(opts.copy ? "Copied as one column, paste into Excel" : "Table copied, paste into Excel"); }
       catch { new Notice("Couldn't copy to the clipboard"); }
-    });
+    };
+    copyBtn.addEventListener("click", (e) => { stop(e); void copy(); });
   }
 
   rowMenu(ev: MouseEvent, entry: CalcEntry, r: number): void {
@@ -219,9 +237,9 @@ export class CalcRenderer {
   async structural(entry: CalcEntry, kind: "insert" | "delete", at: number): Promise<void> {
     const info = entry.ctx.getSectionInfo(entry.el);
     const file = this.app.vault.getAbstractFileByPath(entry.ctx.sourcePath);
-    if (!info || !file) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return; }
+    if (!info || !(file instanceof TFile)) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return; }
     let ok = true;
-    await this.app.vault.process(file as TFile, (data) => {
+    await this.app.vault.process(file, (data) => {
       const out = editRows(data, info.lineStart, kind, at);
       if (out == null) { ok = false; return data; }
       return out;
@@ -232,7 +250,9 @@ export class CalcRenderer {
   fillText(td: HTMLElement, raw: string, ctx: MarkdownPostProcessorContext): void {
     if (/[[*_$<`~]/.test(raw)) {
       const span = td.createSpan();
-      void MarkdownRenderer.render(this.app, raw, span, ctx.sourcePath, this.plugin).then(() => {
+      const child = new MarkdownRenderChild(span);
+      ctx.addChild(child);
+      void MarkdownRenderer.render(this.app, raw, span, ctx.sourcePath, child).then(() => {
         const p = span.querySelector("p");
         if (p && span.childElementCount === 1) { while (p.firstChild) span.appendChild(p.firstChild); p.remove(); }
       });
@@ -242,17 +262,23 @@ export class CalcRenderer {
   /** Click-to-edit for any body cell (values and formulas). */
   editCell(entry: CalcEntry, r: number, c: number, td: HTMLElement, current: string): void {
     if (td.querySelector("input")) return;
+    td.setCssProps({ "--lab-kit-cell-w": `${td.offsetWidth}px` }); // keeps the column from widening
     td.empty();
     td.addClass("is-editing");
     const input = td.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
+    const mine = { entry };
+    this.editor = mine;
     input.focus(); input.select();
     let done = false;
     const finish = async (save: boolean): Promise<void> => {
       if (done) return; done = true;
+      if (this.editor === mine) this.editor = null;
       const val = input.value.trim();
-      if (!save || val === current) { await this.render(entry); return; }
-      await this.writeCell(entry, r, c, val);
+      try {
+        if (!save || val === current) await this.render(entry);
+        else await this.refreshFile(entry.ctx.sourcePath, await this.writeCell(entry, r, c, val));
+      } finally { this.openPending(); }
     };
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); void finish(true); }
@@ -262,11 +288,22 @@ export class CalcRenderer {
     input.addEventListener("click", (e) => e.stopPropagation());
   }
 
-  async writeCell(entry: CalcEntry, r: number, c: number, val: string): Promise<void> {
+  /** Opens the cell the user clicked while another one was being saved. */
+  private openPending(): void {
+    const p = this.pending; this.pending = null;
+    const td = p?.entry.tds?.get(`${p.r}|${p.c}`);
+    if (!p || !td || !td.isConnected || this.editor) return;
+    this.editCell(p.entry, p.r, p.c, td, p.entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
+  }
+
+  /** Writes one cell back into the note; returns the new note text (undefined if it couldn't). */
+  async writeCell(entry: CalcEntry, r: number, c: number, val: string): Promise<string | undefined> {
     const { el, ctx } = entry;
     const info = ctx.getSectionInfo(el);
     const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
-    if (!info || !file) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return; }
-    await this.app.vault.process(file as TFile, (data) => writeCellText(data, info.lineStart, r, c, val));
+    if (!info || !(file instanceof TFile)) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return undefined; }
+    let out: string | undefined;
+    await this.app.vault.process(file, (data) => (out = writeCellText(data, info.lineStart, r, c, val)));
+    return out;
   }
 }

@@ -10,7 +10,8 @@ class El {
   set innerHTML(h){ this.children=[]; this._text=String(h).replace(/<[^>]+>/g,""); }
   setAttribute(k,v){ this.attrs[k]=String(v); } getAttribute(k){ return this.attrs[k]; }
   addEventListener(t,f){ (this.listeners[t] ||= []).push(f); }
-  dispatch(t){ (this.listeners[t]||[]).forEach(f=>f({ preventDefault(){}, stopPropagation(){}, target:this })); }
+  dispatch(t,extra={}){ (this.listeners[t]||[]).forEach(f=>f({ preventDefault(){}, stopPropagation(){}, target:this, ...extra })); }
+  setCssProps(){} get offsetWidth(){ return 80; }
   get isConnected(){ return true; }
   matches(simple){ const [tag,...cls]=simple.split("."); return (!tag || this.tagName===tag.toUpperCase()) && cls.every(c=>this.classList.contains(c)); }
   all(){ return this.children.flatMap(c=>[c,...c.all()]); }

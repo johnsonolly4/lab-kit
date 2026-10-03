@@ -1,4 +1,5 @@
 import { describe, it } from "vitest";
+import { TFile } from "obsidian";
 import assert from "node:assert";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
@@ -12,11 +13,11 @@ const fixture: Record<string, Record<string, unknown>> = JSON.parse(readFileSync
 
 /** Fake vault + metadata cache backed by the fixture; `data` can be edited to simulate the user changing a note. */
 function fakeApp(data = structuredClone(fixture)) {
-  const files = () => Object.keys(data).map(path => ({ path, basename: path.split("/").pop()!.replace(/\.md$/, "") }));
+  const files = () => Object.keys(data).map(path => new TFile({ path, basename: path.split("/").pop()!.replace(/\.md$/, "") }));
   const handlers: Record<string, ((...a: any[]) => void)[]> = {};
   const on = (evt: string, fn: (...a: any[]) => void) => { (handlers[evt] ||= []).push(fn); return {}; };
   const app: any = {
-    vault: { getFileByPath: (p: string) => files().find(f => f.path === p) ?? null, on },
+    vault: { getAbstractFileByPath: (p: string) => files().find(f => f.path === p) ?? null, on },
     metadataCache: {
       getFileCache: (f: { path: string }) => ({ frontmatter: data[f.path] }),
       getFirstLinkpathDest: (name: string) => files().find(f => f.basename.toLowerCase() === name.toLowerCase()) ?? null,

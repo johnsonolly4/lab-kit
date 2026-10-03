@@ -2,6 +2,7 @@
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
+import { TFile } from "obsidian";
 import { CalcRenderer, type CalcEntry } from "../src/calc/render";
 import { extractBlocks } from "../src/calc/engine";
 
@@ -19,7 +20,7 @@ const warns = (el: any): number => el.querySelectorAll(".lab-kit-warn").length;
 
 /** Renders block `n` of the note the way Obsidian does; `info` says what getSectionInfo returns. */
 async function renderBlock(text: string, n: number, info: "real" | "null") {
-  const file = { path: "n.md" };
+  const file = new TFile({ path: "n.md" });
   const plugin: any = { app: { vault: { getAbstractFileByPath: () => file, cachedRead: async () => text } }, registerEvent() { /* unused */ } };
   const found = extractBlocks(text)[n];
   const el = new El("div");

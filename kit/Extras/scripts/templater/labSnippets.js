@@ -6,8 +6,9 @@
    Keys: solution, recipe, raft, matrix, samples, timetable, nmr, gpc,
          dls, results, column, rt, blank
 
-   Needs labForm.js in the same folder. Settings are read from
-   Extras/scripts/lab-config.json (initials).
+   Needs labForm.js in the same folder. Initials come from the Lab Kit
+   plugin settings (Settings → Lab Kit → Initials); older installs fall back
+   to Extras/scripts/lab-config.json.
    ===================================================================== */
 
 const F = "```";
@@ -21,8 +22,11 @@ module.exports = async function labSnippets(tp, key) {
   const file = tp.config.target_file;
   const noteText = () => app.workspace.activeEditor?.editor?.getValue() ?? "";
 
-  let initials = "XX";
-  try { initials = JSON.parse(await app.vault.adapter.read(CONFIG)).initials || initials; } catch (e) {}
+  const readJson = async (path) => { try { return JSON.parse(await app.vault.adapter.read(path)); } catch (e) { return null; } };
+  const saved = (await readJson(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`))?.kit?.initials
+             || (await readJson(CONFIG))?.initials;
+  const initials = String(saved || "").trim() || "XX";
+  if (!saved && ["samples", "timetable", "matrix"].includes(key)) new Notice("Set your initials in Settings → Lab Kit → Initials. Using XX for now.");
   const num = (file?.basename ?? tp.file.title).match(/^\d+/)?.[0] ?? "XXXX";
   const prefix = `${initials}${num}-`;
 
@@ -95,7 +99,7 @@ module.exports = async function labSnippets(tp, key) {
   };
 
   /* ---------- technique tables (shared by several snippets) ---------- */
-  const nmrTable = (codes, { solvent = "CDCl3", method = "1H", dataset = `Monty_${tp.date.now("YYYY_MM_DD")}` } = {}) => {
+  const nmrTable = (codes, { solvent = "CDCl3", method = "1H", dataset = "" } = {}) => {
     const id = unique("nmr");
     const rows = (codes.length ? codes : ["", "", ""]).map((c, i) => [i + 1, c, solvent, method, "", ""]);
     return { id, n: rows.length, md: `## NMR samples
@@ -166,7 +170,7 @@ ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
     async solution() {
       const v = await form("Solution prep", [
         { key: "label", label: "Solution name", value: "Solution 1" },
-        { key: "reagents", label: "Reagents", hint: "comma separated · defaults to this note's Chemicals", value: chemicals().join(", ") || "PABTC, Benzyl alcohol, DCM" },
+        { key: "reagents", label: "Reagents", hint: "comma separated · defaults to this note's Chemicals", value: chemicals().join(", "), placeholder: "e.g. reagent 1, reagent 2" },
       ]);
       if (!v || !list(v.reagents).length) return "";
       const reagents = list(v.reagents).map(link);
@@ -187,7 +191,7 @@ ${calc({ name: id, title: v.label, icon: "test-tube" }, ["Reagent", "MW (g/mol)"
     async recipe() {
       const chem = chemicals();
       const v = await form("Recipe by equivalents", [
-        { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: chem.filter(c => !/dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)).join(", ") || "Acid, Alcohol" },
+        { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: chem.filter(c => !/dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)).join(", "), placeholder: "e.g. reagent 1, reagent 2" },
         { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: chem.find(c => /dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)) ?? "" },
         { key: "mmol", label: "Amount of the first reagent (mmol)", value: "" },
         { key: "total", label: "Total mass (g)", hint: "needed for the solvent row and wt%", value: "" },
@@ -213,10 +217,10 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
 
     async raft() {
       const v = await form("RAFT recipe generator", [
-        { key: "monomers", label: "Monomer(s)", hint: "comma separated", value: "DMA" },
-        { key: "cta", label: "CTA / macro-CTA", value: "PABTC" },
-        { key: "init", label: "Initiator", value: "VA-044" },
-        { key: "solvent", label: "Solvent", value: "Water" },
+        { key: "monomers", label: "Monomer(s)", hint: "comma separated", value: "", placeholder: "e.g. monomer 1, monomer 2" },
+        { key: "cta", label: "CTA / macro-CTA", value: "", placeholder: "e.g. CTA name" },
+        { key: "init", label: "Initiator", value: "", placeholder: "e.g. initiator name" },
+        { key: "solvent", label: "Solvent", value: "", placeholder: "e.g. solvent name" },
         { key: "mass", label: "Total monomer mass (g)", value: "" },
         { key: "dp", label: "Target DP", value: "" },
         { key: "ratio", label: "CTA : initiator", value: "20" },
@@ -227,24 +231,23 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
       const monomers = list(v.monomers).map(link);
       const k = monomers.length, mLast = k + 1, ctaRow = k + 2, initRow = k + 3;
       const frac = k === 1 ? "1" : String(+(1 / k).toFixed(3));
-      const rows = monomers.map((m, i) => { const r = i + 2; return ["Monomer", m, `=MW(B${r})`, frac, `=${id}!$B$6*D${r}`, `=E${r}*C${r}`, ""]; });
+      const rows = monomers.map((m, i) => { const r = i + 2; return ["Monomer", m, `=MW(B${r})`, frac, `=${id}!$B$6*D${r}/SUM(D$2:D$${mLast})`, `=E${r}*C${r}`, ""]; });
       rows.push(["CTA", link(v.cta), `=MW(B${ctaRow})`, "", `=${id}!B6/${id}!B3`, `=E${ctaRow}*C${ctaRow}`, ""]);
       rows.push(["Initiator", link(v.init), `=MW(B${initRow})`, "", `=E${ctaRow}/${id}!B4`, `=E${initRow}*C${initRow}`, ""]);
       rows.push(["Solvent", link(v.solvent), "", "", "", `=SUM(F2:F${initRow})*(100/${id}!B5-1)`, ""]);
       return `## RAFT recipe generator
 ${calc({ name: id, title: "Targets", icon: "flask-conical" }, ["Parameter", "Value"], [
   ["Total monomer mass (g)", v.mass], ["Target DP", v.dp], ["CTA : initiator", v.ratio], ["Solids (% w/w)", v.solids],
-  ["Total monomer (mol)", `=IF(B2="", 1/0, B2/SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast}))`],
-  ["Theoretical Mn (g/mol)", `=IF(B3="", 1/0, B3*SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})+${R}!C${ctaRow})`]])}
+  ["Total monomer (mol)", `=IF(B2="", 1/0, B2/(SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})))`],
+  ["Theoretical Mn (g/mol)", `=IF(B3="", 1/0, B3*SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})+${R}!C${ctaRow})`]])}
 ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "MW (g/mol)", "Mol fraction", "mol", "Mass (g)", "Used (g)"], rows)}
-> [!tip] A CTA or macro-CTA without a chemical note: click its MW cell and type the number.
 `;
     },
 
     async matrix() {
       const v = await form("Variant naming matrix", [
-        { key: "rows", label: "Row items", hint: "e.g. acids, comma separated", value: "Lipoic acid, Acetic acid" },
-        { key: "cols", label: "Column items", hint: "e.g. alcohols, comma separated", value: "Benzyl alcohol, Methanol" },
+        { key: "rows", label: "Row items", hint: "e.g. acids, comma separated", value: "", placeholder: "e.g. acid 1, acid 2" },
+        { key: "cols", label: "Column items", hint: "e.g. alcohols, comma separated", value: "", placeholder: "e.g. alcohol 1, alcohol 2" },
       ]);
       if (!v || !list(v.rows).length) return "";
       const rows = list(v.rows), cols = list(v.cols);
@@ -298,7 +301,7 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
         { key: "codes", label: "Sample codes", type: "textarea", hint: "blank = codes from this note's sample list or timetable", value: codesFrom(["samples", "sampling"]).join(", ") },
         { key: "solvent", label: "Solvent", value: "CDCl3" },
         { key: "method", label: "Method", value: "1H" },
-        { key: "dataset", label: "Dataset / folder", value: `Monty_${tp.date.now("YYYY_MM_DD")}` },
+        { key: "dataset", label: "Dataset / folder", hint: "optional · can be filled in later", value: "", placeholder: "e.g. folder name of the NMR data" },
       ]);
       if (!v) return "";
       tag("NMR");

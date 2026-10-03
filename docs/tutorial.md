@@ -89,17 +89,17 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | change options or lots of text | hover → Obsidian's `</>` button (top right), or arrow into the block |
 
 > [!note] Rows and references
-> Like Excel: when you add a row, `SUM(B2:B4)` becomes `SUM(B2:B5)`, and other tables pointing into this one (`=sol1!B5`, `XLOOKUP(…, nmr!B$2:B$4, …)`) are updated too. Deleting a row that something points at gives `#REF!`.
+> Like Excel: when you add a row, `SUM(B2:B4)` becomes `SUM(B2:B5)`, and other tables pointing into this one (`sol1!B5`, `XLOOKUP(…, nmr!B$2:B$4, …)`) are updated too. Deleting a row that something points at gives `#REF!`.
 
 ### 3.3 Writing formulas
-Formulas start with `=` and use **Excel syntax**. Row 1 is the header row, so the first data row is row 2.
+Formulas start with an equals sign (=) and use **Excel syntax**. Row 1 is the header row, so the first data row is row 2. The examples below are shown without the leading = (type it in the cell).
 
-- Same table: `=C2*D2/1000`
-- Another table in the note: give it a `name:` and use `=sol1!D2` or `=SUM(sol1!D2:D4)`
-- Molar mass from a chemical note: `=MW(A2)` (reads an `MW`, `Mw` or `Molar mass` property; the cell can hold `[[DCM]]` or `DCM`)
-- Any property: `=PROP("PABTC", "Density")`
-- Lookups: `=XLOOKUP(A2, nmr!B$2:B$9, nmr!E$2:E$9, "")`
-- Clock time: `=CLOCK("10:30", 90)` → `12:00`
+- Same table: `C2*D2/1000`
+- Another table in the note: give it a `name:` and use `sol1!D2` or `SUM(sol1!D2:D4)`
+- Molar mass from a chemical note: `MW(A2)` (reads an `MW`, `Mw` or `Molar mass` property; the cell can hold `[[DCM]]` or `DCM`)
+- Any property: `PROP("PABTC", "Density")`
+- Lookups: `XLOOKUP(A2, nmr!B$2:B$9, nmr!E$2:E$9, "")`
+- Clock time: `CLOCK("10:30", 90)` → `12:00`
 
 Residence time, as used in the flow snippets:
 $$\tau = \frac{V_{\text{reactor}}}{Q} \qquad Q = \frac{V_{\text{reactor}}}{\tau}$$
@@ -154,7 +154,7 @@ showLegend: false
 ## 5. Excel → calc tables (the Python script)
 
 > [!question] What does it do?
-> It reads an Excel file, takes every cell (values **and formulas**) and writes them out as ```` ```calc ```` blocks. Each sheet becomes one block named after the sheet, so `=Recipe!B5` in Excel becomes `=recipe!B5` and still works in Obsidian.
+> It reads an Excel file, takes every cell (values **and formulas**) and writes them out as ```` ```calc ```` blocks. Each sheet becomes one block named after the sheet, so `Recipe!B5` in Excel becomes `recipe!B5` and still works in Obsidian.
 
 ```mermaid
 flowchart LR
@@ -196,7 +196,7 @@ flowchart LR
 
 | Change | Where |
 |---|---|
-| Your initials in sample codes | `Extras/scripts/lab-config.json` → `initials` |
+| Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
 | A snippet's menu icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
 | What a snippet builds | `Extras/scripts/templater/labSnippets.js` (one section per snippet) |

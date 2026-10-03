@@ -141,16 +141,6 @@
       "src": ".obsidian/plugins/lab-kit/styles.css",
       "role": "plugin",
       "path": "styles.css"
-    },
-    {
-      "src": "Lab notebook kit - tutorial.md",
-      "role": "docs",
-      "path": "Lab notebook kit - tutorial.md"
-    },
-    {
-      "src": "Lab notebook kit - changelog.md",
-      "role": "docs",
-      "path": "Lab notebook kit - changelog.md"
     }
   ],
   "delete": [
@@ -219,9 +209,5 @@
   ],
   "disableCss": [
     "tabs-mermaid-scroll.css"
-  ],
-  "openAfter": {
-    "role": "docs",
-    "path": "Lab notebook kit - changelog.md"
-  }
+  ]
 }
