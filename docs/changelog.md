@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased (v0.4)
+- **Tab and Escape in a cell**: Tab saves what you typed (like Enter), Escape throws it away. Obsidian no longer also acts on those keys while a cell is open
 - **Page no longer jumps after editing a cell**: the note stays at the same scroll position when a cell is saved and the table redraws (it holds the position for about a second, and lets go as soon as you scroll yourself)
 - **Click-to-edit, second try**: moving from one open cell to another should now take one click even when Obsidian redraws the whole table after saving (the click was lost on the old table)
 - **Kit updates and your frontmatter**: in the Lab Book template the properties (the block between the `---` lines) are now merged property by property. A property you added stays, a property only the kit changed is updated, and only a property you both changed differently counts as a conflict (it shows as one change in **Resolve…**). Your own wording and order are kept

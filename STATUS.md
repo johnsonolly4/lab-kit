@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.4 (plugin + kit; per-commit bump; TypeScript in `src/`)
-**Now:** PRs 1-9 are **merged into `main`** (PR 9 = version rule + settings freeze fix, merge commit `14fa7cf`, version 0.4.1). The kit update system (Phases 1-5), author swap, README privacy / mobile sections and the version-per-commit rule are all in `main`. None of v0.4 has been seen inside Obsidian beyond the settings page (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `version-rule` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** `mobile-guard` holds 0.4.2 (mobile startup guard), 0.4.3 (merge-window CSS fix) and 0.4.4 (click-to-edit second try + page-jump fix, committed, **not pushed**); open as [lab-kit#10](https://github.com/johnsonolly4/lab-kit/pull/10) into `main`, not merged. 0.4.4 still to be tried in Obsidian. Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": Tab/Escape, CSS snippet switch) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Version:** 0.4.5 (plugin + kit; per-commit bump; TypeScript in `src/`)
+**Now:** PRs 1-10 are **merged into `main`** (PR 10 = mobile guard, merge-window fix, click-to-edit retry, page-jump fix; merge commit `9874ba7`, version 0.4.4). The kit update system (Phases 1-5), author swap, README privacy / mobile sections and the version-per-commit rule are all in `main`. None of v0.4 has been seen inside Obsidian beyond the settings page, mobile guard and the settings (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `mobile-guard` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** 0.4.4 still to be tried in Obsidian. Tab/Escape fix is committed as 0.4.5 on branch `tab-escape-fix` (not pushed, no PR). Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": CSS snippet switch) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,20 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit 0.4.4)
+## Last session (commit Tab / Escape fix)
+- User chose "Commit Tab/Escape fix as 0.4.5". Reran `npm test` (123 pass) and `npm run lint` (0 errors, 4 warnings, same). Branched `tab-escape-fix` off `main`, bumped to 0.4.5 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed. **Not pushed, no PR.** Still **not seen in Obsidian** (BACKLOG item says so). Nothing new for BACKLOG
+
+## Earlier session (Tab / Escape in a cell)
+- User chose Tab saves / Escape discards. The code already did that (`src/calc/render.ts` `editCell` keydown), so the bug is **not reproduced**. Best guess: Obsidian's own handling of the key also ran; keydown now calls `stopPropagation` for Enter / Tab / Escape. New test "Tab saves the typed text, Escape discards it…" in `tests/render.test.ts` (passes on the old logic too; it only fails without `stopPropagation`). `npm test`: 123 pass; lint 0 errors, 4 warnings (same)
+- Changelog line added; BACKLOG item ticked with "not seen in Obsidian" and what to tell me if text is still lost. Committed in the session above. Still open nearby: CSS snippet switch, drag-scroll speed, `calc12` rename (BACKLOG, "v0.4 checklist bugs")
+
+## Earlier session (merge PR 10)
+- User chose "Merge PR 10". Merged [lab-kit#10](https://github.com/johnsonolly4/lab-kit/pull/10) into `main` (plain merge commit `9874ba7`, branch not deleted; was clean and mergeable). Pulled `main` locally (stashed this STATUS edit across the checkout, then restored it). User also answered the Escape decision: **discard** (Tab saves); noted in BACKLOG. No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.5 and `main` is the current branch)
+
+## Earlier session (push 0.4.4)
+- User chose "Push 0.4.4 to PR 10". Pushed `mobile-guard` (`75d4b2c`, 0.4.4; `1de10a7..75d4b2c`), so [lab-kit#10](https://github.com/johnsonolly4/lab-kit/pull/10) now holds 0.4.2-0.4.4. **Not merged.** No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.5). Nothing new for BACKLOG
+
+## Earlier session (commit 0.4.4)
 - User chose "Commit pending edits as 0.4.4". Reran `npm test` (122 pass) and `npm run lint` (0 errors, 4 warnings, same). Bumped to 0.4.4 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed the click-to-edit retry + page-jump fix on `mobile-guard`. **Not pushed**, so PR 10 does not have it yet. Both fixes still **not seen in Obsidian** (BACKLOG items say so). Nothing new for BACKLOG
 
 ## Earlier session (page jump after editing a cell)
