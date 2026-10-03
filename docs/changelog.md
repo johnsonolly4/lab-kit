@@ -13,6 +13,7 @@
 
 - **Duplicate table names are flagged**: if two `calc` tables in a note have the same `name:`, both show a red "⚠ name used twice" next to their name, and any reference to that name (`a!B2`, `SUM(a!A2:A5)`) shows `#REF!` instead of silently using the first table. Rename one to fix it
 - **Click-to-edit is steadier**: a cell keeps its width while you edit it, and clicking another cell while one is open goes straight to it (before it took a second click)
+- **RAFT recipe: mol fractions always add up**: with several monomers the fractions (e.g. 0.333 × 3) are now divided by their sum, so moles, masses and theoretical Mn are exact. The tip callout under the table is gone
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):

@@ -227,17 +227,16 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
       const monomers = list(v.monomers).map(link);
       const k = monomers.length, mLast = k + 1, ctaRow = k + 2, initRow = k + 3;
       const frac = k === 1 ? "1" : String(+(1 / k).toFixed(3));
-      const rows = monomers.map((m, i) => { const r = i + 2; return ["Monomer", m, `=MW(B${r})`, frac, `=${id}!$B$6*D${r}`, `=E${r}*C${r}`, ""]; });
+      const rows = monomers.map((m, i) => { const r = i + 2; return ["Monomer", m, `=MW(B${r})`, frac, `=${id}!$B$6*D${r}/SUM(D$2:D$${mLast})`, `=E${r}*C${r}`, ""]; });
       rows.push(["CTA", link(v.cta), `=MW(B${ctaRow})`, "", `=${id}!B6/${id}!B3`, `=E${ctaRow}*C${ctaRow}`, ""]);
       rows.push(["Initiator", link(v.init), `=MW(B${initRow})`, "", `=E${ctaRow}/${id}!B4`, `=E${initRow}*C${initRow}`, ""]);
       rows.push(["Solvent", link(v.solvent), "", "", "", `=SUM(F2:F${initRow})*(100/${id}!B5-1)`, ""]);
       return `## RAFT recipe generator
 ${calc({ name: id, title: "Targets", icon: "flask-conical" }, ["Parameter", "Value"], [
   ["Total monomer mass (g)", v.mass], ["Target DP", v.dp], ["CTA : initiator", v.ratio], ["Solids (% w/w)", v.solids],
-  ["Total monomer (mol)", `=IF(B2="", 1/0, B2/SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast}))`],
-  ["Theoretical Mn (g/mol)", `=IF(B3="", 1/0, B3*SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})+${R}!C${ctaRow})`]])}
+  ["Total monomer (mol)", `=IF(B2="", 1/0, B2/(SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})))`],
+  ["Theoretical Mn (g/mol)", `=IF(B3="", 1/0, B3*SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})+${R}!C${ctaRow})`]])}
 ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "MW (g/mol)", "Mol fraction", "mol", "Mass (g)", "Used (g)"], rows)}
-> [!tip] A CTA or macro-CTA without a chemical note: click its MW cell and type the number.
 `;
     },
 

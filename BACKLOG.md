@@ -9,7 +9,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] **NMR/GPC/DLS don't pick up codes from `samples2`**: fixed with the item above (codes now come from `samples`, `sample`, `samples2`… combined).
 - [x] **Tutorial renders as Dataview errors** (done in `docs/tutorial.md` lines 92, 95-102, 157: formulas shown without the leading `=` in inline code; untested in Obsidian with Dataview on): inline code starting with `=` is a Dataview inline query.
 - [x] **Click-to-edit**: cell keeps its width while editing, moving to another cell takes one click (done in `src/calc/render.ts` `editCell` / `openPending`, `styles.css` `.is-editing`; test in `tests/render.test.ts`; not seen in Obsidian yet)
-- [ ] **RAFT mol fractions not summing to 1**: normalise by `SUM(fractions)`; remove the tip callout.
+- [x] **RAFT mol fractions not summing to 1**: formulas now divide by `SUM(fractions)`; tip callout removed (`kit/Extras/scripts/templater/labSnippets.js` `raft()`; test in `tests/snippets.test.ts`)
 
 ## v0.4 quick changes
 - [ ] Section emoji: 🔬 Objectives · ⚙️ Apparatus · ⚗️ Procedure · 📈 Results / Analysis · 💡 Notes for next time
@@ -59,3 +59,4 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Tutorial fix not seen in Obsidian with Dataview on: open `docs/tutorial.md` there and check no inline `=` errors remain (`docs/tutorial.md` lines 92, 95-102, 157). The repo copy only; vault copies of the old tutorial note stay stale
 - [ ] Old "Lab notebook kit - tutorial.md" / "- changelog.md" notes stay stale in vaults that already installed them (left alone on purpose). Could add `delete` entries in `kit/kit-manifest.json` (role `docs`) if wanted
 - [ ] The "seen" key for the popup is the newest changelog heading (`sectionHeading` in `src/whatsnew.ts`): new bullets added under an unchanged "Unreleased" heading do not re-trigger the popup; renaming the heading to the release version does
+- [ ] RAFT fix not seen in Obsidian: run the RAFT snippet with 3 monomers and check the mol column sums right. `test-vault/Extras/scripts/templater/labSnippets.js` is a hand copy and still has the old formulas; `tests/fixtures/kit-demo.md` keeps the old one-monomer RAFT tables and tip (real-note fixture, left alone)

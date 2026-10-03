@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Click-to-edit fix is committed and pushed on `whats-new-popup` (PR 2). Merge PR 1, then retarget PR 2 to `main` and merge it. Then candidates: the next v0.4 bug (RAFT mol fractions, see BACKLOG) or fixing `npm run lint`.
+**Next:** user's call. RAFT fix is committed and pushed on `whats-new-popup` (PR 2). Merge PR 1, then retarget PR 2 to `main` and merge it. Candidates: next v0.4 items in BACKLOG (section emoji, quick changes) or fixing `npm run lint`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,15 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (commit click-to-edit)
+## Last session (commit RAFT fix)
+- Committed and pushed the RAFT fix below, plus STATUS/BACKLOG/changelog. `npm test`: 53 pass. No code changes
+
+## Earlier session (RAFT mol fractions)
+- `raft()` in `kit/Extras/scripts/templater/labSnippets.js`: monomer mol = total mol × fraction / `SUM(fractions)`; "Total monomer (mol)" and "Theoretical Mn" use the fraction-weighted mean MW divided by `SUM(fractions)`. Tip callout removed
+- Test: 3-monomer case in `tests/snippets.test.ts` (monomer masses sum to 2.5 g, Mn exact; old script fails it). `npm test`: 53 pass; 0005 Mn 19990.14 still holds; `npm run build` clean. Changelog line added; `kit-manifest.json` unchanged on regeneration
+- Not seen in Obsidian, test-vault copy of the script is stale: both in BACKLOG (Not yet tested)
+
+## Earlier session (commit click-to-edit)
 - Committed and pushed the click-to-edit fix below to `whats-new-popup` (PR 2). `npm test`: 53 pass. No code changes
 
 ## Earlier session (click-to-edit)
