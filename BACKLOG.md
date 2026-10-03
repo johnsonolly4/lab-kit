@@ -38,9 +38,9 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 ## Repo / release
 - [ ] Packaging script: assemble `dist/lab-kit-<v>/` (kit/ + built plugin + docs, as listed in kit-manifest.json) and zip it; used by `/release`
 - [ ] Plugin id `lab-calc` → `lab-kit`: migrate the installed folder and data.json (updater record) without losing settings
-- [ ] Port `legacy/main.js` → TypeScript in `src/` (no behaviour change; existing tests must pass)
-- [ ] Split the updater from the calc/header code (Node APIs desktop-only)
-- [ ] Remove private API use or isolate it (Templater settings, `app.plugins`, `app.customCss`)
+- [x] Port `legacy/main.js` → TypeScript in `src/` (no behaviour change; existing tests must pass)
+- [x] Split the updater from the calc/header code (Node APIs desktop-only)
+- [x] Remove private API use or isolate it (Templater settings, `app.plugins`, `app.customCss`): isolated in `src/kit/obsidian-private.ts`, not removed
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac)
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] Community store submission checklist
