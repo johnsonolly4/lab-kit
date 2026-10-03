@@ -11,4 +11,9 @@
 - The real-vault edit block lives in `.claude/settings.local.json` (gitignored); check it exists
 
 ## Last session
-- (Claude: write 3–5 bullets here at the end of every task)
+- Pushed to a public GitHub repo (`lab-kit`, force-pushed over a stray LICENSE-only commit)
+- Renamed `_claude` → `.claude`; `settings.local.json` already has Read/Edit denies for the real vault
+- `npm install` OK, `npm run build` OK, `npm run test:legacy` passes, dev watch builds into `test-vault`
+- `npm test` fails: vitest picks up `tests/legacy/*.test.js` (plain Node, no suites). Needs an `exclude` in a vitest config
+- `CLAUDE.md` public-repo rule now allows the GitHub username (real names, initials, real paths still banned)
+- esbuild postinstall is not approved by npm (warning only; build works)

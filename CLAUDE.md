@@ -31,7 +31,7 @@ Goal: publish to the Obsidian community plugin store.
 - Engine changes need a test against fixtures. Known answers: 0005 RAFT Mn = 19990.14; 0011 reactor volume = 1.7591 mL.
 - Don't change user-facing text, layout or defaults beyond the task. Ask first.
 - Lab vocabulary is the user's: keep their names (Exp. Class, CoSHH, RA, sample codes like ABC0014-A).
-- Public repo: no names, initials, usernames or real paths in any file. Paths and personal values belong in plugin settings (empty defaults). The user's vault path goes in `.claude/settings.local.json` (not committed).
+- Public repo: no real names, initials or real paths in any file. The GitHub username is fine (repo URL, commit author). Paths and personal values belong in plugin settings (empty defaults). The user's vault path goes in `.claude/settings.local.json` (not committed).
 
 ## Workflow
 - One task per session; `/clear` between tasks.
