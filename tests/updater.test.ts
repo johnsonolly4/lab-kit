@@ -4,6 +4,7 @@ import assert from "node:assert";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { buildKitFolder } from "../scripts/package-kit.mjs";
 import { kitApply, kitCompare, kitDetectRoles, kitPlan, kitScan, type Kit } from "../src/kit/updater";
 
 const ROOT = path.join(__dirname, "..");
@@ -11,18 +12,13 @@ const SRC = fs.mkdtempSync(path.join(os.tmpdir(), "labkit-src-"));     // stands
 const VAULT = fs.mkdtempSync(path.join(os.tmpdir(), "labkit-vault-"));
 afterAll(() => { fs.rmSync(SRC, { recursive: true, force: true }); fs.rmSync(VAULT, { recursive: true, force: true }); });
 
-// Assemble a kit folder the way it is shipped: kit/ + plugin files + docs
-const KIT = path.join(SRC, "Lab notebook kit v0.3");
-fs.cpSync(path.join(ROOT, "kit"), KIT, { recursive: true });
+// Assemble a kit folder the way `npm run package` ships it: kit/ + plugin files + docs
 const PLUGIN_BUILD = "// built plugin (stand-in for main.js)\n";
-fs.mkdirSync(path.join(KIT, ".obsidian/plugins/lab-calc"), { recursive: true });
-fs.writeFileSync(path.join(KIT, ".obsidian/plugins/lab-calc/main.js"), PLUGIN_BUILD);
-for (const f of ["manifest.json", "styles.css"]) fs.copyFileSync(path.join(ROOT, f), path.join(KIT, ".obsidian/plugins/lab-calc", f));
-fs.copyFileSync(path.join(ROOT, "docs/tutorial.md"), path.join(KIT, "Lab notebook kit - tutorial.md"));
-fs.copyFileSync(path.join(ROOT, "docs/changelog.md"), path.join(KIT, "Lab notebook kit - changelog.md"));
-fs.copyFileSync(path.join(ROOT, "tests/fixtures/kit-demo.md"), path.join(KIT, "Kit demo v0.2.md"));
-fs.writeFileSync(path.join(KIT, "Lab notebook kit - update to v0.3.md"), "# Update to v0.3\n");
-fs.mkdirSync(path.join(SRC, "Lab notebook kit v0.2"));                       // no manifest → ignored
+const STUB_MAIN = path.join(SRC, "main.js");
+fs.writeFileSync(STUB_MAIN, PLUGIN_BUILD);
+const PACK = path.join(SRC, "packed");                                       // the update folder
+const KIT = buildKitFolder({ outDir: PACK, mainJs: STUB_MAIN }).dir;
+fs.mkdirSync(path.join(PACK, "Lab notebook kit v0.2"));                      // no manifest → ignored
 
 // --- fake vault laid out like a real one (v0.1 installed by hand) ---
 const put = (p: string, txt: string) => { const f = path.join(VAULT, p); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, txt); };
@@ -66,7 +62,7 @@ const readSrc = (kit: Kit) => (src: string) => fs.readFileSync(path.join(kit.dir
 
 describe("kit updater", () => {
   it("scans, detects, plans, applies, re-plans and respects edits", async () => {
-    const kits = kitScan(SRC);
+    const kits = kitScan(PACK);
     assert.strictEqual(kits.length, 1); assert.strictEqual(kits[0].manifest.version, "0.3.0");
     const kit = kits[0];
     assert.ok(kitCompare("0.3.0", "0.2.9") > 0 && kitCompare("0.10.0", "0.9.1") > 0 && kitCompare("1.0", "1.0.0") === 0);

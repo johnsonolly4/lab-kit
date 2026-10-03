@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased (v0.4)
+- **Install opens this changelog**; the tutorial is on GitHub: [Lab Kit tutorial](https://github.com/johnsonolly4/lab-kit/blob/main/docs/tutorial.md)
 - **Hazard header is now part of the plugin** (```` ```lab-header ```` block, no Dataview needed):
   - redraws only when this note's Chemicals or a linked chemical note changes (fixes the stutter)
   - compact layout: one row per chemical with an H-code chip each; the old table is one setting away (Settings → Lab Kit → Hazards → Layout)

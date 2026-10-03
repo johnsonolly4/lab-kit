@@ -128,17 +128,17 @@
       "path": "labSnippets.js"
     },
     {
-      "src": ".obsidian/plugins/lab-calc/main.js",
+      "src": ".obsidian/plugins/lab-kit/main.js",
       "role": "plugin",
       "path": "main.js"
     },
     {
-      "src": ".obsidian/plugins/lab-calc/manifest.json",
+      "src": ".obsidian/plugins/lab-kit/manifest.json",
       "role": "plugin",
       "path": "manifest.json"
     },
     {
-      "src": ".obsidian/plugins/lab-calc/styles.css",
+      "src": ".obsidian/plugins/lab-kit/styles.css",
       "role": "plugin",
       "path": "styles.css"
     },
@@ -222,6 +222,6 @@
   ],
   "openAfter": {
     "role": "docs",
-    "path": "Lab notebook kit - update to v0.3.md"
+    "path": "Lab notebook kit - changelog.md"
   }
 }

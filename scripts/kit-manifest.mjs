@@ -6,7 +6,7 @@ import { join, relative, sep } from "path";
 
 const KIT = "kit";
 const ROLE_BY_PREFIX = [
-  [".obsidian/plugins/lab-calc/", "plugin"],
+  [".obsidian/plugins/lab-kit/", "plugin"],
   [".obsidian/snippets/", "cssSnippets"],
   ["Extras/scripts/templater/", "userScripts"],
   ["Extras/scripts/", "scripts"],
@@ -37,9 +37,9 @@ const files = walk(KIT)
 
 // Shipped alongside kit/ by the packaging step (built plugin + docs)
 const EXTRA = [
-  { src: ".obsidian/plugins/lab-calc/main.js", role: "plugin", path: "main.js" },
-  { src: ".obsidian/plugins/lab-calc/manifest.json", role: "plugin", path: "manifest.json" },
-  { src: ".obsidian/plugins/lab-calc/styles.css", role: "plugin", path: "styles.css" },
+  { src: ".obsidian/plugins/lab-kit/main.js", role: "plugin", path: "main.js" },
+  { src: ".obsidian/plugins/lab-kit/manifest.json", role: "plugin", path: "manifest.json" },
+  { src: ".obsidian/plugins/lab-kit/styles.css", role: "plugin", path: "styles.css" },
   { src: "Lab notebook kit - tutorial.md", role: "docs", path: "Lab notebook kit - tutorial.md" },
   { src: "Lab notebook kit - changelog.md", role: "docs", path: "Lab notebook kit - changelog.md" },
 ];

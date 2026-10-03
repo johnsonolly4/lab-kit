@@ -14,7 +14,7 @@
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$KIT_DIR/.obsidian/plugins/lab-calc"
+SRC="$KIT_DIR/.obsidian/plugins/lab-kit"
 FILES=(main.js manifest.json styles.css)
 
 # Convert a Windows path (C:\a\b) to the shell's form (/c/a/b or /mnt/c/a/b)

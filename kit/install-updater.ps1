@@ -11,7 +11,7 @@
 
 $ErrorActionPreference = "Stop"
 $kitDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$src    = Join-Path $kitDir ".obsidian\plugins\lab-calc"
+$src    = Join-Path $kitDir ".obsidian\plugins\lab-kit"
 $files  = @("main.js", "manifest.json", "styles.css")
 
 Write-Host "Lab notebook kit: install the updater" -ForegroundColor Cyan
