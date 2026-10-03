@@ -77,7 +77,14 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
   const items: ManagedItem[] = [];
   for (const file of bundle.manifest.files) {
     const st = state?.files[file.id];
-    const dest = st?.path || kitJoin(roles[file.role], file.dest);
+    let dest = st?.path || kitJoin(roles[file.role], file.dest);
+    if (!st && !(await adapter.exists(dest))) {
+      // Not installed by this system and the kit has moved the file: a copy at an old place is still this file
+      for (const old of file.renamedFrom) {
+        const oldDest = kitJoin(roles[file.role], old);
+        if (await adapter.exists(oldDest)) { dest = oldDest; break; }
+      }
+    }
     const text = kitText(bundle, file, roles);
     const kitHash = await kitSha256(text);
     const item = (action: ManagedAction, curHash: string | null, extra: Partial<ManagedItem> = {}): ManagedItem => ({ file, dest, text, kitHash, curHash, action, untracked: !st, ...extra });
@@ -207,6 +214,28 @@ export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem,
   }
   await rememberFile(adapter, next, item, opts, written);
   return { state: next, result: { id, dest: item.dest, action: item.action, outcome: written ? "merged" : "adopted", backup } };
+}
+
+/** A kit file the kit has dropped (`removed` in the manifest) that you still have installed. Left where it is, never deleted. */
+export interface RetiredItem { id: string; path: string; exists: boolean }
+
+/** Files this system installed that the kit no longer ships. */
+export async function planRetired(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null): Promise<RetiredItem[]> {
+  const out: RetiredItem[] = [];
+  for (const id of bundle.manifest.removed) {
+    const st = state?.files[id];
+    if (st) out.push({ id, path: st.path, exists: await adapter.exists(st.path) });
+  }
+  return out;
+}
+
+/** Stops tracking a retired file (state entry and base copy). Your file in the vault is not touched. */
+export async function forgetManaged(adapter: ManagedAdapter & Partial<Pick<DataAdapter, "remove">>, state: ManagedState | null, id: string, baseDir: string): Promise<ManagedState> {
+  const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
+  delete next.files[id];
+  const base = kitJoin(baseDir, `${id}.txt`);
+  if (adapter.remove && await adapter.exists(base)) await adapter.remove(base);
+  return next;
 }
 
 /** Stops (or resumes) managing one file. Returns false when the file isn't tracked yet (nothing to detach). */

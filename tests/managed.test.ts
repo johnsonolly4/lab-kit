@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, kitNormalise, kitSha256, planManaged, resolveManaged, restoreManaged, setDetached, statusOf,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
   type EmbeddedKit, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -18,6 +18,7 @@ function memVault(files: Record<string, string> = {}): ManagedAdapter & { files:
     exists: async (p: string) => p in files || dirs.has(p),
     read: async (p: string) => { if (!(p in files)) throw new Error("ENOENT " + p); return files[p]; },
     write: async (p: string, d: string) => { files[p] = d; v.writes.push(p); },
+    remove: async (p: string) => { delete files[p]; },
     mkdir: async (p: string) => { dirs.add(p); },
   };
   return v as unknown as ManagedAdapter & { files: Record<string, string>; writes: string[] };
@@ -395,5 +396,55 @@ describe("embedded kit (the real one)", () => {
     expect(plan.every(p => p.action === "create")).toBe(true);
     const { state } = await applyManaged(v, real, plan, null, opts);
     expect((await planManaged(v, real, state, roles)).every(p => p.action === "up-to-date")).toBe(true);
+  });
+});
+
+describe("renames and retired files", () => {
+  const moved = (k: EmbeddedKit): EmbeddedKit => ({
+    ...k,
+    manifest: { ...k.manifest, files: k.manifest.files.map(f => f.id === "tpl-book" ? { ...f, dest: "Notes/Book.md", renamedFrom: ["Book.md"] } : f) },
+  });
+
+  it("keeps updating your file in place when the kit moves it (same id)", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "mine 1\nline 2\nline 3\n";
+    const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
+    const item = by(plan, "tpl-book");
+    expect(item.dest).toBe("Templates/Book.md");
+    expect(item.action).toBe("merge");
+    expect(item.merged).toBe("mine 1\nline 2\nline 3 changed by kit\n");
+  });
+
+  it("adopts a file found at an old place when nothing is tracked yet", async () => {
+    const v = memVault({ "Templates/Book.md": "line 1\nline 2\nline 3 changed by kit\n" });
+    const item = by(await planManaged(v, moved(V2), null, roles), "tpl-book");
+    expect(item.dest).toBe("Templates/Book.md");
+    expect(item.action).toBe("up-to-date");
+    expect(item.untracked).toBe(true);
+  });
+
+  it("installs a moved file at the new place when no copy exists", async () => {
+    const v = memVault();
+    const item = by(await planManaged(v, moved(V2), null, roles), "tpl-book");
+    expect(item.dest).toBe("Templates/Notes/Book.md");
+    expect(item.action).toBe("create");
+  });
+
+  it("lists a removed file you have installed, and nothing for one you never had", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const dropped: EmbeddedKit = { ...V2, manifest: { ...V2.manifest, files: V2.manifest.files.filter(f => f.id !== "tpl-menu"), removed: ["tpl-menu", "tpl-never"] } };
+    expect(await planRetired(v, dropped, state)).toEqual([{ id: "tpl-menu", path: "Templates/Menu.md", exists: true }]);
+    delete v.files["Templates/Menu.md"];
+    expect((await planRetired(v, dropped, state))[0].exists).toBe(false);
+    expect(await planRetired(v, dropped, null)).toEqual([]);
+  });
+
+  it("forgetting a retired file drops its state and base copy but leaves your file", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const next = await forgetManaged(v, state, "tpl-menu", opts.baseDir);
+    expect(next.files["tpl-menu"]).toBeUndefined();
+    expect(next.files["tpl-book"]).toBeDefined();
+    expect(v.files[`${opts.baseDir}/tpl-menu.txt`]).toBeUndefined();
+    expect(v.files["Templates/Menu.md"]).toBe("menu v1\n");
   });
 });

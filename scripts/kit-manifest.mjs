@@ -40,20 +40,34 @@ function idFor(entry, prev) {
   return id;
 }
 
+// Moving a kit file: add `"renames": { "<old src>": "<new src>" }` to kit-manifest.json before running this.
+// The moved file keeps its id (so installed copies keep updating in place) and remembers its old place in renamedFrom.
+const renames = manifest.renames ?? {};
+const oldSrcOf = new Map(Object.entries(renames).map(([from, to]) => [to, from]));
+const roleOf = (rel) => ROLE_BY_PREFIX.find(([pre]) => rel.startsWith(pre));
+
 const files = walk(KIT)
   .map((p) => relative(KIT, p).split(sep).join("/"))
   .filter((rel) => !SKIP.has(rel))
   .map((rel) => {
-    const hit = ROLE_BY_PREFIX.find(([pre]) => rel.startsWith(pre));
+    const hit = roleOf(rel);
     const role = hit ? hit[1] : "docs";
     const path = hit ? rel.slice(hit[0].length) : rel;
     const kind = KIND_BY_ROLE[role];
-    const prev = previous.get(rel);
+    const oldSrc = oldSrcOf.get(rel);
+    const prev = previous.get(rel) ?? (oldSrc ? previous.get(oldSrc) : undefined);
+    if (oldSrc && !prev) throw new Error(`renames: "${oldSrc}" is not in the previous manifest`);
+    const renamedFrom = [...(prev?.renamedFrom ?? [])];
+    if (oldSrc) {
+      const oldHit = roleOf(oldSrc);
+      const oldPath = oldHit ? oldSrc.slice(oldHit[0].length) : oldSrc;
+      if (!renamedFrom.includes(oldPath)) renamedFrom.push(oldPath);
+    }
     const hash = sha256(readFileSync(join(KIT, rel), "utf8"));
     // "version" = the kit version in which this file's content last changed
     const entry = { id: idFor({ kind, path, src: rel }, prev), kind, src: rel, role, path,
       version: prev?.sha256 === hash && prev.version ? prev.version : manifest.version, sha256: hash,
-      renamedFrom: prev?.renamedFrom ?? [] };
+      renamedFrom };
     if (KEEP.has(rel)) entry.policy = "keep";
     return entry;
   })
@@ -62,6 +76,18 @@ const files = walk(KIT)
 // The plugin's own files (main.js, manifest.json, styles.css) are deliberately NOT listed: the plugin never
 // updates itself (Obsidian developer policies). The package still carries them for the install-updater scripts.
 
-const out = { schema: 1, ...manifest, files, removed: manifest.removed ?? [] };
+// A file that was in the previous manifest and is gone from kit/ (and wasn't moved) is retired: its id goes into
+// `removed`, so installed copies are marked "Retired" and left alone. Printed, so a deleted file is never silent.
+const removed = [...(manifest.removed ?? [])];
+for (const prev of previous.values()) {
+  if (taken.has(prev.id) || removed.includes(prev.id)) continue;
+  removed.push(prev.id);
+  console.log(`retired: ${prev.src} (id ${prev.id})`);
+}
+const clash = removed.filter((id) => taken.has(id));
+if (clash.length) throw new Error(`id in both files and removed: ${clash.join(", ")}`);
+
+const { renames: _done, ...rest } = manifest;
+const out = { schema: 1, ...rest, files, removed };
 writeFileSync(manifestPath, JSON.stringify(out, null, 2) + "\n");
 console.log(`kit-manifest.json: ${files.length} files`);

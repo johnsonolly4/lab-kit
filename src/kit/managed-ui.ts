@@ -2,8 +2,8 @@
 // Works on mobile: only the vault adapter and crypto.subtle (the folder updater in ui.ts stays desktop only).
 import { Modal, Notice, Platform, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, planManaged, resolveManaged, restoreManaged, setDetached, statusOf,
-  type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult
+  SAFE_ACTIONS, applyManaged, forgetManaged, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
+  type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { cssSnippetsSupported, isCssSnippetEnabled, setCssSnippets } from "./obsidian-private";
@@ -123,6 +123,16 @@ export class KitManaged {
     } catch (e) { this.failed(e); onDone(); }
   }
 
+  /** Files you have installed that the kit no longer ships (left in place). */
+  retired(): Promise<RetiredItem[]> { return planRetired(this.app.vault.adapter, this.bundle, this.host.kit.managed); }
+
+  /** Stops tracking a retired file; your copy stays in the vault. */
+  async forget(id: string): Promise<void> {
+    const kit = this.host.kit;
+    kit.managed = await forgetManaged(this.app.vault.adapter, kit.managed, id, this.baseDir());
+    await this.host.save();
+  }
+
   async detach(id: string, on: boolean): Promise<boolean> {
     const ok = setDetached(this.host.kit.managed, id, on);
     if (ok) await this.host.save();
@@ -169,6 +179,7 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
 /** Dry run: what would happen to every kit file, then Apply. */
 class KitManagedModal extends Modal {
   private items: ManagedItem[] = [];
+  private retired: RetiredItem[] = [];
   private recreate = new Set<string>();
   /** Clean merges are ticked by default; ids here were unticked. */
   private noMerge = new Set<string>();
@@ -177,7 +188,7 @@ class KitManagedModal extends Modal {
 
   async onOpen(): Promise<void> {
     this.titleEl.setText(`Kit files, v${this.managed.version}`);
-    try { this.items = await this.managed.plan(); }
+    try { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
     catch (e) { this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
     this.render();
   }
@@ -221,6 +232,18 @@ class KitManagedModal extends Modal {
       }
     }
 
+    if (this.retired.length) {
+      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
+      det.open = true;
+      det.createEl("summary", { text: `Retired by the kit (left in place, never deleted) (${this.retired.length})` });
+      const ul = det.createEl("ul");
+      for (const r of this.retired) {
+        const li = ul.createEl("li");
+        li.createEl("code", { text: r.path });
+        if (!r.exists) li.appendText(" (already deleted)");
+      }
+    }
+
     const todo = this.writes();
     new Setting(contentEl)
       .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
@@ -247,6 +270,7 @@ class KitManagedModal extends Modal {
 /** One row per kit file with a status label and its own buttons, plus the CSS snippet switch. */
 class KitFilesModal extends Modal {
   private items: ManagedItem[] = [];
+  private retired: RetiredItem[] = [];
 
   constructor(app: App, private managed: KitManaged) { super(app); }
 
@@ -258,7 +282,7 @@ class KitFilesModal extends Modal {
 
   /** Re-reads the vault and redraws; the window stays open after every action. */
   private async refresh(): Promise<void> {
-    try { this.items = await this.managed.plan(); }
+    try { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
     catch (e) { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
     this.render();
   }
@@ -311,6 +335,16 @@ class KitFilesModal extends Modal {
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked) row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
       const file = this.app.vault.getFileByPath(it.dest);
+      if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
+        this.close();
+        void this.app.workspace.getLeaf(false).openFile(file);
+      }));
+    }
+    for (const r of this.retired) {
+      const row = new Setting(contentEl).setName(r.path).setDesc("The kit no longer ships this file. Yours is left as it is; forget it to stop listing it here.");
+      row.nameEl.createSpan({ cls: "lab-kit-badge is-muted", text: "Retired" });
+      row.addButton(b => b.setButtonText("Forget").onClick(() => void this.run(() => this.managed.forget(r.id))));
+      const file = this.app.vault.getFileByPath(r.path);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
         this.close();
         void this.app.workspace.getLeaf(false).openFile(file);

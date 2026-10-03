@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-6 are **merged into `main`**. On local branch `whats-new-popup`, Phases 1-4 of the kit update system are committed and pushed (Phase 4 merge window is the newest commit; no PR into `main` yet). None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** open a PR for Phases 1-4 into `main`, then Phase 5 (frontmatter-aware merge, renames, retired files) or the store release path (BACKLOG, Repo / release, "Community store submission checklist": pull `main`, check "Not yet tested" in Obsidian 1.13+, desktop-only vs Node `require`s, README file-access / no-network disclosure, `/release` 0.4.0, submit at community.obsidian.md). Remaining phases: BACKLOG, "Kit update system".
+**Now:** PRs 1-6 are **merged into `main`**. On local branch `whats-new-popup`, Phases 1-4 are committed and pushed; Phase 5 (frontmatter merge, renames, retired files) is committed and pushed too. No PR into `main` for Phases 1-5 yet. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** open a PR for Phases 1-5 into `main`, then the store release path (BACKLOG, Repo / release, "Community store submission checklist": pull `main`, check "Not yet tested" in Obsidian 1.13+, desktop-only vs Node `require`s, README file-access / no-network disclosure, `/release` 0.4.0, submit at community.obsidian.md). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,8 +12,19 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push Phase 4)
-- Committed Phase 4 (merge window, `src/kit/merge-ui.ts`, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+## Last session (commit + push Phase 5)
+- Committed Phase 5 (merge, rename and retired handling, tests, changelog, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun since the Phase 5 session (119 pass)
+
+## Earlier session (kit update system, Phase 5)
+- User chose: **text-level key-block frontmatter merge** (no YAML parser), **renamed kit files stay where the user has them**, retired files only marked. Spec: `~/Downloads/kit-update-system-spec.md`
+- `src/kit/merge.ts`: `mergeRegions` merges frontmatter key by key when all three versions have plain `key:` blocks (frontmatter at the top **or after a Templater `-%>` block**, as in Lab Book Template); the part before it and the body use the old line merge; anything odd falls back to the line merge. Conflicts keep the same hunk shape, so `resolveRegions`, `merge3` and `KitMergeModal` are unchanged
+- `src/kit/managed.ts`: `planManaged` adopts an untracked file found at a `renamedFrom` path; `planRetired` (removed ids you have installed) and `forgetManaged` (drops state + base copy, never your file). `src/kit/managed-ui.ts`: "Retired" group in the Review window, "Retired" rows with **Forget** and Open in Manage files. `ManagedAction` unchanged
+- `scripts/kit-manifest.mjs`: manifest `renames: { old src: new src }` (removed from the file after the run) keeps the id and fills `renamedFrom`; a file gone from `kit/` goes into `removed` (printed); fails if an id is in both lists. `kit-manifest.json` unchanged on regeneration (23 files)
+- `npm test`: 119 pass (13 new: `tests/merge.test.ts`, `tests/managed.test.ts`); `npm run build` clean; lint 0 errors, 4 warnings (same). Changelog lines added; tutorial unchanged. **Not seen in Obsidian** (windows have no automated test). **Not run:** the manifest script's `renames` / auto-`removed` on a temp copy (command was denied). Left out and checks to make: BACKLOG, "Kit update system"
+- Committed in the session above
+
+## Earlier session (commit + push Phase 4)
+- Committed Phase 4 on `whats-new-popup` and pushed. No code changes, tests not rerun
 
 ## Earlier session (kit update system, Phase 4)
 - User chose **core merge window only** (no persisted `pendingConflict`, no Notice) and hunks from `node-diff3` (no new package). Spec: `~/Downloads/kit-update-system-spec.md`

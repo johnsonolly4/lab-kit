@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "fs";
 import { merge3, mergeRegions, resolveRegions, type Region } from "../src/kit/merge";
 
 const base = "top\nmiddle\nbottom\n";
@@ -78,5 +79,78 @@ describe("mergeRegions / resolveRegions", () => {
     expect(r.some(p => "conflict" in p)).toBe(false);
     expect(resolveRegions(r, [], mine)).toBe("x mine\nm\ny kit\n");
     expect(resolveRegions(r, [], mine)).toBe(merge3(base, mine, kit).text);
+  });
+});
+
+describe("frontmatter merge (key by key)", () => {
+  const fm = (keys: string, body = "body\n"): string => `---\n${keys}---\n${body}`;
+  const baseFm = fm("Type:\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n");
+
+  it("keeps a key you added and takes a key the kit changed", () => {
+    const mine = fm("Type:\nStatus:\n  - Planned\nObjective:\nMy key: x\ncssclasses:\n  - academia\n");
+    const kit = fm("Type:\nStatus:\n  - Planned\n  - Done\nObjective:\ncssclasses:\n  - academia\n");
+    const r = merge3(baseFm, mine, kit);
+    expect(r.clean).toBe(true);
+    expect(r.text).toBe(fm("Type:\nStatus:\n  - Planned\n  - Done\nObjective:\nMy key: x\ncssclasses:\n  - academia\n"));
+  });
+
+  it("adds a key the kit added, after the kit key before it, and keeps your order", () => {
+    const mine = fm("Objective:\nType:\nStatus:\n  - Planned\ncssclasses:\n  - academia\n");
+    const kit = fm("Type:\nStatus:\n  - Planned\nOutcome:\nObjective:\ncssclasses:\n  - academia\n");
+    const r = merge3(baseFm, mine, kit);
+    expect(r.clean).toBe(true);
+    expect(r.text).toBe(fm("Objective:\nType:\nStatus:\n  - Planned\nOutcome:\ncssclasses:\n  - academia\n"));
+  });
+
+  it("keeps your change to a key the kit left alone, even beside a body change by the kit", () => {
+    const mine = fm("Type: Lab\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n");
+    const kit = fm("Type:\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n", "body kit\n");
+    expect(merge3(baseFm, mine, kit).text).toBe(fm("Type: Lab\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n", "body kit\n"));
+  });
+
+  it("is one conflict hunk when you and the kit changed the same key differently", () => {
+    const mine = fm("Type: mine\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n");
+    const kit = fm("Type: kit\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n");
+    const r = mergeRegions(baseFm, mine, kit);
+    expect(r.filter(p => "conflict" in p)).toEqual([{ conflict: { ours: ["Type: mine"], base: ["Type:"], theirs: ["Type: kit"] } }]);
+    expect(resolveRegions(r, ["kit"], mine)).toBe(fm("Type: kit\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n"));
+    expect(merge3(baseFm, mine, kit).clean).toBe(false);
+  });
+
+  it("drops a key the kit removed if you left it, and keeps a deleted key deleted", () => {
+    const kitGone = fm("Type:\nStatus:\n  - Planned\ncssclasses:\n  - academia\n");
+    expect(merge3(baseFm, baseFm, kitGone).text).toBe(kitGone);
+    const mineGone = fm("Type:\nStatus:\n  - Planned\ncssclasses:\n  - academia\n");
+    expect(merge3(baseFm, mineGone, baseFm).text).toBe(mineGone);
+    const edited = fm("Type:\nStatus:\n  - Planned\nObjective: edited\ncssclasses:\n  - academia\n");
+    expect(merge3(baseFm, edited, kitGone).clean).toBe(false);   // you edited what the kit removed
+  });
+
+  it("falls back to the line merge without frontmatter or with odd frontmatter", () => {
+    expect(merge3("a\nm\nb\n", "a mine\nm\nb\n", "a\nm\nb kit\n").text).toBe("a mine\nm\nb kit\n");
+    const odd = "---\nnot a key\n---\nbody\n";
+    expect(merge3(odd, odd.replace("body", "mine"), odd.replace("not a key", "not a key kit")).text).toBe("---\nnot a key kit\n---\nmine\n");
+    const open = "---\nType:\nbody never closes\n";
+    expect(merge3(open, open + "mine\n", open.replace("Type:", "Type: kit")).clean).toBe(true);
+  });
+
+  it("keeps Windows line endings", () => {
+    const mine = fm("Type:\nStatus:\n  - Planned\nObjective:\nMy key: x\ncssclasses:\n  - academia\n").replace(/\n/g, "\r\n");
+    const kit = fm("Type: kit\nStatus:\n  - Planned\nObjective:\ncssclasses:\n  - academia\n");
+    const r = merge3(baseFm, mine, kit);
+    expect(r.clean).toBe(true);
+    expect(r.text).toBe(fm("Type: kit\nStatus:\n  - Planned\nObjective:\nMy key: x\ncssclasses:\n  - academia\n").replace(/\n/g, "\r\n"));
+  });
+
+  it("merges the real Lab Book Template with a key you added", () => {
+    const real = readFileSync("kit/Templates/Lab Book Template.md", "utf8").replace(/\r\n/g, "\n");
+    const mine = real.replace("Objective:\n", "Objective:\nMy key: x\n");
+    const kit = real.replace("Outcome:\n", "Outcome: from kit\n");
+    expect(mine).not.toBe(real);
+    expect(kit).not.toBe(real);
+    const r = merge3(real, mine, kit);
+    expect(r.clean).toBe(true);
+    expect(r.text).toContain("My key: x\n");
+    expect(r.text).toContain("Outcome: from kit\n");
   });
 });
