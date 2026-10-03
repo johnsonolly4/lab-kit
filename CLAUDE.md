@@ -14,8 +14,6 @@ Goal: publish to the Obsidian community plugin store.
 - `kit/`: vault files the updater installs (`Templates/`, `Extras/scripts/`)
 - `docs/`: `tutorial.md`, `changelog.md`, `reference/` (saved Obsidian docs: read these, don't fetch)
 - `tests/`: vitest; `tests/fixtures/` holds real experiment tables
-- `legacy/`: v0.3 plain-JS plugin (reference for the port; delete once `src/` matches it)
-- `tests/legacy/`: plain-Node tests of the legacy build (`npm run test:legacy`, all must pass)
 - `scripts/kit-manifest.mjs`: regenerates `kit/kit-manifest.json`
 - `test-vault/`: dev vault (gitignored plugin build)
 - `README.md`, `GETTING-STARTED.md` (user setup guide), `LICENSE` (MIT)
@@ -23,7 +21,7 @@ Goal: publish to the Obsidian community plugin store.
 
 ## Commands
 - `npm run dev`: watch build into `test-vault/.obsidian/plugins/lab-kit/`
-- `npm test`: vitest (failures only) · `npm run test:legacy` · `npm run lint` · `npm run build`
+- `npm test`: vitest (failures only) · `npm run lint` · `npm run build`
 
 ## Hard rules
 - Never read or write the user's real vault. Only `test-vault/`.

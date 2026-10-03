@@ -7,7 +7,6 @@
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run --reporter=dot",
-    "test:legacy": "node tests/legacy/run-all.js",
     "lint": "eslint src",
     "kit:manifest": "node scripts/kit-manifest.mjs"
   },

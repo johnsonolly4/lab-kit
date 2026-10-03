@@ -1,5 +1,5 @@
 // Kit updater UI: the update window, the settings tab and the controller that wires them into the plugin.
-// Ported from legacy/main.js with no behaviour change.
+// Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 import { Modal, Notice, Platform, PluginSettingTab, Setting, type App, type ButtonComponent, type Plugin } from "obsidian";
 import {
   KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitJoin, kitPlan, kitReadSource, kitScan,

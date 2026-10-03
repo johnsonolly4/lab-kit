@@ -1,5 +1,5 @@
 // Formula engine: block parsing, tokenizer, parser, evaluator. No Obsidian imports, so it runs under vitest.
-// Ported from legacy/main.js with no behaviour change.
+// Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 
 /* ---- Types ---- */
 export interface CalcError { err: string; msg?: string }

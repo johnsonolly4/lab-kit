@@ -1,6 +1,6 @@
 // Kit updater logic: installs new versions of the lab notebook kit from a folder on this computer.
 // Desktop only: reads the update folder with Node fs/path/crypto, loaded lazily inside the functions.
-// Ported from legacy/main.js with no behaviour change.
+// Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 //
 //  - finds where things live in the vault (Templater settings, existing kit files, remembered locations)
 //  - previews every change: new / replace / unchanged / edited by you / kept (your config) / delete

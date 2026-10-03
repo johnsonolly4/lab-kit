@@ -1,4 +1,4 @@
-// Ported from tests/legacy/snippets.test.js (runs against src/, not legacy/).
+// Ported from the v0.3 plain-Node test of the same name.
 // Drives the real Templater snippets in kit/ and evaluates the generated calc tables with the src/ engine.
 // Known answers: 0005 RAFT Mn = 19990.14, 0011 reactor volume = 1.7591 mL.
 import { describe, it } from "vitest";

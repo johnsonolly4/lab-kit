@@ -21,7 +21,6 @@ For the snippet forms, also install [Templater](https://github.com/SilentVoid13/
 npm install
 npm run dev          # builds into test-vault/.obsidian/plugins/lab-kit/ and watches
 npm test             # vitest
-npm run test:legacy  # tests of the v0.3 plain-JS build
 ```
 Open `test-vault/` as a vault in Obsidian to try changes. Never develop in your real vault.
 

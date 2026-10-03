@@ -1,4 +1,4 @@
-// Ported from tests/legacy/calccraft-compat.test.js (runs against src/, not legacy/)
+// Ported from the v0.3 plain-Node test of the same name.
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { extractBlocks, formatValue, parseBlock, Workbook } from "../src/calc/engine";

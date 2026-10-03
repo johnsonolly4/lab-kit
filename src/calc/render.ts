@@ -1,5 +1,5 @@
 // Renders ```calc blocks as live tables: click-to-edit, + Row, A1 grid, Copy, row menu.
-// Ported from legacy/main.js with no behaviour change.
+// Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 import { MarkdownRenderer, Menu, Notice, getIcon, type App, type MarkdownPostProcessorContext, type Plugin, type TFile } from "obsidian";
 import {
   ERR, cleanLink, colToIndex, extractBlocks, formatValue, indexToCol, isErr, parseBlock, Workbook,

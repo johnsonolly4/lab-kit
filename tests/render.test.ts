@@ -1,4 +1,4 @@
-// Ported from tests/legacy/render.test.js (runs against src/, not legacy/)
+// Ported from the v0.3 plain-Node test of the same name.
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";

@@ -1,5 +1,5 @@
 // Structural edits to a note's calc blocks: reference rewriting, row insert/delete, cell write-back.
-// Ported from legacy/main.js with no behaviour change.
+// Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 import { cleanLink, colToIndex, extractBlocks, indexToCol, isSeparator, joinRow, normName, parseBlock, splitRow, type ParsedBlock } from "./engine";
 
 interface RefEnd { colAbs: boolean; col: number; rowAbs: boolean; row: number }

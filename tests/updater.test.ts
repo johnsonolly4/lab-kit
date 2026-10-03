@@ -1,4 +1,4 @@
-// Ported from tests/legacy/updater.test.js (runs against src/, not legacy/)
+// Ported from the v0.3 plain-Node test of the same name.
 import { afterAll, describe, it } from "vitest";
 import assert from "node:assert";
 import fs from "node:fs";
