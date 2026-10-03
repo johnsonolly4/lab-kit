@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Lint is down to 44 problems (9 errors), all needing a decision (BACKLOG, Repo / release): Node modules in `src/kit/`, sentence case, command name, deprecated API. Also: merge PR 1, retarget PR 2 to `main`, merge it; v0.4 items (sample-list toggle label, snippet icons).
+**Now:** PR 1 (duplicate-name warning) and PR 2 (What's new popup) are both merged into `main` (merge commits `a4cd160`, `25c0dcb`). Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** commit the lint decisions + settings API work (uncommitted on `whats-new-popup`); then v0.4 items (sample-list toggle label, snippet icons); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -10,9 +10,23 @@
 - Analysis methods + machines in settings: design to agree
 - Sample creation workflow: to discuss
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
-- `npm run lint` reports 44 problems (9 errors, all `no-require-imports`): decisions in BACKLOG.md (Repo / release)
+- `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push lint fixes)
+## Last session (settings definitions API)
+- Settings page now uses `getSettingDefinitions()`: `KitSettingTab` (`src/kit/ui.ts`) + `HeaderStore.definitions()` (`src/header/settings.ts`), all rows as `render` callbacks (same saves as before), groups for the headings. `setWarning` → `setDestructive`, refresh via `this.update()`. `manifest.json` `minAppVersion` 1.5.0 → 1.13.0 (`versions.json` gets `0.4.0: 1.13.0` at release)
+- Two small look changes (user to confirm): the hazards "per-note options" sentence is its own row "Per-note options"; "Install locations" shows a "Show" summary under its name
+- API facts saved in `docs/reference/settings-definitions.md` (typings from `node_modules/obsidian` were readable only when the user pasted them; `render` must return void; groups hold rows, not groups)
+- `npm run build` clean; `npm test`: 59 pass; `npm run lint`: 0 errors, 4 warnings. Not committed. Not seen in Obsidian. Possible later cleanup (`control` rows) in BACKLOG
+
+## Earlier session (lint decisions)
+- Decisions: Node modules → eslint override; sentence case → leave as warnings; command renamed; settings definitions API → next session
+- `eslint.config.mjs`: `src/kit/**` override (Node globals, `no-require-imports` and `no-nodejs-modules` off). Command "Check for lab kit updates" → "Check for updates" (`src/kit/ui.ts:200`, `docs/tutorial.md:212`, changelog line under Unreleased)
+- Lint: 44 → 10 (0 errors). `npm test`: 59 pass; `npm run build` clean. Not committed. Not seen in Obsidian. `test-vault/` tutorial copy still has the old command name (hand copy, left alone)
+
+## Earlier session (merge PRs)
+- Merged PR 1 into `main`, retargeted PR 2 to `main`, merged it (both plain merge commits, branches not deleted). No code changes, tests not rerun. Local `main` not pulled; local branch is still `whats-new-popup`
+
+## Earlier session (commit + push lint fixes)
 - Committed the lint fixes below (15 tracked files, incl. STATUS/BACKLOG) on `whats-new-popup` and pushed, so PR 2 includes them. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
 
 ## Earlier session (lint fixes)
