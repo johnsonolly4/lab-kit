@@ -1,7 +1,7 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-4 are merged into `main`. The column packing commit and the residence-time callout (both on `whats-new-popup`) are in a new PR against `main`, not merged. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Now:** PRs 1-4 are merged into `main`. The column packing commit and the residence-time callout (both on `whats-new-popup`) are in [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) against `main`, not merged. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
 **Next:** merge the new PR; v0.4 quick changes still open in BACKLOG (snippet icons, recipe amount modes); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested). Local `main` not pulled; local branch is still `whats-new-popup`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
@@ -13,7 +13,7 @@
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
 ## Last session (commit + PR column packing and callout)
-- Committed the residence-time callout, pushed `whats-new-popup`, opened a PR against `main` covering it and the column packing commit (`17274be`). Not merged. `npm test`: 60 pass. `test-vault/` hand copies left untracked on purpose. No code changes
+- Committed the residence-time callout, pushed `whats-new-popup`, opened [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) against `main` covering it and the column packing commit (`17274be`). Not merged. `npm test`: 60 pass. `test-vault/` hand copies left untracked on purpose. No code changes
 
 ## Earlier session (residence times callout)
 - The `rt()` snippet already wrote the maths block (since v0.3); user chose to **wrap it in a callout**: `> [!info] Residence time` around `$$\tau = V/Q$$` (`labSnippets.js:375`). Test assertion in `tests/snippets.test.ts`; changelog line added; `kit-manifest.json` unchanged on regeneration
