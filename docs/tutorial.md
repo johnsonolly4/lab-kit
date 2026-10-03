@@ -198,7 +198,8 @@ flowchart LR
 |---|---|
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
-| A snippet's menu icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
+| A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
+| A snippet's built-in icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
 | What a snippet builds | `Extras/scripts/templater/labSnippets.js` (one section per snippet) |
 | A new snippet | copy a file in `Templates/Snippets`, give it a new number and name |
 

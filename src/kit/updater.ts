@@ -27,7 +27,7 @@ export interface KitManifest {
 export interface Kit { dir: string; folder: string; manifest: KitManifest }
 export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
 /** What the plugin remembers about the updater (the `kit` key of data.json). */
-export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null; seenChangelog: string; initials: string }
+export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null; seenChangelog: string; initials: string; snippetIcons: Record<string, string> }
 export interface PlanItem {
   kind: "file" | "delete";
   src?: string;
@@ -48,7 +48,7 @@ export interface ApplyResult {
 }
 
 const KIT_TEXT_EXT = /\.(md|js|json|css|py|txt|csv)$/i;
-export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "" };
+export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "", snippetIcons: {} };
 
 const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {

@@ -24,6 +24,7 @@
 - **Empty calc cells are taller**, so they are easier to click
 - **Sample list and timetable forms**: the technique toggles are headed "Also add (appended below)", so it is clear the tables go under the sample table
 - **Residence times snippet**: the formula (τ = V / Q) now sits in an info callout above the tables
+- **Snippet menu icons are a setting** (Settings → Lab Kit → Snippet menu): type a [Lucide](https://lucide.dev) icon name for any snippet; empty keeps the built-in icon. The colour is always your Obsidian accent colour
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):

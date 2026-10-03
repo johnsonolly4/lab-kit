@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-4 are merged into `main`. The column packing commit and the residence-time callout (both on `whats-new-popup`) are in [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) against `main`, not merged. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** merge the new PR; v0.4 quick changes still open in BACKLOG (snippet icons, recipe amount modes); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested). Local `main` not pulled; local branch is still `whats-new-popup`.
+**Now:** PRs 1-5 are all merged into `main`; the snippet menu icons commit is pushed on `whats-new-popup` but has no PR yet. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** v0.4 quick changes still open in BACKLOG (recipe amount modes, live cell highlight); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested). Local `main` not pulled; local branch is still `whats-new-popup`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,17 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + PR column packing and callout)
+## Last session (commit + push snippet icons)
+- Committed the snippet menu icons work below (7 tracked files + `tests/labpick.test.ts`, incl. STATUS/BACKLOG) on `whats-new-popup` and pushed. PRs 1-5 were already merged, so this commit is **not in `main` yet** (needs a new PR or merge). `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+
+## Earlier session (snippet menu icons)
+- Settings → Lab Kit → **Snippet menu**: one row per snippet in `<templates>/Snippets` with a Lucide icon name box (empty = built-in, placeholder shows it); saved as `kit.snippetIcons` (`KitData`, `src/kit/updater.ts`). `labPick.js` reads `data.json`, puts the chosen name first and keeps the snippet's own icon as fallback. Colour stays the accent (the settings text says so). Changelog + tutorial line updated
+- `tests/labpick.test.ts` (3). `npm test`: 63 pass; `npm run build` clean; lint unchanged (0 errors, 4 warnings); `kit-manifest.json` unchanged on regeneration. Not committed. Not seen in Obsidian, `test-vault/` copy of `labPick.js` is stale; open points in BACKLOG (Not yet tested)
+
+## Earlier session (merge PR 5)
+- Merged [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) into `main` (plain merge commit, branch not deleted). No code changes, tests not rerun. Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (commit + PR column packing and callout)
 - Committed the residence-time callout, pushed `whats-new-popup`, opened [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) against `main` covering it and the column packing commit (`17274be`). Not merged. `npm test`: 60 pass. `test-vault/` hand copies left untracked on purpose. No code changes
 
 ## Earlier session (residence times callout)

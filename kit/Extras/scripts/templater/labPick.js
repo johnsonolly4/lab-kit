@@ -6,10 +6,24 @@
      ], "Insert snippet…");
    Returns the chosen item's value, or null.
    Icons are Lucide names (lucide.dev). A comma-separated list tries each in turn.
+   Icons set per item name in Settings → Lab Kit → Snippet menu (data.json,
+   kit.snippetIcons) win over the item's own; an unknown name falls back to it.
    ===================================================================== */
 
-module.exports = function labPick(tp, items, placeholder = "Search…") {
+const readIcons = async () => {
+  try {
+    const raw = await app.vault.adapter.read(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`);
+    return JSON.parse(raw)?.kit?.snippetIcons ?? {};
+  } catch (e) { return {}; }
+};
+
+module.exports = async function labPick(tp, items, placeholder = "Search…") {
   const { SuggestModal, getIcon } = tp.obsidian;
+  const custom = await readIcons();
+  items = items.map(it => {
+    const mine = String(custom[it.name] ?? "").trim();
+    return mine ? { ...it, icon: [mine, it.icon].filter(Boolean).join(",") } : it;
+  });
 
   const iconFor = (names) => {
     for (const n of String(names ?? "").split(",").map(s => s.trim()).filter(Boolean)) {

@@ -1,6 +1,6 @@
 // Kit updater UI: the update window, the settings tab and the controller that wires them into the plugin.
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
-import { Modal, Notice, Platform, PluginSettingTab, Setting, type App, type ButtonComponent, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Modal, Notice, Platform, PluginSettingTab, Setting, TFile, normalizePath, type App, type ButtonComponent, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import {
   KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitPlan, kitReadSource, kitScan,
   type Kit, type KitData, type PlanItem, type Roles
@@ -142,6 +142,33 @@ class KitUpdateModal extends Modal {
 class KitSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) { super(app, plugin); }
 
+  /** One icon row per snippet in the Snippets folder next to the menu template (the name is what the Alt+S menu shows). */
+  private snippetRows(): SettingGroupItem[] {
+    const templates = this.ctl.kit.installed?.roles?.templates ?? "Templates";
+    const folder = this.app.vault.getFolderByPath(normalizePath(`${templates}/Snippets`));
+    const files = (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md")
+      .sort((a, b) => a.basename.localeCompare(b.basename, undefined, { numeric: true }));
+    const icons = this.ctl.kit.snippetIcons;
+    if (!files.length) return [];
+    const rows: SettingGroupItem[] = [{ name: "Icons", desc: "A Lucide icon name for each snippet, e.g. flask-round (see lucide.dev). Empty keeps the built-in icon. The colour is always your Obsidian accent colour." }];
+    for (const f of files) {
+      const name = f.basename.replace(/^\d+\s*[-.]?\s*/, "");
+      rows.push({
+        name,
+        render: b => {
+          b.addText(t => {
+            t.setValue(icons[name] ?? "").onChange(async v => {
+              if (v.trim()) icons[name] = v.trim(); else delete icons[name];
+              await this.ctl.save();
+            });
+            void this.app.vault.cachedRead(f).then(text => t.setPlaceholder(text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim() ?? ""));
+          });
+        }
+      });
+    }
+    return rows;
+  }
+
   getSettingDefinitions(): SettingDefinitionItem[] {
     const kit = this.ctl.kit;
     const inst = kit.installed;
@@ -149,6 +176,7 @@ class KitSettingTab extends PluginSettingTab {
       { name: "Initials", desc: "Used in sample codes, for example ABC0014-A. Read by the Alt+S snippets.",
         render: b => { b.addText(t => t.setValue(kit.initials).onChange(async v => { kit.initials = v.trim(); await this.ctl.save(); })); } }
     ];
+    const snippets = this.snippetRows();
     const updates: SettingGroupItem[] = [
       { name: "Update folder", desc: "Folder on this computer where new kit versions arrive (each in its own subfolder with kit-manifest.json).",
         render: b => { b.addText(t => { t.setValue(kit.source).onChange(async v => { kit.source = v.trim(); await this.ctl.save(); }); t.inputEl.addClass("lab-kit-wide-input"); }); } },
@@ -180,6 +208,7 @@ class KitSettingTab extends PluginSettingTab {
       } });
     return [
       { type: "group", heading: "Lab notebook", items: notebook },
+      ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
       { type: "group", heading: "Kit updates", items: updates },
       ...this.header.definitions()
     ];
@@ -197,6 +226,7 @@ export class KitController {
   async load(): Promise<void> {
     const saved = (await this.plugin.loadData()) as { kit?: Partial<KitData> } | null;
     this.kit = Object.assign({}, KIT_DEFAULTS, saved?.kit ?? {});
+    this.kit.snippetIcons = { ...this.kit.snippetIcons };
   }
   async save(): Promise<void> {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;
@@ -206,7 +236,10 @@ export class KitController {
 
   setup(): void {
     const plugin = this.plugin;
-    plugin.addSettingTab(new KitSettingTab(this.app, plugin, this, this.header));
+    const tab = new KitSettingTab(this.app, plugin, this, this.header);
+    plugin.addSettingTab(tab);
+    // The snippet rows need the vault index, which is not ready yet when the tab is registered
+    this.app.workspace.onLayoutReady(() => tab.update());
     plugin.addCommand({ id: "kit-update", name: "Check for updates", callback: () => this.check(true) });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     // First start after the plugin changed version: show what's new once
