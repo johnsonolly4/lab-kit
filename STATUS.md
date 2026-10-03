@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** "What's new" popup committed on branch `whats-new-popup` (cut from `duplicate-table-names`; not pushed, no PR yet). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Not seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Push `whats-new-popup` and open a PR (retarget to `main` once PR 1 merges), then candidates: the next v0.4 bug (tutorial renders as Dataview errors) or fixing `npm run lint`.
+**Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** user's call. Merge PR 1, then retarget PR 2 to `main` and merge it. Then candidates: the next v0.4 bug (click-to-edit cell width, see BACKLOG) or fixing `npm run lint`. The tutorial fix is committed and pushed on `whats-new-popup` (PR 2).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,17 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (What's new popup)
+## Last session (commit tutorial fix)
+- Committed and pushed the tutorial fix below, plus STATUS/BACKLOG. No code changes, tests not rerun
+
+## Earlier session (tutorial Dataview errors)
+- `docs/tutorial.md` (lines 92, 95-102, 157): inline code no longer starts with `=` (Dataview treats it as an inline query). Section 3.3 says formulas start with an equals sign and that the examples leave it off. Docs only, no code or tests touched
+- Not seen in Obsidian with Dataview on: BACKLOG (Not yet tested). Changelog not changed (docs-only)
+
+## Earlier session (push + PR)
+- Pushed `whats-new-popup` and opened PR 2 against `duplicate-table-names` (so the diff shows only the popup). No code changes, tests not rerun
+
+## Earlier session (What's new popup)
 - New `src/whatsnew.ts`: `latestSection()` (newest `## ` section of `docs/changelog.md`), `sectionHeading()`, `WhatsNewModal` (renders the section, link to the full changelog on GitHub). Changelog is bundled into `main.js` (`loader: { ".md": "text" }` in `esbuild.config.mjs`, `src/md.d.ts`)
 - `src/kit/ui.ts`: shown once on the first start after the heading changes (`kit.seenChangelog` in data.json, new `KitData` field), command "Show what's new", "What's new" button in Settings → Lab Kit. The *reloaded* plugin shows it, because the running one still has the old changelog
 - `openAfter` removed (`updater.ts`, `ui.ts`, `package-kit.mjs`, `kit-manifest.json`); the tutorial and changelog note copies are no longer packaged or installed (`kit-manifest.mjs`, manifest regenerated, 26 files). Existing copies in vaults are left alone

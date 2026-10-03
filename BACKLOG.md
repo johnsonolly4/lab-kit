@@ -7,7 +7,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] **Cross-table refs fail when the referenced table is the second in the note**: cause was in the snippets, not the engine. They looked up tables by exact name (`samples`, `nmr`), so `samples2` / `nmr2` were missed. Fixed in `labSnippets.js` (tests: `tests/snippets-multi.test.ts`). The calc engine and renderer were fine (`tests/crossref.test.ts`)
 - [x] Duplicate table names: warn on both tables and make refs to the shared name `#REF!` instead of silently using the first (done: `Workbook.dupNames` in `src/calc/engine.ts`, warning in `src/calc/render.ts`, tests in `tests/duplicate-names.test.ts`; not checked inside Obsidian yet)
 - [x] **NMR/GPC/DLS don't pick up codes from `samples2`**: fixed with the item above (codes now come from `samples`, `sample`, `samples2`… combined).
-- [ ] **Tutorial renders as Dataview errors**: inline code starting with `=` is a Dataview inline query. Write formulas without a leading `=` in inline code, or use code blocks.
+- [x] **Tutorial renders as Dataview errors** (done in `docs/tutorial.md` lines 92, 95-102, 157: formulas shown without the leading `=` in inline code; untested in Obsidian with Dataview on): inline code starting with `=` is a Dataview inline query.
 - [ ] **Click-to-edit**: the cell widens while editing (keep the width fixed); moving from one cell to another takes two clicks (make it one).
 - [ ] **RAFT mol fractions not summing to 1**: normalise by `SUM(fractions)`; remove the tip callout.
 
@@ -55,5 +55,6 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Duplicate table name warning inside Obsidian: two tables with the same `name:` show the red warning, refs give `#REF!` (`src/calc/render.ts` caption, `styles.css` `.lab-kit-warn`)
 - [ ] Snippet scripts (`kit/Extras/scripts/templater/labSnippets.js`) still union tables by name and know nothing about duplicate names; check what a duplicated `samples` does there
 - [ ] What's new popup not seen inside Obsidian yet: shows once after the plugin reloads with a new version, "What's new" button (`src/kit/ui.ts` settings tab), command, GitHub link, rendering (`src/whatsnew.ts`)
+- [ ] Tutorial fix not seen in Obsidian with Dataview on: open `docs/tutorial.md` there and check no inline `=` errors remain (`docs/tutorial.md` lines 92, 95-102, 157). The repo copy only; vault copies of the old tutorial note stay stale
 - [ ] Old "Lab notebook kit - tutorial.md" / "- changelog.md" notes stay stale in vaults that already installed them (left alone on purpose). Could add `delete` entries in `kit/kit-manifest.json` (role `docs`) if wanted
 - [ ] The "seen" key for the popup is the newest changelog heading (`sectionHeading` in `src/whatsnew.ts`): new bullets added under an unchanged "Unreleased" heading do not re-trigger the popup; renaming the heading to the release version does
