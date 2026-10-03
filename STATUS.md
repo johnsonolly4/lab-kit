@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.1 (plugin + kit; per-commit bump; TypeScript in `src/`)
-**Now:** PRs 1-8 are **merged into `main`** (PR 8 = store prep, merge commit `3883cff`). The kit update system (Phases 1-5), author swap and README privacy / mobile sections are all in `main`. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `store-prep` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** **you run [docs/obsidian-test-checklist.md](docs/obsidian-test-checklist.md)** in `test-vault/` (Obsidian 1.13+, then mobile), then send what broke via `/feedback`. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Version:** 0.4.2 (plugin + kit; per-commit bump; TypeScript in `src/`)
+**Now:** PRs 1-9 are **merged into `main`** (PR 9 = version rule + settings freeze fix, merge commit `14fa7cf`, version 0.4.1). The kit update system (Phases 1-5), author swap, README privacy / mobile sections and the version-per-commit rule are all in `main`. None of v0.4 has been seen inside Obsidian beyond the settings page (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `version-rule` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** mobile startup guard committed as 0.4.2 on branch `mobile-guard` (not pushed, no PR). Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": snippet rows, click-to-edit, merge window on mobile) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,24 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit settings freeze fix)
+## Last session (commit mobile guard)
+- User chose "Commit mobile guard as 0.4.2". Branch `mobile-guard` from `main`; bumped to 0.4.2 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged). `npm test` 120 pass, lint 0 errors / 4 warnings (same), `npm run build` clean
+- Working tree also held test-time kit edits (Lab Book Template CoSHH `- Incomplete`, deleted `01 Solution prep.md`, manifest `removed`). User said they were wrong: **reverted** with `git checkout`, not committed. `test-vault/` copies left untracked on purpose. Nothing new for BACKLOG
+
+## Earlier session (mobile startup guard)
+- User chose the mobile startup guard. Cause: under `app.emulateMobile(true)` `Platform.isDesktopApp` stays true, so the existing guards let `kitScan` (startup check) and the data-folder button through. New `src/platform.ts` `hasNode()` (`isDesktopApp && !isMobile`) now guards `src/kit/ui.ts` (startup check + `check`), `src/kit/managed-ui.ts` `legacy()` and `src/header/render.ts:57` (so the button is replaced by "Data folder: desktop only"). Rule in `.claude/rules/obsidian-plugin.md` updated; stub `Platform` got `isMobile`
+- New test in `tests/header.test.ts` (mobile shows "desktop only"). `npm test`: 120 pass; lint 0 errors, 4 warnings (same); `tsc` has no `src/` errors (only `node_modules/obsidian` typing noise). **User confirmed it works** in Obsidian ("That works"); real phone still untested. Not committed (a commit bumps to 0.4.2). Changelog not touched. Both bug items ticked in BACKLOG; the merge-window mobile overflow is still open there
+
+## Earlier session (checklist feedback)
+- User ran `docs/obsidian-test-checklist.md` and pasted it. `/feedback` sorted it into `BACKLOG.md`: 10 bugs ("v0.4 checklist bugs"), 5 quick changes, 7 decisions, 1 Kit update system item; 11 "Not yet tested" items ticked as confirmed. Biggest: mobile loads `fs` / `path` at startup (`kitScan` unguarded), snippet menu rows vanish after reload, click-to-edit still needs two clicks. BACKLOG only: no code changed, tests not rerun, not committed (a commit bumps to 0.4.2)
+
+## Earlier session (merge PR 9)
+- User chose "Merge PR 9". Merged [lab-kit#9](https://github.com/johnsonolly4/lab-kit/pull/9) into `main` (plain merge commit `14fa7cf`, branch not deleted; was clean and mergeable). Pulled `main` locally (stashed this STATUS edit across the checkout, then restored it). No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.2 and `main` is the current branch). Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (push + open PR 9)
+- User chose "Push + open PR". Pushed `version-rule` (`3ceb856` 0.4.0, `9153159` 0.4.1) and opened [lab-kit#9](https://github.com/johnsonolly4/lab-kit/pull/9) into `main`. **Not merged.** No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.2)
+
+## Earlier session (commit settings freeze fix)
 - User chose "commit as 0.4.1". Ran the checks left open below: `npm test` 119 pass, `npm run lint` 0 errors / 4 warnings (same), `npm run build` clean. Bumped to 0.4.1 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed on `version-rule`. Not pushed, no PR
 
 ## Earlier session (settings freeze fix)

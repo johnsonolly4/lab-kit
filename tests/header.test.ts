@@ -1,5 +1,5 @@
 import { describe, it } from "vitest";
-import { TFile } from "obsidian";
+import { Platform, TFile } from "obsidian";
 import assert from "node:assert";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
@@ -98,6 +98,17 @@ describe("HeaderRenderer", () => {
     assert.ok(el.querySelector("summary").textContent.includes("4 chemicals"));
     assert.ok(el.textContent.includes("no chemical note found"));
     assert.ok(el.textContent.includes("no H_Phrase"));
+  });
+
+  it("on mobile (also emulated, where isDesktopApp stays true) shows 'desktop only' instead of the data-folder button", () => {
+    const { mount } = setup();
+    assert.ok(mount("notes/0014 - Test.md").querySelector("button"));
+    (Platform as any).isMobile = true;
+    try {
+      const el = mount("notes/0014 - Test.md");
+      assert.strictEqual(el.querySelector("button"), null);
+      assert.ok(el.textContent.includes("Data folder: desktop only"));
+    } finally { (Platform as any).isMobile = false; }
   });
 
   it("renders the table layout when chosen", () => {

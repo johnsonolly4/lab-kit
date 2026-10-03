@@ -1,6 +1,7 @@
 // Kit updater UI: the update window, the settings tab and the controller that wires them into the plugin.
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
-import { Modal, Notice, Platform, PluginSettingTab, Setting, TFile, normalizePath, type App, type ButtonComponent, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { hasNode } from "../platform";
+import { Modal, Notice, PluginSettingTab, Setting, TFile, normalizePath, type App, type ButtonComponent, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import {
   KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitJoin, kitPlan, kitReadSource, kitScan,
   type Kit, type KitData, type PlanItem, type Roles
@@ -320,7 +321,7 @@ export class KitController {
       }
       if (changed) await this.save();
     }));
-    if (Platform.isDesktopApp && this.kit.checkOnStartup) {
+    if (hasNode() && this.kit.checkOnStartup) {
       this.app.workspace.onLayoutReady(() => window.setTimeout(() => this.check(false), 4000));
     }
   }
@@ -335,7 +336,7 @@ export class KitController {
   }
 
   check(manual: boolean): void {
-    if (!Platform.isDesktopApp) { if (manual) new Notice("Kit updates work in the desktop app only."); return; }
+    if (!hasNode()) { if (manual) new Notice("Kit updates work in the desktop app only."); return; }
     let kits: Kit[];
     try { kits = kitScan(this.kit.source); }
     catch { if (manual) new Notice(`Can't read the update folder:\n${this.kit.source}\nSet it in Settings → Lab Kit.`, 8000); return; }

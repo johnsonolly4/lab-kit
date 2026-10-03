@@ -1,6 +1,7 @@
 // Renders ```lab-header blocks: data-folder button + hazard summary for the note's Chemicals.
 // Unlike the old Dataview script it redraws only when this note's Chemicals or a linked chemical note really changed.
-import { Platform, type App, type MarkdownPostProcessorContext, type Plugin } from "obsidian";
+import type { App, MarkdownPostProcessorContext, Plugin } from "obsidian";
+import { hasNode } from "../platform";
 import { openDataFolder } from "../kit/datafolder";
 import { LEVELS } from "./ghs";
 import { collectHazards, hazardSignature, hazardSources, levelCounts, type HazardData, type HazardRow, type Phrase } from "./hazards";
@@ -54,7 +55,7 @@ export class HeaderRenderer {
     el.addClass("lab-header");
     if (block.dataFolder) {
       const bar = el.createDiv({ cls: "lab-header-bar" });
-      if (Platform.isDesktopApp) {
+      if (hasNode()) {
         const noteName = ctx.sourcePath.split("/").pop()!.replace(/\.md$/, "");
         const btn = bar.createEl("button", { text: "📁 Open data folder" });
         btn.addEventListener("click", () => openDataFolder(noteName, this.store.settings));
