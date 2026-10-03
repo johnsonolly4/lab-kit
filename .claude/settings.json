@@ -3,7 +3,6 @@
   "permissions": {
     "deny": [
       "Read(./node_modules/**)",
-      "Read(./main.js)",
       "Read(./test-vault/.obsidian/plugins/**)",
       "Bash(git push --force:*)",
       "Bash(git reset --hard:*)",
