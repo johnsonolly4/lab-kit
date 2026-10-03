@@ -83,4 +83,78 @@ describe("render", () => {
       await new Promise(r => setTimeout(r, 10));
     }
   });
+
+  it("opens the clicked cell even when Obsidian rebuilds the block after the save", async () => {
+    let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    let processor: (s: string, el: unknown, ctx: unknown) => Promise<void> = async () => { /* set by register() */ };
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const source = "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |";
+    const el = new El("div");
+    let el2: any = null;
+    const plugin: any = {
+      app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText, on: () => ({}),
+        process: async (_f: unknown, fn: (d: string) => string) => {
+          fileText = fn(fileText);
+          Object.defineProperty(el, "isConnected", { value: false }); // the old block is gone
+          el2 = new El("div");
+          void processor(source, el2, ctx); // Obsidian renders the replacement a moment later
+        } } },
+      registerEvent() { /* unused */ },
+      registerMarkdownCodeBlockProcessor(_lang: string, fn: typeof processor) { processor = fn; }
+    };
+    const renderer = new CalcRenderer(plugin);
+    renderer.register();
+    const entry: CalcEntry = { el, ctx, source };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    const a = entry.tds!.get("1|0")!;
+    a.dispatch("click");
+    const input = a.querySelector("input");
+    input.value = "3";
+    entry.tds!.get("1|1")!.dispatch("mousedown");
+    input.dispatch("blur");
+    await new Promise(r => setTimeout(r, 30));
+    assert.ok(fileText.includes("| 3 | 5 |"), "edit not saved");
+    const second = [...renderer.live.get("n.md")!].find(e => e.el === el2);
+    assert.ok(second?.tds?.get("1|1")?.querySelector("input"), "second cell did not open in the rebuilt block");
+  });
+
+  it("keeps the page where it was when an edited cell is saved and the block is rebuilt", async () => {
+    let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    const scroller = new El("div"); scroller.className = "cm-scroller";
+    scroller.scrollTop = 480;
+    const el = new El("div"); scroller.appendChild(el);
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const source = "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |";
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText,
+      process: async (_f: unknown, fn: (d: string) => string) => {
+        fileText = fn(fileText);
+        scroller.scrollTop = 0; // the redraw collapses the block and drags the page to the top
+      } } }, registerEvent() { /* unused */ } };
+    const renderer = new CalcRenderer(plugin);
+    const entry: CalcEntry = { el, ctx, source };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    const a = entry.tds!.get("1|0")!;
+    a.dispatch("click");
+    const input = a.querySelector("input");
+    input.value = "3";
+    input.dispatch("blur");
+    await new Promise(r => setTimeout(r, 30));
+    assert.ok(fileText.includes("| 3 | 5 |"), "edit not saved");
+    assert.strictEqual(scroller.scrollTop, 480, "page jumped");
+
+    // a wheel turn by the user ends the hold
+    entry.tds!.get("1|0")!.dispatch("click");
+    const input2 = entry.tds!.get("1|0")!.querySelector("input");
+    input2.value = "4";
+    input2.dispatch("blur");
+    await new Promise(r => setTimeout(r, 10));
+    scroller.dispatch("wheel");
+    scroller.scrollTop = 900;
+    await new Promise(r => setTimeout(r, 150));
+    assert.strictEqual(scroller.scrollTop, 900, "fought the user's own scrolling");
+  });
 });

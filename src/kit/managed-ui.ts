@@ -1,6 +1,7 @@
 // Built-in kit: the glue between the plugin and src/kit/managed.ts, plus the review window, the report and the first-install question.
 // Works on mobile: only the vault adapter and crypto.subtle (the folder updater in ui.ts stays desktop only).
-import { Modal, Notice, Platform, Setting, type App, type Plugin } from "obsidian";
+import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
+import { hasNode } from "../platform";
 import {
   SAFE_ACTIONS, applyManaged, forgetManaged, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
@@ -34,7 +35,7 @@ export class KitManaged {
   /** Files the old folder updater wrote (desktop only), so they aren't mistaken for your edits. */
   private legacy(): LegacyRecord | null {
     const old = this.host.kit.installed;
-    if (!Platform.isDesktopApp || !old) return null;
+    if (!hasNode() || !old) return null;
     return { files: old.files, hash: t => kitHash(new TextEncoder().encode(t)) };
   }
 

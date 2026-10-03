@@ -2,6 +2,7 @@
 // Tests reach into these exports to set up the situation they need (e.g. Platform.isDesktopApp).
 // Popout-window code calls window.setTimeout; under node the global object stands in for the window.
 (globalThis as any).window ??= globalThis;
+(globalThis as any).requestAnimationFrame ??= (f: () => void) => setTimeout(f, 0);
 export class Component { load(): void { /* nothing */ } unload(): void { /* nothing */ } }
 export class MarkdownRenderChild extends Component { constructor(public containerEl: unknown) { super(); } }
 export class Plugin extends Component {
@@ -27,7 +28,7 @@ export class TFile {
   path = ""; basename = "";
   constructor(init?: { path?: string; basename?: string }) { Object.assign(this, init); }
 }
-export const Platform = { isDesktopApp: true };
+export const Platform = { isDesktopApp: true, isMobile: false };
 export const getIcon = (_name: string): SVGElement | null => null;
 export const MarkdownRenderer = {
   render: async (_app: unknown, md: string, el: any): Promise<void> => { el.innerHTML = "<p>" + md + "</p>"; },

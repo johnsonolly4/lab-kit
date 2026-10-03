@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.1 (plugin + kit; per-commit bump; TypeScript in `src/`)
-**Now:** PRs 1-8 are **merged into `main`** (PR 8 = store prep, merge commit `3883cff`). The kit update system (Phases 1-5), author swap and README privacy / mobile sections are all in `main`. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `store-prep` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** **you run [docs/obsidian-test-checklist.md](docs/obsidian-test-checklist.md)** in `test-vault/` (Obsidian 1.13+, then mobile), then send what broke via `/feedback`. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Version:** 0.4.4 (plugin + kit; per-commit bump; TypeScript in `src/`)
+**Now:** PRs 1-9 are **merged into `main`** (PR 9 = version rule + settings freeze fix, merge commit `14fa7cf`, version 0.4.1). The kit update system (Phases 1-5), author swap, README privacy / mobile sections and the version-per-commit rule are all in `main`. None of v0.4 has been seen inside Obsidian beyond the settings page (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `version-rule` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** `mobile-guard` holds 0.4.2 (mobile startup guard), 0.4.3 (merge-window CSS fix) and 0.4.4 (click-to-edit second try + page-jump fix, committed, **not pushed**); open as [lab-kit#10](https://github.com/johnsonolly4/lab-kit/pull/10) into `main`, not merged. 0.4.4 still to be tried in Obsidian. Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": Tab/Escape, CSS snippet switch) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,47 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit settings freeze fix)
+## Last session (commit 0.4.4)
+- User chose "Commit pending edits as 0.4.4". Reran `npm test` (122 pass) and `npm run lint` (0 errors, 4 warnings, same). Bumped to 0.4.4 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed the click-to-edit retry + page-jump fix on `mobile-guard`. **Not pushed**, so PR 10 does not have it yet. Both fixes still **not seen in Obsidian** (BACKLOG items say so). Nothing new for BACKLOG
+
+## Earlier session (page jump after editing a cell)
+- User chose the page-jump bug. Best guess at the cause (not confirmed, no repro): the save redraws the block (in Live Preview Obsidian may rebuild the widget) and the page height collapses for a moment, dragging the scroll. `src/calc/render.ts`: `holdScroll` (on saving a changed cell: scroller = `.cm-scroller` or `.markdown-preview-view`, remembers `scrollTop`), `restoreScroll`, `settleScroll` (restores now, next frame, 100/300/700 ms; also after the code block processor redraws); dropped on wheel / touchmove or after 1.5 s. `input.focus({ preventScroll: true })` in `editCell`
+- New test "keeps the page where it was…" in `tests/render.test.ts` (+ `requestAnimationFrame` in `tests/helpers/obsidian-stub.ts`). `npm test`: 122 pass; lint 0 errors, 4 warnings (same). Changelog line added; BACKLOG item ticked with "not seen in Obsidian". **Not committed**: the working tree also holds the click-to-edit second try (below), so a commit (0.4.4) would carry both; PR 10 still open and unmerged. Still open nearby: Tab/Escape (needs the Escape decision), CSS snippet switch (BACKLOG, "v0.4 checklist bugs")
+
+## Earlier session (click-to-edit, second try)
+- User chose the click-to-edit bug. Best guess at the cause (not confirmed): Obsidian rebuilds the block (new element, new `CalcEntry`) after the save, so the old `pending` pointed at a dead table and the click was lost. `src/calc/render.ts`: `pending` now holds path + block start line (`setPending`, `clearPending`, 2 s expiry); `openPending` finds the live block via `pendingTarget` and is also called after the code block processor redraws
+- New test in `tests/render.test.ts` (block replaced after the save): fails on the old code, passes now. `npm test`: 121 pass; lint 0 errors, 4 warnings (same). Changelog line added; BACKLOG item ticked with "not seen in Obsidian". **Not committed** (a commit bumps to 0.4.4); PR 10 still open and unmerged. Still open nearby: Tab/Escape, page jump (BACKLOG, "v0.4 checklist bugs")
+
+## Earlier session (BACKLOG edit only)
+- User said the "Snippet menu rows vanish" item (BACKLOG, "v0.4 checklist bugs") is **intended behaviour**: ticked with that note, no code change, no tests run. Earlier in the session I guessed wrongly at an ambiguous answer and made edits; all reverted. Not committed (a commit bumps to 0.4.4); PR 10 still open and unmerged
+
+## Earlier session (push + open PR 10)
+- User chose "Push + open PR". Pushed `mobile-guard` (`f300794` 0.4.2, `1de10a7` 0.4.3) and opened [lab-kit#10](https://github.com/johnsonolly4/lab-kit/pull/10) into `main`. **Not merged**; no CI checks configured. No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.4)
+
+## Earlier session (commit merge-window fix)
+- User chose "Commit merge-window fix as 0.4.3". Bumped to 0.4.3 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed `styles.css` + STATUS/BACKLOG on `mobile-guard`. No code changes beyond the CSS already described below; tests not rerun. Merge window still **not seen in Obsidian** (BACKLOG item says so). Not pushed, no PR
+
+## Earlier session (merge window on mobile)
+- User chose the merge-window overflow bug. `styles.css` (~line 77): the old `@media (max-width: 600px)` checks the screen, so a wide screen with a narrow modal (or emulated mobile) kept three columns. Now `.lab-kit-hunk` is a container (`@container (max-width: 520px)` stacks the columns), plus `.is-mobile` rules, `min-width: 0` on columns, textarea `border-box`. CSS only; `npm test` 120 pass. **Not seen in Obsidian, cause is a best guess**; BACKLOG item ticked with that note. Committed in the session above as 0.4.3
+
+## Earlier session (commit mobile guard)
+- User chose "Commit mobile guard as 0.4.2". Branch `mobile-guard` from `main`; bumped to 0.4.2 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged). `npm test` 120 pass, lint 0 errors / 4 warnings (same), `npm run build` clean
+- Working tree also held test-time kit edits (Lab Book Template CoSHH `- Incomplete`, deleted `01 Solution prep.md`, manifest `removed`). User said they were wrong: **reverted** with `git checkout`, not committed. `test-vault/` copies left untracked on purpose. Nothing new for BACKLOG
+
+## Earlier session (mobile startup guard)
+- User chose the mobile startup guard. Cause: under `app.emulateMobile(true)` `Platform.isDesktopApp` stays true, so the existing guards let `kitScan` (startup check) and the data-folder button through. New `src/platform.ts` `hasNode()` (`isDesktopApp && !isMobile`) now guards `src/kit/ui.ts` (startup check + `check`), `src/kit/managed-ui.ts` `legacy()` and `src/header/render.ts:57` (so the button is replaced by "Data folder: desktop only"). Rule in `.claude/rules/obsidian-plugin.md` updated; stub `Platform` got `isMobile`
+- New test in `tests/header.test.ts` (mobile shows "desktop only"). `npm test`: 120 pass; lint 0 errors, 4 warnings (same); `tsc` has no `src/` errors (only `node_modules/obsidian` typing noise). **User confirmed it works** in Obsidian ("That works"); real phone still untested. Not committed (a commit bumps to 0.4.2). Changelog not touched. Both bug items ticked in BACKLOG; the merge-window mobile overflow is still open there
+
+## Earlier session (checklist feedback)
+- User ran `docs/obsidian-test-checklist.md` and pasted it. `/feedback` sorted it into `BACKLOG.md`: 10 bugs ("v0.4 checklist bugs"), 5 quick changes, 7 decisions, 1 Kit update system item; 11 "Not yet tested" items ticked as confirmed. Biggest: mobile loads `fs` / `path` at startup (`kitScan` unguarded), snippet menu rows vanish after reload, click-to-edit still needs two clicks. BACKLOG only: no code changed, tests not rerun, not committed (a commit bumps to 0.4.2)
+
+## Earlier session (merge PR 9)
+- User chose "Merge PR 9". Merged [lab-kit#9](https://github.com/johnsonolly4/lab-kit/pull/9) into `main` (plain merge commit `14fa7cf`, branch not deleted; was clean and mergeable). Pulled `main` locally (stashed this STATUS edit across the checkout, then restored it). No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.2 and `main` is the current branch). Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (push + open PR 9)
+- User chose "Push + open PR". Pushed `version-rule` (`3ceb856` 0.4.0, `9153159` 0.4.1) and opened [lab-kit#9](https://github.com/johnsonolly4/lab-kit/pull/9) into `main`. **Not merged.** No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.2)
+
+## Earlier session (commit settings freeze fix)
 - User chose "commit as 0.4.1". Ran the checks left open below: `npm test` 119 pass, `npm run lint` 0 errors / 4 warnings (same), `npm run build` clean. Bumped to 0.4.1 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed on `version-rule`. Not pushed, no PR
 
 ## Earlier session (settings freeze fix)
