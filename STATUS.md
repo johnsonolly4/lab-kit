@@ -1,8 +1,8 @@
 # Status
 
-**Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-7 are **merged into `main`** (PR 7 = Phases 3-5, merge commit `8596f5f`). The kit update system (Phases 1-5) is all in `main`. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). Local `main` is pulled. Current branch is **`store-prep`** (from `main`): one local commit with the author swap + README / tutorial disclosure, **not pushed, no PR yet**. `whats-new-popup` is finished (merged). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** push `store-prep` and open a PR (ask first), then the store release path (BACKLOG, Repo / release, "Community store submission checklist": check "Not yet tested" in Obsidian 1.13+ and once on mobile, `/release` 0.4.0, submit at community.obsidian.md). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Version:** 0.4.1 (plugin + kit; per-commit bump; TypeScript in `src/`)
+**Now:** PRs 1-8 are **merged into `main`** (PR 8 = store prep, merge commit `3883cff`). The kit update system (Phases 1-5), author swap and README privacy / mobile sections are all in `main`. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `store-prep` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** **you run [docs/obsidian-test-checklist.md](docs/obsidian-test-checklist.md)** in `test-vault/` (Obsidian 1.13+, then mobile), then send what broke via `/feedback`. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,29 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit docs + pull main)
+## Last session (commit settings freeze fix)
+- User chose "commit as 0.4.1". Ran the checks left open below: `npm test` 119 pass, `npm run lint` 0 errors / 4 warnings (same), `npm run build` clean. Bumped to 0.4.1 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed on `version-rule`. Not pushed, no PR
+
+## Earlier session (settings freeze fix)
+- Bug: opening Settings → Lab Kit in Obsidian 1.13.7 froze the settings window (resizing broke it, scrollbar dead, no console error, devtools profile never loaded). Bisected with a temporary `localStorage` switch (removed again): "Lab notebook" alone fine, "Snippet menu" froze
+- Cause (confirmed by the user's test, not by a stack trace): each Snippet menu icon row set its placeholder asynchronously after Obsidian had drawn it (`cachedRead(...).then(setPlaceholder)`). Fix in `src/kit/ui.ts`: `KitSettingTab.refreshSnippets()` reads the built-in icon names first (`builtInIcons`), then calls `update()`; rows set the placeholder synchronously. `KitController.setup` calls `refreshSnippets()` at layout ready instead of `update()`
+- Tested by the user in Obsidian 1.13.7: full settings page, no freeze. `npx tsc` clean. **Not run:** `npm test`, `npm run lint` (command was declined), `npm run build` after the final edit. **Not committed** (no version bump yet). Note: `npm run build` writes to the repo root, only `npm run dev` writes into `test-vault/`; the dev watcher was not running at first, which made round 1 of the bisect meaningless
+- Rest of the settings page is still unchecked: BACKLOG, "Not yet tested"
+
+## Earlier session (version rule)
+- User chose: **bump the version on every commit**, patch steps in 0.4.x (first commit after 0.3.0 = 0.4.0), rule in `CLAUDE.md` Hard rules ("Version bump on every commit"). Files that move: `package.json` (+ lock), `manifest.json`, `kit/kit-manifest.json` `version`, then `npm run kit:manifest`; `versions.json` stays release-only. The repo said 0.3.0 while the code was v0.4 work, which is why Obsidian showed "0.3" even on the new build. First bump done in the commit below (0.4.0; `kit/kit-manifest.json` per-file versions unchanged). `tests/updater.test.ts` hard-coded 0.3.0 and failed on the bump: now reads the version from `kit/kit-manifest.json`. `npm test`: 119 pass
+- Also this session: started `npm run dev` for `test-vault/` (user to open it in Obsidian and reload Lab Kit). Not committed. Open points (script for the bump, `/release` skill steps 1 and 4 still ask / bump): BACKLOG, "Community store submission checklist"
+
+## Earlier session (Obsidian test checklist)
+- User chose "test checklist for you". New `docs/obsidian-test-checklist.md`: 9 ordered sections (setup, settings, built-in kit, manage files, merge, Alt+S snippets, calc tables, header, what's new, mobile) built from BACKLOG "Not yet tested" and "Kit update system". Docs only: no code changed, tests not rerun, not committed. Nothing run in Obsidian. Not in the kit zip (`docs/` isn't packaged)
+
+## Earlier session (merge PR 8)
+- Merged [lab-kit#8](https://github.com/johnsonolly4/lab-kit/pull/8) into `main` (plain merge commit `3883cff`, branch not deleted; was clean and mergeable). Pulled `main` locally. No code changes, tests not rerun. Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (push + open PR 8)
+- User chose "Push + open PR". Pushed `store-prep` (`99b2bd9`) and opened lab-kit#8 into `main`. No code changes, tests not rerun
+
+## Earlier session (commit docs + pull main)
 - User chose "commit docs + pull main". Pulled `main` (fast-forward to `8596f5f`), made branch `store-prep`, committed the author swap (`manifest.json`, `package.json`, `LICENSE`), README "Privacy, network and files" + "Mobile", tutorial line, STATUS / BACKLOG. Not pushed, no PR. No code changed, tests not rerun (docs and metadata only)
 - Nothing new for BACKLOG; the open store checklist items stay there
 

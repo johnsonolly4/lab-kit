@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "kit": "lab-notebook-kit",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "date": "2026-10-02",
   "notes": [
     "Adds the kit updater (this window)",
