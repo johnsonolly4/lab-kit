@@ -1,18 +1,37 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-6 are **merged into `main`**. On local branch `whats-new-popup`, Phases 1-4 are committed and pushed; Phase 5 (frontmatter merge, renames, retired files) is committed and pushed too. No PR into `main` for Phases 1-5 yet. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** open a PR for Phases 1-5 into `main`, then the store release path (BACKLOG, Repo / release, "Community store submission checklist": pull `main`, check "Not yet tested" in Obsidian 1.13+, desktop-only vs Node `require`s, README file-access / no-network disclosure, `/release` 0.4.0, submit at community.obsidian.md). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Now:** PRs 1-7 are **merged into `main`** (PR 7 = Phases 3-5, merge commit `8596f5f`). The kit update system (Phases 1-5) is all in `main`. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). Local `main` is pulled. Current branch is **`store-prep`** (from `main`): one local commit with the author swap + README / tutorial disclosure, **not pushed, no PR yet**. `whats-new-popup` is finished (merged). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** push `store-prep` and open a PR (ask first), then the store release path (BACKLOG, Repo / release, "Community store submission checklist": check "Not yet tested" in Obsidian 1.13+ and once on mobile, `/release` 0.4.0, submit at community.obsidian.md). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
 - Solution prep vs Recipe by equivalents: merge or keep? (to discuss)
 - Analysis methods + machines in settings: design to agree
 - Sample creation workflow: to discuss
-- Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push Phase 5)
+## Last session (commit docs + pull main)
+- User chose "commit docs + pull main". Pulled `main` (fast-forward to `8596f5f`), made branch `store-prep`, committed the author swap (`manifest.json`, `package.json`, `LICENSE`), README "Privacy, network and files" + "Mobile", tutorial line, STATUS / BACKLOG. Not pushed, no PR. No code changed, tests not rerun (docs and metadata only)
+- Nothing new for BACKLOG; the open store checklist items stay there
+
+## Earlier session (author field)
+- User chose the author swap. "Lab Kit contributors" → `johnsonolly4` in `manifest.json:7`, `package.json:14`, `LICENSE:3`. `npm test`: 119 pass. No `authorUrl` / `fundingUrl` added (BACKLOG, Community store submission checklist). Not committed; `package-lock.json` has no author line
+
+## Earlier session (README disclosure)
+- User chose the docs-only task. `README.md`: new sections "Privacy, network and files" (no network, account, ads, telemetry or paid features; folder updater reads the update folder and checks it at startup unless "Check when Obsidian starts" is off; data-folder button creates and opens `<root>/<note name>`, desktop only) and "Mobile". `docs/tutorial.md` section 7: line that the plugin updates through Obsidian once listed. Claims checked against `src/` (no `fetch` / `requestUrl`; `Platform.isDesktopApp` guards)
+- No code changed, tests not rerun, changelog not touched (docs only). Not committed. **Mobile claims not verified on a device**; "Plugin name unique in the directory" check still open. Both in BACKLOG ("Community store submission checklist")
+
+## Earlier session (mobile / desktop-only decision)
+- User chose **keep `isDesktopOnly: false`**. Audited every Node `require` in `src/`: all are inside functions reached only behind `Platform.isDesktopApp` (or a try/catch for `kitHash`), so mobile loads without touching them. **No code changed**, tests not rerun. Not run on a phone or tablet, and the README doesn't mention mobile yet: both in BACKLOG ("Community store submission checklist")
+
+## Earlier session (merge PR 7)
+- Merged [lab-kit#7](https://github.com/johnsonolly4/lab-kit/pull/7) into `main` (plain merge commit `8596f5f`, branch not deleted; was clean and mergeable). No code changes, tests not rerun. Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (open PR 7)
+- Opened [lab-kit#7](https://github.com/johnsonolly4/lab-kit/pull/7) (`whats-new-popup` into `main`: Phases 3-5, commits `2312e25`, `4598efe`, `fb46130`). Found Phases 1-2 were already merged via PR 6. No code changes, tests not rerun. Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (commit + push Phase 5)
 - Committed Phase 5 (merge, rename and retired handling, tests, changelog, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun since the Phase 5 session (119 pass)
 
 ## Earlier session (kit update system, Phase 5)
