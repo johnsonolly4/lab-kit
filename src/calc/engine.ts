@@ -295,6 +295,7 @@ export class Workbook {
   blocks: ParsedBlock[];
   env: Env;
   byName = new Map<string, number>();
+  dupNames = new Set<string>();                // names used by more than one table
   memo = new Map<string, Value>();
   deps = new Map<string, Set<string>>();       // key -> Set of blank cell keys it depends on
   stack = new Set<string>();
@@ -303,11 +304,19 @@ export class Workbook {
   constructor(blocks: ParsedBlock[], env: Env = {}) {
     this.blocks = blocks;
     this.env = env;
-    blocks.forEach((b, i) => { if (b.name && !this.byName.has(b.name)) this.byName.set(b.name, i); });
+    blocks.forEach((b, i) => {
+      if (!b.name) return;
+      if (this.byName.has(b.name)) this.dupNames.add(b.name); else this.byName.set(b.name, i);
+    });
   }
+  isDuplicate(name: string | null): boolean { return name != null && this.dupNames.has(name); }
   blockIndex(name: string | null, selfIdx: number): number {
     if (name == null) return selfIdx;
+    if (this.dupNames.has(name)) return -1;
     return this.byName.has(name) ? this.byName.get(name)! : -1;
+  }
+  badTable(name: string | null): Value {
+    return ERR("#REF!", this.isDuplicate(name) ? `table name "${name}" is used by more than one table` : `no table named "${name}" in this note`);
   }
   cell(bi: number, r: number, c: number): Value {
     const key = `${bi}|${r}|${c}`;
@@ -366,12 +375,12 @@ export class Workbook {
       }
       case "ref": {
         const b = this.blockIndex(n.block, bi);
-        if (b < 0) return ERR("#REF!", `no table named "${n.block}" in this note`);
+        if (b < 0) return this.badTable(n.block);
         return this.cell(b, n.r, n.c);
       }
       case "range": {
         const b = this.blockIndex(n.block, bi);
-        if (b < 0) return ERR("#REF!", `no table named "${n.block}" in this note`);
+        if (b < 0) return this.badTable(n.block);
         const out: Value[] = [];
         for (let rr = n.r1; rr <= n.r2; rr++) for (let cc = n.c1; cc <= n.c2; cc++) out.push(this.cell(b, rr, cc));
         return out;
@@ -419,6 +428,7 @@ export class Workbook {
         if (isErr(v)) return v;
         if (v == null || v === "") return A[3] ? this.scalar(A[3], bi, r, c) : ERR("#N/A", "nothing to look up");
         const look = this.evalNode(A[1], bi, r, c);
+        if (isErr(look)) return look;
         const arr = Array.isArray(look) ? look : [look];
         const i = arr.findIndex(x => typeof v === "number" ? x === v : sameText(x, v));
         if (i < 0) return A[3] ? this.scalar(A[3], bi, r, c) : ERR("#N/A", `"${cleanLink(v)}" not found`);
@@ -447,7 +457,7 @@ export class Workbook {
   pick(node: Node, i: number, bi: number, r: number, c: number): Value {
     if (node.t !== "range") { const v = this.evalNode(node, bi, r, c); return Array.isArray(v) ? (v[i] ?? ERR("#REF!")) : (i === 0 ? v : ERR("#REF!")); }
     const b = this.blockIndex(node.block, bi);
-    if (b < 0) return ERR("#REF!");
+    if (b < 0) return this.badTable(node.block);
     const w = node.c2 - node.c1 + 1;
     const rr = node.r1 + Math.floor(i / w), cc = node.c1 + (i % w);
     if (rr > node.r2 || i < 0) return ERR("#REF!");

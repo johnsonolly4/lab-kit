@@ -5,7 +5,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 ## v0.4 bugs (do first)
 - [x] **Hazard header stutters** (done: `lab-header` block in `src/header/`, chips + table layouts via setting; untested in Obsidian yet): the Dataview script re-runs on every vault change. Move header + hazards into the plugin (`src/header/`); re-render only when this note's Chemicals or a linked chemical note changes. Also make it more compact (proposal: one row per chemical, H-code chips).
 - [x] **Cross-table refs fail when the referenced table is the second in the note**: cause was in the snippets, not the engine. They looked up tables by exact name (`samples`, `nmr`), so `samples2` / `nmr2` were missed. Fixed in `labSnippets.js` (tests: `tests/snippets-multi.test.ts`). The calc engine and renderer were fine (`tests/crossref.test.ts`)
-- [ ] Duplicate table names: warn on both tables and make refs to the shared name `#REF!` instead of silently using the first (user chose this; not the cause of the bug above, still wanted)
+- [x] Duplicate table names: warn on both tables and make refs to the shared name `#REF!` instead of silently using the first (done: `Workbook.dupNames` in `src/calc/engine.ts`, warning in `src/calc/render.ts`, tests in `tests/duplicate-names.test.ts`; not checked inside Obsidian yet)
 - [x] **NMR/GPC/DLS don't pick up codes from `samples2`**: fixed with the item above (codes now come from `samples`, `sample`, `samples2`… combined).
 - [ ] **Tutorial renders as Dataview errors**: inline code starting with `=` is a Dataview inline query. Write formulas without a leading `=` in inline code, or use code blocks.
 - [ ] **Click-to-edit**: the cell widens while editing (keep the width fixed); moving from one cell to another takes two clicks (make it one).
@@ -52,3 +52,5 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 ## Not yet tested by the user
 - Excel → calc converter (`kit/Extras/scripts/excel_to_calc.py`)
 - Updater change preview
+- [ ] Duplicate table name warning inside Obsidian: two tables with the same `name:` show the red warning, refs give `#REF!` (`src/calc/render.ts` caption, `styles.css` `.lab-kit-warn`)
+- [ ] Snippet scripts (`kit/Extras/scripts/templater/labSnippets.js`) still union tables by name and know nothing about duplicate names; check what a duplicated `samples` does there
