@@ -76,3 +76,27 @@ describe("engine", () => {
     assert.strictEqual(shiftRelative('=IF(B2="B2","B2",B2)', 1), '=IF(B3="B2","B2",B3)');
   });
 });
+
+describe("duplicate table names", () => {
+  const DUP = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | =A2*3 |\n```\n```calc\nname: A \n| P | Q |\n|---|---|\n| 5 | 6 |\n```\n```calc\nname: c\n| M | N |\n|---|---|\n| 1 | =a!B2 |\n| 2 | =SUM(a!A2:B2) |\n| 3 | =XLOOKUP(3, a!A2:A2, a!B2:B2) |\n```";
+  it("refs to a shared name are #REF! with a clear message", () => {
+    const { g } = wbOf(DUP);
+    for (const addr of ["B2", "B3", "B4"]) {
+      const v = g(2, addr);
+      assert.strictEqual(v.err, "#REF!", addr);
+      assert.match(v.msg, /more than one table/);
+    }
+  });
+  it("names differing only by case or spaces count as duplicates", () => {
+    const { wb } = wbOf(DUP);
+    assert.ok(wb.isDuplicate("a")); assert.ok(!wb.isDuplicate("c")); assert.ok(!wb.isDuplicate(null));
+  });
+  it("a duplicated table still evaluates its own cells; unique names still resolve", () => {
+    const { g } = wbOf(DUP.replace("=a!B2", "=A2*0+7"));
+    close(g(0, "B2"), 6); close(g(2, "B2"), 7);
+  });
+  it("a missing name keeps the old message", () => {
+    const { g } = wbOf("```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | =zz!A2 |\n```");
+    assert.match(g(0, "B2").msg, /no table named "zz"/);
+  });
+});

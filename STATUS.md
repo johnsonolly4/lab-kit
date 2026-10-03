@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** `lab-calc` → `lab-kit` id migration **committed** (`cad79f3`), plus the CLAUDE.md BACKLOG-step rule (`1f8156f`). Commits from `22ac9c6` on are still unpushed. `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Candidates: the duplicate-name warning, the changelog popup, or the next v0.4 bug (tutorial renders as Dataview errors). Push when ready.
+**Now:** duplicate-name warning **built, tested, not committed** (see Last session). Commits from `22ac9c6` on are still unpushed. `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** user's call. Candidates: the changelog popup, the next v0.4 bug (tutorial renders as Dataview errors), or fixing `npm run lint`. Commit + push when ready.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,8 +12,15 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (commit only)
-- Committed the id migration and the CLAUDE.md change as two commits. No code changes, tests not rerun. Nothing pushed. Nothing new for BACKLOG.md
+## Last session (duplicate table names)
+- Two `calc` tables with the same `name:` now both show a red "⚠ name used twice" in the caption; name-qualified refs to that name give `#REF!` ("table name "x" is used by more than one table"). Own unqualified refs still work
+- `src/calc/engine.ts`: `Workbook.dupNames`, `isDuplicate()`, `badTable()`; `blockIndex` returns -1 for duplicates. `src/calc/render.ts`: no longer drops same-named blocks from the workbook (old filter hid duplicates); with `getSectionInfo` null only the first block equal to this one's source is dropped. `styles.css`: `.lab-kit-warn`
+- Side effect: XLOOKUP now returns an error in its lookup range (was a silent `#N/A`), so a missing / duplicate table there shows `#REF!`
+- Tests in a new file `tests/duplicate-names.test.ts` (not `crossref.test.ts` as planned; that file has CRLF endings and was awkward to append to) plus 4 in `tests/engine.test.ts`. `npm test`: 50 pass; `npm run build` clean. Known answers hold
+- Not verified inside Obsidian; snippet scripts untouched: both in BACKLOG.md (Not yet tested). Changelog line added under Unreleased
+
+## Earlier session (commit only)
+- Committed the id migration and the CLAUDE.md change as two commits. No code changes, tests not rerun. Nothing pushed
 
 ## Earlier session (id migration)
 - User chose **start fresh**: no `data.json` copy (it lives inside the plugin folder, so the old folder's settings and updater record are not carried over; delete the old folder, re-enter the Update folder) and **rename CSS classes**

@@ -81,10 +81,10 @@ export class CalcRenderer {
       const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
       const text = fileText ?? (file ? await this.app.vault.cachedRead(file as TFile) : "");
       const info = ctx.getSectionInfo(el);
-      others = extractBlocks(text)
-        .filter(b => !info || b.lineStart !== info.lineStart)
-        .map(b => parseBlock(b.source))
-        .filter(b => !self.name || b.name !== self.name);
+      const blocks = extractBlocks(text);
+      // Without section info, drop only the first block that is this one (not every same-named block).
+      const selfAt = info ? blocks.findIndex(b => b.lineStart === info.lineStart) : blocks.findIndex(b => b.source === entry.source);
+      others = blocks.filter((_, i) => i !== selfAt).map(b => parseBlock(b.source));
     } catch (e) { /* evaluate on its own */ }
     const wb = new Workbook([self, ...others], this.env(ctx.sourcePath));
     const opts = self.opts;
@@ -100,6 +100,12 @@ export class CalcRenderer {
     if (svg) ic.appendChild(svg);
     cap.createSpan({ cls: "lab-kit-title", text: opts.title || opts.name || "Calculation" });
     if (self.name) cap.createEl("code", { cls: "lab-kit-name", text: self.name });
+    if (wb.isDuplicate(self.name)) {
+      cap.createSpan({
+        cls: "lab-kit-warn", text: "⚠ name used twice",
+        attr: { title: `Another table in this note is also named "${self.name}". Rename one, or references to it show #REF!` }
+      });
+    }
     const tools = cap.createSpan({ cls: "lab-kit-tools" });
     const mkBtn = (text: string, label: string): HTMLButtonElement => tools.createEl("button", { cls: "lab-kit-btn", text, attr: { "aria-label": label } });
     const addBtn = mkBtn("+ Row", "Add a row (formulas fill down)");
