@@ -149,7 +149,7 @@ ${calc({ name: id, title: "DLS samples", icon: "sparkles", copy: "column A" }, [
 ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
   };
   const techToggles = [
-    { type: "heading", label: "Also add" },
+    { type: "heading", label: "Also add (appended below)" },
     { key: "nmr", label: "NMR sample list", type: "toggle", value: false },
     { key: "gpc", label: "GPC sample list", type: "toggle", value: false },
     { key: "dls", label: "DLS sample list", type: "toggle", value: false },

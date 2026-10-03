@@ -75,6 +75,15 @@ describe("empty defaults", () => {
     }
   });
 
+  it("sample list and timetable label the technique toggles as appended below", async () => {
+    const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "ABC" } }) });
+    for (const key of ["samples", "timetable"]) {
+      await h.run(key, { codes: "ABC0014-A", times: "0" });
+      const heading = h.fields[key].find(f => f.type === "heading" && /Also add/.test(f.label));
+      assert.strictEqual(heading?.label, "Also add (appended below)", key);
+    }
+  });
+
   it("NMR dataset is empty by default, in the snippet and in the sample list", async () => {
     const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "ABC" } }) });
     const md = await h.run("nmr", { codes: "ABC0014-A" });

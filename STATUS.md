@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PR 1 (duplicate-name warning) and PR 2 (What's new popup) are both merged into `main` (merge commits `a4cd160`, `25c0dcb`). Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** push `whats-new-popup` (commit `4e48915` is local only; PRs 1 and 2 are already merged, so decide: new PR or merge straight to `main`); then v0.4 items (sample-list toggle label, snippet icons); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested).
+**Now:** PRs 1, 2 and 3 are merged into `main` ([lab-kit#3](https://github.com/johnsonolly4/lab-kit/pull/3) = settings definitions API + lint decisions). None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** merge [lab-kit#4](https://github.com/johnsonolly4/lab-kit/pull/4) (`174ea6f`, toggle label) into `main`; then v0.4 items (snippet icons, other open quick changes in BACKLOG); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,23 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit settings API + lint decisions)
+## Last session (open PR 4)
+- Opened [lab-kit#4](https://github.com/johnsonolly4/lab-kit/pull/4) (`whats-new-popup` into `main`, only `174ea6f`). Not merged. No code changes, tests not rerun. `test-vault/` hand copies left untracked on purpose
+
+## Earlier session (commit + push toggle label)
+- Committed `174ea6f` (toggle label, its test, changelog, STATUS/BACKLOG) and pushed to `whats-new-popup`. PR 3 was already merged, so this commit is **not in `main` yet** (needs a new PR or merge). `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+
+## Earlier session (sample-list toggle label)
+- Toggle heading in `kit/Extras/scripts/templater/labSnippets.js:152` (`techToggles`) is now "Also add (appended below)"; it shows in the sample list and timetable forms. New test in `tests/snippets-defaults.test.ts`; changelog line added; `kit-manifest.json` unchanged on regeneration
+- `npm test`: 60 pass. Not committed. Not seen in Obsidian, `test-vault/` copy of the script is stale (BACKLOG, v0.4 quick changes)
+
+## Earlier session (merge PR 3)
+- Merged PR 3 into `main` (plain merge commit, branch not deleted). No code changes, tests not rerun. Local `main` not pulled; local branch is still `whats-new-popup`
+
+## Earlier session (push + PR 3)
+- Pushed `whats-new-popup` (`4e48915`, `56a6646`) and opened PR 3 against `main`. No code changes, tests not rerun. Local `main` still not pulled
+
+## Earlier session (commit settings API + lint decisions)
 - Committed `4e48915` on `whats-new-popup` (settings definitions API, lint decisions, `minAppVersion` 1.13.0, reference doc). Not pushed. `test-vault/` hand copies left untracked on purpose. `npm test`: 59 pass; `npm run lint`: 0 errors, 4 warnings. No code changes
 
 ## Earlier session (settings definitions API)
