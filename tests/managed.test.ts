@@ -166,7 +166,7 @@ describe("per-file actions (Manage kit files)", () => {
     v.files["Extras/scripts/templater/snip.js"] = "my edit\n";
     state.files["script-config"].detached = true;
     const labels = (await planManaged(v, V2, state, roles)).map(i => statusOf(i).label);
-    expect(labels).toEqual(["Missing", "Changed by you and the kit", "Changed by you", "Detached"]);
+    expect(labels).toEqual(["Missing", "Conflict", "Changed by you", "Detached"]);
     expect(statusOf(by(await planManaged(memVault({ "Templates/Menu.md": "menu v1\n" }), V1, null, roles), "tpl-menu")).label).toBe("Up to date");
     expect(statusOf(by(await planManaged(memVault(), V1, null, roles), "tpl-menu")).label).toBe("New");
   });
@@ -235,6 +235,71 @@ describe("per-file actions (Manage kit files)", () => {
     expect(by(await planManaged(v, V2, state, roles), "tpl-menu").action).toBe("fast-forward");
     expect(setDetached(state, "nope", true)).toBe(false);
     expect(setDetached(null, "tpl-menu", true)).toBe(false);
+  });
+});
+
+describe("three-way merge", () => {
+  const plan = (v: ReturnType<typeof memVault>, state: Awaited<ReturnType<typeof install>>["state"], k = V2) => planManaged(v, k, state, roles, null, opts.baseDir);
+
+  it("plans a clean merge when your edit and the kit's don't overlap, and writes nothing", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1 mine\nline 2\nline 3\n";
+    const before = { ...v.files };
+    const item = by(await plan(v, state), "tpl-book");
+    expect(item.action).toBe("merge");
+    expect(item.merged).toBe("line 1 mine\nline 2\nline 3 changed by kit\n");
+    expect(v.files).toEqual(before);
+    expect(statusOf(item).label).toBe("Merges cleanly");
+  });
+
+  it("does not merge in the safe default selection", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1 mine\nline 2\nline 3\n";
+    const out = await applyManaged(v, V2, await plan(v, state), state, opts);
+    expect(v.files["Templates/Book.md"]).toBe("line 1 mine\nline 2\nline 3\n");
+    expect(out.results.find(r => r.id === "tpl-book")!.outcome).toBe("skipped");
+  });
+
+  it("writes the merge when selected: backs up your copy, base becomes the kit text, status 'Merged'", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1 mine\nline 2\nline 3\n";
+    const out = await applyManaged(v, V2, await plan(v, state), state, { ...opts, select: it => it.action === "merge" });
+    expect(v.files["Templates/Book.md"]).toBe("line 1 mine\nline 2\nline 3 changed by kit\n");
+    expect(v.files["Backups/2026-10-03T12-00-00-000Z/Templates/Book.md"]).toBe("line 1 mine\nline 2\nline 3\n");
+    expect(v.files[".obsidian/plugins/lab-kit/kit-base/tpl-book.txt"]).toBe("line 1\nline 2\nline 3 changed by kit\n");
+    expect(out.results.find(r => r.id === "tpl-book")).toMatchObject({ outcome: "merged" });
+    expect(out.state.files["tpl-book"]).toMatchObject({ merged: true, installedHash: await kitSha256("line 1\nline 2\nline 3 changed by kit\n") });
+    const after = by(await plan(v, out.state), "tpl-book");
+    expect(after.action).toBe("user-modified");                       // your edit still differs from the kit
+    expect(statusOf(after, out.state.files["tpl-book"]).label).toBe("Merged");
+  });
+
+  it("leaves a real conflict untouched and counts it", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1\nline 2\nline 3 mine\n";
+    const item = by(await plan(v, state), "tpl-book");
+    expect(item).toMatchObject({ action: "needs-merge", conflicts: 1 });
+    expect(statusOf(item).label).toBe("Conflict");
+    const out = await applyManaged(v, V2, [item], state, { ...opts, select: () => true });
+    expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3 mine\n");
+    expect(out.results[0].outcome).toBe("skipped");
+  });
+
+  it("stays needs-merge when there is no base copy", async () => {
+    const v = memVault(); const { state } = await install(v);
+    delete v.files[".obsidian/plugins/lab-kit/kit-base/tpl-book.txt"];
+    v.files["Templates/Book.md"] = "line 1 mine\nline 2\nline 3\n";
+    const item = by(await plan(v, state), "tpl-book");
+    expect(item.action).toBe("needs-merge");
+    expect(item.conflicts).toBeUndefined();
+  });
+
+  it("can still restore the kit original instead of merging", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1 mine\nline 2\nline 3\n";
+    const out = await restoreManaged(v, by(await plan(v, state), "tpl-book"), state, opts);
+    expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3 changed by kit\n");
+    expect(out.state.files["tpl-book"].merged).toBeUndefined();
   });
 });
 

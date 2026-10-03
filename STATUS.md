@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** Kit update system **Phase 2 (core) is committed and pushed** on `whats-new-popup` (Manage kit files window + CSS snippet switch). Phase 1 is committed and pushed; PRs 1-5 are merged into `main`; snippet icons `3d0a08e`, `b970d7f` and Phase 1 `fc983ad` are in open PR 6 (mergeable). None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** the store release path (BACKLOG, Repo / release, "Community store submission checklist"): PR 6 is open, so merge it (user's call), pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, `/release` 0.4.0, submit at community.obsidian.md. Kit update system phases 2-5: BACKLOG, "Kit update system". Local `main` not pulled; local branch is `whats-new-popup`.
+**Now:** PRs 1-6 are **merged into `main`**. On local branch `whats-new-popup` there is **uncommitted** work: kit update **Phase 3 (three-way auto-merge)**. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** commit + push Phase 3 (new PR, since `main` has PR 6 only), then Phase 4 (merge modal) or the store release path (BACKLOG, Repo / release, "Community store submission checklist": pull `main`, check "Not yet tested" in Obsidian 1.13+, desktop-only vs Node `require`s, README file-access / no-network disclosure, `/release` 0.4.0, submit at community.obsidian.md). Remaining phases: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,17 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push Phase 2)
+## Last session (kit update system, Phase 3)
+- User chose: clean merges are written only when ticked in the Review window / per-file button (**"Update all safe files" never merges**), library `node-diff3` (devDependency, bundled). Spec: `~/Downloads/kit-update-system-spec.md`
+- `src/kit/merge.ts` (new): `merge3(base, ours, theirs)` → clean text or a conflict count, never markers, keeps CRLF and ignores a BOM. `src/kit/managed.ts`: `planManaged(..., baseDir)` gives action `merge` (`item.merged`) or `needs-merge` (`item.conflicts`; no base copy = `needs-merge`); `applyManaged` writes a selected `merge` after a backup, base copy = kit text, state `merged: true`; `statusOf(item, st)` labels "Merges cleanly" / "Conflict" / "Merged"; `merge` is restorable
+- `src/kit/managed-ui.ts`: Review window group with tick boxes (default ticked, "please test" on scripts), conflict group renamed, "Merge" button in Manage files, "Merged" group + script warning in the report. `tsconfig.json` `moduleResolution` `node` → `bundler` (the only way `tsc` resolved `node-diff3` types)
+- `tests/merge.test.ts` (6) + 6 in `tests/managed.test.ts`. `npm test`: 97 pass; `npm run build` clean; lint 0 errors, 4 warnings (same). Changelog line added; tutorial doesn't mention merging, unchanged. **Not seen in Obsidian**; the windows have no automated test. Left out and open points: BACKLOG, "Kit update system" and "Not yet tested". Not committed
+- Note: reading `node_modules` was denied, so the `diff3Merge` API (`{ok}` / `{conflict}` regions, args ours / base / theirs) was written from memory and confirmed by the tests
+
+## Earlier session (merge PR 6)
+- Merged [lab-kit#6](https://github.com/johnsonolly4/lab-kit/pull/6) into `main` (plain merge commit `23f1f4f`, branch not deleted; was mergeable, no CI checks configured). No code changes, tests not rerun. Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (commit + push Phase 2)
 - Committed Phase 2 (Manage kit files window, snippet switch, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed; it joins open PR 6. `test-vault/` hand copies left untracked on purpose. `npm test`: 85 pass. No code changes
 
 ## Earlier session (kit update system, Phase 2)

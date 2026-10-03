@@ -3,7 +3,7 @@
 import { Modal, Notice, Platform, Setting, type App, type Plugin } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, planManaged, restoreManaged, setDetached, statusOf,
-  type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedItem, type ManagedResult
+  type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult
 } from "./managed";
 import { cssSnippetsSupported, isCssSnippetEnabled, setCssSnippets } from "./obsidian-private";
 import { kitCompare, kitDetectRoles, kitHash, kitJoin, type KitData, type KitRecord, type Roles } from "./updater";
@@ -15,6 +15,7 @@ export class KitManaged {
 
   get app(): App { return this.plugin.app; }
   get version(): string { return this.bundle.manifest.kitVersion; }
+  stateOf(id: string): ManagedFileState | undefined { return this.host.kit.managed?.files[id]; }
   get installedVersion(): string | null { return this.host.kit.managed?.installedKitVersion ?? null; }
   updateAvailable(): boolean { const i = this.installedVersion; return i !== null && kitCompare(this.version, i) > 0; }
 
@@ -37,7 +38,7 @@ export class KitManaged {
   }
 
   plan(): Promise<ManagedItem[]> {
-    return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy());
+    return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy(), this.baseDir());
   }
 
   private applyOptions(extra: Partial<ApplyOptions> = {}): ApplyOptions {
@@ -60,11 +61,11 @@ export class KitManaged {
     if (!left) m.installedKitVersion = this.version;
   }
 
-  /** Install / update / recreate ONE file. */
+  /** Install / update / recreate / merge ONE file. */
   async updateOne(id: string): Promise<ManagedResult[]> {
     const kit = this.host.kit;
     const items = await this.plan();
-    const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing");
+    const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge");
     const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true }));
     kit.managed = out.state;
     await this.settleVersion();
@@ -116,7 +117,8 @@ export class KitManaged {
 }
 
 const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
-  { action: "needs-merge", title: "Changed by you and by the kit (left untouched; merging comes later)", open: true },
+  { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; the merge window comes later)", open: true },
+  { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
   { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "missing", title: "Deleted by you (tick to recreate)", open: true },
   { action: "create", title: "New files", open: true },
@@ -130,6 +132,8 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
 class KitManagedModal extends Modal {
   private items: ManagedItem[] = [];
   private recreate = new Set<string>();
+  /** Clean merges are ticked by default; ids here were unticked. */
+  private noMerge = new Set<string>();
 
   constructor(app: App, private managed: KitManaged) { super(app); }
 
@@ -149,7 +153,7 @@ class KitManagedModal extends Modal {
       text: inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply." });
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
     new Setting(contentEl).setName("Changes").setDesc(
-      `${count("create")} new · ${count("fast-forward")} updated · ${count("needs-merge") + count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
+      `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
 
     for (const g of GROUPS) {
       const group = this.items.filter(i => i.action === g.action);
@@ -166,8 +170,16 @@ class KitManagedModal extends Modal {
           cb.addEventListener("change", () => { if (cb.checked) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); this.render(); });
           li.appendText(" recreate ");
         }
+        if (g.action === "merge") {
+          const cb = li.createEl("input", { attr: { type: "checkbox" } });
+          cb.checked = !this.noMerge.has(it.file.id);
+          cb.addEventListener("change", () => { if (cb.checked) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); this.render(); });
+          li.appendText(" merge ");
+        }
         li.createEl("code", { text: it.dest });
         if (it.untracked && (g.action === "user-modified")) li.appendText(" (not installed by the kit, no original to compare with)");
+        if (g.action === "needs-merge" && it.conflicts === undefined) li.appendText(" (no original copy to merge with)");
+        if (g.action === "merge" && it.file.kind === "script") li.appendText(" (merged code: please test it)");
       }
     }
 
@@ -178,14 +190,16 @@ class KitManagedModal extends Modal {
         .onClick(() => void this.apply()));
   }
 
-  private select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action) || (it.action === "missing" && this.recreate.has(it.file.id));
+  private select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action)
+    || (it.action === "missing" && this.recreate.has(it.file.id))
+    || (it.action === "merge" && !this.noMerge.has(it.file.id));
   private writes(): number { return this.items.filter(i => this.select(i) && i.action !== "up-to-date").length; }
 
   private async apply(): Promise<void> {
     try {
       const results = await this.managed.apply(this.items, this.select);
       this.close();
-      new KitReportModal(this.app, results).open();
+      new KitReportModal(this.app, results, new Set(this.items.filter(i => i.file.kind === "script").map(i => i.file.id))).open();
     } catch (e) { this.managed.failed(e); }
   }
 
@@ -237,15 +251,16 @@ class KitFilesModal extends Modal {
     this.snippetSwitch(contentEl);
     const ordered = [...this.items].sort((a, b) => a.dest.localeCompare(b.dest, undefined, { numeric: true }));
     for (const it of ordered) {
-      const status = statusOf(it);
+      const id = it.file.id;
+      const status = statusOf(it, this.managed.stateOf(id));
       const row = new Setting(contentEl).setName(it.dest);
       row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
-      const id = it.file.id;
-      if (it.action === "create" || it.action === "fast-forward" || it.action === "missing") {
-        const text = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : "Recreate";
+      if (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge") {
+        const text = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : it.action === "merge" ? "Merge" : "Recreate";
         row.addButton(b => b.setButtonText(text).setCta().onClick(() => void this.run(() => this.managed.updateOne(id))));
+        if (it.action === "merge" && it.file.kind === "script") row.setDesc("Merged code: please test it. Your copy is backed up first.");
       }
-      if (it.action === "user-modified" || it.action === "needs-merge") {
+      if (it.action === "user-modified" || it.action === "merge" || it.action === "needs-merge") {
         row.addButton(b => b.setButtonText("Restore kit original").onClick(() => {
           new ConfirmModal(this.app, "Restore the kit's copy?", `${it.dest} goes back to the kit's version. Your copy is saved in the backup folder first.`,
             "Restore", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
@@ -267,21 +282,24 @@ class KitFilesModal extends Modal {
 
 /** What a run did: counts and a file list. */
 class KitReportModal extends Modal {
-  constructor(app: App, private results: ManagedResult[]) { super(app); }
+  constructor(app: App, private results: ManagedResult[], private scripts: Set<string> = new Set()) { super(app); }
 
   onOpen(): void {
     const { contentEl, results } = this;
     this.titleEl.setText("Kit update report");
     contentEl.addClass("lab-kit-modal");
     const n = (o: ManagedResult["outcome"]): number => results.filter(r => r.outcome === o).length;
-    contentEl.createEl("p", { text: `${n("created")} created · ${n("updated")} updated · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
-    const order: ManagedResult["outcome"][] = ["created", "updated", "adopted", "skipped"];
-    const names = { created: "Created", updated: "Updated", adopted: "Already up to date", skipped: "Left alone" };
+    contentEl.createEl("p", { text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
+    if (results.some(r => r.outcome === "merged" && this.scripts.has(r.id))) {
+      contentEl.createEl("p", { text: "Merged scripts combine your edits with the kit's code. Please test them.", cls: "mod-warning" });
+    }
+    const order: ManagedResult["outcome"][] = ["created", "updated", "merged", "adopted", "skipped"];
+    const names = { created: "Created", updated: "Updated", merged: "Merged", adopted: "Already up to date", skipped: "Left alone" };
     for (const o of order) {
       const group = results.filter(r => r.outcome === o);
       if (!group.length) continue;
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
-      det.open = o === "created" || o === "updated" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
+      det.open = o === "created" || o === "updated" || o === "merged" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
       det.createEl("summary", { text: `${names[o]} (${group.length})` });
       const ul = det.createEl("ul");
       for (const r of group) {
