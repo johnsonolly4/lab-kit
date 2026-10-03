@@ -1,0 +1,227 @@
+{
+  "kit": "lab-notebook-kit",
+  "version": "0.3.0",
+  "date": "2026-10-02",
+  "notes": [
+    "Adds the kit updater (this window)",
+    "Includes everything from v0.2: calc tables 1.1, 13 snippets with forms, template changes, tutorial",
+    "Removes the v0.1 snippets and tabs-mermaid-scroll.css"
+  ],
+  "rewrite": {
+    "Extras/scripts": "scripts"
+  },
+  "files": [
+    {
+      "src": ".obsidian/snippets/scrolling-mermaid.css",
+      "role": "cssSnippets",
+      "path": "scrolling-mermaid.css"
+    },
+    {
+      "src": "Extras/scripts/excel_to_calc.py",
+      "role": "scripts",
+      "path": "excel_to_calc.py"
+    },
+    {
+      "src": "Extras/scripts/hazards/view.js",
+      "role": "scripts",
+      "path": "hazards/view.js"
+    },
+    {
+      "src": "Extras/scripts/lab-config.json",
+      "role": "scripts",
+      "path": "lab-config.json",
+      "policy": "keep"
+    },
+    {
+      "src": "Extras/scripts/lab-header/view.js",
+      "role": "scripts",
+      "path": "lab-header/view.js"
+    },
+    {
+      "src": "Templates/Insert snippet.md",
+      "role": "templates",
+      "path": "Insert snippet.md"
+    },
+    {
+      "src": "Templates/Lab Book Template.md",
+      "role": "templates",
+      "path": "Lab Book Template.md"
+    },
+    {
+      "src": "Templates/Snippets/01 Solution prep.md",
+      "role": "templates",
+      "path": "Snippets/01 Solution prep.md"
+    },
+    {
+      "src": "Templates/Snippets/02 Recipe by equivalents.md",
+      "role": "templates",
+      "path": "Snippets/02 Recipe by equivalents.md"
+    },
+    {
+      "src": "Templates/Snippets/03 RAFT recipe generator.md",
+      "role": "templates",
+      "path": "Snippets/03 RAFT recipe generator.md"
+    },
+    {
+      "src": "Templates/Snippets/04 Variant naming matrix.md",
+      "role": "templates",
+      "path": "Snippets/04 Variant naming matrix.md"
+    },
+    {
+      "src": "Templates/Snippets/05 Sample list.md",
+      "role": "templates",
+      "path": "Snippets/05 Sample list.md"
+    },
+    {
+      "src": "Templates/Snippets/06 Sampling timetable.md",
+      "role": "templates",
+      "path": "Snippets/06 Sampling timetable.md"
+    },
+    {
+      "src": "Templates/Snippets/07 NMR samples.md",
+      "role": "templates",
+      "path": "Snippets/07 NMR samples.md"
+    },
+    {
+      "src": "Templates/Snippets/08 GPC samples.md",
+      "role": "templates",
+      "path": "Snippets/08 GPC samples.md"
+    },
+    {
+      "src": "Templates/Snippets/09 DLS samples.md",
+      "role": "templates",
+      "path": "Snippets/09 DLS samples.md"
+    },
+    {
+      "src": "Templates/Snippets/10 Combined results.md",
+      "role": "templates",
+      "path": "Snippets/10 Combined results.md"
+    },
+    {
+      "src": "Templates/Snippets/11 Flow column prep.md",
+      "role": "templates",
+      "path": "Snippets/11 Flow column prep.md"
+    },
+    {
+      "src": "Templates/Snippets/12 Residence times.md",
+      "role": "templates",
+      "path": "Snippets/12 Residence times.md"
+    },
+    {
+      "src": "Templates/Snippets/13 Blank calc table.md",
+      "role": "templates",
+      "path": "Snippets/13 Blank calc table.md"
+    },
+    {
+      "src": "Extras/scripts/templater/labForm.js",
+      "role": "userScripts",
+      "path": "labForm.js"
+    },
+    {
+      "src": "Extras/scripts/templater/labPick.js",
+      "role": "userScripts",
+      "path": "labPick.js"
+    },
+    {
+      "src": "Extras/scripts/templater/labSnippets.js",
+      "role": "userScripts",
+      "path": "labSnippets.js"
+    },
+    {
+      "src": ".obsidian/plugins/lab-calc/main.js",
+      "role": "plugin",
+      "path": "main.js"
+    },
+    {
+      "src": ".obsidian/plugins/lab-calc/manifest.json",
+      "role": "plugin",
+      "path": "manifest.json"
+    },
+    {
+      "src": ".obsidian/plugins/lab-calc/styles.css",
+      "role": "plugin",
+      "path": "styles.css"
+    },
+    {
+      "src": "Lab notebook kit - tutorial.md",
+      "role": "docs",
+      "path": "Lab notebook kit - tutorial.md"
+    },
+    {
+      "src": "Lab notebook kit - changelog.md",
+      "role": "docs",
+      "path": "Lab notebook kit - changelog.md"
+    }
+  ],
+  "delete": [
+    {
+      "role": "templates",
+      "path": "Snippets/01 🧪 Solution prep.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/02 ⚖️ Recipe by equivalents.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/03 ⚗️ RAFT recipe.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/04 🏷️ Sample coding grid.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/05 ⏱️ Sampling timetable.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/06 🧲 NMR samples.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/07 📈 GPC samples.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/08 🌊 Flow column + residence times.md"
+    },
+    {
+      "role": "templates",
+      "path": "Snippets/09 🧮 Blank calc table.md"
+    },
+    {
+      "role": "cssSnippets",
+      "path": "tabs-mermaid-scroll.css"
+    },
+    {
+      "role": "scripts",
+      "path": "data-roots.json"
+    },
+    {
+      "role": "docs",
+      "path": "Lab notebook kit - update to v0.2.md"
+    },
+    {
+      "role": "docs",
+      "path": "Lab notebook kit - setup.md"
+    },
+    {
+      "role": "docs",
+      "path": "Calc demo.md"
+    }
+  ],
+  "templater": {
+    "userScripts": true
+  },
+  "enableCss": [
+    "scrolling-mermaid.css"
+  ],
+  "disableCss": [
+    "tabs-mermaid-scroll.css"
+  ],
+  "openAfter": {
+    "role": "docs",
+    "path": "Lab notebook kit - update to v0.3.md"
+  }
+}

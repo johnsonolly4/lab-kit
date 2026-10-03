@@ -1,0 +1,11 @@
+node_modules/
+main.js
+*.js.map
+dist/
+data.json
+.DS_Store
+# dev vault: keep the notes, ignore Obsidian's own state and the built plugin
+test-vault/.obsidian/*
+!test-vault/.obsidian/.gitkeep
+CLAUDE.local.md
+.claude/settings.local.json

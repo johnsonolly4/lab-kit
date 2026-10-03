@@ -1,0 +1,25 @@
+{
+  "name": "lab-kit",
+  "version": "0.3.0",
+  "description": "Live calculation tables, lab snippet forms and a hazard header for a chemistry lab notebook.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "vitest run --reporter=dot",
+    "test:legacy": "node tests/legacy/run-all.js",
+    "lint": "eslint src",
+    "kit:manifest": "node scripts/kit-manifest.mjs"
+  },
+  "author": "Lab Kit contributors",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "builtin-modules": "^3.3.0",
+    "esbuild": "^0.24.0",
+    "obsidian": "latest",
+    "tslib": "^2.6.0",
+    "typescript": "^5.4.0",
+    "vitest": "^2.0.0"
+  }
+}

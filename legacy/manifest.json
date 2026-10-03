@@ -1,0 +1,9 @@
+{
+  "id": "lab-calc",
+  "name": "Lab Kit",
+  "version": "1.2.0",
+  "minAppVersion": "1.5.0",
+  "description": "Live calculation tables in ```calc blocks (Excel formulas, references between tables, MW from chemical notes) and the lab notebook kit updater.",
+  "author": "Lab Kit contributors",
+  "isDesktopOnly": false
+}

@@ -1,0 +1,35 @@
+/* ==========================================================
+   Scrolling Mermaid diagrams                (kit v0.2)
+   ----------------------------------------------------------
+   Replaces tabs-mermaid-scroll.css.
+
+   Applies to:
+   - notes with "scrolling_mermaid" in their cssclasses
+     (the lab book template adds it), and
+   - any Mermaid diagram inside a ```tabs block.
+
+   What it does:
+   - Puts each Mermaid diagram in a bordered box, at most
+     400px tall, that scrolls on its own (up/down and
+     sideways) so the text around it stays still.
+   - Keeps the diagram at full size instead of shrinking it.
+
+   Change the height with max-height below. To let wide
+   diagrams shrink to fit instead, delete the second rule.
+   ========================================================== */
+
+.scrolling_mermaid .block-language-mermaid,
+.tabbed .block-language-mermaid {
+  display: block;
+  max-width: 100%;
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+.scrolling_mermaid .block-language-mermaid svg,
+.tabbed .block-language-mermaid svg {
+  max-width: none !important;
+}
