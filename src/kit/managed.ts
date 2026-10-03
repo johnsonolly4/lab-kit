@@ -3,8 +3,10 @@
 //
 //  - plan: one action per kit file (create / fast-forward / up-to-date / user-modified / needs-merge / missing / ...)
 //  - apply: backs up every file it overwrites, writes, and remembers what it wrote (state + a base copy for later merges)
-//  - "needs-merge" (you and the kit both changed the file) is only reported and left untouched: merging comes later
+//  - "merge" (you and the kit both changed the file, edits don't overlap) is written only when the caller selects it
+//  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
+import { merge3 } from "./merge";
 import { kitEnsureDir, kitJoin, kitParent, type Roles } from "./updater";
 
 /* ---- Types ---- */
@@ -21,11 +23,13 @@ export interface EmbeddedKit {
 export interface ManagedFileState {
   path: string; installedVersion: string; installedHash: string;
   detached: boolean; userDeleted: boolean; pendingConflict: unknown;
+  /** The file holds a merge of your edits and the kit (cleared by any later write). */
+  merged?: boolean;
 }
 /** What the plugin remembers about built-in kit files (the `managed` key of the kit data). */
 export interface ManagedState { installedKitVersion: string; files: Record<string, ManagedFileState> }
 export type ManagedAdapter = Pick<DataAdapter, "exists" | "read" | "write" | "mkdir">;
-export type ManagedAction = "create" | "fast-forward" | "up-to-date" | "user-modified" | "needs-merge" | "missing" | "keep" | "detached";
+export type ManagedAction = "create" | "fast-forward" | "up-to-date" | "user-modified" | "merge" | "needs-merge" | "missing" | "keep" | "detached";
 export interface ManagedItem {
   file: EmbeddedFile;
   dest: string;
@@ -36,10 +40,14 @@ export interface ManagedItem {
   action: ManagedAction;
   /** No base copy to compare with (file wasn't installed by this system). */
   untracked: boolean;
+  /** action "merge": your edits and the kit's combined (what would be written). */
+  merged?: string;
+  /** action "needs-merge": how many places both sides changed differently (absent when no merge was tried). */
+  conflicts?: number;
 }
 /** Files the old folder updater wrote: path -> SHA-1 of what it wrote, and how to compute that hash. */
 export interface LegacyRecord { files: Record<string, string>; hash: (text: string) => string }
-export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "adopted" | "skipped"; backup?: string }
+export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "merged" | "adopted" | "skipped"; backup?: string }
 
 /** Actions the plugin may carry out on its own ("Update all safe files"). */
 export const SAFE_ACTIONS: ManagedAction[] = ["create", "fast-forward", "up-to-date"];
@@ -64,14 +72,22 @@ export function kitText(bundle: EmbeddedKit, file: EmbeddedFile, roles: Roles): 
 }
 
 /* ---- Plan ---- */
-export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null, roles: Roles, legacy: LegacyRecord | null = null): Promise<ManagedItem[]> {
+/** `baseDir` (where the base copies live) lets "changed by both" files be merged; without it they stay "needs-merge". */
+export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null, roles: Roles, legacy: LegacyRecord | null = null, baseDir: string | null = null): Promise<ManagedItem[]> {
   const items: ManagedItem[] = [];
   for (const file of bundle.manifest.files) {
     const st = state?.files[file.id];
-    const dest = st?.path || kitJoin(roles[file.role], file.dest);
+    let dest = st?.path || kitJoin(roles[file.role], file.dest);
+    if (!st && !(await adapter.exists(dest))) {
+      // Not installed by this system and the kit has moved the file: a copy at an old place is still this file
+      for (const old of file.renamedFrom) {
+        const oldDest = kitJoin(roles[file.role], old);
+        if (await adapter.exists(oldDest)) { dest = oldDest; break; }
+      }
+    }
     const text = kitText(bundle, file, roles);
     const kitHash = await kitSha256(text);
-    const item = (action: ManagedAction, curHash: string | null, untracked = !st): ManagedItem => ({ file, dest, text, kitHash, curHash, action, untracked });
+    const item = (action: ManagedAction, curHash: string | null, extra: Partial<ManagedItem> = {}): ManagedItem => ({ file, dest, text, kitHash, curHash, action, untracked: !st, ...extra });
     if (st?.detached) { items.push(item("detached", null)); continue; }
     if (!(await adapter.exists(dest))) { items.push(item(st ? "missing" : "create", null)); continue; }
 
@@ -82,8 +98,13 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
     // Unmodified = still what this system wrote, or still what the old folder updater recorded for it
     const legacyMatch = legacy?.files[dest] !== undefined && legacy.files[dest] === legacy.hash(cur);
     if (st?.installedHash === curHash || legacyMatch) items.push(item("fast-forward", curHash));
-    else if (st && st.installedHash !== kitHash) items.push(item("needs-merge", curHash));
-    else items.push(item("user-modified", curHash));
+    else if (st && st.installedHash !== kitHash) {
+      const baseFile = baseDir ? kitJoin(baseDir, `${file.id}.txt`) : null;
+      if (baseFile && await adapter.exists(baseFile)) {
+        const m = merge3(await adapter.read(baseFile), cur, text);
+        items.push(m.clean ? item("merge", curHash, { merged: m.text }) : item("needs-merge", curHash, { conflicts: m.conflicts }));
+      } else items.push(item("needs-merge", curHash));
+    } else items.push(item("user-modified", curHash));
   }
   return items;
 }
@@ -107,10 +128,10 @@ export interface ApplyOutcome { state: ManagedState; results: ManagedResult[] }
 const folderStamp = (iso: string): string => iso.replace(/[:.]/g, "-");
 
 /** Records what was written (state + base copy for later merges). Mutates `next`. */
-async function rememberFile(adapter: ManagedAdapter, next: ManagedState, it: ManagedItem, opts: ApplyOptions): Promise<void> {
+async function rememberFile(adapter: ManagedAdapter, next: ManagedState, it: ManagedItem, opts: ApplyOptions, merged = false): Promise<void> {
   const prev = next.files[it.file.id];
   next.files[it.file.id] = { path: it.dest, installedVersion: it.file.version, installedHash: it.kitHash,
-    detached: prev?.detached ?? false, userDeleted: false, pendingConflict: null };
+    detached: prev?.detached ?? false, userDeleted: false, pendingConflict: null, ...(merged ? { merged } : {}) };
   await kitEnsureDir(adapter, opts.baseDir);
   await adapter.write(kitJoin(opts.baseDir, `${it.file.id}.txt`), it.text);
 }
@@ -144,6 +165,12 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
       await rememberFile(adapter, next, it, opts);
       results.push({ id, dest: it.dest, action: it.action, outcome: "updated", backup });
       log("fast-forward", it.dest, "backup", backup);
+    } else if (it.action === "merge" && it.merged !== undefined) {
+      const backup = await backupFile(adapter, it, opts);
+      await adapter.write(it.dest, it.merged);
+      await rememberFile(adapter, next, it, opts, true);   // base = the kit's text, so the next merge starts from this kit version
+      results.push({ id, dest: it.dest, action: it.action, outcome: "merged", backup });
+      log("merge", it.dest, "backup", backup);
     } else {
       // user-modified / needs-merge / keep / detached are never written by apply, even if a caller selects them
       results.push({ id, dest: it.dest, action: it.action, outcome: "skipped" });
@@ -154,7 +181,7 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
 }
 
 /** Actions "Restore kit original" may overwrite (the old copy is backed up first). Never a detached or kept file. */
-export const RESTORABLE_ACTIONS: ManagedAction[] = ["user-modified", "needs-merge", "fast-forward", "missing"];
+export const RESTORABLE_ACTIONS: ManagedAction[] = ["user-modified", "merge", "needs-merge", "fast-forward", "missing"];
 
 /** Puts the kit's version of ONE file back, backing up your copy first. Refuses detached / kept / up-to-date files. */
 export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
@@ -169,6 +196,48 @@ export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem,
   return { state: next, result: { id, dest: item.dest, action: item.action, outcome: backup ? "updated" : "created", backup } };
 }
 
+/**
+ * Settles ONE conflict (`needs-merge`) with the text the merge window resolved to.
+ * `text` null, or equal to your current file, keeps your file as it is and just records it as based on the new kit version ("Keep all mine").
+ * Anything else is written after a backup. Either way the base copy becomes the kit's text, so the next merge starts from this kit version.
+ */
+export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem, text: string | null, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
+  const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
+  const { id } = item.file;
+  if (item.action !== "needs-merge") return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
+  let backup: string | undefined;
+  let written = false;
+  if (text !== null && kitNormalise(text) !== kitNormalise(await adapter.read(item.dest))) {
+    backup = await backupFile(adapter, item, opts);
+    await adapter.write(item.dest, text);
+    written = true;
+  }
+  await rememberFile(adapter, next, item, opts, written);
+  return { state: next, result: { id, dest: item.dest, action: item.action, outcome: written ? "merged" : "adopted", backup } };
+}
+
+/** A kit file the kit has dropped (`removed` in the manifest) that you still have installed. Left where it is, never deleted. */
+export interface RetiredItem { id: string; path: string; exists: boolean }
+
+/** Files this system installed that the kit no longer ships. */
+export async function planRetired(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null): Promise<RetiredItem[]> {
+  const out: RetiredItem[] = [];
+  for (const id of bundle.manifest.removed) {
+    const st = state?.files[id];
+    if (st) out.push({ id, path: st.path, exists: await adapter.exists(st.path) });
+  }
+  return out;
+}
+
+/** Stops tracking a retired file (state entry and base copy). Your file in the vault is not touched. */
+export async function forgetManaged(adapter: ManagedAdapter & Partial<Pick<DataAdapter, "remove">>, state: ManagedState | null, id: string, baseDir: string): Promise<ManagedState> {
+  const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
+  delete next.files[id];
+  const base = kitJoin(baseDir, `${id}.txt`);
+  if (adapter.remove && await adapter.exists(base)) await adapter.remove(base);
+  return next;
+}
+
 /** Stops (or resumes) managing one file. Returns false when the file isn't tracked yet (nothing to detach). */
 export function setDetached(state: ManagedState | null, id: string, detached: boolean): boolean {
   const st = state?.files[id];
@@ -178,13 +247,14 @@ export function setDetached(state: ManagedState | null, id: string, detached: bo
 }
 
 /** Plain-words status for a plan item (the labels in the Manage kit files window). */
-export function statusOf(item: ManagedItem): { label: string; tone: "ok" | "info" | "warn" | "muted" } {
+export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: string; tone: "ok" | "info" | "warn" | "muted" } {
   switch (item.action) {
     case "up-to-date": return { label: "Up to date", tone: "ok" };
     case "fast-forward": return { label: "Update available", tone: "info" };
     case "create": return { label: "New", tone: "info" };
-    case "user-modified": return { label: "Changed by you", tone: "warn" };
-    case "needs-merge": return { label: "Changed by you and the kit", tone: "warn" };
+    case "user-modified": return st?.merged ? { label: "Merged", tone: "info" } : { label: "Changed by you", tone: "warn" };
+    case "merge": return { label: "Merges cleanly", tone: "info" };
+    case "needs-merge": return { label: "Conflict", tone: "warn" };
     case "missing": return { label: "Missing", tone: "warn" };
     case "keep": return { label: "Kept (your settings)", tone: "muted" };
     case "detached": return { label: "Detached", tone: "muted" };
