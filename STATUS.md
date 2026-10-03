@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.5 (plugin + kit; per-commit bump; TypeScript in `src/`)
-**Now:** PRs 1-10 are **merged into `main`** (PR 10 = mobile guard, merge-window fix, click-to-edit retry, page-jump fix; merge commit `9874ba7`, version 0.4.4). The kit update system (Phases 1-5), author swap, README privacy / mobile sections and the version-per-commit rule are all in `main`. None of v0.4 has been seen inside Obsidian beyond the settings page, mobile guard and the settings (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `mobile-guard` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** 0.4.4 still to be tried in Obsidian. Tab/Escape fix is committed as 0.4.5 on branch `tab-escape-fix` (not pushed, no PR). Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": CSS snippet switch) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Version:** 0.4.6 (plugin + kit; per-commit bump; TypeScript in `src/`)
+**Now:** PRs 1-11 are in `main` (0.4.5). Branch `click-edit-abandon` holds 0.4.6 (committed, **not pushed**): BACKLOG / STATUS after the Obsidian test (page jump fixed, Tab saves, click-to-edit still two clicks and **abandoned for now**; its changelog line removed). **Store scan error** "No release matches your manifest version": the store reads `manifest.json` on `main` and wants a GitHub release tagged exactly that version (no `v`); **no release exists yet** (`git tag` is empty, `versions.json` only has 0.3.0). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** release so a tag matches the manifest: push + PR + merge `click-edit-abandon`, then `/release` at the manifest version (0.4.6, or 0.5.0 if the user wants a minor bump; every later commit bumps the manifest again, so release before more commits land). Then re-run the scan at community.obsidian.md (BACKLOG, "Community store submission checklist"). Leftovers: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,18 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit Tab / Escape fix)
+## Last session (Obsidian test of 0.4.5 + commit 0.4.6)
+- User tested 0.4.5 in Obsidian: **one click into the next cell still fails** (abandoned for now, BACKLOG item reopened, changelog line "Click-to-edit, second try" removed because it claimed a fix); **page jump seems fixed**; **Tab saves**. Escape and "text not lost" not reported
+- Committed as 0.4.6 on `click-edit-abandon` (BACKLOG, STATUS, changelog; `package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged). `npm test` 123 pass; lint and build not rerun (no source change). **Not pushed**
+- Store error explained (see Now). No release cut: `/release` pushes tags and creates a GitHub release, which needs the user's go-ahead, and it must run on a clean `main` after the merge
+
+## Earlier session (merge PR 11)
+- User chose "Merge PR 11". Merged [lab-kit#11](https://github.com/johnsonolly4/lab-kit/pull/11) into `main` (plain merge commit `6569c3d`, branch not deleted; was clean and mergeable, no CI checks). Pulled `main` locally (stashed this STATUS edit across the checkout, then restored it). No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.6 and `main` is the current branch). Nothing new for BACKLOG
+
+## Earlier session (push + open PR 11)
+- User chose "Push 0.4.5 + open PR". Pushed `tab-escape-fix` (`efe7156`, 0.4.5) and opened [lab-kit#11](https://github.com/johnsonolly4/lab-kit/pull/11) into `main`. **Not merged**; no CI checks configured. No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.6). Nothing new for BACKLOG
+
+## Earlier session (commit Tab / Escape fix)
 - User chose "Commit Tab/Escape fix as 0.4.5". Reran `npm test` (123 pass) and `npm run lint` (0 errors, 4 warnings, same). Branched `tab-escape-fix` off `main`, bumped to 0.4.5 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed. **Not pushed, no PR.** Still **not seen in Obsidian** (BACKLOG item says so). Nothing new for BACKLOG
 
 ## Earlier session (Tab / Escape in a cell)
