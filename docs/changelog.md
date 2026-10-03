@@ -21,6 +21,7 @@
 - **Forms start empty**: chemical names (solution, recipe, RAFT, variant matrix) and the NMR dataset no longer have example values; grey placeholders show what to type. Reagents still default to the note's Chemicals
 - **New note headings** have new emoji: 🔬 Objectives · ⚙️ Apparatus · ⚗️ Procedure · 📈 Results / Analysis · 💡 Notes for next time
 - **Empty calc cells are taller**, so they are easier to click
+- **Sample list and timetable forms**: the technique toggles are headed "Also add (appended below)", so it is clear the tables go under the sample table
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):

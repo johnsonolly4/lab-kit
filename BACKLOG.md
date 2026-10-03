@@ -18,7 +18,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Snippet menu icons customisable in settings (icon colour = Obsidian accent, say so in the settings text)
 - [x] Blank calc table: taller empty rows (easier to click) (`.lab-kit td.is-blank` in `styles.css`, class set in `src/calc/render.ts:175`; applies to every empty body cell, not only the blank snippet)
 - [x] NMR: dataset empty by default, with a placeholder saying it can be filled in (`labSnippets.js` `nmrTable` + `nmr()`)
-- [ ] Sample list: dataset is now empty (done with the NMR item); still to do: label the toggles "Also add (appended below)" (`labSnippets.js` `techToggles`)
+- [x] Sample list: dataset is now empty (done with the NMR item); toggles headed "Also add (appended below)" (`labSnippets.js:152` `techToggles`, also shown in the timetable form; test in `tests/snippets-defaults.test.ts`; not seen in Obsidian, `test-vault/Extras/scripts/templater/labSnippets.js` is a stale hand copy)
 - [ ] All chemical fields in forms empty by default: reagents, RAFT names and the matrix items are empty now; left on purpose (user's choice): NMR solvent CDCl3 / method 1H, GPC eluent THF, DLS solvent Water / 25 °C, RAFT ratio 20 / solids 20, column dead volume 0.21 (`labSnippets.js` nmr/gpc/dls/raft/column)
 - [ ] Flow column prep: ask for and store the packing material
 - [ ] Residence times: formula in a callout or maths block
