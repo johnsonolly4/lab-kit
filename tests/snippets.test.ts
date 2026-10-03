@@ -115,11 +115,13 @@ describe("snippets", () => {
     // Variant matrix
     r = await run("matrix", { rows: "Lipoic acid, Acetic acid", cols: "Benzyl alcohol, Methanol" }); assert.ok(r.md.includes("copy: list") && r.md.includes("ABC0016-D"));
     // Column + RT linked
-    r = await run("column", { density: "1.325" });
+    r = await run("column", { density: "1.325", packing: "glass beads" });
+    assert.ok(r.md.includes("| Packing material | glass beads |"), r.md);
     note = note.replace("| Empty column (blanking plugs, glass wool) (g) |  |", "| Empty column (blanking plugs, glass wool) (g) | 111.076 |")
                .replace("| Packed column (beads, plugs, glass wool) (g) |  |", "| Packed column (beads, plugs, glass wool) (g) | 111.967 |")
                .replace("| Packed + full of solvent (g) |  |", "| Packed + full of solvent (g) | 114.576 |");
     r = await run("rt");
+    assert.ok(r.md.includes("> [!info] Residence time\n> $$\\tau = \\frac{V_{\\text{reactor}}}{Q}$$\n\n"), r.md);
     ev = evalNote();
     close(ev.g("rt", "B4"), 1.7591 / 20, 1e-3);
     r = await run("gpc"); r = await run("dls"); r = await run("results"); r = await run("blank");

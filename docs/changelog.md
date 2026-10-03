@@ -2,6 +2,7 @@
 
 ## Unreleased (v0.4)
 - **Settings are searchable**: Lab Kit's settings page now uses Obsidian's new settings API, so its options show up in the global settings search. **Needs Obsidian 1.13 or newer.** Two small look changes: the hazards note about per-note options is its own row ("Per-note options"), and "Install locations" opens with a "Show" link
+- **Flow column prep asks for the packing material** (empty by default, added as the last row of the "Column weighing" table, so `column!B10` is still the reactor volume)
 - **Update command renamed** to "Check for updates" (Obsidian already shows "Lab Kit:" in front of it)
 - **Plugin folder is now `lab-kit`** (was `lab-calc`): `install-updater.ps1` / `.sh` install there. If you have the old plugin, turn **Lab Calc** off, delete `.obsidian/plugins/lab-calc`, turn **Lab Kit** on and set the Update folder again (old settings are not carried over)
 - **"What's new" popup** replaces the changelog note: it opens once after an update and any time from Settings → Lab Kit → What's new (or the command "Show what's new"). The tutorial is on GitHub: [Lab Kit tutorial](https://github.com/johnsonolly4/lab-kit/blob/main/docs/tutorial.md). The kit no longer installs the "Lab notebook kit - tutorial" and "- changelog" notes (existing copies are left alone, you can delete them)
@@ -22,6 +23,7 @@
 - **New note headings** have new emoji: 🔬 Objectives · ⚙️ Apparatus · ⚗️ Procedure · 📈 Results / Analysis · 💡 Notes for next time
 - **Empty calc cells are taller**, so they are easier to click
 - **Sample list and timetable forms**: the technique toggles are headed "Also add (appended below)", so it is clear the tables go under the sample table
+- **Residence times snippet**: the formula (τ = V / Q) now sits in an info callout above the tables
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):

@@ -351,13 +351,15 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
         { key: "id", label: "Table id", hint: "other tables use e.g. column!B10 for the reactor volume", value: "column" },
         { key: "density", label: "Solvent density (g/mL)", hint: "blank = fill in later", value: "" },
         { key: "dead", label: "End-fitting dead volume (mL)", value: "0.21" },
+        { key: "packing", label: "Packing material", hint: "blank = fill in later", value: "", placeholder: "e.g. glass beads, 100 µm" },
       ]);
       if (!v) return "";
       return `## Column prep
 ${calc({ name: unique(v.id || "column"), title: "Column weighing", icon: "cylinder" }, ["State", "Value"], [
   ["Empty column (blanking plugs, glass wool) (g)", ""], ["Packed column (beads, plugs, glass wool) (g)", ""],
   ["Packed + full of solvent (g)", ""], ["Solvent density (g/mL)", v.density ?? ""], ["End-fitting dead volume (mL)", v.dead ?? ""],
-  ["Mass of beads (g)", "=B3-B2"], ["Mass of solvent (g)", "=B4-B3"], ["Solvent volume (mL)", "=B8/B5"], ["Reactor volume (mL)", "=B9-B6"]])}`;
+  ["Mass of beads (g)", "=B3-B2"], ["Mass of solvent (g)", "=B4-B3"], ["Solvent volume (mL)", "=B8/B5"], ["Reactor volume (mL)", "=B9-B6"],
+  ["Packing material", v.packing ?? ""]])}`;
     },
 
     async rt() {
@@ -370,7 +372,8 @@ ${calc({ name: unique(v.id || "column"), title: "Column weighing", icon: "cylind
       if (!v || !list(v.rts).length) return "";
       const inp = unique("rt_in"), id = unique("rt");
       let out = `## Residence times
-$$\\tau = \\frac{V_{\\text{reactor}}}{Q}$$
+> [!info] Residence time
+> $$\\tau = \\frac{V_{\\text{reactor}}}{Q}$$
 
 ${calc({ name: inp, title: "Reactor", icon: "waves" }, ["Setting", "Value"], [["Reactor volume (mL)", v.volume ?? ""]])}
 ${calc({ name: id, title: "Flow rate for each residence time", icon: "waves" }, ["Residence time (min)", "Flow rate (mL/min)", "Time to steady state, 3 RTs (min)"],
