@@ -2,6 +2,7 @@
 // Tests reach into these exports to set up the situation they need (e.g. Platform.isDesktopApp).
 // Popout-window code calls window.setTimeout; under node the global object stands in for the window.
 (globalThis as any).window ??= globalThis;
+(globalThis as any).requestAnimationFrame ??= (f: () => void) => setTimeout(f, 0);
 export class Component { load(): void { /* nothing */ } unload(): void { /* nothing */ } }
 export class MarkdownRenderChild extends Component { constructor(public containerEl: unknown) { super(); } }
 export class Plugin extends Component {

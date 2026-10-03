@@ -23,8 +23,15 @@ export class CalcRenderer {
   live = new Map<string, Set<CalcEntry>>();
   /** The cell being edited, if any (one at a time). */
   private editor: { entry: CalcEntry } | null = null;
-  /** Cell clicked while another was being edited: opened once the save and redraw are done. */
-  private pending: { entry: CalcEntry; r: number; c: number } | null = null;
+  /**
+   * Cell clicked while another was being edited: opened once the save and redraw are done.
+   * Obsidian may rebuild the whole block after the save (new element, new entry), so it is
+   * matched by note path + block start line, not by entry.
+   */
+  private pending: { entry: CalcEntry; path: string; line: number | null; r: number; c: number } | null = null;
+  private pendingTimer = 0;
+  /** Scroll position of the note while an edit is saved: a rebuilt block can collapse for a moment and drag the page. */
+  private hold: { scroller: HTMLElement; top: number; until: number } | null = null;
 
   constructor(private plugin: Plugin) {}
 
@@ -37,6 +44,8 @@ export class CalcRenderer {
       if (!this.live.has(ctx.sourcePath)) this.live.set(ctx.sourcePath, new Set());
       this.live.get(ctx.sourcePath)!.add(entry);
       await this.render(entry);
+      this.openPending();
+      this.restoreScroll();
     });
 
     const timers = new Map<string, number>();
@@ -184,7 +193,7 @@ export class CalcRenderer {
             td.addEventListener("mousedown", (ev) => {
               const t = ev.target as HTMLElement;
               if (t.closest("a") || t.closest("input")) return;
-              if (this.editor) this.pending = { entry, r, c };
+              if (this.editor) this.setPending(entry, r, c);
             });
             td.addEventListener("click", (ev) => {
               if ((ev.target as HTMLElement).closest("a")) return;
@@ -269,16 +278,17 @@ export class CalcRenderer {
     input.value = current;
     const mine = { entry };
     this.editor = mine;
-    input.focus(); input.select();
+    input.focus({ preventScroll: true }); input.select();
     let done = false;
     const finish = async (save: boolean): Promise<void> => {
       if (done) return; done = true;
       if (this.editor === mine) this.editor = null;
       const val = input.value.trim();
+      if (save && val !== current) this.holdScroll(entry.el);
       try {
         if (!save || val === current) await this.render(entry);
         else await this.refreshFile(entry.ctx.sourcePath, await this.writeCell(entry, r, c, val));
-      } finally { this.openPending(); }
+      } finally { this.openPending(); this.settleScroll(); }
     };
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); void finish(true); }
@@ -288,12 +298,62 @@ export class CalcRenderer {
     input.addEventListener("click", (e) => e.stopPropagation());
   }
 
+  /** Remembers where the note is scrolled to (Live Preview or Reading view), until the user scrolls themselves. */
+  private holdScroll(el: HTMLElement): void {
+    const scroller = el.closest<HTMLElement>(".cm-scroller") ?? el.closest<HTMLElement>(".markdown-preview-view");
+    if (!scroller) { this.hold = null; return; }
+    const h = { scroller, top: scroller.scrollTop, until: Date.now() + 1500 };
+    this.hold = h;
+    const drop = (): void => { if (this.hold === h) this.hold = null; };
+    scroller.addEventListener("wheel", drop, { once: true });
+    scroller.addEventListener("touchmove", drop, { once: true });
+  }
+
+  private restoreScroll(): void {
+    const h = this.hold;
+    if (!h) return;
+    if (Date.now() > h.until) { this.hold = null; return; }
+    if (h.scroller.scrollTop !== h.top) h.scroller.scrollTop = h.top;
+  }
+
+  /** Restores at once and again while Obsidian lays out the redrawn block. */
+  private settleScroll(): void {
+    this.restoreScroll();
+    window.requestAnimationFrame(() => this.restoreScroll());
+    for (const ms of [100, 300, 700]) window.setTimeout(() => this.restoreScroll(), ms);
+  }
+
   /** Opens the cell the user clicked while another one was being saved. */
   private openPending(): void {
-    const p = this.pending; this.pending = null;
-    const td = p?.entry.tds?.get(`${p.r}|${p.c}`);
-    if (!p || !td || !td.isConnected || this.editor) return;
-    this.editCell(p.entry, p.r, p.c, td, p.entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
+    const p = this.pending;
+    if (!p || this.editor) return;
+    const entry = this.pendingTarget(p);
+    const td = entry?.tds?.get(`${p.r}|${p.c}`);
+    if (!entry || !td || !td.isConnected) return; // block not redrawn yet: the expiry timer clears it
+    this.clearPending();
+    this.editCell(entry, p.r, p.c, td, entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
+  }
+
+  private setPending(entry: CalcEntry, r: number, c: number): void {
+    this.clearPending();
+    const line = entry.ctx.getSectionInfo(entry.el)?.lineStart ?? null;
+    this.pending = { entry, path: entry.ctx.sourcePath, line, r, c };
+    this.pendingTimer = window.setTimeout(() => { this.pending = null; }, 2000);
+  }
+
+  private clearPending(): void {
+    window.clearTimeout(this.pendingTimer);
+    this.pending = null;
+  }
+
+  /** The live block the pending click belongs to: the same entry if still on screen, else the one at the same line. */
+  private pendingTarget(p: { entry: CalcEntry; path: string; line: number | null }): CalcEntry | undefined {
+    if (p.entry.el.isConnected) return p.entry;
+    if (p.line == null) return undefined;
+    for (const e of this.live.get(p.path) ?? []) {
+      if (e.el.isConnected && e.ctx.getSectionInfo(e.el)?.lineStart === p.line) return e;
+    }
+    return undefined;
   }
 
   /** Writes one cell back into the note; returns the new note text (undefined if it couldn't). */
