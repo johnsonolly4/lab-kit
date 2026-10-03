@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** PR 1 (duplicate-name warning) and PR 2 (What's new popup) are both merged into `main` (merge commits `a4cd160`, `25c0dcb`). Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** commit the lint decisions + settings API work (uncommitted on `whats-new-popup`); then v0.4 items (sample-list toggle label, snippet icons); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested).
+**Next:** push `whats-new-popup` (commit `4e48915` is local only; PRs 1 and 2 are already merged, so decide: new PR or merge straight to `main`); then v0.4 items (sample-list toggle label, snippet icons); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,10 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (settings definitions API)
+## Last session (commit settings API + lint decisions)
+- Committed `4e48915` on `whats-new-popup` (settings definitions API, lint decisions, `minAppVersion` 1.13.0, reference doc). Not pushed. `test-vault/` hand copies left untracked on purpose. `npm test`: 59 pass; `npm run lint`: 0 errors, 4 warnings. No code changes
+
+## Earlier session (settings definitions API)
 - Settings page now uses `getSettingDefinitions()`: `KitSettingTab` (`src/kit/ui.ts`) + `HeaderStore.definitions()` (`src/header/settings.ts`), all rows as `render` callbacks (same saves as before), groups for the headings. `setWarning` → `setDestructive`, refresh via `this.update()`. `manifest.json` `minAppVersion` 1.5.0 → 1.13.0 (`versions.json` gets `0.4.0: 1.13.0` at release)
 - Two small look changes (user to confirm): the hazards "per-note options" sentence is its own row "Per-note options"; "Install locations" shows a "Show" summary under its name
 - API facts saved in `docs/reference/settings-definitions.md` (typings from `node_modules/obsidian` were readable only when the user pasted them; `render` must return void; groups hold rows, not groups)
