@@ -34,6 +34,7 @@ Goal: publish to the Obsidian community plugin store.
 ## End-of-task routine (MANDATORY)
 One task per session. You cannot run `/clear` yourself; only the user can. So when a task is done:
 1. Update `STATUS.md` (Now / Next / Last session).
+1b. Anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) goes into `BACKLOG.md` as an unticked item with file:line pointers. In `STATUS.md`, just point to it.
 2. **STOP.** Do not start the next task on your own, even if it is obvious or small.
 3. End your reply with exactly this callout:
    > [!done] Task finished
