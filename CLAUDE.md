@@ -4,7 +4,7 @@ Obsidian plugin + vault kit for a chemistry PhD lab notebook.
 Features: live ```` ```calc ```` tables, Alt+S snippet forms (Templater), hazard/data-folder header, kit updater.
 Goal: publish to the Obsidian community plugin store.
 
-**Start every session by reading `STATUS.md`. End every task by updating it.**
+**Start every session by reading `STATUS.md`. Every task ends with the End-of-task routine below. No exceptions.**
 
 ## Map
 - `src/main.ts`: plugin entry, registers features
@@ -31,8 +31,17 @@ Goal: publish to the Obsidian community plugin store.
 - Lab vocabulary is the user's: keep their names (Exp. Class, CoSHH, RA, sample codes like ABC0014-A).
 - Public repo: no real names, initials or real paths in any file. The GitHub username is fine (repo URL, commit author). Paths and personal values belong in plugin settings (empty defaults). The user's vault path goes in `.claude/settings.local.json` (not committed).
 
+## End-of-task routine (MANDATORY)
+One task per session. You cannot run `/clear` yourself; only the user can. So when a task is done:
+1. Update `STATUS.md` (Now / Next / Last session).
+2. **STOP.** Do not start the next task on your own, even if it is obvious or small.
+3. End your reply with exactly this callout:
+   > [!done] Task finished
+   > Type `/clear`, then say **Read STATUS.md and continue**.
+
+If the user asks for another task without clearing, remind them to `/clear` first, once, then do what they decide.
+
 ## Workflow
-- One task per session; `/clear` between tasks.
 - Plan mode for anything touching more than 2 files; work in phases.
 - Searching the code: use the `explorer` subagent. Long test or log output: run it in a subagent.
 - Releases: `/release` skill. User feedback: `/feedback` skill → `BACKLOG.md`.
