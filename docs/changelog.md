@@ -1,6 +1,9 @@
 # Lab notebook kit: changelog
 
 ## Unreleased (v0.4)
+- **Manage kit files** (Settings → Lab Kit → Built-in kit → **Manage files…**, or the command "Manage kit files"): every kit file with a status (up to date, update available, changed by you, missing, detached) and its own buttons: install / update / recreate, **Restore kit original** (your copy is backed up first), detach / re-attach, open. The window also has a switch for the kit's CSS snippet (on Obsidian versions that allow it; otherwise it says where to turn it on)
+- **The kit is built into the plugin** (first part): Settings → Lab Kit → **Built-in kit** shows the bundled kit version, **Review update…** (a preview of every file: new, updated, changed by you, missing) and **Update all safe files** (new files and files you never edited; the first install asks first). Every file it replaces is copied to the Backup folder first, a file you changed is never overwritten, and a file you deleted is only recreated if you tick it. A file you *and* the kit both changed is listed and left alone (merging comes in a later version). Works on mobile. Templates folder, Scripts folder (not a hidden folder) and Backup folder are settings; empty means detected. The folder updater below still works
+- **The kit updater no longer installs the plugin itself**: it only manages templates, scripts and the CSS snippet. The plugin is updated by Obsidian (community plugins) or by copying the three release files; the updater window no longer lists a "Lab Kit plugin" row and no longer reloads the plugin
 - **Settings are searchable**: Lab Kit's settings page now uses Obsidian's new settings API, so its options show up in the global settings search. **Needs Obsidian 1.13 or newer.** Two small look changes: the hazards note about per-note options is its own row ("Per-note options"), and "Install locations" opens with a "Show" link
 - **Flow column prep asks for the packing material** (empty by default, added as the last row of the "Column weighing" table, so `column!B10` is still the reactor volume)
 - **Update command renamed** to "Check for updates" (Obsidian already shows "Lab Kit:" in front of it)
@@ -24,6 +27,7 @@
 - **Empty calc cells are taller**, so they are easier to click
 - **Sample list and timetable forms**: the technique toggles are headed "Also add (appended below)", so it is clear the tables go under the sample table
 - **Residence times snippet**: the formula (τ = V / Q) now sits in an info callout above the tables
+- **Snippet menu icons are a setting** (Settings → Lab Kit → Snippet menu): type a [Lucide](https://lucide.dev) icon name for any snippet; empty keeps the built-in icon. The colour is always your Obsidian accent colour
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):

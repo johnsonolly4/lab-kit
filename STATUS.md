@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-4 are merged into `main`. The column packing commit and the residence-time callout (both on `whats-new-popup`) are in [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) against `main`, not merged. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** merge the new PR; v0.4 quick changes still open in BACKLOG (snippet icons, recipe amount modes); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested). Local `main` not pulled; local branch is still `whats-new-popup`.
+**Now:** Kit update system **Phase 2 (core) is committed and pushed** on `whats-new-popup` (Manage kit files window + CSS snippet switch). Phase 1 is committed and pushed; PRs 1-5 are merged into `main`; snippet icons `3d0a08e`, `b970d7f` and Phase 1 `fc983ad` are in open PR 6 (mergeable). None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** the store release path (BACKLOG, Repo / release, "Community store submission checklist"): PR 6 is open, so merge it (user's call), pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, `/release` 0.4.0, submit at community.obsidian.md. Kit update system phases 2-5: BACKLOG, "Kit update system". Local `main` not pulled; local branch is `whats-new-popup`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,44 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + PR column packing and callout)
+## Last session (commit + push Phase 2)
+- Committed Phase 2 (Manage kit files window, snippet switch, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed; it joins open PR 6. `test-vault/` hand copies left untracked on purpose. `npm test`: 85 pass. No code changes
+
+## Earlier session (kit update system, Phase 2)
+- User chose **per-file window + snippet switch, no diff view**, as a modal opened from settings. `src/kit/managed.ts`: `restoreManaged` (backup, write kit copy, refresh base), `setDetached`, `statusOf`, `RESTORABLE_ACTIONS`, `ApplyOptions.keepVersion`; `applyManaged` now shares `rememberFile` / `backupFile` helpers (same behaviour). `src/kit/obsidian-private.ts`: `cssSnippetsSupported`, `isCssSnippetEnabled`
+- `src/kit/managed-ui.ts`: `KitFilesModal` (status badge, Install / Update / Recreate, Restore kit original with confirm, Detach / Re-attach, Open, snippet switch with fallback text); `KitManaged.updateOne / restoreOne / detach / manage`; the kit version only moves once no create / fast-forward file is left. `src/kit/ui.ts`: "Manage files…" button + command "Manage kit files". `styles.css` `.lab-kit-badge`. Changelog + tutorial line added
+- `npm test`: 85 pass (7 new in `tests/managed.test.ts`); `npm run build` clean; lint 0 errors, 4 warnings (same); `kit-manifest.json` unchanged. **Not seen in Obsidian**; the window and the snippet switch have no automated test. Left out and open points: BACKLOG, "Kit update system" and "Not yet tested"
+
+## Earlier session (open PR 6)
+- Opened [lab-kit#6](https://github.com/johnsonolly4/lab-kit/pull/6) (`whats-new-popup` into `main`: snippet icons `3d0a08e`, self-update removal `b970d7f`, Phase 1 `fc983ad`). **Not merged.** No code changes, tests not rerun. `test-vault/` hand copies left untracked on purpose
+
+## Earlier session (commit + push Phase 1)
+- Committed Phase 1 (embedded kit, managed-file engine, UI, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. `npm test`: 78 pass. No code changes
+
+## Earlier session (kit update system, Phase 1)
+- Spec read; user chose **Phase 1 only**, **embed the kit and keep the folder updater as fallback**, **keep the `kit/` layout and add ids**. First committed the pending self-update removal as `b970d7f`
+- `scripts/kit-manifest.mjs` now writes `schema`, `removed` and per file `id` (kept once assigned, new ones = prefix + path slug), `kind`, `version`, `sha256`, `renamedFrom`; `kit/kit-manifest.json` regenerated (23 files, legacy fields untouched). `scripts/embed-kit.mjs` reads manifest + files (line endings normalised); `esbuild.config.mjs` plugin turns it into the virtual module `lab-kit-embedded` (`src/embedded.d.ts`), watched in dev. `main.js` now contains the whole kit
+- `src/kit/managed.ts` (pure, adapter injected, `crypto.subtle` SHA-256): `planManaged` gives create / fast-forward / up-to-date / user-modified / needs-merge / missing / keep / detached; `applyManaged` backs up every overwrite to `<backups>/<ISO stamp>/<path>`, writes, saves state + base copy (`<configDir>/plugins/lab-kit/kit-base/<id>.txt`); never writes needs-merge / user-modified / keep / detached. `followRename` follows moved files. `KitData` got `managed`, `paths`, `debug` (`src/kit/updater.ts`; `kitEnsureDir` exported)
+- `src/kit/managed-ui.ts`: `KitManaged` (roles = detected + your folder entries, legacy SHA-1 record so the folder updater's files count as unmodified), review window (dry run, "recreate" ticks for missing files), report window, first-install confirm. `src/kit/ui.ts`: new settings group "Built-in kit", command "Review kit files", rename handler also follows built-in files
+- `tests/managed.test.ts` (15, incl. the real embedded kit installing into an empty vault). `npm test`: 78 pass; `npm run build` and `npm run package` clean; lint 0 errors, 4 warnings (same as before). Changelog + tutorial section 7 line added
+- **Not seen in Obsidian**, and the new windows / settings rows have no automated test (the engine does). Left out on purpose (all in BACKLOG, "Kit update system"): phases 2-5, built-in install does not set Templater's scripts folder or enable the CSS snippet, retention / restore list, forget-missing, startup notice, removing the folder updater
+
+## Earlier session (store submission checklist)
+- User asked to release so updates come via the Obsidian store. `/release` stopped at step 2 (on `whats-new-popup`, snippet icons not in `main`), so **no release was cut**; user chose to build the store checklist first
+- Then checked the developer policies: one blocker (updater overwrote the plugin's own files). User chose option 1, **done**: kit manifest no longer lists plugin files, `reloadPlugin` + plugin row removed, `kitDetectRoles` lost its `pluginDir` argument, test asserts the plugin is untouched, changelog line added, `kit-manifest.json` regenerated (23 files). `npm test`: 63 pass; `npm run build` clean; lint 0 errors, 4 warnings. Not committed. README file-access / no-network disclosure still to write (BACKLOG)
+- Live docs checked: **submission is now via https://community.obsidian.md (link GitHub), not a PR to `obsidian-releases`**. Saved in `docs/reference/plugin-guidelines.md`. Audit (lint 0 errors, 0 prod vulnerabilities, no banned patterns in `src/`) and the open items are in BACKLOG.md ("Community store submission checklist")
+
+## Earlier session (commit + push snippet icons)
+- Committed the snippet menu icons work below (7 tracked files + `tests/labpick.test.ts`, incl. STATUS/BACKLOG) on `whats-new-popup` and pushed. PRs 1-5 were already merged, so this commit is **not in `main` yet** (needs a new PR or merge). `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+
+## Earlier session (snippet menu icons)
+- Settings → Lab Kit → **Snippet menu**: one row per snippet in `<templates>/Snippets` with a Lucide icon name box (empty = built-in, placeholder shows it); saved as `kit.snippetIcons` (`KitData`, `src/kit/updater.ts`). `labPick.js` reads `data.json`, puts the chosen name first and keeps the snippet's own icon as fallback. Colour stays the accent (the settings text says so). Changelog + tutorial line updated
+- `tests/labpick.test.ts` (3). `npm test`: 63 pass; `npm run build` clean; lint unchanged (0 errors, 4 warnings); `kit-manifest.json` unchanged on regeneration. Not committed. Not seen in Obsidian, `test-vault/` copy of `labPick.js` is stale; open points in BACKLOG (Not yet tested)
+
+## Earlier session (merge PR 5)
+- Merged [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) into `main` (plain merge commit, branch not deleted). No code changes, tests not rerun. Nothing left unfinished, so nothing new for BACKLOG
+
+## Earlier session (commit + PR column packing and callout)
 - Committed the residence-time callout, pushed `whats-new-popup`, opened [lab-kit#5](https://github.com/johnsonolly4/lab-kit/pull/5) against `main` covering it and the column packing commit (`17274be`). Not merged. `npm test`: 60 pass. `test-vault/` hand copies left untracked on purpose. No code changes
 
 ## Earlier session (residence times callout)

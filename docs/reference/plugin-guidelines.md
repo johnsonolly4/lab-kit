@@ -56,8 +56,13 @@ https://docs.obsidian.md/Plugins/Getting+started/Build+a+plugin. Re-check the li
 ## TypeScript
 - `const`/`let`, not `var`; async/await over promise chains.
 
-## Store submission (to verify on the live docs before submitting)
-- Public GitHub repo with README and LICENSE; a release whose tag equals `manifest.json` `version` (no "v"), with `main.js`, `manifest.json`, `styles.css` attached.
-- PR to `obsidianmd/obsidian-releases` adding the plugin to `community-plugins.json`.
-- The description shouldn't say "Obsidian" or "This plugin".
+## Store submission
+Checked live 2026-10-03 (https://docs.obsidian.md/Plugins/Releasing/Submit+your+plugin). **The process changed: no PR to `obsidianmd/obsidian-releases` any more.**
+- Repo needs `README.md` (excerpt shows on the listing), `LICENSE`, `manifest.json` (HEAD must match, committed).
+- Release: `manifest.json` `version` is `x.y.z`; GitHub release tag equals it (no "v"); attach `main.js`, `manifest.json`, optional `styles.css`.
+- Submit at https://community.obsidian.md: sign in with an Obsidian account, link GitHub to prove ownership, add the plugin.
+- Plugin `id` must be unique and must not contain `obsidian`.
+- Automated review reports problems: fix, publish a new release with a higher version; installable once errors are gone.
+- Not saved (page missing at the old URL): the detailed "submission requirements" list. Re-read it on the portal before submitting.
+- Old advice kept as good practice: the description shouldn't say "Obsidian" or "This plugin".
 - A plugin that downloads or installs code from elsewhere is likely to be questioned in review: keep the kit updater optional and clearly described.

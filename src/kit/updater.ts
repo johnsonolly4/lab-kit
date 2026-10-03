@@ -8,6 +8,7 @@
 //  - remembers what it installed, and follows files you move or rename
 import type { App, DataAdapter } from "obsidian";
 import { templaterSettings } from "./obsidian-private";
+import type { ManagedState } from "./managed";
 
 /* ---- Types ---- */
 export type Roles = Record<string, string>;
@@ -27,7 +28,14 @@ export interface KitManifest {
 export interface Kit { dir: string; folder: string; manifest: KitManifest }
 export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
 /** What the plugin remembers about the updater (the `kit` key of data.json). */
-export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null; seenChangelog: string; initials: string }
+export interface KitData {
+  source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null; seenChangelog: string; initials: string; snippetIcons: Record<string, string>;
+  /** Built-in kit (embedded in the plugin): what was installed, per file id. */
+  managed: ManagedState | null;
+  /** Folders the user set for the built-in kit (templates, scripts, backups). Empty = detected. */
+  paths: Roles;
+  debug: boolean;
+}
 export interface PlanItem {
   kind: "file" | "delete";
   src?: string;
@@ -48,7 +56,7 @@ export interface ApplyResult {
 }
 
 const KIT_TEXT_EXT = /\.(md|js|json|css|py|txt|csv)$/i;
-export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "" };
+export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, debug: false };
 
 const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {
@@ -73,7 +81,7 @@ export function kitHash(buf: Uint8Array): string {
 const toArrayBuffer = (buf: Buffer): ArrayBuffer => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
 
 /** Where each part of the kit lives in this vault. */
-export function kitDetectRoles(app: App, pluginDir: string, record: KitRecord | null, manifest?: KitManifest): Roles {
+export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: KitManifest): Roles {
   const files = app.vault.getFiles();
   const tpl = templaterSettings(app);
   const remembered: Partial<Roles> = record?.roles ?? {};
@@ -84,7 +92,6 @@ export function kitDetectRoles(app: App, pluginDir: string, record: KitRecord | 
   const menu = find("Insert snippet.md");
   const docsFound = find("Lab notebook kit - changelog.md");
   const roles: Roles = {
-    plugin: pluginDir,
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
     userScripts: tpl.user_scripts_folder || remembered.userScripts || kitJoin(scripts, "templater"),
@@ -133,7 +140,7 @@ export async function kitPlan(adapter: KitAdapter, kit: Kit, roles: Roles, recor
   return items;
 }
 
-async function kitEnsureDir(adapter: KitAdapter, dir: string): Promise<void> {
+export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir">, dir: string): Promise<void> {
   if (!dir) return;
   const parts = dir.split("/"); let cur = "";
   for (const p of parts) { cur = cur ? `${cur}/${p}` : p; if (!(await adapter.exists(cur))) await adapter.mkdir(cur); }

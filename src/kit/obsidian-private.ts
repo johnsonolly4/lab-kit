@@ -16,6 +16,7 @@ interface PrivateApp {
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
+    enabledSnippets?: Set<string>;
   };
 }
 const priv = (app: App): PrivateApp => app as unknown as PrivateApp;
@@ -35,6 +36,14 @@ export async function setTemplaterUserScripts(app: App, folder: string): Promise
   try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
 }
 
+/** True when this Obsidian exposes the snippet manager we can switch snippets with (it is private API and may go away). */
+export const cssSnippetsSupported = (app: App): boolean =>
+  typeof priv(app).customCss?.setCssEnabledStatus === "function" && priv(app).customCss?.enabledSnippets instanceof Set;
+
+/** Whether a snippet is switched on. `undefined` when we can't tell. Name with or without ".css". */
+export const isCssSnippetEnabled = (app: App, name: string): boolean | undefined =>
+  cssSnippetsSupported(app) ? priv(app).customCss?.enabledSnippets?.has(name.replace(/\.css$/, "")) : undefined;
+
 /** Turns CSS snippets on and off. Names are snippet file names, with or without ".css". */
 export async function setCssSnippets(app: App, enable: string[], disable: string[]): Promise<void> {
   const css = priv(app).customCss;
@@ -44,10 +53,3 @@ export async function setCssSnippets(app: App, enable: string[], disable: string
   for (const s of disable) css.setCssEnabledStatus?.(s.replace(/\.css$/, ""), false);
 }
 
-/** Disables then re-enables a plugin, so a freshly installed build is loaded. */
-export async function reloadPlugin(app: App, id: string): Promise<void> {
-  const plugins = priv(app).plugins;
-  if (!plugins) return;
-  await plugins.disablePlugin(id);
-  await plugins.enablePlugin(id);
-}

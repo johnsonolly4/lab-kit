@@ -198,7 +198,8 @@ flowchart LR
 |---|---|
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
-| A snippet's menu icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
+| A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
+| A snippet's built-in icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
 | What a snippet builds | `Extras/scripts/templater/labSnippets.js` (one section per snippet) |
 | A new snippet | copy a file in `Templates/Snippets`, give it a new number and name |
 
@@ -208,6 +209,8 @@ flowchart LR
 ---
 
 ## 7. Updating the kit
+
+The kit files are also built into the plugin: **Settings → Lab Kit → Built-in kit → Review update…** shows what would change (nothing is written until you press **Apply**), and **Update all safe files** adds new files and updates the ones you never edited. A file you changed yourself is left alone. Backups of replaced files go to the Backup folder set there. **Manage files…** lists every kit file with a status and lets you update, restore the kit's original, detach or open one file at a time, and switch the kit's CSS snippet on or off. The folder updater described below is the older way and still works.
 
 New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Lab Kit: Check for updates** from the command palette, or use **Settings → Lab Kit → Check now**.
 
