@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** duplicate-name warning **built, tested, not committed** (see Last session). Commits from `22ac9c6` on are still unpushed. `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Candidates: the changelog popup, the next v0.4 bug (tutorial renders as Dataview errors), or fixing `npm run lint`. Commit + push when ready.
+**Now:** duplicate-name warning committed on branch `duplicate-table-names`, **PR open**: https://github.com/johnsonolly4/lab-kit/pull/1 (not merged). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** user's call. Merge the PR (after checking the warning in Obsidian if wanted), then candidates: the changelog popup, the next v0.4 bug (tutorial renders as Dataview errors), or fixing `npm run lint`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
