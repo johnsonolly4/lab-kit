@@ -73,7 +73,7 @@ export function kitHash(buf: Uint8Array): string {
 const toArrayBuffer = (buf: Buffer): ArrayBuffer => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
 
 /** Where each part of the kit lives in this vault. */
-export function kitDetectRoles(app: App, pluginDir: string, record: KitRecord | null, manifest?: KitManifest): Roles {
+export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: KitManifest): Roles {
   const files = app.vault.getFiles();
   const tpl = templaterSettings(app);
   const remembered: Partial<Roles> = record?.roles ?? {};
@@ -84,7 +84,6 @@ export function kitDetectRoles(app: App, pluginDir: string, record: KitRecord | 
   const menu = find("Insert snippet.md");
   const docsFound = find("Lab notebook kit - changelog.md");
   const roles: Roles = {
-    plugin: pluginDir,
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
     userScripts: tpl.user_scripts_folder || remembered.userScripts || kitJoin(scripts, "templater"),

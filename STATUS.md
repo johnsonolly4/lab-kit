@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** PRs 1-5 are all merged into `main`; the snippet menu icons commit is pushed on `whats-new-popup` but has no PR yet. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** v0.4 quick changes still open in BACKLOG (recipe amount modes, live cell highlight); check the merged features and the new settings page in Obsidian 1.13+ (BACKLOG, Not yet tested). Local `main` not pulled; local branch is still `whats-new-popup`.
+**Next:** store release path, in order (BACKLOG, Repo / release, "Community store submission checklist"): PR + merge `whats-new-popup`, pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, then `/release` 0.4.0 and submit at community.obsidian.md. v0.4 quick changes (recipe amount modes, live cell highlight) stay open in BACKLOG. Local `main` not pulled; local branch is still `whats-new-popup`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,12 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push snippet icons)
+## Last session (store submission checklist)
+- User asked to release so updates come via the Obsidian store. `/release` stopped at step 2 (on `whats-new-popup`, snippet icons not in `main`), so **no release was cut**; user chose to build the store checklist first
+- Then checked the developer policies: one blocker (updater overwrote the plugin's own files). User chose option 1, **done**: kit manifest no longer lists plugin files, `reloadPlugin` + plugin row removed, `kitDetectRoles` lost its `pluginDir` argument, test asserts the plugin is untouched, changelog line added, `kit-manifest.json` regenerated (23 files). `npm test`: 63 pass; `npm run build` clean; lint 0 errors, 4 warnings. Not committed. README file-access / no-network disclosure still to write (BACKLOG)
+- Live docs checked: **submission is now via https://community.obsidian.md (link GitHub), not a PR to `obsidian-releases`**. Saved in `docs/reference/plugin-guidelines.md`. Audit (lint 0 errors, 0 prod vulnerabilities, no banned patterns in `src/`) and the open items are in BACKLOG.md ("Community store submission checklist")
+
+## Earlier session (commit + push snippet icons)
 - Committed the snippet menu icons work below (7 tracked files + `tests/labpick.test.ts`, incl. STATUS/BACKLOG) on `whats-new-popup` and pushed. PRs 1-5 were already merged, so this commit is **not in `main` yet** (needs a new PR or merge). `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
 
 ## Earlier session (snippet menu icons)

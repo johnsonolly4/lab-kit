@@ -8,7 +8,7 @@ import {
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
-import { hasTemplater, reloadPlugin, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
+import { hasTemplater, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
 
 class KitUpdateModal extends Modal {
   roles: Roles = {};
@@ -22,7 +22,7 @@ class KitUpdateModal extends Modal {
   async onOpen(): Promise<void> {
     const m = this.kit.manifest;
     this.titleEl.setText(`Update lab kit to v${m.version}`);
-    this.roles = kitDetectRoles(this.app, this.ctl.plugin.manifest.dir as string, this.ctl.kit.installed, m);
+    this.roles = kitDetectRoles(this.app, this.ctl.kit.installed, m);
     this.setTemplater = true;
     this.enableCss = true;
     this.makeBackups = !!this.ctl.kit.makeBackups;
@@ -45,13 +45,13 @@ class KitUpdateModal extends Modal {
     // ----- Locations -----
     new Setting(contentEl).setName("Where things go").setDesc("Detected from your vault. Edit a line if it's wrong, then press Recheck.").setHeading();
     const used = [...new Set([...m.files.map(f => f.role), ...(m.delete ?? []).map(d => d.role), ...(this.makeBackups ? ["backups"] : [])])];
-    const labels: Record<string, string> = { plugin: "Lab Kit plugin", cssSnippets: "CSS snippets", scripts: "Shared scripts", userScripts: "Templater user scripts",
+    const labels: Record<string, string> = { cssSnippets: "CSS snippets", scripts: "Shared scripts", userScripts: "Templater user scripts",
       templates: "Templates", docs: "Kit notes", backups: "Backups" };
     for (const r of used) {
       new Setting(contentEl).setName(labels[r] ?? r).addText(t => {
         t.setValue(this.roles[r] ?? "").onChange(v => { this.roles[r] = v.trim().replace(/^\/|\/$/g, ""); });
         t.inputEl.addClass("lab-kit-wide-input");
-        if (r === "plugin" || r === "cssSnippets") t.setDisabled(true);
+        if (r === "cssSnippets") t.setDisabled(true);
       }).controlEl.addClass("lab-kit-wide-control");
     }
     new Setting(contentEl).addButton(b => b.setButtonText("Recheck").onClick(() => void this.refresh()));
@@ -122,13 +122,6 @@ class KitUpdateModal extends Modal {
       new Notice(`Lab kit v${m.version} installed: ${d.written} written, ${d.deleted} removed, ${d.skipped} kept.` +
         (res.backupRoot ? `\nBackup: ${res.backupRoot}` : ""), 10000);
       this.close();
-
-      // The reloaded plugin shows the "What's new" popup itself (the running one still has the old changelog)
-      const pluginChanged = this.items.some(i => i.role === "plugin" && i.kind === "file" && (i.status === "new" || i.status === "replace" || (i.status === "edited" && i.overwrite)));
-      if (pluginChanged) {
-        const id = this.ctl.plugin.manifest.id;
-        window.setTimeout(() => void reloadPlugin(this.app, id), 1200);
-      }
     } catch (e) {
       console.error(e);
       new Notice("Lab kit update stopped: " + (e as Error).message + (this.makeBackups ? "\nAnything already replaced is in the backups folder." : ""), 15000);
@@ -192,7 +185,7 @@ class KitSettingTab extends PluginSettingTab {
         } }
     ];
     if (inst?.roles) {
-      const roles = Object.entries(inst.roles);
+      const roles = Object.entries(inst.roles).filter(([k]) => k !== "plugin");
       updates.push({ name: "Install locations", render: b => {
         const det = b.descEl.createEl("details");
         det.createEl("summary", { text: "Show" });

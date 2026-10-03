@@ -67,7 +67,21 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Re-run `npm run lint` before store submission and in `/release` (add a step to the release skill): must end with 0 errors
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac)
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
-- [ ] Community store submission checklist
+- [ ] **Community store submission checklist** (process in `docs/reference/plugin-guidelines.md`, "Store submission"; audited 2026-10-03):
+  - Already fine: public repo, `LICENSE` (MIT), README, unique id `lab-kit`, description has no "Obsidian" / "This plugin", `npm run lint` 0 errors, no production vulnerabilities (`npm audit --omit=dev`), no `innerHTML`, inline styles, `console.log`, default hotkeys or lookbehind in `src/`
+  - [ ] Get `whats-new-popup` into `main` (snippet icons commit `3d0a08e`, no PR yet), pull local `main`
+  - [ ] Check the "Not yet tested" list inside Obsidian (nothing from v0.4 has been seen there)
+  - [ ] **Mobile / desktop-only decision**: `manifest.json` has `isDesktopOnly: false` but `src/kit/updater.ts:66,177,191` and `src/kit/datafolder.ts:6-19` use `require("fs"/"path"/"crypto"/"child_process"/"electron")` (guarded at runtime). Review may query it. Options: keep (guards) or set `true`
+  - [ ] Author field "Lab Kit contributors" (`manifest.json`, `package.json`, `LICENSE`): swap for the GitHub username if wanted. Optional `authorUrl` / `fundingUrl`
+  - [ ] README: replace "Not in the community store yet" install section after listing; add a screenshot or two
+  - [x] **Self-update removed** (developer policy "no self-update"): the kit manifest no longer lists the plugin files, `reloadPlugin` and the plugin row are gone (`scripts/kit-manifest.mjs`, `src/kit/ui.ts`, `src/kit/updater.ts`, `tests/updater.test.ts`). `npm run package` still copies `main.js` / `manifest.json` / `styles.css` into the zip for `install-updater.ps1` / `.sh` (user-run scripts, not the plugin); not seen in Obsidian
+  - [ ] **Developer policies, README disclosure** (https://docs.obsidian.md/community-directory/developer-policies; audited 2026-10-03: no telemetry, ads, network use, obfuscation; MIT): add a README section that says (a) no network use, no account, no paid features, (b) files outside the vault: the updater reads the update folder (`src/kit/updater.ts:177,191`) and the data-folder button opens a folder (`src/kit/datafolder.ts`), why, and that both are optional and desktop only
+  - [ ] Tutorial section 7 (`docs/tutorial.md:211`) still describes the update folder only; add one line that the plugin itself updates through Obsidian (Settings → Community plugins → Check for updates)
+  - [ ] Network / disclosure: updater only reads a local folder today (no network); say so in README. If the GitHub-releases updater is built, it must be optional and described
+  - [ ] Plugin name `Lab Kit` / description: check they are unique in the directory
+  - [ ] Cut release 0.4.0 with `/release` (tag = manifest version, assets `main.js`, `manifest.json`, `styles.css` + kit zip); add `"0.4.0": "1.13.0"` to `versions.json`
+  - [ ] Submit at https://community.obsidian.md (Obsidian account, link GitHub, add plugin), then fix whatever the automated review reports with a new release
+  - [ ] Store users get `main.js` / `manifest.json` / `styles.css` only; the kit files (Templates, scripts) still need the zip or the updater. Decide how store users get the kit (README + GETTING-STARTED wording)
 
 ## Not yet tested by the user
 - [ ] Snippet menu icons inside Obsidian: the "Snippet menu" group shows one row per snippet (needs the Snippets folder at `<templates role>/Snippets`, falls back to `Templates/Snippets`; `src/kit/ui.ts` `snippetRows`), placeholders show the built-in icon, a typed name changes the Alt+S menu icon after the next open, an unknown name falls back. `test-vault/Extras/scripts/templater/labPick.js` is a stale hand copy

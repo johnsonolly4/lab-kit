@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased (v0.4)
+- **The kit updater no longer installs the plugin itself**: it only manages templates, scripts and the CSS snippet. The plugin is updated by Obsidian (community plugins) or by copying the three release files; the updater window no longer lists a "Lab Kit plugin" row and no longer reloads the plugin
 - **Settings are searchable**: Lab Kit's settings page now uses Obsidian's new settings API, so its options show up in the global settings search. **Needs Obsidian 1.13 or newer.** Two small look changes: the hazards note about per-note options is its own row ("Per-note options"), and "Install locations" opens with a "Show" link
 - **Flow column prep asks for the packing material** (empty by default, added as the last row of the "Column weighing" table, so `column!B10` is still the reactor volume)
 - **Update command renamed** to "Check for updates" (Obsidian already shows "Lab Kit:" in front of it)

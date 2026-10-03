@@ -44,10 +44,3 @@ export async function setCssSnippets(app: App, enable: string[], disable: string
   for (const s of disable) css.setCssEnabledStatus?.(s.replace(/\.css$/, ""), false);
 }
 
-/** Disables then re-enables a plugin, so a freshly installed build is loaded. */
-export async function reloadPlugin(app: App, id: string): Promise<void> {
-  const plugins = priv(app).plugins;
-  if (!plugins) return;
-  await plugins.disablePlugin(id);
-  await plugins.enablePlugin(id);
-}

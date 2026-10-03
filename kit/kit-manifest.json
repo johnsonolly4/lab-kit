@@ -126,21 +126,6 @@
       "src": "Extras/scripts/templater/labSnippets.js",
       "role": "userScripts",
       "path": "labSnippets.js"
-    },
-    {
-      "src": ".obsidian/plugins/lab-kit/main.js",
-      "role": "plugin",
-      "path": "main.js"
-    },
-    {
-      "src": ".obsidian/plugins/lab-kit/manifest.json",
-      "role": "plugin",
-      "path": "manifest.json"
-    },
-    {
-      "src": ".obsidian/plugins/lab-kit/styles.css",
-      "role": "plugin",
-      "path": "styles.css"
     }
   ],
   "delete": [

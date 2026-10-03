@@ -6,7 +6,6 @@ import { join, relative, sep } from "path";
 
 const KIT = "kit";
 const ROLE_BY_PREFIX = [
-  [".obsidian/plugins/lab-kit/", "plugin"],
   [".obsidian/snippets/", "cssSnippets"],
   ["Extras/scripts/templater/", "userScripts"],
   ["Extras/scripts/", "scripts"],
@@ -35,13 +34,8 @@ const files = walk(KIT)
   })
   .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));
 
-// Shipped alongside kit/ by the packaging step (built plugin)
-const EXTRA = [
-  { src: ".obsidian/plugins/lab-kit/main.js", role: "plugin", path: "main.js" },
-  { src: ".obsidian/plugins/lab-kit/manifest.json", role: "plugin", path: "manifest.json" },
-  { src: ".obsidian/plugins/lab-kit/styles.css", role: "plugin", path: "styles.css" },
-];
-for (const e of EXTRA) if (!files.some((f) => f.src === e.src)) files.push(e);
+// The plugin's own files (main.js, manifest.json, styles.css) are deliberately NOT listed: the plugin never
+// updates itself (Obsidian developer policies). The package still carries them for the install-updater scripts.
 
 manifest.files = files;
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + "\n");
