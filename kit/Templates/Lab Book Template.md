@@ -40,17 +40,17 @@ cssclasses:
 ```lab-header
 ```
 
-# 🎯 Objectives
+# 🔬 Objectives
 
 
-# 🔧 Apparatus
+# ⚙️ Apparatus
 
 
-# 🧪 Procedure
+# ⚗️ Procedure
 1. 
 
-# 📊 Results / Analysis
+# 📈 Results / Analysis
 
 
-# 📝 Notes for next time
+# 💡 Notes for next time
 - 

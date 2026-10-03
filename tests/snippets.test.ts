@@ -113,7 +113,7 @@ describe("snippets", () => {
     assert.ok(r.md.includes("name: nmr2") && r.md.includes("ABC0016-A"), r.md);
 
     // Variant matrix
-    r = await run("matrix"); assert.ok(r.md.includes("copy: list") && r.md.includes("ABC0016-D"));
+    r = await run("matrix", { rows: "Lipoic acid, Acetic acid", cols: "Benzyl alcohol, Methanol" }); assert.ok(r.md.includes("copy: list") && r.md.includes("ABC0016-D"));
     // Column + RT linked
     r = await run("column", { density: "1.325" });
     note = note.replace("| Empty column (blanking plugs, glass wool) (g) |  |", "| Empty column (blanking plugs, glass wool) (g) | 111.076 |")

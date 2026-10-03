@@ -145,6 +145,10 @@ class KitSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
+    new Setting(containerEl).setName("Lab notebook").setHeading();
+    new Setting(containerEl).setName("Initials")
+      .setDesc("Used in sample codes, for example ABC0014-A. Read by the Alt+S snippets.")
+      .addText(t => t.setValue(this.ctl.kit.initials).onChange(async v => { this.ctl.kit.initials = v.trim(); await this.ctl.save(); }));
     new Setting(containerEl).setName("Kit updates").setHeading();
     new Setting(containerEl).setName("Update folder")
       .setDesc("Folder on this computer where new kit versions arrive (each in its own subfolder with kit-manifest.json).")

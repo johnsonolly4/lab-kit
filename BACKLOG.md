@@ -12,14 +12,14 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] **RAFT mol fractions not summing to 1**: formulas now divide by `SUM(fractions)`; tip callout removed (`kit/Extras/scripts/templater/labSnippets.js` `raft()`; test in `tests/snippets.test.ts`)
 
 ## v0.4 quick changes
-- [ ] Section emoji: 🔬 Objectives · ⚙️ Apparatus · ⚗️ Procedure · 📈 Results / Analysis · 💡 Notes for next time
-- [ ] **All paths and personal values in plugin settings** (data folder roots done; initials and kit update folder: initials still in `lab-config.json`) (user's rule: nothing personal in the repo): data folder root (replaces `lab-config.json` dataRoots), initials, kit update folder. Empty by default; a notice says where to set them when missing
+- [x] Section emoji: 🔬 Objectives · ⚙️ Apparatus · ⚗️ Procedure · 📈 Results / Analysis · 💡 Notes for next time (`kit/Templates/Lab Book Template.md:43-55`)
+- [x] **All paths and personal values in plugin settings** (data folder roots, kit update folder and initials are all settings now; initials: `src/kit/ui.ts` Initials box, `kit.initials` in data.json, read by `labSnippets.js:24-29`; `lab-config.json` stays as fallback for old installs and `dataRoots` for the old Dataview scripts) (user's rule: nothing personal in the repo): data folder root (replaces `lab-config.json` dataRoots), initials, kit update folder. Empty by default; a notice says where to set them when missing
 - [x] Data folder: created on button press only (removed from the template)
 - [ ] Snippet menu icons customisable in settings (icon colour = Obsidian accent, say so in the settings text)
-- [ ] Blank calc table: taller empty rows (easier to click)
-- [ ] NMR: dataset empty by default, with a placeholder saying it can be filled in
-- [ ] Sample list: dataset empty; label the toggles "Also add (appended below)"
-- [ ] All chemical fields in forms empty by default
+- [x] Blank calc table: taller empty rows (easier to click) (`.lab-kit td.is-blank` in `styles.css`, class set in `src/calc/render.ts:175`; applies to every empty body cell, not only the blank snippet)
+- [x] NMR: dataset empty by default, with a placeholder saying it can be filled in (`labSnippets.js` `nmrTable` + `nmr()`)
+- [ ] Sample list: dataset is now empty (done with the NMR item); still to do: label the toggles "Also add (appended below)" (`labSnippets.js` `techToggles`)
+- [ ] All chemical fields in forms empty by default: reagents, RAFT names and the matrix items are empty now; left on purpose (user's choice): NMR solvent CDCl3 / method 1H, GPC eluent THF, DLS solvent Water / 25 °C, RAFT ratio 20 / solids 20, column dead volume 0.21 (`labSnippets.js` nmr/gpc/dls/raft/column)
 - [ ] Flow column prep: ask for and store the packing material
 - [ ] Residence times: formula in a callout or maths block
 - [ ] Live highlight of referenced cells while a formula is being typed (investigate)
@@ -50,6 +50,9 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Community store submission checklist
 
 ## Not yet tested by the user
+- [ ] Initials box in Settings → Lab Kit: set it, run Alt+S Sample list, codes use it; clear it and a notice appears with `XX` codes. `test-vault/Extras/scripts/templater/labSnippets.js` and `test-vault/Templates/` are hand copies and stale until recopied
+- [ ] Empty forms inside Obsidian (placeholders show; an untouched solution / recipe / RAFT / matrix form inserts nothing), new emoji headings in a new note, taller empty cells (`styles.css` `.is-blank`)
+- [ ] Existing vaults: `lab-config.json` initials still work as a fallback, but a vault whose notes use them will show the XX notice only if both are empty
 - Excel → calc converter (`kit/Extras/scripts/excel_to_calc.py`)
 - Updater change preview
 - [ ] Click-to-edit inside Obsidian: width stays fixed while editing (cells narrower than 4em widen to 4em, `styles.css` `.is-editing`), one click moves to the next cell (also across two tables), Enter/Tab/Escape still work, typing is not wiped by the delayed redraw (`src/calc/render.ts` `refreshFile`)

@@ -42,6 +42,17 @@ describe("render", () => {
     assert.ok([...el.querySelectorAll(".lab-kit-grid-row th")].map((t: any) => t.textContent).join(" ").includes("A"), "grid header missing");
   });
 
+  it("marks empty body cells so they can be made taller", async () => {
+    const source = "name: t\n| X | Y |\n|---|---|\n| 2 |  |";
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => ({ path: "n.md" }), cachedRead: async () => "```calc\n" + source + "\n```\n" } }, registerEvent() { /* unused */ } };
+    const el = new El("div");
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    await new CalcRenderer(plugin).render({ el, ctx, source });
+    const blank = [...el.querySelectorAll("tbody td.is-blank")];
+    assert.strictEqual(blank.length, 1);
+    assert.strictEqual(el.querySelectorAll("th.is-blank").length, 0);
+  });
+
   it("moves from one edited cell to the next with a single click", async () => {
     let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
     const plugin: any = { app: { vault: { getAbstractFileByPath: () => ({ path: "n.md" }), cachedRead: async () => fileText,

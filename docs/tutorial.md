@@ -196,7 +196,7 @@ flowchart LR
 
 | Change | Where |
 |---|---|
-| Your initials in sample codes | `Extras/scripts/lab-config.json` → `initials` |
+| Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
 | A snippet's menu icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
 | What a snippet builds | `Extras/scripts/templater/labSnippets.js` (one section per snippet) |

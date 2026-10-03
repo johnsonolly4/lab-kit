@@ -172,6 +172,7 @@ export class CalcRenderer {
             }
           } else {
             if (cell.kind === "number") td.addClass("is-number");
+            if (r > 0 && cell.kind === "blank") td.addClass("is-blank");
             if (r > 0 && cell.kind === "blank" && needed.has(`0|${r}|${c}`)) td.addClass("is-needed");
             this.fillText(td, cell.raw, ctx);
             if (r > 0) td.setAttr("title", `${addr}  click to edit`);

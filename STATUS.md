@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. RAFT fix is committed and pushed on `whats-new-popup` (PR 2). Merge PR 1, then retarget PR 2 to `main` and merge it. Candidates: next v0.4 items in BACKLOG (section emoji, quick changes) or fixing `npm run lint`.
+**Next:** user's call. The v0.4 batch (quick changes + initials) is committed and pushed on `whats-new-popup` (PR 2). Merge PR 1, then retarget PR 2 to `main` and merge it. Candidates: next v0.4 items in BACKLOG (sample-list toggle label, snippet icons) or fixing `npm run lint`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,17 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (commit RAFT fix)
+## Last session (commit + push v0.4 batch)
+- Committed the batch below (tracked changes + `tests/snippets-defaults.test.ts`) and pushed to `whats-new-popup`. `test-vault/` hand copies left untracked on purpose. `npm test`: 59 pass. No code changes
+
+## Earlier session (quick changes batch 1 + initials)
+- New emoji in the template headings; `is-blank` class + `.lab-kit td.is-blank { height: 2em }` for empty body cells (all tables)
+- Forms: reagents, RAFT names, matrix items and the NMR dataset start empty with placeholders (`labSnippets.js`). Solvents, eluent, ratios, dead volume left as they were (user's choice)
+- Initials: `kit.initials` (`KitData`, `src/kit/updater.ts`), Settings → Lab Kit → Initials (`src/kit/ui.ts`). `labSnippets.js` reads `.obsidian/plugins/lab-kit/data.json`, falls back to `lab-config.json`, then `XX` with a notice (samples / timetable / matrix only)
+- Tests: new `tests/snippets-defaults.test.ts` (5), render test for `is-blank`, matrix test now passes its items. `npm test`: 59 pass; `npm run build` clean; `kit-manifest.json` unchanged on regeneration. Changelog + tutorial line updated
+- Not seen in Obsidian, test-vault copies stale, leftover items (sample-list toggle label, other defaults): all in BACKLOG.md
+
+## Earlier session (commit RAFT fix)
 - Committed and pushed the RAFT fix below, plus STATUS/BACKLOG/changelog. `npm test`: 53 pass. No code changes
 
 ## Earlier session (RAFT mol fractions)
