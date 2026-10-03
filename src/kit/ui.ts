@@ -127,7 +127,7 @@ class KitUpdateModal extends Modal {
       const pluginChanged = this.items.some(i => i.role === "plugin" && i.kind === "file" && (i.status === "new" || i.status === "replace" || (i.status === "edited" && i.overwrite)));
       if (pluginChanged) {
         const id = this.ctl.plugin.manifest.id;
-        setTimeout(() => void reloadPlugin(this.app, id), 1200);
+        window.setTimeout(() => void reloadPlugin(this.app, id), 1200);
       }
     } catch (e) {
       console.error(e);
@@ -202,7 +202,7 @@ export class KitController {
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
       const section = latestSection(changelog);
-      if (section && sectionHeading(section) !== this.kit.seenChangelog) setTimeout(() => void this.showWhatsNew(), 1500);
+      if (section && sectionHeading(section) !== this.kit.seenChangelog) window.setTimeout(() => void this.showWhatsNew(), 1500);
     });
     // Follow kit files the user moves or renames inside Obsidian
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {
@@ -217,7 +217,7 @@ export class KitController {
       if (changed) await this.save();
     }));
     if (Platform.isDesktopApp && this.kit.checkOnStartup) {
-      this.app.workspace.onLayoutReady(() => setTimeout(() => this.check(false), 4000));
+      this.app.workspace.onLayoutReady(() => window.setTimeout(() => this.check(false), 4000));
     }
   }
 
@@ -225,7 +225,7 @@ export class KitController {
   async showWhatsNew(): Promise<void> {
     const section = latestSection(changelog);
     if (!section) return;
-    new WhatsNewModal(this.app, this.plugin, section).open();
+    new WhatsNewModal(this.app, section).open();
     const heading = sectionHeading(section);
     if (this.kit.seenChangelog !== heading) { this.kit.seenChangelog = heading; await this.save(); }
   }
@@ -234,7 +234,7 @@ export class KitController {
     if (!Platform.isDesktopApp) { if (manual) new Notice("Kit updates work in the desktop app only."); return; }
     let kits: Kit[];
     try { kits = kitScan(this.kit.source); }
-    catch (e) { if (manual) new Notice(`Can't read the update folder:\n${this.kit.source}\nSet it in Settings → Lab Kit.`, 8000); return; }
+    catch { if (manual) new Notice(`Can't read the update folder:\n${this.kit.source}\nSet it in Settings → Lab Kit.`, 8000); return; }
     const latest = kits[0];
     const installed = this.kit.installed?.version ?? "0";
     if (!latest || kitCompare(latest.manifest.version, installed) <= 0) {

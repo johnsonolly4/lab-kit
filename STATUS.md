@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. The lint setup is committed on `whats-new-popup` (not pushed yet, so PR 2 doesn't include it). Merge PR 1, then retarget PR 2 to `main` and merge it. Candidates: push the lint commit, fix the 81 lint findings (BACKLOG, Repo / release), next v0.4 items (sample-list toggle label, snippet icons).
+**Next:** user's call. Lint is down to 44 problems (9 errors), all needing a decision (BACKLOG, Repo / release): Node modules in `src/kit/`, sentence case, command name, deprecated API. Also: merge PR 1, retarget PR 2 to `main`, merge it; v0.4 items (sample-list toggle label, snippet icons).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -10,9 +10,21 @@
 - Analysis methods + machines in settings: design to agree
 - Sample creation workflow: to discuss
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
-- `npm run lint` runs but reports 81 problems (34 errors); fixing them is in BACKLOG.md (Repo / release)
+- `npm run lint` reports 44 problems (9 errors, all `no-require-imports`): decisions in BACKLOG.md (Repo / release)
 
-## Last session (commit lint setup)
+## Last session (commit + push lint fixes)
+- Committed the lint fixes below (15 tracked files, incl. STATUS/BACKLOG) on `whats-new-popup` and pushed, so PR 2 includes them. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+
+## Earlier session (lint fixes)
+- Fixed the behaviour-neutral lint groups: 81 → 44 problems. `text()` helper (`src/calc/engine.ts`) for `no-base-to-string`; `instanceof TFile` instead of casts; `window.setTimeout`; `MarkdownRenderChild` / own `Component` for `MarkdownRenderer`; unused catch variables, redundant assertions, async click handler
+- `hazards.ts` uses `getAbstractFileByPath` + `instanceof TFile` (was `getFileByPath`), so `minAppVersion` stays 1.5.0. `WhatsNewModal` constructor lost its `plugin` argument
+- Tests: stub got `TFile(init)`, `MarkdownRenderChild`, `Component.load/unload`, `window`; mocks now return real `TFile`s. `npm test`: 59 pass; `npm run build` clean. Not committed. Not seen in Obsidian (the changed code: calc refresh/render/copy, hazard header, What's new popup)
+- Left on purpose: user-facing text (sentence case ×7, command name), Node modules / `require` in `src/kit/`, deprecated `setWarning` / `display()`, settings definitions
+
+## Earlier session (push lint commit)
+- Pushed `a502df9` (eslint setup) to `whats-new-popup`, so PR 2 includes it. No code changes, tests not rerun
+
+## Earlier session (commit lint setup)
 - Committed `eslint.config.mjs`, `package.json`, `package-lock.json`, STATUS and BACKLOG on `whats-new-popup`. Not pushed. No code changes, tests not rerun
 
 ## Earlier session (lint setup)

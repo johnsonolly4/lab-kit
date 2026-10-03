@@ -1,5 +1,5 @@
 // "What's new" popup: shows the newest section of the bundled changelog (docs/changelog.md).
-import { MarkdownRenderer, Modal, type App, type Plugin } from "obsidian";
+import { Component, MarkdownRenderer, Modal, type App } from "obsidian";
 
 export const CHANGELOG_URL = "https://github.com/johnsonolly4/lab-kit/blob/main/docs/changelog.md";
 
@@ -17,18 +17,21 @@ export function latestSection(md: string): string {
 export const sectionHeading = (section: string): string => section.split("\n", 1)[0].replace(/^## /, "").trim();
 
 export class WhatsNewModal extends Modal {
-  constructor(app: App, private plugin: Plugin, private section: string) { super(app); }
+  private component = new Component();
+
+  constructor(app: App, private section: string) { super(app); }
 
   onOpen(): void {
     const { contentEl } = this;
+    this.component.load();
     this.titleEl.setText("What's new in Lab Kit");
     contentEl.addClass("lab-kit-whatsnew");
     const body = contentEl.createDiv({ cls: "lab-kit-whatsnew-body" });
-    void MarkdownRenderer.render(this.app, this.section, body, "", this.plugin);
+    void MarkdownRenderer.render(this.app, this.section, body, "", this.component);
     const foot = contentEl.createDiv({ cls: "lab-kit-whatsnew-foot" });
     foot.createEl("a", { text: "Full changelog on GitHub", href: CHANGELOG_URL });
     foot.createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
   }
 
-  onClose(): void { this.contentEl.empty(); }
+  onClose(): void { this.component.unload(); this.contentEl.empty(); }
 }

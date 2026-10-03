@@ -1,8 +1,8 @@
 // Renders ```calc blocks as live tables: click-to-edit, + Row, A1 grid, Copy, row menu.
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
-import { MarkdownRenderer, Menu, Notice, getIcon, type App, type MarkdownPostProcessorContext, type Plugin, type TFile } from "obsidian";
+import { MarkdownRenderChild, MarkdownRenderer, Menu, Notice, TFile, getIcon, type App, type MarkdownPostProcessorContext, type Plugin } from "obsidian";
 import {
-  ERR, cleanLink, colToIndex, extractBlocks, formatValue, indexToCol, isErr, parseBlock, Workbook,
+  ERR, cleanLink, colToIndex, extractBlocks, formatValue, indexToCol, isErr, parseBlock, text, Workbook,
   type Env, type ParsedBlock, type Value
 } from "./engine";
 import { autoInsertIndex, editRows, writeCellText } from "./rewrite";
@@ -39,11 +39,11 @@ export class CalcRenderer {
       await this.render(entry);
     });
 
-    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const timers = new Map<string, number>();
     this.plugin.registerEvent(this.app.vault.on("modify", (file) => {
       if (!this.live.has(file.path)) return;
-      clearTimeout(timers.get(file.path));
-      timers.set(file.path, setTimeout(() => void this.refreshFile(file.path), 250));
+      window.clearTimeout(timers.get(file.path));
+      timers.set(file.path, window.setTimeout(() => void this.refreshFile(file.path), 250));
     }));
   }
 
@@ -59,16 +59,16 @@ export class CalcRenderer {
         if (key == null || fm[key] == null || fm[key] === "") return ERR("#PROP?", `"${note}" has no ${isMW ? "MW" : keys[0]} property`);
         const v = fm[key];
         if (typeof v === "number") return v;
-        const num = parseFloat(String(v).replace(",", "."));
-        return isMW ? (isNaN(num) ? ERR("#PROP?", `MW of "${note}" isn't a number`) : num) : (isNaN(num) ? String(v) : num);
+        const num = parseFloat(text(v).replace(",", "."));
+        return isMW ? (isNaN(num) ? ERR("#PROP?", `MW of "${note}" isn't a number`) : num) : (isNaN(num) ? text(v) : num);
       }
     };
   }
 
   async refreshFile(path: string, known?: string): Promise<void> {
     const set = this.live.get(path); if (!set) return;
-    const file = this.app.vault.getAbstractFileByPath(path); if (!file) return;
-    const text = known ?? await this.app.vault.cachedRead(file as TFile);
+    const file = this.app.vault.getAbstractFileByPath(path); if (!(file instanceof TFile)) return;
+    const text = known ?? await this.app.vault.cachedRead(file);
     const blocks = extractBlocks(text);
     for (const entry of [...set]) {
       if (!entry.el.isConnected) { set.delete(entry); continue; }
@@ -86,13 +86,13 @@ export class CalcRenderer {
     let others: ParsedBlock[] = [];
     try {
       const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
-      const text = fileText ?? (file ? await this.app.vault.cachedRead(file as TFile) : "");
+      const text = fileText ?? (file instanceof TFile ? await this.app.vault.cachedRead(file) : "");
       const info = ctx.getSectionInfo(el);
       const blocks = extractBlocks(text);
       // Without section info, drop only the first block that is this one (not every same-named block).
       const selfAt = info ? blocks.findIndex(b => b.lineStart === info.lineStart) : blocks.findIndex(b => b.source === entry.source);
       others = blocks.filter((_, i) => i !== selfAt).map(b => parseBlock(b.source));
-    } catch (e) { /* evaluate on its own */ }
+    } catch { /* evaluate on its own */ }
     const wb = new Workbook([self, ...others], this.env(ctx.sourcePath));
     const opts = self.opts;
     entry.parsed = self;
@@ -201,8 +201,7 @@ export class CalcRenderer {
     const stop = (e: Event): void => { e.preventDefault(); e.stopPropagation(); };
     gridBtn.addEventListener("click", (e) => { stop(e); showGrid = !showGrid; entry.grid = showGrid; build(); });
     addBtn.addEventListener("click", (e) => { stop(e); void this.structural(entry, "insert", autoInsertIndex(self)); });
-    copyBtn.addEventListener("click", async (e) => {
-      stop(e);
+    const copy = async (): Promise<void> => {
       const val = (r: number, c: number): string => {
         const cell = self.cells[r]?.[c];
         if (!cell) return "";
@@ -222,7 +221,8 @@ export class CalcRenderer {
       }
       try { await navigator.clipboard.writeText(text); new Notice(opts.copy ? "Copied as one column, paste into Excel" : "Table copied, paste into Excel"); }
       catch { new Notice("Couldn't copy to the clipboard"); }
-    });
+    };
+    copyBtn.addEventListener("click", (e) => { stop(e); void copy(); });
   }
 
   rowMenu(ev: MouseEvent, entry: CalcEntry, r: number): void {
@@ -237,9 +237,9 @@ export class CalcRenderer {
   async structural(entry: CalcEntry, kind: "insert" | "delete", at: number): Promise<void> {
     const info = entry.ctx.getSectionInfo(entry.el);
     const file = this.app.vault.getAbstractFileByPath(entry.ctx.sourcePath);
-    if (!info || !file) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return; }
+    if (!info || !(file instanceof TFile)) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return; }
     let ok = true;
-    await this.app.vault.process(file as TFile, (data) => {
+    await this.app.vault.process(file, (data) => {
       const out = editRows(data, info.lineStart, kind, at);
       if (out == null) { ok = false; return data; }
       return out;
@@ -250,7 +250,9 @@ export class CalcRenderer {
   fillText(td: HTMLElement, raw: string, ctx: MarkdownPostProcessorContext): void {
     if (/[[*_$<`~]/.test(raw)) {
       const span = td.createSpan();
-      void MarkdownRenderer.render(this.app, raw, span, ctx.sourcePath, this.plugin).then(() => {
+      const child = new MarkdownRenderChild(span);
+      ctx.addChild(child);
+      void MarkdownRenderer.render(this.app, raw, span, ctx.sourcePath, child).then(() => {
         const p = span.querySelector("p");
         if (p && span.childElementCount === 1) { while (p.firstChild) span.appendChild(p.firstChild); p.remove(); }
       });
@@ -299,9 +301,9 @@ export class CalcRenderer {
     const { el, ctx } = entry;
     const info = ctx.getSectionInfo(el);
     const file = this.app.vault.getAbstractFileByPath(ctx.sourcePath);
-    if (!info || !file) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return undefined; }
+    if (!info || !(file instanceof TFile)) { new Notice("Couldn't find this calc block. Edit it in source mode instead."); return undefined; }
     let out: string | undefined;
-    await this.app.vault.process(file as TFile, (data) => (out = writeCellText(data, info.lineStart, r, c, val)));
+    await this.app.vault.process(file, (data) => (out = writeCellText(data, info.lineStart, r, c, val)));
     return out;
   }
 }

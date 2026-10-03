@@ -2,6 +2,7 @@
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
+import { TFile } from "obsidian";
 import { CalcRenderer, type CalcEntry } from "../src/calc/render";
 import { parseBlock } from "../src/calc/engine";
 
@@ -13,7 +14,7 @@ describe("render", () => {
     Object.defineProperty(globalThis, "navigator", { value: { clipboard: { writeText: async (t: string) => { clip = t; } } }, configurable: true });
 
     let fileText = "intro\n```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | =A2*b!B2 |\n```\n\n```calc\nname: b\n| P | Q |\n| q | 5 |\n```\n";
-    const file = { path: "n.md" };
+    const file = new TFile({ path: "n.md" });
     const plugin: any = { app: { vault: { getAbstractFileByPath: () => file, cachedRead: async () => fileText,
       process: async (_f: unknown, fn: (d: string) => string) => { fileText = fn(fileText); } } }, registerEvent() { /* unused */ } };
     const renderer = new CalcRenderer(plugin);
@@ -44,7 +45,7 @@ describe("render", () => {
 
   it("marks empty body cells so they can be made taller", async () => {
     const source = "name: t\n| X | Y |\n|---|---|\n| 2 |  |";
-    const plugin: any = { app: { vault: { getAbstractFileByPath: () => ({ path: "n.md" }), cachedRead: async () => "```calc\n" + source + "\n```\n" } }, registerEvent() { /* unused */ } };
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => "```calc\n" + source + "\n```\n" } }, registerEvent() { /* unused */ } };
     const el = new El("div");
     const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
     await new CalcRenderer(plugin).render({ el, ctx, source });
@@ -55,7 +56,7 @@ describe("render", () => {
 
   it("moves from one edited cell to the next with a single click", async () => {
     let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
-    const plugin: any = { app: { vault: { getAbstractFileByPath: () => ({ path: "n.md" }), cachedRead: async () => fileText,
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText,
       process: async (_f: unknown, fn: (d: string) => string) => { fileText = fn(fileText); } } }, registerEvent() { /* unused */ } };
     const renderer = new CalcRenderer(plugin);
     const el = new El("div");

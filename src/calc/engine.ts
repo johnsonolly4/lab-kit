@@ -44,6 +44,13 @@ interface Token { t: "rel" | "num" | "str" | "qual" | "ref" | "id" | "op"; v?: s
 
 export const ERR = (code: string, msg?: string): CalcError => ({ err: code, msg });
 export const isErr = (v: unknown): v is CalcError => !!v && typeof v === "object" && "err" in v;
+/** String(v) for display: null → "", an error → its code, arrays comma-joined (as String() does). */
+export function text(v: unknown): string {
+  if (v == null) return "";
+  if (Array.isArray(v)) return v.map(text).join(",");
+  if (isErr(v)) return v.err;
+  return typeof v === "string" || typeof v === "number" || typeof v === "boolean" || typeof v === "bigint" ? String(v) : "";
+}
 
 export function colToIndex(letters: string): number {
   let n = 0;
@@ -57,7 +64,7 @@ export function indexToCol(i: number): string {
 }
 export const normName = (n: unknown): string => String(n).trim().toLowerCase();
 /** "[[Lipoic Acid|LA]]" → "Lipoic Acid" */
-export const cleanLink = (s: unknown): string => String(s ?? "").replace(/^\s*!?\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]\s*$/, "$1").replace(/\*\*/g, "").trim();
+export const cleanLink = (s: unknown): string => text(s).replace(/^\s*!?\[\[([^\]|#]+)(?:[#|][^\]]*)?\]\]\s*$/, "$1").replace(/\*\*/g, "").trim();
 export const sameText = (a: unknown, b: unknown): boolean => cleanLink(a).toLowerCase() === cleanLink(b).toLowerCase();
 
 /* ---- Block parsing ---- */
@@ -216,8 +223,8 @@ export function toNum(v: Value | undefined): number | CalcError {
   if (v == null || v === "") return 0;
   if (typeof v === "number") return v;
   if (typeof v === "boolean") return v ? 1 : 0;
-  if (NUM_RE.test(String(v).trim())) return parseFloat(String(v));
-  return ERR("#VALUE!", `"${String(v)}" is not a number`);
+  if (NUM_RE.test(text(v).trim())) return parseFloat(text(v));
+  return ERR("#VALUE!", `"${text(v)}" is not a number`);
 }
 const flat = (args: Value[]): Value[] => args.flatMap(a => Array.isArray(a) ? a : [a]);
 const numsOnly = (vals: Value[]): number[] => vals.filter((v): v is number => typeof v === "number");
@@ -228,7 +235,7 @@ function num2(x: Value, y: Value, f: (a: number, b: number) => Value): Value {
   if (isErr(a)) return a; if (isErr(b)) return b; return f(a, b);
 }
 function parseClock(s: unknown): number | null {
-  const m = String(s ?? "").trim().match(/^(\d{1,2})[:.](\d{2})$/);
+  const m = text(s).trim().match(/^(\d{1,2})[:.](\d{2})$/);
   return m ? (+m[1]) * 60 + (+m[2]) : null;
 }
 
@@ -271,7 +278,7 @@ const FUNCS: Record<string, (a: Value[]) => Value> = {
   OR: (a) => { const v = flat(a); return firstErr(v) || v.some(x => !!toNum(x)); },
   NOT: ([x]) => { const n = toNum(x); return isErr(n) ? n : !n; },
   AVG: (a) => FUNCS.AVERAGE(a),
-  CONCAT: (a) => { const v = flat(a); return firstErr(v) || v.map(x => x ?? "").join(""); },
+  CONCAT: (a) => { const v = flat(a); return firstErr(v) || v.map(text).join(""); },
   MATCH: ([v, range]) => {
     const arr = Array.isArray(range) ? range : [range];
     const i = arr.findIndex(x => typeof v === "number" ? x === v : sameText(x, v));
@@ -281,7 +288,7 @@ const FUNCS: Record<string, (a: Value[]) => Value> = {
     if (isErr(start)) return start;
     if (start == null || start === "") return ERR("#VALUE!", "start time is empty");
     const s = parseClock(start);
-    if (s == null) return ERR("#VALUE!", `use hh:mm, not "${String(start)}"`);
+    if (s == null) return ERR("#VALUE!", `use hh:mm, not "${text(start)}"`);
     const m = toNum(mins); if (isErr(m)) return m;
     const t = ((Math.round(s + m) % 1440) + 1440) % 1440;
     return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
@@ -390,7 +397,7 @@ export class Workbook {
       case "fn": return this.evalFn(n, bi, r, c);
       case "bin": {
         const a = this.scalar(n.a, bi, r, c), b = this.scalar(n.b, bi, r, c);
-        if (n.op === "&") { if (isErr(a)) return a; if (isErr(b)) return b; return `${String(a ?? "")}${String(b ?? "")}`; }
+        if (n.op === "&") { if (isErr(a)) return a; if (isErr(b)) return b; return `${text(a)}${text(b)}`; }
         if (["=", "<>", "<", ">", "<=", ">="].includes(n.op)) {
           if (isErr(a)) return a; if (isErr(b)) return b;
           const str = typeof a === "string" || typeof b === "string";
@@ -444,7 +451,7 @@ export class Workbook {
         const target = this.scalar(A[0], bi, r, c);
         if (isErr(target)) return target;
         if (target == null || target === "") return ERR("#VALUE!", "no chemical name");
-        const keys = n.name === "MW" ? MW_KEYS : [String(this.scalar(A[1], bi, r, c) ?? "")];
+        const keys = n.name === "MW" ? MW_KEYS : [text(this.scalar(A[1], bi, r, c))];
         if (!this.env.prop) return ERR("#NAME?", "note properties unavailable");
         return this.env.prop(cleanLink(target), keys, n.name === "MW");
       }
@@ -474,7 +481,7 @@ export function formatValue(v: Value | undefined, opts: FormatOpts): string {
   if (isErr(v)) return v.err;
   if (v == null) return "";
   if (typeof v === "boolean") return v ? "TRUE" : "FALSE";
-  if (typeof v !== "number") return String(v);
+  if (typeof v !== "number") return text(v);
   if (!isFinite(v)) return "#NUM!";
   if (opts.decimals != null && opts.decimals !== "" && !isNaN(+opts.decimals)) return v.toFixed(+opts.decimals);
   if (v === 0) return "0";

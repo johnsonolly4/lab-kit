@@ -1,6 +1,6 @@
 // Reads a note's Chemicals and each chemical note's H_Phrase from the metadata cache (no Dataview) and builds the hazard rows.
-import type { App } from "obsidian";
-import { cleanLink } from "../calc/engine";
+import { TFile, type App } from "obsidian";
+import { cleanLink, text } from "../calc/engine";
 import { LEVELS, phraseLevel, severity } from "./ghs";
 
 export interface Phrase { text: string; level: number; /** GHS category, "9" when unknown. */ cat: string }
@@ -54,13 +54,13 @@ function prop(fm: Record<string, unknown> | undefined, name: string): unknown {
 function toList(v: unknown): string[] {
   if (v == null || v === "") return [];
   if (Array.isArray(v)) return v.flatMap(toList);
-  return [String(v)];
+  return [text(v)];
 }
 
 export function collectHazards(app: App, sourcePath: string, opts: HazardOptions = HAZARD_DEFAULTS): HazardData {
   const cache = app.metadataCache;
-  const here = app.vault.getFileByPath(sourcePath);
-  const fm = (here ? cache.getFileCache(here)?.frontmatter : undefined) as Record<string, unknown> | undefined;
+  const here = app.vault.getAbstractFileByPath(sourcePath);
+  const fm: Record<string, unknown> | undefined = here instanceof TFile ? cache.getFileCache(here)?.frontmatter : undefined;
 
   const classes = toList(prop(fm, opts.classProperty)).map(c => c.replace(/[[\]]/g, "").trim().toLowerCase());
   const hide = opts.hideForClasses.map(c => c.trim().toLowerCase()).filter(Boolean);
@@ -75,7 +75,7 @@ export function collectHazards(app: App, sourcePath: string, opts: HazardOptions
       if (opts.showMissing) rows.push({ name, path: null, phrases: [], topLevel: LEVELS.length + 1, topCount: 0, worst: 1000 });
       continue;
     }
-    const chemFm = cache.getFileCache(file)?.frontmatter as Record<string, unknown> | undefined;
+    const chemFm: Record<string, unknown> | undefined = cache.getFileCache(file)?.frontmatter;
     const phrases = toList(prop(chemFm, "H_Phrase"))
       .sort((a, b) => severity(a).score - severity(b).score || a.localeCompare(b))
       .map(text => ({ text, level: phraseLevel(text), cat: severity(text).cat }));

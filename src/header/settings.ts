@@ -79,7 +79,7 @@ export function parseBlock(source: string): { block: BlockOptions; over: Partial
     else if (key === "layout") { if (raw === "chips" || raw === "table") over[key] = raw; }
     else over[key] = raw;
   }
-  return { block, over: over as Partial<HazardView> };
+  return { block, over: over };
 }
 
 /** The hazard options in effect for one block: plugin settings, then the block's own lines. */
@@ -109,7 +109,7 @@ export class HeaderStore {
     this.onChange();
   }
 
-  private toggle(el: HTMLElement, key: keyof HazardView & string, name: string, desc: string): void {
+  private toggle(el: HTMLElement, key: keyof HazardView, name: string, desc: string): void {
     const s = this.settings as unknown as Record<string, boolean>;
     new Setting(el).setName(name).setDesc(desc)
       .addToggle(t => t.setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); }));

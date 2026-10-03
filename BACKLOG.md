@@ -47,13 +47,13 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] `legacy/main.js` (git-ignored, never committed) still has the old `lab-calc` classes; keep a safe copy or delete it
 - [x] `npm run lint` runs: `eslint.config.mjs` (store plugin `eslint-plugin-obsidianmd` recommended config) + devDependencies. It reports 81 problems (34 errors, 47 warnings) in `src/`, none fixed yet
 - [ ] **Fix lint findings** (`npm run lint`; group by rule, fix each group in its own commit, run `npm test` after):
-  - [ ] `no-base-to-string` ×16 errors: `calc/engine.ts:60,219`, `header/hazards.ts:57`, `kit/updater.ts:54,55`
+  - [x] `no-base-to-string` (new `text()` helper in `calc/engine.ts`, used in `calc/render.ts`, `header/hazards.ts`; `kitVersionText` in `kit/updater.ts`)
   - [ ] `no-require-imports` ×9 errors + `no-nodejs-modules` ×8 + `no-undef` ×16 (`require`, `process`, `Buffer`): `kit/datafolder.ts:6-19`, `kit/updater.ts:36,65,72,99,112,119,176,189,190`. Desktop-only by design (`.claude/rules/obsidian-plugin.md`); probably an eslint override for `src/kit/` (node globals, `require` allowed) plus lazy loading, to agree before the store submission
-  - [ ] `no-unnecessary-type-assertion` ×4: `header/hazards.ts:63,78`, `header/render.ts:92`, `header/settings.ts:82`
-  - [ ] `no-plugin-as-component` ×2 errors: `calc/render.ts:253`, `whatsnew.ts:27` (pass a `Component` of its own to `MarkdownRenderer`)
-  - [ ] `no-misused-promises` `calc/render.ts:204`; `no-redundant-type-constituents` `header/settings.ts:112`
-  - [ ] `no-unsupported-api` `header/hazards.ts:62`: `Vault.getFileByPath` needs 1.5.7 but `manifest.json` `minAppVersion` is 1.5.0 (raise it, or use `getAbstractFileByPath`)
-  - [ ] `no-tfile-tfolder-cast` ×4 (`calc/render.ts:71,89,242,304`), `prefer-window-timers` ×5 (`calc/render.ts:45,46`, `kit/ui.ts:130,205,220`), `no-unused-vars` ×3 (`calc/render.ts:95`, `kit/ui.ts:237`, `kit/updater.ts:66`)
+  - [x] `no-unnecessary-type-assertion`
+  - [x] `no-plugin-as-component` (`MarkdownRenderChild` in `calc/render.ts` `fillText`; `Component` owned by `WhatsNewModal`)
+  - [x] `no-misused-promises`, `no-redundant-type-constituents`
+  - [x] `no-unsupported-api` (`getAbstractFileByPath` + `instanceof TFile` in `header/hazards.ts`, so `minAppVersion` stays 1.5.0)
+  - [x] `no-tfile-tfolder-cast`, `prefer-window-timers`, `no-unused-vars` (tests now give the renderer real `TFile` objects: `tests/helpers/obsidian-stub.ts`)
   - [ ] `ui/sentence-case` ×7: **changes user-facing text, ask first**: `header/settings.ts:131,136,138`, `kit/datafolder.ts:10`, `kit/ui.ts:46,92`, `whatsnew.ts:24`. Plugin name "Lab Kit" in text is flagged too
   - [ ] `no-plugin-name-in-command-name` `kit/ui.ts:200` (command text, ask first); `no-deprecated` `kit/ui.ts:174` (`setWarning`, and `display()` → `getSettingDefinitions()` is a 1.13-only API: check `minAppVersion` before adopting); `prefer-setting-definitions` `kit/ui.ts:142`
 - [x] Commit the lint setup (`eslint.config.mjs`, `package.json`, `package-lock.json`): committed on `whats-new-popup`, not pushed
@@ -67,6 +67,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Community store submission checklist
 
 ## Not yet tested by the user
+- [ ] Lint-fix refactors not seen in Obsidian: calc tables still refresh/edit/copy, a cell with a `[[link]]` still renders (now via `MarkdownRenderChild`, `src/calc/render.ts` `fillText`), hazard header still draws (`src/header/hazards.ts` `collectHazards`), What's new popup renders (`src/whatsnew.ts`)
 - [ ] Initials box in Settings → Lab Kit: set it, run Alt+S Sample list, codes use it; clear it and a notice appears with `XX` codes. `test-vault/Extras/scripts/templater/labSnippets.js` and `test-vault/Templates/` are hand copies and stale until recopied
 - [ ] Empty forms inside Obsidian (placeholders show; an untouched solution / recipe / RAFT / matrix form inserts nothing), new emoji headings in a new note, taller empty cells (`styles.css` `.is-blank`)
 - [ ] Existing vaults: `lab-config.json` initials still work as a fallback, but a vault whose notes use them will show the XX notice only if both are empty

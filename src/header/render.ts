@@ -89,7 +89,7 @@ export class HeaderRenderer {
 
     const host = entry.hazardsEl;
     const old = host.querySelector("details");
-    if (old) entry.open = (old as HTMLDetailsElement).open;
+    if (old) entry.open = old.open;
     else if (!host.childElementCount) entry.open = v.startOpen;
     host.empty();
     if (data.hidden) return;
