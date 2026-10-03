@@ -2,11 +2,14 @@
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 import { Modal, Notice, Platform, PluginSettingTab, Setting, TFile, normalizePath, type App, type ButtonComponent, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import {
-  KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitPlan, kitReadSource, kitScan,
+  KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitJoin, kitPlan, kitReadSource, kitScan,
   type Kit, type KitData, type PlanItem, type Roles
 } from "./updater";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
+import embedded from "lab-kit-embedded";
+import { KitManaged } from "./managed-ui";
+import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
 import { hasTemplater, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
 
@@ -162,6 +165,48 @@ class KitSettingTab extends PluginSettingTab {
     return rows;
   }
 
+  /** The kit files built into the plugin: version, update buttons and the folders they go to. */
+  private builtInRows(): SettingGroupItem[] {
+    const kit = this.ctl.kit, managed = this.ctl.managed, roles = managed.roles();
+    const inst = managed.installedVersion;
+    const isHidden = (path: string): boolean => path.split("/").some(p => p.startsWith("."));
+    const folder = (key: string, name: string, desc: string, noHidden = false): SettingGroupItem => ({
+      name, desc,
+      render: b => {
+        b.addText(t => {
+          t.setPlaceholder(roles[key] ?? "").setValue(kit.paths[key] ?? "").onChange(async v => {
+            const path = v.trim() ? normalizePath(v.trim()) : "";
+            if (noHidden && isHidden(path)) return;                 // not saved, the blur check below says why
+            if (path) kit.paths[key] = path; else delete kit.paths[key];
+            await this.ctl.save();
+          });
+          t.inputEl.addClass("lab-kit-wide-input");
+          if (noHidden) t.inputEl.addEventListener("blur", () => {
+            if (isHidden(t.getValue().trim())) new Notice("Not saved: scripts can't live in a hidden folder (one starting with a dot).", 8000);
+          });
+        });
+      }
+    });
+    const rows: SettingGroupItem[] = [];
+    if (managed.updateAvailable()) rows.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
+    rows.push({
+      name: "Kit version",
+      desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(kit.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
+      render: b => {
+        b.addButton(btn => btn.setButtonText("Review update…").onClick(() => managed.review()))
+          .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
+      }
+    });
+    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: detected from Templater, or Templates."));
+    rows.push(folder("scripts", "Scripts folder", "Where the kit's shared scripts go. Must not be a hidden (dot) folder. Empty: detected.", true));
+    rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time."));
+    rows.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
+      render: b => { b.addText(t => { t.setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); t.inputEl.addClass("lab-kit-wide-input"); }); } });
+    rows.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
+      render: b => { b.addToggle(t => t.setValue(kit.debug).onChange(async v => { kit.debug = v; await this.ctl.save(); })); } });
+    return rows;
+  }
+
   getSettingDefinitions(): SettingDefinitionItem[] {
     const kit = this.ctl.kit;
     const inst = kit.installed;
@@ -170,6 +215,7 @@ class KitSettingTab extends PluginSettingTab {
         render: b => { b.addText(t => t.setValue(kit.initials).onChange(async v => { kit.initials = v.trim(); await this.ctl.save(); })); } }
     ];
     const snippets = this.snippetRows();
+    const builtIn = this.builtInRows();
     const updates: SettingGroupItem[] = [
       { name: "Update folder", desc: "Folder on this computer where new kit versions arrive (each in its own subfolder with kit-manifest.json).",
         render: b => { b.addText(t => { t.setValue(kit.source).onChange(async v => { kit.source = v.trim(); await this.ctl.save(); }); t.inputEl.addClass("lab-kit-wide-input"); }); } },
@@ -202,6 +248,7 @@ class KitSettingTab extends PluginSettingTab {
     return [
       { type: "group", heading: "Lab notebook", items: notebook },
       ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
+      { type: "group", heading: "Built-in kit", items: builtIn },
       { type: "group", heading: "Kit updates", items: updates },
       ...this.header.definitions()
     ];
@@ -211,8 +258,9 @@ class KitSettingTab extends PluginSettingTab {
 /** Owns the updater's saved state (the `kit` key of data.json) and registers its settings tab, command and events. */
 export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
+  readonly managed: KitManaged;
 
-  constructor(readonly plugin: Plugin, private header: HeaderStore) {}
+  constructor(readonly plugin: Plugin, private header: HeaderStore) { this.managed = new KitManaged(plugin, this, embedded); }
 
   get app(): App { return this.plugin.app; }
 
@@ -220,6 +268,7 @@ export class KitController {
     const saved = (await this.plugin.loadData()) as { kit?: Partial<KitData> } | null;
     this.kit = Object.assign({}, KIT_DEFAULTS, saved?.kit ?? {});
     this.kit.snippetIcons = { ...this.kit.snippetIcons };
+    this.kit.paths = { ...this.kit.paths };
   }
   async save(): Promise<void> {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;
@@ -234,6 +283,7 @@ export class KitController {
     // The snippet rows need the vault index, which is not ready yet when the tab is registered
     this.app.workspace.onLayoutReady(() => tab.update());
     plugin.addCommand({ id: "kit-update", name: "Check for updates", callback: () => this.check(true) });
+    plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
@@ -242,14 +292,15 @@ export class KitController {
     });
     // Follow kit files the user moves or renames inside Obsidian
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {
+      let changed = followRename(this.kit.managed, oldPath, file.path);
       const rec = this.kit.installed?.files;
-      if (!rec) return;
-      let changed = false;
-      for (const p of Object.keys(rec)) {
-        if (p === oldPath || p.startsWith(oldPath + "/")) { rec[file.path + p.slice(oldPath.length)] = rec[p]; delete rec[p]; changed = true; }
+      if (rec) {
+        for (const p of Object.keys(rec)) {
+          if (p === oldPath || p.startsWith(oldPath + "/")) { rec[file.path + p.slice(oldPath.length)] = rec[p]; delete rec[p]; changed = true; }
+        }
+        const roles = this.kit.installed!.roles ?? {};
+        for (const [k, v] of Object.entries(roles)) if (v === oldPath || v.startsWith(oldPath + "/")) { roles[k] = file.path + v.slice(oldPath.length); changed = true; }
       }
-      const roles = this.kit.installed!.roles ?? {};
-      for (const [k, v] of Object.entries(roles)) if (v === oldPath || v.startsWith(oldPath + "/")) { roles[k] = file.path + v.slice(oldPath.length); changed = true; }
       if (changed) await this.save();
     }));
     if (Platform.isDesktopApp && this.kit.checkOnStartup) {

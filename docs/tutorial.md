@@ -210,6 +210,8 @@ flowchart LR
 
 ## 7. Updating the kit
 
+The kit files are also built into the plugin: **Settings → Lab Kit → Built-in kit → Review update…** shows what would change (nothing is written until you press **Apply**), and **Update all safe files** adds new files and updates the ones you never edited. A file you changed yourself is left alone. Backups of replaced files go to the Backup folder set there. The folder updater described below is the older way and still works.
+
 New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Lab Kit: Check for updates** from the command palette, or use **Settings → Lab Kit → Check now**.
 
 The update window shows:

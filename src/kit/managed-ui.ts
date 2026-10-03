@@ -1,0 +1,197 @@
+// Built-in kit: the glue between the plugin and src/kit/managed.ts, plus the review window, the report and the first-install question.
+// Works on mobile: only the vault adapter and crypto.subtle (the folder updater in ui.ts stays desktop only).
+import { Modal, Notice, Platform, Setting, type App, type Plugin } from "obsidian";
+import {
+  SAFE_ACTIONS, applyManaged, planManaged,
+  type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedItem, type ManagedResult
+} from "./managed";
+import { kitCompare, kitDetectRoles, kitHash, kitJoin, type KitData, type KitRecord, type Roles } from "./updater";
+
+export interface ManagedHost { kit: KitData; save(): Promise<void> }
+
+export class KitManaged {
+  constructor(private plugin: Plugin, private host: ManagedHost, readonly bundle: EmbeddedKit) {}
+
+  get app(): App { return this.plugin.app; }
+  get version(): string { return this.bundle.manifest.kitVersion; }
+  get installedVersion(): string | null { return this.host.kit.managed?.installedKitVersion ?? null; }
+  updateAvailable(): boolean { const i = this.installedVersion; return i !== null && kitCompare(this.version, i) > 0; }
+
+  /** Folders: detected like the folder updater does, then your own entries from settings on top. */
+  roles(): Roles {
+    const kit = this.host.kit;
+    const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v));
+    const old = kit.installed;
+    const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
+    return { ...kitDetectRoles(this.app, record), ...own };
+  }
+
+  private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
+
+  /** Files the old folder updater wrote (desktop only), so they aren't mistaken for your edits. */
+  private legacy(): LegacyRecord | null {
+    const old = this.host.kit.installed;
+    if (!Platform.isDesktopApp || !old) return null;
+    return { files: old.files, hash: t => kitHash(new TextEncoder().encode(t)) };
+  }
+
+  plan(): Promise<ManagedItem[]> {
+    return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy());
+  }
+
+  async apply(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<ManagedResult[]> {
+    const kit = this.host.kit;
+    const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, {
+      baseDir: this.baseDir(), backups: this.roles().backups, stamp: new Date().toISOString(), select, debug: kit.debug
+    });
+    kit.managed = out.state;
+    await this.host.save();
+    return out.results;
+  }
+
+  /** "Update all safe files": new files and unmodified files only. Asks first on the very first install. */
+  async updateSafe(): Promise<void> {
+    try {
+      const items = await this.plan();
+      const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
+      const go = async (): Promise<void> => {
+        try { new KitReportModal(this.app, await this.apply(items, it => SAFE_ACTIONS.includes(it.action))).open(); }
+        catch (e) { this.failed(e); }
+      };
+      if (!this.host.kit.managed && writes) {
+        new ConfirmModal(this.app, `Create ${writes} kit files?`,
+          "Templates, scripts and the CSS snippet are added to your vault. A file that already exists and differs is never overwritten.", `Create ${writes} files`, go).open();
+      } else await go();
+    } catch (e) { this.failed(e); }
+  }
+
+  review(): void { new KitManagedModal(this.app, this).open(); }
+
+  failed(e: unknown): void {
+    console.error(e);
+    new Notice("Kit update stopped: " + (e as Error).message + "\nAnything it replaced is in the backups folder.", 15000);
+  }
+}
+
+const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
+  { action: "needs-merge", title: "Changed by you and by the kit (left untouched; merging comes later)", open: true },
+  { action: "user-modified", title: "Changed by you (left untouched)" },
+  { action: "missing", title: "Deleted by you (tick to recreate)", open: true },
+  { action: "create", title: "New files", open: true },
+  { action: "fast-forward", title: "Updated (the old copy is backed up first)", open: true },
+  { action: "up-to-date", title: "Already up to date" },
+  { action: "keep", title: "Kept (your settings)" },
+  { action: "detached", title: "Detached (not managed)" }
+];
+
+/** Dry run: what would happen to every kit file, then Apply. */
+class KitManagedModal extends Modal {
+  private items: ManagedItem[] = [];
+  private recreate = new Set<string>();
+
+  constructor(app: App, private managed: KitManaged) { super(app); }
+
+  async onOpen(): Promise<void> {
+    this.titleEl.setText(`Kit files, v${this.managed.version}`);
+    try { this.items = await this.managed.plan(); }
+    catch (e) { this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
+    this.render();
+  }
+
+  private render(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    contentEl.addClass("lab-kit-modal");
+    const inst = this.managed.installedVersion;
+    contentEl.createEl("p", { cls: "setting-item-description",
+      text: inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply." });
+    const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
+    new Setting(contentEl).setName("Changes").setDesc(
+      `${count("create")} new · ${count("fast-forward")} updated · ${count("needs-merge") + count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
+
+    for (const g of GROUPS) {
+      const group = this.items.filter(i => i.action === g.action);
+      if (!group.length) continue;
+      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
+      det.open = !!g.open;
+      det.createEl("summary", { text: `${g.title} (${group.length})` });
+      const ul = det.createEl("ul");
+      for (const it of group) {
+        const li = ul.createEl("li");
+        if (g.action === "missing") {
+          const cb = li.createEl("input", { attr: { type: "checkbox" } });
+          cb.checked = this.recreate.has(it.file.id);
+          cb.addEventListener("change", () => { if (cb.checked) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); this.render(); });
+          li.appendText(" recreate ");
+        }
+        li.createEl("code", { text: it.dest });
+        if (it.untracked && (g.action === "user-modified")) li.appendText(" (not installed by the kit, no original to compare with)");
+      }
+    }
+
+    const todo = this.writes();
+    new Setting(contentEl)
+      .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
+      .addButton(b => b.setButtonText(todo ? `Apply (${todo} files)` : "Apply").setCta().setDisabled(!todo && !count("up-to-date"))
+        .onClick(() => void this.apply()));
+  }
+
+  private select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action) || (it.action === "missing" && this.recreate.has(it.file.id));
+  private writes(): number { return this.items.filter(i => this.select(i) && i.action !== "up-to-date").length; }
+
+  private async apply(): Promise<void> {
+    try {
+      const results = await this.managed.apply(this.items, this.select);
+      this.close();
+      new KitReportModal(this.app, results).open();
+    } catch (e) { this.managed.failed(e); }
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}
+
+/** What a run did: counts and a file list. */
+class KitReportModal extends Modal {
+  constructor(app: App, private results: ManagedResult[]) { super(app); }
+
+  onOpen(): void {
+    const { contentEl, results } = this;
+    this.titleEl.setText("Kit update report");
+    contentEl.addClass("lab-kit-modal");
+    const n = (o: ManagedResult["outcome"]): number => results.filter(r => r.outcome === o).length;
+    contentEl.createEl("p", { text: `${n("created")} created · ${n("updated")} updated · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
+    const order: ManagedResult["outcome"][] = ["created", "updated", "adopted", "skipped"];
+    const names = { created: "Created", updated: "Updated", adopted: "Already up to date", skipped: "Left alone" };
+    for (const o of order) {
+      const group = results.filter(r => r.outcome === o);
+      if (!group.length) continue;
+      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
+      det.open = o === "created" || o === "updated" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
+      det.createEl("summary", { text: `${names[o]} (${group.length})` });
+      const ul = det.createEl("ul");
+      for (const r of group) {
+        const li = ul.createEl("li");
+        li.createEl("code", { text: r.dest });
+        if (r.backup) li.appendText(` (old copy: ${r.backup})`);
+        else if (o === "skipped") li.appendText(` (${r.action})`);
+      }
+    }
+    new Setting(contentEl).addButton(b => b.setButtonText("Close").setCta().onClick(() => this.close()));
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}
+
+class ConfirmModal extends Modal {
+  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>) { super(app); }
+
+  onOpen(): void {
+    this.titleEl.setText(this.title);
+    this.contentEl.createEl("p", { text: this.text });
+    new Setting(this.contentEl)
+      .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
+      .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => { this.close(); void this.onYes(); }));
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}

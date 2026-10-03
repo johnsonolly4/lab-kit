@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-5 are all merged into `main`; the snippet menu icons commit is pushed on `whats-new-popup` but has no PR yet. None of it is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** store release path, in order (BACKLOG, Repo / release, "Community store submission checklist"): PR + merge `whats-new-popup`, pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, then `/release` 0.4.0 and submit at community.obsidian.md. v0.4 quick changes (recipe amount modes, live cell highlight) stay open in BACKLOG. Local `main` not pulled; local branch is still `whats-new-popup`.
+**Now:** Kit update system **Phase 1 is committed and pushed** on `whats-new-popup` (after `b970d7f`, which holds the self-update removal). PRs 1-5 are merged into `main`; snippet icons `3d0a08e`, `b970d7f` and the Phase 1 commit have no PR yet. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** the store release path (BACKLOG, Repo / release, "Community store submission checklist"): PR + merge `whats-new-popup`, pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, `/release` 0.4.0, submit at community.obsidian.md. Kit update system phases 2-5: BACKLOG, "Kit update system". Local `main` not pulled; local branch is `whats-new-popup`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,18 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (store submission checklist)
+## Last session (commit + push Phase 1)
+- Committed Phase 1 (embedded kit, managed-file engine, UI, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. `npm test`: 78 pass. No code changes
+
+## Earlier session (kit update system, Phase 1)
+- Spec read; user chose **Phase 1 only**, **embed the kit and keep the folder updater as fallback**, **keep the `kit/` layout and add ids**. First committed the pending self-update removal as `b970d7f`
+- `scripts/kit-manifest.mjs` now writes `schema`, `removed` and per file `id` (kept once assigned, new ones = prefix + path slug), `kind`, `version`, `sha256`, `renamedFrom`; `kit/kit-manifest.json` regenerated (23 files, legacy fields untouched). `scripts/embed-kit.mjs` reads manifest + files (line endings normalised); `esbuild.config.mjs` plugin turns it into the virtual module `lab-kit-embedded` (`src/embedded.d.ts`), watched in dev. `main.js` now contains the whole kit
+- `src/kit/managed.ts` (pure, adapter injected, `crypto.subtle` SHA-256): `planManaged` gives create / fast-forward / up-to-date / user-modified / needs-merge / missing / keep / detached; `applyManaged` backs up every overwrite to `<backups>/<ISO stamp>/<path>`, writes, saves state + base copy (`<configDir>/plugins/lab-kit/kit-base/<id>.txt`); never writes needs-merge / user-modified / keep / detached. `followRename` follows moved files. `KitData` got `managed`, `paths`, `debug` (`src/kit/updater.ts`; `kitEnsureDir` exported)
+- `src/kit/managed-ui.ts`: `KitManaged` (roles = detected + your folder entries, legacy SHA-1 record so the folder updater's files count as unmodified), review window (dry run, "recreate" ticks for missing files), report window, first-install confirm. `src/kit/ui.ts`: new settings group "Built-in kit", command "Review kit files", rename handler also follows built-in files
+- `tests/managed.test.ts` (15, incl. the real embedded kit installing into an empty vault). `npm test`: 78 pass; `npm run build` and `npm run package` clean; lint 0 errors, 4 warnings (same as before). Changelog + tutorial section 7 line added
+- **Not seen in Obsidian**, and the new windows / settings rows have no automated test (the engine does). Left out on purpose (all in BACKLOG, "Kit update system"): phases 2-5, built-in install does not set Templater's scripts folder or enable the CSS snippet, retention / restore list, forget-missing, startup notice, removing the folder updater
+
+## Earlier session (store submission checklist)
 - User asked to release so updates come via the Obsidian store. `/release` stopped at step 2 (on `whats-new-popup`, snippet icons not in `main`), so **no release was cut**; user chose to build the store checklist first
 - Then checked the developer policies: one blocker (updater overwrote the plugin's own files). User chose option 1, **done**: kit manifest no longer lists plugin files, `reloadPlugin` + plugin row removed, `kitDetectRoles` lost its `pluginDir` argument, test asserts the plugin is untouched, changelog line added, `kit-manifest.json` regenerated (23 files). `npm test`: 63 pass; `npm run build` clean; lint 0 errors, 4 warnings. Not committed. README file-access / no-network disclosure still to write (BACKLOG)
 - Live docs checked: **submission is now via https://community.obsidian.md (link GitHub), not a PR to `obsidian-releases`**. Saved in `docs/reference/plugin-guidelines.md`. Audit (lint 0 errors, 0 prod vulnerabilities, no banned patterns in `src/`) and the open items are in BACKLOG.md ("Community store submission checklist")
