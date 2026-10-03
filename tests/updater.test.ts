@@ -63,7 +63,8 @@ const readSrc = (kit: Kit) => (src: string) => fs.readFileSync(path.join(kit.dir
 describe("kit updater", () => {
   it("scans, detects, plans, applies, re-plans and respects edits", async () => {
     const kits = kitScan(PACK);
-    assert.strictEqual(kits.length, 1); assert.strictEqual(kits[0].manifest.version, "0.3.0");
+    const V = JSON.parse(fs.readFileSync(path.join(ROOT, "kit/kit-manifest.json"), "utf8")).version;   // moves with every commit
+    assert.strictEqual(kits.length, 1); assert.strictEqual(kits[0].manifest.version, V);
     const kit = kits[0];
     assert.ok(kitCompare("0.3.0", "0.2.9") > 0 && kitCompare("0.10.0", "0.9.1") > 0 && kitCompare("1.0", "1.0.0") === 0);
 
@@ -85,8 +86,8 @@ describe("kit updater", () => {
     // 3. Apply
     const res = await kitApply(adapter, kit, roles, items, null, "2026-10-02 1700", true);
     assert.strictEqual(fs.readFileSync(path.join(VAULT, "Extras/scripts/lab-config.json"), "utf8").includes("C:/my/real/path"), true);
-    assert.ok(fs.existsSync(path.join(VAULT, "Extras/kit-backups/2026-10-02 1700 before v0.3.0/Extras/Templates/Lab Book Template.md")));
-    assert.ok(fs.existsSync(path.join(VAULT, "Extras/kit-backups/2026-10-02 1700 before v0.3.0/.obsidian/snippets/tabs-mermaid-scroll.css")));
+    assert.ok(fs.existsSync(path.join(VAULT, `Extras/kit-backups/2026-10-02 1700 before v${V}/Extras/Templates/Lab Book Template.md`)));
+    assert.ok(fs.existsSync(path.join(VAULT, `Extras/kit-backups/2026-10-02 1700 before v${V}/.obsidian/snippets/tabs-mermaid-scroll.css`)));
     assert.ok(!fs.existsSync(path.join(VAULT, ".obsidian/snippets/tabs-mermaid-scroll.css")));
     assert.ok(fs.existsSync(path.join(VAULT, "Extras/Templates/Snippets/13 Blank calc table.md")));
     assert.strictEqual(fs.readFileSync(path.join(VAULT, "Lab Book/Notes/0014 - Test.md"), "utf8"), "my note");
