@@ -1,5 +1,13 @@
 # Lab notebook kit: changelog
 
+## Unreleased (v0.4)
+- **Hazard header is now part of the plugin** (```` ```lab-header ```` block, no Dataview needed):
+  - redraws only when this note's Chemicals or a linked chemical note changes (fixes the stutter)
+  - compact layout: one row per chemical with an H-code chip each; the old table is one setting away (Settings → Lab Kit → Hazards → Layout)
+  - every option of the old script is a setting again, and can be set per note with lines inside the block (see the tutorial)
+  - data folder roots are now plugin settings (empty by default); the folder is created when you press the button, not when the note is made
+  - new note template uses the block; the old Dataview scripts stay for existing notes
+
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):
   - checks your update folder (set in Settings → Lab Kit) when Obsidian starts and offers new versions

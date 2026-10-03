@@ -1,0 +1,7 @@
+{
+  "notes/0014 - Test.md": { "Exp. Class": "synthesis", "Chemicals": ["[[Ethanol]]", "[[Acetone]]", "[[Missing reagent]]", "[[Water]]"] },
+  "notes/0015 - Setup.md": { "Exp. Class": "Setup", "Chemicals": ["[[Ethanol]]"] },
+  "chem/Ethanol.md": { "H_Phrase": ["H319 Causes serious eye irritation", "H225 Highly flammable liquid and vapour"] },
+  "chem/Acetone.md": { "H_Phrase": ["H225 Highly flammable liquid and vapour", "H319 Causes serious eye irritation", "H336 May cause drowsiness or dizziness"] },
+  "chem/Water.md": {}
+}

@@ -7,13 +7,13 @@ cssclasses:
 # 🧰 Lab notebook kit: tutorial (v0.3)
 
 > [!summary] The kit in one minute
-> 1. **New note** in your Notes folder → name it → it's numbered, gets a Google Drive data folder, a hazard table and five sections.
+> 1. **New note** in your Notes folder → name it → it's numbered and gets a hazard table, a data-folder button and five sections.
 > 2. While writing, press **Alt+S** → pick a snippet → fill **one form** → a ready-made table appears.
 > 3. Tables in ```` ```calc ```` blocks **calculate live**: click a cell to type, they update everything that depends on them.
 
 ```mermaid
 flowchart LR
-    N[New note] --> T[Template<br>number · Drive folder · hazards]
+    N[New note] --> T[Template<br>number · data folder button · hazards]
     T --> S[Objectives · Apparatus · Procedure<br>Results · Notes for next time]
     S -- Alt+S --> M[Snippet menu]
     M --> C1[Recipes<br>solution · equivalents · RAFT]
@@ -30,7 +30,7 @@ flowchart LR
 1. Create a new note in **Notes**.
 2. Type the title in the box that pops up (e.g. `Batch esterification of PABTC`).
 3. You get `0016 - Batch esterification of PABTC` with:
-   - 📁 **Open data folder**: opens `<your data folder>/0016 - …` (made automatically)
+   - 📁 **Open data folder**: opens `<your data folder>/0016 - …` (made when you press the button; set the data folder in Settings → Lab Kit)
    - ⚠️ **Hazards**: fills in once you add chemicals to the **Chemicals** property
    - **Objectives · Apparatus · Procedure · Results / Analysis · Notes for next time**
 
@@ -121,7 +121,33 @@ $$\tau = \frac{V_{\text{reactor}}}{Q} \qquad Q = \frac{V_{\text{reactor}}}{\tau}
 ---
 
 ## 4. Hazards
-The table lists every chemical in **Chemicals**, worst first, with each H-code coloured by severity. It needs each chemical note to have an `H_Phrase` list property. Settings are at the top of `Extras/scripts/hazards/view.js` (all commented).
+The table lists every chemical in **Chemicals**, worst first, with each H-code coloured by severity. It needs each chemical note to have an `H_Phrase` list property. It shows one row per chemical with a chip per H-code (hover for the full phrase); Settings → Lab Kit → Hazard layout switches to the two-column table. It only redraws when this note's Chemicals or a linked chemical note changes. The header is a ```` ```lab-header ```` block; **Insert lab header block** in the command palette adds one.
+
+All the options are in Settings → Lab Kit → Hazards. To change one for a single note, put it inside the block, one per line:
+
+````
+```lab-header
+layout: table
+collapsed: false
+showLegend: false
+```
+````
+
+| Option | Values | Default |
+|---|---|---|
+| `layout` | `chips` or `table` | `chips` |
+| `chemicalsProperty` · `classProperty` | property names | `Chemicals` · `Exp. Class` |
+| `hideForClasses` | comma-separated classes | `in-silico, setup` |
+| `collapsed` | hazards behind a one-line summary | `true` |
+| `startOpen` | summary starts expanded | `true` |
+| `showSummaryCounts` | "Severe 1 · High 2" in the summary | `true` |
+| `showLegend` · `legendDetails` | colour key, with categories | `true` · `false` |
+| `sortByWorstHazard` | off = A to Z | `true` |
+| `highlightWholePhrase` | colour the whole phrase, not just the code | `false` |
+| `showCategoryLabels` | "Cat 2" after each code | `false` |
+| `shadeChemicalCell` · `centreChemicalCell` | shade / centre the name | `true` · `true` |
+| `showMissing` | list chemicals with no note or no `H_Phrase` | `true` |
+| `dataFolder` · `hazards` | `false` leaves out the button / the hazards | `true` |
 
 ---
 
@@ -171,7 +197,7 @@ flowchart LR
 | Change | Where |
 |---|---|
 | Your initials in sample codes | `Extras/scripts/lab-config.json` → `initials` |
-| Data folder (e.g. on Google Drive) | `lab-config.json` → `dataRoots` (empty until you set it) |
+| Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
 | A snippet's menu icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
 | What a snippet builds | `Extras/scripts/templater/labSnippets.js` (one section per snippet) |
 | A new snippet | copy a file in `Templates/Snippets`, give it a new number and name |

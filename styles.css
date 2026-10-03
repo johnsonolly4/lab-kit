@@ -56,3 +56,37 @@
 .lab-kit-wide-input { width: 100% !important; }
 .lab-kit-wide-control { flex: 1 1 60% !important; }
 .lab-kit-notice-btn { margin-top: 6px; }
+
+/* Lab header: data-folder button + hazards (```lab-header) */
+.lab-header-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
+.lab-header-muted { color: var(--text-muted); }
+.lab-hazards > summary { cursor: pointer; }
+
+/* Severity colours (same as the Dataview version). Chips and shaded name cells read data-level. */
+.lab-header .lab-hazard-chip { --lab-level: #CACFD9A6; }
+.lab-header [data-level="0"] { --lab-level: #FF5582A6; }
+.lab-header [data-level="1"] { --lab-level: #FF8A4CA6; }
+.lab-header [data-level="2"] { --lab-level: #FFB84DA6; }
+.lab-header [data-level="3"] { --lab-level: #FFE066A6; }
+.lab-header [data-level="4"] { --lab-level: #CACFD9A6; }
+.lab-hazard-chip {
+  display: inline-block; padding: 0 3px; border-radius: 3px; line-height: 1.5;
+  background: var(--lab-level); color: #1e1e1e;
+}
+.lab-hazard-chip.is-bold { font-weight: 600; }
+
+/* Chips layout: one row per chemical */
+.lab-hazard-list { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.lab-hazard-row { display: flex; align-items: baseline; gap: 4px 10px; flex-wrap: wrap; }
+.lab-hazard-row .lab-hazard-name { min-width: 9em; padding: 0 6px; border-radius: 3px; }
+.lab-hazard-name[data-level] { background: var(--lab-level); }
+.lab-hazard-name[data-level] a { color: #1e1e1e; }
+.lab-hazard-chips { display: flex; flex-wrap: wrap; gap: 3px 4px; font-size: 0.9em; }
+
+/* Table layout: chemical name centred and shaded with its worst hazard */
+.lab-hazard-table td.lab-hazard-name.is-centred { text-align: center; vertical-align: middle; }
+.lab-hazard-cat { font-size: 0.8em; }
+
+.lab-hazard-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.85em; margin-top: 6px; align-items: flex-start; }
+.lab-hazard-legend-item.has-details { display: inline-flex; flex-direction: column; }
+.lab-hazard-legend-desc { font-size: 0.85em; }

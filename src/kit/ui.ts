@@ -5,6 +5,7 @@ import {
   KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitJoin, kitPlan, kitReadSource, kitScan,
   type Kit, type KitData, type PlanItem, type Roles
 } from "./updater";
+import type { HeaderStore } from "../header/settings";
 import { hasTemplater, reloadPlugin, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
 
 class KitUpdateModal extends Modal {
@@ -140,7 +141,7 @@ class KitUpdateModal extends Modal {
 }
 
 class KitSettingTab extends PluginSettingTab {
-  constructor(app: App, plugin: Plugin, private ctl: KitController) { super(app, plugin); }
+  constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) { super(app, plugin); }
 
   display(): void {
     const { containerEl } = this;
@@ -167,6 +168,7 @@ class KitSettingTab extends PluginSettingTab {
     new Setting(containerEl).setName("Forget install record")
       .setDesc("Use if you moved things outside Obsidian. Next update re-detects locations; files you edited are then not recognised as edited.")
       .addButton(b => b.setButtonText("Forget").setWarning().onClick(async () => { this.ctl.kit.installed = null; await this.ctl.save(); this.display(); }));
+    this.header.display(containerEl);
   }
 }
 
@@ -174,7 +176,7 @@ class KitSettingTab extends PluginSettingTab {
 export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
 
-  constructor(readonly plugin: Plugin) {}
+  constructor(readonly plugin: Plugin, private header: HeaderStore) {}
 
   get app(): App { return this.plugin.app; }
 
@@ -190,7 +192,7 @@ export class KitController {
 
   setup(): void {
     const plugin = this.plugin;
-    plugin.addSettingTab(new KitSettingTab(this.app, plugin, this));
+    plugin.addSettingTab(new KitSettingTab(this.app, plugin, this, this.header));
     plugin.addCommand({ id: "kit-update", name: "Check for lab kit updates", callback: () => this.check(true) });
     // Follow kit files the user moves or renames inside Obsidian
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {

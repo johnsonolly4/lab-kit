@@ -117,7 +117,8 @@ describe("kit updater", () => {
     const r2 = { ...rec.roles, scripts: "Lab/scripts" };
     items = await kitPlan(adapter, kit2, r2, rec, readSrc(kit2));
     const tpl = items.find(i => i.dest === "Extras/Templates/Lab Book Template.md")!;
-    assert.ok(tpl.text!.includes('dv.view("Lab/scripts/lab-header")') && !tpl.text!.includes("Extras/scripts"));
+    // The note template now uses the ```lab-header block, so it carries no script paths to rewrite
+    assert.ok(!(tpl.text ?? fs.readFileSync(path.join(kit.dir, "Templates/Lab Book Template.md"), "utf8")).includes("Extras/scripts"));
     const snip = items.find(i => i.dest.endsWith("labSnippets.js"))!;
     assert.ok(snip.text!.includes('"Lab/scripts/lab-config.json"'));
   });

@@ -4,13 +4,17 @@
 import esbuild from "esbuild";
 import process from "process";
 import builtins from "builtin-modules";
-import { copyFileSync, mkdirSync } from "fs";
+import { copyFileSync, mkdirSync, watchFile } from "fs";
 
 const prod = process.argv[2] === "production";
 const devDir = "test-vault/.obsidian/plugins/lab-kit";
 if (!prod) {
   mkdirSync(devDir, { recursive: true });
-  for (const f of ["manifest.json", "styles.css"]) copyFileSync(f, `${devDir}/${f}`);
+  // Copy now and again whenever the file changes (reload the plugin in Obsidian to pick up new CSS)
+  for (const f of ["manifest.json", "styles.css"]) {
+    copyFileSync(f, `${devDir}/${f}`);
+    watchFile(f, { interval: 300 }, () => copyFileSync(f, `${devDir}/${f}`));
+  }
 }
 
 const context = await esbuild.context({
