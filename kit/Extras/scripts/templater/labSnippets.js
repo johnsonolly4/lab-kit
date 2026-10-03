@@ -48,24 +48,39 @@ module.exports = async function labSnippets(tp, key) {
     taken.add(n);
     return n;
   };
-  /** Codes from the first column of an existing calc table in the note. */
-  const codesFrom = (names) => {
+  /** Every calc table in the note, in order: { name (lower case), rows } where each row is its list of cells (header row first). */
+  const calcTables = () => {
+    const rx = new RegExp("^[ \\t>]*" + F + "calc[ \\t]*\\n([\\s\\S]*?)\\n[ \\t>]*" + F + "[ \\t]*$", "gim");
     const text = noteText();
+    const out = []; let m;
+    while ((m = rx.exec(text))) {
+      const lines = m[1].split("\n").map(l => l.replace(/^[ \t>]*/, ""));
+      const name = lines.map(l => l.match(/^name:\s*(.+?)\s*$/i)).find(Boolean)?.[1].toLowerCase() ?? "";
+      const rows = lines.filter(l => l.startsWith("|") && !/^[\s|:\-]+$/.test(l)).map(l => l.split("|").slice(1, -1).map(c => c.trim()));
+      out.push({ name, rows });
+    }
+    return out;
+  };
+  /** Tables called base, base2, base3… (a table may have been deleted or copied, so any number can exist). A base ending in "s" also matches the singular: samples → sample, sample2. */
+  const tablesNamed = (base) => {
+    const rx = new RegExp(`^${base.replace(/s$/, "s?")}\\d*$`, "i");
+    return calcTables().filter(t => rx.test(t.name));
+  };
+  /** Codes from the first column of the note's tables: the first name in the list that has any, taken from all of its numbered copies. */
+  const codesFrom = (names) => {
     for (const nm of names) {
-      const m = text.match(new RegExp(`${F}calc\\s*\\n(?:(?!\\s*\\|)(?!${F})[^\\n]*\\n)*?\\s*name:\\s*${nm}\\s*\\n([\\s\\S]*?)${F}`, "i"));
-      if (!m) continue;
-      const rows = m[1].split("\n").filter(l => l.trim().startsWith("|") && !/^[\s|:\-]+$/.test(l.trim()));
-      return rows.slice(1).map(l => l.split("|")[1]?.trim()).filter(Boolean);
+      const codes = [...new Set(tablesNamed(nm).flatMap(t => t.rows.slice(1).map(r => r[0]).filter(Boolean)))];
+      if (codes.length) return codes;
     }
     return [];
   };
-  /** Number of body rows in an existing calc table, or 0. */
+  /** Number of body rows in the calc table with exactly this name, or 0. */
   const tableRows = (name) => {
-    const text = noteText();
-    const m = text.match(new RegExp(`${F}calc\\s*\\n(?:(?!\\s*\\|)(?!${F})[^\\n]*\\n)*?\\s*name:\\s*${name}\\s*\\n([\\s\\S]*?)${F}`, "i"));
-    if (!m) return 0;
-    return m[1].split("\n").filter(l => l.trim().startsWith("|") && !/^[\s|:\-]+$/.test(l.trim())).length - 1;
+    const t = calcTables().find(x => x.name === String(name).toLowerCase());
+    return t ? Math.max(0, t.rows.length - 1) : 0;
   };
+  /** The nmr / gpc / dls tables in the note (nmr, nmr2…) with their sample counts, for the results table to read. */
+  const techTables = (base) => tablesNamed(base).map(t => ({ id: t.name, n: t.rows.length - 1 })).filter(t => t.n > 0);
   /** Add technique tags (NMR, GPC, DLS) to the note's tags property, after the snippet is inserted. */
   const tag = (...tags) => {
     if (!file || !tags.length) return;
@@ -116,12 +131,15 @@ ${calc({ name: id, title: "DLS samples", icon: "sparkles", copy: "column A" }, [
   const resultsTable = (codes, links) => {
     const id = unique("results");
     const header = ["Sample"]; const cols = [];
-    const look = (t, col, rngCol, n) => (r) => `=XLOOKUP(A${r}, ${t}!${rngCol}$2:${rngCol}$${n + 1}, ${t}!${col}$2:${col}$${n + 1}, "")`;
-    if (links.nmr) { header.push("Conversion (%)"); cols.push(links.nmr.id ? look(links.nmr.id, "E", "B", links.nmr.n) : () => ""); }
+    // One XLOOKUP per table of that technique; a code missing from the first is looked up in the next (nmr, then nmr2…)
+    const look = (tables, col, rngCol) => (r) => "=" + tables.reduceRight(
+      (rest, t) => `XLOOKUP(A${r}, ${t.id}!${rngCol}$2:${rngCol}$${t.n + 1}, ${t.id}!${col}$2:${col}$${t.n + 1}, ${rest})`, '""');
+    const linked = (l) => l.tables?.length > 0;
+    if (links.nmr) { header.push("Conversion (%)"); cols.push(linked(links.nmr) ? look(links.nmr.tables, "E", "B") : () => ""); }
     if (links.gpc) { header.push("Mn (g/mol)", "Mw (g/mol)", "Đ");
-      cols.push(...["C", "D", "E"].map(c => links.gpc.id ? look(links.gpc.id, c, "A", links.gpc.n) : () => "")); }
+      cols.push(...["C", "D", "E"].map(c => linked(links.gpc) ? look(links.gpc.tables, c, "A") : () => "")); }
     if (links.dls) { header.push("Dh (nm)", "PDI");
-      cols.push(...["D", "E"].map(c => links.dls.id ? look(links.dls.id, c, "A", links.dls.n) : () => "")); }
+      cols.push(...["D", "E"].map(c => linked(links.dls) ? look(links.dls.tables, c, "A") : () => "")); }
     const rows = (codes.length ? codes : ["", "", ""]).map((c, i) => [c, ...cols.map(f => f(i + 2))]);
     return `## Results
 ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
@@ -135,9 +153,9 @@ ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
   ];
   const addTechniques = (v, codes) => {
     let out = ""; const links = {}; const tags = [];
-    if (v.nmr) { const t = nmrTable(codes); out += "\n" + t.md; links.nmr = t; tags.push("NMR"); }
-    if (v.gpc) { const t = gpcTable(codes); out += "\n" + t.md; links.gpc = t; tags.push("GPC"); }
-    if (v.dls) { const t = dlsTable(codes); out += "\n" + t.md; links.dls = t; tags.push("DLS"); }
+    if (v.nmr) { const t = nmrTable(codes); out += "\n" + t.md; links.nmr = { tables: [t] }; tags.push("NMR"); }
+    if (v.gpc) { const t = gpcTable(codes); out += "\n" + t.md; links.gpc = { tables: [t] }; tags.push("GPC"); }
+    if (v.dls) { const t = dlsTable(codes); out += "\n" + t.md; links.dls = { tables: [t] }; tags.push("DLS"); }
     if (v.results) out += "\n" + resultsTable(codes, links.nmr || links.gpc || links.dls ? links : { nmr: {}, gpc: {}, dls: {} });
     tag(...tags);
     return out;
@@ -309,17 +327,19 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
     },
 
     async results() {
-      const has = (n) => tableRows(n) > 0;
+      const tech = { nmr: techTables("nmr"), gpc: techTables("gpc"), dls: techTables("dls") };
+      const has = (n) => tech[n].length > 0;
+      const hint = (n) => has(n) ? `linked to the ${tech[n].map(t => t.id).join(", ")} table${tech[n].length > 1 ? "s" : ""}` : "typed in";
       const v = await form("Combined results table", [
         { key: "codes", label: "Sample codes", type: "textarea", hint: "defaults to this note's sample list or timetable", value: codesFrom(["samples", "sampling", "nmr", "gpc", "dls"]).join(", ") },
         { type: "heading", label: "Columns" },
-        { key: "nmr", label: "NMR conversion", hint: has("nmr") ? "linked to the nmr table" : "typed in", type: "toggle", value: true },
-        { key: "gpc", label: "GPC Mn, Mw, Đ", hint: has("gpc") ? "linked to the gpc table" : "typed in", type: "toggle", value: true },
-        { key: "dls", label: "DLS Dh, PDI", hint: has("dls") ? "linked to the dls table" : "typed in", type: "toggle", value: has("dls") },
+        { key: "nmr", label: "NMR conversion", hint: hint("nmr"), type: "toggle", value: true },
+        { key: "gpc", label: "GPC Mn, Mw, Đ", hint: hint("gpc"), type: "toggle", value: true },
+        { key: "dls", label: "DLS Dh, PDI", hint: hint("dls"), type: "toggle", value: has("dls") },
       ]);
       if (!v) return "";
       const links = {};
-      for (const t of ["nmr", "gpc", "dls"]) if (v[t]) links[t] = has(t) ? { id: t, n: tableRows(t) } : {};
+      for (const t of ["nmr", "gpc", "dls"]) if (v[t]) links[t] = has(t) ? { tables: tech[t] } : {};
       return resultsTable(list(v.codes), links);
     },
 

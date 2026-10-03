@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** hazard header moved into the plugin (`src/header/`), tests pass, not yet checked in Obsidian.
-**Next:** user checks the `lab-header` block in `test-vault/`; then the next v0.4 bug (cross-table refs when the referenced table is second).
+**Now:** cross-table refs / `samples2` bug fixed in `labSnippets.js`, tests pass, not yet tried in Obsidian. Hazard header pushed earlier, user is checking it.
+**Next:** user tries both in `test-vault/` (the kit file must be installed there: updater or copy `kit/Extras/scripts/templater/labSnippets.js`). Then the next v0.4 bug (tutorial renders as Dataview errors), or the duplicate-name warning.
 **Blockers / open questions:**
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
 - Solution prep vs Recipe by equivalents: merge or keep? (to discuss)
@@ -13,6 +13,13 @@
 - Plugin id `lab-calc` → `lab-kit` migration (installed vaults still have the old folder)
 
 ## Last session
+- User's actual bug: snippets pulled codes only from a table named exactly `samples`; with it deleted (`samples2`) or split (`samples` + `samples2`) nothing was found, and the results snippet only linked an exact `nmr` / `gpc` / `dls` table. Fixed in `kit/Extras/scripts/templater/labSnippets.js`: `calcTables()` / `tablesNamed()` / `codesFrom()` (union over numbered copies, `samples` also matches `sample`) and `techTables()` (results nests `XLOOKUP(..., nextTable)` across nmr, nmr2…)
+- Calc engine + renderer checked first and are fine for refs to a later table (real / null section info, case, quoted names, mutual refs, whole demo note): `tests/crossref.test.ts`. Do not look there again
+- New `tests/snippets-multi.test.ts` fails on the old script (4/4), passes now. `npm test`: 37 pass
+- Small user-facing text change: the results form hint says "linked to the nmr, nmr2 tables" when several exist
+- Duplicate-name warning (+ `#REF!` on ambiguous refs) agreed with the user but not built: separate task in BACKLOG
+
+## Earlier session (hazard header)
 - Hazard header + data-folder button ported from the Dataview scripts to the plugin: `src/header/` (`ghs.ts`, `hazards.ts`, `render.ts`, `settings.ts`), `src/kit/datafolder.ts` (Node/Electron, desktop only), CSS in `styles.css`
 - Block is ```` ```lab-header ````; command "Insert lab header block". Redraws only if the note's Chemicals / a linked chemical's `H_Phrase` changed (signature check), so no more stutter
 - Settings → Lab Kit → "Lab header" (data folder roots for Windows and macOS/Linux, empty by default) and "Hazards" (layout chips/table plus every option of the old Dataview script: collapsed, startOpen, summary counts, legend, details, sort, highlight, category labels, shade/centre, show missing, property names, hidden classes). Each can be overridden per note with `key: value` lines inside the block; `dataFolder: false` / `hazards: false` drop the button / the hazards

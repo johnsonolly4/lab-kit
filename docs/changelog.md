@@ -7,6 +7,7 @@
   - every option of the old script is a setting again, and can be set per note with lines inside the block (see the tutorial)
   - data folder roots are now plugin settings (empty by default); the folder is created when you press the button, not when the note is made
   - new note template uses the block; the old Dataview scripts stay for existing notes
+- **Snippets find numbered tables**: the NMR / GPC / DLS / combined-results snippets now take sample codes from `samples`, `samples2`, `samples3`… (also `sample`, `sampling2`) and combine them, and the results table links every `nmr`, `nmr2`… table (falls through to the next table when a code isn't in the first). Before, a deleted or second sample table was missed
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):
