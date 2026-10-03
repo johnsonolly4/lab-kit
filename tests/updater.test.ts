@@ -12,7 +12,7 @@ const SRC = fs.mkdtempSync(path.join(os.tmpdir(), "labkit-src-"));     // stands
 const VAULT = fs.mkdtempSync(path.join(os.tmpdir(), "labkit-vault-"));
 afterAll(() => { fs.rmSync(SRC, { recursive: true, force: true }); fs.rmSync(VAULT, { recursive: true, force: true }); });
 
-// Assemble a kit folder the way `npm run package` ships it: kit/ + plugin files + docs
+// Assemble a kit folder the way `npm run package` ships it: kit/ + plugin files
 const PLUGIN_BUILD = "// built plugin (stand-in for main.js)\n";
 const STUB_MAIN = path.join(SRC, "main.js");
 fs.writeFileSync(STUB_MAIN, PLUGIN_BUILD);
@@ -80,7 +80,7 @@ describe("kit updater", () => {
     assert.ok(by("delete").includes(".obsidian/snippets/tabs-mermaid-scroll.css"));
     assert.strictEqual(by("delete").filter(p => p.includes("Snippets/")).length, 9);
     assert.ok(by("replace").includes("Extras/Templates/Lab Book Template.md"));
-    assert.ok(by("new").includes("Extras/Lab notebook kit/Lab notebook kit - tutorial.md"));
+    assert.ok(!items.some(i => i.dest.includes("Lab notebook kit - ")));                 // tutorial / changelog notes are no longer installed
 
     // 3. Apply
     const res = await kitApply(adapter, kit, roles, items, null, "2026-10-02 1700", true);

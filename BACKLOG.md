@@ -42,7 +42,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] Port `legacy/main.js` → TypeScript in `src/` (no behaviour change; existing tests must pass)
 - [x] Split the updater from the calc/header code (Node APIs desktop-only)
 - [x] Remove private API use or isolate it (Templater settings, `app.plugins`, `app.customCss`): isolated in `src/kit/obsidian-private.ts`, not removed
-- [ ] **Changelog as a popup, not a note**: after an update, show the changelog in a temporary popup window (modal), also reachable from the settings page (e.g. a "What's new" button). Replaces `openAfter` opening a whole note (`Lab notebook kit - changelog.md`); then drop the changelog/tutorial copies from the package if nothing else needs them
+- [x] **Changelog as a popup, not a note**: `src/whatsnew.ts` (modal, latest changelog section bundled into the plugin, link to the full changelog on GitHub); shown once by the reloaded plugin after an update, plus Settings → Lab Kit → What's new and the command "Show what's new". `openAfter` and the tutorial/changelog note copies are gone from the package
 - [ ] Leftover "Lab Calc" wording after the id migration (decide per item): `docs/tutorial.md` (lines 191, 234), `kit/Extras/scripts/excel_to_calc.py` (lines 6, 40, 93, 145: the plugin is now "Lab Kit"), `styles.css` header comment (line 1), changelog history lines (keep: they describe past versions)
 - [ ] `legacy/main.js` (git-ignored, never committed) still has the old `lab-calc` classes; keep a safe copy or delete it
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac)
@@ -54,3 +54,6 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - Updater change preview
 - [ ] Duplicate table name warning inside Obsidian: two tables with the same `name:` show the red warning, refs give `#REF!` (`src/calc/render.ts` caption, `styles.css` `.lab-kit-warn`)
 - [ ] Snippet scripts (`kit/Extras/scripts/templater/labSnippets.js`) still union tables by name and know nothing about duplicate names; check what a duplicated `samples` does there
+- [ ] What's new popup not seen inside Obsidian yet: shows once after the plugin reloads with a new version, "What's new" button (`src/kit/ui.ts` settings tab), command, GitHub link, rendering (`src/whatsnew.ts`)
+- [ ] Old "Lab notebook kit - tutorial.md" / "- changelog.md" notes stay stale in vaults that already installed them (left alone on purpose). Could add `delete` entries in `kit/kit-manifest.json` (role `docs`) if wanted
+- [ ] The "seen" key for the popup is the newest changelog heading (`sectionHeading` in `src/whatsnew.ts`): new bullets added under an unchanged "Unreleased" heading do not re-trigger the popup; renaming the heading to the release version does

@@ -49,6 +49,8 @@
 /* Lab Kit updater window */
 .lab-kit-modal { max-height: 70vh; overflow-y: auto; }
 .lab-kit-notes { margin: 0 0 8px; padding-left: 1.2em; font-size: 0.9em; }
+.lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
+.lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .lab-kit-group { margin: 4px 0; font-size: 0.88em; }
 .lab-kit-group summary { cursor: pointer; font-weight: 600; }
 .lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }

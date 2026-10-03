@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** duplicate-name warning committed on branch `duplicate-table-names`, **PR open**: https://github.com/johnsonolly4/lab-kit/pull/1 (not merged). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Merge the PR (after checking the warning in Obsidian if wanted), then candidates: the changelog popup, the next v0.4 bug (tutorial renders as Dataview errors), or fixing `npm run lint`.
+**Now:** "What's new" popup committed on branch `whats-new-popup` (cut from `duplicate-table-names`; not pushed, no PR yet). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Not seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** user's call. Push `whats-new-popup` and open a PR (retarget to `main` once PR 1 merges), then candidates: the next v0.4 bug (tutorial renders as Dataview errors) or fixing `npm run lint`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,14 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (duplicate table names)
+## Last session (What's new popup)
+- New `src/whatsnew.ts`: `latestSection()` (newest `## ` section of `docs/changelog.md`), `sectionHeading()`, `WhatsNewModal` (renders the section, link to the full changelog on GitHub). Changelog is bundled into `main.js` (`loader: { ".md": "text" }` in `esbuild.config.mjs`, `src/md.d.ts`)
+- `src/kit/ui.ts`: shown once on the first start after the heading changes (`kit.seenChangelog` in data.json, new `KitData` field), command "Show what's new", "What's new" button in Settings → Lab Kit. The *reloaded* plugin shows it, because the running one still has the old changelog
+- `openAfter` removed (`updater.ts`, `ui.ts`, `package-kit.mjs`, `kit-manifest.json`); the tutorial and changelog note copies are no longer packaged or installed (`kit-manifest.mjs`, manifest regenerated, 26 files). Existing copies in vaults are left alone
+- Tests: new `tests/whatsnew.test.ts` (3); `package-kit` and `updater` tests adjusted. `npm test`: 52 pass; `npm run build` and `npm run package` clean, zip has no `Lab notebook kit - *.md`
+- Changelog line reworded (under Unreleased). Open points are in BACKLOG.md (Not yet tested)
+
+## Earlier session (duplicate table names)
 - Two `calc` tables with the same `name:` now both show a red "⚠ name used twice" in the caption; name-qualified refs to that name give `#REF!` ("table name "x" is used by more than one table"). Own unqualified refs still work
 - `src/calc/engine.ts`: `Workbook.dupNames`, `isDuplicate()`, `badTable()`; `blockIndex` returns -1 for duplicates. `src/calc/render.ts`: no longer drops same-named blocks from the workbook (old filter hid duplicates); with `getSectionInfo` null only the first block equal to this one's source is dropped. `styles.css`: `.lab-kit-warn`
 - Side effect: XLOOKUP now returns an error in its lookup range (was a silent `#N/A`), so a missing / duplicate table there shows `#REF!`

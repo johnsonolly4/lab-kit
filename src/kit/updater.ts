@@ -23,12 +23,11 @@ export interface KitManifest {
   templater?: { userScripts?: boolean };
   enableCss?: string[];
   disableCss?: string[];
-  openAfter?: { role: string; path: string };
 }
 export interface Kit { dir: string; folder: string; manifest: KitManifest }
 export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
 /** What the plugin remembers about the updater (the `kit` key of data.json). */
-export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null }
+export interface KitData { source: string; checkOnStartup: boolean; makeBackups: boolean; installed: KitRecord | null; seenChangelog: string }
 export interface PlanItem {
   kind: "file" | "delete";
   src?: string;
@@ -49,7 +48,7 @@ export interface ApplyResult {
 }
 
 const KIT_TEXT_EXT = /\.(md|js|json|css|py|txt|csv)$/i;
-export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null };
+export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "" };
 
 export function kitCompare(a: unknown, b: unknown): number {
   const pa = String(a ?? "0").split(".").map(n => parseInt(n, 10) || 0);

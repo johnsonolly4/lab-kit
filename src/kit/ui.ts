@@ -2,10 +2,12 @@
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 import { Modal, Notice, Platform, PluginSettingTab, Setting, type App, type ButtonComponent, type Plugin } from "obsidian";
 import {
-  KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitJoin, kitPlan, kitReadSource, kitScan,
+  KIT_DEFAULTS, kitApply, kitCompare, kitDetectRoles, kitPlan, kitReadSource, kitScan,
   type Kit, type KitData, type PlanItem, type Roles
 } from "./updater";
 import type { HeaderStore } from "../header/settings";
+import changelog from "../../docs/changelog.md";
+import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
 import { hasTemplater, reloadPlugin, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
 
 class KitUpdateModal extends Modal {
@@ -121,10 +123,7 @@ class KitUpdateModal extends Modal {
         (res.backupRoot ? `\nBackup: ${res.backupRoot}` : ""), 10000);
       this.close();
 
-      if (m.openAfter) {
-        const p = kitJoin(this.roles[m.openAfter.role], m.openAfter.path);
-        setTimeout(() => void this.app.workspace.openLinkText(p, "", true), 600);
-      }
+      // The reloaded plugin shows the "What's new" popup itself (the running one still has the old changelog)
       const pluginChanged = this.items.some(i => i.role === "plugin" && i.kind === "file" && (i.status === "new" || i.status === "replace" || (i.status === "edited" && i.overwrite)));
       if (pluginChanged) {
         const id = this.ctl.plugin.manifest.id;
@@ -158,6 +157,7 @@ class KitSettingTab extends PluginSettingTab {
     const inst = this.ctl.kit.installed;
     new Setting(containerEl).setName("Installed version")
       .setDesc(inst ? `v${inst.version} · ${Object.keys(inst.files ?? {}).length} files tracked · ${inst.installedAt}` : "Nothing installed by the updater yet")
+      .addButton(b => b.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew()))
       .addButton(b => b.setButtonText("Check now").setCta().onClick(() => this.ctl.check(true)));
     if (inst?.roles) {
       const det = containerEl.createEl("details");
@@ -194,6 +194,12 @@ export class KitController {
     const plugin = this.plugin;
     plugin.addSettingTab(new KitSettingTab(this.app, plugin, this, this.header));
     plugin.addCommand({ id: "kit-update", name: "Check for lab kit updates", callback: () => this.check(true) });
+    plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
+    // First start after the plugin changed version: show what's new once
+    this.app.workspace.onLayoutReady(() => {
+      const section = latestSection(changelog);
+      if (section && sectionHeading(section) !== this.kit.seenChangelog) setTimeout(() => void this.showWhatsNew(), 1500);
+    });
     // Follow kit files the user moves or renames inside Obsidian
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {
       const rec = this.kit.installed?.files;
@@ -209,6 +215,15 @@ export class KitController {
     if (Platform.isDesktopApp && this.kit.checkOnStartup) {
       this.app.workspace.onLayoutReady(() => setTimeout(() => this.check(false), 4000));
     }
+  }
+
+  /** Opens the popup with the newest changelog section and remembers it was shown. */
+  async showWhatsNew(): Promise<void> {
+    const section = latestSection(changelog);
+    if (!section) return;
+    new WhatsNewModal(this.app, this.plugin, section).open();
+    const heading = sectionHeading(section);
+    if (this.kit.seenChangelog !== heading) { this.kit.seenChangelog = heading; await this.save(); }
   }
 
   check(manual: boolean): void {

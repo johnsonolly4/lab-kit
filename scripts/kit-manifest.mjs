@@ -1,5 +1,5 @@
 // Regenerates the "files" list in kit/kit-manifest.json from what's in kit/.
-// Keeps version, notes, rewrite, delete, templater, enableCss, openAfter as they are.
+// Keeps version, notes, rewrite, delete, templater, enableCss as they are.
 // Usage: npm run kit:manifest
 import { readFileSync, writeFileSync, readdirSync, statSync } from "fs";
 import { join, relative, sep } from "path";
@@ -35,13 +35,11 @@ const files = walk(KIT)
   })
   .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));
 
-// Shipped alongside kit/ by the packaging step (built plugin + docs)
+// Shipped alongside kit/ by the packaging step (built plugin)
 const EXTRA = [
   { src: ".obsidian/plugins/lab-kit/main.js", role: "plugin", path: "main.js" },
   { src: ".obsidian/plugins/lab-kit/manifest.json", role: "plugin", path: "manifest.json" },
   { src: ".obsidian/plugins/lab-kit/styles.css", role: "plugin", path: "styles.css" },
-  { src: "Lab notebook kit - tutorial.md", role: "docs", path: "Lab notebook kit - tutorial.md" },
-  { src: "Lab notebook kit - changelog.md", role: "docs", path: "Lab notebook kit - changelog.md" },
 ];
 for (const e of EXTRA) if (!files.some((f) => f.src === e.src)) files.push(e);
 

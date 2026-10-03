@@ -19,17 +19,18 @@ function copyRoot(name: string): string {
   const root = path.join(TMP, name);
   fs.mkdirSync(root);
   for (const f of ["manifest.json", "styles.css"]) fs.copyFileSync(path.join(ROOT, f), path.join(root, f));
-  for (const d of ["kit", "docs"]) fs.cpSync(path.join(ROOT, d), path.join(root, d), { recursive: true });
+  fs.cpSync(path.join(ROOT, "kit"), path.join(root, "kit"), { recursive: true });
   return root;
 }
 
 describe("package-kit", () => {
-  it("ships every file the manifest lists, and opens a note that exists", () => {
+  it("ships every file the manifest lists, and no tutorial / changelog notes", () => {
     const { dir, version } = buildKitFolder({ outDir: path.join(TMP, "out"), mainJs: MAIN });
     assert.strictEqual(path.basename(dir), `lab-kit-${version}`);
     const m = readManifest(dir);
     for (const f of m.files) assert.ok(fs.existsSync(path.join(dir, ...f.src.split("/"))), f.src);
-    assert.ok(m.files.some((f: any) => f.role === "docs" && f.path === m.openAfter.path));
+    assert.ok(!("openAfter" in m));
+    assert.ok(!fs.readdirSync(dir).some((n) => /^Lab notebook kit - /.test(n)));
     assert.ok(fs.existsSync(path.join(dir, ".obsidian/plugins/lab-kit/main.js")));
   });
 
@@ -49,15 +50,6 @@ describe("package-kit", () => {
     m.files.push({ src: "Templates/Nope.md", role: "templates", path: "Nope.md" });
     fs.writeFileSync(mp, JSON.stringify(m));
     assert.throws(() => buildKitFolder({ outDir: path.join(TMP, "o3"), mainJs: MAIN, root }), /Templates\/Nope\.md/);
-  });
-
-  it("fails when openAfter points at a file that is not shipped", () => {
-    const root = copyRoot("broken-open");
-    const mp = path.join(root, "kit/kit-manifest.json");
-    const m = JSON.parse(fs.readFileSync(mp, "utf8"));
-    m.openAfter = { role: "docs", path: "Lab notebook kit - update to v9.md" };
-    fs.writeFileSync(mp, JSON.stringify(m));
-    assert.throws(() => buildKitFolder({ outDir: path.join(TMP, "o4"), mainJs: MAIN, root }), /openAfter/);
   });
 
   it("fails when plugin and kit versions differ", () => {
