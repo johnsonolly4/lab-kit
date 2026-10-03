@@ -291,8 +291,9 @@ export class CalcRenderer {
       } finally { this.openPending(); this.settleScroll(); }
     };
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); void finish(true); }
-      if (e.key === "Escape") { e.preventDefault(); void finish(false); }
+      // Enter / Tab save, Escape discards; stopPropagation keeps the editor and Obsidian's hotkeys from also acting on the key
+      if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); e.stopPropagation(); void finish(true); }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); void finish(false); }
     });
     input.addEventListener("blur", () => void finish(true));
     input.addEventListener("click", (e) => e.stopPropagation());

@@ -84,6 +84,31 @@ describe("render", () => {
     }
   });
 
+  it("Tab saves the typed text, Escape discards it, and neither key reaches Obsidian", async () => {
+    let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText,
+      process: async (_f: unknown, fn: (d: string) => string) => { fileText = fn(fileText); } } }, registerEvent() { /* unused */ } };
+    const renderer = new CalcRenderer(plugin);
+    const el = new El("div");
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const entry: CalcEntry = { el, ctx, source: "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |" };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    for (const [key, typed, saved] of [["Escape", "9", false], ["Tab", "7", true]] as const) {
+      const td = entry.tds!.get("1|0")!;
+      td.dispatch("click");
+      const input = td.querySelector("input");
+      assert.ok(input, "editor did not open");
+      input.value = typed;
+      let stopped = false;
+      for (const f of input.listeners.keydown) f({ key, preventDefault() { /* unused */ }, stopPropagation() { stopped = true; } });
+      await new Promise(r => setTimeout(r, 10));
+      assert.ok(stopped, `${key} was not kept from Obsidian`);
+      assert.strictEqual(fileText.includes(`| ${typed} | 5 |`), saved, `${key}: wrong save result`);
+    }
+  });
+
   it("opens the clicked cell even when Obsidian rebuilds the block after the save", async () => {
     let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
     let processor: (s: string, el: unknown, ctx: unknown) => Promise<void> = async () => { /* set by register() */ };
