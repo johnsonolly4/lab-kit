@@ -21,7 +21,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] Sample list: dataset is now empty (done with the NMR item); toggles headed "Also add (appended below)" (`labSnippets.js:152` `techToggles`, also shown in the timetable form; test in `tests/snippets-defaults.test.ts`; not seen in Obsidian, `test-vault/Extras/scripts/templater/labSnippets.js` is a stale hand copy)
 - [ ] All chemical fields in forms empty by default: reagents, RAFT names and the matrix items are empty now; left on purpose (user's choice): NMR solvent CDCl3 / method 1H, GPC eluent THF, DLS solvent Water / 25 °C, RAFT ratio 20 / solids 20, column dead volume 0.21 (`labSnippets.js` nmr/gpc/dls/raft/column)
 - [x] Flow column prep: ask for and store the packing material (`labSnippets.js:349` `column()`, last row so `column!B10` is unchanged; test in `tests/snippets.test.ts`; not seen in Obsidian, `test-vault/` script copy is stale)
-- [ ] Residence times: formula in a callout or maths block
+- [x] Residence times: formula in a callout (`labSnippets.js:375` `rt()`: `> [!info] Residence time` around the existing maths block; test in `tests/snippets.test.ts`; not seen in Obsidian, `test-vault/` script copy is stale)
 - [ ] Live highlight of referenced cells while a formula is being typed (investigate)
 - [ ] Recipe: first-reagent amount as mass / eq / concentration (+ w/v% with a density caveat); empty by default
 

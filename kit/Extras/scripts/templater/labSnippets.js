@@ -372,7 +372,8 @@ ${calc({ name: unique(v.id || "column"), title: "Column weighing", icon: "cylind
       if (!v || !list(v.rts).length) return "";
       const inp = unique("rt_in"), id = unique("rt");
       let out = `## Residence times
-$$\\tau = \\frac{V_{\\text{reactor}}}{Q}$$
+> [!info] Residence time
+> $$\\tau = \\frac{V_{\\text{reactor}}}{Q}$$
 
 ${calc({ name: inp, title: "Reactor", icon: "waves" }, ["Setting", "Value"], [["Reactor volume (mL)", v.volume ?? ""]])}
 ${calc({ name: id, title: "Flow rate for each residence time", icon: "waves" }, ["Residence time (min)", "Flow rate (mL/min)", "Time to steady state, 3 RTs (min)"],

@@ -23,6 +23,7 @@
 - **New note headings** have new emoji: 🔬 Objectives · ⚙️ Apparatus · ⚗️ Procedure · 📈 Results / Analysis · 💡 Notes for next time
 - **Empty calc cells are taller**, so they are easier to click
 - **Sample list and timetable forms**: the technique toggles are headed "Also add (appended below)", so it is clear the tables go under the sample table
+- **Residence times snippet**: the formula (τ = V / Q) now sits in an info callout above the tables
 
 ## v0.3 (2026-10-02)
 - **Kit updater** built into the plugin (now called **Lab Kit**, plugin 1.2):
