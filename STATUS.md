@@ -1,6 +1,6 @@
 # Status
 
-**Version:** 0.4.0 (plugin + kit; first per-commit bump, was 0.3.0; TypeScript in `src/`)
+**Version:** 0.4.1 (plugin + kit; per-commit bump; TypeScript in `src/`)
 **Now:** PRs 1-8 are **merged into `main`** (PR 8 = store prep, merge commit `3883cff`). The kit update system (Phases 1-5), author swap and README privacy / mobile sections are all in `main`. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `store-prep` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
 **Next:** **you run [docs/obsidian-test-checklist.md](docs/obsidian-test-checklist.md)** in `test-vault/` (Obsidian 1.13+, then mobile), then send what broke via `/feedback`. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
@@ -11,7 +11,16 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (version rule)
+## Last session (commit settings freeze fix)
+- User chose "commit as 0.4.1". Ran the checks left open below: `npm test` 119 pass, `npm run lint` 0 errors / 4 warnings (same), `npm run build` clean. Bumped to 0.4.1 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed on `version-rule`. Not pushed, no PR
+
+## Earlier session (settings freeze fix)
+- Bug: opening Settings → Lab Kit in Obsidian 1.13.7 froze the settings window (resizing broke it, scrollbar dead, no console error, devtools profile never loaded). Bisected with a temporary `localStorage` switch (removed again): "Lab notebook" alone fine, "Snippet menu" froze
+- Cause (confirmed by the user's test, not by a stack trace): each Snippet menu icon row set its placeholder asynchronously after Obsidian had drawn it (`cachedRead(...).then(setPlaceholder)`). Fix in `src/kit/ui.ts`: `KitSettingTab.refreshSnippets()` reads the built-in icon names first (`builtInIcons`), then calls `update()`; rows set the placeholder synchronously. `KitController.setup` calls `refreshSnippets()` at layout ready instead of `update()`
+- Tested by the user in Obsidian 1.13.7: full settings page, no freeze. `npx tsc` clean. **Not run:** `npm test`, `npm run lint` (command was declined), `npm run build` after the final edit. **Not committed** (no version bump yet). Note: `npm run build` writes to the repo root, only `npm run dev` writes into `test-vault/`; the dev watcher was not running at first, which made round 1 of the bisect meaningless
+- Rest of the settings page is still unchecked: BACKLOG, "Not yet tested"
+
+## Earlier session (version rule)
 - User chose: **bump the version on every commit**, patch steps in 0.4.x (first commit after 0.3.0 = 0.4.0), rule in `CLAUDE.md` Hard rules ("Version bump on every commit"). Files that move: `package.json` (+ lock), `manifest.json`, `kit/kit-manifest.json` `version`, then `npm run kit:manifest`; `versions.json` stays release-only. The repo said 0.3.0 while the code was v0.4 work, which is why Obsidian showed "0.3" even on the new build. First bump done in the commit below (0.4.0; `kit/kit-manifest.json` per-file versions unchanged). `tests/updater.test.ts` hard-coded 0.3.0 and failed on the bump: now reads the version from `kit/kit-manifest.json`. `npm test`: 119 pass
 - Also this session: started `npm run dev` for `test-vault/` (user to open it in Obsidian and reload Lab Kit). Not committed. Open points (script for the bump, `/release` skill steps 1 and 4 still ask / bump): BACKLOG, "Community store submission checklist"
 

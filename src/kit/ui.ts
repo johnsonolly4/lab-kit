@@ -138,12 +138,28 @@ class KitUpdateModal extends Modal {
 class KitSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) { super(app, plugin); }
 
-  /** One icon row per snippet in the Snippets folder next to the menu template (the name is what the Alt+S menu shows). */
-  private snippetRows(): SettingGroupItem[] {
+  /** Built-in icon of each snippet (from its `// icon:` line), read before the rows are drawn so no row changes after it is shown. */
+  private builtInIcons = new Map<string, string>();
+
+  private snippetFiles(): TFile[] {
     const templates = this.ctl.kit.installed?.roles?.templates ?? "Templates";
     const folder = this.app.vault.getFolderByPath(normalizePath(`${templates}/Snippets`));
-    const files = (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md")
+    return (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md")
       .sort((a, b) => a.basename.localeCompare(b.basename, undefined, { numeric: true }));
+  }
+
+  /** Reads the built-in icon names, then redraws the tab. Call once the vault index is ready. */
+  async refreshSnippets(): Promise<void> {
+    for (const f of this.snippetFiles()) {
+      const text = await this.app.vault.cachedRead(f);
+      this.builtInIcons.set(f.path, text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim() ?? "");
+    }
+    this.update();
+  }
+
+  /** One icon row per snippet in the Snippets folder next to the menu template (the name is what the Alt+S menu shows). */
+  private snippetRows(): SettingGroupItem[] {
+    const files = this.snippetFiles();
     const icons = this.ctl.kit.snippetIcons;
     if (!files.length) return [];
     const rows: SettingGroupItem[] = [{ name: "Icons", desc: "A Lucide icon name for each snippet, e.g. flask-round (see lucide.dev). Empty keeps the built-in icon. The colour is always your Obsidian accent colour." }];
@@ -153,11 +169,10 @@ class KitSettingTab extends PluginSettingTab {
         name,
         render: b => {
           b.addText(t => {
-            t.setValue(icons[name] ?? "").onChange(async v => {
+            t.setPlaceholder(this.builtInIcons.get(f.path) ?? "").setValue(icons[name] ?? "").onChange(async v => {
               if (v.trim()) icons[name] = v.trim(); else delete icons[name];
               await this.ctl.save();
             });
-            void this.app.vault.cachedRead(f).then(text => t.setPlaceholder(text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim() ?? ""));
           });
         }
       });
@@ -282,7 +297,7 @@ export class KitController {
     const tab = new KitSettingTab(this.app, plugin, this, this.header);
     plugin.addSettingTab(tab);
     // The snippet rows need the vault index, which is not ready yet when the tab is registered
-    this.app.workspace.onLayoutReady(() => tab.update());
+    this.app.workspace.onLayoutReady(() => void tab.refreshSnippets());
     plugin.addCommand({ id: "kit-update", name: "Check for updates", callback: () => this.check(true) });
     plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
     plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
