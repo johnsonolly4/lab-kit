@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, kitNormalise, kitSha256, planManaged,
+  applyManaged, emptyManagedState, followRename, kitNormalise, kitSha256, planManaged, restoreManaged, setDetached, statusOf,
   type EmbeddedKit, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -156,6 +156,85 @@ describe("missing and detached files", () => {
     const item = by(await planManaged(v, V2, state, roles), "tpl-menu");
     expect(item.dest).toBe("Notes/Menu.md");
     expect(item.action).toBe("fast-forward");
+  });
+});
+
+describe("per-file actions (Manage kit files)", () => {
+  it("statusOf gives a label for every action", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "mine\n"; delete v.files["Templates/Menu.md"];
+    v.files["Extras/scripts/templater/snip.js"] = "my edit\n";
+    state.files["script-config"].detached = true;
+    const labels = (await planManaged(v, V2, state, roles)).map(i => statusOf(i).label);
+    expect(labels).toEqual(["Missing", "Changed by you and the kit", "Changed by you", "Detached"]);
+    expect(statusOf(by(await planManaged(memVault({ "Templates/Menu.md": "menu v1\n" }), V1, null, roles), "tpl-menu")).label).toBe("Up to date");
+    expect(statusOf(by(await planManaged(memVault(), V1, null, roles), "tpl-menu")).label).toBe("New");
+  });
+
+  it("updates one file and leaves the others and the kit version alone", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const plan = await planManaged(v, V2, state, roles);
+    const out = await applyManaged(v, V2, plan, state, { ...opts, select: it => it.file.id === "tpl-menu", keepVersion: true });
+    expect(v.files["Templates/Menu.md"]).toBe("menu v2\n");
+    expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3\n");      // also fast-forwardable, not selected
+    expect(out.state.installedKitVersion).toBe("0.1.0");
+    expect(out.state.files["tpl-book"].installedHash).toBe(state.files["tpl-book"].installedHash);
+  });
+
+  it("restores a file you changed: backs up your copy, writes the kit's, refreshes the base copy", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Extras/scripts/templater/snip.js"] = "my edit\n";
+    const item = by(await planManaged(v, V2, state, roles), "script-snip");
+    expect(item.action).toBe("user-modified");
+    const out = await restoreManaged(v, item, state, opts);
+    expect(v.files["Extras/scripts/templater/snip.js"]).toBe("path = My scripts/x\n");
+    expect(v.files["Backups/2026-10-03T12-00-00-000Z/Extras/scripts/templater/snip.js"]).toBe("my edit\n");
+    expect(out.result).toMatchObject({ outcome: "updated", id: "script-snip" });
+    expect(v.files[".obsidian/plugins/lab-kit/kit-base/script-snip.txt"]).toBe("path = My scripts/x\n");
+    expect((await planManaged(v, V2, out.state, roles)).find(i => i.file.id === "script-snip")!.action).toBe("up-to-date");
+  });
+
+  it("restores a needs-merge file to the new kit version", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1\nline 2\nline 3 mine\n";
+    const item = by(await planManaged(v, V2, state, roles), "tpl-book");
+    const out = await restoreManaged(v, item, state, opts);
+    expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3 changed by kit\n");
+    expect(v.files["Backups/2026-10-03T12-00-00-000Z/Templates/Book.md"]).toBe("line 1\nline 2\nline 3 mine\n");
+    expect(out.state.files["tpl-book"].installedHash).toBe(await kitSha256("line 1\nline 2\nline 3 changed by kit\n"));
+  });
+
+  it("restores a missing file without a backup", async () => {
+    const v = memVault(); const { state } = await install(v);
+    delete v.files["Templates/Menu.md"];
+    const item = by(await planManaged(v, V1, state, roles), "tpl-menu");
+    const out = await restoreManaged(v, item, state, opts);
+    expect(v.files["Templates/Menu.md"]).toBe("menu v1\n");
+    expect(out.result).toMatchObject({ outcome: "created" });
+    expect(out.result.backup).toBeUndefined();
+  });
+
+  it("refuses to restore detached, kept and up-to-date files", async () => {
+    const v = memVault(); const { state } = await install(v);
+    state.files["tpl-menu"].detached = true;
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";
+    const plan = await planManaged(v, V2, state, roles);
+    for (const id of ["tpl-menu", "script-config", "script-snip"]) {
+      const before = { ...v.files };
+      const out = await restoreManaged(v, by(plan, id), state, opts);
+      expect(out.result.outcome).toBe("skipped");
+      expect(v.files).toEqual(before);
+    }
+  });
+
+  it("detach and re-attach", async () => {
+    const v = memVault(); const { state } = await install(v);
+    expect(setDetached(state, "tpl-menu", true)).toBe(true);
+    expect(by(await planManaged(v, V2, state, roles), "tpl-menu").action).toBe("detached");
+    expect(setDetached(state, "tpl-menu", false)).toBe(true);
+    expect(by(await planManaged(v, V2, state, roles), "tpl-menu").action).toBe("fast-forward");
+    expect(setDetached(state, "nope", true)).toBe(false);
+    expect(setDetached(null, "tpl-menu", true)).toBe(false);
   });
 });
 

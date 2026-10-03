@@ -98,41 +98,50 @@ export interface ApplyOptions {
   stamp: string;
   /** Which items to carry out. Default: the safe ones. */
   select?: (item: ManagedItem) => boolean;
+  /** Leave `installedKitVersion` as it was (a single-file action doesn't mean the whole kit is installed). */
+  keepVersion?: boolean;
   debug?: boolean;
 }
 export interface ApplyOutcome { state: ManagedState; results: ManagedResult[] }
 
 const folderStamp = (iso: string): string => iso.replace(/[:.]/g, "-");
 
+/** Records what was written (state + base copy for later merges). Mutates `next`. */
+async function rememberFile(adapter: ManagedAdapter, next: ManagedState, it: ManagedItem, opts: ApplyOptions): Promise<void> {
+  const prev = next.files[it.file.id];
+  next.files[it.file.id] = { path: it.dest, installedVersion: it.file.version, installedHash: it.kitHash,
+    detached: prev?.detached ?? false, userDeleted: false, pendingConflict: null };
+  await kitEnsureDir(adapter, opts.baseDir);
+  await adapter.write(kitJoin(opts.baseDir, `${it.file.id}.txt`), it.text);
+}
+
+/** Copies the current file to <backups>/<timestamp>/<its path> and returns that path. */
+async function backupFile(adapter: ManagedAdapter, it: ManagedItem, opts: ApplyOptions): Promise<string> {
+  const backup = kitJoin(opts.backups, folderStamp(opts.stamp), it.dest);
+  await kitEnsureDir(adapter, kitParent(backup));
+  await adapter.write(backup, await adapter.read(it.dest));
+  return backup;
+}
+
 export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, items: ManagedItem[], state: ManagedState | null, opts: ApplyOptions): Promise<ApplyOutcome> {
   const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
   const select = opts.select ?? (it => SAFE_ACTIONS.includes(it.action));
   const results: ManagedResult[] = [];
   const log = (...a: unknown[]): void => { if (opts.debug) console.debug("Lab Kit:", ...a); };
-  const remember = async (it: ManagedItem): Promise<void> => {
-    const prev = next.files[it.file.id];
-    next.files[it.file.id] = { path: it.dest, installedVersion: it.file.version, installedHash: it.kitHash,
-      detached: prev?.detached ?? false, userDeleted: false, pendingConflict: null };
-    const base = kitJoin(opts.baseDir, `${it.file.id}.txt`);
-    await kitEnsureDir(adapter, opts.baseDir);
-    await adapter.write(base, it.text);
-  };
   for (const it of items) {
     const { id } = it.file;
     if (!select(it)) { results.push({ id, dest: it.dest, action: it.action, outcome: "skipped" }); log("skip", it.action, it.dest); continue; }
-    if (it.action === "up-to-date") { await remember(it); results.push({ id, dest: it.dest, action: it.action, outcome: "adopted" }); continue; }
+    if (it.action === "up-to-date") { await rememberFile(adapter, next, it, opts); results.push({ id, dest: it.dest, action: it.action, outcome: "adopted" }); continue; }
     if (it.action === "create" || it.action === "missing") {
       await kitEnsureDir(adapter, kitParent(it.dest));
       await adapter.write(it.dest, it.text);
-      await remember(it);
+      await rememberFile(adapter, next, it, opts);
       results.push({ id, dest: it.dest, action: it.action, outcome: "created" });
       log("create", it.dest);
     } else if (it.action === "fast-forward") {
-      const backup = kitJoin(opts.backups, folderStamp(opts.stamp), it.dest);
-      await kitEnsureDir(adapter, kitParent(backup));
-      await adapter.write(backup, await adapter.read(it.dest));
+      const backup = await backupFile(adapter, it, opts);
       await adapter.write(it.dest, it.text);
-      await remember(it);
+      await rememberFile(adapter, next, it, opts);
       results.push({ id, dest: it.dest, action: it.action, outcome: "updated", backup });
       log("fast-forward", it.dest, "backup", backup);
     } else {
@@ -140,8 +149,46 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
       results.push({ id, dest: it.dest, action: it.action, outcome: "skipped" });
     }
   }
-  next.installedKitVersion = bundle.manifest.kitVersion;
+  if (!opts.keepVersion) next.installedKitVersion = bundle.manifest.kitVersion;
   return { state: next, results };
+}
+
+/** Actions "Restore kit original" may overwrite (the old copy is backed up first). Never a detached or kept file. */
+export const RESTORABLE_ACTIONS: ManagedAction[] = ["user-modified", "needs-merge", "fast-forward", "missing"];
+
+/** Puts the kit's version of ONE file back, backing up your copy first. Refuses detached / kept / up-to-date files. */
+export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
+  const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
+  const { id } = item.file;
+  if (!RESTORABLE_ACTIONS.includes(item.action)) return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
+  let backup: string | undefined;
+  if (item.action !== "missing") backup = await backupFile(adapter, item, opts);
+  else await kitEnsureDir(adapter, kitParent(item.dest));
+  await adapter.write(item.dest, item.text);
+  await rememberFile(adapter, next, item, opts);
+  return { state: next, result: { id, dest: item.dest, action: item.action, outcome: backup ? "updated" : "created", backup } };
+}
+
+/** Stops (or resumes) managing one file. Returns false when the file isn't tracked yet (nothing to detach). */
+export function setDetached(state: ManagedState | null, id: string, detached: boolean): boolean {
+  const st = state?.files[id];
+  if (!st) return false;
+  st.detached = detached;
+  return true;
+}
+
+/** Plain-words status for a plan item (the labels in the Manage kit files window). */
+export function statusOf(item: ManagedItem): { label: string; tone: "ok" | "info" | "warn" | "muted" } {
+  switch (item.action) {
+    case "up-to-date": return { label: "Up to date", tone: "ok" };
+    case "fast-forward": return { label: "Update available", tone: "info" };
+    case "create": return { label: "New", tone: "info" };
+    case "user-modified": return { label: "Changed by you", tone: "warn" };
+    case "needs-merge": return { label: "Changed by you and the kit", tone: "warn" };
+    case "missing": return { label: "Missing", tone: "warn" };
+    case "keep": return { label: "Kept (your settings)", tone: "muted" };
+    case "detached": return { label: "Detached", tone: "muted" };
+  }
 }
 
 /** Follows files the user moves or renames inside Obsidian. Returns true if anything changed. */

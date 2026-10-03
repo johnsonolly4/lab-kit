@@ -2,9 +2,10 @@
 // Works on mobile: only the vault adapter and crypto.subtle (the folder updater in ui.ts stays desktop only).
 import { Modal, Notice, Platform, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, planManaged,
-  type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedItem, type ManagedResult
+  SAFE_ACTIONS, applyManaged, planManaged, restoreManaged, setDetached, statusOf,
+  type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedItem, type ManagedResult
 } from "./managed";
+import { cssSnippetsSupported, isCssSnippetEnabled, setCssSnippets } from "./obsidian-private";
 import { kitCompare, kitDetectRoles, kitHash, kitJoin, type KitData, type KitRecord, type Roles } from "./updater";
 
 export interface ManagedHost { kit: KitData; save(): Promise<void> }
@@ -39,14 +40,54 @@ export class KitManaged {
     return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy());
   }
 
+  private applyOptions(extra: Partial<ApplyOptions> = {}): ApplyOptions {
+    return { baseDir: this.baseDir(), backups: this.roles().backups, stamp: new Date().toISOString(), debug: this.host.kit.debug, ...extra };
+  }
+
   async apply(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<ManagedResult[]> {
     const kit = this.host.kit;
-    const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, {
-      baseDir: this.baseDir(), backups: this.roles().backups, stamp: new Date().toISOString(), select, debug: kit.debug
-    });
+    const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select }));
     kit.managed = out.state;
     await this.host.save();
     return out.results;
+  }
+
+  /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
+  private async settleVersion(): Promise<void> {
+    const m = this.host.kit.managed;
+    if (!m) return;
+    const left = (await this.plan()).some(i => i.action === "create" || i.action === "fast-forward");
+    if (!left) m.installedKitVersion = this.version;
+  }
+
+  /** Install / update / recreate ONE file. */
+  async updateOne(id: string): Promise<ManagedResult[]> {
+    const kit = this.host.kit;
+    const items = await this.plan();
+    const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing");
+    const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true }));
+    kit.managed = out.state;
+    await this.settleVersion();
+    await this.host.save();
+    return out.results.filter(r => r.id === id);
+  }
+
+  /** Put the kit's copy of ONE file back (your copy is backed up first). */
+  async restoreOne(id: string): Promise<ManagedResult | null> {
+    const kit = this.host.kit;
+    const item = (await this.plan()).find(i => i.file.id === id);
+    if (!item) return null;
+    const out = await restoreManaged(this.app.vault.adapter, item, kit.managed, this.applyOptions());
+    kit.managed = out.state;
+    await this.settleVersion();
+    await this.host.save();
+    return out.result;
+  }
+
+  async detach(id: string, on: boolean): Promise<boolean> {
+    const ok = setDetached(this.host.kit.managed, id, on);
+    if (ok) await this.host.save();
+    return ok;
   }
 
   /** "Update all safe files": new files and unmodified files only. Asks first on the very first install. */
@@ -66,6 +107,7 @@ export class KitManaged {
   }
 
   review(): void { new KitManagedModal(this.app, this).open(); }
+  manage(): void { new KitFilesModal(this.app, this).open(); }
 
   failed(e: unknown): void {
     console.error(e);
@@ -145,6 +187,79 @@ class KitManagedModal extends Modal {
       this.close();
       new KitReportModal(this.app, results).open();
     } catch (e) { this.managed.failed(e); }
+  }
+
+  onClose(): void { this.contentEl.empty(); }
+}
+
+/** One row per kit file with a status label and its own buttons, plus the CSS snippet switch. */
+class KitFilesModal extends Modal {
+  private items: ManagedItem[] = [];
+
+  constructor(app: App, private managed: KitManaged) { super(app); }
+
+  async onOpen(): Promise<void> {
+    this.titleEl.setText(`Manage kit files, v${this.managed.version}`);
+    this.contentEl.addClass("lab-kit-modal");
+    await this.refresh();
+  }
+
+  /** Re-reads the vault and redraws; the window stays open after every action. */
+  private async refresh(): Promise<void> {
+    try { this.items = await this.managed.plan(); }
+    catch (e) { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
+    this.render();
+  }
+
+  private async run(action: () => Promise<unknown>): Promise<void> {
+    try { await action(); } catch (e) { this.managed.failed(e); }
+    await this.refresh();
+  }
+
+  private snippetSwitch(contentEl: HTMLElement): void {
+    const installed = this.items.filter(i => i.file.kind === "snippet" && i.curHash !== null);
+    if (!installed.length) return;
+    const names = installed.map(i => i.dest.split("/").pop() ?? i.dest);
+    if (!cssSnippetsSupported(this.app)) {
+      new Setting(contentEl).setName("CSS snippet").setDesc(`This version of Obsidian doesn't let Lab Kit switch snippets. Turn on ${names.join(", ")} in Settings → Appearance → CSS snippets.`);
+      return;
+    }
+    new Setting(contentEl).setName("CSS snippet").setDesc(names.join(", "))
+      .addToggle(t => t.setValue(names.every(n => isCssSnippetEnabled(this.app, n) === true)).onChange(async v => {
+        try { await (v ? setCssSnippets(this.app, names, []) : setCssSnippets(this.app, [], names)); }
+        catch (e) { this.managed.failed(e); }
+      }));
+  }
+
+  private render(): void {
+    const { contentEl } = this;
+    contentEl.empty();
+    this.snippetSwitch(contentEl);
+    const ordered = [...this.items].sort((a, b) => a.dest.localeCompare(b.dest, undefined, { numeric: true }));
+    for (const it of ordered) {
+      const status = statusOf(it);
+      const row = new Setting(contentEl).setName(it.dest);
+      row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
+      const id = it.file.id;
+      if (it.action === "create" || it.action === "fast-forward" || it.action === "missing") {
+        const text = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : "Recreate";
+        row.addButton(b => b.setButtonText(text).setCta().onClick(() => void this.run(() => this.managed.updateOne(id))));
+      }
+      if (it.action === "user-modified" || it.action === "needs-merge") {
+        row.addButton(b => b.setButtonText("Restore kit original").onClick(() => {
+          new ConfirmModal(this.app, "Restore the kit's copy?", `${it.dest} goes back to the kit's version. Your copy is saved in the backup folder first.`,
+            "Restore", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
+        }));
+      }
+      if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
+      else if (!it.untracked) row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
+      const file = this.app.vault.getFileByPath(it.dest);
+      if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
+        this.close();
+        void this.app.workspace.getLeaf(false).openFile(file);
+      }));
+    }
+    new Setting(contentEl).addButton(b => b.setButtonText("Close").setCta().onClick(() => this.close()));
   }
 
   onClose(): void { this.contentEl.empty(); }

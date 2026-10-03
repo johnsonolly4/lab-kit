@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** Kit update system **Phase 1 is committed and pushed** on `whats-new-popup` (after `b970d7f`, which holds the self-update removal). PRs 1-5 are merged into `main`; snippet icons `3d0a08e`, `b970d7f` and the Phase 1 commit have no PR yet. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** the store release path (BACKLOG, Repo / release, "Community store submission checklist"): PR + merge `whats-new-popup`, pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, `/release` 0.4.0, submit at community.obsidian.md. Kit update system phases 2-5: BACKLOG, "Kit update system". Local `main` not pulled; local branch is `whats-new-popup`.
+**Now:** Kit update system **Phase 2 (core) is committed and pushed** on `whats-new-popup` (Manage kit files window + CSS snippet switch). Phase 1 is committed and pushed; PRs 1-5 are merged into `main`; snippet icons `3d0a08e`, `b970d7f` and Phase 1 `fc983ad` are in open PR 6 (mergeable). None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** the store release path (BACKLOG, Repo / release, "Community store submission checklist"): PR 6 is open, so merge it (user's call), pull `main`, check the "Not yet tested" list in Obsidian 1.13+, decide desktop-only vs the Node `require`s, `/release` 0.4.0, submit at community.obsidian.md. Kit update system phases 2-5: BACKLOG, "Kit update system". Local `main` not pulled; local branch is `whats-new-popup`.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,18 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push Phase 1)
+## Last session (commit + push Phase 2)
+- Committed Phase 2 (Manage kit files window, snippet switch, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed; it joins open PR 6. `test-vault/` hand copies left untracked on purpose. `npm test`: 85 pass. No code changes
+
+## Earlier session (kit update system, Phase 2)
+- User chose **per-file window + snippet switch, no diff view**, as a modal opened from settings. `src/kit/managed.ts`: `restoreManaged` (backup, write kit copy, refresh base), `setDetached`, `statusOf`, `RESTORABLE_ACTIONS`, `ApplyOptions.keepVersion`; `applyManaged` now shares `rememberFile` / `backupFile` helpers (same behaviour). `src/kit/obsidian-private.ts`: `cssSnippetsSupported`, `isCssSnippetEnabled`
+- `src/kit/managed-ui.ts`: `KitFilesModal` (status badge, Install / Update / Recreate, Restore kit original with confirm, Detach / Re-attach, Open, snippet switch with fallback text); `KitManaged.updateOne / restoreOne / detach / manage`; the kit version only moves once no create / fast-forward file is left. `src/kit/ui.ts`: "Manage files…" button + command "Manage kit files". `styles.css` `.lab-kit-badge`. Changelog + tutorial line added
+- `npm test`: 85 pass (7 new in `tests/managed.test.ts`); `npm run build` clean; lint 0 errors, 4 warnings (same); `kit-manifest.json` unchanged. **Not seen in Obsidian**; the window and the snippet switch have no automated test. Left out and open points: BACKLOG, "Kit update system" and "Not yet tested"
+
+## Earlier session (open PR 6)
+- Opened [lab-kit#6](https://github.com/johnsonolly4/lab-kit/pull/6) (`whats-new-popup` into `main`: snippet icons `3d0a08e`, self-update removal `b970d7f`, Phase 1 `fc983ad`). **Not merged.** No code changes, tests not rerun. `test-vault/` hand copies left untracked on purpose
+
+## Earlier session (commit + push Phase 1)
 - Committed Phase 1 (embedded kit, managed-file engine, UI, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. `npm test`: 78 pass. No code changes
 
 ## Earlier session (kit update system, Phase 1)

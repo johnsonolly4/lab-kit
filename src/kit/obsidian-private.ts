@@ -16,6 +16,7 @@ interface PrivateApp {
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
+    enabledSnippets?: Set<string>;
   };
 }
 const priv = (app: App): PrivateApp => app as unknown as PrivateApp;
@@ -34,6 +35,14 @@ export async function setTemplaterUserScripts(app: App, folder: string): Promise
   tpl.settings.user_scripts_folder = folder;
   try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
 }
+
+/** True when this Obsidian exposes the snippet manager we can switch snippets with (it is private API and may go away). */
+export const cssSnippetsSupported = (app: App): boolean =>
+  typeof priv(app).customCss?.setCssEnabledStatus === "function" && priv(app).customCss?.enabledSnippets instanceof Set;
+
+/** Whether a snippet is switched on. `undefined` when we can't tell. Name with or without ".css". */
+export const isCssSnippetEnabled = (app: App, name: string): boolean | undefined =>
+  cssSnippetsSupported(app) ? priv(app).customCss?.enabledSnippets?.has(name.replace(/\.css$/, "")) : undefined;
 
 /** Turns CSS snippets on and off. Names are snippet file names, with or without ".css". */
 export async function setCssSnippets(app: App, enable: string[], disable: string[]): Promise<void> {

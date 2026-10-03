@@ -193,7 +193,8 @@ class KitSettingTab extends PluginSettingTab {
       name: "Kit version",
       desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(kit.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
       render: b => {
-        b.addButton(btn => btn.setButtonText("Review update…").onClick(() => managed.review()))
+        b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => managed.manage()))
+          .addButton(btn => btn.setButtonText("Review update…").onClick(() => managed.review()))
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
@@ -284,6 +285,7 @@ export class KitController {
     this.app.workspace.onLayoutReady(() => tab.update());
     plugin.addCommand({ id: "kit-update", name: "Check for updates", callback: () => this.check(true) });
     plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
+    plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
