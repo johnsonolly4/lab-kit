@@ -74,7 +74,12 @@
 .lab-kit-hunk pre.is-empty { color: var(--text-faint); font-style: italic; }
 .lab-kit-hunk-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .lab-kit-hunk-edit { width: 100%; margin-top: 8px; font-family: var(--font-monospace); font-size: 0.85em; }
-@media (max-width: 600px) { .lab-kit-hunk-cols { grid-template-columns: minmax(0, 1fr); } }
+.lab-kit-hunk { container-type: inline-size; }
+.lab-kit-hunk-col { min-width: 0; }
+@container (max-width: 520px) { .lab-kit-hunk-cols { grid-template-columns: minmax(0, 1fr); } }
+.is-mobile .lab-kit-hunk-cols { grid-template-columns: minmax(0, 1fr); }
+.is-mobile .lab-kit-modal { overflow-x: hidden; }
+.is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
 .lab-kit-wide-input { width: 100% !important; }
 .lab-kit-wide-control { flex: 1 1 60% !important; }

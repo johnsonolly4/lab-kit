@@ -1,7 +1,7 @@
 {
   "id": "lab-kit",
   "name": "Lab Kit",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "minAppVersion": "1.13.0",
   "description": "Live calculation tables, lab snippet forms and a hazard header for a chemistry lab notebook.",
   "author": "johnsonolly4",

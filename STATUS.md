@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.2 (plugin + kit; per-commit bump; TypeScript in `src/`)
+**Version:** 0.4.3 (plugin + kit; per-commit bump; TypeScript in `src/`)
 **Now:** PRs 1-9 are **merged into `main`** (PR 9 = version rule + settings freeze fix, merge commit `14fa7cf`, version 0.4.1). The kit update system (Phases 1-5), author swap, README privacy / mobile sections and the version-per-commit rule are all in `main`. None of v0.4 has been seen inside Obsidian beyond the settings page (BACKLOG, Not yet tested). Local `main` is pulled and checked out; `version-rule` is merged (branch not deleted). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** mobile startup guard committed as 0.4.2 on branch `mobile-guard` (not pushed, no PR). Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": snippet rows, click-to-edit, merge window on mobile) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
+**Next:** `mobile-guard` holds 0.4.2 (mobile startup guard) and 0.4.3 (merge-window CSS fix); not pushed, no PR. Pick the next checklist bug (BACKLOG, "v0.4 checklist bugs": snippet rows, click-to-edit, Tab/Escape) and answer the new Decisions. After that: `/release` 0.4.0 and submit at community.obsidian.md (BACKLOG, Repo / release, "Community store submission checklist"). Leftovers of the kit update system: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,13 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit mobile guard)
+## Last session (commit merge-window fix)
+- User chose "Commit merge-window fix as 0.4.3". Bumped to 0.4.3 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged) and committed `styles.css` + STATUS/BACKLOG on `mobile-guard`. No code changes beyond the CSS already described below; tests not rerun. Merge window still **not seen in Obsidian** (BACKLOG item says so). Not pushed, no PR
+
+## Earlier session (merge window on mobile)
+- User chose the merge-window overflow bug. `styles.css` (~line 77): the old `@media (max-width: 600px)` checks the screen, so a wide screen with a narrow modal (or emulated mobile) kept three columns. Now `.lab-kit-hunk` is a container (`@container (max-width: 520px)` stacks the columns), plus `.is-mobile` rules, `min-width: 0` on columns, textarea `border-box`. CSS only; `npm test` 120 pass. **Not seen in Obsidian, cause is a best guess**; BACKLOG item ticked with that note. Committed in the session above as 0.4.3
+
+## Earlier session (commit mobile guard)
 - User chose "Commit mobile guard as 0.4.2". Branch `mobile-guard` from `main`; bumped to 0.4.2 (`package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged). `npm test` 120 pass, lint 0 errors / 4 warnings (same), `npm run build` clean
 - Working tree also held test-time kit edits (Lab Book Template CoSHH `- Incomplete`, deleted `01 Solution prep.md`, manifest `removed`). User said they were wrong: **reverted** with `git checkout`, not committed. `test-vault/` copies left untracked on purpose. Nothing new for BACKLOG
 
