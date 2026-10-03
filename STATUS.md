@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** `lab-calc` → `lab-kit` id migration done in the working tree, **not committed yet** (installers, CSS classes, label, tests, changelog, BACKLOG). Earlier commits (`22ac9c6` and after) are still unpushed. `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. Candidates: commit this change, the duplicate-name warning, the changelog popup, or the next v0.4 bug (tutorial renders as Dataview errors). Push when ready.
+**Now:** `lab-calc` → `lab-kit` id migration **committed** (`cad79f3`), plus the CLAUDE.md BACKLOG-step rule (`1f8156f`). Commits from `22ac9c6` on are still unpushed. `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** user's call. Candidates: the duplicate-name warning, the changelog popup, or the next v0.4 bug (tutorial renders as Dataview errors). Push when ready.
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,10 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
 
-## Last session (id migration)
+## Last session (commit only)
+- Committed the id migration and the CLAUDE.md change as two commits. No code changes, tests not rerun. Nothing pushed. Nothing new for BACKLOG.md
+
+## Earlier session (id migration)
 - User chose **start fresh**: no `data.json` copy (it lives inside the plugin folder, so the old folder's settings and updater record are not carried over; delete the old folder, re-enter the Update folder) and **rename CSS classes**
 - `install-updater.ps1` / `.sh` now install into `.obsidian/plugins/lab-kit` (`.sh` backup path too); final instructions say turn on Lab Kit, and if a `lab-calc` folder exists they tell the user to turn Lab Calc off and delete it (scripts never delete)
 - `lab-calc*` CSS classes → `lab-kit*` in `styles.css`, `src/calc/render.ts`, `tests/render.test.ts`; `tests/updater.test.ts` uses `.obsidian/plugins/lab-kit`; updater label "Lab Calc plugin" → "Lab Kit plugin" (`src/kit/ui.ts`)
