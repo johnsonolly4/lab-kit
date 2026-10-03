@@ -69,15 +69,19 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] **Community store submission checklist** (process in `docs/reference/plugin-guidelines.md`, "Store submission"; audited 2026-10-03):
   - Already fine: public repo, `LICENSE` (MIT), README, unique id `lab-kit`, description has no "Obsidian" / "This plugin", `npm run lint` 0 errors, no production vulnerabilities (`npm audit --omit=dev`), no `innerHTML`, inline styles, `console.log`, default hotkeys or lookbehind in `src/`
-  - [ ] Get `whats-new-popup` into `main` (snippet icons commit `3d0a08e`, no PR yet), pull local `main`
+  - [x] `whats-new-popup` is in `main` (PR 7), local `main` pulled
+  - [ ] Push `store-prep` (author swap + README / tutorial disclosure, committed locally) and open a PR into `main`
   - [ ] Check the "Not yet tested" list inside Obsidian (nothing from v0.4 has been seen there)
-  - [ ] **Mobile / desktop-only decision**: `manifest.json` has `isDesktopOnly: false` but `src/kit/updater.ts:66,177,191` and `src/kit/datafolder.ts:6-19` use `require("fs"/"path"/"crypto"/"child_process"/"electron")` (guarded at runtime). Review may query it. Options: keep (guards) or set `true`
-  - [ ] Author field "Lab Kit contributors" (`manifest.json`, `package.json`, `LICENSE`): swap for the GitHub username if wanted. Optional `authorUrl` / `fundingUrl`
+  - [x] **Mobile / desktop-only decision**: user chose **keep `isDesktopOnly: false`**. Checked every `require("fs"/"path"/"crypto"/"child_process"/"electron")`: all sit inside functions reached only behind `Platform.isDesktopApp` (`src/kit/datafolder.ts:6-19` via `src/header/render.ts:57`; `kitScan` / `kitReadSource` `src/kit/updater.ts:184,198` via `src/kit/ui.ts:323`; `kitHash` `updater.ts:74` is in a try/catch and its only other caller is guarded at `src/kit/managed-ui.ts:37`). No code changed
+  - [ ] Never run on a phone or tablet: open the plugin in Obsidian mobile once (or the mobile emulation in desktop) to confirm it loads, calc tables render and the header shows "Data folder: desktop only" (`src/header/render.ts:62`)
+  - [x] README: "Mobile" section (calc tables, header, built-in kit work; folder updater and data-folder button desktop only). **Written from the code, not from a phone** (see the check above)
+  - [x] Author field swapped to the GitHub username (`manifest.json:7`, `package.json:14`, `LICENSE:3`)
+  - [ ] Optional `authorUrl` / `fundingUrl` in `manifest.json` (not added; ask first)
   - [ ] README: replace "Not in the community store yet" install section after listing; add a screenshot or two
   - [x] **Self-update removed** (developer policy "no self-update"): the kit manifest no longer lists the plugin files, `reloadPlugin` and the plugin row are gone (`scripts/kit-manifest.mjs`, `src/kit/ui.ts`, `src/kit/updater.ts`, `tests/updater.test.ts`). `npm run package` still copies `main.js` / `manifest.json` / `styles.css` into the zip for `install-updater.ps1` / `.sh` (user-run scripts, not the plugin); not seen in Obsidian
-  - [ ] **Developer policies, README disclosure** (https://docs.obsidian.md/community-directory/developer-policies; audited 2026-10-03: no telemetry, ads, network use, obfuscation; MIT): add a README section that says (a) no network use, no account, no paid features, (b) files outside the vault: the updater reads the update folder (`src/kit/updater.ts:177,191`) and the data-folder button opens a folder (`src/kit/datafolder.ts`), why, and that both are optional and desktop only
-  - [ ] Tutorial section 7 (`docs/tutorial.md:211`) still describes the update folder only; add one line that the plugin itself updates through Obsidian (Settings → Community plugins → Check for updates)
-  - [ ] Network / disclosure: updater only reads a local folder today (no network); say so in README. If the GitHub-releases updater is built, it must be optional and described
+  - [x] **Developer policies, README disclosure**: README section "Privacy, network and files" (no network / account / ads / telemetry / paid features; folder updater reads the update folder incl. the startup check; data-folder button creates and opens a folder). Checked `src/` has no `fetch` / `requestUrl` / `http` call, only the changelog link string (`src/whatsnew.ts:4`)
+  - [x] Tutorial section 7 (`docs/tutorial.md`): line added that, once in the store, the plugin updates through Obsidian. Reword it when the plugin is listed
+  - [ ] If the GitHub-releases updater is built, it must be optional and described in the README "Privacy, network and files" section (it is the first network use)
   - [ ] Plugin name `Lab Kit` / description: check they are unique in the directory
   - [ ] Cut release 0.4.0 with `/release` (tag = manifest version, assets `main.js`, `manifest.json`, `styles.css` + kit zip); add `"0.4.0": "1.13.0"` to `versions.json`
   - [ ] Submit at https://community.obsidian.md (Obsidian account, link GitHub, add plugin), then fix whatever the automated review reports with a new release

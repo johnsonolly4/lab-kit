@@ -212,6 +212,8 @@ flowchart LR
 
 The kit files are also built into the plugin: **Settings → Lab Kit → Built-in kit → Review update…** shows what would change (nothing is written until you press **Apply**), and **Update all safe files** adds new files and updates the ones you never edited. A file you changed yourself is left alone. Backups of replaced files go to the Backup folder set there. **Manage files…** lists every kit file with a status and lets you update, restore the kit's original, detach or open one file at a time, and switch the kit's CSS snippet on or off. If you and the kit changed the same lines of a file it shows **Conflict**: press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply** (your copy is backed up first). The folder updater described below is the older way and still works.
 
+Once Lab Kit is in the community store, the plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates**. That does not touch your templates or scripts; those only change when you press **Apply** here.
+
 New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Lab Kit: Check for updates** from the command palette, or use **Settings → Lab Kit → Check now**.
 
 The update window shows:
