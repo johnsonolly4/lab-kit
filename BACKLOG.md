@@ -45,6 +45,23 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] **Changelog as a popup, not a note**: `src/whatsnew.ts` (modal, latest changelog section bundled into the plugin, link to the full changelog on GitHub); shown once by the reloaded plugin after an update, plus Settings → Lab Kit → What's new and the command "Show what's new". `openAfter` and the tutorial/changelog note copies are gone from the package
 - [ ] Leftover "Lab Calc" wording after the id migration (decide per item): `docs/tutorial.md` (lines 191, 234), `kit/Extras/scripts/excel_to_calc.py` (lines 6, 40, 93, 145: the plugin is now "Lab Kit"), `styles.css` header comment (line 1), changelog history lines (keep: they describe past versions)
 - [ ] `legacy/main.js` (git-ignored, never committed) still has the old `lab-calc` classes; keep a safe copy or delete it
+- [x] `npm run lint` runs: `eslint.config.mjs` (store plugin `eslint-plugin-obsidianmd` recommended config) + devDependencies. It reports 81 problems (34 errors, 47 warnings) in `src/`, none fixed yet
+- [ ] **Fix lint findings** (`npm run lint`; group by rule, fix each group in its own commit, run `npm test` after):
+  - [ ] `no-base-to-string` ×16 errors: `calc/engine.ts:60,219`, `header/hazards.ts:57`, `kit/updater.ts:54,55`
+  - [ ] `no-require-imports` ×9 errors + `no-nodejs-modules` ×8 + `no-undef` ×16 (`require`, `process`, `Buffer`): `kit/datafolder.ts:6-19`, `kit/updater.ts:36,65,72,99,112,119,176,189,190`. Desktop-only by design (`.claude/rules/obsidian-plugin.md`); probably an eslint override for `src/kit/` (node globals, `require` allowed) plus lazy loading, to agree before the store submission
+  - [ ] `no-unnecessary-type-assertion` ×4: `header/hazards.ts:63,78`, `header/render.ts:92`, `header/settings.ts:82`
+  - [ ] `no-plugin-as-component` ×2 errors: `calc/render.ts:253`, `whatsnew.ts:27` (pass a `Component` of its own to `MarkdownRenderer`)
+  - [ ] `no-misused-promises` `calc/render.ts:204`; `no-redundant-type-constituents` `header/settings.ts:112`
+  - [ ] `no-unsupported-api` `header/hazards.ts:62`: `Vault.getFileByPath` needs 1.5.7 but `manifest.json` `minAppVersion` is 1.5.0 (raise it, or use `getAbstractFileByPath`)
+  - [ ] `no-tfile-tfolder-cast` ×4 (`calc/render.ts:71,89,242,304`), `prefer-window-timers` ×5 (`calc/render.ts:45,46`, `kit/ui.ts:130,205,220`), `no-unused-vars` ×3 (`calc/render.ts:95`, `kit/ui.ts:237`, `kit/updater.ts:66`)
+  - [ ] `ui/sentence-case` ×7: **changes user-facing text, ask first**: `header/settings.ts:131,136,138`, `kit/datafolder.ts:10`, `kit/ui.ts:46,92`, `whatsnew.ts:24`. Plugin name "Lab Kit" in text is flagged too
+  - [ ] `no-plugin-name-in-command-name` `kit/ui.ts:200` (command text, ask first); `no-deprecated` `kit/ui.ts:174` (`setWarning`, and `display()` → `getSettingDefinitions()` is a 1.13-only API: check `minAppVersion` before adopting); `prefer-setting-definitions` `kit/ui.ts:142`
+- [x] Commit the lint setup (`eslint.config.mjs`, `package.json`, `package-lock.json`): committed on `whats-new-popup`, not pushed
+- [ ] `npm audit`: 8 vulnerabilities (6 moderate, 1 high, 1 critical) reported after installing eslint; not looked at. Check whether they are dev-only (esbuild, vitest, eslint chain) and whether `npm audit fix` is safe
+- [ ] `eslint-plugin-obsidianmd` has peer `obsidian@1.8.7` and `@eslint/json@0.14.0` (pinned); repo uses `obsidian@latest` (1.13.1). Decide: pin `obsidian` to match the store's lint, or keep latest (affects which APIs `no-unsupported-api` and `minAppVersion` allow)
+- [ ] `npm run lint` only lints `src`; `eslint.config.mjs` is the only other file covered. Decide whether `tests/` and `scripts/` should be linted too (store review looks at the plugin source only)
+- [ ] `no-undef` warnings for Node globals (`require`, `process`, `Buffer`) are a config gap, not code: add a `src/kit/**` override with Node globals (see the `no-require-imports` item above)
+- [ ] Re-run `npm run lint` before store submission and in `/release` (add a step to the release skill): must end with 0 errors
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac)
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] Community store submission checklist

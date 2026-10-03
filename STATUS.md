@@ -2,7 +2,7 @@
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
 **Now:** "What's new" popup pushed on branch `whats-new-popup`, PR https://github.com/johnsonolly4/lab-kit/pull/2 (base `duplicate-table-names`, stacked on PR 1). PR https://github.com/johnsonolly4/lab-kit/pull/1 (duplicate-name warning) is still open and untouched. Neither is seen inside Obsidian yet (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** user's call. The v0.4 batch (quick changes + initials) is committed and pushed on `whats-new-popup` (PR 2). Merge PR 1, then retarget PR 2 to `main` and merge it. Candidates: next v0.4 items in BACKLOG (sample-list toggle label, snippet icons) or fixing `npm run lint`.
+**Next:** user's call. The lint setup is committed on `whats-new-popup` (not pushed yet, so PR 2 doesn't include it). Merge PR 1, then retarget PR 2 to `main` and merge it. Candidates: push the lint commit, fix the 81 lint findings (BACKLOG, Repo / release), next v0.4 items (sample-list toggle label, snippet icons).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -10,9 +10,18 @@
 - Analysis methods + machines in settings: design to agree
 - Sample creation workflow: to discuss
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
-- `npm run lint` fails: eslint is not in devDependencies and has no config (store review uses `eslint-plugin-obsidianmd`)
+- `npm run lint` runs but reports 81 problems (34 errors); fixing them is in BACKLOG.md (Repo / release)
 
-## Last session (commit + push v0.4 batch)
+## Last session (commit lint setup)
+- Committed `eslint.config.mjs`, `package.json`, `package-lock.json`, STATUS and BACKLOG on `whats-new-popup`. Not pushed. No code changes, tests not rerun
+
+## Earlier session (lint setup)
+- Added devDependencies `eslint@9`, `eslint-plugin-obsidianmd`, `@eslint/js`, `@eslint/json`, `typescript-eslint`, and `eslint.config.mjs` (store plugin's `recommended` config, type-checked via `projectService`). `npm run lint` now runs on `src/`
+- Result: 81 problems (34 errors, 47 warnings). **Nothing fixed on purpose**: several change user-facing text (sentence case, command name) or need a decision (Node APIs in `src/kit/`, `minAppVersion`). Grouped list with file:line pointers is in BACKLOG.md
+- `npm test`: 59 pass; `npm run build` clean. Not committed
+- Note: `npm install` warns of 8 vulnerabilities (dev dependencies, not checked) and the plugin's peer `obsidian@1.8.7` while the repo uses `obsidian@latest` (1.13.1); lint still works
+
+## Earlier session (commit + push v0.4 batch)
 - Committed the batch below (tracked changes + `tests/snippets-defaults.test.ts`) and pushed to `whats-new-popup`. `test-vault/` hand copies left untracked on purpose. `npm test`: 59 pass. No code changes
 
 ## Earlier session (quick changes batch 1 + initials)
