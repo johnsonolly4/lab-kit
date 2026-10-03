@@ -4,7 +4,7 @@
 //  - plan: one action per kit file (create / fast-forward / up-to-date / user-modified / needs-merge / missing / ...)
 //  - apply: backs up every file it overwrites, writes, and remembers what it wrote (state + a base copy for later merges)
 //  - "merge" (you and the kit both changed the file, edits don't overlap) is written only when the caller selects it
-//  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched: the merge window comes later
+//  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
 import { merge3 } from "./merge";
 import { kitEnsureDir, kitJoin, kitParent, type Roles } from "./updater";
@@ -187,6 +187,26 @@ export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem,
   await adapter.write(item.dest, item.text);
   await rememberFile(adapter, next, item, opts);
   return { state: next, result: { id, dest: item.dest, action: item.action, outcome: backup ? "updated" : "created", backup } };
+}
+
+/**
+ * Settles ONE conflict (`needs-merge`) with the text the merge window resolved to.
+ * `text` null, or equal to your current file, keeps your file as it is and just records it as based on the new kit version ("Keep all mine").
+ * Anything else is written after a backup. Either way the base copy becomes the kit's text, so the next merge starts from this kit version.
+ */
+export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem, text: string | null, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
+  const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
+  const { id } = item.file;
+  if (item.action !== "needs-merge") return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
+  let backup: string | undefined;
+  let written = false;
+  if (text !== null && kitNormalise(text) !== kitNormalise(await adapter.read(item.dest))) {
+    backup = await backupFile(adapter, item, opts);
+    await adapter.write(item.dest, text);
+    written = true;
+  }
+  await rememberFile(adapter, next, item, opts, written);
+  return { state: next, result: { id, dest: item.dest, action: item.action, outcome: written ? "merged" : "adopted", backup } };
 }
 
 /** Stops (or resumes) managing one file. Returns false when the file isn't tracked yet (nothing to detach). */

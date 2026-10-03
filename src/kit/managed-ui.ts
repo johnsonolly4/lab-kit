@@ -2,9 +2,10 @@
 // Works on mobile: only the vault adapter and crypto.subtle (the folder updater in ui.ts stays desktop only).
 import { Modal, Notice, Platform, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, planManaged, restoreManaged, setDetached, statusOf,
+  SAFE_ACTIONS, applyManaged, planManaged, resolveManaged, restoreManaged, setDetached, statusOf,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult
 } from "./managed";
+import { KitMergeModal } from "./merge-ui";
 import { cssSnippetsSupported, isCssSnippetEnabled, setCssSnippets } from "./obsidian-private";
 import { kitCompare, kitDetectRoles, kitHash, kitJoin, type KitData, type KitRecord, type Roles } from "./updater";
 
@@ -85,6 +86,43 @@ export class KitManaged {
     return out.result;
   }
 
+  /** Settles ONE conflict: write `text` (after a backup), or keep your file when `text` is null. Throws after telling the user, so the merge window stays open. */
+  async resolveOne(id: string, text: string | null): Promise<void> {
+    try {
+      const kit = this.host.kit;
+      const item = (await this.plan()).find(i => i.file.id === id);
+      if (!item) throw new Error("kit file not found");
+      const out = await resolveManaged(this.app.vault.adapter, item, text, kit.managed, this.applyOptions());
+      kit.managed = out.state;
+      await this.settleVersion();
+      await this.host.save();
+      const r = out.result;
+      if (r.outcome === "skipped") new Notice(`${item.dest} is no longer in conflict, nothing changed.`);
+      else new Notice(r.backup ? `Merged ${item.dest}. Your old copy: ${r.backup}` : `Kept your ${item.dest}.`, 8000);
+    } catch (e) { this.failed(e); throw e; }
+  }
+
+  /** Opens the merge window for ONE conflict; `onDone` runs when it closes (the caller redraws). */
+  async resolve(id: string, onDone: () => void): Promise<void> {
+    try {
+      const item = (await this.plan()).find(i => i.file.id === id);
+      if (!item || item.action !== "needs-merge") { new Notice("This file isn't in conflict."); onDone(); return; }
+      const adapter = this.app.vault.adapter;
+      const baseFile = kitJoin(this.baseDir(), `${id}.txt`);
+      const base = item.conflicts !== undefined && await adapter.exists(baseFile) ? await adapter.read(baseFile) : null;
+      const modal = new KitMergeModal(this.app,
+        { dest: item.dest, isScript: item.file.kind === "script", base, ours: await adapter.read(item.dest), theirs: item.text },
+        {
+          apply: text => this.resolveOne(id, text),
+          takeKit: () => new ConfirmModal(this.app, "Restore the kit's copy?", `${item.dest} goes back to the kit's version. Your copy is saved in the backup folder first.`, "Restore", async () => {
+            try { await this.restoreOne(id); modal.close(); } catch (e) { this.failed(e); }
+          }).open(),
+          done: onDone
+        });
+      modal.open();
+    } catch (e) { this.failed(e); onDone(); }
+  }
+
   async detach(id: string, on: boolean): Promise<boolean> {
     const ok = setDetached(this.host.kit.managed, id, on);
     if (ok) await this.host.save();
@@ -117,7 +155,7 @@ export class KitManaged {
 }
 
 const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
-  { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; the merge window comes later)", open: true },
+  { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; resolve in Manage kit files)", open: true },
   { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
   { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "missing", title: "Deleted by you (tick to recreate)", open: true },
@@ -259,6 +297,10 @@ class KitFilesModal extends Modal {
         const text = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : it.action === "merge" ? "Merge" : "Recreate";
         row.addButton(b => b.setButtonText(text).setCta().onClick(() => void this.run(() => this.managed.updateOne(id))));
         if (it.action === "merge" && it.file.kind === "script") row.setDesc("Merged code: please test it. Your copy is backed up first.");
+      }
+      if (it.action === "needs-merge") {
+        row.addButton(b => b.setButtonText("Resolve…").setCta().onClick(() => void this.managed.resolve(id, () => void this.refresh())));
+        if (it.file.kind === "script") row.setDesc("Code: after merging, please test it.");
       }
       if (it.action === "user-modified" || it.action === "merge" || it.action === "needs-merge") {
         row.addButton(b => b.setButtonText("Restore kit original").onClick(() => {

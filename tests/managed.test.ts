@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, kitNormalise, kitSha256, planManaged, restoreManaged, setDetached, statusOf,
+  applyManaged, emptyManagedState, followRename, kitNormalise, kitSha256, planManaged, resolveManaged, restoreManaged, setDetached, statusOf,
   type EmbeddedKit, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -300,6 +300,57 @@ describe("three-way merge", () => {
     const out = await restoreManaged(v, by(await plan(v, state), "tpl-book"), state, opts);
     expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3 changed by kit\n");
     expect(out.state.files["tpl-book"].merged).toBeUndefined();
+  });
+});
+
+describe("resolving a conflict (merge window)", () => {
+  const plan = (v: ReturnType<typeof memVault>, state: Awaited<ReturnType<typeof install>>["state"]) => planManaged(v, V2, state, roles, null, opts.baseDir);
+  const conflict = async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "line 1\nline 2\nline 3 mine\n";
+    const item = by(await plan(v, state), "tpl-book");
+    expect(item.action).toBe("needs-merge");
+    return { v, state, item };
+  };
+
+  it("writes the resolved text after a backup, bases the next merge on the kit text, and reads as Merged", async () => {
+    const { v, state, item } = await conflict();
+    const resolved = "line 1\nline 2\nline 3 mine and kit\n";
+    const out = await resolveManaged(v, item, resolved, state, opts);
+    expect(out.result.outcome).toBe("merged");
+    expect(v.files["Templates/Book.md"]).toBe(resolved);
+    expect(v.files[out.result.backup!]).toBe("line 1\nline 2\nline 3 mine\n");
+    expect(v.files[".obsidian/plugins/lab-kit/kit-base/tpl-book.txt"]).toBe(item.text);
+    expect(out.state.files["tpl-book"].merged).toBe(true);
+    const after = by(await plan(v, out.state), "tpl-book");
+    expect(after.action).toBe("user-modified");
+    expect(statusOf(after, out.state.files["tpl-book"]).label).toBe("Merged");
+  });
+
+  it("keep all mine: file and backups untouched, but it counts as based on the new kit", async () => {
+    const { v, state, item } = await conflict();
+    const writes = v.writes.length;
+    const out = await resolveManaged(v, item, null, state, opts);
+    expect(out.result.outcome).toBe("adopted");
+    expect(out.result.backup).toBeUndefined();
+    expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3 mine\n");
+    expect(v.writes.length).toBe(writes + 1);                                  // only the base copy
+    expect(out.state.files["tpl-book"].installedHash).toBe(item.kitHash);
+    expect(out.state.files["tpl-book"].merged).toBeUndefined();
+    expect(by(await plan(v, out.state), "tpl-book").action).toBe("user-modified");
+  });
+
+  it("resolving to the text already in the file is the same as keeping it", async () => {
+    const { v, state, item } = await conflict();
+    const out = await resolveManaged(v, item, "line 1\r\nline 2\r\nline 3 mine\r\n", state, opts);
+    expect(out.result.outcome).toBe("adopted");
+  });
+
+  it("refuses a file that isn't in conflict", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const out = await resolveManaged(v, by(await plan(v, state), "tpl-book"), "x", state, opts);
+    expect(out.result.outcome).toBe("skipped");
+    expect(v.files["Templates/Book.md"]).toBe("line 1\nline 2\nline 3\n");
   });
 });
 

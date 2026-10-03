@@ -1,8 +1,8 @@
 # Status
 
 **Version:** kit v0.3.0 (plugin Lab Kit 1.2.0 behaviour, now TypeScript in `src/`)
-**Now:** PRs 1-6 are **merged into `main`**. On local branch `whats-new-popup` there is **uncommitted** work: kit update **Phase 3 (three-way auto-merge)**. None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** commit + push Phase 3 (new PR, since `main` has PR 6 only), then Phase 4 (merge modal) or the store release path (BACKLOG, Repo / release, "Community store submission checklist": pull `main`, check "Not yet tested" in Obsidian 1.13+, desktop-only vs Node `require`s, README file-access / no-network disclosure, `/release` 0.4.0, submit at community.obsidian.md). Remaining phases: BACKLOG, "Kit update system".
+**Now:** PRs 1-6 are **merged into `main`**. On local branch `whats-new-popup`, Phases 1-4 of the kit update system are committed and pushed (Phase 4 merge window is the newest commit; no PR into `main` yet). None of v0.4 has been seen inside Obsidian (BACKLOG, Not yet tested). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** open a PR for Phases 1-4 into `main`, then Phase 5 (frontmatter-aware merge, renames, retired files) or the store release path (BACKLOG, Repo / release, "Community store submission checklist": pull `main`, check "Not yet tested" in Obsidian 1.13+, desktop-only vs Node `require`s, README file-access / no-network disclosure, `/release` 0.4.0, submit at community.obsidian.md). Remaining phases: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,16 @@
 - Author is "Lab Kit contributors" (LICENSE, manifest, package.json): swap in the GitHub username before store submission if wanted
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (kit update system, Phase 3)
+## Last session (commit + push Phase 4)
+- Committed Phase 4 (merge window, `src/kit/merge-ui.ts`, tests, docs, STATUS/BACKLOG) on `whats-new-popup` and pushed. `test-vault/` hand copies left untracked on purpose. No code changes, tests not rerun
+
+## Earlier session (kit update system, Phase 4)
+- User chose **core merge window only** (no persisted `pendingConflict`, no Notice) and hunks from `node-diff3` (no new package). Spec: `~/Downloads/kit-update-system-spec.md`
+- `src/kit/merge.ts`: `mergeRegions` (ok / conflict regions), `resolveRegions` (choice per conflict: mine / kit / both / edit; null while undecided; CRLF kept), `hunkLines`; `merge3` now built on it. `src/kit/managed.ts`: `resolveManaged` (only for `needs-merge`; backup + write, or no write when the text equals your file = "Keep all mine"; base copy = kit text, `merged` only when written)
+- `src/kit/merge-ui.ts` (new): `KitMergeModal` (hunk cards Yours / Kit / Original, four buttons, Edit textarea, live preview, Apply disabled until all decided, Keep all mine, Take kit version, Later; script warning + "Take kit (suggested)"; only whole-file choices when there is no base copy). `src/kit/managed-ui.ts`: `KitManaged.resolve` / `resolveOne`, **Resolve…** button on conflict rows in Manage kit files, Review group heading reworded. `styles.css` `.lab-kit-hunk*`
+- `npm test`: 106 pass (9 new: `tests/merge.test.ts`, `tests/managed.test.ts`); `npm run build` clean; lint 0 errors, 4 warnings (same). Changelog + tutorial line added; `kit-manifest.json` untouched. **Not seen in Obsidian**; the window has no automated test. Left out and checks to make: BACKLOG, "Kit update system"
+
+## Earlier session (kit update system, Phase 3)
 - User chose: clean merges are written only when ticked in the Review window / per-file button (**"Update all safe files" never merges**), library `node-diff3` (devDependency, bundled). Spec: `~/Downloads/kit-update-system-spec.md`
 - `src/kit/merge.ts` (new): `merge3(base, ours, theirs)` → clean text or a conflict count, never markers, keeps CRLF and ignores a BOM. `src/kit/managed.ts`: `planManaged(..., baseDir)` gives action `merge` (`item.merged`) or `needs-merge` (`item.conflicts`; no base copy = `needs-merge`); `applyManaged` writes a selected `merge` after a backup, base copy = kit text, state `merged: true`; `statusOf(item, st)` labels "Merges cleanly" / "Conflict" / "Merged"; `merge` is restorable
 - `src/kit/managed-ui.ts`: Review window group with tick boxes (default ticked, "please test" on scripts), conflict group renamed, "Merge" button in Manage files, "Merged" group + script warning in the report. `tsconfig.json` `moduleResolution` `node` → `bundler` (the only way `tsc` resolved `node-diff3` types)
