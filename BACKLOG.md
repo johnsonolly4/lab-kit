@@ -60,9 +60,10 @@ Order after the store submission: **Kit picker → Chemical database → Analysi
   - [ ] Never run on a phone or tablet: open the plugin in Obsidian mobile once to confirm it loads, calc tables render and the header shows "Data folder: desktop only" (`src/header/render.ts:62`). Mobile emulation on desktop was checked; the README "Mobile" section is written from the code
   - [ ] Optional `authorUrl` / `fundingUrl` in `manifest.json` (not added; ask first)
   - [ ] Tutorial and README were brought up to 0.4.8 on 2026-10-04 (no screenshots; the Alt+S setup steps and the Templater hotkey name were written from the code, not tried in Obsidian)
-  - [ ] README: replace "Not in the community store yet" install section after listing; add a screenshot or two. Reword `docs/tutorial.md` section 7 ("once in the store…") too
+  - [x] README install section and `docs/tutorial.md` section 7 reworded for the store listing (2026-10-04)
+  - [ ] README: add a screenshot or two
   - [ ] Plugin name `Lab Kit` / description: check they are unique in the directory
-  - [ ] Submit at https://community.obsidian.md (Obsidian account, link GitHub, add plugin), then fix whatever the automated review reports with a new release
+  - [x] Submitted and listed in the community store (2026-10-04)
 
 ## Kit update system (spec: kit-update-system-spec.md, kept outside the repo)
 Phases 1-5 (core) are built. Left for later:

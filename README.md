@@ -10,7 +10,11 @@ Live calculation tables, lab snippet forms and a hazard header for a chemistry l
 - **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it, so a plugin update brings the new kit. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 
 ## Install
-Needs Obsidian 1.13 or newer. Not in the community store yet. Until then:
+Needs Obsidian 1.13 or newer.
+
+**From the community store:** Settings → Community plugins → Browse → search **Lab Kit** → Install → Enable. Then go to step 4.
+
+**By hand** (to try a release before the store has it):
 1. Download `main.js`, `manifest.json` and `styles.css` from the latest [release](../../releases).
 2. Put them in `<your vault>/.obsidian/plugins/lab-kit/`.
 3. Settings → Community plugins → enable **Lab Kit**.
