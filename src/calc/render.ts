@@ -335,8 +335,8 @@ export class CalcRenderer {
     // The user taking over (wheel, touch, or grabbing the scrollbar) ends the hold
     const ac = new AbortController();
     const drop = (): void => { if (this.hold === h) this.hold = null; ac.abort(); };
-    scroller.addEventListener("wheel", drop, { signal: ac.signal });
-    scroller.addEventListener("touchmove", drop, { signal: ac.signal });
+    scroller.addEventListener("wheel", drop, { signal: ac.signal, passive: true });
+    scroller.addEventListener("touchmove", drop, { signal: ac.signal, passive: true });
     scroller.addEventListener("pointerdown", (e) => { if (e.target === scroller) drop(); }, { signal: ac.signal });
   }
 
