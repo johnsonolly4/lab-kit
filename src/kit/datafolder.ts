@@ -1,11 +1,12 @@
 // "Open data folder" button: creates <data root>/<note name> when pressed, then opens it. Desktop only (Node/Electron).
-import { Notice } from "obsidian";
+import { Notice, Platform } from "obsidian";
+import { nodeModule } from "../node";
 import type { HeaderSettings } from "../header/settings";
 
 export function openDataFolder(noteName: string, s: HeaderSettings): void {
-  const fs = require("fs") as typeof import("fs");
-  const path = require("path") as typeof import("path");
-  const win = process.platform === "win32";
+  const fs = nodeModule("fs"), path = nodeModule("path");
+  if (!fs || !path) { new Notice("The data folder button works in the desktop app only."); return; }
+  const win = Platform.isWin;
   const root = win ? s.dataRootWindows : s.dataRootMac;
   if (!root) { new Notice("Set your data folder first: Settings → Lab Kit → Data folder root.", 8000); return; }
   try {
@@ -13,10 +14,12 @@ export function openDataFolder(noteName: string, s: HeaderSettings): void {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     if (win) {
       // Starting Explorer ourselves lets Windows bring the window to the front
-      const cp = require("child_process") as typeof import("child_process");
+      const cp = nodeModule("child_process");
+      if (!cp) return;
       cp.spawn("explorer.exe", [dir.replace(/\//g, "\\")], { detached: true, stdio: "ignore" }).unref();
     } else {
-      const electron = require("electron") as { shell: { openPath(p: string): Promise<string> } };
+      const electron = nodeModule("electron");
+      if (!electron) return;
       void electron.shell.openPath(dir).then(err => { if (err) new Notice(err); });
     }
   } catch (e) {

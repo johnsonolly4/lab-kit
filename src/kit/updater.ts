@@ -1,5 +1,5 @@
 // Kit updater logic: installs new versions of the lab notebook kit from a folder on this computer.
-// Desktop only: reads the update folder with Node fs/path/crypto, loaded lazily inside the functions.
+// Desktop only: reads the update folder with Node fs/path/crypto, which come from `nodeModule` (src/node.ts) and are null on mobile.
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 //
 //  - finds where things live in the vault (Templater settings, existing kit files, remembered locations)
@@ -7,6 +7,7 @@
 //  - optionally backs up what it replaces or deletes (off by default)
 //  - remembers what it installed, and follows files you move or rename
 import type { App, DataAdapter } from "obsidian";
+import { nodeModule } from "../node";
 import { templaterSettings } from "./obsidian-private";
 import type { ManagedState } from "./managed";
 
@@ -41,7 +42,7 @@ export interface PlanItem {
   src?: string;
   dest: string;
   role: string;
-  buf?: Buffer;
+  buf?: Uint8Array;
   text?: string | null;
   newHash?: string;
   curHash?: string | null;
@@ -71,14 +72,14 @@ export function kitCompare(a: unknown, b: unknown): number {
 export const kitJoin = (...parts: (string | null | undefined)[]): string => parts.filter(p => p != null && p !== "").join("/").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
 export const kitParent = (p: string): string => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
 export function kitHash(buf: Uint8Array): string {
-  try { return (require("crypto") as typeof import("crypto")).createHash("sha1").update(buf).digest("hex"); }
-  catch {                                         // fallback: FNV-1a
-    let h = 0x811c9dc5; const b = new Uint8Array(buf);
-    for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193) >>> 0; }
-    return h.toString(16);
-  }
+  const crypto = nodeModule("crypto");
+  if (crypto) return crypto.createHash("sha1").update(buf).digest("hex");
+  let h = 0x811c9dc5; const b = new Uint8Array(buf);   // fallback: FNV-1a
+  for (let i = 0; i < b.length; i++) { h ^= b[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16);
 }
-const toArrayBuffer = (buf: Buffer): ArrayBuffer => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+const utf8 = new TextDecoder("utf-8", { ignoreBOM: true });   // keeps a leading BOM, like Buffer.toString("utf8")
+const toArrayBuffer = (buf: Uint8Array): ArrayBuffer => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
 
 /** Where each part of the kit lives in this vault. */
 export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: KitManifest): Roles {
@@ -104,7 +105,7 @@ export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: Ki
 }
 
 /** Read every file of a kit version from disk (Node fs) and decide what to do with it. */
-export async function kitPlan(adapter: KitAdapter, kit: Kit, roles: Roles, record: KitRecord | null, readSource: (src: string) => Buffer): Promise<PlanItem[]> {
+export async function kitPlan(adapter: KitAdapter, kit: Kit, roles: Roles, record: KitRecord | null, readSource: (src: string) => Uint8Array): Promise<PlanItem[]> {
   const m = kit.manifest;
   const rewrites = Object.entries(m.rewrite ?? {})
     .map(([literal, role]): [string, string] => [literal, roles[role]])
@@ -115,16 +116,16 @@ export async function kitPlan(adapter: KitAdapter, kit: Kit, roles: Roles, recor
     let buf = readSource(f.src);
     let text: string | null = null;
     if (KIT_TEXT_EXT.test(f.src)) {
-      text = buf.toString("utf8");
+      text = utf8.decode(buf);
       for (const [lit, to] of rewrites) text = text.split(lit).join(to);
-      buf = Buffer.from(text, "utf8");
+      buf = new TextEncoder().encode(text);
     }
     const newHash = kitHash(buf);
     const exists = await adapter.exists(dest);
     let status: ItemStatus, curHash: string | null = null;
     if (!exists) status = "new";
     else {
-      curHash = kitHash(Buffer.from(await adapter.readBinary(dest)));
+      curHash = kitHash(new Uint8Array(await adapter.readBinary(dest)));
       const known = record?.files?.[dest];
       if (f.policy === "keep") status = "keep";
       else if (curHash === newHash) status = "same";
@@ -179,9 +180,15 @@ export async function kitApply(adapter: KitAdapter, kit: Kit, roles: Roles, item
   return { record: { version: kit.manifest.version, roles, files, installedAt: stamp }, done, backupRoot: done.backedUp ? backupRoot : null };
 }
 
+function desktopOnly(): { fs: typeof import("fs"); path: typeof import("path") } {
+  const fs = nodeModule("fs"), path = nodeModule("path");
+  if (!fs || !path) throw new Error("The folder updater works in the desktop app only.");
+  return { fs, path };
+}
+
 /** List kit versions in the source folder (Node fs, desktop only). */
 export function kitScan(source: string): Kit[] {
-  const fs = require("fs") as typeof import("fs"), path = require("path") as typeof import("path");
+  const { fs, path } = desktopOnly();
   const out: Kit[] = [];
   for (const d of fs.readdirSync(source, { withFileTypes: true })) {
     if (!d.isDirectory()) continue;
@@ -194,7 +201,7 @@ export function kitScan(source: string): Kit[] {
 }
 
 /** Reads one file of a kit version from the update folder (Node fs, desktop only). */
-export function kitReadSource(kit: Kit, src: string): Buffer {
-  const fs = require("fs") as typeof import("fs"), path = require("path") as typeof import("path");
+export function kitReadSource(kit: Kit, src: string): Uint8Array {
+  const { fs, path } = desktopOnly();
   return fs.readFileSync(path.join(kit.dir, ...src.split("/")));
 }
