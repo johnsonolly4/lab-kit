@@ -16,15 +16,11 @@ const ROLE_BY_PREFIX = [
   ["Templates/", "templates"],
 ];
 const SKIP = new Set(["kit-manifest.json"]);
-const KEEP = new Set(["Extras/scripts/lab-config.json"]);
 
 // One line per kit file, shown in Manage kit files. Snippets (Templates/Snippets/) use their own "// desc:" line.
 const DESC = {
   ".obsidian/snippets/scrolling-mermaid.css": "Lets wide Mermaid diagrams scroll sideways inside a note",
   "Extras/scripts/excel_to_calc.py": "Command-line tool that turns an Excel file into calc tables",
-  "Extras/scripts/hazards/view.js": "Hazard table for older notes that use Dataview (new notes use the lab-header block)",
-  "Extras/scripts/lab-config.json": "Your settings for the older Dataview scripts (never overwritten)",
-  "Extras/scripts/lab-header/view.js": "Header (hazards and data folder button) for older notes that use Dataview",
   "Extras/scripts/templater/labForm.js": "The pop-up form every snippet uses",
   "Extras/scripts/templater/labPick.js": "The searchable snippet menu with icons",
   "Extras/scripts/templater/labSnippets.js": "The code behind every snippet",
@@ -32,6 +28,8 @@ const DESC = {
   "Templates/Lab Book Template.md": "New experiment note: number, hazards, data folder button and sections",
 };
 const OPTIONAL_PREFIX = "Templates/Snippets/";
+// The Excel converter is not part of the plugin itself: it can be switched off in Manage files
+const OPTIONAL_FILES = new Set(["Extras/scripts/excel_to_calc.py"]);
 const descOf = (rel, text) => rel.startsWith(OPTIONAL_PREFIX)
   ? (text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim() ?? (() => { throw new Error(`${rel}: no "// desc:" line`); })())
   : (DESC[rel] ?? (() => { throw new Error(`${rel}: add a line to DESC in scripts/kit-manifest.mjs`); })());
@@ -88,8 +86,7 @@ const files = walk(KIT)
     const entry = { id: idFor({ kind, path, src: rel }, prev), kind, src: rel, role, path,
       version: prev?.sha256 === hash && prev.version ? prev.version : manifest.version, sha256: hash,
       renamedFrom, desc: descOf(rel, text) };
-    if (rel.startsWith(OPTIONAL_PREFIX)) entry.optional = true;
-    if (KEEP.has(rel)) entry.policy = "keep";
+    if (rel.startsWith(OPTIONAL_PREFIX) || OPTIONAL_FILES.has(rel)) entry.optional = true;
     return entry;
   })
   .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));

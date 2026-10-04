@@ -93,8 +93,8 @@ class KitSettingTab extends PluginSettingTab {
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     rows.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
       render: b => { b.addToggle(t => t.setValue(kit.notifyKitUpdate).onChange(async v => { kit.notifyKitUpdate = v; await this.ctl.save(); })); } });
-    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault a Lab Kit folder inside Templater's templates folder."));
-    rows.push(folder("scripts", "Scripts folder", "Where the kit's shared scripts go. Must not be a hidden (dot) folder. Empty: detected.", true));
+    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
+    rows.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
     rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
     rows.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
       render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });

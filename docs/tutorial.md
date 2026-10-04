@@ -45,9 +45,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts it in a **Lab Kit** folder inside your Templater templates folder (Settings → Lab Kit → **Manage files…** shows where each file is).
+> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts the templates in your Templater templates folder, or in `Templates` at the vault root if Templater has none (Settings → Lab Kit → **Manage files…** shows where each file is). The **Set up** button in Settings → Lab Kit can add the hotkey for you.
 > 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**.
-> 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault gets a `lab-kit` folder inside your scripts folder; Templater also reads subfolders, so the folder above it works too). See Troubleshooting.
+> 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault puts the scripts in your Templater scripts folder, or in `scripts` at the vault root if Templater has none; Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
 
@@ -240,7 +240,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 - **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
 - **A file you changed** is never overwritten. If your edits and the kit's touch different lines, it is listed under "merges cleanly" and you can tick it to merge. In the Lab Book template the properties are merged one by one, so a property you added stays.
 - **Conflict:** if you and the kit changed the same lines, the file shows **Conflict** and is left alone. Press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply**. **Keep all mine** and **Take kit version** settle the whole file at once.
-- **Use toggle:** each snippet (not the core files) has a switch in **Manage files…**, with a one-line description. Off = not installed and not in the Alt+S menu. Switching off a snippet you already have asks first, copies it to the Backup folder and moves it to your trash. Switching it on installs it again. **Update all safe files** never installs a switched-off snippet.
+- **Use toggle:** each snippet, and the Excel converter `excel_to_calc.py`, has a switch in **Manage files…**, with a one-line description. Off = not installed and not in the Alt+S menu. Switching off a snippet you already have asks first, copies it to the Backup folder and moves it to your trash. Switching it on installs it again. **Update all safe files** never installs a switched-off snippet.
 - **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
 - **First install:** the question before the first install has two switches, both on: **Turn on the CSS snippet**, and **Set Templater's user scripts folder** (only shown when Templater has no such folder yet; a folder you already set is never changed).
 

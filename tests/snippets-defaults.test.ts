@@ -7,7 +7,6 @@ const require = createRequire(import.meta.url);
 const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
-const CONFIG = "Extras/scripts/lab-config.json";
 
 function harness(files: Record<string, string>) {
   const notices: string[] = [];
@@ -40,16 +39,10 @@ function harness(files: Record<string, string>) {
 }
 
 describe("initials", () => {
-  it("come from the plugin settings, which win over lab-config.json", async () => {
-    const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "QRS" } }), [CONFIG]: JSON.stringify({ initials: "OLD" }) });
+  it("come from the plugin settings (an old lab-config.json is no longer read)", async () => {
+    const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "QRS" } }), "Extras/scripts/lab-config.json": JSON.stringify({ initials: "OLD" }) });
     const md = await h.run("samples", { codes: "", count: "2" });
     assert.ok(md.includes("QRS0014-A") && !md.includes("OLD"), md);
-    assert.deepStrictEqual(h.notices, []);
-  });
-
-  it("fall back to lab-config.json for older installs", async () => {
-    const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "" } }), [CONFIG]: JSON.stringify({ initials: "OLD" }) });
-    assert.ok((await h.run("samples", { codes: "", count: "1" })).includes("OLD0014-A"));
     assert.deepStrictEqual(h.notices, []);
   });
 

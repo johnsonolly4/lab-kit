@@ -27,41 +27,8 @@
       "version": "0.3.0",
       "sha256": "701281ed4b8a7af5d5ba09ef692ee36464571a6bb0a127f14e32bf51bbca7b1a",
       "renamedFrom": [],
-      "desc": "Command-line tool that turns an Excel file into calc tables"
-    },
-    {
-      "id": "script-hazards-view-js",
-      "kind": "script",
-      "src": "Extras/scripts/hazards/view.js",
-      "role": "scripts",
-      "path": "hazards/view.js",
-      "version": "0.3.0",
-      "sha256": "b9fd55bf69b472985c8e3c8eca7d9205158c5917a45612bd3610f19757e2b0f9",
-      "renamedFrom": [],
-      "desc": "Hazard table for older notes that use Dataview (new notes use the lab-header block)"
-    },
-    {
-      "id": "script-lab-config-json",
-      "kind": "script",
-      "src": "Extras/scripts/lab-config.json",
-      "role": "scripts",
-      "path": "lab-config.json",
-      "version": "0.3.0",
-      "sha256": "544aea30c36e15e137f53fa5812c014c708ce2cc172bb3a27023b2159084749d",
-      "renamedFrom": [],
-      "desc": "Your settings for the older Dataview scripts (never overwritten)",
-      "policy": "keep"
-    },
-    {
-      "id": "script-lab-header-view-js",
-      "kind": "script",
-      "src": "Extras/scripts/lab-header/view.js",
-      "role": "scripts",
-      "path": "lab-header/view.js",
-      "version": "0.4.8",
-      "sha256": "da107537cab58a7d8ad4653e4b7367c53a2a8d6c5a0ce1c809eb5a226f19e5ec",
-      "renamedFrom": [],
-      "desc": "Header (hazards and data folder button) for older notes that use Dataview"
+      "desc": "Command-line tool that turns an Excel file into calc tables",
+      "optional": true
     },
     {
       "id": "tpl-insert-snippet-md",
@@ -270,7 +237,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.4.9",
-      "sha256": "de89fcba0ddf7053e461011878e213d27e3b7d6ccb459a5265e2a2b1bf3a928e",
+      "sha256": "577c21a9e1edaefa87fe7ccf6fbd4b38dd22ab6c07bdbf5f0587d6aeaf5ee57d",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }
@@ -284,5 +251,9 @@
   "disableCss": [
     "tabs-mermaid-scroll.css"
   ],
-  "removed": []
+  "removed": [
+    "script-hazards-view-js",
+    "script-lab-config-json",
+    "script-lab-header-view-js"
+  ]
 }
