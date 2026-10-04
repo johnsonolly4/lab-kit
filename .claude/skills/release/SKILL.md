@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut a new Lab Kit release - bump versions, test, changelog, tag and push the tag; GitHub Actions builds, attests and publishes main.js/manifest.json/styles.css and the kit zip. Use when the user says "release", "ship" or "new version".
+description: Cut a new Lab Kit release - bump versions, build, test, changelog, tag, GitHub release with main.js/manifest.json/styles.css and the kit zip. Use when the user says "release", "ship" or "new version".
 ---
 # Release
 
@@ -13,4 +13,4 @@ description: Cut a new Lab Kit release - bump versions, test, changelog, tag and
 7. Update `STATUS.md`: version, what this release ships, and that the feedback page needs a new round. Do this before committing so it goes into the release commit and `main` stays clean afterwards.
 8. Commit `Release <version>` (including `STATUS.md`), tag `<version>` (no "v" prefix, as Obsidian requires).
 9. **Ask before pushing.** Then `git push && git push --tags`.
-10. The pushed tag starts `.github/workflows/release.yml`, which builds on GitHub, attests `main.js`, `manifest.json` and `styles.css`, and creates the release with those files plus `dist/lab-kit-<version>.zip` (notes = the version's section of `docs/changelog.md`). Do not build or run `gh release create` locally. Find the run with `gh run list --workflow release.yml --limit 1`, watch it with `gh run watch <run-id> --exit-status`, and report the result. If it fails, say so, show the failing step (`gh run view <run-id> --log-failed`) and leave `STATUS.md` noting the release is not yet on GitHub.
+10. `npm run package` (rebuilds, then writes `dist/lab-kit-<version>/` and the zip; it fails if the manifest lists a missing file or the versions differ). Then `gh release create <version> main.js manifest.json styles.css dist/lab-kit-<version>.zip --notes-file <changelog section>` (ask first). If this step fails, say so and leave `STATUS.md` noting the release is not yet on GitHub.
