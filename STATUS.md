@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.6 (plugin + kit; per-commit bump; TypeScript in `src/`)
-**Now:** PRs 1-11 are in `main` (0.4.5). Branch `click-edit-abandon` holds 0.4.6 (committed, **not pushed**): BACKLOG / STATUS after the Obsidian test (page jump fixed, Tab saves, click-to-edit still two clicks and **abandoned for now**; its changelog line removed). **Store scan error** "No release matches your manifest version": the store reads `manifest.json` on `main` and wants a GitHub release tagged exactly that version (no `v`); **no release exists yet** (`git tag` is empty, `versions.json` only has 0.3.0). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** release so a tag matches the manifest: push + PR + merge `click-edit-abandon`, then `/release` at the manifest version (0.4.6, or 0.5.0 if the user wants a minor bump; every later commit bumps the manifest again, so release before more commits land). Then re-run the scan at community.obsidian.md (BACKLOG, "Community store submission checklist"). Leftovers: BACKLOG, "Kit update system".
+**Version:** 0.4.6 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
+**Now:** PRs 1-12 are in `main` (0.4.6, merge commit `139800b`; local `main` pulled and checked out). 0.4.6 = BACKLOG / STATUS after the Obsidian test (page jump fixed, Tab saves, click-to-edit still two clicks and **abandoned for now**; its changelog line removed). **Store scan error** "No release matches your manifest version": the store reads `manifest.json` on `main` and wants a GitHub release tagged exactly that version (no `v`); **no release exists yet** (`git tag` is empty, `versions.json` only has 0.3.0). `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** release so a tag matches the manifest: `/release` on clean `main` at the manifest version (0.4.6, or 0.5.0 if the user wants a minor bump). Merge the rule-change PR first (branch `release-only-version`, no version bump). Then re-run the scan at community.obsidian.md (BACKLOG, "Community store submission checklist"). Leftovers: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,20 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (Obsidian test of 0.4.5 + commit 0.4.6)
+## Last session (commit + push rule change)
+- User chose "Commit, push, PR". Committed the rule change below on `release-only-version` (no version bump, stays 0.4.6), pushed and opened a PR into `main`. **Not merged**, no release cut. No code changes, tests not rerun. Nothing new for BACKLOG
+
+## Earlier session (version rule change)
+- User pasted advice (official sample plugin workflow) and chose **change the rule first**: the version no longer moves per commit, only at `/release`. `CLAUDE.md` Hard rules rewritten (and the end-of-task routine's Version-line wording), `.claude/skills/release/SKILL.md` steps 1 and 4 (suggests the current manifest version if untagged; sets package.json + lock, manifest.json, versions.json; skips what already matches; uses `npm run kit:manifest`), `STATUS.md` Version line, a test comment in `tests/updater.test.ts`. BACKLOG: bump-script item closed, two new items (optional GitHub Action, check `versions.json`)
+- Committed in the session above (no bump under the new rule). No tests run (comment-only change in a test)
+
+## Earlier session (merge PR 12)
+- User chose "Merge PR 12". Merged [lab-kit#12](https://github.com/johnsonolly4/lab-kit/pull/12) into `main` (plain merge commit `139800b`, branch not deleted; was clean and mergeable). Pulled `main` locally (stashed this STATUS edit across the checkout, then restored it). No code changes, tests not rerun, **no release cut**. This STATUS edit is **not committed** (a commit would bump to 0.4.7 and move the manifest version away from the one to release). Nothing new for BACKLOG
+
+## Earlier session (push + open PR 12)
+- User chose "Push + open PR". Pushed `click-edit-abandon` (`89d0318`, 0.4.6) and opened [lab-kit#12](https://github.com/johnsonolly4/lab-kit/pull/12) into `main`. **Not merged**, no release cut. No code changes, tests not rerun. This STATUS edit is **not committed** (a commit would bump to 0.4.7 and move the manifest version away from the one to release). Nothing new for BACKLOG
+
+## Earlier session (Obsidian test of 0.4.5 + commit 0.4.6)
 - User tested 0.4.5 in Obsidian: **one click into the next cell still fails** (abandoned for now, BACKLOG item reopened, changelog line "Click-to-edit, second try" removed because it claimed a fix); **page jump seems fixed**; **Tab saves**. Escape and "text not lost" not reported
 - Committed as 0.4.6 on `click-edit-abandon` (BACKLOG, STATUS, changelog; `package.json`, lock, `manifest.json`, `kit/kit-manifest.json`; per-file kit versions unchanged). `npm test` 123 pass; lint and build not rerun (no source change). **Not pushed**
 - Store error explained (see Now). No release cut: `/release` pushes tags and creates a GitHub release, which needs the user's go-ahead, and it must run on a clean `main` after the merge

@@ -29,18 +29,12 @@ Goal: publish to the Obsidian community plugin store.
 - Engine changes need a test against fixtures. Known answers: 0005 RAFT Mn = 19990.14; 0011 reactor volume = 1.7591 mL.
 - Don't change user-facing text, layout or defaults beyond the task. Ask first.
 - Lab vocabulary is the user's: keep their names (Exp. Class, CoSHH, RA, sample codes like ABC0014-A).
-- **Version bump on every commit** (patch, 0.4.x; the first commit after 0.3.0 sets 0.4.0). Push and pull carry the commit's version, no extra bump. Do it as part of the commit, before `git commit`:
-  1. `npm version <next> --no-git-tag-version` (`package.json` + `package-lock.json`)
-  2. Same version in `manifest.json` and in `kit/kit-manifest.json` `version` (`npm run package` fails if they differ)
-  3. `npm run kit:manifest` (per-file versions move only for kit files whose content changed)
-  4. Put the version in the commit message first line, e.g. `0.4.3: fix merge window`, and in `STATUS.md` (Version line)
-  - Leave `versions.json` alone: `/release` adds its line. `/release` uses the current version instead of asking for a new one, unless the user wants a minor bump (new feature set, e.g. 0.5.0: only the user decides)
-  - Docs-only or STATUS-only commits bump too. A merge commit made by GitHub does not
+- **The version only moves at release.** Commits do not bump it (the number is not a commit counter). `/release` is the only thing that changes `package.json` (+ lock), `manifest.json`, `kit/kit-manifest.json` `version` and `versions.json`, and it uses the current version unless the user wants another (e.g. a minor bump like 0.5.0: only the user decides). Never edit those version fields by hand in a commit. `npm run package` fails if the three versions differ.
 - Public repo: no real names, initials or real paths in any file. The GitHub username is fine (repo URL, commit author). Paths and personal values belong in plugin settings (empty defaults). The user's vault path goes in `.claude/settings.local.json` (not committed).
 
 ## End-of-task routine (MANDATORY)
 One task per session. You cannot run `/clear` yourself; only the user can. So when a task is done:
-1. Update `STATUS.md` (Now / Next / Last session, and the Version line if a commit was made: see "Version bump on every commit").
+1. Update `STATUS.md` (Now / Next / Last session; the Version line only changes at release).
 1b. Anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) goes into `BACKLOG.md` as an unticked item with file:line pointers. In `STATUS.md`, just point to it.
 2. **STOP.** Do not start the next task on your own, even if it is obvious or small.
 3. End your reply with exactly this callout:
