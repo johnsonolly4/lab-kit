@@ -2,7 +2,7 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, templaterScriptsNeedChange, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -216,6 +216,24 @@ export class KitManaged {
         new ConfirmModal(this.app, `Create ${writes} kit files?`,
           "Templates, scripts and the CSS snippet are added to your vault. A file that already exists and differs is never overwritten.", `Create ${writes} files`, first, undefined, ticks).open();
       } else await go();
+    } catch (e) { this.failed(e); }
+  }
+
+  /** The "Set up Templater" button: points Templater's user scripts folder at the kit's scripts (only when it can't find them now) and adds Insert snippet to its Template hotkeys. */
+  async setupTemplater(): Promise<void> {
+    if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
+    try {
+      const roles = this.roles();
+      const menu = kitJoin(roles.templates, "Insert snippet.md");
+      if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
+      const done: string[] = [];
+      const current = templaterUserScriptsFolder(this.app);
+      if (templaterScriptsNeedChange(current, roles.userScripts)) {
+        await setTemplaterUserScripts(this.app, roles.userScripts);
+        done.push(`User scripts folder set to ${roles.userScripts}${current?.trim() ? ` (was ${current})` : ""}.`);
+      }
+      if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys.");
+      new Notice((done.length ? done.join("\n") : "Templater was already set up.") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
     } catch (e) { this.failed(e); }
   }
 

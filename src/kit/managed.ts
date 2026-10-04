@@ -311,6 +311,13 @@ export function followRename(state: ManagedState | null, oldPath: string, newPat
   return changed;
 }
 
+/** True when Templater's user scripts folder must change for it to find the kit's scripts: it is empty, or is neither the kit's script folder nor a folder above it (Templater reads subfolders). */
+export function templaterScriptsNeedChange(current: string | undefined, kitScripts: string): boolean {
+  const norm = (p: string): string => p.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const cur = norm(current ?? ""), kit = norm(kitScripts);
+  return !cur || !(kit === cur || kit.startsWith(cur + "/"));
+}
+
 /** What the first-install dialog offers: CSS snippets to switch on, and Templater's user scripts folder (only when Templater has none). */
 export interface FirstInstallOptions { css: { enable: string[]; disable: string[] } | null; templaterFolder: string | null }
 export function firstInstallOptions(bundle: EmbeddedKit, templater: { installed: boolean; folder?: string }, userScripts: string): FirstInstallOptions {

@@ -16,6 +16,7 @@
 - Page jump: hold now lasts while redraws keep moving the page (8 s cap), every `render()` restores it, scrollbar grab ends it (`src/calc/render.ts`; test in `tests/render.test.ts`). Cause on the user's machine not reproduced
 - Indent: defensive CSS reset only (cause not seen; Obsidian's own CSS does not indent tables, so probably the user's theme)
 - Templater: Insert snippet.md is added to Template hotkeys when installed / updated (`addTemplaterHotkey`, `tests/templater-hotkey.test.ts`)
+- **Set up** button (Settings → Lab Kit → Built-in kit, Templater row) does the Templater settings on demand; the Built-in kit group is now first in the settings
 - I did not touch the user's real vault (Obsidian showed it; no UI testing was done)
 
 ## Earlier session (Chemical database + autocomplete, 2026-10-04)

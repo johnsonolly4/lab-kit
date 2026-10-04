@@ -85,6 +85,8 @@ class KitSettingTab extends PluginSettingTab {
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
+    rows.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
+      render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
     rows.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     rows.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
@@ -117,9 +119,9 @@ class KitSettingTab extends PluginSettingTab {
     const snippets = this.snippetRows();
     const builtIn = this.builtInRows();
     return [
+      { type: "group", heading: "Built-in kit", items: builtIn },
       { type: "group", heading: "Lab notebook", items: notebook },
       ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
-      { type: "group", heading: "Built-in kit", items: builtIn },
       ...this.header.definitions()
     ];
   }

@@ -26,3 +26,15 @@ describe("addTemplaterHotkey", () => {
     expect(await addTemplaterHotkey(appWith(undefined), "A.md")).toBe(false);
   });
 });
+
+describe("templaterScriptsNeedChange", () => {
+  it("only asks for a change when Templater cannot find the kit's scripts", async () => {
+    const { templaterScriptsNeedChange: need } = await import("../src/kit/managed");
+    expect(need("", "Extras/scripts/lab-kit")).toBe(true);
+    expect(need(undefined, "Extras/scripts/lab-kit")).toBe(true);
+    expect(need("Extras/scripts/lab-kit", "Extras/scripts/lab-kit")).toBe(false);
+    expect(need("Extras/scripts/", "Extras/scripts/lab-kit")).toBe(false);   // a folder above: Templater reads subfolders
+    expect(need("Extras/scripts-old", "Extras/scripts/lab-kit")).toBe(true);
+    expect(need("Other", "Extras/scripts/lab-kit")).toBe(true);
+  });
+});
