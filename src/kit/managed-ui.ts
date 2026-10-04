@@ -7,7 +7,7 @@ import {
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
-import { kitCompare, kitDetectRoles, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
+import { kitCompare, kitDetectRoles, kitInBackup, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
 const MENU_ID = "tpl-insert-snippet-md";
@@ -26,7 +26,7 @@ export class KitManaged {
   /** Folders: detected from your vault and Templater, then your own entries from settings on top. */
   roles(): Roles {
     const kit = this.host.kit;
-    const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v));
+    const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v && !kitInBackup(v)));
     const old = kit.installed;
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
     return { ...kitDetectRoles(this.app, record, trackedRoles(this.bundle, kit.managed)), ...own };
@@ -227,13 +227,13 @@ export class KitManaged {
       const menu = kitJoin(roles.templates, "Insert snippet.md");
       if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
       const done: string[] = [];
-      const current = templaterUserScriptsFolder(this.app);
+      const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake
       if (templaterScriptsNeedChange(current, roles.userScripts)) {
         await setTemplaterUserScripts(this.app, roles.userScripts);
         done.push(`User scripts folder set to ${roles.userScripts}${current?.trim() ? ` (was ${current})` : ""}.`);
       }
       // The template folder is only filled in when Templater has none; one that is set is never changed
-      const tplFolder = templaterTemplatesFolder(this.app)?.trim();
+      const tplFolder = kitInBackup(templaterTemplatesFolder(this.app) ?? "") ? "" : templaterTemplatesFolder(this.app)?.trim();
       const target = templaterTemplatesTarget(roles.templates);
       if (!tplFolder && target) { await setTemplaterTemplatesFolder(this.app, target); done.push(`Template folder set to ${target}.`); }
       else if (tplFolder && templaterScriptsNeedChange(tplFolder, roles.templates)) done.push(`Template folder left as ${tplFolder} (the kit's templates are in ${roles.templates}).`);

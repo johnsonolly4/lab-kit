@@ -193,6 +193,15 @@ describe("backup copies are not kit files", () => {
     expect(r.templates).toBe("Templates/Lab Kit");
   });
 
+  it("a Templater folder that points into a backup is ignored", () => {
+    const bad = "Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater";
+    const none: any = { vault: { configDir: ".obsidian", getAbstractFileByPath: () => null, getFiles: () => [] },
+      plugins: { plugins: { "templater-obsidian": { settings: { user_scripts_folder: bad, templates_folder: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates" } } } } };
+    const r = kitDetectRoles(none, null, {});
+    expect(r.userScripts).toBe("Extras/scripts/templater");
+    expect(r.templates).toBe("Templates/Lab Kit");
+  });
+
   it("a path an older version recorded inside a backup is not trusted", () => {
     const r = trackedRoles({ manifest: { files: [{ id: "a", role: "userScripts", dest: "labForm.js" }] } } as any,
       { installedKitVersion: "0.4.9", files: { a: { path: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater/labForm.js" } } } as any);
