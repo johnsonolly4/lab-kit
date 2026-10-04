@@ -2,11 +2,11 @@
   "schema": 1,
   "kit": "lab-notebook-kit",
   "version": "0.4.6",
-  "date": "2026-10-02",
+  "date": "2026-10-04",
   "notes": [
-    "Adds the kit updater (this window)",
-    "Includes everything from v0.2: calc tables 1.1, 13 snippets with forms, template changes, tutorial",
-    "Removes the v0.1 snippets and tabs-mermaid-scroll.css"
+    "Built-in kit: review, update, merge and resolve conflicts per file, with backups",
+    "Hazard header is part of the plugin (no Dataview); settings are searchable (needs Obsidian 1.13)",
+    "Fixes: Tab and Escape in a cell, page jump after editing, duplicate table names flagged"
   ],
   "rewrite": {
     "Extras/scripts": "scripts"

@@ -1,6 +1,6 @@
 # Lab notebook kit: changelog
 
-## Unreleased (v0.4)
+## v0.4.6 (2026-10-04)
 - **Tab and Escape in a cell**: Tab saves what you typed (like Enter), Escape throws it away. Obsidian no longer also acts on those keys while a cell is open
 - **Page no longer jumps after editing a cell**: the note stays at the same scroll position when a cell is saved and the table redraws (it holds the position for about a second, and lets go as soon as you scroll yourself)
 - **Kit updates and your frontmatter**: in the Lab Book template the properties (the block between the `---` lines) are now merged property by property. A property you added stays, a property only the kit changed is updated, and only a property you both changed differently counts as a conflict (it shows as one change in **Resolve…**). Your own wording and order are kept
@@ -24,7 +24,7 @@
 - **Snippets find numbered tables**: the NMR / GPC / DLS / combined-results snippets now take sample codes from `samples`, `samples2`, `samples3`… (also `sample`, `sampling2`) and combine them, and the results table links every `nmr`, `nmr2`… table (falls through to the next table when a code isn't in the first). Before, a deleted or second sample table was missed
 
 - **Duplicate table names are flagged**: if two `calc` tables in a note have the same `name:`, both show a red "⚠ name used twice" next to their name, and any reference to that name (`a!B2`, `SUM(a!A2:A5)`) shows `#REF!` instead of silently using the first table. Rename one to fix it
-- **Click-to-edit is steadier**: a cell keeps its width while you edit it, and clicking another cell while one is open goes straight to it (before it took a second click)
+- **Click-to-edit keeps its width**: a cell keeps its width while you edit it. Known issue: clicking another cell while one is open still needs a second click
 - **RAFT recipe: mol fractions always add up**: with several monomers the fractions (e.g. 0.333 × 3) are now divided by their sum, so moles, masses and theoretical Mn are exact. The tip callout under the table is gone
 
 - **Initials are a plugin setting** (Settings → Lab Kit → Initials, empty by default). The snippets read it for sample codes; until it is set they use `XX` and show a notice. `lab-config.json` is only a fallback for older installs

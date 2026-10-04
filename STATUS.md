@@ -1,8 +1,8 @@
 # Status
 
 **Version:** 0.4.6 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
-**Now:** PRs 1-12 are in `main` (0.4.6, merge commit `139800b`; local `main` pulled and checked out). 0.4.6 = BACKLOG / STATUS after the Obsidian test (page jump fixed, Tab saves, click-to-edit still two clicks and **abandoned for now**; its changelog line removed). **Store scan error** "No release matches your manifest version": the store reads `manifest.json` on `main` and wants a GitHub release tagged exactly that version (no `v`); **no release exists yet** (`git tag` is empty, `versions.json` only has 0.3.0). `test-vault/` hand-copied kit files stay untracked on purpose.
-**Next:** release so a tag matches the manifest: `/release` on clean `main` at the manifest version (0.4.6, or 0.5.0 if the user wants a minor bump). Merge the rule-change PR first (branch `release-only-version`, no version bump). Then re-run the scan at community.obsidian.md (BACKLOG, "Community store submission checklist"). Leftovers: BACKLOG, "Kit update system".
+**Now:** 0.4.6 is released: commit `Release 0.4.6` + tag `0.4.6` on `main`; push and GitHub release (`main.js`, `manifest.json`, `styles.css`, kit zip) pending the user's go-ahead (see Last session). PRs 1-14 are in `main`. **Store scan:** re-run at community.obsidian.md once the GitHub release exists. Click-to-edit (second click) is **abandoned for now**, shipped as a known issue in the changelog. `test-vault/` hand-copied kit files stay untracked on purpose.
+**Next:** push + GitHub release for 0.4.6 if not done, re-run the store scan (BACKLOG, "Community store submission checklist"), and **a new feedback round** (`/feedback`) on 0.4.6. Leftovers: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -11,7 +11,16 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (commit + push rule change)
+## Last session (release 0.4.6)
+- User chose "Merge and release 0.4.6". Merged [lab-kit#14](https://github.com/johnsonolly4/lab-kit/pull/14) (`0c46f7e`), pulled `main`, ran `/release`: `npm test` 123 pass, build clean. `versions.json` gets `0.4.6: 1.13.0`; `kit/kit-manifest.json` notes (3 bullets) and date rewritten, `docs/changelog.md` heading "Unreleased (v0.4)" → "v0.4.6 (2026-10-04)"; the click-to-edit line reworded to what is true (width only; second click is a known issue). Committed `Release 0.4.6` with this STATUS edit and tagged `0.4.6`. Lint not rerun
+
+## Earlier session (release skill PR 14)
+- User supplied a new `.claude/skills/release/SKILL.md` (STATUS.md may be dirty at release; STATUS updated before the release commit and included in it; failed GitHub release noted in STATUS). Branch `fix/release-skill-status`, committed (no version bump), pushed, opened [lab-kit#14](https://github.com/johnsonolly4/lab-kit/pull/14). **Not merged**, no release cut. No tests run. This STATUS edit is **not committed** (it carries over into the release commit per the new skill). Nothing new for BACKLOG
+
+## Earlier session (merge PR 13)
+- User chose "Merge PR 13". Merged [lab-kit#13](https://github.com/johnsonolly4/lab-kit/pull/13) into `main` (plain merge commit `4201773`, branch not deleted; was clean and mergeable). Pulled `main` locally. No code changes, tests not rerun, **no release cut**. This STATUS edit is **not committed** (`main` is the current branch; commit it on a branch). Nothing new for BACKLOG
+
+## Earlier session (commit + push rule change)
 - User chose "Commit, push, PR". Committed the rule change below on `release-only-version` (no version bump, stays 0.4.6), pushed and opened a PR into `main`. **Not merged**, no release cut. No code changes, tests not rerun. Nothing new for BACKLOG
 
 ## Earlier session (version rule change)
