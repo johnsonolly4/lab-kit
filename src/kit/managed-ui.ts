@@ -446,7 +446,8 @@ class KitFilesModal extends Modal {
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
-      const file = this.app.vault.getFileByPath(it.dest);
+      // A snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so snippet rows have no Open button
+      const file = it.file.dest.startsWith("Snippets/") ? null : this.app.vault.getFileByPath(it.dest);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
         this.close();
         void this.app.workspace.getLeaf(false).openFile(file);
