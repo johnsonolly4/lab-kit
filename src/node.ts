@@ -6,7 +6,6 @@ export interface NodeModules {
   fs: typeof import("fs");
   path: typeof import("path");
   crypto: typeof import("crypto");
-  child_process: typeof import("child_process");
   electron: { shell: { openPath(path: string): Promise<string> } };
 }
 
@@ -33,7 +32,6 @@ function load<K extends keyof NodeModules>(name: K): NodeModules[K] {
       case "fs": return require("fs") as NodeModules[K];
       case "path": return require("path") as NodeModules[K];
       case "crypto": return require("crypto") as NodeModules[K];
-      case "child_process": return require("child_process") as NodeModules[K];
       case "electron": return require("electron") as NodeModules[K];
     }
   }
