@@ -2,7 +2,7 @@
 
 **Version:** 0.4.8 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 **Now:** 0.4.8 is released. Two unpushed branches, stacked: `feat/sample-letters-backups-notes` (step 1: sample letters, hidden backups, "Kit notes" dropped) and `feat/kit-picker` on top (step 2: Kit picker + vault layout). Code + tests done (154 pass, lint 0 errors, build OK); neither is seen in Obsidian. Click-to-edit (second click) is abandoned for now (known issue). **The feedback page needs a new round.**
-**Next:** your go-ahead for step 3 (**Chemical database + autocomplete**, own plan pass; needs your chemical note template first), then Analysis methods (BACKLOG, "Decided"). Also open: push + PR for the two branches, re-run the store scan on 0.4.8 and the "Repo / release" checks, then a feedback round (`/feedback`).
+**Next:** your go-ahead for step 3 (**Chemical database + autocomplete**, own plan pass; needs your chemical note template first), then Analysis methods (BACKLOG, "Decided"). **Planned and approved: remove the folder updater** once `feat/kit-picker` is merged (BACKLOG, "Kit update system": decisions + steps). Also open: push + PR for the two branches, re-run the store scan on 0.4.8 and the "Repo / release" checks, then a feedback round (`/feedback`).
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` fails with ENOENT (release-only files)
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`): the v0.3 plain-JS source exists only on this machine. User keeps a copy or deletes it
