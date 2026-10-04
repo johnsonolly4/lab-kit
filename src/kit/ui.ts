@@ -143,8 +143,7 @@ class KitSettingTab extends PluginSettingTab {
   private builtInIcons = new Map<string, string>();
 
   private snippetFiles(): TFile[] {
-    const templates = this.ctl.kit.installed?.roles?.templates ?? "Templates";
-    const folder = this.app.vault.getFolderByPath(normalizePath(`${templates}/Snippets`));
+    const folder = this.app.vault.getFolderByPath(normalizePath(`${this.ctl.managed.templatesFolder()}/Snippets`));
     return (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md")
       .sort((a, b) => a.basename.localeCompare(b.basename, undefined, { numeric: true }));
   }
@@ -214,7 +213,7 @@ class KitSettingTab extends PluginSettingTab {
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
-    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: detected from Templater, or Templates."));
+    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault a Lab Kit folder inside Templater's templates folder."));
     rows.push(folder("scripts", "Scripts folder", "Where the kit's shared scripts go. Must not be a hidden (dot) folder. Empty: detected.", true));
     rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
     rows.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
@@ -286,6 +285,7 @@ export class KitController {
     this.kit = Object.assign({}, KIT_DEFAULTS, saved?.kit ?? {});
     this.kit.snippetIcons = { ...this.kit.snippetIcons };
     this.kit.paths = { ...this.kit.paths };
+    this.kit.off = { ...this.kit.off };
   }
   async save(): Promise<void> {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;

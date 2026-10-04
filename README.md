@@ -6,7 +6,7 @@ Live calculation tables, lab snippet forms and a hazard header for a chemistry l
 - **Calc tables**: ```` ```calc ```` blocks with Excel-style formulas (`SUM`, `XLOOKUP`, `IF`, …), references between tables, and `MW()` read from your chemical notes. Click a cell to edit; everything that depends on it updates.
 - **Snippet forms** (Alt+S, needs Templater): solution prep, recipe by equivalents, RAFT recipe, sample lists, sampling timetables, NMR / GPC / DLS sample tables, combined results, flow column prep, residence times.
 - **Experiment header**: hazard table built from the note's Chemicals property, and a button that opens the experiment's data folder.
-- **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it. Review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
+- **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 - **Folder updater** (desktop only, optional): the older way, installing kit versions from a folder you downloaded.
 
 ## Install

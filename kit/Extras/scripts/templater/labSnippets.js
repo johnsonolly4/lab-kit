@@ -1,7 +1,7 @@
 /* =====================================================================
    labSnippets: builds every Alt+S snippet (Templater user script)
    ---------------------------------------------------------------------
-   Each file in Templates/Snippets calls:
+   Each file in the Snippets folder calls:
        tR += await tp.user.labSnippets(tp, "solution")
    Keys: solution, recipe, raft, matrix, samples, timetable, nmr, gpc,
          dls, results, column, rt, blank
@@ -408,7 +408,7 @@ ${calc({ name: unique("rt_check"), title: "Residence time for each flow rate", i
   };
 
   if (!tp.user?.labForm) {
-    new Notice("Lab snippets need Templater → User script functions folder = Extras/scripts/templater");
+    new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
     return "";
   }
   if (!S[key]) { new Notice(`Unknown snippet "${key}"`); return ""; }

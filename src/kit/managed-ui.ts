@@ -3,7 +3,7 @@
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import { hasNode } from "../platform";
 import {
-  SAFE_ACTIONS, applyManaged, forgetManaged, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
+  SAFE_ACTIONS, applyManaged, disableManaged, forgetManaged, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -27,8 +27,13 @@ export class KitManaged {
     const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v));
     const old = kit.installed;
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
-    return { ...kitDetectRoles(this.app, record), ...own };
+    return { ...kitDetectRoles(this.app, record, undefined, trackedRoles(this.bundle, kit.managed)), ...own };
   }
+
+  /** Where the templates (Insert snippet.md, Snippets/) are: the Alt+S menu scans the Snippets folder next to it. */
+  templatesFolder(): string { return this.roles().templates; }
+
+  isOff(id: string): boolean { return !!this.host.kit.off[id]; }
 
   private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
 
@@ -40,7 +45,7 @@ export class KitManaged {
   }
 
   plan(): Promise<ManagedItem[]> {
-    return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy(), this.baseDir());
+    return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy(), this.baseDir(), new Set(Object.keys(this.host.kit.off)));
   }
 
   private applyOptions(extra: Partial<ApplyOptions> = {}): ApplyOptions {
@@ -73,6 +78,40 @@ export class KitManaged {
     await this.settleVersion();
     await this.host.save();
     return out.results.filter(r => r.id === id);
+  }
+
+  /**
+   * Use ON: the file is installed again. Use OFF: your copy is backed up, then moved to the trash, and the kit stops installing it.
+   * `done` runs afterwards, also when the user cancels, so the window can redraw.
+   */
+  async setUse(id: string, on: boolean, done: () => void): Promise<void> {
+    const kit = this.host.kit;
+    if (on) {
+      delete kit.off[id];
+      await this.host.save();
+      try { await this.updateOne(id); } catch (e) { this.failed(e); }
+      done();
+      return;
+    }
+    const item = (await this.plan()).find(i => i.file.id === id);
+    if (!item) { done(); return; }
+    const adapter = this.app.vault.adapter;
+    const apply = async (): Promise<void> => {
+      const remove = async (path: string): Promise<void> => {
+        const f = this.app.vault.getFileByPath(path);
+        if (f) await this.app.fileManager.trashFile(f); else await adapter.remove(path);
+      };
+      const out = await disableManaged(adapter, item, kit.managed, this.applyOptions(), remove);
+      kit.managed = out.state;
+      kit.off[id] = true;
+      await this.settleVersion();
+      await this.host.save();
+      if (out.backup) new Notice(`Switched off ${item.dest}. A copy is in ${out.backup}`, 8000);
+    };
+    const go = async (): Promise<void> => { try { await apply(); } catch (e) { this.failed(e); } done(); };
+    if (!(await adapter.exists(item.dest))) { await go(); return; }
+    new ConfirmModal(this.app, `Remove ${item.dest.split("/").pop() ?? item.dest}?`,
+      "It leaves the Alt+S menu. A copy goes to the backup folder first and the file moves to your trash. Switch it on again to get it back.", "Remove", go, done).open();
   }
 
   /** Put the kit's copy of ONE file back (your copy is backed up first). */
@@ -174,7 +213,8 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "fast-forward", title: "Updated (the old copy is backed up first)", open: true },
   { action: "up-to-date", title: "Already up to date" },
   { action: "keep", title: "Kept (your settings)" },
-  { action: "detached", title: "Detached (not managed)" }
+  { action: "detached", title: "Detached (not managed)" },
+  { action: "off", title: "Switched off (not installed)" }
 ];
 
 /** Dry run: what would happen to every kit file, then Apply. */
@@ -318,14 +358,19 @@ class KitFilesModal extends Modal {
       const status = statusOf(it, this.managed.stateOf(id));
       const row = new Setting(contentEl).setName(it.dest);
       row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
+      const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
+        : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";
+      row.setDesc([it.file.desc, note].filter(Boolean).join(" · "));
+      if (it.file.optional) {
+        row.addToggle(t => t.setTooltip("Use this file").setValue(it.action !== "off")
+          .onChange(on => void this.managed.setUse(id, on, () => void this.refresh())));
+      }
       if (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge") {
         const text = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : it.action === "merge" ? "Merge" : "Recreate";
         row.addButton(b => b.setButtonText(text).setCta().onClick(() => void this.run(() => this.managed.updateOne(id))));
-        if (it.action === "merge" && it.file.kind === "script") row.setDesc("Merged code: please test it. Your copy is backed up first.");
       }
       if (it.action === "needs-merge") {
         row.addButton(b => b.setButtonText("Resolve…").setCta().onClick(() => void this.managed.resolve(id, () => void this.refresh())));
-        if (it.file.kind === "script") row.setDesc("Code: after merging, please test it.");
       }
       if (it.action === "user-modified" || it.action === "merge" || it.action === "needs-merge") {
         row.addButton(b => b.setButtonText("Restore kit original").onClick(() => {
@@ -334,7 +379,7 @@ class KitFilesModal extends Modal {
         }));
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
-      else if (!it.untracked) row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
+      else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
       const file = this.app.vault.getFileByPath(it.dest);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
         this.close();
@@ -393,15 +438,16 @@ class KitReportModal extends Modal {
 }
 
 class ConfirmModal extends Modal {
-  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>) { super(app); }
+  private confirmed = false;
+  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>, private onCancel?: () => void) { super(app); }
 
   onOpen(): void {
     this.titleEl.setText(this.title);
     this.contentEl.createEl("p", { text: this.text });
     new Setting(this.contentEl)
       .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => { this.close(); void this.onYes(); }));
+      .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => { this.confirmed = true; this.close(); void this.onYes(); }));
   }
 
-  onClose(): void { this.contentEl.empty(); }
+  onClose(): void { this.contentEl.empty(); if (!this.confirmed) this.onCancel?.(); }
 }

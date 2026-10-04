@@ -45,9 +45,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Templater → **Template hotkeys** → add `Templates/Insert snippet.md` (your Templates folder may have another name).
+> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts it in a **Lab Kit** folder inside your Templater templates folder (Settings → Lab Kit → **Manage files…** shows where each file is).
 > 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**.
-> 3. Templater → **User script functions** folder = `Extras/scripts/templater` (see Troubleshooting).
+> 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault gets a `lab-kit` folder inside your scripts folder; Templater also reads subfolders, so the folder above it works too). See Troubleshooting.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
 
@@ -213,9 +213,10 @@ flowchart LR
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
-| A snippet's built-in icon or text | first two lines of its file in `Templates/Snippets` (`// icon:` and `// desc:`) |
-| What a snippet builds | `Extras/scripts/templater/labSnippets.js` (one section per snippet) |
-| A new snippet | copy a file in `Templates/Snippets`, give it a new number and name |
+| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`) |
+| What a snippet builds | `labSnippets.js` in your Templater user scripts folder (one section per snippet) |
+| A new snippet | copy a file in the `Snippets` folder, give it a new number and name |
+| Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 
 > [!tip] Icons
 > Browse [lucide.dev](https://lucide.dev/icons) and use the icon's name, e.g. `flask-round`, `test-tube`, `beaker`, `atom`, `droplets`. A comma-separated list tries each name in turn.
@@ -235,6 +236,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 - **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
 - **A file you changed** is never overwritten. If your edits and the kit's touch different lines, it is listed under "merges cleanly" and you can tick it to merge. In the Lab Book template the properties are merged one by one, so a property you added stays.
 - **Conflict:** if you and the kit changed the same lines, the file shows **Conflict** and is left alone. Press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply**. **Keep all mine** and **Take kit version** settle the whole file at once.
+- **Use toggle:** each snippet (not the core files) has a switch in **Manage files…**, with a one-line description. Off = not installed and not in the Alt+S menu. Switching off a snippet you already have asks first, copies it to the Backup folder and moves it to your trash. Switching it on installs it again. **Update all safe files** never installs a switched-off snippet.
 - **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
 
 Once Lab Kit is in the community store, the plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates**. That does not touch your templates or scripts; those only change when you press **Apply** here.
@@ -262,7 +264,7 @@ Then **Install**. `lab-config.json` is never overwritten. If you want copies of 
 
 | Problem | Fix |
 |---|---|
-| Snippets ask one question at a time, or say "need Templater → User script functions" | Settings → Templater → **User script functions** folder = `Extras/scripts/templater` |
+| Snippets ask one question at a time, or say "need Templater → User script functions" | Settings → Templater → **User script functions** folder = the folder that holds `labSnippets.js` |
 | `#NOTE?` in an MW cell | No note with that name. Check spelling, or type the MW over the formula |
 | `#PROP?` in an MW cell | The chemical note has no `MW` / `Mw` property |
 | `#REF!` | The formula points at a deleted row or a table name that doesn't exist |

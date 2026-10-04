@@ -14,6 +14,10 @@ export type ManagedKind = "template" | "snippet" | "script";
 export interface EmbeddedFile {
   id: string; kind: ManagedKind; role: string; src: string; dest: string;
   version: string; sha256: string; renamedFrom: string[]; policy?: string;
+  /** One line shown in Manage kit files. */
+  desc?: string;
+  /** Can be switched off (not installed, not in the Alt+S menu). Core files are never optional. */
+  optional?: boolean;
 }
 /** The kit as built into main.js (see scripts/embed-kit.mjs). */
 export interface EmbeddedKit {
@@ -29,7 +33,7 @@ export interface ManagedFileState {
 /** What the plugin remembers about built-in kit files (the `managed` key of the kit data). */
 export interface ManagedState { installedKitVersion: string; files: Record<string, ManagedFileState> }
 export type ManagedAdapter = Pick<DataAdapter, "exists" | "read" | "write" | "mkdir">;
-export type ManagedAction = "create" | "fast-forward" | "up-to-date" | "user-modified" | "merge" | "needs-merge" | "missing" | "keep" | "detached";
+export type ManagedAction = "create" | "fast-forward" | "up-to-date" | "user-modified" | "merge" | "needs-merge" | "missing" | "keep" | "detached" | "off";
 export interface ManagedItem {
   file: EmbeddedFile;
   dest: string;
@@ -71,9 +75,21 @@ export function kitText(bundle: EmbeddedKit, file: EmbeddedFile, roles: Roles): 
   return text;
 }
 
+/** Folders where this system has already put files: each role's folder, read back from the tracked files' paths (a file you moved is skipped). */
+export function trackedRoles(bundle: EmbeddedKit, state: ManagedState | null): Roles {
+  const out: Roles = {};
+  for (const file of bundle.manifest.files) {
+    const path = state?.files[file.id]?.path;
+    if (!path || out[file.role] !== undefined) continue;
+    if (path === file.dest) out[file.role] = "";
+    else if (path.endsWith("/" + file.dest)) out[file.role] = path.slice(0, path.length - file.dest.length - 1);
+  }
+  return out;
+}
+
 /* ---- Plan ---- */
 /** `baseDir` (where the base copies live) lets "changed by both" files be merged; without it they stay "needs-merge". */
-export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null, roles: Roles, legacy: LegacyRecord | null = null, baseDir: string | null = null): Promise<ManagedItem[]> {
+export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null, roles: Roles, legacy: LegacyRecord | null = null, baseDir: string | null = null, off: ReadonlySet<string> = new Set()): Promise<ManagedItem[]> {
   const items: ManagedItem[] = [];
   for (const file of bundle.manifest.files) {
     const st = state?.files[file.id];
@@ -89,6 +105,8 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
     const kitHash = await kitSha256(text);
     const item = (action: ManagedAction, curHash: string | null, extra: Partial<ManagedItem> = {}): ManagedItem => ({ file, dest, text, kitHash, curHash, action, untracked: !st, ...extra });
     if (st?.detached) { items.push(item("detached", null)); continue; }
+    // Switched off by the user: nothing is installed or updated (only files marked optional can be off)
+    if (file.optional && off.has(file.id)) { items.push(item("off", (await adapter.exists(dest)) ? await kitSha256(await adapter.read(dest)) : null)); continue; }
     if (!(await adapter.exists(dest))) { items.push(item(st ? "missing" : "create", null)); continue; }
 
     const cur = await adapter.read(dest);
@@ -216,6 +234,19 @@ export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem,
   return { state: next, result: { id, dest: item.dest, action: item.action, outcome: written ? "merged" : "adopted", backup } };
 }
 
+/**
+ * Switches ONE optional file off: your copy (if it is installed) is backed up, then removed, and the kit forgets it.
+ * `remove` does the deleting (the plugin moves it to the trash; tests use the adapter). Returns where the backup went.
+ */
+export async function disableManaged(adapter: ManagedAdapter & Partial<Pick<DataAdapter, "remove">>, item: ManagedItem, state: ManagedState | null, opts: ApplyOptions, remove: (path: string) => Promise<void>): Promise<{ state: ManagedState; backup?: string }> {
+  let backup: string | undefined;
+  if (await adapter.exists(item.dest)) {
+    backup = await backupFile(adapter, item, opts);
+    await remove(item.dest);
+  }
+  return { state: await forgetManaged(adapter, state, item.file.id, opts.baseDir), backup };
+}
+
 /** A kit file the kit has dropped (`removed` in the manifest) that you still have installed. Left where it is, never deleted. */
 export interface RetiredItem { id: string; path: string; exists: boolean }
 
@@ -258,6 +289,7 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
     case "missing": return { label: "Missing", tone: "warn" };
     case "keep": return { label: "Kept (your settings)", tone: "muted" };
     case "detached": return { label: "Detached", tone: "muted" };
+    case "off": return { label: "Off", tone: "muted" };
   }
 }
 
