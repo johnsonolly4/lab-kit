@@ -88,8 +88,13 @@
 .is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
 .lab-kit-wide-input { width: 100%; }
-.setting-item-control.lab-kit-wide-control,
-.setting-item-control:has(> .lab-kit-wide-input) { flex: 1 1 60%; }
+/* Settings rows with a text box: the same split on every row (text 40%, box the rest), not sized by how long the description is.
+   Obsidian stacks the row below 340px wide, so only wider rows get this. */
+@container (min-width: 341px) {
+  .setting-item:has(.lab-kit-wide-input) > .setting-item-info { flex: 0 0 40%; }
+  .setting-item-control.lab-kit-wide-control,
+  .setting-item-control:has(> .lab-kit-wide-input) { flex: 1 1 0; min-width: 0; }
+}
 .lab-kit-notice-btn { margin-top: 6px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */
