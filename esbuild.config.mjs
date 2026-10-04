@@ -3,7 +3,7 @@
 // `npm run build` → production main.js in the repo root (for releases)
 import esbuild from "esbuild";
 import process from "process";
-import builtins from "builtin-modules";
+import { builtinModules } from "node:module";
 import { copyFileSync, mkdirSync, watchFile } from "fs";
 import { resolve } from "path";
 import { embeddedKit } from "./scripts/embed-kit.mjs";
@@ -36,7 +36,7 @@ const context = await esbuild.context({
   bundle: true,
   external: ["obsidian", "electron", "@codemirror/autocomplete", "@codemirror/collab", "@codemirror/commands",
     "@codemirror/language", "@codemirror/lint", "@codemirror/search", "@codemirror/state", "@codemirror/view",
-    "@lezer/common", "@lezer/highlight", "@lezer/lr", ...builtins],
+    "@lezer/common", "@lezer/highlight", "@lezer/lr", ...builtinModules],
   loader: { ".md": "text" },
   plugins: [embedKit],
   format: "cjs",

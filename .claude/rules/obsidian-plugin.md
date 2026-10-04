@@ -11,7 +11,7 @@ Source: docs/reference/plugin-guidelines.md. Check there before guessing.
 - No `innerHTML` / `outerHTML` / `insertAdjacentHTML`: use `createEl`, `createDiv`, `createSpan`, `el.empty()`.
 - No inline styles (`el.style.x = …`): CSS classes in `styles.css` using Obsidian CSS variables.
 - No regex lookbehind (breaks on iOS).
-- Node/Electron APIs (`fs`, `path`, `crypto`, `child_process`) only inside `src/kit/`, behind `hasNode()` (`src/platform.ts`; plain `Platform.isDesktopApp` stays true in mobile emulation), loaded lazily.
+- Node/Electron APIs (`fs`, `path`, `crypto`, `electron`) only through `nodeModule()` in `src/node.ts`, the one place that calls `require()`. It returns `null` unless `hasNode()` (`src/platform.ts`; plain `Platform.isDesktopApp` stays true in mobile emulation). No `child_process`, no `Buffer` or `process` globals.
 - `normalizePath()` on every path a user types.
 - Prefer the Vault API (`vault.process`, `fileManager.processFrontMatter`) over the Adapter API; Adapter only for `.obsidian/` files.
 - Look files up with `getAbstractFileByPath` / `getFileByPath`; don't iterate `getFiles()` unless unavoidable.

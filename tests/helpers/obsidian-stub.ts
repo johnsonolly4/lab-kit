@@ -28,7 +28,7 @@ export class TFile {
   path = ""; basename = "";
   constructor(init?: { path?: string; basename?: string }) { Object.assign(this, init); }
 }
-export const Platform = { isDesktopApp: true, isMobile: false };
+export const Platform = { isDesktop: true, isDesktopApp: true, isMobile: false, isWin: false };
 export const getIcon = (_name: string): SVGElement | null => null;
 export const MarkdownRenderer = {
   render: async (_app: unknown, md: string, el: any): Promise<void> => { el.innerHTML = "<p>" + md + "</p>"; },

@@ -73,20 +73,20 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
 - [x] `npm run lint` runs: `eslint.config.mjs` (store plugin `eslint-plugin-obsidianmd` recommended config) + devDependencies. It reports 81 problems (34 errors, 47 warnings) in `src/`, none fixed yet
 - [ ] **Fix lint findings** (`npm run lint`; group by rule, fix each group in its own commit, run `npm test` after):
   - [x] `no-base-to-string` (new `text()` helper in `calc/engine.ts`, used in `calc/render.ts`, `header/hazards.ts`; `kitVersionText` in `kit/updater.ts`)
-  - [x] `no-require-imports`, `no-nodejs-modules`, `no-undef` (Node globals): `eslint.config.mjs` override for `src/kit/**` (code unchanged, already desktop-guarded). Store reviewers may still query Node use with `isDesktopOnly: false`
+  - [x] `no-require-imports`, `no-nodejs-modules`, `no-undef` (Node globals): the `src/kit/**` override is **gone**; every `require()` now lives in `src/node.ts` (`nodeModule()`, null unless `hasNode()`), and `Buffer` / `process` are no longer used. `npm run lint` shows none of these. Store reviewers may still query Node use with `isDesktopOnly: false`
   - [x] `no-unnecessary-type-assertion`
   - [x] `no-plugin-as-component` (`MarkdownRenderChild` in `calc/render.ts` `fillText`; `Component` owned by `WhatsNewModal`)
   - [x] `no-misused-promises`, `no-redundant-type-constituents`
   - [x] `no-unsupported-api` (`getAbstractFileByPath` + `instanceof TFile` in `header/hazards.ts`, so `minAppVersion` stays 1.5.0)
   - [x] `no-tfile-tfolder-cast`, `prefer-window-timers`, `no-unused-vars` (tests now give the renderer real `TFile` objects: `tests/helpers/obsidian-stub.ts`)
-  - [ ] `ui/sentence-case` ×4 warnings left, **user chose to leave them** (the rule misreads proper nouns: wants 'lab kit', 'templater'): `kit/datafolder.ts:10`, `kit/ui.ts:46,92`, `whatsnew.ts:27` (the 3 in `header/settings.ts` stopped being flagged once the strings moved into definitions). Revisit if the store review bot complains
+  - [ ] `ui/sentence-case` ×4 warnings left, **user chose to leave them** (the rule misreads proper nouns: wants 'lab kit', 'templater'): `kit/datafolder.ts:11`, `kit/ui.ts:50,96`, `whatsnew.ts:27` (the 3 in `header/settings.ts` stopped being flagged once the strings moved into definitions). Revisit if the store review bot complains
   - [x] `no-plugin-name-in-command-name`: command now "Check for updates" (`kit/ui.ts:200`, tutorial line 212, changelog)
   - [x] **Adopt the settings definitions API**: `KitSettingTab.getSettingDefinitions()` (`kit/ui.ts`), `HeaderStore.definitions()` (`header/settings.ts`), `setDestructive`, `manifest.json` `minAppVersion` 1.13.0. API notes: `docs/reference/settings-definitions.md`. Lint 0 errors, 4 warnings
   - [ ] Add `"0.4.0": "1.13.0"` to `versions.json` at release (`/release` step 4); `0.3.0` stays `1.5.0`
   - [ ] Optional later: move simple rows (toggles, dropdown, plain texts) to `control` entries with `getControlValue` / `setControlValue` overrides mapping onto `kit` / `header`. Not done: `control` rows can't take the `lab-kit-wide-input` class and `data.json` keys stay nested
 - [x] Commit the lint setup (`eslint.config.mjs`, `package.json`, `package-lock.json`): committed on `whats-new-popup`, not pushed
 - [ ] `npm audit`: 8 vulnerabilities (6 moderate, 1 high, 1 critical) reported after installing eslint; not looked at. Check whether they are dev-only (esbuild, vitest, eslint chain) and whether `npm audit fix` is safe
-- [ ] `eslint-plugin-obsidianmd` has peer `obsidian@1.8.7` and `@eslint/json@0.14.0` (pinned); repo uses `obsidian@latest` (1.13.1). Decide: pin `obsidian` to match the store's lint, or keep latest (affects which APIs `no-unsupported-api` and `minAppVersion` allow)
+- [x] `obsidian` is now pinned to `1.13.1` in `package.json` (was `latest`) so builds repeat. The lint plugin's own peer is `obsidian@1.8.7`: unchanged, lint still works
 - [ ] `npm run lint` only lints `src`; `eslint.config.mjs` is the only other file covered. Decide whether `tests/` and `scripts/` should be linted too (store review looks at the plugin source only)
 - [x] `no-undef` warnings for Node globals: done with the `src/kit/**` override
 - [ ] Re-run `npm run lint` before store submission and in `/release` (add a step to the release skill): must end with 0 errors
@@ -97,7 +97,19 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
   - [x] `whats-new-popup` is in `main` (PR 7), local `main` pulled
   - [ ] Push `store-prep` (author swap + README / tutorial disclosure, committed locally) and open a PR into `main`
   - [x] Per-commit version bump removed: the version now only moves at `/release` (`CLAUDE.md` Hard rules, `.claude/skills/release/SKILL.md` steps 1 and 4 updated). No bump script needed
-  - [ ] Optional: GitHub Action that builds on a pushed tag and attaches `main.js`, `manifest.json`, `styles.css` (the official sample plugin does this; `/release` step 9 does it by hand with `gh release create` for now)
+  - [x] GitHub Action that builds on a pushed tag, attests and attaches `main.js`, `manifest.json`, `styles.css` + the kit zip: `.github/workflows/release.yml` (branch `fix/store-scan-0.4.6`); `/release` now pushes the tag and watches the run. **Never run yet**: first real run is `/release 0.4.7`
+  - [ ] After the 0.4.7 release: check the workflow run is green (`gh run list --workflow release.yml`), `gh attestation verify main.js --repo johnsonolly4/lab-kit` passes, then re-run the store scan: "Build output does not match" depends on the build being identical on the scan's machine (`npm ci`, pinned `obsidian@1.13.1`); if it still differs, compare the released `main.js` with a fresh `npm ci && npm run build`
+  - [ ] Workflow actions are pinned by major tag (`actions/checkout@v4`, `setup-node@v4`, `attest-build-provenance@v2`, `.github/workflows/release.yml`), not by commit SHA. Pin to SHAs if the scan or a policy asks
+  - [ ] No CI on pull requests (`npm test` / `npm run lint` / `npm run build` only run locally); optional second workflow
+  - [ ] Windows: does the Explorer window come to the front with `shell.openPath` (`src/kit/datafolder.ts:14`)? Not tested by me. If not, revert the commit "Open the data folder with Electron's shell.openPath on Windows too"
+  - [ ] **Check the `!important` removal in real Obsidian** (`styles.css:24-55`, `:85-87`; no rule needed `!important`). Selectors are the shortest that beat Obsidian 1.13.7's own table rules, not yet seen in Obsidian. In `test-vault` (reload the plugin; `npm run dev` or copy `styles.css` + `main.js`), note `kit-demo`, Reading view **and** Live Preview, dark **and** light:
+    1. Calculated cells are soft blue, also in the 2nd, 4th… column (Obsidian's alternate-column rule)
+    2. An amber "needs …" cell and a red error cell (type `=1/0` in a cell) keep their colour and text style
+    3. Click a cell: the input fills the cell with no extra padding; Enter / Tab / Escape still behave
+    4. **A1** button: grid labels are small, grey, centred, no background, including the header row's 2nd, 4th… letters
+    5. Settings → Lab Kit → Kit updates: the Update folder box and other folder boxes still fill their row
+    6. Hover a row of a tinted table: the tint stays (rows only change their own background)
+    7. If you use a theme or snippet with striped rows or columns, repeat 1 and 4 with it on. If a tint is lost, tell me the theme: that rule would need `!important` back (list it in the PR)
   - [ ] Check `versions.json` after the first release: it must map each released version to its `minAppVersion` (now only `0.3.0`; `/release` step 4 adds the line, 0.4.6 should be `1.13.0`)
   - [ ] Check the "Not yet tested" list inside Obsidian (nothing from v0.4 has been seen there). Ordered walkthrough: `docs/obsidian-test-checklist.md` (tick the items here once it is done)
   - [x] **Mobile / desktop-only decision**: user chose **keep `isDesktopOnly: false`**. Checked every `require("fs"/"path"/"crypto"/"child_process"/"electron")`: all sit inside functions reached only behind `Platform.isDesktopApp` (`src/kit/datafolder.ts:6-19` via `src/header/render.ts:57`; `kitScan` / `kitReadSource` `src/kit/updater.ts:184,198` via `src/kit/ui.ts:323`; `kitHash` `updater.ts:74` is in a try/catch and its only other caller is guarded at `src/kit/managed-ui.ts:37`). No code changed
@@ -107,9 +119,9 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03). The user ticks items off
   - [ ] Optional `authorUrl` / `fundingUrl` in `manifest.json` (not added; ask first)
   - [ ] README: replace "Not in the community store yet" install section after listing; add a screenshot or two
   - [x] **Self-update removed** (developer policy "no self-update"): the kit manifest no longer lists the plugin files, `reloadPlugin` and the plugin row are gone (`scripts/kit-manifest.mjs`, `src/kit/ui.ts`, `src/kit/updater.ts`, `tests/updater.test.ts`). `npm run package` still copies `main.js` / `manifest.json` / `styles.css` into the zip for `install-updater.ps1` / `.sh` (user-run scripts, not the plugin); not seen in Obsidian
-  - [x] **Developer policies, README disclosure**: README section "Privacy, network and files" (no network / account / ads / telemetry / paid features; folder updater reads the update folder incl. the startup check; data-folder button creates and opens a folder). Checked `src/` has no `fetch` / `requestUrl` / `http` call, only the changelog link string (`src/whatsnew.ts:4`)
+  - [x] **Developer policies, README disclosure**: README section "Privacy, network and files", renamed "Privacy & permissions" (no network / account / ads / telemetry / paid features; folder updater reads the update folder incl. the startup check; data-folder button creates and opens a folder). Checked `src/` has no `fetch` / `requestUrl` / `http` call, only the changelog link string (`src/whatsnew.ts:4`)
   - [x] Tutorial section 7 (`docs/tutorial.md`): line added that, once in the store, the plugin updates through Obsidian. Reword it when the plugin is listed
-  - [ ] If the GitHub-releases updater is built, it must be optional and described in the README "Privacy, network and files" section (it is the first network use)
+  - [ ] If the GitHub-releases updater is built, it must be optional and described in the README "Privacy & permissions" section (it is the first network use)
   - [ ] Plugin name `Lab Kit` / description: check they are unique in the directory
   - [ ] Cut release 0.4.0 with `/release` (tag = manifest version, assets `main.js`, `manifest.json`, `styles.css` + kit zip); add `"0.4.0": "1.13.0"` to `versions.json`
   - [ ] Submit at https://community.obsidian.md (Obsidian account, link GitHub, add plugin), then fix whatever the automated review reports with a new release
