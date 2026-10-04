@@ -1,12 +1,11 @@
 {
   "schema": 1,
   "kit": "lab-notebook-kit",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "date": "2026-10-04",
   "notes": [
-    "Fixes for the Obsidian community store scan: no longer starts other programs, no !important in styles.css",
-    "Windows opens the data folder through Obsidian (shell.openPath), like the other platforms",
-    "README has a Privacy & permissions section; releases are built and attested on GitHub"
+    "Last fixes for the Obsidian community store scan",
+    "The data folder button opens through Obsidian on every platform (the kit no longer starts Explorer)"
   ],
   "rewrite": {
     "Extras/scripts": "scripts"
@@ -59,7 +58,7 @@
       "src": "Extras/scripts/lab-header/view.js",
       "role": "scripts",
       "path": "lab-header/view.js",
-      "version": "0.4.7",
+      "version": "0.4.8",
       "sha256": "da107537cab58a7d8ad4653e4b7367c53a2a8d6c5a0ce1c809eb5a226f19e5ec",
       "renamedFrom": []
     },

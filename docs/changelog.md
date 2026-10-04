@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## v0.4.8 (2026-10-04)
+- **Last fixes for the Obsidian community store scan**: the hazard header's data folder button opens the folder through Obsidian on every platform, so the kit no longer starts Explorer itself. Nothing changes in how you use it (update the kit to get the new `lab-header/view.js`)
+
 ## v0.4.7 (2026-10-04)
 - **Fixes for the Obsidian community store scan**: the plugin and the kit no longer start other programs, and `!important` is gone, and all access to Node features goes through one guarded place, so it still loads on mobile
 - **Windows opens the data folder through Obsidian** (like macOS and Linux), instead of starting Explorer separately
