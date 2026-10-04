@@ -2,12 +2,15 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
-import { kitCompare, kitDetectRoles, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
+import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { kitCompare, kitDetectRoles, kitInBackup, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
+
+/** Id of the Alt+S menu template in kit-manifest.json. */
+const MENU_ID = "tpl-insert-snippet-md";
 
 export interface ManagedHost { kit: KitData; save(): Promise<void> }
 
@@ -23,7 +26,7 @@ export class KitManaged {
   /** Folders: detected from your vault and Templater, then your own entries from settings on top. */
   roles(): Roles {
     const kit = this.host.kit;
-    const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v));
+    const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v && !kitInBackup(v)));
     const old = kit.installed;
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
     return { ...kitDetectRoles(this.app, record, trackedRoles(this.bundle, kit.managed)), ...own };
@@ -55,7 +58,17 @@ export class KitManaged {
     const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select }));
     kit.managed = out.state;
     await this.host.save();
+    await this.templaterHotkey(out.results);
     return out.results;
+  }
+
+  /** When the Alt+S menu template was written, it also goes into Templater's Template hotkeys (nothing is added twice, nothing is ever removed). */
+  private async templaterHotkey(results: ManagedResult[]): Promise<void> {
+    const menu = results.find(r => r.id === MENU_ID && r.outcome !== "skipped");
+    if (!menu || !hasTemplater(this.app)) return;
+    try {
+      if (await addTemplaterHotkey(this.app, menu.dest)) new Notice("Added Insert snippet to Templater's Template hotkeys. Now set Alt+S for it in Obsidian → Hotkeys.", 12000);
+    } catch (e) { console.error(e); }
   }
 
   /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
@@ -75,6 +88,7 @@ export class KitManaged {
     kit.managed = out.state;
     await this.settleVersion();
     await this.host.save();
+    await this.templaterHotkey(out.results);
     return out.results.filter(r => r.id === id);
   }
 
@@ -205,6 +219,29 @@ export class KitManaged {
     } catch (e) { this.failed(e); }
   }
 
+  /** The "Set up Templater" button: points Templater's user scripts folder at the kit's scripts (only when it can't find them now) and adds Insert snippet to its Template hotkeys. */
+  async setupTemplater(): Promise<void> {
+    if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
+    try {
+      const roles = this.roles();
+      const menu = kitJoin(roles.templates, "Insert snippet.md");
+      if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
+      const done: string[] = [];
+      const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake
+      if (templaterScriptsNeedChange(current, roles.userScripts)) {
+        await setTemplaterUserScripts(this.app, roles.userScripts);
+        done.push(`User scripts folder set to ${roles.userScripts}${current?.trim() ? ` (was ${current})` : ""}.`);
+      }
+      // The template folder is only filled in when Templater has none; one that is set is never changed
+      const tplFolder = kitInBackup(templaterTemplatesFolder(this.app) ?? "") ? "" : templaterTemplatesFolder(this.app)?.trim();
+      const target = templaterTemplatesTarget(roles.templates);
+      if (!tplFolder && target) { await setTemplaterTemplatesFolder(this.app, target); done.push(`Template folder set to ${target}.`); }
+      else if (tplFolder && templaterScriptsNeedChange(tplFolder, roles.templates)) done.push(`Template folder left as ${tplFolder} (the kit's templates are in ${roles.templates}).`);
+      if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys.");
+      new Notice((done.length ? done.join("\n") : "Templater was already set up.") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
+    } catch (e) { this.failed(e); }
+  }
+
   review(): void { new KitManagedModal(this.app, this).open(); }
   manage(): void { new KitFilesModal(this.app, this).open(); }
 
@@ -255,6 +292,14 @@ class KitManagedModal extends Modal {
     new Setting(contentEl).setName("Changes").setDesc(
       `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
 
+    // One click ticks every file with a box (recreate / merge); nothing is written until Apply
+    const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge");
+    if (boxed.length) {
+      new Setting(contentEl).setName(`Tick or untick all ${boxed.length} files with a box`)
+        .addButton(b => b.setButtonText("Tick all").setCta().onClick(() => this.tick(boxed, true)))
+        .addButton(b => b.setButtonText("Untick all").onClick(() => this.tick(boxed, false)));
+    }
+
     for (const g of GROUPS) {
       const group = this.items.filter(i => i.action === g.action);
       if (!group.length) continue;
@@ -296,10 +341,19 @@ class KitManagedModal extends Modal {
     }
 
     const todo = this.writes();
-    new Setting(contentEl)
+    new Setting(contentEl).setClass("lab-kit-sticky-foot")
       .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
       .addButton(b => b.setButtonText(todo ? `Apply (${todo} files)` : "Apply").setCta().setDisabled(!todo && !count("up-to-date"))
         .onClick(() => void this.apply()));
+  }
+
+  /** Ticks or unticks every recreate / merge box at once. */
+  private tick(items: ManagedItem[], on: boolean): void {
+    for (const it of items) {
+      if (it.action === "missing") { if (on) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); }
+      else if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id);
+    }
+    this.render();
   }
 
   private select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action)
@@ -333,9 +387,11 @@ class KitFilesModal extends Modal {
 
   /** Re-reads the vault and redraws; the window stays open after every action. */
   private async refresh(): Promise<void> {
+    const top = this.contentEl.scrollTop;   // the window scrolls its own content: keep the place after the redraw
     try { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
     catch (e) { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
     this.render();
+    this.contentEl.scrollTop = top;
   }
 
   private async run(action: () => Promise<unknown>): Promise<void> {
@@ -390,7 +446,8 @@ class KitFilesModal extends Modal {
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
-      const file = this.app.vault.getFileByPath(it.dest);
+      // A snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so snippet rows have no Open button
+      const file = it.file.dest.startsWith("Snippets/") ? null : this.app.vault.getFileByPath(it.dest);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
         this.close();
         void this.app.workspace.getLeaf(false).openFile(file);

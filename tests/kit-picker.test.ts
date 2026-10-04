@@ -177,3 +177,45 @@ describe("folder layout", () => {
     expect(r.templates).toBe("T/Lab Kit");
   });
 });
+
+describe("backup copies are not kit files", () => {
+  const files = ["Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater/labForm.js", "Extras/scripts/templater/labForm.js",
+    "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates/Insert snippet.md", "Templates/Lab Kit/Insert snippet.md"];
+  const app: any = {
+    vault: { configDir: ".obsidian", getAbstractFileByPath: () => null,
+      getFiles: () => files.map(p => ({ name: p.split("/").pop(), path: p, parent: { path: p.slice(0, p.lastIndexOf("/")) } })) },
+    plugins: { plugins: {} },
+  };
+
+  it("roles are detected from the real files, not an old backup", () => {
+    const r = kitDetectRoles(app, null, {});
+    expect(r.userScripts).toBe("Extras/scripts/templater");
+    expect(r.templates).toBe("Templates/Lab Kit");
+  });
+
+  it("a Templater folder that points into a backup is ignored", () => {
+    const bad = "Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater";
+    const none: any = { vault: { configDir: ".obsidian", getAbstractFileByPath: () => null, getFiles: () => [] },
+      plugins: { plugins: { "templater-obsidian": { settings: { user_scripts_folder: bad, templates_folder: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates" } } } } };
+    const r = kitDetectRoles(none, null, {});
+    expect(r.userScripts).toBe("Extras/scripts/templater");
+    expect(r.templates).toBe("Templates/Lab Kit");
+  });
+
+  it("a path an older version recorded inside a backup is not trusted", () => {
+    const r = trackedRoles({ manifest: { files: [{ id: "a", role: "userScripts", dest: "labForm.js" }] } } as any,
+      { installedKitVersion: "0.4.9", files: { a: { path: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater/labForm.js" } } } as any);
+    expect(r.userScripts).toBeUndefined();
+  });
+});
+
+describe("a file recorded inside a backup folder", () => {
+  it("is planned as not installed (create) at its real place, not as deleted", async () => {
+    const bad = "Backups/2026-10-04T17-21-03-991Z/Templates/Menu.md";
+    const v = memVault({ [bad]: "menu\n" });
+    const state: any = { installedKitVersion: "0.1.0", files: { "tpl-menu": { path: bad, version: "0.1.0", hash: "x" } } };
+    const plan = await planManaged(v, kit, state, roles, null, null, new Set());
+    expect(by(plan, "tpl-menu").action).toBe("create");
+    expect(by(plan, "tpl-menu").dest).toBe("Templates/Menu.md");
+  });
+});

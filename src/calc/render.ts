@@ -18,6 +18,8 @@ export interface CalcEntry {
   el: HTMLElement;
   ctx: MarkdownPostProcessorContext;
   source: string;
+  /** When the block was made: a block Obsidian has not attached to the page yet is kept for a few seconds, not dropped. */
+  born?: number;
   parsed?: ParsedBlock;
   grid?: boolean;
   /** Body cells of the current render, keyed `row|col`, so a click can be carried over a re-render. */
@@ -36,8 +38,11 @@ export class CalcRenderer {
    */
   private pending: { entry: CalcEntry; path: string; line: number | null; r: number; c: number } | null = null;
   private pendingTimer = 0;
+  private retryTimer = 0;
+  /** Until this time (ms) Obsidian may still rebuild blocks after a save: a cell opened before then would be wiped by the rebuild. */
+  private quietUntil = 0;
   /** Scroll position of the note while an edit is saved: a rebuilt block can collapse for a moment and drag the page. */
-  private hold: { scroller: HTMLElement; top: number; until: number } | null = null;
+  private hold: { scroller: HTMLElement; top: number; until: number; start: number } | null = null;
 
   constructor(private plugin: Plugin, private settings: () => ChemSettings = () => ({})) {}
 
@@ -46,10 +51,11 @@ export class CalcRenderer {
   /** Registers the ```calc processor and the refresh-on-edit listener. */
   register(): void {
     this.plugin.registerMarkdownCodeBlockProcessor("calc", async (source, el, ctx) => {
-      const entry: CalcEntry = { el, ctx, source };
+      const entry: CalcEntry = { el, ctx, source, born: Date.now() };
       if (!this.live.has(ctx.sourcePath)) this.live.set(ctx.sourcePath, new Set());
       this.live.get(ctx.sourcePath)!.add(entry);
       await this.render(entry);
+      this.quietUntil = Math.max(this.quietUntil, Date.now() + (this.pending ? 300 : 0));   // a rebuild just happened: wait for a quiet moment
       this.openPending();
       this.restoreScroll();
     });
@@ -88,7 +94,7 @@ export class CalcRenderer {
     const text = known ?? await this.app.vault.cachedRead(file);
     const blocks = extractBlocks(text);
     for (const entry of [...set]) {
-      if (!entry.el.isConnected) { set.delete(entry); continue; }
+      if (!entry.el.isConnected) { if (Date.now() - (entry.born ?? 0) > 5000) set.delete(entry); continue; }   // a new block may not be attached yet
       const info = entry.ctx.getSectionInfo(entry.el);
       if (info) { const blk = blocks.find(b => b.lineStart === info.lineStart); if (blk) entry.source = blk.source; }
       if (this.editor?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
@@ -214,6 +220,7 @@ export class CalcRenderer {
       });
     };
     build();
+    this.restoreScroll(); // every redraw during an edit's hold puts the page back, not only the edited block's
 
     const stop = (e: Event): void => { e.preventDefault(); e.stopPropagation(); };
     gridBtn.addEventListener("click", (e) => { stop(e); showGrid = !showGrid; entry.grid = showGrid; build(); });
@@ -297,7 +304,7 @@ export class CalcRenderer {
       if (this.editor === mine) this.editor = null;
       suggest?.close();
       const val = input.value.trim();
-      if (save && val !== current) this.holdScroll(entry.el);
+      if (save && val !== current) { this.holdScroll(entry.el); this.quietUntil = Date.now() + 400; }
       try {
         if (!save || val === current) await this.render(entry);
         else await this.refreshFile(entry.ctx.sourcePath, await this.writeCell(entry, r, c, val));
@@ -322,25 +329,34 @@ export class CalcRenderer {
   private holdScroll(el: HTMLElement): void {
     const scroller = el.closest<HTMLElement>(".cm-scroller") ?? el.closest<HTMLElement>(".markdown-preview-view");
     if (!scroller) { this.hold = null; return; }
-    const h = { scroller, top: scroller.scrollTop, until: Date.now() + 1500 };
+    const now = Date.now();
+    const h = { scroller, top: scroller.scrollTop, until: now + 1500, start: now };
     this.hold = h;
-    const drop = (): void => { if (this.hold === h) this.hold = null; };
-    scroller.addEventListener("wheel", drop, { once: true });
-    scroller.addEventListener("touchmove", drop, { once: true });
+    // The user taking over (wheel, touch, or grabbing the scrollbar) ends the hold
+    const ac = new AbortController();
+    const drop = (): void => { if (this.hold === h) this.hold = null; ac.abort(); };
+    scroller.addEventListener("wheel", drop, { signal: ac.signal, passive: true });
+    scroller.addEventListener("touchmove", drop, { signal: ac.signal, passive: true });
+    scroller.addEventListener("pointerdown", (e) => { if (e.target === scroller) drop(); }, { signal: ac.signal });
   }
 
   private restoreScroll(): void {
     const h = this.hold;
     if (!h) return;
-    if (Date.now() > h.until) { this.hold = null; return; }
-    if (h.scroller.scrollTop !== h.top) h.scroller.scrollTop = h.top;
+    const now = Date.now();
+    if (now > h.until) { this.hold = null; return; }
+    if (h.scroller.scrollTop !== h.top) {
+      h.scroller.scrollTop = h.top;
+      // The layout is still moving (a big note redraws slowly): keep holding, for 8 s at most
+      h.until = Math.min(Math.max(h.until, now + 1000), h.start + 8000);
+    }
   }
 
   /** Restores at once and again while Obsidian lays out the redrawn block. */
   private settleScroll(): void {
     this.restoreScroll();
     window.requestAnimationFrame(() => this.restoreScroll());
-    for (const ms of [100, 300, 700]) window.setTimeout(() => this.restoreScroll(), ms);
+    for (const ms of [100, 300, 700, 1200, 2000, 3500]) window.setTimeout(() => this.restoreScroll(), ms);
   }
 
   /** Opens the cell the user clicked while another one was being saved. */
@@ -349,9 +365,15 @@ export class CalcRenderer {
     if (!p || this.editor) return;
     const entry = this.pendingTarget(p);
     const td = entry?.tds?.get(`${p.r}|${p.c}`);
-    if (!entry || !td || !td.isConnected) return; // block not redrawn yet: the expiry timer clears it
+    // Block not redrawn yet, or Obsidian may still rebuild it after the save: look again shortly (the expiry timer clears a click that never lands)
+    if (!entry || !td || !td.isConnected || Date.now() < this.quietUntil) { this.retryPending(); return; }
     this.clearPending();
     this.editCell(entry, p.r, p.c, td, entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
+  }
+
+  private retryPending(): void {
+    if (this.retryTimer) return;
+    this.retryTimer = window.setTimeout(() => { this.retryTimer = 0; if (this.pending) this.openPending(); }, 80);
   }
 
   private setPending(entry: CalcEntry, r: number, c: number): void {

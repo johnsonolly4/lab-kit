@@ -234,6 +234,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 |---|---|
 | **Review update…** | a preview of every file: new, updated, changed by you, missing. Nothing is written until you press **Apply** |
 | **Update all safe files** | adds new files and updates the ones you never edited (the first install asks first). It never merges |
+| **Set up** (Templater row) | points Templater's user scripts folder at the kit's scripts (only when it can't find them now), fills in its template folder only when that is empty (one you set is never changed), and adds *Insert snippet* to its Template hotkeys. Press it once after installing the kit, then set **Alt+S** in Obsidian → Hotkeys. Installing or updating the Alt+S menu template adds the hotkey entry by itself |
 | **Manage files…** | every kit file with a status, and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
 
 - **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
@@ -243,7 +244,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 - **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
 - **First install:** the question before the first install has two switches, both on: **Turn on the CSS snippet**, and **Set Templater's user scripts folder** (only shown when Templater has no such folder yet; a folder you already set is never changed).
 
-The plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates** (until Lab Kit is in the store: copy the three release files). A new plugin version brings the new kit with it, but your templates and scripts only change when you press **Apply** here. When Obsidian starts after such an update, a notice says **Lab kit vX is ready → Review**. Switch it off with **Settings → Lab Kit → Tell me when a kit update is ready**.
+The plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates**. A new plugin version brings the new kit with it, but your templates and scripts only change when you press **Apply** here. When Obsidian starts after such an update, a notice says **Lab kit vX is ready → Review**. Switch it off with **Settings → Lab Kit → Tell me when a kit update is ready**.
 
 After an update, a **What's new** popup opens once. Open it again from **Settings → Lab Kit → What's new** or the command **Show what's new**.
 

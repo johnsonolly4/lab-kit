@@ -37,6 +37,7 @@ cssclasses:
   - wide
   - scrolling_mermaid
 ---
+
 ```lab-header
 ```
 

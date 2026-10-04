@@ -1,5 +1,6 @@
 /* Lab Calc 1.1: calculation tables */
-.lab-kit { margin: 0.6em 0; }
+/* Flush with the text column: no padding or side margins from Obsidian or a theme (themes often indent or centre plain tables) */
+.lab-kit { margin: 0.6em 0; padding: 0; }
 
 /* Caption: icon · title · id · buttons, all on the left.
    The right edge is kept free for Obsidian's own </> edit button. */
@@ -17,8 +18,8 @@
 .lab-kit:hover .lab-kit-tools, .lab-kit-tools:focus-within { opacity: 1; }
 .lab-kit-btn { font-size: 0.8em; padding: 0 8px; height: 22px; }
 
-.lab-kit-scroll { overflow-x: auto; }
-.lab-kit table { width: auto; margin: 0; }
+.lab-kit .lab-kit-scroll { overflow-x: auto; margin: 0; padding: 0; }
+.lab-kit .lab-kit-scroll table { width: auto; margin: 0; }
 .lab-kit td.is-number, .lab-kit th.is-number { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Cell states. Obsidian colours alternate columns with ".markdown-rendered tbody tr > td:nth-child(2n+2)" (0,2,3),
@@ -57,6 +58,8 @@
 
 /* Lab Kit windows (review, manage, merge, what's new) */
 .lab-kit-modal { max-height: 70vh; overflow-y: auto; }
+/* Review window: the Apply row stays in view while the list scrolls */
+.lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; background: var(--background-primary); }
 .lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
 .lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .lab-kit-group { margin: 4px 0; font-size: 0.88em; }
@@ -85,6 +88,13 @@
 .is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
 .lab-kit-wide-input { width: 100%; }
+/* Settings rows with a text box: the same split on every row (text 40%, box the rest), not sized by how long the description is.
+   Obsidian stacks the row below 340px wide, so only wider rows get this. */
+@container (min-width: 341px) {
+  .setting-item:has(.lab-kit-wide-input) > .setting-item-info { flex: 0 0 40%; }
+  .setting-item-control.lab-kit-wide-control,
+  .setting-item-control:has(> .lab-kit-wide-input) { flex: 1 1 0; min-width: 0; }
+}
 .lab-kit-notice-btn { margin-top: 6px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */

@@ -5,6 +5,7 @@ import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
 import { KitManaged } from "./managed-ui";
+import { wideBox } from "./settings-box";
 import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
 
@@ -41,6 +42,7 @@ class KitSettingTab extends PluginSettingTab {
         name,
         render: b => {
           b.addText(t => {
+            wideBox(b, t);
             t.setPlaceholder(this.builtInIcons.get(f.path) ?? "").setValue(icons[name] ?? "").onChange(async v => {
               if (v.trim()) icons[name] = v.trim(); else delete icons[name];
               await this.ctl.save();
@@ -61,13 +63,13 @@ class KitSettingTab extends PluginSettingTab {
       name, desc,
       render: b => {
         b.addText(t => {
+          wideBox(b, t, this.app);
           t.setPlaceholder(roles[key] ?? "").setValue(kit.paths[key] ?? "").onChange(async v => {
             const path = v.trim() ? normalizePath(v.trim()) : "";
             if (noHidden && isHidden(path)) return;                 // not saved, the blur check below says why
             if (path) kit.paths[key] = path; else delete kit.paths[key];
             await this.ctl.save();
           });
-          t.inputEl.addClass("lab-kit-wide-input");
           if (noHidden) t.inputEl.addEventListener("blur", () => {
             if (isHidden(t.getValue().trim())) new Notice("Not saved: scripts can't live in a hidden folder (one starting with a dot).", 8000);
           });
@@ -85,6 +87,8 @@ class KitSettingTab extends PluginSettingTab {
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
+    rows.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
+      render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
     rows.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     rows.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
@@ -93,7 +97,7 @@ class KitSettingTab extends PluginSettingTab {
     rows.push(folder("scripts", "Scripts folder", "Where the kit's shared scripts go. Must not be a hidden (dot) folder. Empty: detected.", true));
     rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
     rows.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
-      render: b => { b.addText(t => { t.setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); t.inputEl.addClass("lab-kit-wide-input"); }); } });
+      render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });
     rows.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
       render: b => { b.addToggle(t => t.setValue(kit.debug).onChange(async v => { kit.debug = v; await this.ctl.save(); })); } });
     return rows;
@@ -103,23 +107,23 @@ class KitSettingTab extends PluginSettingTab {
     const kit = this.ctl.kit;
     const notebook: SettingGroupItem[] = [
       { name: "Initials", desc: "Used in sample codes, for example ABC0014-A. Read by the Alt+S snippets.",
-        render: b => { b.addText(t => t.setValue(kit.initials).onChange(async v => { kit.initials = v.trim(); await this.ctl.save(); })); } },
+        render: b => { b.addText(t => wideBox(b, t).setValue(kit.initials).onChange(async v => { kit.initials = v.trim(); await this.ctl.save(); })); } },
       { name: "Chemical folder", desc: "The folder of your chemical notes. Typing [[ in a calc cell, and the reagent and solvent fields of the Alt+S forms, then suggest them by note name or by the names in their Names property. Empty: no suggestions.",
         render: b => {
           b.addText(t => {
+            wideBox(b, t, this.app);
             t.setValue(kit.chemicalFolder).onChange(async v => { kit.chemicalFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
-            t.inputEl.addClass("lab-kit-wide-input");
           });
         } },
       { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
-        render: b => { b.addText(t => t.setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } }
+        render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } }
     ];
     const snippets = this.snippetRows();
     const builtIn = this.builtInRows();
     return [
+      { type: "group", heading: "Built-in kit", items: builtIn },
       { type: "group", heading: "Lab notebook", items: notebook },
       ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
-      { type: "group", heading: "Built-in kit", items: builtIn },
       ...this.header.definitions()
     ];
   }

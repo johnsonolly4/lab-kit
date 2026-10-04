@@ -2,7 +2,7 @@
 
 Obsidian plugin + vault kit for a chemistry PhD lab notebook.
 Features: live ```` ```calc ```` tables, Alt+S snippet forms (Templater), hazard/data-folder header, built-in kit (templates + scripts, updated with the plugin).
-Goal: publish to the Obsidian community plugin store.
+Listed in the Obsidian community plugin store (since 2026-10-04); every release goes through the store review.
 
 **Start every session by reading `STATUS.md`. Every task ends with the End-of-task routine below. No exceptions.**
 

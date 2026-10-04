@@ -80,8 +80,8 @@
       "src": "Templates/Lab Book Template.md",
       "role": "templates",
       "path": "Lab Book Template.md",
-      "version": "0.3.0",
-      "sha256": "2116df1c9284cf21e5d7097af108195d81ae6b1db1fc130b52bf355cce75adae",
+      "version": "0.4.9",
+      "sha256": "3eb4f56452c6cf6d4bccc57069417f5f26179fda17a1390bb84c68c4c4ef7aae",
       "renamedFrom": [],
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },
@@ -270,7 +270,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.4.9",
-      "sha256": "3a63416de9161f2299f31024e2eb4770b58e37a5478e0bf55c8c25a7b9a29116",
+      "sha256": "de89fcba0ddf7053e461011878e213d27e3b7d6ccb459a5265e2a2b1bf3a928e",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }

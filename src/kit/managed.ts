@@ -7,7 +7,7 @@
 //  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
 import { merge3 } from "./merge";
-import { kitEnsureDir, kitJoin, kitParent, type Roles } from "./paths";
+import { kitEnsureDir, kitIsBackup, kitJoin, kitParent, type Roles } from "./paths";
 
 /* ---- Types ---- */
 export type ManagedKind = "template" | "snippet" | "script";
@@ -88,7 +88,7 @@ export function trackedRoles(bundle: EmbeddedKit, state: ManagedState | null): R
   const out: Roles = {};
   for (const file of bundle.manifest.files) {
     const path = state?.files[file.id]?.path;
-    if (!path || out[file.role] !== undefined) continue;
+    if (!path || kitIsBackup(path) || out[file.role] !== undefined) continue;
     if (path === file.dest) out[file.role] = "";
     else if (path.endsWith("/" + file.dest)) out[file.role] = path.slice(0, path.length - file.dest.length - 1);
   }
@@ -100,7 +100,9 @@ export function trackedRoles(bundle: EmbeddedKit, state: ManagedState | null): R
 export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null, roles: Roles, legacy: LegacyRecord | null = null, baseDir: string | null = null, off: ReadonlySet<string> = new Set()): Promise<ManagedItem[]> {
   const items: ManagedItem[] = [];
   for (const file of bundle.manifest.files) {
-    const st = state?.files[file.id];
+    // A path recorded inside a backup folder is a mistake (an old version picked the backup copy): treat the file as not installed yet, at its real place
+    const rec = state?.files[file.id];
+    const st = rec && kitIsBackup(rec.path) ? undefined : rec;
     let dest = st?.path || kitJoin(roles[file.role], file.dest);
     if (!st && !(await adapter.exists(dest))) {
       // Not installed by this system and the kit has moved the file: a copy at an old place is still this file
@@ -309,6 +311,20 @@ export function followRename(state: ManagedState | null, oldPath: string, newPat
     if (st.path === oldPath || st.path.startsWith(oldPath + "/")) { st.path = newPath + st.path.slice(oldPath.length); changed = true; }
   }
   return changed;
+}
+
+/** True when Templater's user scripts folder must change for it to find the kit's scripts: it is empty, or is neither the kit's script folder nor a folder above it (Templater reads subfolders). */
+export function templaterScriptsNeedChange(current: string | undefined, kitScripts: string): boolean {
+  const norm = (p: string): string => p.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const cur = norm(current ?? ""), kit = norm(kitScripts);
+  return !cur || !(kit === cur || kit.startsWith(cur + "/"));
+}
+
+/** The folder to give Templater as its template folder when it has none: the kit's own "Lab Kit" folder is a subfolder of it, so other templates stay listed. null when there is no sensible folder (the vault root). */
+export function templaterTemplatesTarget(kitTemplates: string): string | null {
+  const parts = kitTemplates.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+  if (parts.length > 1 && parts[parts.length - 1] === "Lab Kit") parts.pop();
+  return parts.length ? parts.join("/") : null;
 }
 
 /** What the first-install dialog offers: CSS snippets to switch on, and Templater's user scripts folder (only when Templater has none). */
