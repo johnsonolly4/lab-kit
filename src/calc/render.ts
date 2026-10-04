@@ -37,7 +37,7 @@ export class CalcRenderer {
   private pending: { entry: CalcEntry; path: string; line: number | null; r: number; c: number } | null = null;
   private pendingTimer = 0;
   /** Scroll position of the note while an edit is saved: a rebuilt block can collapse for a moment and drag the page. */
-  private hold: { scroller: HTMLElement; top: number; until: number } | null = null;
+  private hold: { scroller: HTMLElement; top: number; until: number; start: number } | null = null;
 
   constructor(private plugin: Plugin, private settings: () => ChemSettings = () => ({})) {}
 
@@ -214,6 +214,7 @@ export class CalcRenderer {
       });
     };
     build();
+    this.restoreScroll(); // every redraw during an edit's hold puts the page back, not only the edited block's
 
     const stop = (e: Event): void => { e.preventDefault(); e.stopPropagation(); };
     gridBtn.addEventListener("click", (e) => { stop(e); showGrid = !showGrid; entry.grid = showGrid; build(); });
@@ -322,25 +323,34 @@ export class CalcRenderer {
   private holdScroll(el: HTMLElement): void {
     const scroller = el.closest<HTMLElement>(".cm-scroller") ?? el.closest<HTMLElement>(".markdown-preview-view");
     if (!scroller) { this.hold = null; return; }
-    const h = { scroller, top: scroller.scrollTop, until: Date.now() + 1500 };
+    const now = Date.now();
+    const h = { scroller, top: scroller.scrollTop, until: now + 1500, start: now };
     this.hold = h;
-    const drop = (): void => { if (this.hold === h) this.hold = null; };
-    scroller.addEventListener("wheel", drop, { once: true });
-    scroller.addEventListener("touchmove", drop, { once: true });
+    // The user taking over (wheel, touch, or grabbing the scrollbar) ends the hold
+    const ac = new AbortController();
+    const drop = (): void => { if (this.hold === h) this.hold = null; ac.abort(); };
+    scroller.addEventListener("wheel", drop, { signal: ac.signal });
+    scroller.addEventListener("touchmove", drop, { signal: ac.signal });
+    scroller.addEventListener("pointerdown", (e) => { if (e.target === scroller) drop(); }, { signal: ac.signal });
   }
 
   private restoreScroll(): void {
     const h = this.hold;
     if (!h) return;
-    if (Date.now() > h.until) { this.hold = null; return; }
-    if (h.scroller.scrollTop !== h.top) h.scroller.scrollTop = h.top;
+    const now = Date.now();
+    if (now > h.until) { this.hold = null; return; }
+    if (h.scroller.scrollTop !== h.top) {
+      h.scroller.scrollTop = h.top;
+      // The layout is still moving (a big note redraws slowly): keep holding, for 8 s at most
+      h.until = Math.min(Math.max(h.until, now + 1000), h.start + 8000);
+    }
   }
 
   /** Restores at once and again while Obsidian lays out the redrawn block. */
   private settleScroll(): void {
     this.restoreScroll();
     window.requestAnimationFrame(() => this.restoreScroll());
-    for (const ms of [100, 300, 700]) window.setTimeout(() => this.restoreScroll(), ms);
+    for (const ms of [100, 300, 700, 1200, 2000, 3500]) window.setTimeout(() => this.restoreScroll(), ms);
   }
 
   /** Opens the cell the user clicked while another one was being saved. */

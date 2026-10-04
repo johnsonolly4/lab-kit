@@ -9,6 +9,9 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03) plus later sessions. Open
 - [ ] Report only: two `calc` tables both named `calc1`: the second was renamed `calc12`. Find what does the renaming (snippet script or plugin) and whether it is wanted; the "used twice" warning didn't show because of it
 
 ## v0.4 quick changes
+- [ ] **Check in Obsidian (2026-10-04 fixes, tests only)**: (1) calc tables flush left (`styles.css:3`, `:21-22`; the cause was NOT seen, the user's theme is unknown: if still indented, get the table's computed margin / padding in dev tools and the theme name); (2) no page jump after saving a cell in a long note with many tables (`src/calc/render.ts` `holdScroll` / `restoreScroll`); (3) Review update… in a vault that has the Insert snippet template adds it to Templater's Template hotkeys (`addTemplaterHotkey`, `src/kit/obsidian-private.ts`; Templater internals read from its GitHub source, `sync_template_hotkeys`, not seen live); (4) Solution prep / Recipe forms empty
+- [ ] The user's real vault still had the pre-5bee403 scripts (DMA, PABTC, dated NMR dataset): find out why Review update… did not replace `labSnippets.js` there (shown as "changed by you"? detached? old updater record?)
+- [ ] Templater's **User scripts folder** is still only set when empty (`firstInstallOptions`, `src/kit/managed.ts`); the user was asked what they want changed there and did not understand the question: ask again in plain words
 - [ ] All chemical fields in forms empty by default: reagents, RAFT names and the matrix items are empty now; the rest is left on purpose (user's choice): NMR solvent CDCl3 / method 1H, GPC eluent THF, DLS solvent Water / 25 °C, RAFT ratio 20 / solids 20, column dead volume 0.21 (`labSnippets.js` nmr/gpc/dls/raft/column)
 - [ ] Live highlight of referenced cells while a formula is being typed (investigate)
 - [ ] Recipe: first-reagent amount as mass / eq / concentration (+ w/v% with a density caveat); empty by default

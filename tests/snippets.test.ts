@@ -57,15 +57,15 @@ describe("snippets", () => {
       return { g: gc, wb, errs, blocks, byName };
     };
 
-    // Solution prep: defaults to Chemicals, MW pulled, mmol
-    let r = await run("solution");
+    // Solution prep: starts empty (no Chemicals default), MW pulled, mmol
+    let r = await run("solution", { reagents: "Lipoic Acid, Benzyl alcohol, DCM" });
     assert.ok(r.md.includes("[[Lipoic Acid]]") && !r.md.includes("Appearance"));
     note = note.replace("| [[Lipoic Acid]] | =MW(A2) |  |  |", "| [[Lipoic Acid]] | =MW(A2) | 1 | 1.0316 |");
     let { g: gg } = evalNote();
     close(gg("sol1", "B2"), 206.32); close(gg("sol1", "E2"), 5);
 
     // Recipe by equivalents with solvent rest + total
-    r = await run("recipe", { mmol: "10", total: "60" });
+    r = await run("recipe", { reagents: "Lipoic Acid, Benzyl alcohol", solvent: "DCM", mmol: "10", total: "60" });
     ({ g: gg } = evalNote());
     close(gg("recipe", "F3"), 10);                  // 1 eq of BA relative to LA
     close(gg("recipe", "G2"), 2.0632);

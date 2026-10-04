@@ -171,6 +171,11 @@ describe("render", () => {
     assert.ok(fileText.includes("| 3 | 5 |"), "edit not saved");
     assert.strictEqual(scroller.scrollTop, 480, "page jumped");
 
+    // a later redraw of any block while the hold lasts (a big note redraws slowly) is corrected too
+    scroller.scrollTop = 0;
+    await renderer.render(entry);
+    assert.strictEqual(scroller.scrollTop, 480, "late redraw dragged the page");
+
     // a wheel turn by the user ends the hold
     entry.tds!.get("1|0")!.dispatch("click");
     const input2 = entry.tds!.get("1|0")!.querySelector("input");

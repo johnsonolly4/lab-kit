@@ -1,5 +1,6 @@
 /* Lab Calc 1.1: calculation tables */
-.lab-kit { margin: 0.6em 0; }
+/* Flush with the text column: no padding or side margins from Obsidian or a theme (themes often indent or centre plain tables) */
+.lab-kit { margin: 0.6em 0; padding: 0; }
 
 /* Caption: icon · title · id · buttons, all on the left.
    The right edge is kept free for Obsidian's own </> edit button. */
@@ -17,8 +18,8 @@
 .lab-kit:hover .lab-kit-tools, .lab-kit-tools:focus-within { opacity: 1; }
 .lab-kit-btn { font-size: 0.8em; padding: 0 8px; height: 22px; }
 
-.lab-kit-scroll { overflow-x: auto; }
-.lab-kit table { width: auto; margin: 0; }
+.lab-kit .lab-kit-scroll { overflow-x: auto; margin: 0; padding: 0; }
+.lab-kit .lab-kit-scroll table { width: auto; margin: 0; }
 .lab-kit td.is-number, .lab-kit th.is-number { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Cell states. Obsidian colours alternate columns with ".markdown-rendered tbody tr > td:nth-child(2n+2)" (0,2,3),

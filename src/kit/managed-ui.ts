@@ -6,8 +6,11 @@ import {
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
+import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
 import { kitCompare, kitDetectRoles, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
+
+/** Id of the Alt+S menu template in kit-manifest.json. */
+const MENU_ID = "tpl-insert-snippet-md";
 
 export interface ManagedHost { kit: KitData; save(): Promise<void> }
 
@@ -55,7 +58,17 @@ export class KitManaged {
     const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select }));
     kit.managed = out.state;
     await this.host.save();
+    await this.templaterHotkey(out.results);
     return out.results;
+  }
+
+  /** When the Alt+S menu template was written, it also goes into Templater's Template hotkeys (nothing is added twice, nothing is ever removed). */
+  private async templaterHotkey(results: ManagedResult[]): Promise<void> {
+    const menu = results.find(r => r.id === MENU_ID && r.outcome !== "skipped");
+    if (!menu || !hasTemplater(this.app)) return;
+    try {
+      if (await addTemplaterHotkey(this.app, menu.dest)) new Notice("Added Insert snippet to Templater's Template hotkeys. Now set Alt+S for it in Obsidian → Hotkeys.", 12000);
+    } catch (e) { console.error(e); }
   }
 
   /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
@@ -75,6 +88,7 @@ export class KitManaged {
     kit.managed = out.state;
     await this.settleVersion();
     await this.host.save();
+    await this.templaterHotkey(out.results);
     return out.results.filter(r => r.id === id);
   }
 

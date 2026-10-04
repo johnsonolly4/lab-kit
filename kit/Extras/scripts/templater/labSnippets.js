@@ -32,12 +32,6 @@ module.exports = async function labSnippets(tp, key) {
   const num = (file?.basename ?? tp.file.title).match(/^\d+/)?.[0] ?? "XXXX";
   const prefix = `${initials}${num}-`;
 
-  /** Chemical names from this note's Chemicals property. */
-  const chemicals = () => {
-    const fm = app.metadataCache.getFileCache(file)?.frontmatter ?? {};
-    const raw = fm.Chemicals ?? fm.chemicals ?? [];
-    return (Array.isArray(raw) ? raw : [raw]).map(x => String(x).replace(/^\[\[|\]\]$/g, "").split("|")[0].trim()).filter(Boolean);
-  };
   /** The chemical notes (Settings → Lab Kit → Chemical folder) as { name, aliases } for the forms' suggestions; undefined when no folder is set. */
   const chemList = () => {
     const path = String(kitData?.chemicalFolder ?? "").trim().replace(/^\/+|\/+$/g, "");
@@ -211,7 +205,7 @@ ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
     async solution() {
       const v = await form("Solution prep", [
         { key: "label", label: "Solution name", value: "Solution 1" },
-        { key: "reagents", label: "Reagents", hint: "comma separated · defaults to this note's Chemicals", value: chemicals().join(", "), placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
+        { key: "reagents", label: "Reagents", hint: "comma separated", value: "", placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
       ]);
       if (!v || !list(v.reagents).length) return "";
       const reagents = list(v.reagents).map(link);
@@ -230,10 +224,9 @@ ${calc({ name: id, title: v.label, icon: "test-tube" }, ["Reagent", "MW (g/mol)"
     },
 
     async recipe() {
-      const chem = chemicals();
       const v = await form("Recipe by equivalents", [
-        { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: chem.filter(c => !/dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)).join(", "), placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
-        { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: chem.find(c => /dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)) ?? "", suggest: chems },
+        { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: "", placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
+        { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: "", suggest: chems },
         { key: "mmol", label: "Amount of the first reagent (mmol)", value: "" },
         { key: "total", label: "Total mass (g)", hint: "needed for the solvent row and wt%", value: "" },
       ], { intro: "Each row's amount = Eq. × the reagent named in 'Relative to'. Type a 'Set mmol' on any row to fix it directly." });
