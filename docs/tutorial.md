@@ -4,7 +4,7 @@ cssclasses:
   - academia-rounded
   - scrolling_mermaid
 ---
-# 🧰 Lab notebook kit: tutorial (v0.3)
+# 🧰 Lab notebook kit: tutorial
 
 > [!summary] The kit in one minute
 > 1. **New note** in your Notes folder → name it → it's numbered and gets a hazard table, a data-folder button and five sections.
@@ -41,13 +41,21 @@ flowchart LR
 
 ## 2. Snippets (Alt+S)
 
-Put your cursor where you want the table, press **Alt+S**, type a few letters to filter, press Enter. Each snippet opens **one form**; press **Enter** to insert or **Esc** to cancel.
+Put your cursor where you want the table, press **Alt+S**, type a few letters to filter, press Enter. Each snippet opens **one form**; press **Enter** to insert or **Esc** to cancel. Forms start empty (grey placeholders show what to type), and submitting an untouched form inserts nothing.
+
+> [!note] One-time setup for Alt+S
+> Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
+> 1. Templater → **Template hotkeys** → add `Templates/Insert snippet.md` (your Templates folder may have another name).
+> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**.
+> 3. Templater → **User script functions** folder = `Extras/scripts/templater` (see Troubleshooting).
+>
+> Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
 
 | Snippet | Use it for | Gives you |
 |---|---|---|
 | **Solution prep** | Making up a stock solution | Reagent · MW (from the chemical note) · target · added · mmol · wt% |
 | **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, solvent "rest" row, total mass, wt% |
-| **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent, Mn |
+| **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent, Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |
 | **Sample list** | Samples without times | Typed or generated codes · can add NMR/GPC/DLS + results |
 | **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · can add NMR/GPC/DLS + results |
@@ -55,7 +63,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **GPC samples** | GPC | Sample · eluent · Mn · Mw · Đ (calculated) · tags `GPC` |
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI |
-| **Flow column prep** | Packing a column | Weighings → bead mass → reactor volume |
+| **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
 | **Blank calc table** | Anything else | Your own columns |
 
@@ -64,6 +72,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 > 2. On the day, type the real times in **Taken at**.
 > 3. Type conversions into the **NMR** table: the **Results** table fills itself in.
 > 4. **Copy** on the Results table → paste into Excel or Origin.
+
+> [!tip] Several sample tables
+> The NMR / GPC / DLS / Results snippets take sample codes from `samples`, `samples2`, `samples3`… and combine them. The Results table links every `nmr`, `nmr2`… table.
 
 ---
 
@@ -81,7 +92,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 ### 3.2 Editing
 | To… | Do this |
 |---|---|
-| change a value **or a formula** | **click the cell**, type, Enter (Esc cancels) |
+| change a value **or a formula** | **click the cell**, type, **Enter** or **Tab** to save, **Esc** to throw away what you typed (clicking another cell while one is open currently needs a second click) |
 | add a row | **+ Row** (adds above *Total* / *(rest)* rows, copies the formulas down) |
 | insert or delete a specific row | **right-click** the row |
 | see cell addresses | **A1** |
@@ -90,6 +101,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] Rows and references
 > Like Excel: when you add a row, `SUM(B2:B4)` becomes `SUM(B2:B5)`, and other tables pointing into this one (`sol1!B5`, `XLOOKUP(…, nmr!B$2:B$4, …)`) are updated too. Deleting a row that something points at gives `#REF!`.
+
+> [!warning] Give every table its own name
+> If two `calc` tables in a note have the same `name:`, both show a red "⚠ name used twice". Any reference to that name shows `#REF!` until you rename one.
 
 ### 3.3 Writing formulas
 Formulas start with an equals sign (=) and use **Excel syntax**. Row 1 is the header row, so the first data row is row 2. The examples below are shown without the leading = (type it in the cell).
@@ -121,7 +135,7 @@ $$\tau = \frac{V_{\text{reactor}}}{Q} \qquad Q = \frac{V_{\text{reactor}}}{\tau}
 ---
 
 ## 4. Hazards
-The table lists every chemical in **Chemicals**, worst first, with each H-code coloured by severity. It needs each chemical note to have an `H_Phrase` list property. It shows one row per chemical with a chip per H-code (hover for the full phrase); Settings → Lab Kit → Hazard layout switches to the two-column table. It only redraws when this note's Chemicals or a linked chemical note changes. The header is a ```` ```lab-header ```` block; **Insert lab header block** in the command palette adds one.
+The table lists every chemical in **Chemicals**, worst first, with each H-code coloured by severity. It needs each chemical note to have an `H_Phrase` list property. It shows one row per chemical with a chip per H-code (hover for the full phrase); Settings → Lab Kit → Hazards → Layout switches to the two-column table. It only redraws when this note's Chemicals or a linked chemical note changes. The header is a ```` ```lab-header ```` block; **Insert lab header block** in the command palette adds one.
 
 All the options are in Settings → Lab Kit → Hazards. To change one for a single note, put it inside the block, one per line:
 
@@ -188,7 +202,7 @@ flowchart LR
 > [!warning]
 > - Google Sheets: **File → Download → Microsoft Excel (.xlsx)** first.
 > - Excel shows `15%` but stores `0.15`. Check percentage cells.
-> - Functions Lab Calc doesn't know are listed as warnings; those cells show `#NAME?` until you rewrite them.
+> - Functions Lab Kit doesn't know are listed as warnings; those cells show `#NAME?` until you rewrite them.
 
 ---
 
@@ -210,9 +224,25 @@ flowchart LR
 
 ## 7. Updating the kit
 
-The kit files are also built into the plugin: **Settings → Lab Kit → Built-in kit → Review update…** shows what would change (nothing is written until you press **Apply**), and **Update all safe files** adds new files and updates the ones you never edited. A file you changed yourself is left alone. Backups of replaced files go to the Backup folder set there. **Manage files…** lists every kit file with a status and lets you update, restore the kit's original, detach or open one file at a time, and switch the kit's CSS snippet on or off. If you and the kit changed the same lines of a file it shows **Conflict**: press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply** (your copy is backed up first). The folder updater described below is the older way and still works.
+The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.13 or newer. **Settings → Lab Kit → Built-in kit**:
+
+| Button | Does |
+|---|---|
+| **Review update…** | a preview of every file: new, updated, changed by you, missing. Nothing is written until you press **Apply** |
+| **Update all safe files** | adds new files and updates the ones you never edited (the first install asks first). It never merges |
+| **Manage files…** | every kit file with a status, and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
+
+- **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
+- **A file you changed** is never overwritten. If your edits and the kit's touch different lines, it is listed under "merges cleanly" and you can tick it to merge. In the Lab Book template the properties are merged one by one, so a property you added stays.
+- **Conflict:** if you and the kit changed the same lines, the file shows **Conflict** and is left alone. Press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply**. **Keep all mine** and **Take kit version** settle the whole file at once.
+- **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
 
 Once Lab Kit is in the community store, the plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates**. That does not touch your templates or scripts; those only change when you press **Apply** here.
+
+After an update, a **What's new** popup opens once. Open it again from **Settings → Lab Kit → What's new** or the command **Show what's new**.
+
+### The folder updater (desktop, optional)
+The older way, for kit versions you download as a folder. It only manages templates, scripts and the CSS snippet; it never installs the plugin.
 
 New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Lab Kit: Check for updates** from the command palette, or use **Settings → Lab Kit → Check now**.
 
@@ -236,8 +266,8 @@ Then **Install**. `lab-config.json` is never overwritten. If you want copies of 
 | `#NOTE?` in an MW cell | No note with that name. Check spelling, or type the MW over the formula |
 | `#PROP?` in an MW cell | The chemical note has no `MW` / `Mw` property |
 | `#REF!` | The formula points at a deleted row or a table name that doesn't exist |
-| Table looks like plain code | Lab Kit (Lab Calc) isn't enabled (Settings → Community plugins) |
+| Table looks like plain code | Lab Kit isn't enabled (Settings → Community plugins) |
 | No update notice | Settings → Lab Kit: check the update folder path, then **Check now** |
 | Hazard table empty | Chemicals property empty, or chemical notes missing `H_Phrase` |
 
-Related: [[Lab notebook kit - update to v0.3]] · [[Lab notebook kit - changelog]]
+Related: [Changelog](changelog.md)
