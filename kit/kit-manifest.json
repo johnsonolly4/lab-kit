@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "kit": "lab-notebook-kit",
-  "version": "0.4.8",
+  "version": "0.4.9",
   "date": "2026-10-04",
   "rewrite": {
     "Extras/scripts": "scripts"

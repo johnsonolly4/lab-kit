@@ -1,8 +1,8 @@
 # Status
 
-**Version:** 0.4.8 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
-**Now:** 0.4.8 is released. Kit picker, sample letters and hidden backups are merged ([lab-kit#20](https://github.com/johnsonolly4/lab-kit/pull/20)). **Folder updater removed** on branch `feat/remove-folder-updater` (committed, not pushed, no PR): code + tests done (152 pass, lint 0 errors / 2 warnings, build OK), not seen in Obsidian. Click-to-edit (second click) is abandoned for now (known issue). **The feedback page needs a new round.**
-**Next:** push + PR for `feat/remove-folder-updater` (ask first). Then step 3 (**Chemical database + autocomplete**, own plan pass; needs your chemical note template first), then Analysis methods (BACKLOG, "Decided"). Also open: the Obsidian checks in `docs/obsidian-test-checklist.md` (sections 1-3 cover the new work), re-run the store scan, then a feedback round (`/feedback`).
+**Version:** 0.4.9 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
+**Now:** 0.4.9 is released (tag pushed once you confirm; check GitHub Actions). It ships the kit picker, sample letters, hidden backups and the **removed folder updater** ([lab-kit#20](https://github.com/johnsonolly4/lab-kit/pull/20), [#21](https://github.com/johnsonolly4/lab-kit/pull/21)): 152 tests pass, lint 0 errors / 2 warnings, build OK, not seen in Obsidian. Click-to-edit (second click) is abandoned for now (known issue). **The feedback page needs a new round.**
+**Next:** try `docs/obsidian-test-checklist.md` sections 1-3 in Obsidian (`npm run dev`). Then step 3 (**Chemical database + autocomplete**, own plan pass; needs your chemical note template first), then Analysis methods (BACKLOG, "Decided"). Also open: re-run the store scan, then a feedback round (`/feedback`).
 **Blockers / open questions:**
 - Local `dist/` still holds old kit packages (0.3.0, 0.4.6, zips) from the removed `npm run package`; still gitignored. Safe to delete when you like
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`): the v0.3 plain-JS source exists only on this machine. User keeps a copy or deletes it
