@@ -6,6 +6,7 @@ import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
 import { KitManaged } from "./managed-ui";
 import { wideBox } from "./settings-box";
+import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
 
@@ -116,7 +117,19 @@ class KitSettingTab extends PluginSettingTab {
           });
         } },
       { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
-        render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } }
+        render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
+      { name: "Methods folder", desc: "The folder of your analysis method notes (one note per method, with its columns and machines). The Alt+S analysis snippets then offer them next to the built-in NMR, GPC and DLS. Empty: only the built-in methods. A folder that does not exist yet is created.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.methodsFolder).onChange(async v => { kit.methodsFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+            // once the box is left (not on every key): a folder that does not exist yet is created
+            t.inputEl.addEventListener("change", () => {
+              const path = kit.methodsFolder;
+              if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
+            });
+          });
+        } }
     ];
     const snippets = this.snippetRows();
     const builtIn = this.builtInRows();

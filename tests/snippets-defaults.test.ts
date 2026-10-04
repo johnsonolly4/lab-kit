@@ -5,6 +5,7 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 
@@ -25,6 +26,7 @@ function harness(files: Record<string, string>) {
       file: { title: "0014 - Test" },
       date: { now: () => "2026_10_03" },
       user: {
+        labMethods,
         labForm: async (_tp: unknown, _t: string, f: any[]) => {
           fields[key] = f;
           const v: Record<string, unknown> = {};

@@ -36,8 +36,8 @@
       "src": "Templates/Insert snippet.md",
       "role": "templates",
       "path": "Insert snippet.md",
-      "version": "0.3.0",
-      "sha256": "38429d75bce20438cabd578ea17bb7cae603f058ce719cce5c03ebaaf39b2914",
+      "version": "0.4.9",
+      "sha256": "b880e77da9dde9a6342ed993e8623e24dfe1da3b735f6a5e3051dbac8f5ec037",
       "renamedFrom": [],
       "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
     },
@@ -209,15 +209,38 @@
       "optional": true
     },
     {
+      "id": "tpl-snippets-14-analysis-table-md",
+      "kind": "template",
+      "src": "Templates/Snippets/14 Analysis table.md",
+      "role": "templates",
+      "path": "Snippets/14 Analysis table.md",
+      "version": "0.4.9",
+      "sha256": "46d9ff5f6bb01780d9bb344ae24b2ac4a3bb27bf46032c2ab51ac174f89e827c",
+      "renamedFrom": [],
+      "desc": "Sample table for any analysis method: NMR, GPC, DLS or your own (Methods folder)",
+      "optional": true
+    },
+    {
       "id": "script-labform-js",
       "kind": "script",
       "src": "Extras/scripts/templater/labForm.js",
       "role": "userScripts",
       "path": "labForm.js",
       "version": "0.4.9",
-      "sha256": "796e2fba3483b8375e31c4b1dc70c795105fb36c54dc7ccb6ae6fb252296a5c1",
+      "sha256": "3acec997f788c75896b3842ab73b8718647a74b3c55c97fbd6a8fd9c0b77ab2d",
       "renamedFrom": [],
       "desc": "The pop-up form every snippet uses"
+    },
+    {
+      "id": "script-labmethods-js",
+      "kind": "script",
+      "src": "Extras/scripts/templater/labMethods.js",
+      "role": "userScripts",
+      "path": "labMethods.js",
+      "version": "0.4.9",
+      "sha256": "a0b311fe65da80bc14d0b254cb4b1876675cfdd447bfd85a4095ccd00881f131",
+      "renamedFrom": [],
+      "desc": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)"
     },
     {
       "id": "script-labpick-js",
@@ -237,7 +260,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.4.9",
-      "sha256": "577c21a9e1edaefa87fe7ccf6fbd4b38dd22ab6c07bdbf5f0587d6aeaf5ee57d",
+      "sha256": "b883b26a04e09c876ec6da18d15b9d9f47fd77d0b22645be1acfb18c4cd513fc",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }

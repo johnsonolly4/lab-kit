@@ -81,6 +81,19 @@
 - [ ] **Column** snippet: type DCM as Solvent: the density row is DCM's Density; a density typed in the form wins; no solvent leaves it blank
 - [ ] Folder empty or wrong: forms and cells behave as before
 
+## 6c. Analysis methods (needs `npm run dev`, then Review update… for the new scripts and the Analysis table snippet)
+- [ ] Methods folder empty: Alt+S **NMR / GPC / DLS samples**, **Sample list** toggles and **Combined results** look and behave as before
+- [ ] Type a new folder name (e.g. `Analysis/Methods`) in **Methods folder** and click out of the box: the folder (and `Analysis`) appears in the file list with a notice; an existing folder is left alone; a name starting with `.` creates nothing
+- [ ] Settings → Lab Kit → Lab notebook: **Methods folder** is wide and suggests folders; picking one saves (also at phone width)
+- [ ] In `test-vault/Methods/`: a method note (Columns, Results, Machines) and two machine notes. Alt+S **Analysis table** lists NMR, GPC, DLS and your method; the form shows a **Machine** dropdown (looks right, default selected) and a field for each column with a default
+- [ ] Alt+S menu (after Review update… for the new Insert snippet.md): your method is listed at the end as *Name samples* with its icon and the machines in the description; picking it opens its form directly; add a second method note and it shows next time with no refresh
+- [ ] Pick the other machine without touching the fields: they take its values; type a value first: it stays
+- [ ] The formula column calculates; the Machine cell links to the machine note
+- [ ] **Sample list** shows a toggle for your method; **Combined results** has a toggle and the right columns, filled from the table (with two tables of the method: the second is used for codes missing from the first)
+- [ ] A note with no Columns in the Methods folder is ignored; a note called GPC replaces the built-in GPC
+
+---
+
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)
 - [ ] Change a chemical's `H_Phrase`: header redraws, no stutter

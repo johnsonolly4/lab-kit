@@ -4,15 +4,17 @@
    Each file in the Snippets folder calls:
        tR += await tp.user.labSnippets(tp, "solution")
    Keys: solution, recipe, raft, matrix, samples, timetable, nmr, gpc,
-         dls, results, column, rt, blank
+         dls, method, results, column, rt, blank
 
-   Needs labForm.js in the same folder. Initials come from the Lab Kit
+   Needs labForm.js and labMethods.js in the same folder. Initials come from the Lab Kit
    plugin settings (Settings → Lab Kit → Initials).
    ===================================================================== */
 
 const F = "```";
 
-module.exports = async function labSnippets(tp, key) {
+module.exports = async function labSnippets(tp, snippet) {
+  /** "method:mass_spec" = the Analysis table of that method, without asking which (the Alt+S menu lists the Methods folder's notes like this). */
+  const [key, arg] = String(snippet).split(":");
   /* ---------- helpers ---------- */
   const form = (title, fields, opts) => tp.user.labForm(tp, title, fields, opts);
   const list = (s) => String(s ?? "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
@@ -52,6 +54,9 @@ module.exports = async function labSnippets(tp, key) {
     return out.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
   };
   const chems = chemList();
+  /** NMR / GPC / DLS and the notes of the Methods folder (Settings → Lab Kit → Methods folder), see labMethods.js. */
+  const M = tp.user?.labMethods?.();
+  const methods = M ? M.loadMethods(app, kitData?.methodsFolder, file?.path ?? "") : [];
   /** Wrap in [[ ]] when a note with that name exists, so MW() and links work. */
   const link = (name) => {
     const n = String(name).replace(/^\[\[|\]\]$/g, "").trim();
@@ -116,9 +121,9 @@ module.exports = async function labSnippets(tp, key) {
     const t = calcTables().find(x => x.name === String(name).toLowerCase());
     return t ? Math.max(0, t.rows.length - 1) : 0;
   };
-  /** The nmr / gpc / dls tables in the note (nmr, nmr2…) with their sample counts, for the results table to read. */
-  const techTables = (base) => tablesNamed(base).map(t => ({ id: t.name, n: t.rows.length - 1 })).filter(t => t.n > 0);
-  /** Add technique tags (NMR, GPC, DLS) to the note's tags property, after the snippet is inserted. */
+  /** A method's tables in the note (nmr, nmr2…) with their sample counts and headers, for the results table to read. */
+  const techTables = (base) => tablesNamed(base).map(t => ({ id: t.name, n: t.rows.length - 1, header: t.rows[0] ?? [] })).filter(t => t.n > 0);
+  /** Add method tags (NMR, GPC, DLS…) to the note's tags property, after the snippet is inserted. */
   const tag = (...tags) => {
     if (!file || !tags.length) return;
     setTimeout(() => app.fileManager.processFrontMatter(file, (fm) => {
@@ -131,69 +136,77 @@ module.exports = async function labSnippets(tp, key) {
     return `${F}calc\n${o}\n| ${header.join(" | ")} |\n|${header.map(() => "---").join("|")}|\n${rows.map(r => "| " + r.join(" | ") + " |").join("\n")}\n${F}\n`;
   };
 
-  /* ---------- technique tables (shared by several snippets) ---------- */
-  const nmrTable = (codes, { solvent = "CDCl3", method = "1H", dataset = "" } = {}) => {
-    const id = unique("nmr");
-    const rows = (codes.length ? codes : ["", "", ""]).map((c, i) => [i + 1, c, solvent, method, "", ""]);
-    return { id, n: rows.length, md: `## NMR samples
-${calc({ name: id, title: "NMR samples", icon: "magnet", copy: "column B" }, ["Run #", "Sample", "Solvent", "Method", "Conversion (%)", "Notes"], rows)}
-Dataset: ${dataset}
-
-- [ ] Submitted
-- [ ] Results processed
-- [ ] Results saved
-` };
+  /* ---------- method tables (shared by several snippets) ---------- */
+  const normName = (s) => String(s ?? "").toLowerCase().replace(/[\s_-]+/g, " ").trim();
+  const machineOf = (m, name) => m.machines.find(x => x.name === name);
+  /** One sample table for a method. machine = { name, fm } or undefined; values = the form's answers by column key. */
+  const methodTable = (m, codes, { machine, values = {} } = {}) => {
+    const id = unique(m.key);
+    const plan = M.planColumns(m);
+    const rows = M.buildRows(plan, codes, { values, machineCell: machine ? link(machine.name) : "", machineFm: machine?.fm });
+    const copy = `column ${letter(plan.sampleIdx)}`;
+    return { id, n: rows.length, header: plan.header, md: `## ${m.title}
+${calc({ name: id, title: m.title, icon: m.icon, copy }, plan.header, rows)}
+${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c => `- [ ] ${c}\n`).join("")}` };
   };
-  const gpcTable = (codes, { eluent = "THF" } = {}) => {
-    const id = unique("gpc");
-    const rows = (codes.length ? codes : ["", "", ""]).map((c, i) => [c, eluent, "", "", `=IFERROR(D${i + 2}/C${i + 2}, "")`, ""]);
-    return { id, n: rows.length, md: `## GPC samples
-${calc({ name: id, title: "GPC samples", icon: "line-chart", copy: "column A" }, ["Sample", "Eluent", "Mn (g/mol)", "Mw (g/mol)", "Đ", "Notes"], rows)}
-- [ ] Submitted
-- [ ] Results processed
-- [ ] Results saved
-` };
+  /** Columns with a default (from the method or any of its machines) get a field in the form. */
+  const fieldColumns = (m) => m.columns.filter(c => !c.auto && c.formula == null && (c.def !== null || m.machines.some(x => M.columnDefault(c, x.fm) !== undefined && M.columnDefault(c, x.fm) !== null)));
+  const methodForm = (m) => {
+    const dm = machineOf(m, m.defaultMachine);
+    return form(m.title, [
+      { key: "codes", label: "Sample codes", type: "textarea", hint: "blank = codes from this note's sample list or timetable", value: codesFrom(["samples", "sampling"]).join(", ") },
+      ...(m.machines.length ? [{ key: "machine", label: "Machine", type: "select", options: m.machines.map(x => ({ value: x.name, label: x.name })), value: m.defaultMachine }] : []),
+      ...fieldColumns(m).map(c => ({ key: c.key, label: c.label ?? c.name, value: M.columnDefault(c, dm?.fm) ?? "" })),
+      ...(m.dataset ? [{ key: "dataset", label: "Dataset / folder", hint: "optional · can be filled in later", value: "", placeholder: `e.g. folder name of the ${m.name} data` }] : []),
+    ]);
   };
-  const dlsTable = (codes, { solvent = "Water", temp = "25" } = {}) => {
-    const id = unique("dls");
-    const rows = (codes.length ? codes : ["", "", ""]).map(c => [c, solvent, temp, "", "", ""]);
-    return { id, n: rows.length, md: `## DLS samples
-${calc({ name: id, title: "DLS samples", icon: "sparkles", copy: "column A" }, ["Sample", "Solvent", "Temp (°C)", "Dh (nm)", "PDI", "Notes"], rows)}
-- [ ] Submitted
-- [ ] Results processed
-- [ ] Results saved
-` };
+  /** Ask for one method's table and build it. A field left at the default machine's value follows the machine that was picked. */
+  const runMethod = async (m) => {
+    const v = await methodForm(m);
+    if (!v) return "";
+    const machine = machineOf(m, v.machine), dm = machineOf(m, m.defaultMachine);
+    if (machine && dm && machine !== dm) for (const c of fieldColumns(m)) {
+      if (v[c.key] === (M.columnDefault(c, dm.fm) ?? "")) v[c.key] = M.columnDefault(c, machine.fm) ?? "";
+    }
+    tag(m.tag);
+    return methodTable(m, list(v.codes), { machine, values: v }).md;
   };
-  /** One row per sample, pulling values from the NMR/GPC/DLS tables by sample code. */
+  /** One row per sample, pulling values from the methods' tables by sample code. links = [{ method, tables }]; no tables = columns typed in. */
   const resultsTable = (codes, links) => {
     const id = unique("results");
     const header = ["Sample"]; const cols = [];
-    // One XLOOKUP per table of that technique; a code missing from the first is looked up in the next (nmr, then nmr2…)
-    const look = (tables, col, rngCol) => (r) => "=" + tables.reduceRight(
-      (rest, t) => `XLOOKUP(A${r}, ${t.id}!${rngCol}$2:${rngCol}$${t.n + 1}, ${t.id}!${col}$2:${col}$${t.n + 1}, ${rest})`, '""');
-    const linked = (l) => l.tables?.length > 0;
-    if (links.nmr) { header.push("Conversion (%)"); cols.push(linked(links.nmr) ? look(links.nmr.tables, "E", "B") : () => ""); }
-    if (links.gpc) { header.push("Mn (g/mol)", "Mw (g/mol)", "Đ");
-      cols.push(...["C", "D", "E"].map(c => linked(links.gpc) ? look(links.gpc.tables, c, "A") : () => "")); }
-    if (links.dls) { header.push("Dh (nm)", "PDI");
-      cols.push(...["D", "E"].map(c => linked(links.dls) ? look(links.dls.tables, c, "A") : () => "")); }
+    const at = (t, name) => t.header.findIndex(h => normName(h) === normName(name));
+    // One XLOOKUP per table of that method; a code missing from the first is looked up in the next (nmr, then nmr2…)
+    const look = (tables, sample, name) => {
+      const f = tables.reduceRight((rest, t) => {
+        const s = at(t, sample), c = at(t, name);
+        if (s < 0 || c < 0) return rest;
+        const sl = letter(s), cl = letter(c);
+        return `XLOOKUP(A$R, ${t.id}!${sl}$2:${sl}$${t.n + 1}, ${t.id}!${cl}$2:${cl}$${t.n + 1}, ${rest})`;
+      }, '""');
+      return f === '""' ? () => "" : (r) => "=" + f.replaceAll("A$R", `A${r}`);
+    };
+    for (const { method: m, tables } of links) {
+      const sample = m.columns[m.sampleIdx].name;
+      for (const name of m.results) { header.push(name); cols.push(tables?.length ? look(tables, sample, name) : () => ""); }
+    }
     const rows = (codes.length ? codes : ["", "", ""]).map((c, i) => [c, ...cols.map(f => f(i + 2))]);
     return `## Results
 ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
   };
   const techToggles = [
     { type: "heading", label: "Also add (appended below)" },
-    { key: "nmr", label: "NMR sample list", type: "toggle", value: false },
-    { key: "gpc", label: "GPC sample list", type: "toggle", value: false },
-    { key: "dls", label: "DLS sample list", type: "toggle", value: false },
-    { key: "results", label: "Combined results table", hint: "one row per sample with NMR / GPC / DLS values", type: "toggle", value: false },
+    ...methods.map(m => ({ key: m.key, label: `${m.name} sample list`, type: "toggle", value: false })),
+    { key: "results", label: "Combined results table", hint: `one row per sample with ${methods.map(m => m.name).join(" / ")} values`, type: "toggle", value: false },
   ];
   const addTechniques = (v, codes) => {
-    let out = ""; const links = {}; const tags = [];
-    if (v.nmr) { const t = nmrTable(codes); out += "\n" + t.md; links.nmr = { tables: [t] }; tags.push("NMR"); }
-    if (v.gpc) { const t = gpcTable(codes); out += "\n" + t.md; links.gpc = { tables: [t] }; tags.push("GPC"); }
-    if (v.dls) { const t = dlsTable(codes); out += "\n" + t.md; links.dls = { tables: [t] }; tags.push("DLS"); }
-    if (v.results) out += "\n" + resultsTable(codes, links.nmr || links.gpc || links.dls ? links : { nmr: {}, gpc: {}, dls: {} });
+    let out = ""; const links = []; const tags = [];
+    for (const m of methods) {
+      if (!v[m.key]) continue;
+      const t = methodTable(m, codes, { machine: machineOf(m, m.defaultMachine) });
+      out += "\n" + t.md; links.push({ method: m, tables: [t] }); tags.push(m.tag);
+    }
+    if (v.results) out += "\n" + resultsTable(codes, links.length ? links : methods.map(method => ({ method, tables: [] })));
     tag(...tags);
     return out;
   };
@@ -329,53 +342,36 @@ ${calc({ name: st, title: "Start", icon: "timer" }, ["Setting", "Value"], [["Sta
 ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" }, ["Code", `Time (${v.unit || "min"})`, "Target time", "Taken at", "Notes"], rows)}${addTechniques(v, codes)}`;
     },
 
-    async nmr() {
-      const v = await form("NMR samples", [
-        { key: "codes", label: "Sample codes", type: "textarea", hint: "blank = codes from this note's sample list or timetable", value: codesFrom(["samples", "sampling"]).join(", ") },
-        { key: "solvent", label: "Solvent", value: "CDCl3" },
-        { key: "method", label: "Method", value: "1H" },
-        { key: "dataset", label: "Dataset / folder", hint: "optional · can be filled in later", value: "", placeholder: "e.g. folder name of the NMR data" },
-      ]);
-      if (!v) return "";
-      tag("NMR");
-      return nmrTable(list(v.codes), v).md;
-    },
+    nmr: () => runMethod(methods.find(m => m.key === "nmr")),
+    gpc: () => runMethod(methods.find(m => m.key === "gpc")),
+    dls: () => runMethod(methods.find(m => m.key === "dls")),
 
-    async gpc() {
-      const v = await form("GPC samples", [
-        { key: "codes", label: "Sample codes", type: "textarea", hint: "blank = codes from this note's sample list or timetable", value: codesFrom(["samples", "sampling"]).join(", ") },
-        { key: "eluent", label: "Eluent", value: "THF" },
+    async method() {
+      if (arg) {
+        const m = methods.find(x => x.key === arg);
+        if (m) return runMethod(m);
+        new Notice(`Unknown method "${arg}"`);
+        return "";
+      }
+      const v = await form("Analysis table", [
+        { key: "method", label: "Method", type: "select", options: methods.map(m => ({ value: m.key, label: m.name })), value: methods[0]?.key },
       ]);
-      if (!v) return "";
-      tag("GPC");
-      return gpcTable(list(v.codes), v).md;
-    },
-
-    async dls() {
-      const v = await form("DLS samples", [
-        { key: "codes", label: "Sample codes", type: "textarea", hint: "blank = codes from this note's sample list or timetable", value: codesFrom(["samples", "sampling"]).join(", ") },
-        { key: "solvent", label: "Solvent / dispersant", value: "Water" },
-        { key: "temp", label: "Temperature (°C)", value: "25" },
-      ]);
-      if (!v) return "";
-      tag("DLS");
-      return dlsTable(list(v.codes), v).md;
+      const m = v && methods.find(x => x.key === v.method);
+      return m ? runMethod(m) : "";
     },
 
     async results() {
-      const tech = { nmr: techTables("nmr"), gpc: techTables("gpc"), dls: techTables("dls") };
-      const has = (n) => tech[n].length > 0;
-      const hint = (n) => has(n) ? `linked to the ${tech[n].map(t => t.id).join(", ")} table${tech[n].length > 1 ? "s" : ""}` : "typed in";
+      const tech = Object.fromEntries(methods.map(m => [m.key, techTables(m.key)]));
+      const has = (k) => tech[k].length > 0;
+      const hint = (k) => has(k) ? `linked to the ${tech[k].map(t => t.id).join(", ")} table${tech[k].length > 1 ? "s" : ""}` : "typed in";
+      const withResults = methods.filter(m => m.results.length);
       const v = await form("Combined results table", [
-        { key: "codes", label: "Sample codes", type: "textarea", hint: "defaults to this note's sample list or timetable", value: codesFrom(["samples", "sampling", "nmr", "gpc", "dls"]).join(", ") },
+        { key: "codes", label: "Sample codes", type: "textarea", hint: "defaults to this note's sample list or timetable", value: codesFrom(["samples", "sampling", ...methods.map(m => m.key)]).join(", ") },
         { type: "heading", label: "Columns" },
-        { key: "nmr", label: "NMR conversion", hint: hint("nmr"), type: "toggle", value: true },
-        { key: "gpc", label: "GPC Mn, Mw, Đ", hint: hint("gpc"), type: "toggle", value: true },
-        { key: "dls", label: "DLS Dh, PDI", hint: hint("dls"), type: "toggle", value: has("dls") },
+        ...withResults.map(m => ({ key: m.key, label: m.resultsLabel, hint: hint(m.key), type: "toggle", value: m.resultsDefault || has(m.key) })),
       ]);
       if (!v) return "";
-      const links = {};
-      for (const t of ["nmr", "gpc", "dls"]) if (v[t]) links[t] = has(t) ? { tables: tech[t] } : {};
+      const links = withResults.filter(m => v[m.key]).map(method => ({ method, tables: tech[method.key] }));
       return resultsTable(list(v.codes), links);
     },
 
@@ -430,7 +426,7 @@ ${calc({ name: unique("rt_check"), title: "Residence time for each flow rate", i
     },
   };
 
-  if (!tp.user?.labForm) {
+  if (!tp.user?.labForm || !M) {
     new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
     return "";
   }

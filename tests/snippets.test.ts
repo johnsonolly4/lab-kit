@@ -9,6 +9,7 @@ import { editRows } from "../src/calc/rewrite";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
 
 const MW: Record<string, number> = { "lipoic acid": 206.32, "benzyl alcohol": 108.14, "dcm": 84.93, "pabtc": 238.39, "dmam": 99.13, "daam": 169.23, "va-044": 323.33 };
 const close = (a: unknown, b: number, tol = 1e-4) => assert.ok(typeof a === "number" && Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)), `${JSON.stringify(a)} != ${b}`);
@@ -36,6 +37,7 @@ describe("snippets", () => {
         file: { title: "0016 - Test" },
         date: { now: () => "2026_10_02" },
         user: {
+        labMethods,
           labForm: async (_tp: unknown, _title: string, fields: any[]) => {
             const v: Record<string, unknown> = {};
             for (const f of fields) if (f.key) v[f.key] = f.key in overrides ? overrides[f.key] : (f.type === "toggle" ? !!f.value : String(f.value ?? ""));
