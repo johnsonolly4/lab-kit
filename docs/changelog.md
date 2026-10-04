@@ -1,5 +1,11 @@
 # Lab notebook kit: changelog
 
+## v0.4.7 (2026-10-04)
+- **Fixes for the Obsidian community store scan**: the plugin no longer uses `child_process` or `!important`, and all access to Node features goes through one guarded place, so it still loads on mobile
+- **Windows opens the data folder through Obsidian** (like macOS and Linux), instead of starting Explorer separately
+- **README: "Privacy & permissions"** lists what the plugin reads and writes (no network, no account, no telemetry)
+- **Releases are built on GitHub** and signed with an attestation, so the files you install are the ones built from the tagged source. Nothing changes in how you use the plugin
+
 ## v0.4.6 (2026-10-04)
 - **Tab and Escape in a cell**: Tab saves what you typed (like Enter), Escape throws it away. Obsidian no longer also acts on those keys while a cell is open
 - **Page no longer jumps after editing a cell**: the note stays at the same scroll position when a cell is saved and the table redraws (it holds the position for about a second, and lets go as soon as you scroll yourself)

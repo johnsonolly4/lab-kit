@@ -1,12 +1,12 @@
 {
   "schema": 1,
   "kit": "lab-notebook-kit",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "date": "2026-10-04",
   "notes": [
-    "Built-in kit: review, update, merge and resolve conflicts per file, with backups",
-    "Hazard header is part of the plugin (no Dataview); settings are searchable (needs Obsidian 1.13)",
-    "Fixes: Tab and Escape in a cell, page jump after editing, duplicate table names flagged"
+    "Fixes for the Obsidian community store scan: no child_process, no !important in styles.css",
+    "Windows opens the data folder through Obsidian (shell.openPath), like the other platforms",
+    "README has a Privacy & permissions section; releases are built and attested on GitHub"
   ],
   "rewrite": {
     "Extras/scripts": "scripts"
