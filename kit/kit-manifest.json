@@ -19,7 +19,8 @@
       "path": "scrolling-mermaid.css",
       "version": "0.3.0",
       "sha256": "7910a5e30cb086150cbcc92fdd68523d788e7a27aeaf5d1dd2fcf1bd8fa5be98",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Lets wide Mermaid diagrams scroll sideways inside a note"
     },
     {
       "id": "script-excel-to-calc-py",
@@ -29,7 +30,8 @@
       "path": "excel_to_calc.py",
       "version": "0.3.0",
       "sha256": "701281ed4b8a7af5d5ba09ef692ee36464571a6bb0a127f14e32bf51bbca7b1a",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Command-line tool that turns an Excel file into calc tables"
     },
     {
       "id": "script-hazards-view-js",
@@ -39,7 +41,8 @@
       "path": "hazards/view.js",
       "version": "0.3.0",
       "sha256": "b9fd55bf69b472985c8e3c8eca7d9205158c5917a45612bd3610f19757e2b0f9",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Hazard table for older notes that use Dataview (new notes use the lab-header block)"
     },
     {
       "id": "script-lab-config-json",
@@ -50,6 +53,7 @@
       "version": "0.3.0",
       "sha256": "544aea30c36e15e137f53fa5812c014c708ce2cc172bb3a27023b2159084749d",
       "renamedFrom": [],
+      "desc": "Your settings for the older Dataview scripts (never overwritten)",
       "policy": "keep"
     },
     {
@@ -60,7 +64,8 @@
       "path": "lab-header/view.js",
       "version": "0.4.8",
       "sha256": "da107537cab58a7d8ad4653e4b7367c53a2a8d6c5a0ce1c809eb5a226f19e5ec",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Header (hazards and data folder button) for older notes that use Dataview"
     },
     {
       "id": "tpl-insert-snippet-md",
@@ -70,7 +75,8 @@
       "path": "Insert snippet.md",
       "version": "0.3.0",
       "sha256": "38429d75bce20438cabd578ea17bb7cae603f058ce719cce5c03ebaaf39b2914",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
     },
     {
       "id": "tpl-lab-book-template-md",
@@ -80,7 +86,8 @@
       "path": "Lab Book Template.md",
       "version": "0.3.0",
       "sha256": "2116df1c9284cf21e5d7097af108195d81ae6b1db1fc130b52bf355cce75adae",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "New experiment note: number, hazards, data folder button and sections"
     },
     {
       "id": "tpl-snippets-01-solution-prep-md",
@@ -90,7 +97,9 @@
       "path": "Snippets/01 Solution prep.md",
       "version": "0.3.0",
       "sha256": "dda5fd7c54482db14244d13c7a3e96ed7a7d1c670dcfa701d81be6497977b832",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Reagents with MW from their notes, target / added mass, mmol, wt%",
+      "optional": true
     },
     {
       "id": "tpl-snippets-02-recipe-by-equivalents-md",
@@ -100,7 +109,9 @@
       "path": "Snippets/02 Recipe by equivalents.md",
       "version": "0.3.0",
       "sha256": "cfc3f5db4de63c6e8ace7d71fb29426cf67e7cc2f574eaebeddff76518f801f4",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Eq. relative to any reagent, solvent makes up the rest, wt%",
+      "optional": true
     },
     {
       "id": "tpl-snippets-03-raft-recipe-generator-md",
@@ -110,7 +121,9 @@
       "path": "Snippets/03 RAFT recipe generator.md",
       "version": "0.3.0",
       "sha256": "cfd716ae5d5ab2beb2a8dbace2597ca6559fcebcd6ead60926e5106384480e02",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Monomer mass, DP, CTA:initiator, solids → every mass and Mn",
+      "optional": true
     },
     {
       "id": "tpl-snippets-04-variant-naming-matrix-md",
@@ -120,7 +133,9 @@
       "path": "Snippets/04 Variant naming matrix.md",
       "version": "0.3.0",
       "sha256": "22c098cd67e195ad7262918f26d1c296ae0e6eaf2e70d77d715a52c26a48f72b",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Rows × columns → sample codes; Copy gives one column",
+      "optional": true
     },
     {
       "id": "tpl-snippets-05-sample-list-md",
@@ -130,7 +145,9 @@
       "path": "Snippets/05 Sample list.md",
       "version": "0.3.0",
       "sha256": "0f14aeeb5e66276667969d2339e8d99a8c5de9ddc1dde6871fedb9213fe33d91",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Untimed list of sample codes, typed or generated; can add NMR / GPC / DLS",
+      "optional": true
     },
     {
       "id": "tpl-snippets-06-sampling-timetable-md",
@@ -140,7 +157,9 @@
       "path": "Snippets/06 Sampling timetable.md",
       "version": "0.3.0",
       "sha256": "47cbe71ff78d11d5d392af049a31103d2aa6ec0defc5fcacc5bc32a587a02e26",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Codes per time point with target clock times; can add NMR / GPC / DLS",
+      "optional": true
     },
     {
       "id": "tpl-snippets-07-nmr-samples-md",
@@ -150,7 +169,9 @@
       "path": "Snippets/07 NMR samples.md",
       "version": "0.3.0",
       "sha256": "0ba238370ecd25e5ba3633f297c5ac081e0b8b44f2b49661170a6580226d0002",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Sample / solvent / method / conversion, dataset, checklist · tags NMR",
+      "optional": true
     },
     {
       "id": "tpl-snippets-08-gpc-samples-md",
@@ -160,7 +181,9 @@
       "path": "Snippets/08 GPC samples.md",
       "version": "0.3.0",
       "sha256": "95ae37a5fadc8d58a6e498156de257d7aad106a253ea1856e15f3af001159e7b",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Sample / eluent / Mn / Mw / Đ, checklist · tags GPC",
+      "optional": true
     },
     {
       "id": "tpl-snippets-09-dls-samples-md",
@@ -170,7 +193,9 @@
       "path": "Snippets/09 DLS samples.md",
       "version": "0.3.0",
       "sha256": "65137c02685fc9a8deb34506b939a6adce31ce336424ba26f79a29eda40e92a3",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Sample / solvent / temperature / Dh / PDI, checklist · tags DLS",
+      "optional": true
     },
     {
       "id": "tpl-snippets-10-combined-results-md",
@@ -180,7 +205,9 @@
       "path": "Snippets/10 Combined results.md",
       "version": "0.3.0",
       "sha256": "1185d31957e3ce356b1037a22276aa6d74cb58471458b51e21e93ddbc0fd5808",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "One row per sample with NMR, GPC and DLS values pulled in",
+      "optional": true
     },
     {
       "id": "tpl-snippets-11-flow-column-prep-md",
@@ -190,7 +217,9 @@
       "path": "Snippets/11 Flow column prep.md",
       "version": "0.3.0",
       "sha256": "24d9f833e382759e6fecd07aaa1238f11d7db2dd4010878fa5935ac766282c9a",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Column weighing → bead mass → reactor volume",
+      "optional": true
     },
     {
       "id": "tpl-snippets-12-residence-times-md",
@@ -200,7 +229,9 @@
       "path": "Snippets/12 Residence times.md",
       "version": "0.3.0",
       "sha256": "f307a4ebaf9fa168c1cea949d0e590c355e1c877a0c8384965656c4724a4d709",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Flow rate for each residence time from a reactor volume",
+      "optional": true
     },
     {
       "id": "tpl-snippets-13-blank-calc-table-md",
@@ -210,7 +241,9 @@
       "path": "Snippets/13 Blank calc table.md",
       "version": "0.3.0",
       "sha256": "58b4816822afb0b6db4e2333c10071a3c1e3aa6f7eaf6a7f0ecff22bbd8d8a44",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "Your own columns and rows",
+      "optional": true
     },
     {
       "id": "script-labform-js",
@@ -218,9 +251,10 @@
       "src": "Extras/scripts/templater/labForm.js",
       "role": "userScripts",
       "path": "labForm.js",
-      "version": "0.3.0",
-      "sha256": "be4a5d960b588333eb1b9ed0e73cd7de6da467559a57e8ac7b961634c37fb15d",
-      "renamedFrom": []
+      "version": "0.4.8",
+      "sha256": "fe8f2d14d851190f8ffeed86422f16f14e79a25f2c9a446f3b2a013f667a25be",
+      "renamedFrom": [],
+      "desc": "The pop-up form every snippet uses"
     },
     {
       "id": "script-labpick-js",
@@ -230,7 +264,8 @@
       "path": "labPick.js",
       "version": "0.3.0",
       "sha256": "5cfda721dc56b2073ec409cd4329abc87529219753abb3987567e7718e47ae26",
-      "renamedFrom": []
+      "renamedFrom": [],
+      "desc": "The searchable snippet menu with icons"
     },
     {
       "id": "script-labsnippets-js",
@@ -238,9 +273,10 @@
       "src": "Extras/scripts/templater/labSnippets.js",
       "role": "userScripts",
       "path": "labSnippets.js",
-      "version": "0.3.0",
-      "sha256": "649e19bc674700f4c5a8e252d50b28e7f0baef87aecac772c9d0d6d7bb36a378",
-      "renamedFrom": []
+      "version": "0.4.8",
+      "sha256": "53171b57fe631b10ed85358d6fb043435827308ea9701550647ef4aebb3dd424",
+      "renamedFrom": [],
+      "desc": "The code behind every snippet"
     }
   ],
   "delete": [
@@ -287,18 +323,6 @@
     {
       "role": "scripts",
       "path": "data-roots.json"
-    },
-    {
-      "role": "docs",
-      "path": "Lab notebook kit - update to v0.2.md"
-    },
-    {
-      "role": "docs",
-      "path": "Lab notebook kit - setup.md"
-    },
-    {
-      "role": "docs",
-      "path": "Calc demo.md"
     }
   ],
   "templater": {

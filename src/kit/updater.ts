@@ -35,6 +35,8 @@ export interface KitData {
   managed: ManagedState | null;
   /** Folders the user set for the built-in kit (templates, scripts, backups). Empty = detected. */
   paths: Roles;
+  /** Optional kit files the user switched off (ids): not installed, not updated. */
+  off: Record<string, true>;
   debug: boolean;
 }
 export interface PlanItem {
@@ -57,7 +59,7 @@ export interface ApplyResult {
 }
 
 const KIT_TEXT_EXT = /\.(md|js|json|css|py|txt|csv)$/i;
-export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, debug: false };
+export const KIT_DEFAULTS: KitData = { source: "", checkOnStartup: true, makeBackups: false, installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, debug: false };
 
 const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {
@@ -81,8 +83,13 @@ export function kitHash(buf: Uint8Array): string {
 const utf8 = new TextDecoder("utf-8", { ignoreBOM: true });   // keeps a leading BOM, like Buffer.toString("utf8")
 const toArrayBuffer = (buf: Uint8Array): ArrayBuffer => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
 
-/** Where each part of the kit lives in this vault. */
-export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: KitManifest): Roles {
+/**
+ * Where each part of the kit lives in this vault.
+ * `tracked` (the built-in kit passes it, even when empty): the folders where it already put files. Then templates and user scripts follow the files
+ * that are already there, so a file added by a later kit version lands beside them; only a vault with no kit files yet gets the tidy layout
+ * (<Templater templates folder>/Lab Kit, <Templater user scripts folder>/lab-kit). Without `tracked` (the folder updater) the old rules apply.
+ */
+export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: KitManifest, tracked?: Partial<Roles>): Roles {
   const files = app.vault.getFiles();
   const tpl = templaterSettings(app);
   const remembered: Partial<Roles> = record?.roles ?? {};
@@ -91,14 +98,17 @@ export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: Ki
                     ?? find("lab-config.json");
   const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "Extras/scripts");
   const menu = find("Insert snippet.md");
-  const docsFound = find("Lab notebook kit - changelog.md");
+  const formScript = find("labForm.js");
   const roles: Roles = {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
-    userScripts: tpl.user_scripts_folder || remembered.userScripts || kitJoin(scripts, "templater"),
-    templates: tpl.templates_folder || remembered.templates || (menu ? menu.parent!.path : "Templates"),
-    docs: remembered.docs ?? (docsFound ? docsFound.parent!.path : "Extras/Lab notebook kit"),
-    backups: remembered.backups ?? kitJoin(kitParent(scripts) || "Extras", "kit-backups"),
+    userScripts: tracked
+      ? tracked.userScripts ?? (formScript ? formScript.parent!.path : tpl.user_scripts_folder ? kitJoin(tpl.user_scripts_folder, "lab-kit") : kitJoin(scripts, "templater"))
+      : tpl.user_scripts_folder || remembered.userScripts || kitJoin(scripts, "templater"),
+    templates: tracked
+      ? tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || "Templates", "Lab Kit"))
+      : tpl.templates_folder || remembered.templates || (menu ? menu.parent!.path : "Templates"),
+    backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
   };
   for (const [k, v] of Object.entries(manifest?.roles ?? {})) if (!(k in roles)) roles[k] = remembered[k] ?? v.default ?? k;
   return roles;

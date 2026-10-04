@@ -1,7 +1,7 @@
 /* =====================================================================
    labSnippets: builds every Alt+S snippet (Templater user script)
    ---------------------------------------------------------------------
-   Each file in Templates/Snippets calls:
+   Each file in the Snippets folder calls:
        tR += await tp.user.labSnippets(tp, "solution")
    Keys: solution, recipe, raft, matrix, samples, timetable, nmr, gpc,
          dls, results, column, rt, blank
@@ -19,6 +19,8 @@ module.exports = async function labSnippets(tp, key) {
   const form = (title, fields, opts) => tp.user.labForm(tp, title, fields, opts);
   const list = (s) => String(s ?? "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
   const letter = (i) => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
+  /** Inverse of letter(): A → 0, Z → 25, AA → 26. */
+  const letterIndex = (s) => [...s].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
   const file = tp.config.target_file;
   const noteText = () => app.workspace.activeEditor?.editor?.getValue() ?? "";
 
@@ -77,6 +79,14 @@ module.exports = async function labSnippets(tp, key) {
       if (codes.length) return codes;
     }
     return [];
+  };
+  /** Index of the first sample letter not used yet: one past the highest letter after this note's prefix (ABC0016-A, ABC0016-C12 → 3). Looks at the whole note, or at the cells of the given tables. */
+  const nextFreeIndex = (tables) => {
+    const text = tables ? tables.flatMap(t => t.rows.flat()).join("\n") : noteText();
+    const rx = new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([A-Z]+)", "g");
+    let next = 0, m;
+    while ((m = rx.exec(text))) next = Math.max(next, letterIndex(m[1]) + 1);
+    return next;
   };
   /** Number of body rows in the calc table with exactly this name, or 0. */
   const tableRows = (name) => {
@@ -251,7 +261,7 @@ ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "
       ]);
       if (!v || !list(v.rows).length) return "";
       const rows = list(v.rows), cols = list(v.cols);
-      let n = 0;
+      let n = nextFreeIndex();
       const body = cols.length
         ? rows.map(r => [`**${r}**`, ...cols.map(() => prefix + letter(n++))])
         : rows.map(r => [`**${r}**`, prefix + letter(n++)]);
@@ -268,7 +278,8 @@ ${calc({ name: unique("variants"), title: "Variant naming matrix", icon: "grid-3
       ]);
       if (!v) return "";
       let codes = list(v.codes);
-      if (!codes.length) codes = Array.from({ length: Math.max(1, parseInt(v.count, 10) || 1) }, (_, i) => prefix + letter(i));
+      const start = nextFreeIndex();
+      if (!codes.length) codes = Array.from({ length: Math.max(1, parseInt(v.count, 10) || 1) }, (_, i) => prefix + letter(start + i));
       return `## Samples
 ${calc({ name: unique("samples"), title: "Samples", icon: "list", copy: "column A" }, ["Code", "Description", "Notes"], codes.map(c => [c, "", ""]))}${addTechniques(v, codes)}`;
     },
@@ -277,7 +288,7 @@ ${calc({ name: unique("samples"), title: "Samples", icon: "list", copy: "column 
       const v = await form("Sampling timetable", [
         { key: "times", label: "Time points", hint: "comma separated", value: "0, 30, 60, 120" },
         { key: "unit", label: "Time unit", hint: "min or h", value: "min" },
-        { key: "letters", label: "Sample letters", hint: "comma separated · blank = one sample", value: "A" },
+        { key: "letters", label: "Sample letters", hint: "comma separated · blank = one sample", value: letter(nextFreeIndex(tablesNamed("sampling"))) },
         { key: "start", label: "Start time (hh:mm)", hint: "blank = fill in on the day", value: "" },
         ...techToggles,
       ]);
@@ -397,7 +408,7 @@ ${calc({ name: unique("rt_check"), title: "Residence time for each flow rate", i
   };
 
   if (!tp.user?.labForm) {
-    new Notice("Lab snippets need Templater → User script functions folder = Extras/scripts/templater");
+    new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
     return "";
   }
   if (!S[key]) { new Notice(`Unknown snippet "${key}"`); return ""; }

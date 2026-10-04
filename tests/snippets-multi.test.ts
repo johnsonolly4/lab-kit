@@ -89,3 +89,53 @@ describe("snippets read numbered tables", () => {
     assert.strictEqual(ev.cell("results", "B3"), 77);
   });
 });
+
+describe("sample letters carry on from the next free letter", () => {
+  const codesOf = (md: string) => [...md.matchAll(/ABC0001-[A-Z]+\d*/g)].map(m => m[0]);
+
+  it("first list starts at A", async () => {
+    const h = harness("");
+    assert.deepStrictEqual(codesOf(await h.run("samples", { count: "3" })), ["ABC0001-A", "ABC0001-B", "ABC0001-C"]);
+  });
+
+  it("a second sample list continues after the first", async () => {
+    const h = harness("");
+    await h.run("samples", { count: "3" });
+    assert.deepStrictEqual(codesOf(await h.run("samples", { count: "2" })), ["ABC0001-D", "ABC0001-E"]);
+  });
+
+  it("goes past Z (AA, AB…)", async () => {
+    const h = harness(table("samples", ["ABC0001-Z"]));
+    assert.deepStrictEqual(codesOf(await h.run("samples", { count: "2" })), ["ABC0001-AA", "ABC0001-AB"]);
+  });
+
+  it("counts codes written anywhere in the note and ignores other prefixes", async () => {
+    const h = harness("Run ABC0001-F done. Old: XYZ0001-Q and ABC0002-M.\n");
+    assert.deepStrictEqual(codesOf(await h.run("samples", { count: "1" })), ["ABC0001-G"]);
+  });
+
+  it("typed codes are kept as typed", async () => {
+    const h = harness(table("samples", ["ABC0001-A"]));
+    assert.deepStrictEqual(codesOf(await h.run("samples", { codes: "ABC0001-A, ABC0001-B" })), ["ABC0001-A", "ABC0001-B"]);
+  });
+
+  it("the variant matrix continues too", async () => {
+    const h = harness(table("samples", ["ABC0001-A", "ABC0001-B", "ABC0001-C"]));
+    const md = await h.run("matrix", { rows: "x, y", cols: "" });
+    assert.deepStrictEqual(codesOf(md), ["ABC0001-D", "ABC0001-E"]);
+  });
+
+  it("a second timetable defaults to the next letter; a sample list does not move the first", async () => {
+    const h = harness(table("samples", ["ABC0001-A", "ABC0001-B"]));
+    const first = await h.run("timetable", { times: "0, 30" });
+    assert.deepStrictEqual(codesOf(first), ["ABC0001-A0", "ABC0001-A30"]);
+    const second = await h.run("timetable", { times: "0, 30" });
+    assert.deepStrictEqual(codesOf(second), ["ABC0001-B0", "ABC0001-B30"]);
+  });
+
+  it("an explicitly typed letter wins", async () => {
+    const h = harness("");
+    await h.run("timetable", { times: "0" });
+    assert.deepStrictEqual(codesOf(await h.run("timetable", { times: "0", letters: "A" })), ["ABC0001-A0"]);
+  });
+});

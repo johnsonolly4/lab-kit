@@ -50,7 +50,7 @@ class KitUpdateModal extends Modal {
     new Setting(contentEl).setName("Where things go").setDesc("Detected from your vault. Edit a line if it's wrong, then press Recheck.").setHeading();
     const used = [...new Set([...m.files.map(f => f.role), ...(m.delete ?? []).map(d => d.role), ...(this.makeBackups ? ["backups"] : [])])];
     const labels: Record<string, string> = { cssSnippets: "CSS snippets", scripts: "Shared scripts", userScripts: "Templater user scripts",
-      templates: "Templates", docs: "Kit notes", backups: "Backups" };
+      templates: "Templates", backups: "Backups" };
     for (const r of used) {
       new Setting(contentEl).setName(labels[r] ?? r).addText(t => {
         t.setValue(this.roles[r] ?? "").onChange(v => { this.roles[r] = v.trim().replace(/^\/|\/$/g, ""); });
@@ -143,8 +143,7 @@ class KitSettingTab extends PluginSettingTab {
   private builtInIcons = new Map<string, string>();
 
   private snippetFiles(): TFile[] {
-    const templates = this.ctl.kit.installed?.roles?.templates ?? "Templates";
-    const folder = this.app.vault.getFolderByPath(normalizePath(`${templates}/Snippets`));
+    const folder = this.app.vault.getFolderByPath(normalizePath(`${this.ctl.managed.templatesFolder()}/Snippets`));
     return (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md")
       .sort((a, b) => a.basename.localeCompare(b.basename, undefined, { numeric: true }));
   }
@@ -214,9 +213,9 @@ class KitSettingTab extends PluginSettingTab {
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
-    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: detected from Templater, or Templates."));
+    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault a Lab Kit folder inside Templater's templates folder."));
     rows.push(folder("scripts", "Scripts folder", "Where the kit's shared scripts go. Must not be a hidden (dot) folder. Empty: detected.", true));
-    rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time."));
+    rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
     rows.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
       render: b => { b.addText(t => { t.setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); t.inputEl.addClass("lab-kit-wide-input"); }); } });
     rows.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
@@ -238,7 +237,7 @@ class KitSettingTab extends PluginSettingTab {
         render: b => { b.addText(t => { t.setValue(kit.source).onChange(async v => { kit.source = v.trim(); await this.ctl.save(); }); t.inputEl.addClass("lab-kit-wide-input"); }); } },
       { name: "Check when Obsidian starts",
         render: b => { b.addToggle(t => t.setValue(kit.checkOnStartup).onChange(async v => { kit.checkOnStartup = v; await this.ctl.save(); })); } },
-      { name: "Back up replaced files", desc: "Copy files to a kit-backups folder before an update replaces or removes them. Off by default.",
+      { name: "Back up replaced files", desc: "Copy files to the Backup folder before an update replaces or removes them. Off by default.",
         render: b => { b.addToggle(t => t.setValue(!!kit.makeBackups).onChange(async v => { kit.makeBackups = v; await this.ctl.save(); })); } },
       { name: "Installed version",
         desc: inst ? `v${inst.version} · ${Object.keys(inst.files ?? {}).length} files tracked · ${inst.installedAt}` : "Nothing installed by the updater yet",
@@ -286,6 +285,7 @@ export class KitController {
     this.kit = Object.assign({}, KIT_DEFAULTS, saved?.kit ?? {});
     this.kit.snippetIcons = { ...this.kit.snippetIcons };
     this.kit.paths = { ...this.kit.paths };
+    this.kit.off = { ...this.kit.off };
   }
   async save(): Promise<void> {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;

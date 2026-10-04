@@ -2,7 +2,7 @@
    labForm: one pop-up form with several fields (Templater user script)
    ---------------------------------------------------------------------
    Setup: Settings → Templater → "User script functions" folder
-          = Extras/scripts/templater
+          = the folder that holds this file (or a folder above it)
 
      const v = await tp.user.labForm(tp, "Solution prep", [
        { key: "name", label: "Solution name", value: "Solution 1" },

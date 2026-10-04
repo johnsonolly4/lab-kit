@@ -1,5 +1,12 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Pick your snippets**: in Settings → Lab Kit → Manage files…, every snippet has a short description and a **Use** toggle. Off = not installed and not in the Alt+S menu. Turning off a snippet you already have asks first, backs it up and moves it to your trash. The menu, the scripts and the Lab Book template stay always on
+- **Tidier folders for new vaults**: the first install puts the kit's templates in a **Lab Kit** folder inside Templater's templates folder, and its scripts in a `lab-kit` folder inside Templater's scripts folder. Vaults that already have the kit never move: new files go next to the ones you have
+- **Sample letters carry on**: a second sample list, variant matrix or sampling timetable in the same note starts at the next free letter instead of repeating A, B, C. You can still edit the codes in the form. A timetable only looks at earlier timetables, so a sample list and its timetable both start at A
+- **Backups are hidden**: replaced kit files are now copied to `.obsidian/plugins/lab-kit/backups` (out of your file list) unless you set your own Backup folder. Old backups in `kit-backups` stay where they are
+- **"Kit notes" location removed** from the folder updater window: no kit file uses it any more
+
 ## v0.4.8 (2026-10-04)
 - **Last fixes for the Obsidian community store scan**: the hazard header's data folder button opens the folder through Obsidian on every platform, so the kit no longer starts Explorer itself. Nothing changes in how you use it (update the kit to get the new `lab-header/view.js`)
 

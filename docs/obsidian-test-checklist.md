@@ -7,7 +7,7 @@
 ## 0. Setup (5 min)
 - [ ] Obsidian is 1.13 or newer (Settings → About)
 - [ ] Terminal: `npm run dev`, open `test-vault/`, Lab Kit is on
-- [ ] Templater is on and set to **Templates** folder and **Extras/scripts/templater** scripts folder
+- [ ] Templater is on with a **Templates** folder and a **User script functions** folder set (e.g. `Templates` and `Extras/scripts/templater`)
 - [ ] The old hand copies in `test-vault/Templates/` and `test-vault/Extras/` are stale. Delete both folders first so step 2 starts clean
 
 ## 1. Settings page
@@ -19,6 +19,8 @@
 ## 2. Built-in kit install
 - [ ] Built-in kit group shows version row and three folder boxes
 - [ ] Scripts folder refuses a dot folder (notice on blur)
+- [ ] **New vault layout**: with Templater's folders set, the first install puts templates in `<Templates>/Lab Kit/` (menu + `Snippets/`) and the user scripts in `<scripts folder>/lab-kit/`. Give `Insert snippet.md` an Alt+S hotkey: the menu opens, and a snippet runs (so Templater finds `tp.user.labSnippets` in the subfolder; if not, tell me)
+- [ ] **Existing vault** (flat layout): nothing moves; a kit file added later lands beside `Insert snippet.md`
 - [ ] Review update… asks before first install, then Apply creates the files
 - [ ] Report window lists them; nothing broken in the file tree
 - [ ] Edit an installed template, Review again: it says "changed by you"
@@ -28,8 +30,12 @@
 - [ ] Opens from Settings and from the command palette
 - [ ] Badges readable (colours OK)
 - [ ] Install / Update / Recreate works on one file
-- [ ] Edit a template → **Restore kit original** (confirm, backup lands in the Backup folder)
+- [ ] Edit a template → **Restore kit original** (confirm, backup lands in the Backup folder, by default `.obsidian/plugins/lab-kit/backups/<date>/…`, not visible in the file list)
 - [ ] Detach, then Re-attach
+- [ ] Snippet rows have a one-line description and a **Use** toggle; core files (menu, scripts, Lab Book Template) have none
+- [ ] Toggle a snippet **off** (not installed yet): row shows **Off**, **Update all safe files** does not install it
+- [ ] Toggle an **installed** snippet off: asks first, backup lands in `.obsidian/plugins/lab-kit/backups`, the file is in Obsidian's trash, it is gone from Alt+S and from Settings → Snippet menu. Cancel leaves the toggle on
+- [ ] Toggle it on again: reinstalled, back in Alt+S
 - [ ] CSS snippet switch really turns `scrolling-mermaid` on and off
 
 ## 4. Merge (needs a kit bump)
@@ -48,6 +54,7 @@
 - [ ] Forms start empty with placeholders; submitting an untouched form inserts nothing
 - [ ] RAFT with **3 monomers**: mol column sums right, Mn looks sane
 - [ ] Sample list form: toggle heading reads "Also add (appended below)"
+- [ ] Second **Sample list** in the same note starts at the next letter (A–F, then G…); second **Sampling timetable** defaults to the next letter; a timetable after a sample list still starts at A
 - [ ] Column snippet has "Packing material"; residence time is in an info callout
 - [ ] Two tables `samples` and `samples2`: codes from both are found
 - [ ] Two tables both named `samples`: note what the snippet does (just report it)
