@@ -4,7 +4,10 @@ main.js
 dist/
 data.json
 .DS_Store
-# dev vault: keep the notes, ignore Obsidian's own state and the built plugin
+# dev vault: only Welcome.md is tracked; hand-copied kit files, test notes, Obsidian's state and the built plugin stay local
+test-vault/*
+!test-vault/Welcome.md
+!test-vault/.obsidian/
 test-vault/.obsidian/*
 !test-vault/.obsidian/.gitkeep
 CLAUDE.local.md

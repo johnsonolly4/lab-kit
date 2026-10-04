@@ -10,12 +10,15 @@ Goal: publish to the Obsidian community plugin store.
 - `src/main.ts`: plugin entry, registers features
 - `src/calc/`: formula engine (parse, evaluate, rewrite refs) + table renderer
 - `src/header/`: hazard table + data-folder button (replaces the Dataview scripts)
-- `src/kit/`: updater (desktop only)
+- `src/kit/`: built-in kit (managed files, merge, merge window) + folder updater (desktop only)
+- `src/node.ts`: the only `require()` (Node/Electron modules, null on mobile) · `src/platform.ts`: `hasNode()` · `src/whatsnew.ts`: What's new popup
 - `kit/`: vault files the updater installs (`Templates/`, `Extras/scripts/`)
-- `docs/`: `tutorial.md`, `changelog.md`, `reference/` (saved Obsidian docs: read these, don't fetch)
+- `docs/`: `tutorial.md`, `changelog.md`, `obsidian-test-checklist.md`, `reference/` (saved Obsidian docs: read these, don't fetch)
 - `tests/`: vitest; `tests/fixtures/` holds real experiment tables
-- `scripts/kit-manifest.mjs`: regenerates `kit/kit-manifest.json`
-- `test-vault/`: dev vault (gitignored plugin build)
+- `scripts/`: `kit-manifest.mjs` regenerates `kit/kit-manifest.json` · `embed-kit.mjs` embeds the kit in `main.js` · `package-kit.mjs` builds `dist/` (`npm run package`)
+- `.github/workflows/release.yml`: builds, attests and publishes a release on a pushed tag
+- `test-vault/`: dev vault (only `Welcome.md` tracked; notes, kit copies and plugin build are gitignored)
+- `dist/`, `legacy/`: gitignored (package output; old v0.3 `main.js`, never committed)
 - `README.md`, `GETTING-STARTED.md` (user setup guide), `LICENSE` (MIT)
 - `STATUS.md`: now / next / blockers · `BACKLOG.md`: feedback by version
 
