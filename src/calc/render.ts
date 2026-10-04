@@ -38,6 +38,9 @@ export class CalcRenderer {
    */
   private pending: { entry: CalcEntry; path: string; line: number | null; r: number; c: number } | null = null;
   private pendingTimer = 0;
+  private retryTimer = 0;
+  /** Until this time (ms) Obsidian may still rebuild blocks after a save: a cell opened before then would be wiped by the rebuild. */
+  private quietUntil = 0;
   /** Scroll position of the note while an edit is saved: a rebuilt block can collapse for a moment and drag the page. */
   private hold: { scroller: HTMLElement; top: number; until: number; start: number } | null = null;
 
@@ -52,8 +55,8 @@ export class CalcRenderer {
       if (!this.live.has(ctx.sourcePath)) this.live.set(ctx.sourcePath, new Set());
       this.live.get(ctx.sourcePath)!.add(entry);
       await this.render(entry);
+      this.quietUntil = Math.max(this.quietUntil, Date.now() + (this.pending ? 300 : 0));   // a rebuild just happened: wait for a quiet moment
       this.openPending();
-      this.retryPending();
       this.restoreScroll();
     });
 
@@ -301,11 +304,11 @@ export class CalcRenderer {
       if (this.editor === mine) this.editor = null;
       suggest?.close();
       const val = input.value.trim();
-      if (save && val !== current) this.holdScroll(entry.el);
+      if (save && val !== current) { this.holdScroll(entry.el); this.quietUntil = Date.now() + 400; }
       try {
         if (!save || val === current) await this.render(entry);
         else await this.refreshFile(entry.ctx.sourcePath, await this.writeCell(entry, r, c, val));
-      } finally { this.openPending(); this.retryPending(); this.settleScroll(); }
+      } finally { this.openPending(); this.settleScroll(); }
     };
     input.addEventListener("keydown", (e) => {
       // With suggestions showing, Enter and Escape belong to the suggestion popup (pick / close)
@@ -362,14 +365,15 @@ export class CalcRenderer {
     if (!p || this.editor) return;
     const entry = this.pendingTarget(p);
     const td = entry?.tds?.get(`${p.r}|${p.c}`);
-    if (!entry || !td || !td.isConnected) return; // block not redrawn yet: the expiry timer clears it
+    // Block not redrawn yet, or Obsidian may still rebuild it after the save: look again shortly (the expiry timer clears a click that never lands)
+    if (!entry || !td || !td.isConnected || Date.now() < this.quietUntil) { this.retryPending(); return; }
     this.clearPending();
     this.editCell(entry, p.r, p.c, td, entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
   }
 
-  /** A rebuilt block is not on screen yet when its processor finishes (Obsidian attaches it a moment later): try again for a short while. */
   private retryPending(): void {
-    for (const ms of [30, 100, 250, 500, 900, 1500]) window.setTimeout(() => { if (this.pending) this.openPending(); }, ms);
+    if (this.retryTimer) return;
+    this.retryTimer = window.setTimeout(() => { this.retryTimer = 0; if (this.pending) this.openPending(); }, 80);
   }
 
   private setPending(entry: CalcEntry, r: number, c: number): void {

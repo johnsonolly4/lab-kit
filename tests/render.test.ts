@@ -74,7 +74,7 @@ describe("render", () => {
       const b = entry.tds!.get("1|1")!;
       b.dispatch("mousedown"); // pressing the next cell blurs the editor, which redraws the table
       input.dispatch("blur");
-      await new Promise(r => setTimeout(r, 10));
+      await new Promise(r => setTimeout(r, 900));
       assert.ok(fileText.includes(`| ${typed} | 5 |`), "edit not saved");
       const b2 = entry.tds!.get("1|1")!;
       assert.notStrictEqual(b2, b, "table was not redrawn");
@@ -139,7 +139,7 @@ describe("render", () => {
     input.value = "3";
     entry.tds!.get("1|1")!.dispatch("mousedown");
     input.dispatch("blur");
-    await new Promise(r => setTimeout(r, 30));
+    await new Promise(r => setTimeout(r, 900));
     assert.ok(fileText.includes("| 3 | 5 |"), "edit not saved");
     const second = [...renderer.live.get("n.md")!].find(e => e.el === el2);
     assert.ok(second?.tds?.get("1|1")?.querySelector("input"), "second cell did not open in the rebuilt block");
@@ -177,7 +177,7 @@ describe("render", () => {
     input.value = "3";
     entry.tds!.get("1|1")!.dispatch("mousedown");
     input.dispatch("blur");
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 1200));
     assert.ok(fileText.includes("| 3 | 5 |"), "edit not saved");
     const second = [...renderer.live.get("n.md")!].find(e => e.el === el2);
     assert.ok(second?.tds?.get("1|1")?.querySelector("input"), "second cell did not open in the rebuilt block");
