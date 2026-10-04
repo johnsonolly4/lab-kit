@@ -292,6 +292,14 @@ class KitManagedModal extends Modal {
     new Setting(contentEl).setName("Changes").setDesc(
       `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
 
+    // One click ticks every file with a box (recreate / merge); nothing is written until Apply
+    const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge");
+    if (boxed.length) {
+      new Setting(contentEl).setName(`Tick or untick all ${boxed.length} files with a box`)
+        .addButton(b => b.setButtonText("Tick all").setCta().onClick(() => this.tick(boxed, true)))
+        .addButton(b => b.setButtonText("Untick all").onClick(() => this.tick(boxed, false)));
+    }
+
     for (const g of GROUPS) {
       const group = this.items.filter(i => i.action === g.action);
       if (!group.length) continue;
@@ -333,10 +341,19 @@ class KitManagedModal extends Modal {
     }
 
     const todo = this.writes();
-    new Setting(contentEl)
+    new Setting(contentEl).setClass("lab-kit-sticky-foot")
       .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
       .addButton(b => b.setButtonText(todo ? `Apply (${todo} files)` : "Apply").setCta().setDisabled(!todo && !count("up-to-date"))
         .onClick(() => void this.apply()));
+  }
+
+  /** Ticks or unticks every recreate / merge box at once. */
+  private tick(items: ManagedItem[], on: boolean): void {
+    for (const it of items) {
+      if (it.action === "missing") { if (on) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); }
+      else if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id);
+    }
+    this.render();
   }
 
   private select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action)

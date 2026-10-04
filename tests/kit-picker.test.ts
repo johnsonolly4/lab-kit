@@ -199,3 +199,14 @@ describe("backup copies are not kit files", () => {
     expect(r.userScripts).toBeUndefined();
   });
 });
+
+describe("a file recorded inside a backup folder", () => {
+  it("is planned as not installed (create) at its real place, not as deleted", async () => {
+    const bad = "Backups/2026-10-04T17-21-03-991Z/Templates/Menu.md";
+    const v = memVault({ [bad]: "menu\n" });
+    const state: any = { installedKitVersion: "0.1.0", files: { "tpl-menu": { path: bad, version: "0.1.0", hash: "x" } } };
+    const plan = await planManaged(v, kit, state, roles, null, null, new Set());
+    expect(by(plan, "tpl-menu").action).toBe("create");
+    expect(by(plan, "tpl-menu").dest).toBe("Templates/Menu.md");
+  });
+});

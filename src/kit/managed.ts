@@ -100,9 +100,10 @@ export function trackedRoles(bundle: EmbeddedKit, state: ManagedState | null): R
 export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, state: ManagedState | null, roles: Roles, legacy: LegacyRecord | null = null, baseDir: string | null = null, off: ReadonlySet<string> = new Set()): Promise<ManagedItem[]> {
   const items: ManagedItem[] = [];
   for (const file of bundle.manifest.files) {
-    const st = state?.files[file.id];
-    // A path recorded inside a backup folder is a mistake (an old version picked the backup copy): use the real place
-    let dest = (st?.path && !kitIsBackup(st.path) ? st.path : "") || kitJoin(roles[file.role], file.dest);
+    // A path recorded inside a backup folder is a mistake (an old version picked the backup copy): treat the file as not installed yet, at its real place
+    const rec = state?.files[file.id];
+    const st = rec && kitIsBackup(rec.path) ? undefined : rec;
+    let dest = st?.path || kitJoin(roles[file.role], file.dest);
     if (!st && !(await adapter.exists(dest))) {
       // Not installed by this system and the kit has moved the file: a copy at an old place is still this file
       for (const old of file.renamedFrom) {
