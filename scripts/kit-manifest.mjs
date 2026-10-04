@@ -32,6 +32,8 @@ const DESC = {
   "Templates/Lab Book Template.md": "New experiment note: number, hazards, data folder button and sections",
 };
 const OPTIONAL_PREFIX = "Templates/Snippets/";
+// Older files the plugin itself does not need (Dataview-era header scripts, their settings file, the Excel converter): can be switched off in Manage files
+const OPTIONAL_FILES = new Set(["Extras/scripts/excel_to_calc.py", "Extras/scripts/hazards/view.js", "Extras/scripts/lab-header/view.js", "Extras/scripts/lab-config.json"]);
 const descOf = (rel, text) => rel.startsWith(OPTIONAL_PREFIX)
   ? (text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim() ?? (() => { throw new Error(`${rel}: no "// desc:" line`); })())
   : (DESC[rel] ?? (() => { throw new Error(`${rel}: add a line to DESC in scripts/kit-manifest.mjs`); })());
@@ -88,7 +90,7 @@ const files = walk(KIT)
     const entry = { id: idFor({ kind, path, src: rel }, prev), kind, src: rel, role, path,
       version: prev?.sha256 === hash && prev.version ? prev.version : manifest.version, sha256: hash,
       renamedFrom, desc: descOf(rel, text) };
-    if (rel.startsWith(OPTIONAL_PREFIX)) entry.optional = true;
+    if (rel.startsWith(OPTIONAL_PREFIX) || OPTIONAL_FILES.has(rel)) entry.optional = true;
     if (KEEP.has(rel)) entry.policy = "keep";
     return entry;
   })

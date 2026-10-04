@@ -101,17 +101,19 @@ describe("switched-off files", () => {
 
 describe("real kit manifest", () => {
   const real = embeddedKit() as EmbeddedKit;
-  it("describes every file, and only the 13 snippets can be switched off", () => {
+  const legacy = ["excel_to_calc.py", "hazards/view.js", "lab-header/view.js", "lab-config.json"];
+  it("describes every file, and only the 13 snippets and the 4 older script files can be switched off", () => {
     for (const f of real.manifest.files) expect(f.desc?.length ?? 0, f.src).toBeGreaterThan(5);
     const optional = real.manifest.files.filter(f => f.optional).map(f => f.dest);
-    expect(optional).toHaveLength(13);
-    expect(optional.every(d => d.startsWith("Snippets/"))).toBe(true);
+    expect(optional).toHaveLength(17);
+    expect(optional.filter(d => d.startsWith("Snippets/"))).toHaveLength(13);
+    expect(optional.filter(d => !d.startsWith("Snippets/")).sort()).toEqual([...legacy].sort());
   });
-  it("planning with every snippet off installs the core and none of the snippets", async () => {
+  it("planning with every optional file off installs the core and none of the snippets or older files", async () => {
     const v = memVault();
     const off = new Set(real.manifest.files.filter(f => f.optional).map(f => f.id));
     const plan = await planManaged(v, real, null, roles, null, null, off);
-    expect(plan.filter(p => p.action === "off")).toHaveLength(13);
+    expect(plan.filter(p => p.action === "off")).toHaveLength(17);
     await applyManaged(v, real, plan, null, opts);
     expect(v.files["Templates/Insert snippet.md"]).toBeDefined();
     expect(Object.keys(v.files).some(f => f.startsWith("Templates/Snippets/"))).toBe(false);

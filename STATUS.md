@@ -10,6 +10,9 @@
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG, "Repo / release")
 - Git identity: commits now use the global `~/.gitconfig` noreply address (set 2026-10-04 after a push was refused for the private email)
 
+## Latest (2026-10-04, after PR 23): older script files optional
+- `scripts/kit-manifest.mjs` `OPTIONAL_FILES`: excel_to_calc.py, hazards/view.js, lab-header/view.js, lab-config.json now have a Use toggle (default on, nothing changes unless switched off). Branch `feat/optional-legacy-files`. Answered the user: scripts may live in any non-hidden folder (Templates folder / Scripts folder settings); Templater's template folder is left as it is (Set up only fills an empty one)
+
 ## Last session (fixes on feat/chemical-database, 2026-10-04)
 - Solution prep and Recipe no longer fill reagents / solvent from the note's Chemicals (`labSnippets.js`; tests pass the reagents explicitly)
 - The user's vault runs OLD scripts (pre-2026-10-03 defaults): the RAFT / NMR dataset / matrix "autofill" they saw is not in the current kit. BACKLOG has the question why the update did not replace them

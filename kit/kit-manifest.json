@@ -27,7 +27,8 @@
       "version": "0.3.0",
       "sha256": "701281ed4b8a7af5d5ba09ef692ee36464571a6bb0a127f14e32bf51bbca7b1a",
       "renamedFrom": [],
-      "desc": "Command-line tool that turns an Excel file into calc tables"
+      "desc": "Command-line tool that turns an Excel file into calc tables",
+      "optional": true
     },
     {
       "id": "script-hazards-view-js",
@@ -38,7 +39,8 @@
       "version": "0.3.0",
       "sha256": "b9fd55bf69b472985c8e3c8eca7d9205158c5917a45612bd3610f19757e2b0f9",
       "renamedFrom": [],
-      "desc": "Hazard table for older notes that use Dataview (new notes use the lab-header block)"
+      "desc": "Hazard table for older notes that use Dataview (new notes use the lab-header block)",
+      "optional": true
     },
     {
       "id": "script-lab-config-json",
@@ -50,6 +52,7 @@
       "sha256": "544aea30c36e15e137f53fa5812c014c708ce2cc172bb3a27023b2159084749d",
       "renamedFrom": [],
       "desc": "Your settings for the older Dataview scripts (never overwritten)",
+      "optional": true,
       "policy": "keep"
     },
     {
@@ -61,7 +64,8 @@
       "version": "0.4.8",
       "sha256": "da107537cab58a7d8ad4653e4b7367c53a2a8d6c5a0ce1c809eb5a226f19e5ec",
       "renamedFrom": [],
-      "desc": "Header (hazards and data folder button) for older notes that use Dataview"
+      "desc": "Header (hazards and data folder button) for older notes that use Dataview",
+      "optional": true
     },
     {
       "id": "tpl-insert-snippet-md",
