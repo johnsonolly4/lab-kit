@@ -6,6 +6,12 @@ import {
   type Env, type ParsedBlock, type Value
 } from "./engine";
 import { autoInsertIndex, editRows, writeCellText } from "./rewrite";
+import { listChemicals, type Chemical } from "../chem";
+import { ChemicalSuggest } from "../chem/suggest";
+import { prop } from "../frontmatter";
+
+/** The chemical-database settings the calc tables use (the plugin's `kit` settings). */
+export interface ChemSettings { chemicalFolder?: string; mwProperty?: string }
 
 /** One rendered ```calc block. */
 export interface CalcEntry {
@@ -33,7 +39,7 @@ export class CalcRenderer {
   /** Scroll position of the note while an edit is saved: a rebuilt block can collapse for a moment and drag the page. */
   private hold: { scroller: HTMLElement; top: number; until: number } | null = null;
 
-  constructor(private plugin: Plugin) {}
+  constructor(private plugin: Plugin, private settings: () => ChemSettings = () => ({})) {}
 
   get app(): App { return this.plugin.app; }
 
@@ -64,9 +70,11 @@ export class CalcRenderer {
         if (!f) return ERR("#NOTE?", `no note called "${note}"`);
         const fm: Record<string, unknown> = app.metadataCache.getFileCache(f)?.frontmatter ?? {};
         const wanted = keys.map(k => k.toLowerCase());
+        const mine = isMW ? this.settings().mwProperty?.trim() : "";   // the user's own MW property name wins over the built-in names
+        const own = mine ? prop(fm, mine) : undefined;
         const key = Object.keys(fm).find(k => wanted.includes(k.toLowerCase()));
-        if (key == null || fm[key] == null || fm[key] === "") return ERR("#PROP?", `"${note}" has no ${isMW ? "MW" : keys[0]} property`);
-        const v = fm[key];
+        const v = own != null && own !== "" ? own : key == null ? undefined : fm[key];
+        if (v == null || v === "") return ERR("#PROP?", `"${note}" has no ${isMW ? "MW" : keys[0]} property`);
         if (typeof v === "number") return v;
         const num = parseFloat(text(v).replace(",", "."));
         return isMW ? (isNaN(num) ? ERR("#PROP?", `MW of "${note}" isn't a number`) : num) : (isNaN(num) ? text(v) : num);
@@ -279,10 +287,15 @@ export class CalcRenderer {
     const mine = { entry };
     this.editor = mine;
     input.focus({ preventScroll: true }); input.select();
+    // Typing [[ suggests the notes in the chemical folder, when one is set
+    const folder = this.settings().chemicalFolder?.trim();
+    let chemicals: Chemical[] | null = null;
+    const suggest = folder ? new ChemicalSuggest(this.app, input, () => chemicals ??= listChemicals(this.app, folder)) : null;
     let done = false;
     const finish = async (save: boolean): Promise<void> => {
       if (done) return; done = true;
       if (this.editor === mine) this.editor = null;
+      suggest?.close();
       const val = input.value.trim();
       if (save && val !== current) this.holdScroll(entry.el);
       try {
@@ -291,11 +304,17 @@ export class CalcRenderer {
       } finally { this.openPending(); this.settleScroll(); }
     };
     input.addEventListener("keydown", (e) => {
+      // With suggestions showing, Enter and Escape belong to the suggestion popup (pick / close)
+      if (suggest?.shown && (e.key === "Enter" || e.key === "Escape")) return;
       // Enter / Tab save, Escape discards; stopPropagation keeps the editor and Obsidian's hotkeys from also acting on the key
       if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); e.stopPropagation(); void finish(true); }
       if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); void finish(false); }
     });
-    input.addEventListener("blur", () => void finish(true));
+    input.addEventListener("blur", () => {
+      if (!suggest?.shown) { void finish(true); return; }
+      // Clicking a suggestion blurs the input for a moment: save only if the focus did not come back
+      window.setTimeout(() => { if (input.ownerDocument.activeElement !== input) void finish(true); }, 200);
+    });
     input.addEventListener("click", (e) => e.stopPropagation());
   }
 

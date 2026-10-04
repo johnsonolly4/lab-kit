@@ -25,8 +25,8 @@ module.exports = async function labSnippets(tp, key) {
   const noteText = () => app.workspace.activeEditor?.editor?.getValue() ?? "";
 
   const readJson = async (path) => { try { return JSON.parse(await app.vault.adapter.read(path)); } catch (e) { return null; } };
-  const saved = (await readJson(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`))?.kit?.initials
-             || (await readJson(CONFIG))?.initials;
+  const kitData = (await readJson(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`))?.kit;
+  const saved = kitData?.initials || (await readJson(CONFIG))?.initials;
   const initials = String(saved || "").trim() || "XX";
   if (!saved && ["samples", "timetable", "matrix"].includes(key)) new Notice("Set your initials in Settings → Lab Kit → Initials. Using XX for now.");
   const num = (file?.basename ?? tp.file.title).match(/^\d+/)?.[0] ?? "XXXX";
@@ -38,12 +38,43 @@ module.exports = async function labSnippets(tp, key) {
     const raw = fm.Chemicals ?? fm.chemicals ?? [];
     return (Array.isArray(raw) ? raw : [raw]).map(x => String(x).replace(/^\[\[|\]\]$/g, "").split("|")[0].trim()).filter(Boolean);
   };
+  /** The chemical notes (Settings → Lab Kit → Chemical folder) as { name, aliases } for the forms' suggestions; undefined when no folder is set. */
+  const chemList = () => {
+    const path = String(kitData?.chemicalFolder ?? "").trim().replace(/^\/+|\/+$/g, "");
+    const root = path ? app.vault.getFolderByPath(path) : null;
+    if (!root) return undefined;
+    const out = [];
+    const walk = (children) => {
+      for (const c of children ?? []) {
+        if (Array.isArray(c.children)) walk(c.children);
+        else if (c.extension === "md") {
+          const fm = app.metadataCache.getFileCache(c)?.frontmatter ?? {};
+          const key = Object.keys(fm).find(k => k.trim().toLowerCase() === "names");
+          const raw = key === undefined ? [] : [fm[key]].flat(Infinity);
+          const aliases = raw.filter(a => a != null && a !== "").map(a => String(a).trim()).filter(a => a && a.toLowerCase() !== c.basename.toLowerCase());
+          out.push({ name: c.basename, aliases });
+        }
+      }
+    };
+    walk(root.children);
+    return out.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+  };
+  const chems = chemList();
   /** Wrap in [[ ]] when a note with that name exists, so MW() and links work. */
   const link = (name) => {
     const n = String(name).replace(/^\[\[|\]\]$/g, "").trim();
     return app.metadataCache.getFirstLinkpathDest(n, file?.path ?? "") ? `[[${n}]]` : n;
   };
   const plain = (name) => String(name).replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+  /** A number from a property of the note called name (case and spacing ignored), or "" when there is no such note, property or number. */
+  const noteNumber = (name, property) => {
+    const note = app.metadataCache.getFirstLinkpathDest(plain(name), file?.path ?? "");
+    const fm = note ? app.metadataCache.getFileCache(note)?.frontmatter ?? {} : {};
+    const want = property.toLowerCase();
+    const key = Object.keys(fm).find(k => k.trim().toLowerCase() === want);
+    const n = key === undefined ? NaN : parseFloat(String(fm[key]).replace(",", "."));
+    return isNaN(n) ? "" : String(n);
+  };
   /** Table names must be unique within the note: nmr, nmr2, nmr3… */
   const taken = new Set();
   const unique = (base) => {
@@ -180,7 +211,7 @@ ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
     async solution() {
       const v = await form("Solution prep", [
         { key: "label", label: "Solution name", value: "Solution 1" },
-        { key: "reagents", label: "Reagents", hint: "comma separated · defaults to this note's Chemicals", value: chemicals().join(", "), placeholder: "e.g. reagent 1, reagent 2" },
+        { key: "reagents", label: "Reagents", hint: "comma separated · defaults to this note's Chemicals", value: chemicals().join(", "), placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
       ]);
       if (!v || !list(v.reagents).length) return "";
       const reagents = list(v.reagents).map(link);
@@ -201,8 +232,8 @@ ${calc({ name: id, title: v.label, icon: "test-tube" }, ["Reagent", "MW (g/mol)"
     async recipe() {
       const chem = chemicals();
       const v = await form("Recipe by equivalents", [
-        { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: chem.filter(c => !/dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)).join(", "), placeholder: "e.g. reagent 1, reagent 2" },
-        { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: chem.find(c => /dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)) ?? "" },
+        { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: chem.filter(c => !/dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)).join(", "), placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
+        { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: chem.find(c => /dcm|thf|toluene|water|methanol|ethanol|acetonitrile|dmf|dmso/i.test(c)) ?? "", suggest: chems },
         { key: "mmol", label: "Amount of the first reagent (mmol)", value: "" },
         { key: "total", label: "Total mass (g)", hint: "needed for the solvent row and wt%", value: "" },
       ], { intro: "Each row's amount = Eq. × the reagent named in 'Relative to'. Type a 'Set mmol' on any row to fix it directly." });
@@ -227,10 +258,10 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
 
     async raft() {
       const v = await form("RAFT recipe generator", [
-        { key: "monomers", label: "Monomer(s)", hint: "comma separated", value: "", placeholder: "e.g. monomer 1, monomer 2" },
-        { key: "cta", label: "CTA / macro-CTA", value: "", placeholder: "e.g. CTA name" },
-        { key: "init", label: "Initiator", value: "", placeholder: "e.g. initiator name" },
-        { key: "solvent", label: "Solvent", value: "", placeholder: "e.g. solvent name" },
+        { key: "monomers", label: "Monomer(s)", hint: "comma separated", value: "", placeholder: "e.g. monomer 1, monomer 2", suggest: chems },
+        { key: "cta", label: "CTA / macro-CTA", value: "", placeholder: "e.g. CTA name", suggest: chems },
+        { key: "init", label: "Initiator", value: "", placeholder: "e.g. initiator name", suggest: chems },
+        { key: "solvent", label: "Solvent", value: "", placeholder: "e.g. solvent name", suggest: chems },
         { key: "mass", label: "Total monomer mass (g)", value: "" },
         { key: "dp", label: "Target DP", value: "" },
         { key: "ratio", label: "CTA : initiator", value: "20" },
@@ -360,7 +391,8 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
     async column() {
       const v = await form("Flow column prep", [
         { key: "id", label: "Table id", hint: "other tables use e.g. column!B10 for the reactor volume", value: "column" },
-        { key: "density", label: "Solvent density (g/mL)", hint: "blank = fill in later", value: "" },
+        { key: "solvent", label: "Solvent", hint: "optional · its note's Density fills the density below", value: "", placeholder: "e.g. solvent name", suggest: chems },
+        { key: "density", label: "Solvent density (g/mL)", hint: "blank = from the solvent's note, or fill in later", value: "" },
         { key: "dead", label: "End-fitting dead volume (mL)", value: "0.21" },
         { key: "packing", label: "Packing material", hint: "blank = fill in later", value: "", placeholder: "e.g. glass beads, 100 µm" },
       ]);
@@ -368,7 +400,7 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
       return `## Column prep
 ${calc({ name: unique(v.id || "column"), title: "Column weighing", icon: "cylinder" }, ["State", "Value"], [
   ["Empty column (blanking plugs, glass wool) (g)", ""], ["Packed column (beads, plugs, glass wool) (g)", ""],
-  ["Packed + full of solvent (g)", ""], ["Solvent density (g/mL)", v.density ?? ""], ["End-fitting dead volume (mL)", v.dead ?? ""],
+  ["Packed + full of solvent (g)", ""], ["Solvent density (g/mL)", String(v.density ?? "").trim() || (v.solvent ? noteNumber(v.solvent, "Density") : "")], ["End-fitting dead volume (mL)", v.dead ?? ""],
   ["Mass of beads (g)", "=B3-B2"], ["Mass of solvent (g)", "=B4-B3"], ["Solvent volume (mL)", "=B8/B5"], ["Reactor volume (mL)", "=B9-B6"],
   ["Packing material", v.packing ?? ""]])}`;
     },

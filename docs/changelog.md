@@ -1,5 +1,10 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Chemical database**: set **Chemical folder** in Settings → Lab Kit to the folder of your chemical notes. Typing `[[` in a calc cell then suggests them (by note name, or by the names in the note's **Names** property: picking one found by a name gives `[[Note|name]]`), and the reagent, solvent, monomer, CTA and initiator fields in the Alt+S forms suggest them for the item you are typing (after the last comma). Empty folder = no suggestions, everything as before
+- **Molecular weight property**: tell `MW()` which property holds the molecular weight (Settings → Lab Kit). It is tried before the usual names (MW, Mr, Molecular weight…)
+- **Column snippet: Solvent field**: an optional solvent; if its note has a **Density**, the density row is filled in. A density you type in the form wins
+- Update the kit (Review update…) to get the new forms
 ## v0.4.9 (2026-10-04)
 - **The folder updater is gone**: the kit comes with the plugin, so a plugin update brings the new kit, and **Review update…** / **Update all safe files** install it. The "Kit updates" settings (update folder, check at start, install record) and the command **Check for updates** are removed, and releases no longer carry a kit zip. Files the folder updater installed are still recognised as unchanged
 - **First install sets things up**: the question before the first kit install has two switches, both on: **Turn on the CSS snippet**, and **Set Templater's user scripts folder** (only when Templater has none yet; a folder you set is never changed)

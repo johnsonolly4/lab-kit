@@ -1,6 +1,7 @@
 // Reads a note's Chemicals and each chemical note's H_Phrase from the metadata cache (no Dataview) and builds the hazard rows.
 import { TFile, type App } from "obsidian";
-import { cleanLink, text } from "../calc/engine";
+import { cleanLink } from "../calc/engine";
+import { prop, toList } from "../frontmatter";
 import { LEVELS, phraseLevel, severity } from "./ghs";
 
 export interface Phrase { text: string; level: number; /** GHS category, "9" when unknown. */ cat: string }
@@ -39,23 +40,6 @@ export const HAZARD_DEFAULTS: HazardOptions = {
   sortByWorstHazard: true,
   showMissing: true
 };
-
-const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();
-
-/** Frontmatter value by property name, ignoring capitals and spacing ("Exp. Class" = "exp. class"). */
-function prop(fm: Record<string, unknown> | undefined, name: string): unknown {
-  if (!fm) return undefined;
-  const want = norm(name);
-  const key = Object.keys(fm).find(k => norm(k) === want);
-  return key === undefined ? undefined : fm[key];
-}
-
-/** A property value as a flat list of non-empty strings (YAML `[[link]]` unquoted arrives as nested arrays). */
-function toList(v: unknown): string[] {
-  if (v == null || v === "") return [];
-  if (Array.isArray(v)) return v.flatMap(toList);
-  return [text(v)];
-}
 
 export function collectHazards(app: App, sourcePath: string, opts: HazardOptions = HAZARD_DEFAULTS): HazardData {
   const cache = app.metadataCache;

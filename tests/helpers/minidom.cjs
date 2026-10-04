@@ -19,7 +19,8 @@ class El {
     for(const p of parts){ set=[...new Set(set.flatMap(e=>e.all().filter(x=>x.matches(p))))]; } return set; }
   querySelector(sel){ return this.querySelectorAll(sel)[0] ?? null; }
   closest(sel){ let e=this; while(e){ if(e.matches(sel)) return e; e=e.parent; } return null; }
-  focus(){} select(){}
+  focus(){} select(){} setSelectionRange(a,b){ this.selectionStart=a; this.selectionEnd=b; }
+  get ownerDocument(){ return { activeElement: null }; }
   // Obsidian helpers
   empty(){ this.children=[]; this._text=""; }
   createEl(tag,o={}){ const e=new El(tag); if(o.cls) e.className=o.cls; if(o.text!=null) e._text=String(o.text); if(o.attr) for(const k in o.attr) e.setAttribute(k,o.attr[k]); this.appendChild(e); return e; }

@@ -71,6 +71,16 @@
 - [ ] Two tables with the same `name:` show the red "used twice" warning; refs give `#REF!`
 - [ ] Copy still works
 
+## 6b. Chemical database (needs `npm run dev`, then Review update… for the new forms)
+- [ ] Settings → Lab Kit → Lab notebook: **Chemical folder** and **Molecular weight property** are empty; typing `[[` in a calc cell suggests nothing
+- [ ] Set Chemical folder to `Chemical database/Chemicals`: typing `[[tol` in a cell shows Toluene; click one, then Enter on another: the cell is filled, not saved half-typed
+- [ ] With the popup open, **Enter** picks the highlighted suggestion (does not save the cell); **Esc** closes the popup; with it closed they save / discard as before
+- [ ] A chemical found by its **Names** entry (e.g. DTT → Dithiothreitol) inserts `[[Note|name]]` and `=MW(...)` still works
+- [ ] Set Molecular weight property to a property that exists on one note only: MW() uses it; clear it: MW() works as before
+- [ ] Alt+S **Solution prep** / **Recipe** / **RAFT**: reagent, solvent, monomer, CTA, initiator fields suggest; after a comma only the new item is replaced; Enter picks, second Enter inserts
+- [ ] **Column** snippet: type DCM as Solvent: the density row is DCM's Density; a density typed in the form wins; no solvent leaves it blank
+- [ ] Folder empty or wrong: forms and cells behave as before
+
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)
 - [ ] Change a chemical's `H_Phrase`: header redraws, no stutter

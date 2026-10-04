@@ -247,8 +247,8 @@
       "src": "Extras/scripts/templater/labForm.js",
       "role": "userScripts",
       "path": "labForm.js",
-      "version": "0.4.8",
-      "sha256": "fe8f2d14d851190f8ffeed86422f16f14e79a25f2c9a446f3b2a013f667a25be",
+      "version": "0.4.9",
+      "sha256": "796e2fba3483b8375e31c4b1dc70c795105fb36c54dc7ccb6ae6fb252296a5c1",
       "renamedFrom": [],
       "desc": "The pop-up form every snippet uses"
     },
@@ -269,8 +269,8 @@
       "src": "Extras/scripts/templater/labSnippets.js",
       "role": "userScripts",
       "path": "labSnippets.js",
-      "version": "0.4.8",
-      "sha256": "53171b57fe631b10ed85358d6fb043435827308ea9701550647ef4aebb3dd424",
+      "version": "0.4.9",
+      "sha256": "3a63416de9161f2299f31024e2eb4770b58e37a5478e0bf55c8c25a7b9a29116",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }
