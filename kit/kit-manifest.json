@@ -4,7 +4,7 @@
   "version": "0.4.7",
   "date": "2026-10-04",
   "notes": [
-    "Fixes for the Obsidian community store scan: no child_process, no !important in styles.css",
+    "Fixes for the Obsidian community store scan: no longer starts other programs, no !important in styles.css",
     "Windows opens the data folder through Obsidian (shell.openPath), like the other platforms",
     "README has a Privacy & permissions section; releases are built and attested on GitHub"
   ],
@@ -59,8 +59,8 @@
       "src": "Extras/scripts/lab-header/view.js",
       "role": "scripts",
       "path": "lab-header/view.js",
-      "version": "0.3.0",
-      "sha256": "5a0e743fcf0d2eeaa0cc7a863654e10bfc60f3476d1d88910d3b99058ae1ea06",
+      "version": "0.4.7",
+      "sha256": "da107537cab58a7d8ad4653e4b7367c53a2a8d6c5a0ce1c809eb5a226f19e5ec",
       "renamedFrom": []
     },
     {

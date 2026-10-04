@@ -7,7 +7,7 @@
 //  - optionally backs up what it replaces or deletes (off by default)
 //  - remembers what it installed, and follows files you move or rename
 import type { App, DataAdapter } from "obsidian";
-import { nodeModule } from "../node";
+import { nodeModule, type NodeFs, type NodePath } from "../node";
 import { templaterSettings } from "./obsidian-private";
 import type { ManagedState } from "./managed";
 
@@ -180,7 +180,7 @@ export async function kitApply(adapter: KitAdapter, kit: Kit, roles: Roles, item
   return { record: { version: kit.manifest.version, roles, files, installedAt: stamp }, done, backupRoot: done.backedUp ? backupRoot : null };
 }
 
-function desktopOnly(): { fs: typeof import("fs"); path: typeof import("path") } {
+function desktopOnly(): { fs: NodeFs; path: NodePath } {
   const fs = nodeModule("fs"), path = nodeModule("path");
   if (!fs || !path) throw new Error("The folder updater works in the desktop app only.");
   return { fs, path };

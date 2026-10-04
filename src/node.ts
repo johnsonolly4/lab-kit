@@ -2,10 +2,23 @@
 // where they don't exist (mobile, or mobile emulation: see `hasNode`), so no other file calls require().
 import { Platform } from "obsidian";
 
+// Hand-typed on purpose: only what we call. `typeof import("fs")` needs @types/node, which the store scan may not have.
+export interface NodeFs {
+  existsSync(path: string): boolean;
+  mkdirSync(path: string, options: { recursive: boolean }): unknown;
+  readdirSync(path: string, options: { withFileTypes: true }): { name: string; isDirectory(): boolean }[];
+  readFileSync(path: string): Uint8Array;
+  readFileSync(path: string, encoding: "utf8"): string;
+}
+export interface NodePath { join(...parts: string[]): string }
+export interface NodeCrypto {
+  createHash(algorithm: string): { update(data: Uint8Array): { digest(encoding: "hex"): string } };
+}
+
 export interface NodeModules {
-  fs: typeof import("fs");
-  path: typeof import("path");
-  crypto: typeof import("crypto");
+  fs: NodeFs;
+  path: NodePath;
+  crypto: NodeCrypto;
   electron: { shell: { openPath(path: string): Promise<string> } };
 }
 
