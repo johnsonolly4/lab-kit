@@ -145,6 +145,44 @@ describe("render", () => {
     assert.ok(second?.tds?.get("1|1")?.querySelector("input"), "second cell did not open in the rebuilt block");
   });
 
+  it("opens the clicked cell when the rebuilt block is attached to the page late", async () => {
+    let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    let processor: (s: string, el: unknown, ctx: unknown) => Promise<void> = async () => { /* set by register() */ };
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const source = "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |";
+    const el = new El("div");
+    let el2: any = null;
+    const plugin: any = {
+      app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText, on: () => ({}),
+        process: async (_f: unknown, fn: (d: string) => string) => {
+          fileText = fn(fileText);
+          Object.defineProperty(el, "isConnected", { value: false }); // the old block is gone
+          el2 = new El("div");
+          const t0 = Date.now();
+          Object.defineProperty(el2, "isConnected", { get: () => Date.now() > t0 + 120 }); // Obsidian attaches the new block a moment later
+          void processor(source, el2, ctx); // Obsidian renders the replacement a moment later
+        } } },
+      registerEvent() { /* unused */ },
+      registerMarkdownCodeBlockProcessor(_lang: string, fn: typeof processor) { processor = fn; }
+    };
+    const renderer = new CalcRenderer(plugin);
+    renderer.register();
+    const entry: CalcEntry = { el, ctx, source };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    const a = entry.tds!.get("1|0")!;
+    a.dispatch("click");
+    const input = a.querySelector("input");
+    input.value = "3";
+    entry.tds!.get("1|1")!.dispatch("mousedown");
+    input.dispatch("blur");
+    await new Promise(r => setTimeout(r, 400));
+    assert.ok(fileText.includes("| 3 | 5 |"), "edit not saved");
+    const second = [...renderer.live.get("n.md")!].find(e => e.el === el2);
+    assert.ok(second?.tds?.get("1|1")?.querySelector("input"), "second cell did not open in the rebuilt block");
+  });
+
   it("keeps the page where it was when an edited cell is saved and the block is rebuilt", async () => {
     let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
     const scroller = new El("div"); scroller.className = "cm-scroller";

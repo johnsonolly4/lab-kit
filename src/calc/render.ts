@@ -18,6 +18,8 @@ export interface CalcEntry {
   el: HTMLElement;
   ctx: MarkdownPostProcessorContext;
   source: string;
+  /** When the block was made: a block Obsidian has not attached to the page yet is kept for a few seconds, not dropped. */
+  born?: number;
   parsed?: ParsedBlock;
   grid?: boolean;
   /** Body cells of the current render, keyed `row|col`, so a click can be carried over a re-render. */
@@ -46,11 +48,12 @@ export class CalcRenderer {
   /** Registers the ```calc processor and the refresh-on-edit listener. */
   register(): void {
     this.plugin.registerMarkdownCodeBlockProcessor("calc", async (source, el, ctx) => {
-      const entry: CalcEntry = { el, ctx, source };
+      const entry: CalcEntry = { el, ctx, source, born: Date.now() };
       if (!this.live.has(ctx.sourcePath)) this.live.set(ctx.sourcePath, new Set());
       this.live.get(ctx.sourcePath)!.add(entry);
       await this.render(entry);
       this.openPending();
+      this.retryPending();
       this.restoreScroll();
     });
 
@@ -88,7 +91,7 @@ export class CalcRenderer {
     const text = known ?? await this.app.vault.cachedRead(file);
     const blocks = extractBlocks(text);
     for (const entry of [...set]) {
-      if (!entry.el.isConnected) { set.delete(entry); continue; }
+      if (!entry.el.isConnected) { if (Date.now() - (entry.born ?? 0) > 5000) set.delete(entry); continue; }   // a new block may not be attached yet
       const info = entry.ctx.getSectionInfo(entry.el);
       if (info) { const blk = blocks.find(b => b.lineStart === info.lineStart); if (blk) entry.source = blk.source; }
       if (this.editor?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
@@ -302,7 +305,7 @@ export class CalcRenderer {
       try {
         if (!save || val === current) await this.render(entry);
         else await this.refreshFile(entry.ctx.sourcePath, await this.writeCell(entry, r, c, val));
-      } finally { this.openPending(); this.settleScroll(); }
+      } finally { this.openPending(); this.retryPending(); this.settleScroll(); }
     };
     input.addEventListener("keydown", (e) => {
       // With suggestions showing, Enter and Escape belong to the suggestion popup (pick / close)
@@ -362,6 +365,11 @@ export class CalcRenderer {
     if (!entry || !td || !td.isConnected) return; // block not redrawn yet: the expiry timer clears it
     this.clearPending();
     this.editCell(entry, p.r, p.c, td, entry.parsed?.cells[p.r]?.[p.c]?.raw ?? "");
+  }
+
+  /** A rebuilt block is not on screen yet when its processor finishes (Obsidian attaches it a moment later): try again for a short while. */
+  private retryPending(): void {
+    for (const ms of [30, 100, 250, 500, 900, 1500]) window.setTimeout(() => { if (this.pending) this.openPending(); }, ms);
   }
 
   private setPending(entry: CalcEntry, r: number, c: number): void {
