@@ -25,9 +25,11 @@ export interface KitData {
   chemicalFolder: string;
   /** Property of a chemical note that holds its molecular weight, tried before the built-in names. Empty = built-in names only. */
   mwProperty: string;
+  /** Vault folder of analysis method notes (and, linked from them, machine notes), read by the Alt+S snippets. Empty = only the built-in NMR, GPC and DLS. */
+  methodsFolder: string;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "", mwProperty: "" };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "", mwProperty: "", methodsFolder: "" };
 
 const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {

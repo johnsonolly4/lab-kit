@@ -10,7 +10,8 @@
      ], { intro: "Optional line of help text" });
      if (v) { ... }            // null if cancelled
 
-   Field types: "text" (default) | "number" | "textarea" | "toggle"
+   Field types: "text" (default) | "number" | "textarea" | "toggle" | "select"
+   A select field has  options: [{ value, label }]  and a value (default: the first).
    A text field may have  suggest: [{ name, aliases }]  : typing suggests those
    names (note name or alias) for the item after the last comma.
    Keys: Enter = insert (Ctrl+Enter inside a textarea), Esc = cancel
@@ -69,6 +70,14 @@ function labForm(tp, title, fields, opts = {}) {
           if (f.type === "toggle") {
             this.values[f.key] = !!f.value;
             row.addToggle((t) => t.setValue(!!f.value).onChange((v) => { this.values[f.key] = v; }));
+            continue;
+          }
+          if (f.type === "select") {
+            this.values[f.key] = String(f.value ?? f.options?.[0]?.value ?? "");
+            row.addDropdown((d) => {
+              for (const o of f.options ?? []) d.addOption(String(o.value), String(o.label ?? o.value));
+              d.setValue(this.values[f.key]).onChange((v) => { this.values[f.key] = v; });
+            });
             continue;
           }
           this.values[f.key] = String(f.value ?? "");

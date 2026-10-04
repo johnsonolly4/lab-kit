@@ -22,6 +22,7 @@ const DESC = {
   ".obsidian/snippets/scrolling-mermaid.css": "Lets wide Mermaid diagrams scroll sideways inside a note",
   "Extras/scripts/excel_to_calc.py": "Command-line tool that turns an Excel file into calc tables",
   "Extras/scripts/templater/labForm.js": "The pop-up form every snippet uses",
+  "Extras/scripts/templater/labMethods.js": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)",
   "Extras/scripts/templater/labPick.js": "The searchable snippet menu with icons",
   "Extras/scripts/templater/labSnippets.js": "The code behind every snippet",
   "Templates/Insert snippet.md": "The Alt+S menu: lists the snippets and inserts the one you pick",

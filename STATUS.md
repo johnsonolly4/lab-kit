@@ -1,14 +1,23 @@
 # Status
 
 **Version:** 0.4.9 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
-**Now:** PR 23 is **merged into `main`** (2026-10-04): chemical database + `[[` suggestions, empty Solution prep / Recipe forms, steadier page hold, flush calc tables, one-click cell moves, Set up button for Templater (user scripts folder, template folder only when empty, Insert snippet hotkey), Tick all in the review window, wide settings boxes with folder suggestions, backup copies ignored by the kit's folder detection. The user tested these in Obsidian and says they work. All of it is in changelog "Unreleased"; 0.4.9 is still the released version.
-**Next:** the user decides when to release (`/release`; version 0.5.0 or 0.4.10: only the user decides). Then: Analysis methods (BACKLOG, "Decided"), the "Make my own copy" snippet idea and per-snippet script files (BACKLOG), and a feedback round (`/feedback`). Lab Kit is listed in the community store, so a release reaches users through Obsidian.
+**Now:** Analysis methods are committed on branch `feat/analysis-methods` and a PR is open (2026-10-04, 206 tests pass, lint 0 errors, nothing seen in Obsidian): Methods folder setting, method notes + machine notes, new Alt+S **Analysis table**, per-method toggles in Sample list / Timetable, Combined results over any methods. PR 23 and PR 25 are merged into `main`. Everything is in changelog "Unreleased"; 0.4.9 is still the released version.
+**Next:** the user tries Analysis methods in Obsidian (checklist 6c, BACKLOG "Not yet tested") and merges the PR. Then: release (`/release`; 0.5.0 or 0.4.10: only the user decides), the "Make my own copy" snippet idea and per-snippet script files (BACKLOG), Solution prep vs Recipe and the sample workflow (BACKLOG "Decisions needed"), a feedback round (`/feedback`).
 **Blockers / open questions:**
 - Local `dist/` still holds old kit packages (0.3.0, 0.4.6, zips) from the removed `npm run package`; still gitignored. Safe to delete when you like
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`): the v0.3 plain-JS source exists only on this machine. User keeps a copy or deletes it
 - Still to discuss: Solution prep vs Recipe (walk through a real experiment) and the sample creation workflow (BACKLOG, "Decisions needed")
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG, "Repo / release")
 - Git identity: commits now use the global `~/.gitconfig` noreply address (set 2026-10-04 after a push was refused for the private email)
+
+## Latest (2026-10-04): Analysis methods as notes
+- User chose: columns as a property list, machines prefill defaults, Combined results keeps fall-through over tables of one method
+- New `kit/Extras/scripts/templater/labMethods.js` (`parseMethod`, `loadMethods`, `planColumns`, `buildRows`; built-in NMR/GPC/DLS descriptors), `labForm.js` `select` field, `labSnippets.js` `methodTable` / `runMethod` / `resultsTable` (columns found by header name) replace `nmrTable` / `gpcTable` / `dlsTable`; keys `nmr` / `gpc` / `dls` unchanged, new key `method` + file `Templates/Snippets/14 Analysis table.md`
+- Settings: `methodsFolder` (`src/kit/paths.ts`, `src/kit/ui.ts`). Docs: tutorial 6.1, changelog, checklist 6c, CLAUDE.md map. Manifest regenerated
+- Tests: new `tests/methods.test.ts`; the three old snippet tests pass with the same assertions (only `tp.user.labMethods` added to their mocks); `tests/kit-picker.test.ts` counts 13 → 14 snippets. 199 tests, lint 0 errors, build ok
+- Methods folder is created when it is missing: `src/kit/ensure-folder.ts` (used on the box's `change` event in `src/kit/ui.ts`, test `tests/ensure-folder.test.ts`). Example notes in `test-vault/Methods/` (gitignored); data.json of the dev vault not touched: type `Methods` in the setting to try it
+- Alt+S lists the Methods folder's notes by itself (user chose this over a refresh button that writes files): `Insert snippet.md` asks `labMethods().menuEntries(app)` and runs `labSnippets(tp, "method:<key>")`; test in `tests/methods.test.ts` runs the real template with mocks
+- Left over and unseen in Obsidian: see BACKLOG "Not yet tested" (first item)
 
 ## Latest (2026-10-04, after PR 23): Dataview-era files removed
 - **Dataview-era kit files deleted** (user asked: nothing uses them): `hazards/view.js`, `lab-header/view.js`, `lab-config.json` removed from `kit/` (ids retired in the manifest; copies in a vault show as Retired and are never deleted); `lab-config.json` initials fallback removed from `labSnippets.js`; scripts-folder detection now looks for `excel_to_calc.py`. `excel_to_calc.py` stays, optional (Use toggle). Branch `feat/optional-legacy-files`, PR 25. The user also asked: scripts may live in any non-hidden folder; Templater's template folder is left as is (Set up only fills an empty one)

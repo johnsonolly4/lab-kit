@@ -62,7 +62,8 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **NMR samples** | NMR submissions | Sample · solvent · method · conversion · dataset · checklist · tags the note `NMR` |
 | **GPC samples** | GPC | Sample · eluent · Mn · Mw · Đ (calculated) · tags `GPC` |
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
-| **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI |
+| **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
+| **Analysis table** | Any other method | Pick a method (NMR, GPC, DLS or a note in your Methods folder), then its sample table, machine and checklist |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
 | **Blank calc table** | Anything else | Your own columns |
@@ -214,6 +215,7 @@ flowchart LR
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
 | Your chemical notes | Settings → Lab Kit → Chemical folder (empty = no suggestions). Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts |
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
+| Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
 | A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`) |
@@ -223,6 +225,51 @@ flowchart LR
 
 > [!tip] Icons
 > Browse [lucide.dev](https://lucide.dev/icons) and use the icon's name, e.g. `flask-round`, `test-tube`, `beaker`, `atom`, `droplets`. A comma-separated list tries each name in turn.
+
+### 6.1 Analysis methods and machines
+One note per method in your **Methods folder** (Settings → Lab Kit), for example `Mass spec.md`:
+
+```yaml
+---
+Columns:
+  - Sample
+  - "Ionisation: ESI"
+  - Expected m/z
+  - Found m/z
+  - 'Error (ppm): =IFERROR(({Found m/z}-{Expected m/z})/{Expected m/z}*1000000, "")'
+  - Notes
+Results:
+  - Found m/z
+  - Error (ppm)
+Machines:
+  - "[[Machine A]]"
+  - "[[Machine B]]"
+Default machine: "[[Machine A]]"
+---
+```
+
+and one note per machine (`Machine B.md`), whose properties fill the columns of the same name:
+
+```yaml
+---
+Ionisation: APCI
+---
+```
+
+| Property of the method note | Meaning |
+|---|---|
+| **Columns** | One item per column. `Name` is an empty column, `Name: text` has that default, `Name: =formula` is a formula (`{Other column}` = that column in the same row), `Name: {n}` numbers the rows. The first column holds the sample code (or the one named in **Sample column**) |
+| **Results** | Columns that **Combined results** pulls in, by sample code |
+| **Machines**, **Default machine** | Links to machine notes. The table gets a **Machine** column and the form a dropdown; a field left at the default machine's value follows the machine you pick |
+| **Title**, **Icon**, **Tag**, **Checklist** | Heading and table title (default *Name samples*), Lucide icon, tag added to the note, checklist lines (default Submitted / Results processed / Results saved) |
+| **Dataset folder** | `true` adds a *Dataset:* line and form field, like NMR |
+
+> [!note] Good to know
+> - Property names ignore case and spacing. Edit the properties in Obsidian's Properties view, or quote items that contain `:`, `#` or `{`.
+> - Every method note appears in the Alt+S menu on its own (as *Name samples*, with its **Icon**), after the numbered snippets. A new or edited note shows up the next time you open the menu.
+> - A note without **Columns** in the folder is ignored (a README is fine).
+> - NMR, GPC and DLS are always there; a note called `GPC` replaces the built-in one entirely.
+> - The tables are named after the method (`mass_spec`, `mass_spec2`…). Changing a method note later does not change tables already in a note.
 
 ---
 

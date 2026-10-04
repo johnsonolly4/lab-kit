@@ -6,6 +6,7 @@ import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
 
 const table = (name: string, codes: string[]) =>
   "```calc\nname: " + name + "\n| Code | Description | Notes |\n|---|---|---|\n" + codes.map(c => `| ${c} |  |  |`).join("\n") + "\n```\n";
@@ -26,6 +27,7 @@ function harness(initial: string) {
       file: { title: "0001 - Test" },
       date: { now: () => "2026_10_03" },
       user: {
+        labMethods,
         labForm: async (_tp: unknown, _t: string, fields: any[]) => {
           const v: Record<string, unknown> = {};
           for (const f of fields) if (f.key) v[f.key] = f.key in overrides ? overrides[f.key] : (f.type === "toggle" ? !!f.value : String(f.value ?? ""));

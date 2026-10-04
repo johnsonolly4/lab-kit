@@ -14,6 +14,7 @@ Listed in the Obsidian community plugin store (since 2026-10-04); every release 
 - `src/kit/`: built-in kit (managed files, merge, merge window, settings tab; `paths.ts` = folders + saved state)
 - `src/node.ts`: the only `require()` (Node/Electron modules, null on mobile) · `src/platform.ts`: `hasNode()` · `src/whatsnew.ts`: What's new popup
 - `kit/`: vault files the built-in kit installs (`Templates/`, `Extras/scripts/`), embedded in `main.js` at build
+  - `kit/Extras/scripts/templater/`: Templater scripts: `labSnippets.js` (every snippet), `labMethods.js` (analysis methods + machines from the Methods folder; NMR/GPC/DLS built in), `labForm.js` (pop-up forms), `labPick.js` (Alt+S menu)
 - `docs/`: `tutorial.md`, `changelog.md`, `obsidian-test-checklist.md`, `reference/` (saved Obsidian docs: read these, don't fetch)
 - `tests/`: vitest; `tests/fixtures/` holds real experiment tables
 - `scripts/`: `kit-manifest.mjs` regenerates `kit/kit-manifest.json` · `embed-kit.mjs` embeds the kit in `main.js`
