@@ -45,6 +45,8 @@
   width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
 }
 .lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; padding: 2px 4px; }
+/* Chemical suggestions: the matched alias, after the note name */
+.lab-kit-suggest-alias { margin-left: 0.6em; color: var(--text-muted); font-size: 0.85em; }
 
 /* A1 grid labels. The header row needs (0,3,1) to beat ".markdown-rendered thead tr > th:nth-child(2n+2)" (0,2,3) */
 .lab-kit .lab-kit-scroll .lab-kit-grid-row th,

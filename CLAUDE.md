@@ -9,6 +9,7 @@ Goal: publish to the Obsidian community plugin store.
 ## Map
 - `src/main.ts`: plugin entry, registers features
 - `src/calc/`: formula engine (parse, evaluate, rewrite refs) + table renderer
+- `src/chem/`: chemical database (notes in the user's folder, matching, `[[` suggest popup for calc cells; `src/frontmatter.ts` = shared property readers)
 - `src/header/`: hazard table + data-folder button (replaces the Dataview scripts)
 - `src/kit/`: built-in kit (managed files, merge, merge window, settings tab; `paths.ts` = folders + saved state)
 - `src/node.ts`: the only `require()` (Node/Electron modules, null on mobile) · `src/platform.ts`: `hasNode()` · `src/whatsnew.ts`: What's new popup

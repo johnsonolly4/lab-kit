@@ -21,9 +21,13 @@ export interface KitData {
   /** Show a notice at startup when the plugin brings a newer kit. */
   notifyKitUpdate: boolean;
   debug: boolean;
+  /** Vault folder of chemical notes (autocomplete in calc cells and forms). Empty = no chemical database. */
+  chemicalFolder: string;
+  /** Property of a chemical note that holds its molecular weight, tried before the built-in names. Empty = built-in names only. */
+  mwProperty: string;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, notifyKitUpdate: true, debug: false };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "", mwProperty: "" };
 
 const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {

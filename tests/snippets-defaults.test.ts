@@ -93,3 +93,57 @@ describe("empty defaults", () => {
     assert.ok(/^Dataset: *$/m.test(md2) && !md2.includes("Monty"), md2);
   });
 });
+
+describe("chemical folder suggestions", () => {
+  const FOLDER = { children: [
+    { path: "Chem/Toluene.md", basename: "Toluene", extension: "md" },
+    { path: "Chem/Sub", children: [{ path: "Chem/Sub/DTT.md", basename: "DTT", extension: "md" }] },
+    { path: "Chem/scan.pdf", basename: "scan", extension: "pdf" },
+  ] };
+  const withFolder = (h: ReturnType<typeof harness>) => {
+    const app = (globalThis as any).app;
+    app.vault.getFolderByPath = (p: string) => p === "Chem" ? FOLDER : null;
+    app.metadataCache.getFileCache = (f: any) => ({ frontmatter: f.basename === "DTT" ? { Names: ["DTT", "Dithiothreitol"] } : {} });
+    return h;
+  };
+  const suggestKeys = (h: ReturnType<typeof harness>, key: string) => h.fields[key].filter(f => f.suggest).map(f => f.key);
+
+  it("reagent, solvent, monomer, CTA and initiator fields get the notes of the folder, with their aliases", async () => {
+    const h = withFolder(harness({ [DATA]: JSON.stringify({ kit: { chemicalFolder: "/Chem/" } }) }));
+    for (const key of ["solution", "recipe", "raft"]) await h.run(key);
+    assert.deepStrictEqual(suggestKeys(h, "solution"), ["reagents"]);
+    assert.deepStrictEqual(suggestKeys(h, "recipe"), ["reagents", "solvent"]);
+    assert.deepStrictEqual(suggestKeys(h, "raft"), ["monomers", "cta", "init", "solvent"]);
+    assert.deepStrictEqual(h.fields.solution.find(f => f.key === "reagents").suggest, [{ name: "DTT", aliases: ["Dithiothreitol"] }, { name: "Toluene", aliases: [] }]);
+  });
+
+  it("no folder set, or a folder that does not exist: no suggestions, forms as before", async () => {
+    for (const data of [{}, { chemicalFolder: "Nope" }]) {
+      const h = withFolder(harness({ [DATA]: JSON.stringify({ kit: data }) }));
+      for (const key of ["solution", "recipe", "raft"]) await h.run(key);
+      for (const key of ["solution", "recipe", "raft"]) assert.deepStrictEqual(suggestKeys(h, key), [], key);
+    }
+  });
+});
+
+describe("column density from the solvent's note", () => {
+  const setup = (fm: Record<string, unknown>) => {
+    const h = harness({});
+    const app = (globalThis as any).app;
+    app.metadataCache.getFirstLinkpathDest = (n: string) => n === "DCM" ? { path: "Chem/DCM.md" } : null;
+    app.metadataCache.getFileCache = (f: any) => ({ frontmatter: f.path === "Chem/DCM.md" ? fm : {} });
+    return h;
+  };
+  const density = (md: string) => md.match(/\| Solvent density \(g\/mL\) \| (.*?) \|/)![1];
+
+  it("fills the density row from the note's Density (a link or a comma decimal works)", async () => {
+    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "DCM" })), "1.325");
+    assert.strictEqual(density(await setup({ density: "1,325" }).run("column", { solvent: "[[DCM]]" })), "1.325");
+  });
+  it("a density typed in the form wins; no solvent, an unknown solvent or an empty Density leave it blank", async () => {
+    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "DCM", density: "0.9" })), "0.9");
+    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "" })), "");
+    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "Nope" })), "");
+    assert.strictEqual(density(await setup({ Density: null }).run("column", { solvent: "DCM" })), "");
+  });
+});

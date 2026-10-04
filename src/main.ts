@@ -13,7 +13,7 @@ export default class LabKitPlugin extends Plugin {
   async onload(): Promise<void> {
     const store = new HeaderStore(this);
     await store.load();
-    this.calc = new CalcRenderer(this);
+    this.calc = new CalcRenderer(this, () => this.kit.kit);
     this.header = new HeaderRenderer(this, store);
     this.kit = new KitController(this, store);
     await this.kit.load();
