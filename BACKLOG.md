@@ -16,27 +16,27 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03) plus later sessions. Open
 - [ ] Manage kit files: sort so files that need action come first (`KitFilesModal`, `src/kit/managed-ui.ts:196`)
 - [ ] Calc cell: Enter saves and starts editing the cell below (`src/calc/render.ts`)
 - [ ] Copy: review where "copied as one column" is used; the user more often wants the whole table (`src/calc/render.ts`)
-- [ ] Checklist wording (`docs/obsidian-test-checklist.md`, and the `test-vault/` copy): step 0 Templater item is unclear (give exact steps); step 2 says "three folder boxes" (line 20), there are four (templates, scripts, backups, snippets); step 5 needs a first line on how to bind Alt+S (Templater → Template hotkeys → `Templates/Insert snippet.md`, then Hotkeys → Alt+S). Check `docs/tutorial.md` section 2 says it too
+- [ ] Checklist wording (`docs/obsidian-test-checklist.md`, and the `test-vault/` copy): step 0 Templater item is unclear (give exact steps); step 2 says "three folder boxes" (line 20), there are four (templates, scripts, backups, snippets); step 5 needs a first line on how to bind Alt+S (Templater → Template hotkeys → `Templates/Insert snippet.md`, then Hotkeys → Alt+S). The tutorial now says it (section 2, "One-time setup for Alt+S"): check the exact wording of the hotkey name in a real Templater install
+
+## Decided (decisions round, 2026-10-04): to build
+Order after the store submission: **Kit picker → Chemical database → Analysis methods**. Each is its own version; plan mode first.
+- [ ] **Duplicate sample codes: continue the letters.** A second sample list / timetable in the same note starts at the next free letter (scan the note's tables); the codes stay editable in the form (`labSnippets.js` `codesFrom` / `calcTables`)
+- [ ] **Backups hidden in the plugin folder**: default Backup folder becomes `.obsidian/plugins/lab-kit/backups` (out of the file tree, still on disk). Today's default: `src/kit/updater.ts:101` (`kitDetectRoles`). A Backup folder the user set stays. Scripts folder stays visible (Templater can't use a dot folder)
+- [ ] **Drop the "Kit notes" location** (role `docs`, no kit file uses it since 0.4.6): `src/kit/updater.ts:94,100` and its settings row. Empty body cells at 2em tall: user "not sure", keep for now
+- [ ] **1. Kit picker** in Manage kit files: each kit file gets a "Use" on/off toggle and a short description; off = not installed and not in the Alt+S menu (`src/kit/managed-ui.ts`). Pictures in the README later. Same version: **vault layout**: kit templates go in `<Templater templates folder>/Lab Kit/`, kit scripts in a `lab-kit` subfolder of Templater's user scripts folder. Only the defaults for new vaults change; the kit keeps following Templater's settings (`src/kit/updater.ts:98-99`) and never moves existing files. Check first that Templater loads user scripts from a subfolder
+- [ ] **2. Chemical database**, together with **autocomplete**: the database is a vault folder of chemical notes (the user shares their setup and chemical note template, no personal data). Settings hold only the folder path and the MW property name (theirs: "Molecular weight"); not managed through the settings menu. Autocomplete: `[[link]]` suggestions in calc cells, form fields (reagents, solvents) suggest notes from the folder, a solvent's density comes from its note
+- [ ] **3. Analysis methods as vault notes** (one big feature, includes Combined results): a Methods folder with one note per method (NMR, GPC, DLS, …; properties: columns, machines, default machine, calibrant for GPC) **plus one note per machine**, linked from the method. Settings hold only the folder path. Snippets read them; **Combined results** takes any mix of methods and more than one table per method
+- [ ] **Preview pane** beside the forms (toggle in settings): later, after the store submission
+- SDS PDFs → chemical notes: a **separate Python project, not part of Lab Kit** (user's choice). Starter prompt given in the reply of the 2026-10-04 decisions session
+- Dropped: Retired files "build kit file from related?" (user: drop the question)
 
 ## Decisions needed (ask the user, multiple choice)
-- [ ] **Duplicate sample codes**: a second sampling timetable / sample list in the same note starts again at the default letters, giving two sets of the same names. Scan the note's tables and continue the lettering? Warn? Option in settings? (`labSnippets.js` `codesFrom` / `calcTables`)
-- [ ] **Kit-created folders clutter the file tree** (Backups, kit files; clashes with Notebook Navigator). Options: backups under `.obsidian/plugins/lab-kit/` (hidden from the vault), hide via a CSS snippet, or leave. Scripts folder can't be a dot folder (Templater)
-- [ ] **Autocomplete**: `[[link]]` suggestions while typing in a calc cell; form fields (reagents, solvents) that suggest notes of the right type; pull a solvent's density from its note. Belongs with "Chemical database" below
-- [ ] **Choose which kit items are used** (many by default, not all useful) and show a picture + description of each in the repo / Manage files. Belongs with "Streamline vault layout"
-- [ ] **Retired files: "build kit file from related"?** (the user's question, meaning unclear: create a new kit file from an existing one?)
-- [ ] "Kit notes" install location (role `docs`: setup / demo notes, `kit/kit-manifest.json`): still needed, or drop it? Empty body cells at 2em tall: user "not sure", keep for now
-- [ ] **Solution prep vs Recipe by equivalents**: merge into one reagent table with per-row target modes, or keep both? (User wants to discuss. Look at how ELNs do it first: eLabFTW, Chemotion, SciNote, Benchling stoichiometry tables.)
-- [ ] **Solution prep details**: mmol/mol toggle (mmol default); target by mmol/mol, mass or concentration; added usually in g, sometimes mL; solvent row
-- [ ] **Analysis methods in settings**: user-defined methods (NMR, GPC, DLS, …) each with columns, machines (with a default), calibrant (GPC); these drive the snippets and the combined results table
-- [ ] **Combined results**: any combination of methods; more than one table per method (dropdown or tickboxes + free text)
-- [ ] **Chemical database**: folder chosen in settings; forms autocomplete from it; MW property name set in settings (theirs is "Molecular weight"); default chemical note template (the user has one)
-- [ ] **Faster chemical pages**: parse SDS PDFs (Python script or plugin) into chemical notes
-- [ ] **Preview pane** beside the forms (toggle in settings)
-- [ ] **Sample creation workflow**: to discuss
-- [ ] **Streamline vault layout**: the user's files are scattered under `Extras/`; propose one kit folder
+- [ ] **Solution prep vs Recipe by equivalents**: user wants to **discuss more first** (2026-10-04), walking through one of their real experiments. Option on the table: one ELN-style reagent table (reference row, "Target by" per row: eq / mmol / g / mL / M, optional solvent row) with "Solution prep" and "Recipe" kept as two starting setups in the Alt+S menu. Snippets today: `labSnippets.js:170` (solution), `:191` (recipe)
+- [ ] **Solution prep details** (part of the item above): mmol/mol toggle (mmol default); target by mmol/mol, mass or concentration; added usually in g, sometimes mL; solvent row
+- [ ] **Sample creation workflow**: its own session, with a real example (no details yet)
 
 ## Repo / release
-- [ ] Leftover "Lab Calc" wording after the id migration (decide per item): `docs/tutorial.md` (lines 191, 239), `kit/Extras/scripts/excel_to_calc.py` (lines 6, 40, 93, 145: the plugin is now "Lab Kit"), `styles.css` header comment (line 1). Keep: changelog history lines and the old-plugin check in `kit/install-updater.ps1:48` / `.sh:69`
+- [ ] Leftover "Lab Calc" wording after the id migration (decide per item): `kit/Extras/scripts/excel_to_calc.py` (lines 6, 40, 93, 145: the plugin is now "Lab Kit"), `styles.css` header comment (line 1). Keep: changelog history lines and the old-plugin check in `kit/install-updater.ps1:48` / `.sh:69`
 - [ ] `legacy/main.js` (git-ignored, never committed, old `lab-calc` classes): the user keeps a safe copy or deletes it
 - [ ] `ui/sentence-case` ×4 lint warnings, **user chose to leave them** (the rule misreads proper nouns: wants 'lab kit', 'templater'): `kit/datafolder.ts:11`, `kit/ui.ts:50,96`, `whatsnew.ts:27`. Revisit if the store review bot complains
 - [ ] Optional later: move simple settings rows (toggles, dropdown, plain texts) to `control` entries with `getControlValue` / `setControlValue` overrides mapping onto `kit` / `header`. Not done: `control` rows can't take the `lab-kit-wide-input` class and `data.json` keys stay nested
@@ -48,7 +48,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03) plus later sessions. Open
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] **Community store submission checklist** (process in `docs/reference/plugin-guidelines.md`, "Store submission"):
   - Already fine: public repo, `LICENSE` (MIT), README, unique id `lab-kit`, description has no "Obsidian" / "This plugin", `npm run lint` 0 errors, no production vulnerabilities, release workflow with attestations (`.github/workflows/release.yml`, first run 0.4.7), `versions.json` maps 0.4.6 / 0.4.7 to `1.13.0`
-  - [ ] **`/release 0.4.8`, then re-scan** at community.obsidian.md: PR 17 (merged) should clear the `child_process` warning (`grep -c child_process main.js` = 0), `no-unsafe-*` and "unnecessary assertion" (checked locally without `@types/node`). "Build output does not match" depends on an identical build (`npm ci`, pinned `obsidian@1.13.1`); if it still differs, compare the released `main.js` with a fresh `npm ci && npm run build`. If the scan flags anything, paste it
+  - [ ] **Re-scan 0.4.8** at community.obsidian.md (0.4.8 released 2026-10-04): PR 17 (merged) should clear the `child_process` warning (`grep -c child_process main.js` = 0), `no-unsafe-*` and "unnecessary assertion" (checked locally without `@types/node`). "Build output does not match" depends on an identical build (`npm ci`, pinned `obsidian@1.13.1`); if it still differs, compare the released `main.js` with a fresh `npm ci && npm run build`. If the scan flags anything, paste it
   - [ ] `gh attestation verify main.js --repo johnsonolly4/lab-kit` on a downloaded release file (not run yet)
   - [ ] Workflow warnings: Node 20 deprecation for `checkout@v4` / `setup-node@v4` / attest actions, and `ubuntu-latest` becomes Ubuntu 26 on 2026-10-19 (pin `ubuntu-24.04` if the build changes). Actions are pinned by major tag, not commit SHA: pin to SHAs if the scan or a policy asks (`.github/workflows/release.yml`)
   - [ ] Windows: does the Explorer window come to the front with `shell.openPath` (`src/kit/datafolder.ts:14`)? Not tested. If not, revert the commit "Open the data folder with Electron's shell.openPath on Windows too"
@@ -64,6 +64,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03) plus later sessions. Open
   - [ ] Check the "Not yet tested" list below inside Obsidian. Ordered walkthrough: `docs/obsidian-test-checklist.md`
   - [ ] Never run on a phone or tablet: open the plugin in Obsidian mobile once to confirm it loads, calc tables render and the header shows "Data folder: desktop only" (`src/header/render.ts:62`). Mobile emulation on desktop was checked; the README "Mobile" section is written from the code
   - [ ] Optional `authorUrl` / `fundingUrl` in `manifest.json` (not added; ask first)
+  - [ ] Tutorial and README were brought up to 0.4.8 on 2026-10-04 (no screenshots; the Alt+S setup steps and the Templater hotkey name were written from the code, not tried in Obsidian)
   - [ ] README: replace "Not in the community store yet" install section after listing; add a screenshot or two. Reword `docs/tutorial.md` section 7 ("once in the store…") too
   - [ ] Plugin name `Lab Kit` / description: check they are unique in the directory
   - [ ] Submit at https://community.obsidian.md (Obsidian account, link GitHub, add plugin), then fix whatever the automated review reports with a new release
