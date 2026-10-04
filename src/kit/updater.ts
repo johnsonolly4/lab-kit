@@ -91,14 +91,12 @@ export function kitDetectRoles(app: App, record: KitRecord | null, manifest?: Ki
                     ?? find("lab-config.json");
   const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "Extras/scripts");
   const menu = find("Insert snippet.md");
-  const docsFound = find("Lab notebook kit - changelog.md");
   const roles: Roles = {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
     userScripts: tpl.user_scripts_folder || remembered.userScripts || kitJoin(scripts, "templater"),
     templates: tpl.templates_folder || remembered.templates || (menu ? menu.parent!.path : "Templates"),
-    docs: remembered.docs ?? (docsFound ? docsFound.parent!.path : "Extras/Lab notebook kit"),
-    backups: remembered.backups ?? kitJoin(kitParent(scripts) || "Extras", "kit-backups"),
+    backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
   };
   for (const [k, v] of Object.entries(manifest?.roles ?? {})) if (!(k in roles)) roles[k] = remembered[k] ?? v.default ?? k;
   return roles;

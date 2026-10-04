@@ -28,7 +28,7 @@
 - [ ] Opens from Settings and from the command palette
 - [ ] Badges readable (colours OK)
 - [ ] Install / Update / Recreate works on one file
-- [ ] Edit a template → **Restore kit original** (confirm, backup lands in the Backup folder)
+- [ ] Edit a template → **Restore kit original** (confirm, backup lands in the Backup folder, by default `.obsidian/plugins/lab-kit/backups/<date>/…`, not visible in the file list)
 - [ ] Detach, then Re-attach
 - [ ] CSS snippet switch really turns `scrolling-mermaid` on and off
 
@@ -48,6 +48,7 @@
 - [ ] Forms start empty with placeholders; submitting an untouched form inserts nothing
 - [ ] RAFT with **3 monomers**: mol column sums right, Mn looks sane
 - [ ] Sample list form: toggle heading reads "Also add (appended below)"
+- [ ] Second **Sample list** in the same note starts at the next letter (A–F, then G…); second **Sampling timetable** defaults to the next letter; a timetable after a sample list still starts at A
 - [ ] Column snippet has "Packing material"; residence time is in an info callout
 - [ ] Two tables `samples` and `samples2`: codes from both are found
 - [ ] Two tables both named `samples`: note what the snippet does (just report it)

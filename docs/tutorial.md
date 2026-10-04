@@ -251,7 +251,7 @@ The update window shows:
 2. **Changes**: new · replaced · *edited by you* (kept unless you tick *overwrite*) · removed · kept · unchanged
 3. **Options**: set Templater's user script folder, turn on new CSS snippets
 
-Then **Install**. `lab-config.json` is never overwritten. If you want copies of the files an update replaces, turn on **Back up replaced files** (in the update window or Settings → Lab Kit); they then go to `Extras/kit-backups/<date> before vX/`.
+Then **Install**. `lab-config.json` is never overwritten. If you want copies of the files an update replaces, turn on **Back up replaced files** (in the update window or Settings → Lab Kit); they then go to the Backup folder (by default inside the plugin folder, `.obsidian/plugins/lab-kit/backups`), in a folder named `<date> before vX`.
 
 > [!tip] Moving kit files
 > Move or rename kit files **inside Obsidian** and the updater follows them. If you move things in File Explorer instead, use **Settings → Lab Kit → Forget install record** and the next update re-detects everything.

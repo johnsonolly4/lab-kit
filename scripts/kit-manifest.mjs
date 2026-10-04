@@ -7,7 +7,7 @@ import { join, relative, sep } from "path";
 import { sha256 } from "./embed-kit.mjs";
 
 const KIT = "kit";
-const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", scripts: "script", userScripts: "script", docs: "script" };
+const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", scripts: "script", userScripts: "script" };
 const PREFIX = { snippet: "snip", template: "tpl", script: "script" };
 const ROLE_BY_PREFIX = [
   [".obsidian/snippets/", "cssSnippets"],
@@ -51,8 +51,9 @@ const files = walk(KIT)
   .filter((rel) => !SKIP.has(rel))
   .map((rel) => {
     const hit = roleOf(rel);
-    const role = hit ? hit[1] : "docs";
-    const path = hit ? rel.slice(hit[0].length) : rel;
+    if (!hit) throw new Error(`kit/${rel}: not under a known kit folder (see ROLE_BY_PREFIX)`);
+    const role = hit[1];
+    const path = rel.slice(hit[0].length);
     const kind = KIND_BY_ROLE[role];
     const oldSrc = oldSrcOf.get(rel);
     const prev = previous.get(rel) ?? (oldSrc ? previous.get(oldSrc) : undefined);

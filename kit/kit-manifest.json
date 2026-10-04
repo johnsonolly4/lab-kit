@@ -238,8 +238,8 @@
       "src": "Extras/scripts/templater/labSnippets.js",
       "role": "userScripts",
       "path": "labSnippets.js",
-      "version": "0.3.0",
-      "sha256": "649e19bc674700f4c5a8e252d50b28e7f0baef87aecac772c9d0d6d7bb36a378",
+      "version": "0.4.8",
+      "sha256": "0ad7e0a60c78a217246b7eb78ef460f1542f9517e84ab9a776e1a64c543e913d",
       "renamedFrom": []
     }
   ],
@@ -287,18 +287,6 @@
     {
       "role": "scripts",
       "path": "data-roots.json"
-    },
-    {
-      "role": "docs",
-      "path": "Lab notebook kit - update to v0.2.md"
-    },
-    {
-      "role": "docs",
-      "path": "Lab notebook kit - setup.md"
-    },
-    {
-      "role": "docs",
-      "path": "Calc demo.md"
     }
   ],
   "templater": {
