@@ -45,9 +45,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts it in a **Lab Kit** folder inside your Templater templates folder (Settings → Lab Kit → **Manage files…** shows where each file is).
+> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts the templates in your Templater templates folder, or in `Templates` at the vault root if Templater has none (Settings → Lab Kit → **Manage files…** shows where each file is). The **Set up** button in Settings → Lab Kit can add the hotkey for you.
 > 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**.
-> 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault gets a `lab-kit` folder inside your scripts folder; Templater also reads subfolders, so the folder above it works too). See Troubleshooting.
+> 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault puts the scripts in your Templater scripts folder, or in `scripts` at the vault root if Templater has none; Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
 

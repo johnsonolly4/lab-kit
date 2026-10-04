@@ -13,6 +13,8 @@
 ## Latest (2026-10-04, after PR 23): Dataview-era files removed
 - **Dataview-era kit files deleted** (user asked: nothing uses them): `hazards/view.js`, `lab-header/view.js`, `lab-config.json` removed from `kit/` (ids retired in the manifest; copies in a vault show as Retired and are never deleted); `lab-config.json` initials fallback removed from `labSnippets.js`; scripts-folder detection now looks for `excel_to_calc.py`. `excel_to_calc.py` stays, optional (Use toggle). Branch `feat/optional-legacy-files`, PR 25. The user also asked: scripts may live in any non-hidden folder; Templater's template folder is left as is (Set up only fills an empty one)
 
+- **New default folders** (the user's design): a vault with no kit files uses Templater's template folder else `Templates`, and Templater's scripts folder else `scripts` (both at the vault root, no subfolders; the Templater scripts and excel_to_calc.py share the scripts folder). Existing vaults follow the files they have (`kitDetectRoles`, `src/kit/paths.ts`). Not tried on a fresh vault in Obsidian: BACKLOG
+
 ## Last session (fixes on feat/chemical-database, 2026-10-04)
 - Solution prep and Recipe no longer fill reagents / solvent from the note's Chemicals (`labSnippets.js`; tests pass the reagents explicitly)
 - The user's vault runs OLD scripts (pre-2026-10-03 defaults): the RAFT / NMR dataset / matrix "autofill" they saw is not in the current kit. BACKLOG has the question why the update did not replace them

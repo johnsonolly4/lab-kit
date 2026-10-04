@@ -55,8 +55,9 @@ export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir"
 /**
  * Where each part of the kit lives in this vault.
  * `tracked`: the folders where the kit already put files. Templates and user scripts follow the files that are already there, so a file
- * added by a later kit version lands beside them; only a vault with no kit files yet gets the tidy layout
- * (<Templater templates folder>/Lab Kit, <Templater user scripts folder>/lab-kit). `record` (old folder updater) supplies scripts and backups.
+ * added by a later kit version lands beside them; only a vault with no kit files yet gets the default layout: Templater's own templates
+ * folder (else Templates) for the templates and Templater's user scripts folder (else scripts) for all scripts, both at the vault root, no
+ * subfolders. `record` (old folder updater) supplies scripts and backups.
  */
 export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>): Roles {
   const files = app.vault.getFiles().filter(f => !kitIsBackup(f.path));   // a backup copy of labForm.js must not look like the real one
@@ -67,14 +68,14 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   const remembered: Partial<Roles> = Object.fromEntries(Object.entries(record?.roles ?? {}).filter(([, v]) => sane(v)));
   const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
   const scriptsFound = find("excel_to_calc.py");
-  const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "Extras/scripts");
+  const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "scripts");
   const menu = find("Insert snippet.md");
   const formScript = find("labForm.js");
   return {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
-    userScripts: tracked.userScripts ?? (formScript ? formScript.parent!.path : tpl.user_scripts_folder ? kitJoin(tpl.user_scripts_folder, "lab-kit") : kitJoin(scripts, "templater")),
-    templates: tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || "Templates", "Lab Kit")),
+    userScripts: tracked.userScripts ?? (formScript ? formScript.parent!.path : tpl.user_scripts_folder || scripts),
+    templates: tracked.templates ?? (menu ? menu.parent!.path : tpl.templates_folder || "Templates"),
     backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
   };
 }
