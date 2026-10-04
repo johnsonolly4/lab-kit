@@ -238,25 +238,14 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 - **Conflict:** if you and the kit changed the same lines, the file shows **Conflict** and is left alone. Press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply**. **Keep all mine** and **Take kit version** settle the whole file at once.
 - **Use toggle:** each snippet (not the core files) has a switch in **Manage files…**, with a one-line description. Off = not installed and not in the Alt+S menu. Switching off a snippet you already have asks first, copies it to the Backup folder and moves it to your trash. Switching it on installs it again. **Update all safe files** never installs a switched-off snippet.
 - **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
+- **First install:** the question before the first install has two switches, both on: **Turn on the CSS snippet**, and **Set Templater's user scripts folder** (only shown when Templater has no such folder yet; a folder you already set is never changed).
 
-Once Lab Kit is in the community store, the plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates**. That does not touch your templates or scripts; those only change when you press **Apply** here.
+The plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates** (until Lab Kit is in the store: copy the three release files). A new plugin version brings the new kit with it, but your templates and scripts only change when you press **Apply** here. When Obsidian starts after such an update, a notice says **Lab kit vX is ready → Review**. Switch it off with **Settings → Lab Kit → Tell me when a kit update is ready**.
 
 After an update, a **What's new** popup opens once. Open it again from **Settings → Lab Kit → What's new** or the command **Show what's new**.
 
-### The folder updater (desktop, optional)
-The older way, for kit versions you download as a folder. It only manages templates, scripts and the CSS snippet; it never installs the plugin.
-
-New versions arrive in the update folder you set in **Settings → Lab Kit** (one subfolder per version). When Obsidian starts, a notice says **Lab kit vX is ready → Review & update**. You can also run **Lab Kit: Check for updates** from the command palette, or use **Settings → Lab Kit → Check now**.
-
-The update window shows:
-1. **Where things go**: detected from your vault; edit a line if it's wrong, then **Recheck**
-2. **Changes**: new · replaced · *edited by you* (kept unless you tick *overwrite*) · removed · kept · unchanged
-3. **Options**: set Templater's user script folder, turn on new CSS snippets
-
-Then **Install**. `lab-config.json` is never overwritten. If you want copies of the files an update replaces, turn on **Back up replaced files** (in the update window or Settings → Lab Kit); they then go to the Backup folder (by default inside the plugin folder, `.obsidian/plugins/lab-kit/backups`), in a folder named `<date> before vX`.
-
 > [!tip] Moving kit files
-> Move or rename kit files **inside Obsidian** and the updater follows them. If you move things in File Explorer instead, use **Settings → Lab Kit → Forget install record** and the next update re-detects everything.
+> Move or rename kit files **inside Obsidian** and the kit follows them. If you move them in File Explorer instead, the kit can't follow: they show as **Missing** in **Manage files…** until you move them back.
 
 ---
 
@@ -269,7 +258,7 @@ Then **Install**. `lab-config.json` is never overwritten. If you want copies of 
 | `#PROP?` in an MW cell | The chemical note has no `MW` / `Mw` property |
 | `#REF!` | The formula points at a deleted row or a table name that doesn't exist |
 | Table looks like plain code | Lab Kit isn't enabled (Settings → Community plugins) |
-| No update notice | Settings → Lab Kit: check the update folder path, then **Check now** |
+| No update notice | It only shows when the plugin brings a newer kit than the one installed, and **Tell me when a kit update is ready** is on (Settings → Lab Kit). **Review update…** works any time |
 | Hazard table empty | Chemicals property empty, or chemical notes missing `H_Phrase` |
 
 Related: [Changelog](changelog.md)

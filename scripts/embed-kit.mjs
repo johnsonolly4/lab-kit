@@ -27,7 +27,10 @@ export function embeddedKit(root = "kit") {
     };
   });
   return {
-    manifest: { schema: m.schema ?? 1, kitVersion: m.version, files, removed: m.removed ?? [], rewrite: m.rewrite ?? {} },
+    manifest: {
+      schema: m.schema ?? 1, kitVersion: m.version, files, removed: m.removed ?? [], rewrite: m.rewrite ?? {},
+      ...(m.enableCss ? { enableCss: m.enableCss } : {}), ...(m.disableCss ? { disableCss: m.disableCss } : {}), ...(m.templater ? { templater: m.templater } : {}),
+    },
     contents,
     paths,
   };

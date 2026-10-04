@@ -53,9 +53,8 @@
   background: transparent; text-align: center; padding: 1px 4px;
 }
 
-/* Lab Kit updater window */
+/* Lab Kit windows (review, manage, merge, what's new) */
 .lab-kit-modal { max-height: 70vh; overflow-y: auto; }
-.lab-kit-notes { margin: 0 0 8px; padding-left: 1.2em; font-size: 0.9em; }
 .lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
 .lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .lab-kit-group { margin: 4px 0; font-size: 0.88em; }
@@ -84,7 +83,6 @@
 .is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
 .lab-kit-wide-input { width: 100%; }
-.setting-item-control.lab-kit-wide-control { flex: 1 1 60%; }
 .lab-kit-notice-btn { margin-top: 6px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */

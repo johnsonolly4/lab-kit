@@ -1,6 +1,6 @@
 // Regenerates the "files" list in kit/kit-manifest.json from what's in kit/.
 // Per file: id (kept once assigned), kind, version (kit version where the content last changed), sha256, renamedFrom.
-// Keeps version, notes, rewrite, delete, templater, enableCss as they are.
+// Keeps version, rewrite, templater, enableCss / disableCss and removed as they are.
 // Usage: npm run kit:manifest
 import { readFileSync, writeFileSync, readdirSync, statSync } from "fs";
 import { join, relative, sep } from "path";
@@ -15,7 +15,7 @@ const ROLE_BY_PREFIX = [
   ["Extras/scripts/", "scripts"],
   ["Templates/", "templates"],
 ];
-const SKIP = new Set(["kit-manifest.json", "install-updater.ps1", "install-updater.sh"]);
+const SKIP = new Set(["kit-manifest.json"]);
 const KEEP = new Set(["Extras/scripts/lab-config.json"]);
 
 // One line per kit file, shown in Manage kit files. Snippets (Templates/Snippets/) use their own "// desc:" line.
@@ -95,7 +95,7 @@ const files = walk(KIT)
   .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));
 
 // The plugin's own files (main.js, manifest.json, styles.css) are deliberately NOT listed: the plugin never
-// updates itself (Obsidian developer policies). The package still carries them for the install-updater scripts.
+// updates itself (Obsidian developer policies).
 
 // A file that was in the previous manifest and is gone from kit/ (and wasn't moved) is retired: its id goes into
 // `removed`, so installed copies are marked "Retired" and left alone. Printed, so a deleted file is never silent.

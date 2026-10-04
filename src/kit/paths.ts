@@ -1,0 +1,70 @@
+// Kit paths and saved state: where each part of the kit lives in the vault, path helpers, and the `kit` key of data.json.
+// Works on mobile: only the Vault API and Templater's settings.
+import type { App, DataAdapter } from "obsidian";
+import { templaterSettings } from "./obsidian-private";
+import type { ManagedState } from "./managed";
+
+export type Roles = Record<string, string>;
+/** What the old folder updater (removed) recorded. Kept so files it wrote are not mistaken for your edits. */
+export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
+/** The `kit` key of data.json. */
+export interface KitData {
+  /** Old folder updater's install record, read only for migration. */
+  installed: KitRecord | null;
+  seenChangelog: string; initials: string; snippetIcons: Record<string, string>;
+  /** Built-in kit (embedded in the plugin): what was installed, per file id. */
+  managed: ManagedState | null;
+  /** Folders the user set for the built-in kit (templates, scripts, backups). Empty = detected. */
+  paths: Roles;
+  /** Optional kit files the user switched off (ids): not installed, not updated. */
+  off: Record<string, true>;
+  /** Show a notice at startup when the plugin brings a newer kit. */
+  notifyKitUpdate: boolean;
+  debug: boolean;
+}
+
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, notifyKitUpdate: true, debug: false };
+
+const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
+export function kitCompare(a: unknown, b: unknown): number {
+  const pa = kitVersionText(a).split(".").map(n => parseInt(n, 10) || 0);
+  const pb = kitVersionText(b).split(".").map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d) return d;
+  }
+  return 0;
+}
+export const kitJoin = (...parts: (string | null | undefined)[]): string => parts.filter(p => p != null && p !== "").join("/").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
+export const kitParent = (p: string): string => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
+
+export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir">, dir: string): Promise<void> {
+  if (!dir) return;
+  const parts = dir.split("/"); let cur = "";
+  for (const p of parts) { cur = cur ? `${cur}/${p}` : p; if (!(await adapter.exists(cur))) await adapter.mkdir(cur); }
+}
+
+/**
+ * Where each part of the kit lives in this vault.
+ * `tracked`: the folders where the kit already put files. Templates and user scripts follow the files that are already there, so a file
+ * added by a later kit version lands beside them; only a vault with no kit files yet gets the tidy layout
+ * (<Templater templates folder>/Lab Kit, <Templater user scripts folder>/lab-kit). `record` (old folder updater) supplies scripts and backups.
+ */
+export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>): Roles {
+  const files = app.vault.getFiles();
+  const tpl = templaterSettings(app);
+  const remembered: Partial<Roles> = record?.roles ?? {};
+  const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
+  const scriptsFound = find("lab-config.json", f => app.vault.getAbstractFileByPath(kitJoin(f.parent?.path, "lab-header")) != null)
+                    ?? find("lab-config.json");
+  const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "Extras/scripts");
+  const menu = find("Insert snippet.md");
+  const formScript = find("labForm.js");
+  return {
+    cssSnippets: kitJoin(app.vault.configDir, "snippets"),
+    scripts,
+    userScripts: tracked.userScripts ?? (formScript ? formScript.parent!.path : tpl.user_scripts_folder ? kitJoin(tpl.user_scripts_folder, "lab-kit") : kitJoin(scripts, "templater")),
+    templates: tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || "Templates", "Lab Kit")),
+    backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
+  };
+}

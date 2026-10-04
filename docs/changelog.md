@@ -1,6 +1,9 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **The folder updater is gone**: the kit comes with the plugin, so a plugin update brings the new kit, and **Review update…** / **Update all safe files** install it. The "Kit updates" settings (update folder, check at start, install record) and the command **Check for updates** are removed, and releases no longer carry a kit zip. Files the folder updater installed are still recognised as unchanged
+- **First install sets things up**: the question before the first kit install has two switches, both on: **Turn on the CSS snippet**, and **Set Templater's user scripts folder** (only when Templater has none yet; a folder you set is never changed)
+- **Update notice**: when Obsidian starts after the plugin brought a newer kit, a notice says **Lab kit vX is ready → Review**. Switch it off in Settings → Lab Kit → **Tell me when a kit update is ready**. **What's new** moved to the Built-in kit group
 - **Pick your snippets**: in Settings → Lab Kit → Manage files…, every snippet has a short description and a **Use** toggle. Off = not installed and not in the Alt+S menu. Turning off a snippet you already have asks first, backs it up and moves it to your trash. The menu, the scripts and the Lab Book template stay always on
 - **Tidier folders for new vaults**: the first install puts the kit's templates in a **Lab Kit** folder inside Templater's templates folder, and its scripts in a `lab-kit` folder inside Templater's scripts folder. Vaults that already have the kit never move: new files go next to the ones you have
 - **Sample letters carry on**: a second sample list, variant matrix or sampling timetable in the same note starts at the next free letter instead of repeating A, B, C. You can still edit the codes in the form. A timetable only looks at earlier timetables, so a sample list and its timetable both start at A

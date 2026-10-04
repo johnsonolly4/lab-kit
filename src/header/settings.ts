@@ -1,4 +1,4 @@
-// Settings for the ```lab-header block, saved under the `header` key of data.json (the updater keeps `kit`).
+// Settings for the ```lab-header block, saved under the `header` key of data.json (the kit keeps `kit`).
 // Every hazard option can also be set for one note, as `key: value` lines inside the block.
 import type { Plugin, SettingDefinition, SettingDefinitionItem } from "obsidian";
 

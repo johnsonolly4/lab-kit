@@ -1,14 +1,13 @@
 // Built-in kit: the glue between the plugin and src/kit/managed.ts, plus the review window, the report and the first-install question.
-// Works on mobile: only the vault adapter and crypto.subtle (the folder updater in ui.ts stays desktop only).
+// Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
-import { hasNode } from "../platform";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, forgetManaged, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { cssSnippetsSupported, isCssSnippetEnabled, setCssSnippets } from "./obsidian-private";
-import { kitCompare, kitDetectRoles, kitHash, kitJoin, type KitData, type KitRecord, type Roles } from "./updater";
+import { cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterUserScripts, templaterUserScriptsFolder } from "./obsidian-private";
+import { kitCompare, kitDetectRoles, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
 
 export interface ManagedHost { kit: KitData; save(): Promise<void> }
 
@@ -21,13 +20,13 @@ export class KitManaged {
   get installedVersion(): string | null { return this.host.kit.managed?.installedKitVersion ?? null; }
   updateAvailable(): boolean { const i = this.installedVersion; return i !== null && kitCompare(this.version, i) > 0; }
 
-  /** Folders: detected like the folder updater does, then your own entries from settings on top. */
+  /** Folders: detected from your vault and Templater, then your own entries from settings on top. */
   roles(): Roles {
     const kit = this.host.kit;
     const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v));
     const old = kit.installed;
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
-    return { ...kitDetectRoles(this.app, record, undefined, trackedRoles(this.bundle, kit.managed)), ...own };
+    return { ...kitDetectRoles(this.app, record, trackedRoles(this.bundle, kit.managed)), ...own };
   }
 
   /** Where the templates (Insert snippet.md, Snippets/) are: the Alt+S menu scans the Snippets folder next to it. */
@@ -37,11 +36,10 @@ export class KitManaged {
 
   private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
 
-  /** Files the old folder updater wrote (desktop only), so they aren't mistaken for your edits. */
+  /** Files the old folder updater wrote, so they aren't mistaken for your edits. */
   private legacy(): LegacyRecord | null {
     const old = this.host.kit.installed;
-    if (!hasNode() || !old) return null;
-    return { files: old.files, hash: t => kitHash(new TextEncoder().encode(t)) };
+    return old ? { files: old.files, hash: kitSha1 } : null;
   }
 
   plan(): Promise<ManagedItem[]> {
@@ -189,8 +187,20 @@ export class KitManaged {
         catch (e) { this.failed(e); }
       };
       if (!this.host.kit.managed && writes) {
+        const opts = firstInstallOptions(this.bundle, { installed: hasTemplater(this.app), folder: templaterUserScriptsFolder(this.app) }, this.roles().userScripts);
+        const choice = { css: !!opts.css, templater: !!opts.templaterFolder };
+        const ticks: ConfirmTick[] = [];
+        if (opts.css) ticks.push({ name: "Turn on the CSS snippet", desc: opts.css.enable.join(", "), value: true, onChange: v => { choice.css = v; } });
+        if (opts.templaterFolder) ticks.push({ name: "Set Templater's user scripts folder", desc: `To ${opts.templaterFolder}. Templater has none yet; the snippet forms need it.`, value: true, onChange: v => { choice.templater = v; } });
+        const first = async (): Promise<void> => {
+          await go();
+          try {
+            if (choice.css && opts.css) await setCssSnippets(this.app, opts.css.enable, opts.css.disable);
+            if (choice.templater && opts.templaterFolder) await setTemplaterUserScripts(this.app, opts.templaterFolder);
+          } catch (e) { console.error(e); }
+        };
         new ConfirmModal(this.app, `Create ${writes} kit files?`,
-          "Templates, scripts and the CSS snippet are added to your vault. A file that already exists and differs is never overwritten.", `Create ${writes} files`, go).open();
+          "Templates, scripts and the CSS snippet are added to your vault. A file that already exists and differs is never overwritten.", `Create ${writes} files`, first, undefined, ticks).open();
       } else await go();
     } catch (e) { this.failed(e); }
   }
@@ -437,13 +447,17 @@ class KitReportModal extends Modal {
   onClose(): void { this.contentEl.empty(); }
 }
 
+/** A tick box in a ConfirmModal. */
+interface ConfirmTick { name: string; desc: string; value: boolean; onChange: (v: boolean) => void }
+
 class ConfirmModal extends Modal {
   private confirmed = false;
-  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>, private onCancel?: () => void) { super(app); }
+  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>, private onCancel?: () => void, private ticks: ConfirmTick[] = []) { super(app); }
 
   onOpen(): void {
     this.titleEl.setText(this.title);
     this.contentEl.createEl("p", { text: this.text });
+    for (const t of this.ticks) new Setting(this.contentEl).setName(t.name).setDesc(t.desc).addToggle(g => g.setValue(t.value).onChange(t.onChange));
     new Setting(this.contentEl)
       .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
       .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => { this.confirmed = true; this.close(); void this.onYes(); }));

@@ -1,4 +1,4 @@
-// Lab Kit: live ```calc tables, hazard header + kit updater. See STATUS.md.
+// Lab Kit: live ```calc tables, hazard header + built-in kit. See STATUS.md.
 import { Plugin } from "obsidian";
 import { CalcRenderer } from "./calc/render";
 import { HeaderRenderer } from "./header/render";

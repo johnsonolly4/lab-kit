@@ -6,19 +6,12 @@ import { Platform } from "obsidian";
 export interface NodeFs {
   existsSync(path: string): boolean;
   mkdirSync(path: string, options: { recursive: boolean }): unknown;
-  readdirSync(path: string, options: { withFileTypes: true }): { name: string; isDirectory(): boolean }[];
-  readFileSync(path: string): Uint8Array;
-  readFileSync(path: string, encoding: "utf8"): string;
 }
 export interface NodePath { join(...parts: string[]): string }
-export interface NodeCrypto {
-  createHash(algorithm: string): { update(data: Uint8Array): { digest(encoding: "hex"): string } };
-}
 
 export interface NodeModules {
   fs: NodeFs;
   path: NodePath;
-  crypto: NodeCrypto;
   electron: { shell: { openPath(path: string): Promise<string> } };
 }
 
@@ -44,7 +37,6 @@ function load<K extends keyof NodeModules>(name: K): NodeModules[K] {
     switch (name) {
       case "fs": return require("fs") as NodeModules[K];
       case "path": return require("path") as NodeModules[K];
-      case "crypto": return require("crypto") as NodeModules[K];
       case "electron": return require("electron") as NodeModules[K];
     }
   }

@@ -8,8 +8,7 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run --reporter=dot",
     "lint": "eslint src",
-    "kit:manifest": "node scripts/kit-manifest.mjs",
-    "package": "npm run build && node scripts/package-kit.mjs"
+    "kit:manifest": "node scripts/kit-manifest.mjs"
   },
   "author": "johnsonolly4",
   "license": "MIT",
@@ -20,7 +19,6 @@
     "esbuild": "^0.24.0",
     "eslint": "^9.39.5",
     "eslint-plugin-obsidianmd": "^0.4.2",
-    "fflate": "^0.8.3",
     "node-diff3": "^3.2.1",
     "obsidian": "1.13.1",
     "tslib": "^2.6.0",

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
   type EmbeddedKit, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -356,10 +356,13 @@ describe("resolving a conflict (merge window)", () => {
 });
 
 describe("files from the old folder updater", () => {
-  const sha1 = (t: string): string => "h:" + t;                       // stand-in hash, only equality matters
+  it("hashes with SHA-1 of the exact text, like the old updater recorded (no line-ending normalising)", async () => {
+    expect(await kitSha1("abc")).toBe("a9993e364706816aba3e25717850c26c9cd0d89d");
+    expect(await kitSha1("a\r\n")).not.toBe(await kitSha1("a\n"));
+  });
   it("treats a file unchanged since the old updater as unmodified", async () => {
     const v = memVault({ "Templates/Menu.md": "menu v0\n", "Templates/Book.md": "edited by me\n" });
-    const legacy = { files: { "Templates/Menu.md": sha1("menu v0\n"), "Templates/Book.md": sha1("what the old updater wrote\n") }, hash: sha1 };
+    const legacy = { files: { "Templates/Menu.md": await kitSha1("menu v0\n"), "Templates/Book.md": await kitSha1("what the old updater wrote\n") }, hash: kitSha1 };
     const plan = await planManaged(v, V1, emptyManagedState(), roles, legacy);
     expect(by(plan, "tpl-menu").action).toBe("fast-forward");
     expect(by(plan, "tpl-book").action).toBe("user-modified");
