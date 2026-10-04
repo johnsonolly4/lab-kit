@@ -63,7 +63,7 @@ const readSrc = (kit: Kit) => (src: string) => fs.readFileSync(path.join(kit.dir
 describe("kit updater", () => {
   it("scans, detects, plans, applies, re-plans and respects edits", async () => {
     const kits = kitScan(PACK);
-    const V = JSON.parse(fs.readFileSync(path.join(ROOT, "kit/kit-manifest.json"), "utf8")).version;   // moves with every commit
+    const V = JSON.parse(fs.readFileSync(path.join(ROOT, "kit/kit-manifest.json"), "utf8")).version;   // moves at release
     assert.strictEqual(kits.length, 1); assert.strictEqual(kits[0].manifest.version, V);
     const kit = kits[0];
     assert.ok(kitCompare("0.3.0", "0.2.9") > 0 && kitCompare("0.10.0", "0.9.1") > 0 && kitCompare("1.0", "1.0.0") === 0);
