@@ -34,7 +34,7 @@ Order after the store submission: **Kit picker → Chemical database → Analysi
 
 ## Decisions needed (ask the user, multiple choice)
 - [x] **Solution prep vs Recipe**: DECIDED 2026-10-04: keep them separate. Solution prep = stock solutions, Recipe = experiments (Recipe stays as it is). Snippets: `labSnippets.js:216` (solution), `:237` (recipe)
-- [x] **Solution prep rebuild**: BUILT 2026-10-04 on branch `feat/solution-prep` (`labSnippets.js` `solution()`, `tests/snippets.test.ts`; two tables, per-row unit, total concentration + ratio, g/mL with density, one row per solvent sharing the final volume equally). NOT seen in Obsidian: checklist 6b (Solution prep item)
+- [x] **Solution prep rebuild**: BUILT and merged 2026-10-04 (PR 27) (`labSnippets.js` `solution()`, `tests/snippets.test.ts`; two tables, per-row unit, total concentration + ratio, g/mL with density, one row per solvent sharing the final volume equally). NOT seen in Obsidian: checklist 6b (Solution prep item)
   - Each solute has its own target: concentration (M or mg/mL) or mass (g), plus the final volume (mL)
   - Also an overall (total) concentration split by a ratio between the components; a toggle picks molar or mass ratio
   - Added in g, or in mL: mL is converted to g with that row's Density (note property via `noteNumber(…, "Density")`, as the Column form does at `labSnippets.js:390`), else an editable assumed value; blank and flagged if unknown, never a silent 1.0
