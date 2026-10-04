@@ -21,15 +21,17 @@
 .lab-kit table { width: auto; margin: 0; }
 .lab-kit td.is-number, .lab-kit th.is-number { text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Cell states. Obsidian colours alternate columns with ".markdown-rendered tbody tr > td:nth-child(2n+2)" (0,2,3),
+   so these need three classes (0,3,1); the cell font and colour rules of Obsidian are only (0,1,1). */
 /* Calculated cells: soft blue */
-.lab-kit td.is-formula { background-color: rgba(97, 175, 239, 0.16) !important; }
+.lab-kit .lab-kit-scroll td.is-formula { background-color: rgba(97, 175, 239, 0.16); }
 /* Waiting for an input: amber, says what it needs */
-.lab-kit td.is-needs {
-  background-color: rgba(229, 160, 80, 0.18) !important; color: #9a5b00 !important;
+.lab-kit .lab-kit-scroll td.is-needs {
+  background-color: rgba(229, 160, 80, 0.18); color: #9a5b00;
   font-size: 0.85em; font-style: italic; white-space: nowrap;
 }
 /* Real errors: red */
-.lab-kit td.is-error { background-color: rgba(224, 108, 117, 0.25) !important; color: #b3261e !important; font-weight: 600; }
+.lab-kit .lab-kit-scroll td.is-error { background-color: rgba(224, 108, 117, 0.25); color: #b3261e; font-weight: 600; }
 /* Empty inputs that block a result: amber outline */
 .lab-kit td.is-needed { box-shadow: inset 0 0 0 2px rgba(229, 160, 80, 0.85); }
 
@@ -39,16 +41,16 @@
 .lab-kit td.is-blank { height: 2em; }
 .lab-kit td.is-editable:hover { outline: 1px dashed var(--interactive-accent); outline-offset: -2px; }
 .lab-kit td.is-editing {
-  padding: 0 !important; box-sizing: border-box;
+  padding: 0; box-sizing: border-box;
   width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
 }
 .lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; padding: 2px 4px; }
 
-/* A1 grid labels */
-.lab-kit .lab-kit-grid-row th,
+/* A1 grid labels. The header row needs (0,3,1) to beat ".markdown-rendered thead tr > th:nth-child(2n+2)" (0,2,3) */
+.lab-kit .lab-kit-scroll .lab-kit-grid-row th,
 .lab-kit .lab-kit-rownum {
-  font-size: 0.7em !important; color: var(--text-faint) !important; font-weight: 400 !important;
-  background: transparent !important; text-align: center; padding: 1px 4px !important;
+  font-size: 0.7em; color: var(--text-faint); font-weight: 400;
+  background: transparent; text-align: center; padding: 1px 4px;
 }
 
 /* Lab Kit updater window */
@@ -81,8 +83,8 @@
 .is-mobile .lab-kit-modal { overflow-x: hidden; }
 .is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
-.lab-kit-wide-input { width: 100% !important; }
-.lab-kit-wide-control { flex: 1 1 60% !important; }
+.lab-kit-wide-input { width: 100%; }
+.setting-item-control.lab-kit-wide-control { flex: 1 1 60%; }
 .lab-kit-notice-btn { margin-top: 6px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */
