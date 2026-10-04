@@ -26,6 +26,7 @@ const templater = (app: App): TemplaterPlugin | undefined => priv(app).plugins?.
 /** Templater's settings, or {} when Templater isn't installed. */
 export const templaterSettings = (app: App): NonNullable<TemplaterPlugin["settings"]> => templater(app)?.settings ?? {};
 export const hasTemplater = (app: App): boolean => !!templater(app);
+export const templaterTemplatesFolder = (app: App): string | undefined => templater(app)?.settings?.templates_folder;
 export const templaterUserScriptsFolder = (app: App): string | undefined => templater(app)?.settings?.user_scripts_folder;
 
 /** Points Templater's "user scripts" folder at `folder` and saves its settings. */
@@ -34,6 +35,15 @@ export async function setTemplaterUserScripts(app: App, folder: string): Promise
   if (!tpl) return;
   tpl.settings = tpl.settings ?? {};
   tpl.settings.user_scripts_folder = folder;
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+}
+
+/** Points Templater's "template folder" at `folder` and saves its settings. */
+export async function setTemplaterTemplatesFolder(app: App, folder: string): Promise<void> {
+  const tpl = templater(app);
+  if (!tpl) return;
+  tpl.settings = tpl.settings ?? {};
+  tpl.settings.templates_folder = folder;
   try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
 }
 

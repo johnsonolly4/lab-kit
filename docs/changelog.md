@@ -7,7 +7,7 @@
 - **Solution prep and Recipe start empty**: the reagent and solvent fields no longer fill themselves from the note's Chemicals property (type them, or pick from the suggestions)
 - **Page no longer jumps after a cell is saved, also in big notes**: the page is held in place for as long as the tables are still redrawing (up to 8 s), not only for the first 1.5 s; grabbing the scrollbar also lets go
 - **Calc tables sit flush with the text**: padding and side margins that Obsidian or a theme put on tables are reset for calc tables
-- **Built-in kit is the first group in Settings → Lab Kit**, with a new **Set up** button (Templater row): it points Templater's user scripts folder at the kit's scripts (only when Templater can't find them now) and adds Insert snippet to its Template hotkeys. Use it after installing the kit
+- **Built-in kit is the first group in Settings → Lab Kit**, with a new **Set up** button (Templater row): it points Templater's user scripts folder at the kit's scripts (only when Templater can't find them now), fills in Templater's template folder only when it is empty (never changes one you set), and adds Insert snippet to its Template hotkeys. Use it after installing the kit
 - **Templater hotkey**: when the kit installs or updates the Alt+S menu template (Insert snippet.md), it is also added to Templater's **Template hotkeys**, if it isn't there yet. You only need to set Alt+S in Obsidian → Hotkeys. Nothing is ever removed from Templater's settings
 - Update the kit (Review update…) to get the new forms
 ## v0.4.9 (2026-10-04)

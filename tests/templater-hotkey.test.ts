@@ -38,3 +38,14 @@ describe("templaterScriptsNeedChange", () => {
     expect(need("Other", "Extras/scripts/lab-kit")).toBe(true);
   });
 });
+
+describe("templaterTemplatesTarget", () => {
+  it("gives the folder above the kit's Lab Kit folder, never the vault root", async () => {
+    const { templaterTemplatesTarget: target } = await import("../src/kit/managed");
+    expect(target("Templates/Lab Kit")).toBe("Templates");
+    expect(target("Templates")).toBe("Templates");
+    expect(target("Extras/Templates/Lab Kit/")).toBe("Extras/Templates");
+    expect(target("Lab Kit")).toBe("Lab Kit");
+    expect(target("")).toBeNull();
+  });
+});

@@ -318,6 +318,13 @@ export function templaterScriptsNeedChange(current: string | undefined, kitScrip
   return !cur || !(kit === cur || kit.startsWith(cur + "/"));
 }
 
+/** The folder to give Templater as its template folder when it has none: the kit's own "Lab Kit" folder is a subfolder of it, so other templates stay listed. null when there is no sensible folder (the vault root). */
+export function templaterTemplatesTarget(kitTemplates: string): string | null {
+  const parts = kitTemplates.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+  if (parts.length > 1 && parts[parts.length - 1] === "Lab Kit") parts.pop();
+  return parts.length ? parts.join("/") : null;
+}
+
 /** What the first-install dialog offers: CSS snippets to switch on, and Templater's user scripts folder (only when Templater has none). */
 export interface FirstInstallOptions { css: { enable: string[]; disable: string[] } | null; templaterFolder: string | null }
 export function firstInstallOptions(bundle: EmbeddedKit, templater: { installed: boolean; folder?: string }, userScripts: string): FirstInstallOptions {
