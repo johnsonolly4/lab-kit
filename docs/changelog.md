@@ -1,7 +1,7 @@
 # Lab notebook kit: changelog
 
 ## v0.4.7 (2026-10-04)
-- **Fixes for the Obsidian community store scan**: the plugin no longer uses `child_process` or `!important`, and all access to Node features goes through one guarded place, so it still loads on mobile
+- **Fixes for the Obsidian community store scan**: the plugin and the kit no longer start other programs, and `!important` is gone, and all access to Node features goes through one guarded place, so it still loads on mobile
 - **Windows opens the data folder through Obsidian** (like macOS and Linux), instead of starting Explorer separately
 - **README: "Privacy & permissions"** lists what the plugin reads and writes (no network, no account, no telemetry)
 - **Releases are built on GitHub** and signed with an attestation, so the files you install are the ones built from the tagged source. Nothing changes in how you use the plugin

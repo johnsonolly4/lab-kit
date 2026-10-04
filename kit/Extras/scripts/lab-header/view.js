@@ -37,13 +37,8 @@ if (S.dataFolder) {
         const dir = require("path").join(root, dv.current().file.name);
         const fs = require("fs");
         if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-        if (process.platform === "win32") {
-          // Starting Explorer ourselves lets Windows bring the window to the front
-          require("child_process").spawn("explorer.exe", [dir.replace(/\//g, "\\")], { detached: true, stdio: "ignore" }).unref();
-        } else {
-          const err = await require("electron").shell.openPath(dir);
-          if (err) new Notice(err);
-        }
+        const err = await require("electron").shell.openPath(dir);
+        if (err) new Notice(err);
       } catch (e) {
         new Notice("Couldn't open data folder. Is Google Drive running?\n" + e.message);
       }
