@@ -7,7 +7,7 @@
 //  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
 import { merge3 } from "./merge";
-import { kitEnsureDir, kitJoin, kitParent, type Roles } from "./updater";
+import { kitEnsureDir, kitJoin, kitParent, type Roles } from "./paths";
 
 /* ---- Types ---- */
 export type ManagedKind = "template" | "snippet" | "script";
@@ -21,7 +21,9 @@ export interface EmbeddedFile {
 }
 /** The kit as built into main.js (see scripts/embed-kit.mjs). */
 export interface EmbeddedKit {
-  manifest: { schema: number; kitVersion: string; files: EmbeddedFile[]; removed: string[]; rewrite?: Record<string, string> };
+  manifest: { schema: number; kitVersion: string; files: EmbeddedFile[]; removed: string[]; rewrite?: Record<string, string>;
+    /** First install: CSS snippets to switch on / off, and whether the kit needs Templater's user scripts folder. */
+    enableCss?: string[]; disableCss?: string[]; templater?: { userScripts?: boolean } };
   contents: Record<string, string>;
 }
 export interface ManagedFileState {
@@ -50,7 +52,7 @@ export interface ManagedItem {
   conflicts?: number;
 }
 /** Files the old folder updater wrote: path -> SHA-1 of what it wrote, and how to compute that hash. */
-export interface LegacyRecord { files: Record<string, string>; hash: (text: string) => string }
+export interface LegacyRecord { files: Record<string, string>; hash: (text: string) => Promise<string> }
 export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "merged" | "adopted" | "skipped"; backup?: string }
 
 /** Actions the plugin may carry out on its own ("Update all safe files"). */
@@ -65,7 +67,13 @@ export async function kitSha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Kit content for this vault: the folder rewrites (e.g. Extras/scripts -> your scripts folder) applied, like the folder updater does. */
+/** SHA-1 hex of the exact text (no normalising): the hash the old folder updater recorded for files it wrote. */
+export async function kitSha1(text: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Kit content for this vault: the folder rewrites (e.g. Extras/scripts -> your scripts folder) applied, like the old folder updater did. */
 export function kitText(bundle: EmbeddedKit, file: EmbeddedFile, roles: Roles): string {
   let text = bundle.contents[file.id] ?? "";
   for (const [literal, role] of Object.entries(bundle.manifest.rewrite ?? {})) {
@@ -114,7 +122,7 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
     if (curHash === kitHash) { items.push(item("up-to-date", curHash)); continue; }
     if (file.policy === "keep") { items.push(item("keep", curHash)); continue; }
     // Unmodified = still what this system wrote, or still what the old folder updater recorded for it
-    const legacyMatch = legacy?.files[dest] !== undefined && legacy.files[dest] === legacy.hash(cur);
+    const legacyMatch = legacy?.files[dest] !== undefined && legacy.files[dest] === await legacy.hash(cur);
     if (st?.installedHash === curHash || legacyMatch) items.push(item("fast-forward", curHash));
     else if (st && st.installedHash !== kitHash) {
       const baseFile = baseDir ? kitJoin(baseDir, `${file.id}.txt`) : null;
@@ -301,4 +309,14 @@ export function followRename(state: ManagedState | null, oldPath: string, newPat
     if (st.path === oldPath || st.path.startsWith(oldPath + "/")) { st.path = newPath + st.path.slice(oldPath.length); changed = true; }
   }
   return changed;
+}
+
+/** What the first-install dialog offers: CSS snippets to switch on, and Templater's user scripts folder (only when Templater has none). */
+export interface FirstInstallOptions { css: { enable: string[]; disable: string[] } | null; templaterFolder: string | null }
+export function firstInstallOptions(bundle: EmbeddedKit, templater: { installed: boolean; folder?: string }, userScripts: string): FirstInstallOptions {
+  const m = bundle.manifest;
+  return {
+    css: m.enableCss?.length ? { enable: m.enableCss, disable: m.disableCss ?? [] } : null,
+    templaterFolder: m.templater?.userScripts && templater.installed && !templater.folder?.trim() ? userScripts : null,
+  };
 }

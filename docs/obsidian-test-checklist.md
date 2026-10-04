@@ -14,7 +14,8 @@
 - [ ] Settings → Lab Kit opens, rows in a sensible order
 - [ ] Type a value (Initials), close Obsidian settings, reload the plugin: value is still there
 - [ ] Settings search finds "legend"
-- [ ] "Per-note options" is its own row; "Install locations" has a "Show" link. Happy with both?
+- [ ] "Per-note options" is its own row. Happy with it?
+- [ ] No "Kit updates" group and no **Check for updates** command (the folder updater is gone); **What's new** and **Tell me when a kit update is ready** are in the Built-in kit group
 
 ## 2. Built-in kit install
 - [ ] Built-in kit group shows version row and three folder boxes
@@ -22,6 +23,8 @@
 - [ ] **New vault layout**: with Templater's folders set, the first install puts templates in `<Templates>/Lab Kit/` (menu + `Snippets/`) and the user scripts in `<scripts folder>/lab-kit/`. Give `Insert snippet.md` an Alt+S hotkey: the menu opens, and a snippet runs (so Templater finds `tp.user.labSnippets` in the subfolder; if not, tell me)
 - [ ] **Existing vault** (flat layout): nothing moves; a kit file added later lands beside `Insert snippet.md`
 - [ ] Review update… asks before first install, then Apply creates the files
+- [ ] **First install switches**: with Templater's user scripts folder empty, the question shows **Turn on the CSS snippet** and **Set Templater's user scripts folder**; afterwards the snippet is on (Settings → Appearance) and Templater's folder is set. With a folder already set in Templater: only the CSS switch, and Templater's folder is unchanged
+- [ ] **Update notice**: in `.obsidian/plugins/lab-kit/data.json` lower `kit.managed.installedKitVersion` (e.g. to 0.4.0), reload: a notice says **Lab kit vX is ready**, and **Review** opens the review window. Switch off **Tell me when a kit update is ready**, reload: no notice
 - [ ] Report window lists them; nothing broken in the file tree
 - [ ] Edit an installed template, Review again: it says "changed by you"
 - [ ] Delete one file, Review again: it says "missing" and offers to recreate

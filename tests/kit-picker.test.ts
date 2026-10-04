@@ -4,7 +4,7 @@ import {
   SAFE_ACTIONS, applyManaged, disableManaged, planManaged, statusOf, trackedRoles,
   type EmbeddedKit, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
-import { kitDetectRoles } from "../src/kit/updater";
+import { kitDetectRoles } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -130,34 +130,35 @@ describe("folder layout", () => {
   const tplSettings = { templates_folder: "Templater/Templates", user_scripts_folder: "Templater/Scripts" };
 
   it("a new vault gets Lab Kit folders inside Templater's own folders", () => {
-    const r = kitDetectRoles(vault([], tplSettings), null, undefined, {});
+    const r = kitDetectRoles(vault([], tplSettings), null, {});
     expect(r.templates).toBe("Templater/Templates/Lab Kit");
     expect(r.userScripts).toBe("Templater/Scripts/lab-kit");
     expect(r.scripts).toBe("Extras/scripts");                               // shared scripts stay where they were
   });
 
   it("without Templater folders: Templates/Lab Kit, and the scripts keep the old default", () => {
-    const r = kitDetectRoles(vault([], {}), null, undefined, {});
+    const r = kitDetectRoles(vault([], {}), null, {});
     expect(r.templates).toBe("Templates/Lab Kit");
     expect(r.userScripts).toBe("Extras/scripts/templater");
   });
 
   it("follows the files the kit already installed, not Templater's folders", () => {
-    const r = kitDetectRoles(vault([], tplSettings), null, undefined, { templates: "Old/Place", userScripts: "Old/Scripts" });
+    const r = kitDetectRoles(vault([], tplSettings), null, { templates: "Old/Place", userScripts: "Old/Scripts" });
     expect(r.templates).toBe("Old/Place");
     expect(r.userScripts).toBe("Old/Scripts");
   });
 
   it("follows an existing Insert snippet.md / labForm.js (hand-installed or from the folder updater)", () => {
-    const r = kitDetectRoles(vault(["Mine/Insert snippet.md", "Mine/js/labForm.js"], tplSettings), null, undefined, {});
+    const r = kitDetectRoles(vault(["Mine/Insert snippet.md", "Mine/js/labForm.js"], tplSettings), null, {});
     expect(r.templates).toBe("Mine");
     expect(r.userScripts).toBe("Mine/js");
   });
 
-  it("the folder updater (no tracked folders) keeps its old behaviour", () => {
-    const r = kitDetectRoles(vault([], tplSettings), null);
-    expect(r.templates).toBe("Templater/Templates");
-    expect(r.userScripts).toBe("Templater/Scripts");
+  it("the old folder updater's record still gives the scripts and backup folders", () => {
+    const record = { version: "0.4.5", files: {}, installedAt: "", roles: { scripts: "Lab/scripts", backups: "Lab/kit-backups" } };
+    const r = kitDetectRoles(vault([], tplSettings), record, {});
+    expect(r.scripts).toBe("Lab/scripts");
+    expect(r.backups).toBe("Lab/kit-backups");
   });
 
   it("trackedRoles reads each role's folder back from the installed paths and skips moved files", async () => {
@@ -172,7 +173,7 @@ describe("folder layout", () => {
   it("a kit file added later lands beside the existing menu (the next plan uses the tracked folders)", async () => {
     const v = memVault();
     const first = await applyManaged(v, kit, await planManaged(v, kit, null, { ...roles, templates: "T/Lab Kit" }), null, opts);
-    const r = kitDetectRoles(vault([], tplSettings), null, undefined, trackedRoles(kit, first.state));
+    const r = kitDetectRoles(vault([], tplSettings), null, trackedRoles(kit, first.state));
     expect(r.templates).toBe("T/Lab Kit");
   });
 });

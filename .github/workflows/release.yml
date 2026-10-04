@@ -36,8 +36,8 @@ jobs:
 
       - run: npm test
 
-      # Builds main.js and writes dist/lab-kit-<version>.zip (fails if the versions or kit files disagree)
-      - run: npm run package
+      # npm test above already checked that the versions and kit files agree
+      - run: npm run build
 
       - name: Release notes from docs/changelog.md
         run: |
@@ -62,5 +62,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
-            main.js manifest.json styles.css "dist/lab-kit-$GITHUB_REF_NAME.zip" \
+            main.js manifest.json styles.css \
             --title "$GITHUB_REF_NAME" --notes-file notes.md

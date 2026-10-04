@@ -3,10 +3,6 @@
   "kit": "lab-notebook-kit",
   "version": "0.4.8",
   "date": "2026-10-04",
-  "notes": [
-    "Last fixes for the Obsidian community store scan",
-    "The data folder button opens through Obsidian on every platform (the kit no longer starts Explorer)"
-  ],
   "rewrite": {
     "Extras/scripts": "scripts"
   },
@@ -277,52 +273,6 @@
       "sha256": "53171b57fe631b10ed85358d6fb043435827308ea9701550647ef4aebb3dd424",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
-    }
-  ],
-  "delete": [
-    {
-      "role": "templates",
-      "path": "Snippets/01 🧪 Solution prep.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/02 ⚖️ Recipe by equivalents.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/03 ⚗️ RAFT recipe.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/04 🏷️ Sample coding grid.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/05 ⏱️ Sampling timetable.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/06 🧲 NMR samples.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/07 📈 GPC samples.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/08 🌊 Flow column + residence times.md"
-    },
-    {
-      "role": "templates",
-      "path": "Snippets/09 🧮 Blank calc table.md"
-    },
-    {
-      "role": "cssSnippets",
-      "path": "tabs-mermaid-scroll.css"
-    },
-    {
-      "role": "scripts",
-      "path": "data-roots.json"
     }
   ],
   "templater": {
