@@ -53,7 +53,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 | Snippet | Use it for | Gives you |
 |---|---|---|
-| **Solution prep** | Making up a stock solution | Reagent · MW (from the chemical note) · target · added · mmol · wt% |
+| **Solution prep** | Making up a stock solution | Targets table (final volume, optional total concentration) + one row per solute and solvent: MW (from the chemical note) · target (M, mg/mL or g, or a total concentration split by a ratio) · added in g or mL (mL uses the row's Density) · mmol · concentration reached |
 | **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, solvent "rest" row, total mass, wt% |
 | **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent, Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |

@@ -1,8 +1,8 @@
 # Status
 
 **Version:** 0.4.9 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
-**Now:** Analysis methods are committed on branch `feat/analysis-methods` and a PR is open (2026-10-04, 206 tests pass, lint 0 errors, nothing seen in Obsidian): Methods folder setting, method notes + machine notes, new Alt+S **Analysis table**, per-method toggles in Sample list / Timetable, Combined results over any methods. PR 23 and PR 25 are merged into `main`. Everything is in changelog "Unreleased"; 0.4.9 is still the released version.
-**Next:** the user tries Analysis methods in Obsidian (checklist 6c, BACKLOG "Not yet tested") and merges the PR. Then: release (`/release`; 0.5.0 or 0.4.10: only the user decides), the "Make my own copy" snippet idea and per-snippet script files (BACKLOG), Solution prep vs Recipe and the sample workflow (BACKLOG "Decisions needed"), a feedback round (`/feedback`).
+**Now:** Solution prep is rebuilt on branch `feat/solution-prep` (2026-10-04, not committed yet; 206 tests pass, lint 0 errors, build ok, nothing seen in Obsidian): targets table + component table, per-solute target (M / mg/mL / g) or total concentration split by a ratio, added in g or mL with Density, one row per solvent. Changelog "Unreleased" has it. Before it: Analysis methods are merged into `main` ([PR 26](https://github.com/johnsonolly4/lab-kit/pull/26), 2026-10-04; 206 tests pass, lint 0 errors, nothing seen in Obsidian yet): Methods folder setting, method notes + machine notes, new Alt+S **Analysis table**, per-method toggles in Sample list / Timetable, Combined results over any methods. PR 23 and PR 25 are merged too. Everything is in changelog "Unreleased"; 0.4.9 is still the released version.
+**Next:** the user commits / opens the PR for Solution prep and tries it (checklist 6b) and gives one real stock solution for the test (BACKLOG "Decisions needed"). The user also tries Analysis methods in Obsidian (checklist 6c, BACKLOG "Not yet tested"). Then: release (`/release`; 0.5.0 or 0.4.10: only the user decides), the "Make my own copy" snippet idea and per-snippet script files (BACKLOG), Solution prep vs Recipe and the sample workflow (BACKLOG "Decisions needed"), a feedback round (`/feedback`).
 **Blockers / open questions:**
 - Local `dist/` still holds old kit packages (0.3.0, 0.4.6, zips) from the removed `npm run package`; still gitignored. Safe to delete when you like
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`): the v0.3 plain-JS source exists only on this machine. User keeps a copy or deletes it
@@ -10,7 +10,13 @@
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG, "Repo / release")
 - Git identity: commits now use the global `~/.gitconfig` noreply address (set 2026-10-04 after a push was refused for the private email)
 
-## Latest (2026-10-04): Analysis methods as notes
+## Latest (2026-10-04): Solution prep rebuild
+- Plan agreed with the user: two tables like RAFT; one row per solvent, several share the final volume equally; hand-calculated test now
+- `labSnippets.js` `solution()`: form (solutes, solvents, final volume, target mode, unit, total concentration + unit, ratio basis + numbers, mmol / mol); tables `<id>_in` (volume, total concentration) and `<id>` (Component, MW, Target / Ratio, Unit / Mol parts, Target (g · mL), Added, In, Density, Added (g), mmol, Conc. M, Conc. mg/mL, Total). Density from the note, blank = error (`1/0`), never 1.0
+- Tests: new Solution block in `tests/snippets.test.ts` (own targets, mL + density, mol, two solvents, all four ratio-basis × unit combinations); `tests/snippets-defaults.test.ts` suggest keys `solutes` + `solvents`. Docs: tutorial snippet table, changelog, checklist. Manifest regenerated
+- Left over: BACKLOG (real test case, not seen in Obsidian, small leftovers)
+
+## Earlier (2026-10-04): Analysis methods as notes
 - User chose: columns as a property list, machines prefill defaults, Combined results keeps fall-through over tables of one method
 - New `kit/Extras/scripts/templater/labMethods.js` (`parseMethod`, `loadMethods`, `planColumns`, `buildRows`; built-in NMR/GPC/DLS descriptors), `labForm.js` `select` field, `labSnippets.js` `methodTable` / `runMethod` / `resultsTable` (columns found by header name) replace `nmrTable` / `gpcTable` / `dlsTable`; keys `nmr` / `gpc` / `dls` unchanged, new key `method` + file `Templates/Snippets/14 Analysis table.md`
 - Settings: `methodsFolder` (`src/kit/paths.ts`, `src/kit/ui.ts`). Docs: tutorial 6.1, changelog, checklist 6c, CLAUDE.md map. Manifest regenerated

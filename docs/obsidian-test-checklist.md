@@ -78,6 +78,7 @@
 - [ ] A chemical found by its **Names** entry (e.g. DTT → Dithiothreitol) inserts `[[Note|name]]` and `=MW(...)` still works
 - [ ] Set Molecular weight property to a property that exists on one note only: MW() uses it; clear it: MW() works as before
 - [ ] Alt+S **Solution prep** / **Recipe** / **RAFT**: reagent, solvent, monomer, CTA, initiator fields suggest; after a comma only the new item is replaced; Enter picks, second Enter inserts
+- [ ] Alt+S **Solution prep**: a solute with its own target in M / mg/mL / g gives the right Target (g); a row added in mL with a Density gives Added (g), without a Density shows an error; "Total concentration split by a ratio" splits the mass as expected; two solvents share the final volume
 - [ ] **Column** snippet: type DCM as Solvent: the density row is DCM's Density; a density typed in the form wins; no solvent leaves it blank
 - [ ] Folder empty or wrong: forms and cells behave as before
 
