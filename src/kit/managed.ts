@@ -7,7 +7,7 @@
 //  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
 import { merge3 } from "./merge";
-import { kitEnsureDir, kitJoin, kitParent, type Roles } from "./paths";
+import { kitEnsureDir, kitIsBackup, kitJoin, kitParent, type Roles } from "./paths";
 
 /* ---- Types ---- */
 export type ManagedKind = "template" | "snippet" | "script";
@@ -88,7 +88,7 @@ export function trackedRoles(bundle: EmbeddedKit, state: ManagedState | null): R
   const out: Roles = {};
   for (const file of bundle.manifest.files) {
     const path = state?.files[file.id]?.path;
-    if (!path || out[file.role] !== undefined) continue;
+    if (!path || kitIsBackup(path) || out[file.role] !== undefined) continue;
     if (path === file.dest) out[file.role] = "";
     else if (path.endsWith("/" + file.dest)) out[file.role] = path.slice(0, path.length - file.dest.length - 1);
   }
@@ -101,7 +101,8 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
   const items: ManagedItem[] = [];
   for (const file of bundle.manifest.files) {
     const st = state?.files[file.id];
-    let dest = st?.path || kitJoin(roles[file.role], file.dest);
+    // A path recorded inside a backup folder is a mistake (an old version picked the backup copy): use the real place
+    let dest = (st?.path && !kitIsBackup(st.path) ? st.path : "") || kitJoin(roles[file.role], file.dest);
     if (!st && !(await adapter.exists(dest))) {
       // Not installed by this system and the kit has moved the file: a copy at an old place is still this file
       for (const old of file.renamedFrom) {

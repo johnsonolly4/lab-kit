@@ -177,3 +177,25 @@ describe("folder layout", () => {
     expect(r.templates).toBe("T/Lab Kit");
   });
 });
+
+describe("backup copies are not kit files", () => {
+  const files = ["Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater/labForm.js", "Extras/scripts/templater/labForm.js",
+    "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates/Insert snippet.md", "Templates/Lab Kit/Insert snippet.md"];
+  const app: any = {
+    vault: { configDir: ".obsidian", getAbstractFileByPath: () => null,
+      getFiles: () => files.map(p => ({ name: p.split("/").pop(), path: p, parent: { path: p.slice(0, p.lastIndexOf("/")) } })) },
+    plugins: { plugins: {} },
+  };
+
+  it("roles are detected from the real files, not an old backup", () => {
+    const r = kitDetectRoles(app, null, {});
+    expect(r.userScripts).toBe("Extras/scripts/templater");
+    expect(r.templates).toBe("Templates/Lab Kit");
+  });
+
+  it("a path an older version recorded inside a backup is not trusted", () => {
+    const r = trackedRoles({ manifest: { files: [{ id: "a", role: "userScripts", dest: "labForm.js" }] } } as any,
+      { installedKitVersion: "0.4.9", files: { a: { path: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Extras/scripts/templater/labForm.js" } } } as any);
+    expect(r.userScripts).toBeUndefined();
+  });
+});

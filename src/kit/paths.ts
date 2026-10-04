@@ -40,6 +40,8 @@ export function kitCompare(a: unknown, b: unknown): number {
   return 0;
 }
 export const kitJoin = (...parts: (string | null | undefined)[]): string => parts.filter(p => p != null && p !== "").join("/").replace(/\/+/g, "/").replace(/^\/|\/$/g, "");
+/** True for a file inside a backup folder (the kit's backups are `<backup folder>/<time stamp>/…`): never a place the kit's files live. */
+export const kitIsBackup = (path: string): boolean => /(^|\/)\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z\//.test(path);
 export const kitParent = (p: string): string => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
 
 export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir">, dir: string): Promise<void> {
@@ -55,7 +57,7 @@ export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir"
  * (<Templater templates folder>/Lab Kit, <Templater user scripts folder>/lab-kit). `record` (old folder updater) supplies scripts and backups.
  */
 export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>): Roles {
-  const files = app.vault.getFiles();
+  const files = app.vault.getFiles().filter(f => !kitIsBackup(f.path));   // a backup copy of labForm.js must not look like the real one
   const tpl = templaterSettings(app);
   const remembered: Partial<Roles> = record?.roles ?? {};
   const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
