@@ -33,8 +33,17 @@ Order after the store submission: **Kit picker → Chemical database → Analysi
 - Dropped: Retired files "build kit file from related?" (user: drop the question)
 
 ## Decisions needed (ask the user, multiple choice)
-- [ ] **Solution prep vs Recipe by equivalents**: user wants to **discuss more first** (2026-10-04), walking through one of their real experiments. Option on the table: one ELN-style reagent table (reference row, "Target by" per row: eq / mmol / g / mL / M, optional solvent row) with "Solution prep" and "Recipe" kept as two starting setups in the Alt+S menu. Snippets today: `labSnippets.js:170` (solution), `:191` (recipe)
-- [ ] **Solution prep details** (part of the item above): mmol/mol toggle (mmol default); target by mmol/mol, mass or concentration; added usually in g, sometimes mL; solvent row
+- [x] **Solution prep vs Recipe**: DECIDED 2026-10-04: keep them separate. Solution prep = stock solutions, Recipe = experiments (Recipe stays as it is). Snippets: `labSnippets.js:216` (solution), `:237` (recipe)
+- [x] **Solution prep rebuild**: BUILT 2026-10-04 on branch `feat/solution-prep` (`labSnippets.js` `solution()`, `tests/snippets.test.ts`; two tables, per-row unit, total concentration + ratio, g/mL with density, one row per solvent sharing the final volume equally). NOT seen in Obsidian: checklist 6b (Solution prep item)
+  - Each solute has its own target: concentration (M or mg/mL) or mass (g), plus the final volume (mL)
+  - Also an overall (total) concentration split by a ratio between the components; a toggle picks molar or mass ratio
+  - Added in g, or in mL: mL is converted to g with that row's Density (note property via `noteNumber(…, "Density")`, as the Column form does at `labSnippets.js:390`), else an editable assumed value; blank and flagged if unknown, never a silent 1.0
+  - Density is used only for the per-row "added in mL" conversion (user: nothing else; no solvent mass/volume row from density)
+  - Solvent gets its own row, made up to the final volume (user, 2026-10-04), unless that conflicts with several solvents: decide the multi-solvent layout when planning (e.g. one make-up row per solvent with a split, or no make-up row)
+  - The mmol / mol toggle stays (mmol default)
+  - [ ] Test case: the tests use an invented stock (A 100, B 200 g/mol, 10 mL, `tests/snippets.test.ts` Solution block). The user still has to supply one real stock solution (components, MW, target, volume, amounts weighed) with a known answer; the engine test needs it
+
+- [ ] Solution prep left as built (ask if wanted): solvent split is equal only (edit the formula for another split); no wt% column any more; Density only per row for g/mL (as decided); old Solution prep tables are not converted (`labSnippets.js` `solution()`)
 - [ ] **Sample creation workflow**: its own session, with a real example (no details yet)
 
 ## Repo / release

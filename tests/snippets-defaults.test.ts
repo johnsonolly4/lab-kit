@@ -64,7 +64,7 @@ describe("empty defaults", () => {
   it("chemical fields start empty, so an untouched form inserts nothing", async () => {
     const h = harness({});
     for (const key of ["solution", "recipe", "raft", "matrix"]) assert.strictEqual(await h.run(key), "", key);
-    const empty = (key: string) => h.fields[key].filter(f => ["reagents", "monomers", "cta", "init", "solvent", "rows", "cols"].includes(f.key));
+    const empty = (key: string) => h.fields[key].filter(f => ["reagents", "solutes", "solvents", "monomers", "cta", "init", "solvent", "rows", "cols"].includes(f.key));
     for (const key of ["solution", "recipe", "raft", "matrix"]) {
       for (const f of empty(key)) if (f.key !== "solvent" || key === "raft") assert.strictEqual(f.value, "", `${key}.${f.key}`);
     }
@@ -106,10 +106,10 @@ describe("chemical folder suggestions", () => {
   it("reagent, solvent, monomer, CTA and initiator fields get the notes of the folder, with their aliases", async () => {
     const h = withFolder(harness({ [DATA]: JSON.stringify({ kit: { chemicalFolder: "/Chem/" } }) }));
     for (const key of ["solution", "recipe", "raft"]) await h.run(key);
-    assert.deepStrictEqual(suggestKeys(h, "solution"), ["reagents"]);
+    assert.deepStrictEqual(suggestKeys(h, "solution"), ["solutes", "solvents"]);
     assert.deepStrictEqual(suggestKeys(h, "recipe"), ["reagents", "solvent"]);
     assert.deepStrictEqual(suggestKeys(h, "raft"), ["monomers", "cta", "init", "solvent"]);
-    assert.deepStrictEqual(h.fields.solution.find(f => f.key === "reagents").suggest, [{ name: "DTT", aliases: ["Dithiothreitol"] }, { name: "Toluene", aliases: [] }]);
+    assert.deepStrictEqual(h.fields.solution.find(f => f.key === "solutes").suggest, [{ name: "DTT", aliases: ["Dithiothreitol"] }, { name: "Toluene", aliases: [] }]);
   });
 
   it("no folder set, or a folder that does not exist: no suggestions, forms as before", async () => {

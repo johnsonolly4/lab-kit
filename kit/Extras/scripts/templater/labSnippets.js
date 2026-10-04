@@ -216,22 +216,48 @@ ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
     async solution() {
       const v = await form("Solution prep", [
         { key: "label", label: "Solution name", value: "Solution 1" },
-        { key: "reagents", label: "Reagents", hint: "comma separated", value: "", placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
-      ]);
-      if (!v || !list(v.reagents).length) return "";
-      const reagents = list(v.reagents).map(link);
+        { key: "solutes", label: "Solutes", hint: "comma separated", value: "", placeholder: "e.g. solute 1, solute 2", suggest: chems },
+        { key: "solvents", label: "Solvent(s)", hint: "optional · comma separated · several share the final volume equally", value: "", placeholder: "e.g. solvent name", suggest: chems },
+        { key: "volume", label: "Final volume (mL)", hint: "blank = fill in later", value: "" },
+        { key: "mode", label: "Targets", type: "select", options: [{ value: "each", label: "Each solute has its own target" }, { value: "total", label: "Total concentration split by a ratio" }], value: "each" },
+        { key: "unit", label: "Target unit (own targets)", type: "select", options: [{ value: "M", label: "M (mol/L)" }, { value: "mg/mL", label: "mg/mL" }, { value: "g", label: "g (mass)" }], value: "M" },
+        { key: "total", label: "Total concentration (ratio split)", hint: "only for 'Total concentration split by a ratio' · blank = fill in later", value: "" },
+        { key: "totalUnit", label: "Total concentration unit", type: "select", options: [{ value: "M", label: "M (mol/L)" }, { value: "mg/mL", label: "mg/mL" }], value: "M" },
+        { key: "basis", label: "Ratio between solutes", type: "select", options: [{ value: "molar", label: "Molar" }, { value: "mass", label: "Mass" }], value: "molar" },
+        { key: "ratios", label: "Ratio numbers", hint: "same order as the solutes · blank = 1 each", value: "" },
+        { key: "amount", label: "Amount unit", type: "select", options: [{ value: "mmol", label: "mmol" }, { value: "mol", label: "mol" }], value: "mmol" },
+      ], { intro: "Added can be in g or mL (type g or mL in the In column); mL is converted with the row's Density." });
+      if (!v || !list(v.solutes).length) return "";
+      const solutes = list(v.solutes).map(link), solvents = list(v.solvents).map(link);
       const id = unique(v.label.match(/(\d+)\s*$/) ? "sol" + v.label.match(/(\d+)\s*$/)[1] : v.label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "") || "sol");
-      const last = reagents.length + 1;
-      const rows = reagents.map((r, i) => {
+      const inp = unique(`${id}_in`);
+      const total = v.mode === "total", mol = v.amount === "mol";
+      const V = `${inp}!$B$2`, Ct = `${inp}!$B$3`;
+      const s = solutes.length, last = s + 1, allEnd = last + solvents.length, totalRow = allEnd + 1;
+      const ratios = list(v.ratios);
+      const header = ["Component", "MW (g/mol)",
+        ...(total ? [`Ratio (${v.basis})`, "Mol parts"] : ["Target", "Unit"]),
+        "Target (g · mL)", "Added", "In", "Density (g/mL)", "Added (g)", `${v.amount} (added)`, "Conc. (M)", "Conc. (mg/mL)"];
+      const rows = solutes.map((r, i) => {
         const n = i + 2;
-        return [r, `=MW(A${n})`, "", "", `=IF(D${n}="", "", D${n}/B${n}*1000)`, `=IFERROR(D${n}/SUM(D$2:D$${last})*100, "")`];
+        const parts = v.basis === "mass" ? `=C${n}/B${n}` : `=C${n}`;
+        const target = total
+          ? `=IF(${V}="", 1/0, IF(${Ct}="", 1/0, ${v.totalUnit === "M"
+            ? `${Ct}*${V}/1000*D${n}/SUM(D$2:D$${last})*B${n}`
+            : `${Ct}*${V}/1000*D${n}*B${n}/SUMPRODUCT(D$2:D$${last}, B$2:B$${last})`}))`
+          : `=IF(C${n}="", "", IF(D${n}="M", IF(${V}="", 1/0, C${n}*${V}/1000*B${n}), IF(D${n}="mg/mL", IF(${V}="", 1/0, C${n}*${V}/1000), C${n})))`;
+        return [r, `=MW(A${n})`, ...(total ? [ratios[i] ?? "1", parts] : ["", v.unit]),
+          target, "", "g", noteNumber(r, "Density"), `=IF(F${n}="", "", IF(G${n}="mL", IF(H${n}="", 1/0, F${n}*H${n}), F${n}))`,
+          `=IF(I${n}="", "", I${n}/B${n}${mol ? "" : "*1000"})`, `=IF(J${n}="", "", J${n}${mol ? "*1000" : ""}/${V})`, `=IF(I${n}="", "", I${n}*1000/${V})`];
       });
-      rows.push(["**Total**", "", `=SUM(C2:C${last})`, `=SUM(D2:D${last})`, "", ""]);
+      solvents.forEach((r) => rows.push([r, "", "", "", solvents.length === 1 ? `=${V}` : `=${V}/${solvents.length}`, "", "mL", "", "", "", "", ""]));
+      rows.push(["**Total**", "", "", "", `=SUM(E2:E${last})`, "", "", "", `=SUM(I2:I${last})`, `=SUM(J2:J${last})`, `=SUM(K2:K${last})`, `=SUM(L2:L${last})`]);
+      const inRows = [["Final volume (mL)", v.volume ?? ""], ...(total ? [[`Total concentration (${v.totalUnit})`, v.total ?? ""]] : [])];
       return `## ${v.label}
 Made on: ${tp.date.now("YYYY-MM-DD")}
 
-${calc({ name: id, title: v.label, icon: "test-tube" }, ["Reagent", "MW (g/mol)", "Target (g)", "Added (g)", "mmol (added)", "wt% (added)"], rows)}
-`;
+${calc({ name: inp, title: `${v.label}: targets`, icon: "test-tube" }, ["Parameter", "Value"], inRows)}
+${calc({ name: id, title: v.label, icon: "test-tube" }, header, rows)}${solvents.length ? "Dissolve the solutes, then make up to the final volume.\n" : ""}`;
     },
 
     async recipe() {

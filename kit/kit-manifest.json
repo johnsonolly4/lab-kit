@@ -58,10 +58,10 @@
       "src": "Templates/Snippets/01 Solution prep.md",
       "role": "templates",
       "path": "Snippets/01 Solution prep.md",
-      "version": "0.3.0",
-      "sha256": "dda5fd7c54482db14244d13c7a3e96ed7a7d1c670dcfa701d81be6497977b832",
+      "version": "0.4.9",
+      "sha256": "a9c3a24fd4e70bd7bc95b9b8f720b9550bea00d25e69de82d345f5206136e4f0",
       "renamedFrom": [],
-      "desc": "Reagents with MW from their notes, target / added mass, mmol, wt%",
+      "desc": "Solutes and solvents with MW from their notes, targets by concentration or ratio, added in g or mL",
       "optional": true
     },
     {
@@ -260,7 +260,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.4.9",
-      "sha256": "b883b26a04e09c876ec6da18d15b9d9f47fd77d0b22645be1acfb18c4cd513fc",
+      "sha256": "b8470d39283135c1dd7b7430b5b4aadeba34aa2018b18e4a3401169b02d95550",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }
