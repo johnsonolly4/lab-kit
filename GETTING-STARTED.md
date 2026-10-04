@@ -40,7 +40,7 @@ Then open the `lab-kit` folder in Claude Code.
 ## 4. Set up the test vault
 1. Run `npm run dev` (or ask Claude to). It builds the plugin into `test-vault/.obsidian/plugins/lab-kit/` and rebuilds on every change.
 2. In Obsidian: **Open another vault → Open folder as vault → `test-vault`**.
-3. Enable community plugins there. Install **Templater** and **Dataview** in the test vault too, then turn on **Lab Kit**.
+3. Enable community plugins there. Install **Templater** in the test vault too, then turn on **Lab Kit**.
 4. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts into the test vault.
 
 > [!tip] Optional

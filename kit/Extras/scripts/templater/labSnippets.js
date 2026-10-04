@@ -7,12 +7,10 @@
          dls, results, column, rt, blank
 
    Needs labForm.js in the same folder. Initials come from the Lab Kit
-   plugin settings (Settings → Lab Kit → Initials); older installs fall back
-   to Extras/scripts/lab-config.json.
+   plugin settings (Settings → Lab Kit → Initials).
    ===================================================================== */
 
 const F = "```";
-const CONFIG = "Extras/scripts/lab-config.json";
 
 module.exports = async function labSnippets(tp, key) {
   /* ---------- helpers ---------- */
@@ -26,7 +24,7 @@ module.exports = async function labSnippets(tp, key) {
 
   const readJson = async (path) => { try { return JSON.parse(await app.vault.adapter.read(path)); } catch (e) { return null; } };
   const kitData = (await readJson(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`))?.kit;
-  const saved = kitData?.initials || (await readJson(CONFIG))?.initials;
+  const saved = kitData?.initials;
   const initials = String(saved || "").trim() || "XX";
   if (!saved && ["samples", "timetable", "matrix"].includes(key)) new Notice("Set your initials in Settings → Lab Kit → Initials. Using XX for now.");
   const num = (file?.basename ?? tp.file.title).match(/^\d+/)?.[0] ?? "XXXX";

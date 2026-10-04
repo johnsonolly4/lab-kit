@@ -10,8 +10,8 @@
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG, "Repo / release")
 - Git identity: commits now use the global `~/.gitconfig` noreply address (set 2026-10-04 after a push was refused for the private email)
 
-## Latest (2026-10-04, after PR 23): older script files optional
-- `scripts/kit-manifest.mjs` `OPTIONAL_FILES`: excel_to_calc.py, hazards/view.js, lab-header/view.js, lab-config.json now have a Use toggle (default on, nothing changes unless switched off). Branch `feat/optional-legacy-files`. Answered the user: scripts may live in any non-hidden folder (Templates folder / Scripts folder settings); Templater's template folder is left as it is (Set up only fills an empty one)
+## Latest (2026-10-04, after PR 23): Dataview-era files removed
+- **Dataview-era kit files deleted** (user asked: nothing uses them): `hazards/view.js`, `lab-header/view.js`, `lab-config.json` removed from `kit/` (ids retired in the manifest; copies in a vault show as Retired and are never deleted); `lab-config.json` initials fallback removed from `labSnippets.js`; scripts-folder detection now looks for `excel_to_calc.py`. `excel_to_calc.py` stays, optional (Use toggle). Branch `feat/optional-legacy-files`, PR 25. The user also asked: scripts may live in any non-hidden folder; Templater's template folder is left as is (Set up only fills an empty one)
 
 ## Last session (fixes on feat/chemical-database, 2026-10-04)
 - Solution prep and Recipe no longer fill reagents / solvent from the note's Chemicals (`labSnippets.js`; tests pass the reagents explicitly)

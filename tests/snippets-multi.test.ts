@@ -15,7 +15,7 @@ function harness(initial: string) {
   const g = globalThis as any;
   g.Notice = class { constructor(_m: string) { /* silent */ } };
   g.app = {
-    vault: { adapter: { read: async () => JSON.stringify({ initials: "ABC" }) } },
+    vault: { adapter: { read: async () => JSON.stringify({ kit: { initials: "ABC" } }) } },
     workspace: { activeEditor: { editor: { getValue: () => note } } },
     metadataCache: { getFileCache: () => ({ frontmatter: {} }), getFirstLinkpathDest: () => null },
     fileManager: { processFrontMatter: async () => { /* tags not under test */ } },

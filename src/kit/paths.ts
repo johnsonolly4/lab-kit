@@ -66,8 +66,7 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   const tpl = { user_scripts_folder: sane(raw.user_scripts_folder), templates_folder: sane(raw.templates_folder) };
   const remembered: Partial<Roles> = Object.fromEntries(Object.entries(record?.roles ?? {}).filter(([, v]) => sane(v)));
   const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
-  const scriptsFound = find("lab-config.json", f => app.vault.getAbstractFileByPath(kitJoin(f.parent?.path, "lab-header")) != null)
-                    ?? find("lab-config.json");
+  const scriptsFound = find("excel_to_calc.py");
   const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "Extras/scripts");
   const menu = find("Insert snippet.md");
   const formScript = find("labForm.js");
