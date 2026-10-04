@@ -1,9 +1,9 @@
 # Status
 
 **Version:** 0.4.7 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
-**Now:** 0.4.7 is **committed and tagged locally** (`Release 0.4.7`), ships the store scan fixes (PR 15). **Not pushed yet**: the push starts `.github/workflows/release.yml` (first real run); the result is below once known. 0.4.6 is released ([GitHub release](https://github.com/johnsonolly4/lab-kit/releases/tag/0.4.6)). PRs 1-15 are in `main`. **Store scan not re-run yet.** Click-to-edit (second click) is **abandoned for now**, shipped as a known issue in the changelog. `test-vault/` hand-copied kit files stay untracked on purpose.
+**Now:** 0.4.7 is **released** (`Release 0.4.7`, `1c41e99`, tag `0.4.7` pushed). It was built by the GitHub Actions workflow (green, 24 s): [GitHub release 0.4.7](https://github.com/johnsonolly4/lab-kit/releases/tag/0.4.7) has `main.js`, `manifest.json`, `styles.css` and `lab-kit-0.4.7.zip`. **The workflow stays** (user decision, after trying a revert: [PR 16](https://github.com/johnsonolly4/lab-kit/pull/16) closed unmerged): the store scan recommends GitHub artifact attestations for `main.js` / `styles.css`, which only a workflow run can create. `/release` step 10 (push tag, watch the run) is unchanged. PRs 1-15 are in `main`. **Store scan not re-run yet.** Click-to-edit (second click) is **abandoned for now**, shipped as a known issue in the changelog. `test-vault/` hand-copied kit files stay untracked on purpose.
 **Store scan fixes:** [lab-kit#15](https://github.com/johnsonolly4/lab-kit/pull/15) merged (`b86f746`; GitHub Actions release, `src/node.ts`, no `child_process`, no `!important`, README "Privacy & permissions"). The user still checks the CSS and the Windows Explorer step in real Obsidian (checklist: BACKLOG, "Repo / release")
-**Next:** watch the 0.4.7 workflow run, re-run the scan at community.obsidian.md. Checks to make after: BACKLOG, "Repo / release" (workflow run, attestation, Windows Explorer test). Then **a new feedback round** (`/feedback`) on 0.4.7. Leftovers: BACKLOG, "Kit update system".
+**Next:** re-run the scan at community.obsidian.md. Checks to make after: BACKLOG, "Repo / release" (scan, attestation verify, Windows Explorer test, CSS). Then **a new feedback round** (`/feedback`) on 0.4.7. Leftovers: BACKLOG, "Kit update system".
 **Blockers / open questions:**
 - **The updater must be pointed at `dist/`, not `kit/`**: run `npm run package`, then set Settings → Lab Kit → Update folder to the repo's `dist` folder (test vault only). Pointing it at `kit/` still fails with ENOENT (release-only files). Confirmed working from `dist/`
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`), so the v0.3 plain-JS source exists only as an ignored file on this machine. Keep a copy somewhere safe or delete it when sure; it is not in git history
@@ -12,7 +12,12 @@
 - Sample creation workflow: to discuss
 - `npm run lint`: 0 errors, 4 warnings (sentence case, left on purpose): BACKLOG.md (Repo / release)
 
-## Last session (merge PR 15)
+## Last session (release 0.4.7, workflow reverted then kept)
+- `/release` 0.4.7 (summary "Store scan fixes"): `npm test` 131 pass, build clean, `Release 0.4.7` (`1c41e99`), tag pushed, workflow green, GitHub release has the 4 files. User then asked why the workflow existed (the notes only record "plan approved" for the scan-fix PR, not a separate yes to the Action) and chose **revert to local builds**; I opened [PR 16](https://github.com/johnsonolly4/lab-kit/pull/16) for it (branch `revert-github-action`)
+- User then pasted a scan recommendation ("Missing GitHub artifact attestations for release assets: `main.js`, `styles.css`"). Attestations can only be created by a workflow run (my belief, GitHub docs not checked), so the user chose to **keep the workflow**: PR 16 **closed unmerged** (branch left on the remote), `main` still has `.github/workflows/release.yml` and the workflow-based `/release`. The release commit's STATUS on `main` had said "not pushed yet" and BACKLOG still said "never run": both corrected here. 0.4.7 has the attestations. Nothing run (no code change)
+- A stray idle `python` process from a bad command of mine may still be running (kill was denied): user can close it
+
+## Earlier session (merge PR 15)
 - User chose "Merge PR 15". Merged [lab-kit#15](https://github.com/johnsonolly4/lab-kit/pull/15) into `main` (plain merge commit `b86f746`, branch not deleted; was mergeable, no CI checks). Pulled `main` locally. No code changes, tests not rerun, **no release cut**. The CSS / Windows Explorer checks in BACKLOG ("Repo / release") are still the user's. STATUS edit committed on branch `status-merge-pr15` (not pushed). Nothing new for BACKLOG
 
 ## Earlier session (store scan fixes, 0.4.6 scan)
