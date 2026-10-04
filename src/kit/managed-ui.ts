@@ -387,9 +387,11 @@ class KitFilesModal extends Modal {
 
   /** Re-reads the vault and redraws; the window stays open after every action. */
   private async refresh(): Promise<void> {
+    const top = this.contentEl.scrollTop;   // the window scrolls its own content: keep the place after the redraw
     try { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
     catch (e) { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
     this.render();
+    this.contentEl.scrollTop = top;
   }
 
   private async run(action: () => Promise<unknown>): Promise<void> {
