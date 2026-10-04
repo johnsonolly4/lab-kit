@@ -13,6 +13,7 @@
 - **Lab Book template starts with an empty line** under the properties, so the cursor lands there and not in front of the lab header block (which then showed as source). Update the kit to get it
 - **Manage files…**: the Open button is gone from the snippet rows (each is only a small stub that calls the snippet code, so opening it was no use)
 - **Manage files…** keeps its scroll position after Install, Detach, Re-attach and the other buttons (it used to jump back to the top)
+- **Settings boxes fill the row, and folder boxes suggest your folders**: every text box in Settings → Lab Kit is wide (the Chemical folder box was too narrow to read), and the Chemical, Templates, Scripts and Backup folder boxes show a list of your vault's folders as you type
 - **Built-in kit is the first group in Settings → Lab Kit**, with a new **Set up** button (Templater row): it points Templater's user scripts folder at the kit's scripts (only when Templater can't find them now), fills in Templater's template folder only when it is empty (never changes one you set), and adds Insert snippet to its Template hotkeys. Use it after installing the kit
 - **Templater hotkey**: when the kit installs or updates the Alt+S menu template (Insert snippet.md), it is also added to Templater's **Template hotkeys**, if it isn't there yet. You only need to set Alt+S in Obsidian → Hotkeys. Nothing is ever removed from Templater's settings
 - Update the kit (Review update…) to get the new forms

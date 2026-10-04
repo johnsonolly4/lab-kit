@@ -1,5 +1,6 @@
 // Settings for the ```lab-header block, saved under the `header` key of data.json (the kit keeps `kit`).
-// Every hazard option can also be set for one note, as `key: value` lines inside the block.
+// Every hazard option can also be set for one note, as `key: value` lines inside the block.
+import { wideBox } from "../kit/settings-box";
 import type { Plugin, SettingDefinition, SettingDefinitionItem } from "obsidian";
 
 /** How the hazards look and behave. Names match the options of the old Dataview script. */
@@ -116,15 +117,14 @@ export class HeaderStore {
 
   private text(key: "chemicalsProperty" | "classProperty" | "hideForClasses", name: string, desc: string): SettingDefinition {
     const s = this.settings;
-    return { name, desc, render: b => { b.addText(t => t.setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); })); } };
+    return { name, desc, render: b => { b.addText(t => wideBox(b, t).setValue(s[key]).onChange(async v => { s[key] = v; await this.save(); })); } };
   }
 
   private root(key: "dataRootWindows" | "dataRootMac", name: string, desc: string): SettingDefinition {
     const s = this.settings;
     return { name, desc, render: b => {
       b.addText(t => {
-        t.setValue(s[key]).onChange(async v => { s[key] = v.trim(); await this.save(); });
-        t.inputEl.addClass("lab-kit-wide-input");
+        wideBox(b, t).setValue(s[key]).onChange(async v => { s[key] = v.trim(); await this.save(); });
       });
     } };
   }

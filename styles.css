@@ -88,6 +88,7 @@
 .is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
 .lab-kit-wide-input { width: 100%; }
+.setting-item-control.lab-kit-wide-control { flex: 1 1 60%; }
 .lab-kit-notice-btn { margin-top: 6px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */
