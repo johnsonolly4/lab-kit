@@ -10,6 +10,9 @@
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG, "Repo / release")
 - Git identity: commits now use the global `~/.gitconfig` noreply address (set 2026-10-04 after a push was refused for the private email)
 
+## Last session (2026-10-04, store lint warning): no more `:has` in `styles.css`
+- The store check warned about `:has` (`styles.css:94`, `:96`). The settings row now gets the class `lab-kit-wide-row` from `wideBox` (`src/kit/settings-box.ts`) and the CSS uses plain class selectors. 206 tests, build ok, lint 0 errors. Not committed; not looked at in Obsidian (BACKLOG "Settings boxes")
+
 ## Latest (2026-10-04): Solution prep rebuild
 - Plan agreed with the user: two tables like RAFT; one row per solvent, several share the final volume equally; hand-calculated test now
 - `labSnippets.js` `solution()`: form (solutes, solvents, final volume, target mode, unit, total concentration + unit, ratio basis + numbers, mmol / mol); tables `<id>_in` (volume, total concentration) and `<id>` (Component, MW, Target / Ratio, Unit / Mol parts, Target (g · mL), Added, In, Density, Added (g), mmol, Conc. M, Conc. mg/mL, Total). Density from the note, blank = error (`1/0`), never 1.0
