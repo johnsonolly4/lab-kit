@@ -47,7 +47,12 @@
 - Docs: tutorial (sections 3.3 and 6), README, changelog "Unreleased", checklist 6b, CLAUDE.md map. `kit/kit-manifest.json` regenerated (file hashes and per-file versions only; the plugin version did not move)
 
 ## Earlier session (merge PR 20 + remove the folder updater, 2026-10-04)
-- PR 20 (Kit picker) merged and the folder updater removed ([lab-kit#20](https://github.com/johnsonolly4/lab-kit/pull/20), [#21](https://github.com/johnsonolly4/lab-kit/pull/21)); details in the 0.4.9 changelog## Last session (2026-10-05): settings groups, sort, Recipe amount, RAFT co-solvent, live highlight
+- PR 20 (Kit picker) merged and the folder updater removed ([lab-kit#20](https://github.com/johnsonolly4/lab-kit/pull/20), [#21](https://github.com/johnsonolly4/lab-kit/pull/21)); details in the 0.4.9 changelog
+
+## Last session (2026-10-05, docs): README and tutorial brought up to date with 0.5.1
+- Tutorial: Chemicals tip no longer says snippets start from the property (forms start empty since 0.5.0; suggestions come from Chemical folder), live-highlight tip in 3.2, Flow column prep solvent density, Review update ordering + Tick all. README: live highlight, solution prep targets, analysis methods bullet. Docs only; no code, version or manifest touched. Later: README rewritten with contents, quick start, per-feature sections, settings groups, commands, troubleshooting and support (the "By hand" install section removed: Lab Kit is in the store). Not checked in Obsidian: the README's example calc block and chemical-note YAML were written from the tutorial, not run
+
+## Earlier (2026-10-05): settings groups, sort, Recipe amount, RAFT co-solvent, live highlight
 - Merged as PR 29 (215 tests pass, lint 0 errors, build ok, nothing seen in Obsidian). Changelog "Unreleased" has it; PR 28 replaced the `:has` selectors in `styles.css` with a `lab-kit-wide-row` class (`src/kit/settings-box.ts`), store lint warning, not seen in Obsidian (BACKLOG "Settings boxes")
 - Settings: Built-in kit = update rows; new group Kit folders and setup (`src/kit/ui.ts` `builtInGroups`). Manage files / Review update: `attentionRank` / `sortByAttention` (`src/kit/managed.ts`)
 - `labSnippets.js`: Recipe first amount in mmol / g / M (Set mmol cell gets a visible formula); RAFT optional co-solvent (Targets B8). The user's RAFT workbook already matched the snippet; Init eq, NMR standard and the lab-book table were left out on purpose (BACKLOG)
