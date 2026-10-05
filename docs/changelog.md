@@ -1,11 +1,12 @@
 # Lab notebook kit: changelog
 
-## Unreleased
+## v0.5.1 (2026-10-05)
 - **Settings: the update rows come first, together**: the **Built-in kit** group now holds only update things (Update available, Kit version with Manage files / Review update / Update all safe files, What's new, Tell me when a kit update is ready, Backup folder). Templater's **Set up**, the Templates, Scripts and Snippets folders and the console log moved to a new group, **Kit folders and setup**, right below it
 - **Manage kit files and Review update list what needs action first**: Conflict, Merges cleanly, Missing, Update available, New, then Changed by you, Up to date, Kept, Detached and Off (each in path order); Retired files stay last. In Review update the group "Changed by you" moved below the groups you can act on
 - **Recipe: the first reagent's amount in mmol, g or M**: next to the amount there is a unit choice. Grams are divided by the MW (`=0.5/D2*1000`), a concentration is multiplied by a **Total volume (mL)** (`=0.1*10`); the formula stays visible in the first row's *Set mmol* cell. A concentration without a volume leaves the cell empty and says so
 - **RAFT: optional co-solvent**: name a co-solvent and its percentage of the solvent's mass (default 20 %, as ethanol in water): it gets its own row and a row in the Targets table. It is not counted in the solids. Blank = the table is as before
 - **Live highlight while you type a formula**: the cells the formula points at (this table, other tables of the note, header cells too) get a ring while you type, and lose it when you press Enter, Tab or Escape or click away. Works for `B2`, `$B$2`, `B2:C5`, `sol1!B2` and `(-1c0r)`; a half-typed formula marks what it already has
+- **Store check: no more `:has` in the stylesheet**: the wide text boxes in the settings use a class on the row instead (same look)
 
 ## v0.5.0 (2026-10-04)
 - **Solution prep rebuilt**: two tables, **Targets** (final volume, and a total concentration when you split by a ratio) and the components. Each solute can have its own target in **M, mg/mL or g** (the Unit cell), or you give one **total concentration** (M or mg/mL) split between the solutes by a **molar or mass ratio**. **Added** can be in **g or mL** (type `g` or `mL` in the In column): mL is converted to g with the row's **Density** (filled from the chemical note's Density property; blank = the row shows an error, never an assumed 1.0). Each solvent gets its own row (several share the final volume equally; edit the formula to change the split). The table shows the mmol (or mol: your choice in the form) and the concentration actually reached (M and mg/mL). Update the kit (Review update…) to get it; tables made with the old Solution prep keep working
