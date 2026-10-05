@@ -23,7 +23,8 @@ export class FolderSuggest extends AbstractInputSuggest<TFolder> {
 }
 
 /** Lets a settings text box fill its row. With `app`, typing suggests vault folders. */
-export function wideBox(setting: { controlEl: HTMLElement }, text: TextComponent, app?: App): TextComponent {
+export function wideBox(setting: { settingEl: HTMLElement; controlEl: HTMLElement }, text: TextComponent, app?: App): TextComponent {
+  setting.settingEl.addClass("lab-kit-wide-row");
   setting.controlEl.addClass("lab-kit-wide-control");
   text.inputEl.addClass("lab-kit-wide-input");
   if (app) new FolderSuggest(app, text.inputEl);
