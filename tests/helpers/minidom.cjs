@@ -25,7 +25,7 @@ class El {
   empty(){ this.children=[]; this._text=""; }
   createEl(tag,o={}){ const e=new El(tag); if(o.cls) e.className=o.cls; if(o.text!=null) e._text=String(o.text); if(o.attr) for(const k in o.attr) e.setAttribute(k,o.attr[k]); this.appendChild(e); return e; }
   createDiv(o){ return this.createEl("div",o); } createSpan(o){ return this.createEl("span",o); }
-  addClass(c){ this.classList.add(c); } toggleClass(c,b){ b?this.classList.add(c):this.classList.remove(c); }
+  addClass(c){ this.classList.add(c); } removeClass(c){ this.classList.remove(c); } hasClass(c){ return this.classList.contains(c); } toggleClass(c,b){ b?this.classList.add(c):this.classList.remove(c); }
   appendText(t){ const e=new El("#text"); e._text=String(t); this.appendChild(e); }
   setText(t){ this.textContent=t; } setAttr(k,v){ this.setAttribute(k,v); }
 }

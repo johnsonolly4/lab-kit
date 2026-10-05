@@ -264,7 +264,9 @@ ${calc({ name: id, title: v.label, icon: "test-tube" }, header, rows)}${solvents
       const v = await form("Recipe by equivalents", [
         { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: "", placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
         { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: "", suggest: chems },
-        { key: "mmol", label: "Amount of the first reagent (mmol)", value: "" },
+        { key: "amount", label: "Amount of the first reagent", hint: "leave blank to type it in the table", value: "" },
+        { key: "amountUnit", label: "…in", type: "select", options: [{ value: "mmol", label: "mmol" }, { value: "g", label: "g (mass)" }, { value: "M", label: "M (concentration)" }], value: "mmol" },
+        { key: "volume", label: "Total volume (mL)", hint: "only for a concentration: amount = M × mL", value: "" },
         { key: "total", label: "Total mass (g)", hint: "needed for the solvent row and wt%", value: "" },
       ], { intro: "Each row's amount = Eq. × the reagent named in 'Relative to'. Type a 'Set mmol' on any row to fix it directly." });
       if (!v || !list(v.reagents).length) return "";
@@ -274,9 +276,17 @@ ${calc({ name: id, title: v.label, icon: "test-tube" }, header, rows)}${solvents
       const solvRow = v.solvent ? k + 2 : null;
       const totalRow = (solvRow ?? last) + 1;
       const allEnd = solvRow ?? last;
+      // The first row's Set mmol cell: the amount as typed (mmol), or a visible formula from grams (÷ MW) or from a concentration (× volume)
+      const amount = String(v.amount ?? "").trim(), volume = String(v.volume ?? "").trim();
+      let first = amount;
+      if (amount && v.amountUnit === "g") first = `=${amount}/D2*1000`;
+      if (amount && v.amountUnit === "M") {
+        if (volume) first = `=${amount}*${volume}`;
+        else { first = ""; new Notice("A concentration needs the total volume (mL): type =M*mL in the first row's Set mmol cell."); }
+      }
       const rows = reagents.map((r, i) => {
         const n = i + 2;
-        return [r, i === 0 ? "1" : "1", i === 0 ? "" : plain(reagents[0]), `=MW(A${n})`, i === 0 ? (v.mmol ?? "") : "",
+        return [r, i === 0 ? "1" : "1", i === 0 ? "" : plain(reagents[0]), `=MW(A${n})`, i === 0 ? first : "",
           `=IF(E${n}<>"", E${n}, XLOOKUP(C${n}, A$2:A$${last}, F$2:F$${last})*B${n})`, `=F${n}*D${n}/1000`, "", `=IFERROR(G${n}/G$${totalRow}*100, "")`];
       });
       if (solvRow) rows.push([`${link(v.solvent)} (rest)`, "", "", "", "", "", `=IF(G${totalRow}="", 1/0, G${totalRow}-SUM(G2:G${last}))`, "", `=IFERROR(G${solvRow}/G$${totalRow}*100, "")`]);
@@ -292,6 +302,8 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
         { key: "cta", label: "CTA / macro-CTA", value: "", placeholder: "e.g. CTA name", suggest: chems },
         { key: "init", label: "Initiator", value: "", placeholder: "e.g. initiator name", suggest: chems },
         { key: "solvent", label: "Solvent", value: "", placeholder: "e.g. solvent name", suggest: chems },
+        { key: "cosolvent", label: "Co-solvent", hint: "optional · leave blank for none", value: "", placeholder: "e.g. co-solvent name", suggest: chems },
+        { key: "cosolventPct", label: "Co-solvent (% of the solvent's mass)", value: "20" },
         { key: "mass", label: "Total monomer mass (g)", value: "" },
         { key: "dp", label: "Target DP", value: "" },
         { key: "ratio", label: "CTA : initiator", value: "20" },
@@ -306,11 +318,14 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
       rows.push(["CTA", link(v.cta), `=MW(B${ctaRow})`, "", `=${id}!B6/${id}!B3`, `=E${ctaRow}*C${ctaRow}`, ""]);
       rows.push(["Initiator", link(v.init), `=MW(B${initRow})`, "", `=E${ctaRow}/${id}!B4`, `=E${initRow}*C${initRow}`, ""]);
       rows.push(["Solvent", link(v.solvent), "", "", "", `=SUM(F2:F${initRow})*(100/${id}!B5-1)`, ""]);
+      // A co-solvent is a share of the solvent's mass and is not part of the solids
+      if (v.cosolvent) rows.push(["Co-solvent", link(v.cosolvent), "", "", "", `=F${initRow + 1}*${id}!B8/100`, ""]);
       return `## RAFT recipe generator
 ${calc({ name: id, title: "Targets", icon: "flask-conical" }, ["Parameter", "Value"], [
   ["Total monomer mass (g)", v.mass], ["Target DP", v.dp], ["CTA : initiator", v.ratio], ["Solids (% w/w)", v.solids],
   ["Total monomer (mol)", `=IF(B2="", 1/0, B2/(SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})))`],
-  ["Theoretical Mn (g/mol)", `=IF(B3="", 1/0, B3*SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})+${R}!C${ctaRow})`]])}
+  ["Theoretical Mn (g/mol)", `=IF(B3="", 1/0, B3*SUMPRODUCT(${R}!C2:C${mLast}, ${R}!D2:D${mLast})/SUM(${R}!D2:D${mLast})+${R}!C${ctaRow})`],
+  ...(v.cosolvent ? [["Co-solvent (% of solvent mass)", v.cosolventPct]] : [])])}
 ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "MW (g/mol)", "Mol fraction", "mol", "Mass (g)", "Used (g)"], rows)}
 `;
     },

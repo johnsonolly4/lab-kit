@@ -2,8 +2,8 @@
 // Ported from the v0.3 plain-JS plugin (see git history before the port) with no behaviour change.
 import { cleanLink, colToIndex, extractBlocks, indexToCol, isSeparator, joinRow, normName, parseBlock, splitRow, type ParsedBlock } from "./engine";
 
-interface RefEnd { colAbs: boolean; col: number; rowAbs: boolean; row: number }
-interface Ref { qualText: string | null; qual: string | null; a: RefEnd; b: RefEnd | null }
+export interface RefEnd { colAbs: boolean; col: number; rowAbs: boolean; row: number }
+export interface Ref { qualText: string | null; qual: string | null; a: RefEnd; b: RefEnd | null }
 
 /* ---- Rewriting references inside formula text (row insert/delete, fill-down) ---- */
 const REF_AT = /^(?:('(?:[^']+)'|[A-Za-z_][\w.-]*)!)?(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?![\w(!])(?::(?:('(?:[^']+)'|[A-Za-z_][\w.-]*)!)?(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?![\w(!]))?/;

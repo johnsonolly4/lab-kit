@@ -6,6 +6,7 @@ import {
   type Env, type ParsedBlock, type Value
 } from "./engine";
 import { autoInsertIndex, editRows, writeCellText } from "./rewrite";
+import { formulaRefs } from "./refs";
 import { listChemicals, type Chemical } from "../chem";
 import { ChemicalSuggest } from "../chem/suggest";
 import { prop } from "../frontmatter";
@@ -24,13 +25,17 @@ export interface CalcEntry {
   grid?: boolean;
   /** Body cells of the current render, keyed `row|col`, so a click can be carried over a re-render. */
   tds?: Map<string, HTMLElement>;
+  /** Every cell of the current render including the header row, keyed `row|col`: the live highlight finds cells here. */
+  cells?: Map<string, HTMLElement>;
 }
 
 export class CalcRenderer {
   /** Rendered blocks per note path, so edits to the note refresh them. */
   live = new Map<string, Set<CalcEntry>>();
   /** The cell being edited, if any (one at a time). */
-  private editor: { entry: CalcEntry } | null = null;
+  private editor: { entry: CalcEntry; showRefs?: () => void } | null = null;
+  /** Cells marked as referenced by the formula being typed. */
+  private marked: HTMLElement[] = [];
   /**
    * Cell clicked while another was being edited: opened once the save and redraw are done.
    * Obsidian may rebuild the whole block after the save (new element, new entry), so it is
@@ -101,6 +106,7 @@ export class CalcRenderer {
       await this.render(entry, text);
     }
     if (!set.size) this.live.delete(path);
+    this.editor?.showRefs?.();                      // another table was redrawn: its marks are gone
   }
 
   async render(entry: CalcEntry, fileText?: string): Promise<void> {
@@ -158,6 +164,7 @@ export class CalcRenderer {
     const build = (): void => {
       table.empty();
       entry.tds = new Map();
+      entry.cells = new Map();
       table.toggleClass("show-grid", showGrid);
       const head = table.createEl("thead");
       if (showGrid) {
@@ -200,6 +207,7 @@ export class CalcRenderer {
             this.fillText(td, cell.raw, ctx);
             if (r > 0) td.setAttr("title", `${addr}  click to edit`);
           }
+          entry.cells?.set(`${r}|${c}`, td);
           if (r > 0) {
             td.addClass("is-editable");
             entry.tds?.set(`${r}|${c}`, td);
@@ -283,6 +291,26 @@ export class CalcRenderer {
     } else td.setText(raw);
   }
 
+  /** Marks the cells that the formula being typed points at (this table and other tables of the note). */
+  private markRefs(entry: CalcEntry, r: number, c: number, text: string): void {
+    this.clearRefs();
+    if (!text.trim().startsWith("=")) return;
+    const others = [...(this.live.get(entry.ctx.sourcePath) ?? [])].filter(e => e.el.isConnected);
+    for (const ref of formulaRefs(text, { r, c })) {
+      const target = ref.qual === null ? entry : others.find(e => e.parsed?.name === ref.qual);
+      if (!target?.cells) continue;
+      for (let rr = ref.r1; rr <= Math.min(ref.r2, ref.r1 + 200); rr++) for (let cc = ref.c1; cc <= Math.min(ref.c2, ref.c1 + 50); cc++) {
+        const td = target.cells.get(`${rr}|${cc}`);
+        if (td && td.isConnected && !td.hasClass("is-editing")) { td.addClass("is-ref"); this.marked.push(td); }
+      }
+    }
+  }
+
+  private clearRefs(): void {
+    for (const td of this.marked) td.removeClass("is-ref");
+    this.marked = [];
+  }
+
   /** Click-to-edit for any body cell (values and formulas). */
   editCell(entry: CalcEntry, r: number, c: number, td: HTMLElement, current: string): void {
     if (td.querySelector("input")) return;
@@ -291,7 +319,8 @@ export class CalcRenderer {
     td.addClass("is-editing");
     const input = td.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
-    const mine = { entry };
+    const mine: { entry: CalcEntry; showRefs?: () => void } = { entry };
+    mine.showRefs = () => this.markRefs(entry, r, c, input.value);
     this.editor = mine;
     input.focus({ preventScroll: true }); input.select();
     // Typing [[ suggests the notes in the chemical folder, when one is set
@@ -301,6 +330,7 @@ export class CalcRenderer {
     let done = false;
     const finish = async (save: boolean): Promise<void> => {
       if (done) return; done = true;
+      this.clearRefs();
       if (this.editor === mine) this.editor = null;
       suggest?.close();
       const val = input.value.trim();
@@ -323,6 +353,8 @@ export class CalcRenderer {
       window.setTimeout(() => { if (input.ownerDocument.activeElement !== input) void finish(true); }, 200);
     });
     input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("input", () => mine.showRefs?.());
+    mine.showRefs();                                // a formula already in the cell shows what it points at
   }
 
   /** Remembers where the note is scrolled to (Live Preview or Reading view), until the user scrolls themselves. */
