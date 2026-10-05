@@ -259,8 +259,8 @@
       "src": "Extras/scripts/templater/labSnippets.js",
       "role": "userScripts",
       "path": "labSnippets.js",
-      "version": "0.4.9",
-      "sha256": "b8470d39283135c1dd7b7430b5b4aadeba34aa2018b18e4a3401169b02d95550",
+      "version": "0.5.0",
+      "sha256": "1944c4481c5cbd4d2342f53f7693c4ced00f37353113d9bfef3503b414ea7e81",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }

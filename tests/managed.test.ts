@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank,
   type EmbeddedKit, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -170,6 +170,23 @@ describe("per-file actions (Manage kit files)", () => {
     expect(labels).toEqual(["Missing", "Conflict", "Changed by you", "Detached"]);
     expect(statusOf(by(await planManaged(memVault({ "Templates/Menu.md": "menu v1\n" }), V1, null, roles), "tpl-menu")).label).toBe("Up to date");
     expect(statusOf(by(await planManaged(memVault(), V1, null, roles), "tpl-menu")).label).toBe("New");
+  });
+
+  it("sorts the files that need action first, each kind in path order", () => {
+    const item = (action: ManagedItem["action"], dest: string) => ({ action, dest, file: { id: dest } }) as unknown as ManagedItem;
+    const all: ManagedItem["action"][] = ["off", "detached", "keep", "up-to-date", "user-modified", "create", "fast-forward", "missing", "merge", "needs-merge"];
+    const items = all.map((a, i) => item(a, `b${i}.md`));
+    items.push(item("fast-forward", "a.md"), item("create", "a.md"));
+    expect(sortByAttention(items).map(i => `${i.action}:${i.dest}`)).toEqual([
+      "needs-merge:b9.md", "merge:b8.md", "missing:b7.md", "fast-forward:a.md", "fast-forward:b6.md", "create:a.md", "create:b5.md",
+      "user-modified:b4.md", "up-to-date:b3.md", "keep:b2.md", "detached:b1.md", "off:b0.md"]);
+    expect(new Set(all.map(a => attentionRank(item(a, "x")))).size).toBe(all.length);   // every action has its own rank
+  });
+
+  it("a merged file (changed by you, then merged) needs no attention", () => {
+    const it = { action: "user-modified", dest: "x", file: { id: "x" } } as unknown as ManagedItem;
+    expect(attentionRank(it, { merged: true } as never)).toBe(attentionRank({ ...it, action: "up-to-date" }));
+    expect(attentionRank(it)).toBeLessThan(attentionRank({ ...it, action: "up-to-date" }));
   });
 
   it("updates one file and leaves the others and the kit version alone", async () => {

@@ -15,10 +15,15 @@
 - [ ] Type a value (Initials), close Obsidian settings, reload the plugin: value is still there
 - [ ] Settings search finds "legend"
 - [ ] "Per-note options" is its own row. Happy with it?
+- [ ] **Built-in kit** group = update rows only (Update available, Kit version, What's new, Tell me, Backup folder); **Kit folders and setup** group below it = Set up, Templates / Scripts / Snippets folders, console log
+- [ ] Manage files…: Conflict / Merges cleanly / Missing / Update available / New / Changed by you come first, then Up to date, Kept, Detached, Off; Retired last. Review update…: "Changed by you" is below "Updated"
+- [ ] Alt+S **Recipe**: first reagent 0.5 g gives mmol = g ÷ MW in the Set mmol cell; 0.1 M with 10 mL gives 1 mmol; M without a volume leaves the cell empty and shows a notice
+- [ ] Alt+S **RAFT** with a co-solvent: an extra row, mass = % of the solvent's mass; blank co-solvent: no extra row
+- [ ] **Live highlight**: click a formula cell, type `=B2*sol1!B3`: B2 and the cell in the other table get a ring while typing; header cells too; the ring goes on Enter / Esc / click away (also in dark theme and on mobile)
 - [ ] No "Kit updates" group and no **Check for updates** command (the folder updater is gone); **What's new** and **Tell me when a kit update is ready** are in the Built-in kit group
 
 ## 2. Built-in kit install
-- [ ] Built-in kit group shows version row and three folder boxes
+- [ ] Built-in kit group shows the version row and the Backup folder; the Templates and Scripts folder boxes are in Kit folders and setup
 - [ ] Scripts folder refuses a dot folder (notice on blur)
 - [ ] **New vault layout**: with Templater's folders set, the first install puts templates in `<Templates>/Lab Kit/` (menu + `Snippets/`) and the user scripts in `<scripts folder>/lab-kit/`. Give `Insert snippet.md` an Alt+S hotkey: the menu opens, and a snippet runs (so Templater finds `tp.user.labSnippets` in the subfolder; if not, tell me)
 - [ ] **Existing vault** (flat layout): nothing moves; a kit file added later lands beside `Insert snippet.md`

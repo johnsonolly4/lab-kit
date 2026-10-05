@@ -2,16 +2,13 @@
 
 **Version:** 0.5.0 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 **Now:** Solution prep is rebuilt and merged into `main` ([PR 27](https://github.com/johnsonolly4/lab-kit/pull/27), 2026-10-04; 206 tests pass, lint 0 errors, build ok, nothing seen in Obsidian): targets table + component table, per-solute target (M / mg/mL / g) or total concentration split by a ratio, added in g or mL with Density, one row per solvent. Changelog v0.5.0 has it. Before it: Analysis methods are merged into `main` ([PR 26](https://github.com/johnsonolly4/lab-kit/pull/26), 2026-10-04; 206 tests pass, lint 0 errors, nothing seen in Obsidian yet): Methods folder setting, method notes + machine notes, new Alt+S **Analysis table**, per-method toggles in Sample list / Timetable, Combined results over any methods. PR 23 and PR 25 are merged too. 0.5.0 (2026-10-04) ships all of it (Chemical database, Analysis methods, Solution prep rebuild, new default folders, Dataview-era files removed): see changelog v0.5.0. The feedback page needs a new round (`/feedback`).
-**Next:** the user tries Solution prep (checklist 6b) and gives one real stock solution for the test (BACKLOG "Decisions needed"). The user also tries Analysis methods in Obsidian (checklist 6c, BACKLOG "Not yet tested"). Then: release (`/release`; 0.5.0 or 0.4.10: only the user decides), the "Make my own copy" snippet idea and per-snippet script files (BACKLOG), Solution prep vs Recipe and the sample workflow (BACKLOG "Decisions needed"), a feedback round (`/feedback`).
+**Next:** the user tries the 2026-10-05 work in Obsidian (merged: [PR 29](https://github.com/johnsonolly4/lab-kit/pull/29); also the `:has` fix, PR 28) (checklist 6b, section 1 and 2); the user tries Solution prep (checklist 6b) and gives one real stock solution for the test (BACKLOG "Decisions needed"). The user also tries Analysis methods in Obsidian (checklist 6c, BACKLOG "Not yet tested"). Then: release (`/release`; 0.5.0 or 0.4.10: only the user decides), the "Make my own copy" snippet idea and per-snippet script files (BACKLOG), Solution prep vs Recipe and the sample workflow (BACKLOG "Decisions needed"), a feedback round (`/feedback`).
 **Blockers / open questions:**
 - Local `dist/` still holds old kit packages (0.3.0, 0.4.6, zips) from the removed `npm run package`; still gitignored. Safe to delete when you like
 - `legacy/main.js` was never committed (`.gitignore` hides every `main.js`): the v0.3 plain-JS source exists only on this machine. User keeps a copy or deletes it
 - Still to discuss: Solution prep vs Recipe (walk through a real experiment) and the sample creation workflow (BACKLOG, "Decisions needed")
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG, "Repo / release")
 - Git identity: commits now use the global `~/.gitconfig` noreply address (set 2026-10-04 after a push was refused for the private email)
-
-## Last session (2026-10-04, store lint warning): no more `:has` in `styles.css`
-- The store check warned about `:has` (`styles.css:94`, `:96`). The settings row now gets the class `lab-kit-wide-row` from `wideBox` (`src/kit/settings-box.ts`) and the CSS uses plain class selectors. 206 tests, build ok, lint 0 errors. Not committed; not looked at in Obsidian (BACKLOG "Settings boxes")
 
 ## Latest (2026-10-04): Solution prep rebuild
 - Plan agreed with the user: two tables like RAFT; one row per solvent, several share the final volume equally; hand-calculated test now
@@ -50,4 +47,11 @@
 - Docs: tutorial (sections 3.3 and 6), README, changelog "Unreleased", checklist 6b, CLAUDE.md map. `kit/kit-manifest.json` regenerated (file hashes and per-file versions only; the plugin version did not move)
 
 ## Earlier session (merge PR 20 + remove the folder updater, 2026-10-04)
-- PR 20 (Kit picker) merged and the folder updater removed ([lab-kit#20](https://github.com/johnsonolly4/lab-kit/pull/20), [#21](https://github.com/johnsonolly4/lab-kit/pull/21)); details in the 0.4.9 changelog
+- PR 20 (Kit picker) merged and the folder updater removed ([lab-kit#20](https://github.com/johnsonolly4/lab-kit/pull/20), [#21](https://github.com/johnsonolly4/lab-kit/pull/21)); details in the 0.4.9 changelog## Last session (2026-10-05): settings groups, sort, Recipe amount, RAFT co-solvent, live highlight
+- Merged as PR 29 (215 tests pass, lint 0 errors, build ok, nothing seen in Obsidian). Changelog "Unreleased" has it; PR 28 replaced the `:has` selectors in `styles.css` with a `lab-kit-wide-row` class (`src/kit/settings-box.ts`), store lint warning, not seen in Obsidian (BACKLOG "Settings boxes")
+- Settings: Built-in kit = update rows; new group Kit folders and setup (`src/kit/ui.ts` `builtInGroups`). Manage files / Review update: `attentionRank` / `sortByAttention` (`src/kit/managed.ts`)
+- `labSnippets.js`: Recipe first amount in mmol / g / M (Set mmol cell gets a visible formula); RAFT optional co-solvent (Targets B8). The user's RAFT workbook already matched the snippet; Init eq, NMR standard and the lab-book table were left out on purpose (BACKLOG)
+- Live highlight: `src/calc/refs.ts` (`formulaRefs`), `render.ts` (`markRefs`, `entry.cells`), `styles.css` `.is-ref`; tests `tests/refs.test.ts`, `tests/render.test.ts`
+- Left over: BACKLOG (not seen in Obsidian; left-out RAFT items; the sheet's average-MW bug)
+
+

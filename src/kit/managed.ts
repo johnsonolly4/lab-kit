@@ -303,6 +303,28 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
   }
 }
 
+/** How soon a file needs the user's attention: 0 = most urgent. A merged file (changed by you, then merged) needs nothing, like "Up to date". */
+export function attentionRank(item: ManagedItem, st?: ManagedFileState): number {
+  switch (item.action) {
+    case "needs-merge": return 0;
+    case "merge": return 1;
+    case "missing": return 2;
+    case "fast-forward": return 3;
+    case "create": return 4;
+    case "user-modified": return st?.merged ? 6 : 5;
+    case "up-to-date": return 6;
+    case "keep": return 7;
+    case "detached": return 8;
+    case "off": return 9;
+  }
+}
+
+/** Files that need action first (conflicts, merges, missing, updates, new files, changed by you), then the rest; each kind in path order. */
+export function sortByAttention(items: ManagedItem[], stateOf: (id: string) => ManagedFileState | undefined = () => undefined): ManagedItem[] {
+  return [...items].sort((a, b) =>
+    attentionRank(a, stateOf(a.file.id)) - attentionRank(b, stateOf(b.file.id)) || a.dest.localeCompare(b.dest, undefined, { numeric: true }));
+}
+
 /** Follows files the user moves or renames inside Obsidian. Returns true if anything changed. */
 export function followRename(state: ManagedState | null, oldPath: string, newPath: string): boolean {
   if (!state) return false;

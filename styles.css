@@ -36,6 +36,9 @@
 /* Empty inputs that block a result: amber outline */
 .lab-kit td.is-needed { box-shadow: inset 0 0 0 2px rgba(229, 160, 80, 0.85); }
 
+/* Cells the formula being typed points at: a solid ring in the accent colour (the amber ring above is for empty inputs, the dashed outline for hover) */
+.lab-kit td.is-ref, .lab-kit th.is-ref { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
+
 /* Every body cell can be clicked to edit */
 .lab-kit td.is-editable { cursor: text; }
 /* Empty cells: tall enough to click easily */
