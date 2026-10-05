@@ -54,6 +54,40 @@ describe("render", () => {
     assert.strictEqual(el.querySelectorAll("th.is-blank").length, 0);
   });
 
+  it("marks the cells a formula points at while it is typed, in this table and in others, and unmarks them when the edit ends", async () => {
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => "" } }, registerEvent() { /* unused */ } };
+    const renderer = new CalcRenderer(plugin);
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const mk = (source: string): CalcEntry => ({ el: new El("div"), ctx, source });
+    const a = mk("name: a\n| X | Y |\n|---|---|\n| 2 |  |"), b = mk("name: b\n| P | Q |\n|---|---|\n| q | 5 |");
+    renderer.live.set("n.md", new Set([a, b]));
+    await renderer.render(a); await renderer.render(b);
+    const marked = (e: CalcEntry) => [...e.cells!].filter(([, td]) => td.classList.contains("is-ref")).map(([k]) => k).sort();
+
+    const td = a.tds!.get("1|1")!;
+    td.dispatch("click");
+    const input = td.querySelector("input");
+    assert.ok(input, "editor did not open");
+    input.value = "=A2*b!B2+A1";                         // a body cell, a body cell of the other table, a header cell
+    input.dispatch("input");
+    assert.deepStrictEqual(marked(a), ["0|0", "1|0"]);
+    assert.deepStrictEqual(marked(b), ["1|1"]);
+    input.value = "=A2";                                  // typing on: the old marks go
+    input.dispatch("input");
+    assert.deepStrictEqual(marked(a), ["1|0"]);
+    assert.deepStrictEqual(marked(b), []);
+    input.value = "5";                                    // no longer a formula
+    input.dispatch("input");
+    assert.deepStrictEqual(marked(a), []);
+    input.value = "=b!A2";
+    input.dispatch("input");
+    assert.deepStrictEqual(marked(b), ["1|0"]);
+    input.dispatch("keydown", { key: "Escape" });         // discard: marks gone
+    await new Promise(r => setTimeout(r, 10));
+    assert.deepStrictEqual(marked(a), []);
+    assert.deepStrictEqual(marked(b), []);
+  });
+
   it("moves from one edited cell to the next with a single click", async () => {
     let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
     const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText,

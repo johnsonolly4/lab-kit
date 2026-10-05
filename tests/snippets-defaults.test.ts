@@ -108,7 +108,7 @@ describe("chemical folder suggestions", () => {
     for (const key of ["solution", "recipe", "raft"]) await h.run(key);
     assert.deepStrictEqual(suggestKeys(h, "solution"), ["solutes", "solvents"]);
     assert.deepStrictEqual(suggestKeys(h, "recipe"), ["reagents", "solvent"]);
-    assert.deepStrictEqual(suggestKeys(h, "raft"), ["monomers", "cta", "init", "solvent"]);
+    assert.deepStrictEqual(suggestKeys(h, "raft"), ["monomers", "cta", "init", "solvent", "cosolvent"]);
     assert.deepStrictEqual(h.fields.solution.find(f => f.key === "solutes").suggest, [{ name: "DTT", aliases: ["Dithiothreitol"] }, { name: "Toluene", aliases: [] }]);
   });
 

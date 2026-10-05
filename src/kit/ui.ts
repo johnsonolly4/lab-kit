@@ -55,8 +55,8 @@ class KitSettingTab extends PluginSettingTab {
     return rows;
   }
 
-  /** The kit files built into the plugin: version, update buttons and the folders they go to. */
-  private builtInRows(): SettingGroupItem[] {
+  /** The kit files built into the plugin, as two groups: the update rows, then setup (Templater and the folders the kit's files go to). */
+  private builtInGroups(): { updates: SettingGroupItem[]; setup: SettingGroupItem[] } {
     const kit = this.ctl.kit, managed = this.ctl.managed, roles = managed.roles();
     const inst = managed.installedVersion;
     const isHidden = (path: string): boolean => path.split("/").some(p => p.startsWith("."));
@@ -77,9 +77,9 @@ class KitSettingTab extends PluginSettingTab {
         });
       }
     });
-    const rows: SettingGroupItem[] = [];
-    if (managed.updateAvailable()) rows.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
-    rows.push({
+    const updates: SettingGroupItem[] = [];
+    if (managed.updateAvailable()) updates.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
+    updates.push({
       name: "Kit version",
       desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(kit.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
       render: b => {
@@ -88,20 +88,21 @@ class KitSettingTab extends PluginSettingTab {
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
-    rows.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
+    const setup: SettingGroupItem[] = [];
+    setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
       render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
-    rows.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
+    updates.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
-    rows.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
+    updates.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
       render: b => { b.addToggle(t => t.setValue(kit.notifyKitUpdate).onChange(async v => { kit.notifyKitUpdate = v; await this.ctl.save(); })); } });
-    rows.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
-    rows.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
-    rows.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
-    rows.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
+    setup.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
+    setup.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
+    updates.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
+    setup.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
       render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });
-    rows.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
+    setup.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
       render: b => { b.addToggle(t => t.setValue(kit.debug).onChange(async v => { kit.debug = v; await this.ctl.save(); })); } });
-    return rows;
+    return { updates, setup };
   }
 
   getSettingDefinitions(): SettingDefinitionItem[] {
@@ -132,9 +133,10 @@ class KitSettingTab extends PluginSettingTab {
         } }
     ];
     const snippets = this.snippetRows();
-    const builtIn = this.builtInRows();
+    const builtIn = this.builtInGroups();
     return [
-      { type: "group", heading: "Built-in kit", items: builtIn },
+      { type: "group", heading: "Built-in kit", items: builtIn.updates },
+      { type: "group", heading: "Kit folders and setup", items: builtIn.setup },
       { type: "group", heading: "Lab notebook", items: notebook },
       ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
       ...this.header.definitions()

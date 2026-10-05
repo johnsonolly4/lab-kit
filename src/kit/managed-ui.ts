@@ -2,7 +2,7 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -254,10 +254,10 @@ export class KitManaged {
 const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; resolve in Manage kit files)", open: true },
   { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
-  { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "missing", title: "Deleted by you (tick to recreate)", open: true },
   { action: "create", title: "New files", open: true },
   { action: "fast-forward", title: "Updated (the old copy is backed up first)", open: true },
+  { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "up-to-date", title: "Already up to date" },
   { action: "keep", title: "Kept (your settings)" },
   { action: "detached", title: "Detached (not managed)" },
@@ -418,7 +418,7 @@ class KitFilesModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     this.snippetSwitch(contentEl);
-    const ordered = [...this.items].sort((a, b) => a.dest.localeCompare(b.dest, undefined, { numeric: true }));
+    const ordered = sortByAttention(this.items, (id) => this.managed.stateOf(id));
     for (const it of ordered) {
       const id = it.file.id;
       const status = statusOf(it, this.managed.stateOf(id));

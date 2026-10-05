@@ -54,8 +54,8 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | Snippet | Use it for | Gives you |
 |---|---|---|
 | **Solution prep** | Making up a stock solution | Targets table (final volume, optional total concentration) + one row per solute and solvent: MW (from the chemical note) · target (M, mg/mL or g, or a total concentration split by a ratio) · added in g or mL (mL uses the row's Density) · mmol · concentration reached |
-| **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, solvent "rest" row, total mass, wt% |
-| **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent, Mn (several monomers: the mol fractions always add up) |
+| **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, the first reagent's amount in mmol, g or M (× volume), solvent "rest" row, total mass, wt% |
+| **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent (and an optional co-solvent as % of its mass), Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |
 | **Sample list** | Samples without times | Typed or generated codes · can add NMR/GPC/DLS + results |
 | **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · can add NMR/GPC/DLS + results |
@@ -275,14 +275,14 @@ Ionisation: APCI
 
 ## 7. Updating the kit
 
-The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.13 or newer. **Settings → Lab Kit → Built-in kit**:
+The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.13 or newer. **Settings → Lab Kit → Built-in kit** (the update buttons; Set up and the folders are in the next group, **Kit folders and setup**):
 
 | Button | Does |
 |---|---|
 | **Review update…** | a preview of every file: new, updated, changed by you, missing. Nothing is written until you press **Apply** |
 | **Update all safe files** | adds new files and updates the ones you never edited (the first install asks first). It never merges |
 | **Set up** (Templater row) | points Templater's user scripts folder at the kit's scripts (only when it can't find them now), fills in its template folder only when that is empty (one you set is never changed), and adds *Insert snippet* to its Template hotkeys. Press it once after installing the kit, then set **Alt+S** in Obsidian → Hotkeys. Installing or updating the Alt+S menu template adds the hotkey entry by itself |
-| **Manage files…** | every kit file with a status, and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
+| **Manage files…** | every kit file with a status (files that need action first), and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
 
 - **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
 - **A file you changed** is never overwritten. If your edits and the kit's touch different lines, it is listed under "merges cleanly" and you can tick it to merge. In the Lab Book template the properties are merged one by one, so a property you added stays.

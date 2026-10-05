@@ -120,12 +120,22 @@ describe("snippets", () => {
     assert.ok(evalNote().g("sol8", "E2").err);
 
     // Recipe by equivalents with solvent rest + total
-    r = await run("recipe", { reagents: "Lipoic Acid, Benzyl alcohol", solvent: "DCM", mmol: "10", total: "60" });
+    r = await run("recipe", { reagents: "Lipoic Acid, Benzyl alcohol", solvent: "DCM", amount: "10", total: "60" });
     ({ g: gg } = evalNote());
     close(gg("recipe", "F3"), 10);                  // 1 eq of BA relative to LA
     close(gg("recipe", "G2"), 2.0632);
     close(gg("recipe", "G4"), 60 - 2.0632 - 1.0814);  // DCM (rest)
     close(gg("recipe", "I2"), 2.0632 / 60 * 100);
+
+    // Recipe: the first reagent's amount in g (÷ MW) or as a concentration (× volume)
+    await run("recipe", { reagents: "A, B", amount: "0.5", amountUnit: "g" });
+    await run("recipe", { reagents: "A, B", amount: "0.1", amountUnit: "M", volume: "10" });
+    await run("recipe", { reagents: "A, B", amount: "0.1", amountUnit: "M", volume: "" });       // no volume: left blank, not guessed
+    let ev0 = evalNote();
+    assert.deepStrictEqual(ev0.errs, []);
+    close(ev0.g("recipe2", "F2"), 5); close(ev0.g("recipe2", "G2"), 0.5);                         // 0.5 g / 100 g/mol
+    close(ev0.g("recipe3", "F2"), 1); close(ev0.g("recipe3", "G2"), 0.1);                         // 0.1 M × 10 mL
+    assert.ok(ev0.g("recipe4", "F2").err, "no amount, no number");
 
     // RAFT generator: blanks → needs messages, then numbers from 0005
     r = await run("raft", { monomers: "DAAm", cta: "PDMA 76", init: "VA-044", solvent: "Water" });
@@ -146,6 +156,15 @@ describe("snippets", () => {
     close(ev.g("raft2_r", "F2") + ev.g("raft2_r", "F3") + ev.g("raft2_r", "F4"), 2.5, 1e-9);
     close(ev.g("raft2", "B6"), 2.5 / mean, 1e-9);
     close(ev.g("raft2", "B7"), 105 * mean + 238.39, 1e-9);
+
+    // RAFT co-solvent: a share of the solvent's mass, outside the solids
+    r = await run("raft", { monomers: "DAAm", cta: "PDMA 76", init: "VA-044", solvent: "Water", cosolvent: "Ethanol" });
+    const rid = r.md.match(/name: (raft\d*)\n/)![1];
+    setCell(rid, 1, "B", "2.5"); setCell(rid, 2, "B", "105"); setCell(`${rid}_r`, 2, "C", "2220.99");
+    ev = evalNote();
+    assert.deepStrictEqual(ev.errs, []);
+    close(ev.g(`${rid}_r`, "F5"), 11.259, 1e-3); close(ev.g(`${rid}_r`, "F6"), 11.259 * 0.2, 1e-3);
+    assert.ok(r.md.includes("Co-solvent (% of solvent mass) | 20"));
 
     // Sample list + NMR/GPC + results
     r = await run("samples", { codes: "", count: "3", nmr: true, gpc: true, results: true });
