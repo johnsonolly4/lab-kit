@@ -35,7 +35,7 @@ flowchart LR
    - **Objectives · Apparatus · Procedure · Results / Analysis · Notes for next time**
 
 > [!tip] Add chemicals early
-> Put them in **Chemicals** as links (`[[DCM]]`). The hazard table, and the reagent lists in snippets, all start from this property.
+> Put them in **Chemicals** as links (`[[DCM]]`): the hazard table is built from this property. The snippet forms start empty; to pick chemicals quickly in them, set **Chemical folder** (section 6) and they suggest your notes as you type.
 
 ---
 
@@ -64,7 +64,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
 | **Analysis table** | Any other method | Pick a method (NMR, GPC, DLS or a note in your Methods folder), then its sample table, machine and checklist |
-| **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume |
+| **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
 | **Blank calc table** | Anything else | Your own columns |
 
@@ -99,6 +99,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | see cell addresses | **A1** |
 | send to Excel | **Copy** |
 | change options or lots of text | hover → Obsidian's `</>` button (top right), or arrow into the block |
+
+> [!tip] See what a formula points at
+> While you type a formula, the cells it refers to (this table, other tables in the note, header cells too) get a ring. The rings go when you press Enter, Tab or Esc, or click away. It works for `B2`, `$B$2`, `B2:C5` and `sol1!B2`; a half-typed formula marks what it already has.
 
 > [!note] Rows and references
 > Like Excel: when you add a row, `SUM(B2:B4)` becomes `SUM(B2:B5)`, and other tables pointing into this one (`sol1!B5`, `XLOOKUP(…, nmr!B$2:B$4, …)`) are updated too. Deleting a row that something points at gives `#REF!`.
@@ -216,7 +219,7 @@ flowchart LR
 | Your chemical notes | Settings → Lab Kit → Chemical folder (empty = no suggestions). Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts |
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
-| Data folder (e.g. on Google Drive) | Settings → Lab Kit → Data folder root (empty until you set it) |
+| Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
 | A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`) |
 | What a snippet builds | `labSnippets.js` in your Templater user scripts folder (one section per snippet) |
@@ -279,7 +282,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 
 | Button | Does |
 |---|---|
-| **Review update…** | a preview of every file: new, updated, changed by you, missing. Nothing is written until you press **Apply** |
+| **Review update…** | a preview of every file: what needs action first (conflict, merges cleanly, missing, update, new), then changed by you. **Tick all / Untick all** handles the files with a box. Nothing is written until you press **Apply** |
 | **Update all safe files** | adds new files and updates the ones you never edited (the first install asks first). It never merges |
 | **Set up** (Templater row) | points Templater's user scripts folder at the kit's scripts (only when it can't find them now), fills in its template folder only when that is empty (one you set is never changed), and adds *Insert snippet* to its Template hotkeys. Press it once after installing the kit, then set **Alt+S** in Obsidian → Hotkeys. Installing or updating the Alt+S menu template adds the hotkey entry by itself |
 | **Manage files…** | every kit file with a status (files that need action first), and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
