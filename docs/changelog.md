@@ -1,5 +1,10 @@
 # Lab notebook kit: changelog
 
+## v0.5.2 (2026-10-05)
+- **Docs only: no change to how the plugin or the kit works** (the kit files are identical, so there is nothing to update in Review update…)
+- **README rewritten for the store page**: contents, quick start, a section for each feature (calc tables, chemical database, snippet forms, analysis methods, header, built-in kit), the settings groups, the commands, troubleshooting and where to report problems. The "install by hand" steps are gone: Lab Kit is in the community store
+- **Tutorial brought up to date**: the Chemicals tip now says the forms start empty and suggest notes from your Chemical folder, a tip about the rings on the cells a formula points at, the solvent density in Flow column prep, how Review update orders its files, and where the Data folder root setting is
+
 ## v0.5.1 (2026-10-05)
 - **Settings: the update rows come first, together**: the **Built-in kit** group now holds only update things (Update available, Kit version with Manage files / Review update / Update all safe files, What's new, Tell me when a kit update is ready, Backup folder). Templater's **Set up**, the Templates, Scripts and Snippets folders and the console log moved to a new group, **Kit folders and setup**, right below it
 - **Manage kit files and Review update list what needs action first**: Conflict, Merges cleanly, Missing, Update available, New, then Changed by you, Up to date, Kept, Detached and Off (each in path order); Retired files stay last. In Review update the group "Changed by you" moved below the groups you can act on
