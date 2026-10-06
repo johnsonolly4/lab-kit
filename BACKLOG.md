@@ -1,6 +1,16 @@
 # Backlog
 
 Source: Lab Kit Feedback page (v0.3 round, 2026-10-03) plus later sessions. Open items only: done items are in `docs/changelog.md` and git history (cleaned 2026-10-04).
+When an item is chosen, move it to `STATUS.md` → Next.
+
+## GitHub issues (open, copied 2026-10-07; scheduled in `STATUS.md` → Next)
+- [ ] [#32](https://github.com/johnsonolly4/lab-kit/issues/32) Lab note template: Status is still a list form rather than text
+- [ ] [#33](https://github.com/johnsonolly4/lab-kit/issues/33) Missing chemical database template (no description)
+- [ ] [#34](https://github.com/johnsonolly4/lab-kit/issues/34) Overwrites user scripts on setup (no description)
+
+## Leftovers from sessions
+- [ ] Starter-kit adoption (2026-10-07): the repo's `explorer` agent and `release` skill were kept, not replaced by the kit's. Differences: kit `explorer` caps output at 40 lines and forbids diagnosis; kit `release` proposes a semver bump and scans for real names before tagging (`.claude/agents/explorer.md`, `.claude/skills/release/SKILL.md`). Adopt either if wanted
+- [ ] Duplicate item: "Click-to-edit still takes two clicks" (v0.4 checklist bugs) is superseded by the ticked one-click item in "v0.4 quick changes", which says to delete it at the next tidy. Left in place (needs the user's OK)
 
 ## v0.4 checklist bugs (Obsidian test, 2026-10-03)
 - [ ] CSS snippet switch (`scrolling-mermaid`) "doesn't seem to do anything" (`src/kit/obsidian-private.ts` `isCssSnippetEnabled`; the snippet only affects Mermaid blocks, so test on a note with one and check `appearance.json`)
