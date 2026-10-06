@@ -69,7 +69,7 @@ Order after the store submission: **Kit picker → Chemical database → Analysi
 - [ ] `npm audit`: 0 production vulnerabilities; 8 in dev dependencies (6 moderate, 1 high, 1 critical; esbuild / vitest / eslint chain, checked 2026-10-04). Check whether `npm audit fix` (without `--force`) is safe
 - [ ] `npm run lint` only lints `src`. Decide whether `tests/` and `scripts/` should be linted too (store review looks at the plugin source only)
 - [ ] Add a `npm run lint` step to `/release` (`.claude/skills/release/SKILL.md` has none): must end with 0 errors
-- [ ] No CI on pull requests (`npm test` / `npm run lint` / `npm run build` only run locally); optional second workflow
+- [x] No CI on pull requests (`npm test` / `npm run lint` / `npm run build` only run locally); optional second workflow. Added 2026-10-07: `.github/workflows/tests.yml` (not yet run on GitHub)
 - [ ] Updater: install from **GitHub releases** instead of a local folder (also works on the Mac). Must be optional and described in the README "Privacy & permissions" section (it is the first network use)
 - [ ] Tutorial lives in the repo (`docs/tutorial.md`) and in the README
 - [ ] **Community store submission checklist** (process in `docs/reference/plugin-guidelines.md`, "Store submission"):
