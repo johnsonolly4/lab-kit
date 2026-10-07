@@ -2,7 +2,7 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
   kitBackupPath, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -357,6 +357,14 @@ export class KitManaged {
   }
 }
 
+/** The symbol + word for what Apply does with a file, coloured (src/kit/managed.ts `actionLook`). */
+function actionChip(parent: HTMLElement, action: ManagedAction): void {
+  const look = actionLook(action);
+  const chip = parent.createSpan({ cls: `lab-kit-act is-${look.tone}` });
+  chip.createSpan({ cls: "lab-kit-act-symbol", text: look.symbol });
+  chip.appendText(" " + look.word);
+}
+
 const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; resolve in Manage kit files)", open: true },
   { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
@@ -365,7 +373,7 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "fast-forward", title: "Updated (the old copy is backed up first)", open: true },
   { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "up-to-date", title: "Already up to date" },
-  { action: "keep", title: "Kept (your settings)" },
+  { action: "keep", title: "Kept: files you are meant to edit (your settings); the kit never updates them" },
   { action: "detached", title: "Detached (not managed)" },
   { action: "off", title: "Switched off (not installed)" }
 ];
@@ -428,6 +436,8 @@ class KitManagedModal extends Modal {
           li.appendText(" merge ");
         }
         li.addClass("lab-kit-review-row");
+        actionChip(li, g.action);
+        li.appendText(" ");
         li.createSpan({ cls: "lab-kit-install-name", text: it.dest.slice(it.dest.lastIndexOf("/") + 1) });
         if (it.file.desc) li.createDiv({ cls: "setting-item-description", text: it.file.desc });
         li.createEl("code", { cls: "lab-kit-install-path", text: it.dest });
@@ -444,6 +454,7 @@ class KitManagedModal extends Modal {
       const ul = det.createEl("ul");
       for (const r of this.retired) {
         const li = ul.createEl("li");
+        li.createSpan({ cls: "lab-kit-act is-leave", text: "– Left in place, not deleted " });
         li.createEl("code", { text: r.path });
         if (!r.exists) li.appendText(" (already deleted)");
       }
@@ -530,6 +541,7 @@ class KitFilesModal extends Modal {
       const id = it.file.id;
       const status = statusOf(it, this.managed.stateOf(id));
       const row = new Setting(contentEl).setName(it.dest);
+      actionChip(row.nameEl, it.action);
       row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
       const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
         : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";

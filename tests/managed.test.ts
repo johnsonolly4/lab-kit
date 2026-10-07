@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank,
-  type EmbeddedKit, type ManagedAdapter, type ManagedItem
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
+  type EmbeddedKit, type ManagedAction, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -466,5 +466,22 @@ describe("renames and retired files", () => {
     expect(next.files["tpl-book"]).toBeDefined();
     expect(v.files[`${opts.baseDir}/tpl-menu.txt`]).toBeUndefined();
     expect(v.files["Templates/Menu.md"]).toBe("menu v1\n");
+  });
+});
+
+describe("actionLook (symbol + word + tone for what Apply does)", () => {
+  const all: ManagedAction[] = ["create", "fast-forward", "up-to-date", "user-modified", "merge", "needs-merge", "missing", "keep", "detached", "off"];
+  it("has a distinct symbol-or-word and a tone for every action", () => {
+    const words = all.map(a => actionLook(a).word);
+    expect(new Set(words).size).toBe(all.length);
+    for (const a of all) expect(actionLook(a).symbol.length).toBeGreaterThan(0);
+  });
+  it("colours: add green, change orange, conflict red; yours and settings are left", () => {
+    expect(actionLook("create").tone).toBe("add");
+    expect(actionLook("fast-forward").tone).toBe("change");
+    expect(actionLook("merge").tone).toBe("change");
+    expect(actionLook("needs-merge").tone).toBe("conflict");
+    expect(actionLook("user-modified").tone).toBe("leave");
+    expect(actionLook("keep").tone).toBe("leave");
   });
 });

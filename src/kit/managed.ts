@@ -378,6 +378,23 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
   }
 }
 
+/** What Apply does with a file, as a symbol + word + colour tone (red = problem, orange = changed, green = added; colour is never the only signal). */
+export type ActionTone = "add" | "change" | "conflict" | "leave" | "same";
+export function actionLook(action: ManagedAction): { symbol: string; word: string; tone: ActionTone } {
+  switch (action) {
+    case "create": return { symbol: "+", word: "Add", tone: "add" };
+    case "missing": return { symbol: "+", word: "Recreate (if ticked)", tone: "add" };
+    case "fast-forward": return { symbol: "↑", word: "Update", tone: "change" };
+    case "merge": return { symbol: "⇄", word: "Merge (if ticked)", tone: "change" };
+    case "needs-merge": return { symbol: "!", word: "Conflict: left as is", tone: "conflict" };
+    case "user-modified": return { symbol: "•", word: "Leave (yours)", tone: "leave" };
+    case "keep": return { symbol: "•", word: "Leave (your settings)", tone: "leave" };
+    case "detached": return { symbol: "–", word: "Leave (detached)", tone: "leave" };
+    case "off": return { symbol: "–", word: "Skip (off)", tone: "leave" };
+    case "up-to-date": return { symbol: "=", word: "Same", tone: "same" };
+  }
+}
+
 /** How soon a file needs the user's attention: 0 = most urgent. A merged file (changed by you, then merged) needs nothing, like "Up to date". */
 export function attentionRank(item: ManagedItem, st?: ManagedFileState): number {
   switch (item.action) {

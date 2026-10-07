@@ -73,6 +73,12 @@
 .lab-kit-badge.is-ok { color: var(--text-success); }
 .lab-kit-badge.is-info { color: var(--text-accent); }
 .lab-kit-badge.is-warn { color: var(--text-warning); }
+/* What Apply does with a file (src/kit/managed.ts actionLook): green add, orange change, red conflict, grey leave / same */
+.lab-kit-act { display: inline-block; margin-right: 6px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
+.lab-kit-act-symbol { font-weight: 700; }
+.lab-kit-act.is-add { background: rgba(var(--color-green-rgb), 0.22); color: var(--text-normal); }
+.lab-kit-act.is-change { background: rgba(var(--color-orange-rgb), 0.25); color: var(--text-normal); }
+.lab-kit-act.is-conflict { background: rgba(var(--color-red-rgb), 0.22); color: var(--text-normal); }
 /* Merge window: one card per conflict, Yours / Kit / Original side by side (stacked on narrow screens) */
 .lab-kit-hunk { margin: 8px 0; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
 .lab-kit-hunk.is-undecided { border-color: var(--text-warning); }
