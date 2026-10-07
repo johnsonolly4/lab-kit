@@ -39,3 +39,4 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-07 — Meta Bind buttons call `lab-kit:<id>` from Phase 4b; the Action templates the commands replace leave the kit — one copy of each action — (user, `/phase-plan` 4b)
 - 2026-10-07 — Per-project to-do / note: a plugin method with an optional project, no extra commands — (user, `/phase-plan` 4b)
 - 2026-10-07 — Planning commands are registered only when the planning kit is on and installed (gate read at load, as the to-do engine) — (user, `/phase-plan` 4b)
+- 2026-10-07 — Alt+S stays a Templater template hotkey (Set up adds it; no Lab Kit insert command) — (user, multi-kit feedback round)
