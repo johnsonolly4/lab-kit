@@ -34,7 +34,6 @@ Outcome:
 cssclasses:
   - academia
   - academia-rounded
-  - wide
   - scrolling_mermaid
 ---
 

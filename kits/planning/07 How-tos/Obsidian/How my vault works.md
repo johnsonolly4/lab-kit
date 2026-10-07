@@ -2,7 +2,6 @@
 kind: guide
 cssclasses:
   - vt
-  - wide
 ---
 
 # How my vault works

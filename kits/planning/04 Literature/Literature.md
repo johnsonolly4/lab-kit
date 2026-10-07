@@ -2,7 +2,6 @@
 kind: hub
 cssclasses:
   - vt
-  - wide
 ---
 
 > [!note]- How I read

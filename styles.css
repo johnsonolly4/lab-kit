@@ -153,3 +153,5 @@
 .lab-kit-install-row { padding: 4px 0 6px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-install-name { font-weight: 600; }
 .lab-kit-install-path { font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
+.lab-kit-review-row { padding: 4px 0; }
+.lab-kit-review-row .lab-kit-install-path { display: block; }

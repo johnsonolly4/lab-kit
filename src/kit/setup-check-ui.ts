@@ -85,7 +85,7 @@ export class SetupCheckModal extends Modal {
       case "templater": this.close(); await lab.setupTemplater(); return;
       case "css": await confirm({ name: "Turn on the CSS snippet", desc: fix.names.join(", "), apply: () => setCssSnippets(this.app, fix.names, []) }); break;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
-      case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Also turns on Templater's "Trigger Templater on new file creation".`,
+      case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
         apply: () => addTemplaterFolderTemplate(this.app, fix.folder, fix.template) }); break;
       case "hotkey": await confirm({ name: `Set ${hotkeyText(fix.key)}`, desc: `For ${it.label.split(":")[0]} (Settings → Hotkeys shows it afterwards).`,
         apply: async () => { if (!(await addHotkey(this.app, fix.command, fix.key))) new Notice("Couldn't set it here. Set it in the hotkeys settings."); } }); break;

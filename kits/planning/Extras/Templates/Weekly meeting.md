@@ -12,7 +12,6 @@ kind: meeting
 date: <% date %>
 cssclasses:
   - vt
-  - wide
 ---
 
 # Weekly meeting - <% d.format("dddd D MMMM") %>

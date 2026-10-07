@@ -5,7 +5,6 @@ kind: daily
 Experiments:
 cssclasses:
   - vt
-  - wide
 ---
 
 `BUTTON[todo, go-todo]`

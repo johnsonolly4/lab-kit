@@ -6,7 +6,7 @@ import {
   type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
 import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
@@ -16,7 +16,7 @@ const MENU_ID = "tpl-insert-snippet-md";
 /** Names of the settings a kit file can need (`needs` in kit-manifest.json), as the settings tab shows them. */
 const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder" };
 
-export interface ManagedHost { kit: KitData; save(): Promise<void> }
+export interface ManagedHost { kit: KitData; save(): Promise<void>; /** Called after a kit's files were written (e.g. to start the planning commands without a reload). */ installed?(): void }
 
 export class KitManaged {
   constructor(private plugin: Plugin, private host: ManagedHost, readonly bundle: EmbeddedKit) {}
@@ -59,6 +59,11 @@ export class KitManaged {
     return old ? { files: old.files, hash: kitSha1 } : null;
   }
 
+  /** Writes kit files while Templater's "Trigger on new file creation" leaves them alone: a template must land as text, not be run. */
+  private quietly<T>(items: ManagedItem[], write: () => Promise<T>): Promise<T> {
+    return withoutTemplaterTrigger(this.app, items.map(i => i.dest), write);
+  }
+
   plan(): Promise<ManagedItem[]> {
     return planManaged(this.app.vault.adapter, this.bundle, this.slot.managed, this.roles(), this.legacy(), this.baseDir(), this.offIds());
   }
@@ -69,9 +74,10 @@ export class KitManaged {
 
   async apply(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<ManagedResult[]> {
     const kit = this.slot;
-    const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select }));
+    const out = await this.quietly(items, () => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select })));
     kit.managed = out.state;
     await this.host.save();
+    this.host.installed?.();
     return out.results;
   }
 
@@ -111,8 +117,8 @@ export class KitManaged {
     const out: SettingChange[] = [];
     const css = opts.css, folder = opts.templaterFolder;
     if (css) out.push({ name: "Turn on the CSS snippet", desc: css.enable.join(", "), apply: () => setCssSnippets(this.app, css.enable, css.disable) });
-    // Only the lab kit sets it: the planning kit's scripts sit in a subfolder (vault/) beside lab-kit/, so its folder would hide the lab scripts
-    if (folder && this.bundle.manifest.id === LAB_KIT) out.push({ name: "Set Templater's user scripts folder", desc: `To ${folder}. Templater has none yet; the snippet forms need it.`, apply: () => setTemplaterUserScripts(this.app, folder) });
+    // The folder above the kit's own subfolder (templaterScriptsTarget), so it covers lab-kit/ and vault/ alike
+    if (folder) out.push({ name: "Set Templater's user scripts folder", desc: `To ${folder}. Templater has none yet; the kit's templates need it.`, apply: () => setTemplaterUserScripts(this.app, folder) });
     return out;
   }
 
@@ -140,7 +146,7 @@ export class KitManaged {
     let results: ManagedResult[] = [];
     const item = items.find(go);
     await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, settings: this.hotkeySetting(items, go), run: async () => {
-      const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true }));
+      const out = await this.quietly(items, () => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true })));
       kit.managed = out.state;
       await this.settleVersion();
       await this.host.save();
@@ -324,7 +330,7 @@ export class KitManaged {
         run: async () => {
           ran = true;
           if (!moved || scripts.kind !== "relocate") return;
-          const out = await applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, this.applyOptions({ select, keepVersion: true }));
+          const out = await this.quietly(items, () => applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, this.applyOptions({ select, keepVersion: true })));
           kit.managed = out.state;
           kit.paths.userScripts = scripts.to;
           await this.host.save();
@@ -415,7 +421,10 @@ class KitManagedModal extends Modal {
           cb.addEventListener("change", () => { if (cb.checked) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); this.render(); });
           li.appendText(" merge ");
         }
-        li.createEl("code", { text: it.dest });
+        li.addClass("lab-kit-review-row");
+        li.createSpan({ cls: "lab-kit-install-name", text: it.dest.slice(it.dest.lastIndexOf("/") + 1) });
+        if (it.file.desc) li.createDiv({ cls: "setting-item-description", text: it.file.desc });
+        li.createEl("code", { cls: "lab-kit-install-path", text: it.dest });
         if (it.untracked && (g.action === "user-modified")) li.appendText(" (not installed by the kit, no original to compare with)");
         if (g.action === "needs-merge" && it.conflicts === undefined) li.appendText(" (no original copy to merge with)");
         if (g.action === "merge" && it.file.kind === "script") li.appendText(" (merged code: please test it)");

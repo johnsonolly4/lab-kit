@@ -4,9 +4,9 @@ import type { App, TFile, TFolder } from "obsidian";
 
 interface TemplaterPlugin {
   settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[];
-    trigger_on_file_creation?: boolean; enable_folder_templates?: boolean; folder_templates?: { folder?: string; template?: string }[] };
+    folder_templates?: { folder?: string; template?: string }[] };
   command_handler?: { sync_template_hotkeys?: () => void; add_template_hotkey?: (old: string | null, template: string) => void };
-  templater?: { create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
+  templater?: { files_with_pending_templates?: Set<string>; create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
   save_settings?: () => Promise<void>;
   saveSettings?: () => Promise<void>;
 }
@@ -123,7 +123,7 @@ export async function setCssSnippets(app: App, enable: string[], disable: string
 export const templaterFolderTemplates = (app: App): { folder: string; template: string }[] =>
   (templater(app)?.settings?.folder_templates ?? []).map(e => ({ folder: e?.folder ?? "", template: e?.template ?? "" }));
 
-/** Adds a folder template and turns on "Trigger Templater on new file creation" (needed for folder templates). Adds only: a folder that has an entry keeps it. True when added. */
+/** Adds a folder template. Adds only: a folder that has an entry keeps it. True when added. ("Trigger Templater on new file creation", which folder templates need, is stored per device by Templater: the user turns it on.) */
 export async function addTemplaterFolderTemplate(app: App, folder: string, template: string): Promise<boolean> {
   const tpl = templater(app);
   if (!tpl?.settings) return false;
@@ -132,8 +132,6 @@ export async function addTemplaterFolderTemplate(app: App, folder: string, templ
   // Templater keeps an empty first row for its settings page; fill that instead of adding a second one
   const blank = list.find(e => !e?.folder && !e?.template);
   if (blank) { blank.folder = folder; blank.template = template; } else list.push({ folder, template });
-  tpl.settings.trigger_on_file_creation = true;
-  if (tpl.settings.enable_folder_templates === false) tpl.settings.enable_folder_templates = true;
   try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
   return true;
 }
@@ -162,4 +160,19 @@ export async function addHotkey(app: App, command: string, key: KitHotkey): Prom
 export function commandNames(app: App): Record<string, string> {
   const cmds = (app as unknown as { commands?: { commands?: Record<string, { name?: string }> } }).commands?.commands ?? {};
   return Object.fromEntries(Object.entries(cmds).map(([id, c]) => [id, c?.name ?? id]));
+}
+
+/**
+ * Runs `write` while Templater ignores new files at `paths`. With "Trigger Templater on new file creation" on, Templater runs the code in every
+ * new note outside its template folder, so a kit template written there would be run (forms popping up, the file changed). Templater skips
+ * paths in its `files_with_pending_templates` set (private) and looks 300 ms after a file appears, so the paths stay in the set a little longer.
+ * Without that set (older Templater) it just writes.
+ */
+export async function withoutTemplaterTrigger<T>(app: App, paths: string[], write: () => Promise<T>): Promise<T> {
+  const pending = templater(app)?.templater?.files_with_pending_templates;
+  if (!(pending instanceof Set)) return write();
+  const added = paths.filter(p => !pending.has(p));
+  for (const p of added) pending.add(p);
+  try { return await write(); }
+  finally { window.setTimeout(() => { for (const p of added) pending.delete(p); }, 3000); }
 }

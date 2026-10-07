@@ -27,14 +27,9 @@ export default class LabKitPlugin extends Plugin {
     this.calc.register();
     this.header.register();
 
-    // To-do engine and planning commands: only in a vault where the planning kit is switched on and installed (read once, at load)
-    const planning = this.kit.kit.kits[PLANNING_KIT];
-    if (planning?.enabled && planning.managed) {
-      const engine = new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos"));
-      engine.start();
-      this.planning = new PlanningCommands(this, planning.managed, engine);
-      this.planning.register();
-    }
+    // To-do engine and planning commands: once the planning kit is switched on and installed (at load, or right after its install)
+    this.startPlanning();
+    this.kit.onInstalled = () => this.startPlanning();
 
     this.addCommand({
       id: "insert-calc-block",
@@ -46,5 +41,15 @@ export default class LabKitPlugin extends Plugin {
       name: "Insert lab header block",
       editorCallback: (editor) => editor.replaceSelection("```lab-header\n```\n")
     });
+  }
+
+  /** Starts the to-do engine and registers the planning commands, once, when the planning kit is on and installed. Switching it off needs a reload. */
+  startPlanning(): void {
+    const planning = this.kit.kit.kits[PLANNING_KIT];
+    if (this.planning || !planning?.enabled || !planning.managed) return;
+    const engine = new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos"));
+    engine.start();
+    this.planning = new PlanningCommands(this, planning.managed, engine);
+    this.planning.register();
   }
 }

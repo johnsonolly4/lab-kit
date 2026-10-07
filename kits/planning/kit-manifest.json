@@ -66,7 +66,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "0.5.2",
-      "sha256": "469033730cfded4589b6c7ed0b14a1fe6766d8443744ffe690155333fb2c50e8",
+      "sha256": "2fb813af9ca15fa2780fc9a40239d5e259b8f8df25fd444f46c5ae114c946250",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -114,7 +114,7 @@
       "role": "literature",
       "path": "Literature.md",
       "version": "0.5.2",
-      "sha256": "6053438dc0a78169bc95139feb36df26ff3ad2bacf5a205edf517f9ea408c159",
+      "sha256": "1e29feb910c9680e45f2cb0a5560128800c7359f619a7a231a1fcccd0109ea33",
       "renamedFrom": [],
       "desc": "Literature hub (ZotLit imports)",
       "optional": true,
@@ -128,7 +128,7 @@
       "role": "meetings",
       "path": "Weekly meetings/Weekly meetings.md",
       "version": "0.5.2",
-      "sha256": "b3378b77a770342a398c5dd304dd5ae09471e2d992d6df0c082423db4236c302",
+      "sha256": "2585d465ad4f2aacc8349a2612ffe65d0637fa222de7da9ea09f0d856f3fcc78",
       "renamedFrom": [],
       "desc": "Meeting series hub",
       "policy": "keep"
@@ -188,7 +188,7 @@
       "role": "templates",
       "path": "Daily note.md",
       "version": "0.5.2",
-      "sha256": "a8c50f92eebe91d7693221c405bdba4ef55a1be9f3e088c08ea1aa4298f3c933",
+      "sha256": "ae1a5157ef89d217621a505098678613a0404bb814cb1db9259fb64ac3ac8722",
       "renamedFrom": [],
       "desc": "Daily note (folder template for 01 Daily Notes)"
     },
@@ -232,7 +232,7 @@
       "role": "templates",
       "path": "Weekly meeting.md",
       "version": "0.5.2",
-      "sha256": "cf7b51c5c231610ef5bda9bfa44288c5eaac3543671978feb3903af7a9703d9e",
+      "sha256": "017920770edbc6e333dabad0d4d719c281520512a9415829f02cc186a9b7c9f4",
       "renamedFrom": [],
       "desc": "New meeting note"
     },

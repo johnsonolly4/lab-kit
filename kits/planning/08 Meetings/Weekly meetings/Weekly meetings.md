@@ -2,7 +2,6 @@
 kind: hub
 cssclasses:
   - vt
-  - wide
 deck_windows: ""
 deck_mac: ""
 ---

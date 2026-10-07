@@ -416,7 +416,8 @@ export function templaterTemplatesTarget(kitTemplates: string): string | null {
 /** The folder to give Templater as its user scripts folder when it has none: the folder above the kit's `lab-kit` folder, so the user's own scripts beside it load too. */
 export function templaterScriptsTarget(kitUserScripts: string): string {
   const kit = kitJoin(kitUserScripts.trim().replace(/\\/g, "/"));
-  return kit.endsWith("/lab-kit") ? kitParent(kit) : kit;   // a lab-kit folder at the vault root stays itself (no parent to give)
+  // the folder above a kit's own subfolder (lab-kit/, vault/), so Templater finds both kits' scripts; one at the vault root stays itself (no parent to give)
+  return /\/(lab-kit|vault)$/.test(kit) ? kitParent(kit) : kit;
 }
 
 /**

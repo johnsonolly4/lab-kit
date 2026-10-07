@@ -101,7 +101,8 @@ class KitSettingTab extends PluginSettingTab {
           b.addToggle(t => t.setValue(pSlot.enabled).onChange(async v => {
             pSlot.enabled = v;
             await this.ctl.save();
-            new Notice(v ? "Planning kit on. Install its files with Review update…, then reload Lab Kit (Settings → Community plugins) to start its commands." : "Planning kit off. Reload Lab Kit to stop its commands; its files stay.", 10000);
+            new Notice(v ? "Planning kit on. Install its files with Review update…; its commands start once they are installed." : "Planning kit off. Reload Lab Kit to stop its commands; its files stay.", 10000);
+            if (v) this.ctl.installed();
             this.update();
           }));
         } });
@@ -184,6 +185,9 @@ class KitSettingTab extends PluginSettingTab {
 export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
   readonly managed: KitManaged;
+  /** Set by the plugin: runs after a kit's files were written. */
+  onInstalled: (() => void) | null = null;
+  installed(): void { this.onInstalled?.(); }
   /** The planning kit (switched off until the user turns it on in settings); null if main.js has none. */
   readonly planning: KitManaged | null;
 

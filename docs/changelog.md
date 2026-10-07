@@ -1,6 +1,10 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Installing the kit no longer runs its templates**: with Templater's "Trigger Templater on new file creation" on, writing the kit's templates outside Templater's template folder made Templater run them (every snippet form popped up and the files changed). The kit now tells Templater to leave the files it writes alone
+- **Planning commands start right after the planning install** (no reload); the planning kit can set an empty Templater user scripts folder to the folder above both kits' script folders
+- **Review update… rows** show each file's name, what it is and its path
+- **Notes and templates no longer set `wide`** (the planning theme makes every note wide)
 - **Install window says what each thing is**: every file and folder in the confirmation is a row with its name, one line on what it is for, and where it goes; each group says what will happen to it
 - **The layout's folders are made at first install**: the planning kit makes its empty folders too (00 Inbox, 01 Daily Notes, To-dos, Projects, Knowledge, How-tos, Meetings, Extras/attachments; 04 Literature only with ZotLit; never 99 Archive), the lab kit its Lab notes and Chemical folders; they are listed first and Cancel makes none
 - **Planning kit switch (preview)**: Settings → Lab Kit → Built-in kit → **Planning kit (preview)** turns the planning suite on; its files then install through the same Review update… / Update all safe files list. Reload Lab Kit to start its commands. Some homepage buttons don't work yet. Switching it off removes nothing
