@@ -5,7 +5,7 @@ _Updated: 2026-10-07 by Opus 5.5 (feedback round sorted into BACKLOG; Phase 6 + 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phases 0–4 and 6 built and committed, not pushed. The planning kit can now be switched on (Settings → Built-in kit, preview), so Phase 4 "roll-over seen in test-vault" can be tried. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 316 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
+Phases 0–4 and 6 built and committed, not pushed. The planning kit can now be switched on (Settings → Built-in kit, preview), so Phase 4 "roll-over seen in test-vault" can be tried. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 318 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)

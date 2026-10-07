@@ -37,6 +37,8 @@ export interface SetupState {
   zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
   propertiesView?: string;
+  /** Notebook Navigator's homepage (null without the plugin) and the planning kit's homepage note. */
+  navigator?: { homepage: { source: string; file: string | null } | null; home: string };
   /** Loaded plugin ids (plus kit names such as `zotlit`). */
   plugins: ReadonlySet<string>;
   planning: boolean;
@@ -70,6 +72,7 @@ export type SetupFix =
   | { kind: "settings" }
   | { kind: "methods-folder"; path: string }
   | { kind: "hide-properties" }
+  | { kind: "navigator-home"; path: string }
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
   | { kind: "dataview-js" }
@@ -160,6 +163,15 @@ export function checkSetup(s: SetupState): SetupItem[] {
       detail: old.length ? `Lists the old roll-over (${old[0]}). Lab Kit's to-do engine does this now; the old one makes it stand down.`
         : others.length ? `Yours, left as they are: ${others.join(", ")}.` : "None (the to-do roll-over is built into Lab Kit).",
       fix: old.length ? { kind: "startup-remove", template: old[0] } : undefined });
+  }
+
+  const nav = s.navigator;
+  if (s.planning && nav?.homepage) {
+    const h = nav.homepage, ok = h.source === "file" && h.file === nav.home;
+    out.push({ id: "navigator:homepage", group: "Notebook Navigator", label: `Homepage: ${nav.home}`, ok,
+      detail: ok ? "Set." : h.source === "none" ? "No homepage set. Fix makes the kit's homepage open at startup."
+        : `Set to ${h.source === "file" ? h.file ?? "a file" : h.source} (yours, left as it is).`,
+      fix: h.source === "none" ? { kind: "navigator-home", path: nav.home } : undefined });
   }
 
   if (s.planning && s.dataviewJs !== null) out.push({ id: "dataview:js", group: "Dataview", label: "Dataview JavaScript queries", ok: s.dataviewJs,

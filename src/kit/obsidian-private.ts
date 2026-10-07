@@ -263,3 +263,25 @@ export function hidePropertiesInDocument(app: App): boolean {
   vault.setConfig("propertiesInDocument", "hidden");
   return true;
 }
+
+const NOTEBOOK_NAVIGATOR = "notebook-navigator";
+interface NavigatorPlugin { settings?: { homepage?: unknown }; saveSettingsAndUpdate?: () => Promise<void>; saveSettings?: () => Promise<void>; saveData?: (d: unknown) => Promise<void> }
+/** Notebook Navigator's homepage (`settings.homepage`: { source: none / file / daily-note…, file }; older versions: a path string). null without the plugin. */
+export function navigatorHomepage(app: App): { source: string; file: string | null } | null {
+  const nn = priv(app).plugins?.plugins?.[NOTEBOOK_NAVIGATOR] as NavigatorPlugin | undefined;
+  if (!nn?.settings) return null;
+  const h = nn.settings.homepage;
+  if (typeof h === "string") return h ? { source: "file", file: h } : { source: "none", file: null };
+  const o = (h ?? {}) as { source?: unknown; file?: unknown };
+  return { source: typeof o.source === "string" ? o.source : "none", file: typeof o.file === "string" ? o.file : null };
+}
+/** Sets Notebook Navigator's homepage to `path`, only when it has none (a homepage you chose is kept), and saves. True when set. */
+export async function setNavigatorHomepage(app: App, path: string): Promise<boolean> {
+  const nn = priv(app).plugins?.plugins?.[NOTEBOOK_NAVIGATOR] as NavigatorPlugin | undefined;
+  const cur = navigatorHomepage(app);
+  if (!nn?.settings || !cur || cur.source !== "none") return false;
+  const old = nn.settings.homepage;
+  nn.settings.homepage = typeof old === "object" && old !== null ? { ...old, source: "file", file: path } : { source: "file", file: path, createMissingPeriodicNote: true };
+  try { await (nn.saveSettingsAndUpdate ? nn.saveSettingsAndUpdate() : nn.saveSettings ? nn.saveSettings() : nn.saveData?.(nn.settings)); } catch (e) { console.error(e); }
+  return true;
+}

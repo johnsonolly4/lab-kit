@@ -4,7 +4,7 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { applyManaged, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
 import { PLANNING_LAYOUT, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
-import { addMetaBindButtons, loadedPlugins, metaBindButtonIds } from "../src/kit/obsidian-private";
+import { addMetaBindButtons, loadedPlugins, metaBindButtonIds, navigatorHomepage, setNavigatorHomepage } from "../src/kit/obsidian-private";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit, embeddedKits } from "../scripts/embed-kit.mjs";
@@ -180,5 +180,16 @@ describe("Meta Bind buttons (Phase 6d)", () => {
     expect(mb.settings.buttonTemplates[0]).toBe(mine);
     expect(await addMetaBindButtons(a, PLANNING_BUTTONS)).toBe(0);
     expect(new Set(metaBindButtonIds(a)).size).toBe(PLANNING_BUTTONS.length);
+  });
+});
+
+describe("Notebook Navigator homepage (Check setup)", () => {
+  const nnApp = (homepage: unknown) => { const nn: any = { settings: { homepage }, saveSettingsAndUpdate: async () => {} }; return { nn, app: { plugins: { plugins: { "notebook-navigator": nn } } } as any }; };
+  it("reads the current shape and the old string; sets only when there is none", async () => {
+    expect(navigatorHomepage(nnApp("Old.md").app)).toEqual({ source: "file", file: "Old.md" });
+    const { nn, app } = nnApp({ source: "none", file: null, createMissingPeriodicNote: false });
+    expect(await setNavigatorHomepage(app, "00 Home.md")).toBe(true);
+    expect(nn.settings.homepage).toEqual({ source: "file", file: "00 Home.md", createMissingPeriodicNote: false });
+    expect(await setNavigatorHomepage(nnApp({ source: "daily-note", file: null }).app, "00 Home.md")).toBe(false);
   });
 });

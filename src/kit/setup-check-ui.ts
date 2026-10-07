@@ -3,7 +3,7 @@ import { Modal, Notice, type App } from "obsidian";
 import { PLANNING_LAYOUT, kitJoin, type KitData } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
-import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, propertiesInDocument, addTemplaterFolderTemplate, commandNames, dataviewJsEnabled, enableDataviewJs, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
+import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, dataviewJsEnabled, enableDataviewJs, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { PLANNING_BUTTONS } from "../planning/buttons";
@@ -39,6 +39,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
+    navigator: { homepage: navigatorHomepage(app), home: planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md" },
     plugins: loadedPlugins(app),
     planning: planningOn,
     templater: {
@@ -96,6 +97,8 @@ export class SetupCheckModal extends Modal {
     switch (fix.kind) {
       case "methods-folder": await confirm({ name: `Create ${fix.path} and use it as the Methods folder`, desc: "Put one note per analysis method there; the Alt+S analysis snippets then offer them.",
         apply: async () => { await ensureFolder(this.app.vault, fix.path); this.host.kit.methodsFolder = fix.path; await this.host.save(); } }); break;
+      case "navigator-home": await confirm({ name: "Set Notebook Navigator's homepage", desc: `To ${fix.path}. It opens when Obsidian starts.`,
+        apply: () => setNavigatorHomepage(this.app, fix.path) }); break;
       case "hide-properties": await confirm({ name: "Set Properties in document to Hidden", desc: "Settings → Editor. Properties stay in the note; open them from the note's menu.",
         apply: async () => { if (!hidePropertiesInDocument(this.app)) new Notice("Couldn't change it here. Set it in the editor settings."); } }); break;
       case "settings": this.close(); if (!openPluginSettings(this.app, this.host.pluginId)) new Notice("Couldn't open the settings: open them from the gear icon."); return;

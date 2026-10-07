@@ -148,4 +148,14 @@ describe("check setup (Phase 6)", () => {
     expect(byId(state())["plugin:omnisearch"]).toBeUndefined();          // lab only: planning plugins not listed
     expect(byId(state({ plugins: new Set(["templater-obsidian", "dataview"]) }))["plugin:table-editor-obsidian"].optional).toBe(true);
   });
+
+  it("Notebook Navigator homepage: none gets a Fix to the kit's homepage, yours is left alone", () => {
+    const nav = (homepage: { source: string; file: string | null } | null) => byId(state({ planning: true, navigator: { homepage, home: "00 Home.md" } }))["navigator:homepage"];
+    expect(nav({ source: "none", file: null })).toMatchObject({ ok: false, fix: { kind: "navigator-home", path: "00 Home.md" } });
+    expect(nav({ source: "file", file: "00 Home.md" }).ok).toBe(true);
+    const mine = nav({ source: "daily-note", file: null });
+    expect(mine.ok).toBe(false);
+    expect(mine.fix).toBeUndefined();
+    expect(nav(null)).toBeUndefined();
+  });
 });

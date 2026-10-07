@@ -117,6 +117,7 @@
 - [ ] Alt+S when another command already uses it: no Fix, the row names that command
 - [ ] Open on a missing plugin opens its page in Community plugins
 - [ ] Phone width: the list fits
+- [ ] Check setup → Notebook Navigator → Homepage: with no homepage set, Fix sets `00 Home.md` (Notebook Navigator settings show it; it opens at startup); a homepage you chose is left alone
 - [ ] Check setup → Obsidian → Properties hidden in notes: Fix sets Settings → Editor → Properties in document to Hidden
 - [ ] Phase 6e: Check setup → Methods folder Fix creates `Extras/methods` and fills the setting; the ZotLit row shows "!" and names the checklist note
 - [ ] Phase 6d: Enter saves in the New to-do / New lab entry / Quick capture boxes; Check setup shows Lab Kit settings (Open → settings tab), Templater matching mode and startup templates, Dataview JS, Meta Bind buttons (Fix adds 26 or the missing ones), ZotLit (Open → Set up ZotLit note); ZotLit's plugin Open goes to ZotLit
