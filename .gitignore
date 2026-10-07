@@ -12,3 +12,7 @@ test-vault/.obsidian/*
 !test-vault/.obsidian/.gitkeep
 CLAUDE.local.md
 .claude/settings.local.json
+# secrets and other OSes
+.env
+*.key
+Thumbs.db
