@@ -14,6 +14,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - [Analysis methods](#analysis-methods)
 - [Experiment header](#experiment-header)
 - [Built-in kit](#built-in-kit)
+- [Folder contract](#folder-contract)
 - [Settings](#settings)
 - [Commands](#commands)
 - [Privacy & permissions](#privacy--permissions)
@@ -124,6 +125,24 @@ The templates (Lab Book, Alt+S menu, one file per snippet), the Templater script
 - A file you edited is never overwritten. If your changes and the kit's touch different lines you can **merge**; if they touch the same lines you **resolve** them change by change.
 - Every replaced file is copied to a backup folder first.
 
+The kit is split into two **kits**, each with its own files, state and switch: the **lab kit** (Lab Book template, snippets, scripts; on by default) and the **planning kit** (homepage, to-do board, projects, meetings, knowledge notes; preview, off until you switch it on). Review, Manage and Update work per kit.
+
+## Folder contract
+The kits expect these folders. Each is a setting; empty means the default below, and a folder you rename inside Obsidian is followed by its setting.
+
+| Folder (default) | Used by | Setting |
+|---|---|---|
+| `03 Lab Book/Notes` | lab kit: experiment notes | Lab notes folder |
+| `05 Chemicals/Chemicals` | lab kit: chemical notes | Chemical folder |
+| Methods folder (empty until set) | lab kit: analysis methods | Methods folder |
+| `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
+| `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
+| `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
+| `99 Archive` (made when first needed) | planning kit | Planning folders |
+| `Extras/` (templates, scripts, fonts) | both kits | Kit folders and setup |
+
+A new vault can get this layout, the plugin list and the Templater settings from the generated starter (see Development).
+
 ## Settings
 Settings → Lab Kit is searchable and grouped:
 
@@ -152,6 +171,21 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Show what's new | Opens the What's new popup for this version |
 | Find moved folders | For each folder in the settings that no longer exists (moved outside Obsidian), suggests where it went; Apply changes only the settings |
 | Check setup | Lists what the kits need (plugins, Templater, CSS snippets, folders, the Alt+S hotkey) with a Fix for each missing item; nothing changes until you confirm |
+| Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; **Change notes…** rewrites only what you tick, after a backup and a second confirmation |
+
+With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are added. Open meeting deck is desktop only.
+
+| Command | Does |
+|---|---|
+| New to-do | A to-do note in the Planning folder's `To-dos` |
+| Quick capture | An empty note in the Inbox, opened |
+| Add to shopping list | Adds comma-separated items to `Shopping list.md` in the Planning folder |
+| Sort inbox | Opens each Inbox note in turn and asks where it goes; Esc or Stop ends it |
+| Archive old to-dos | Moves to-dos finished more than 30 days ago into the Archive folder |
+| New meeting | A note for a meeting series (asks which when there are several) |
+| Open meeting deck | Opens the deck file of this computer |
+| New project · New project note | A project hub, or a note inside a project |
+| Roll over to-dos now | Carries unfinished to-dos over to today |
 
 ## Privacy & permissions
 - **No network use.** Lab Kit never connects to the internet, has no account, no ads, no telemetry and no paid features. The "full changelog" button only opens a link in your browser when you press it.
@@ -188,7 +222,9 @@ npm run lint
 npm run build
 npm run starter     # new-vault settings + plugin list, from the kits, into dist/starter/
 ```
-Open `test-vault/` as a vault in Obsidian to try changes. Never develop in your real vault. The kit files live in `kit/` and are embedded in `main.js` at build.
+`npm run starter` writes `dist/starter/`: empty contract folders, Obsidian settings (plugin list, CSS snippets, Alt+S, Templater folders) and `install-plugins.sh` / `.ps1`, generated from the kits so they can't drift. Copy it into an empty folder, run the install script with Obsidian open, then **Check setup**. Steps in [GETTING-STARTED](GETTING-STARTED.md#new-vault-from-the-starter).
+
+Open `test-vault/` as a vault in Obsidian to try changes. Never develop in your real vault. The kit files live in `kits/` and are embedded in `main.js` at build.
 
 ## Licence
 MIT, see [LICENSE](LICENSE).
