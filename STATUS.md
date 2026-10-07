@@ -1,27 +1,26 @@
 # Status
 
-_Updated: 2026-10-07 by Opus 5.5 (Phase 0). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-07 by Opus 5.5 (Phases 0, 1a, 1b; one unattended run, user-approved). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phase 0 (issue #34) done on `fix/34-user-scripts-folder` (committed, not pushed): a set Templater user scripts folder is never changed; lab scripts go into `<folder>/lab-kit/`. Tests (a)–(e) pass; not seen in Obsidian (BACKLOG "Not yet tested").
+Phases 0, 1a, 1b done, committed, not pushed. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a + 1b, stacked on it; no PR yet). Tests 230 pass; nothing seen in Obsidian (BACKLOG "Not yet tested").
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
 1. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
-2. Phase 1a: multi-kit manifest, `kit/` → `kits/lab/`, no behaviour change — done when: per plan
-3. Phase 1b: confirmation dialog, `Extras/` defaults, `policy: keep` — done when: per plan
-4. Phase 2: lab kit completion (issues #32, #33, `new-lab-entry`, settings at phone width) — done when: per plan
-5. Phases 3–8: per plan
-6. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
-7. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
+2. Phase 2: lab kit completion (issues #32, #33, `new-lab-entry`, settings at phone width) — done when: per plan
+3. Phases 3–8: per plan
+4. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
+5. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
 None.
 
 ## Waiting on owner (needs a human)
-- [ ] Review branch `fix/34-user-scripts-folder`, say "push" (PR closes issue #34); check the Tests workflow runs green — by 2026-10-08
+- [ ] Merge PR #37 (`fix/34`), then review `feat/multi-kit` and say "push" for its PR — by 2026-10-09
+- [ ] Review the confirmation dialog's wording (written unattended; BACKLOG "Not yet tested", Phase 1b) — by 2026-10-09
 - [ ] Try issue #34 in test-vault (checklist section 2, "Your scripts folder is kept")
 - [ ] Copy the personal preferences file from the adoption session to `~/.claude/CLAUDE.md`; add `/opt/homebrew/opt/node@20/bin` to your PATH (Node 20 installed 2026-10-07) — by 2026-10-08
 - [ ] Confirm the Next order above (seeded from the old STATUS and open issues) — next session

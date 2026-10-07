@@ -32,6 +32,8 @@ const CONFIG = {
     roleByPrefix: LAB_ROLE_BY_PREFIX, desc: LAB_DESC,
     // Snippets carry their own "// desc:" line and can be switched off; so can the Excel converter (not part of the plugin itself)
     optionalPrefix: "Templates/Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py"]),
+    // policy "keep": installed once, never updated (notes that become the user's own)
+    keepFiles: new Set(),
   },
 };
 const SKIP = new Set(["kit-manifest.json"]);
@@ -98,6 +100,8 @@ function regenerate(KIT) {
         version: prev?.sha256 === hash && prev.version ? prev.version : manifest.version, sha256: hash,
         renamedFrom, desc: descOf(rel, text) };
       if (rel.startsWith(OPTIONAL_PREFIX) || OPTIONAL_FILES.has(rel)) entry.optional = true;
+    const policy = cfg.keepFiles?.has(rel) ? "keep" : prev?.policy;   // a policy set by hand in the manifest is kept too
+    if (policy) entry.policy = policy;
       return entry;
     })
     .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));

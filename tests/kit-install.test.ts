@@ -1,7 +1,7 @@
 // First install of the built-in kit (CSS snippet, Templater's user scripts folder) and the version compare behind the update notice.
 import { describe, it, expect } from "vitest";
 import {
-  applyManaged, firstInstallOptions, planManaged, relocateRole, templaterScriptsAction, trackedRoles,
+  applyManaged, firstInstallOptions, planManaged, previewInstall, relocateRole, templaterScriptsAction, trackedRoles,
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
@@ -82,28 +82,28 @@ describe("Templater's user scripts folder (issue #34)", () => {
     expect(v.files["My scripts/labForm.js"]).toBeUndefined();
   });
 
-  it("(c) a fresh vault: Templater is offered the parent, the scripts go into <parent>/lab-kit", async () => {
+  it("(c) a fresh vault: Templater is offered the parent (Extras/scripts/templater, Phase 1b), the scripts go into <parent>/lab-kit", async () => {
     const v = memVault();
     const state = await install(v, {});
     const kitFolder = trackedRoles(kit, state).userScripts;
-    expect(kitFolder).toBe("scripts/lab-kit");
-    expect(v.files["scripts/lab-kit/labForm.js"]).toBe("form\n");
-    expect(firstInstallOptions(real, { installed: true }, kitFolder).templaterFolder).toBe("scripts");
-    expect(templaterScriptsAction("", kitFolder)).toEqual({ kind: "set", folder: "scripts" });
-    expect(templaterScriptsAction("scripts", kitFolder)).toEqual({ kind: "ok" });
+    expect(kitFolder).toBe("Extras/scripts/templater/lab-kit");
+    expect(v.files["Extras/scripts/templater/lab-kit/labForm.js"]).toBe("form\n");
+    expect(firstInstallOptions(real, { installed: true }, kitFolder).templaterFolder).toBe("Extras/scripts/templater");
+    expect(templaterScriptsAction("", kitFolder)).toEqual({ kind: "set", folder: "Extras/scripts/templater" });
+    expect(templaterScriptsAction("Extras/scripts/templater", kitFolder)).toEqual({ kind: "ok" });
   });
 
   it("(d) an older install outside the folder: Set up installs new copies into <folder>/lab-kit; old copies untouched; cancel writes nothing", async () => {
     const v = memVault({ ...userFiles });
-    const state = await install(v, {});                                       // older install: scripts/lab-kit, Templater then pointed elsewhere
-    v.files["scripts/lab-kit/labForm.js"] = "form, edited\n";
+    const state = await install(v, {});                                       // older install: Extras/scripts/templater/lab-kit, Templater then pointed elsewhere
+    v.files["Extras/scripts/templater/lab-kit/labForm.js"] = "form, edited\n";
     const before = { ...v.files };
     const action = templaterScriptsAction("My scripts", trackedRoles(kit, state).userScripts);
     expect(action).toEqual({ kind: "relocate", to: "My scripts/lab-kit" });
     if (action.kind !== "relocate") return;
 
     const moved = relocateRole(kit, state, "userScripts");
-    expect(moved.old.sort()).toEqual(["scripts/lab-kit/labForm.js", "scripts/lab-kit/labMethods.js"]);
+    expect(moved.old.sort()).toEqual(["Extras/scripts/templater/lab-kit/labForm.js", "Extras/scripts/templater/lab-kit/labMethods.js"]);
     expect(state.files["script-form"]).toBeDefined();                         // the saved state is not changed until confirmed
     const roles = { ...kitDetectRoles(app(v, { user_scripts_folder: "My scripts" }), null, trackedRoles(kit, moved.state)), userScripts: action.to };
     const items = (await planManaged(v, kit, moved.state, roles)).filter(i => i.file.role === "userScripts");
@@ -187,5 +187,117 @@ describe("multi-kit manifest (schema 2)", () => {
     const kit = kitLoad({ source: "x", checkOnStartup: false, makeBackups: true }) as any;
     expect(kit.notifyKitUpdate).toBe(false);
     expect("source" in kit || "checkOnStartup" in kit || "makeBackups" in kit).toBe(false);
+  });
+});
+
+// Phase 1b: folder-contract defaults, the confirmation preview, policy "keep", kits installed on their own
+describe("install preview and folder contract (Phase 1b)", () => {
+  const lab: EmbeddedKit = {
+    manifest: { schema: 2, id: "lab", kitVersion: "0.1.0", removed: [], files: [
+      { id: "tpl-menu", kind: "template", role: "templates", src: "Templates/Insert snippet.md", dest: "Insert snippet.md", version: "0.1.0", sha256: "", renamedFrom: [] },
+      { id: "script-form", kind: "script", role: "userScripts", src: "labForm.js", dest: "labForm.js", version: "0.1.0", sha256: "", renamedFrom: [] },
+      { id: "script-xl", kind: "script", role: "scripts", src: "excel_to_calc.py", dest: "excel_to_calc.py", version: "0.1.0", sha256: "", renamedFrom: [] },
+    ] },
+    contents: { "tpl-menu": "menu\n", "script-form": "form\n", "script-xl": "xl\n" },
+  };
+  // Until Phase 3: a two-file stand-in for the planning kit, with its own roles
+  const planning: EmbeddedKit = {
+    manifest: { schema: 2, id: "planning", kitVersion: "0.1.0", removed: [], files: [
+      { id: "home", kind: "template", role: "home", src: "00 Home.md", dest: "00 Home.md", version: "0.1.0", sha256: "", renamedFrom: [], policy: "keep" },
+      { id: "board", kind: "template", role: "planning", src: "To-do board.base", dest: "To-do board.base", version: "0.1.0", sha256: "", renamedFrom: [] },
+    ] },
+    contents: { home: "home\n", board: "board\n" },
+  };
+  const planningRoles = { home: "", planning: "00 Planning", backups: "Backups" };
+  const opts = { baseDir: ".obsidian/plugins/lab-kit/kit-base", backups: "Backups", stamp: "2026-10-07T12:00:00.000Z" };
+  const memVault = (files: Record<string, string> = {}, dirs: string[] = []) => {
+    const d = new Set(dirs);
+    for (const p of Object.keys(files)) for (let x = p.slice(0, p.lastIndexOf("/")); x; x = x.includes("/") ? x.slice(0, x.lastIndexOf("/")) : "") d.add(x);
+    return {
+      files, dirs: d,
+      exists: async (p: string) => p in files || d.has(p),
+      read: async (p: string) => { if (!(p in files)) throw new Error("ENOENT " + p); return files[p]; },
+      write: async (p: string, t: string) => { files[p] = t; },
+      mkdir: async (p: string) => { d.add(p); },
+    } as unknown as ManagedAdapter & { files: Record<string, string>; dirs: Set<string> };
+  };
+  const app = (v: { files: Record<string, string> }, tpl: object = {}): any => ({
+    vault: { configDir: ".obsidian", getAbstractFileByPath: () => null,
+      getFiles: () => Object.keys(v.files).map(p => ({ name: p.split("/").pop(), path: p, parent: { path: p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "" } })) },
+    plugins: { plugins: { "templater-obsidian": { settings: tpl } } },
+  });
+  /** An adapter that fails on any write: planning and previewing must only read. */
+  const readOnly = (v: ManagedAdapter): ManagedAdapter => ({ ...v, write: async () => { throw new Error("wrote"); }, mkdir: async () => { throw new Error("made a folder"); } }) as ManagedAdapter;
+
+  it("(a) empty vault: the folder contract under Extras/, and only the planned files and folders are created", async () => {
+    const v = memVault();
+    const roles = kitDetectRoles(app(v), null, {});
+    const items = await planManaged(readOnly(v), lab, null, roles);
+    const preview = await previewInstall(readOnly(v), items);
+    expect(preview.create.sort()).toEqual(["Extras/Templates/Lab Kit/Insert snippet.md", "Extras/scripts/lab-kit/excel_to_calc.py", "Extras/scripts/templater/lab-kit/labForm.js"]);
+    expect(preview.leftAlone).toEqual([]);
+    expect(preview.folders).toEqual(["Extras", "Extras/Templates", "Extras/Templates/Lab Kit", "Extras/scripts", "Extras/scripts/lab-kit", "Extras/scripts/templater", "Extras/scripts/templater/lab-kit"]);
+    await applyManaged(v, lab, items, null, opts);
+    const written = Object.keys(v.files).filter(p => !p.startsWith(".obsidian/"));
+    expect(written.sort()).toEqual(preview.create.sort());
+  });
+
+  it("(b) files with the same names already there: none overwritten, listed as left alone", async () => {
+    const mine = { "Extras/Templates/Lab Kit/Insert snippet.md": "my menu\n", "Extras/scripts/templater/lab-kit/labForm.js": "form\n" };
+    const v = memVault({ ...mine });
+    const roles = kitDetectRoles(app(v), null, {});
+    const items = await planManaged(v, lab, null, roles);
+    const preview = await previewInstall(v, items);
+    expect(preview.leftAlone.sort()).toEqual(Object.keys(mine).sort());   // the identical one is adopted, not written
+    expect(preview.create).toEqual(["Extras/scripts/lab-kit/excel_to_calc.py"]);
+    expect(preview.folders).toEqual(["Extras/scripts/lab-kit"]);
+    await applyManaged(v, lab, items, null, opts);
+    for (const [p, text] of Object.entries(mine)) expect(v.files[p]).toBe(text);
+  });
+
+  it("(c) cancel writes nothing: planning and the preview only read", async () => {
+    const v = memVault({ "notes/a.md": "a\n" });
+    const before = JSON.stringify(v.files);
+    const items = await planManaged(readOnly(v), lab, null, kitDetectRoles(app(v), null, {}));
+    await previewInstall(readOnly(v), items);
+    expect(JSON.stringify(v.files)).toBe(before);
+  });
+
+  it("(d) the lab kit alone and the planning kit alone each install cleanly, each into its own state", async () => {
+    for (const only of [lab, planning]) {
+      const v = memVault();
+      const data = kitLoad(undefined);
+      const slot = kitSlot(data, only.manifest.id);
+      const roles = only === lab ? kitDetectRoles(app(v), null, {}) : planningRoles;
+      const items = await planManaged(v, only, slot.managed, roles);
+      expect(items.every(i => i.action === "create")).toBe(true);
+      slot.managed = (await applyManaged(v, only, items, slot.managed, opts)).state;
+      expect(Object.keys(data.kits)).toEqual([only.manifest.id]);
+      expect(Object.keys(slot.managed.files).sort()).toEqual(only.manifest.files.map(f => f.id).sort());
+      expect((await planManaged(v, only, slot.managed, roles)).every(i => i.action === "up-to-date")).toBe(true);
+    }
+  });
+
+  it("(e) an existing install keeps its folders (vault root Templates/ and scripts/): nothing new under Extras/", async () => {
+    const v = memVault({ "Templates/Insert snippet.md": "menu\n", "scripts/labForm.js": "form\n", "scripts/excel_to_calc.py": "xl\n" });
+    const first = await applyManaged(v, lab, await planManaged(v, lab, null, { templates: "Templates", userScripts: "scripts", scripts: "scripts", backups: "Backups" }), null, opts);
+    const roles = kitDetectRoles(app(v, { user_scripts_folder: "scripts" }), null, trackedRoles(lab, first.state));
+    expect([roles.templates, roles.userScripts, roles.scripts]).toEqual(["Templates", "scripts", "scripts"]);
+    const items = await planManaged(v, lab, first.state, roles);
+    const preview = await previewInstall(v, items);
+    expect(preview.create).toEqual([]);
+    expect(preview.folders).toEqual([]);
+  });
+
+  it("policy keep: installed once, never updated, even when untouched and the kit changes it", async () => {
+    const v = memVault();
+    const first = await applyManaged(v, planning, await planManaged(v, planning, null, planningRoles), null, opts);
+    const newer: EmbeddedKit = { manifest: { ...planning.manifest, kitVersion: "0.2.0" }, contents: { home: "home v2\n", board: "board v2\n" } };
+    const items = await planManaged(v, newer, first.state, planningRoles);
+    expect(items.find(i => i.file.id === "home")!.action).toBe("keep");
+    expect(items.find(i => i.file.id === "board")!.action).toBe("fast-forward");
+    await applyManaged(v, newer, items, first.state, opts);
+    expect(v.files["00 Home.md"]).toBe("home\n");
+    expect(v.files["00 Planning/To-do board.base"]).toBe("board v2\n");
   });
 });

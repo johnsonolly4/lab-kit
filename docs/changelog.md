@@ -1,6 +1,9 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **One confirmation before the kit writes anything new**: the first install, Set up, and any update that needs a new folder or a settings change first show a list: files to create, files to update, files left alone because they already exist, folders to create, and each settings change with its own switch. Nothing is written until you confirm; Cancel writes nothing. Updates that only refresh files in existing folders run straight away, as before
+- **New vaults get the folder layout under `Extras/`**: templates in `Extras/Templates/Lab Kit/` (or a `Lab Kit` folder inside Templater's template folder), the Templater scripts in `Extras/scripts/templater/lab-kit/` (or a `lab-kit` folder inside your user scripts folder), the Excel converter in `Extras/scripts/lab-kit/`. An existing install stays where it is
+- **Templater's Template hotkeys**: Insert snippet is added only after you confirm it in that list (it used to be added on its own when the menu was installed)
 - **Ready for more than one kit** (no change in what you see): the kit's saved state in the plugin's `data.json` moves into a per-kit entry the first time the new version loads. Going back to v0.5.2 afterwards would lose that record, so v0.5.2 treats the kit as not installed yet (your files are untouched)
 - **Your Templater user scripts folder is never changed** (issue #34): the lab scripts (`labForm.js`, `labMethods.js`, …) now go into a `lab-kit` folder inside it, so your own scripts keep loading. With no folder set, the first install offers the folder above `lab-kit` (default `scripts`). If an older install put the kit's scripts outside your folder, **Set up** asks before installing fresh copies into `<your folder>/lab-kit`; the old copies stay where they are for you to delete. Kit scripts already inside your folder don't move
 

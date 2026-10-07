@@ -47,6 +47,13 @@ export async function setTemplaterTemplatesFolder(app: App, folder: string): Pro
   try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
 }
 
+/** True when `template` (a vault path) is already in Templater's "Template hotkeys" (or Templater is missing: nothing to add). Reads only. */
+export function hasTemplaterHotkey(app: App, template: string): boolean {
+  const list = templater(app)?.settings?.enabled_templates_hotkeys;
+  if (!templater(app)?.settings) return true;
+  return !!list?.some(e => (typeof e === "string" ? e : e?.template) === template);
+}
+
 /** Adds `template` (a vault path) to Templater's "Template hotkeys" so it shows up in Obsidian's Hotkeys list. True when it was added, false when it was already there or Templater is missing. */
 export async function addTemplaterHotkey(app: App, template: string): Promise<boolean> {
   const tpl = templater(app);

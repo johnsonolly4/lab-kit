@@ -139,6 +139,28 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
   return items;
 }
 
+/* ---- Preview (the confirmation dialog) ---- */
+/** What carrying out `items` (those `select` picks) would touch: files written new, files left alone because they already exist, folders created. */
+export interface InstallPreview { create: string[]; update: string[]; leftAlone: string[]; folders: string[] }
+export async function previewInstall(adapter: Pick<DataAdapter, "exists">, items: ManagedItem[], select: (it: ManagedItem) => boolean = it => SAFE_ACTIONS.includes(it.action)): Promise<InstallPreview> {
+  const out: InstallPreview = { create: [], update: [], leftAlone: [], folders: [] };
+  const folders = new Set<string>();
+  for (const it of items) {
+    const writes = select(it) && it.action !== "up-to-date";
+    if (writes && (it.action === "create" || it.action === "missing")) out.create.push(it.dest);
+    else if (writes) out.update.push(it.dest);
+    else if (it.untracked && it.curHash !== null) { out.leftAlone.push(it.dest); continue; }   // there before the kit: never written
+    if (!writes) continue;
+    // every folder above the file that isn't there yet
+    for (let dir = kitParent(it.dest); dir && !folders.has(dir); dir = kitParent(dir)) {
+      if (await adapter.exists(dir)) break;
+      folders.add(dir);
+    }
+  }
+  out.folders = [...folders].sort();
+  return out;
+}
+
 /* ---- Apply ---- */
 export interface ApplyOptions {
   /** Where the base copies go: <configDir>/plugins/<plugin id>/kit-base */
@@ -354,7 +376,7 @@ export function templaterTemplatesTarget(kitTemplates: string): string | null {
 /** The folder to give Templater as its user scripts folder when it has none: the folder above the kit's `lab-kit` folder, so the user's own scripts beside it load too. */
 export function templaterScriptsTarget(kitUserScripts: string): string {
   const kit = kitJoin(kitUserScripts.trim().replace(/\\/g, "/"));
-  return kit.endsWith("/lab-kit") ? kitParent(kit) : kit;
+  return kit.endsWith("/lab-kit") ? kitParent(kit) : kit;   // a lab-kit folder at the vault root stays itself (no parent to give)
 }
 
 /**

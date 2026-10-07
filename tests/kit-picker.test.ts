@@ -131,17 +131,18 @@ describe("folder layout", () => {
   });
   const tplSettings = { templates_folder: "Templater/Templates", user_scripts_folder: "Templater/Scripts" };
 
-  it("a new vault uses Templater's own folders; the lab scripts go into a lab-kit folder inside its user scripts folder (issue #34)", () => {
+  it("a new vault uses a Lab Kit / lab-kit folder inside Templater's own folders (issue #34); other scripts in Extras/scripts/lab-kit", () => {
     const r = kitDetectRoles(vault([], tplSettings), null, {});
-    expect(r.templates).toBe("Templater/Templates");
+    expect(r.templates).toBe("Templater/Templates/Lab Kit");
     expect(r.userScripts).toBe("Templater/Scripts/lab-kit");
-    expect(r.scripts).toBe("scripts");
+    expect(r.scripts).toBe("Extras/scripts/lab-kit");
   });
 
-  it("without Templater folders: Templates and scripts at the vault root", () => {
+  it("without Templater folders: the folder contract under Extras/", () => {
     const r = kitDetectRoles(vault([], {}), null, {});
-    expect(r.templates).toBe("Templates");
-    expect(r.userScripts).toBe("scripts/lab-kit");
+    expect(r.templates).toBe("Extras/Templates/Lab Kit");
+    expect(r.userScripts).toBe("Extras/scripts/templater/lab-kit");
+    expect(r.scripts).toBe("Extras/scripts/lab-kit");
   });
 
   it("follows the files the kit already installed, not Templater's folders", () => {
@@ -206,8 +207,8 @@ describe("backup copies are not kit files", () => {
     const none: any = { vault: { configDir: ".obsidian", getAbstractFileByPath: () => null, getFiles: () => [] },
       plugins: { plugins: { "templater-obsidian": { settings: { user_scripts_folder: bad, templates_folder: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates" } } } } };
     const r = kitDetectRoles(none, null, {});
-    expect(r.userScripts).toBe("scripts/lab-kit");
-    expect(r.templates).toBe("Templates");
+    expect(r.userScripts).toBe("Extras/scripts/templater/lab-kit");
+    expect(r.templates).toBe("Extras/Templates/Lab Kit");
   });
 
   it("a path an older version recorded inside a backup is not trusted", () => {

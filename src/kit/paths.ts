@@ -57,7 +57,7 @@ export function kitLoad(saved: unknown): KitData {
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
   kit.snippetIcons = { ...kit.snippetIcons };
-  kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
+  kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
   if (!kit.kits[LAB_KIT] && (single.managed || single.paths || single.off)) {
     kit.kits[LAB_KIT] = { enabled: true, managed: (single.managed as ManagedState | null) ?? null, paths: { ...(single.paths as Roles) }, off: { ...(single.off as Record<string, true>) } };
   }
@@ -90,11 +90,15 @@ export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir"
 /**
  * Where each part of the kit lives in this vault.
  * `tracked`: the folders where the kit already put files. Templates and user scripts follow the files that are already there, so a file
- * added by a later kit version lands beside them; only a vault with no kit files yet gets the default layout: Templater's own templates
- * folder (else Templates) for the templates, and a `lab-kit` subfolder of Templater's user scripts folder (else of the scripts folder) for
- * the lab scripts. A user scripts folder that is set is never changed (issue #34), so a hand copy of labForm.js outside it is not followed.
- * `record` (old folder updater) supplies scripts and backups.
+ * added by a later kit version lands beside them; only a vault with no kit files yet gets the default layout (the folder contract in
+ * docs/plans/planning-suite-kit.md, see LAB_LAYOUT): a `Lab Kit` subfolder of Templater's templates folder (else `Extras/Templates/Lab Kit`)
+ * for the templates, a `lab-kit` subfolder of Templater's user scripts folder (else of `Extras/scripts/templater`) for the Templater scripts,
+ * and `Extras/scripts/lab-kit` for the other scripts. A user scripts folder that is set is never changed (issue #34), so a hand copy of
+ * labForm.js outside it is not followed. `record` (old folder updater) supplies scripts and backups.
  */
+/** Where the lab kit goes in a vault with no kit files yet (the folder contract). */
+export const LAB_LAYOUT = { templates: "Extras/Templates", templatesSub: "Lab Kit", userScripts: "Extras/scripts/templater", userScriptsSub: "lab-kit", scripts: "Extras/scripts/lab-kit" };
+
 export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>): Roles {
   const files = app.vault.getFiles().filter(f => !kitIsBackup(f.path));   // a backup copy of labForm.js must not look like the real one
   // Folders that sit inside a backup are mistakes (an earlier version copied one into Templater's settings): ignored
@@ -104,15 +108,15 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   const remembered: Partial<Roles> = Object.fromEntries(Object.entries(record?.roles ?? {}).filter(([, v]) => sane(v)));
   const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
   const scriptsFound = find("excel_to_calc.py");
-  const scripts = remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : "scripts");
+  const scripts = tracked.scripts ?? remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : LAB_LAYOUT.scripts);
   const menu = find("Insert snippet.md");
   const userFolder = kitJoin(tpl.user_scripts_folder.trim().replace(/\\/g, "/"));
   const formScript = find("labForm.js", f => !userFolder || f.path.startsWith(userFolder + "/"));
   return {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
-    userScripts: tracked.userScripts ?? (formScript ? formScript.parent!.path : kitJoin(userFolder || scripts, "lab-kit")),
-    templates: tracked.templates ?? (menu ? menu.parent!.path : tpl.templates_folder || "Templates"),
+    userScripts: tracked.userScripts ?? (formScript ? formScript.parent!.path : kitJoin(userFolder || LAB_LAYOUT.userScripts, LAB_LAYOUT.userScriptsSub)),
+    templates: tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || LAB_LAYOUT.templates, LAB_LAYOUT.templatesSub)),
     backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
   };
 }

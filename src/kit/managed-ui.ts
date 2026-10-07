@@ -2,11 +2,11 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
-  type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
+  type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { LAB_KIT, kitCompare, kitDetectRoles, kitInBackup, kitJoin, kitSlot, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
@@ -63,17 +63,47 @@ export class KitManaged {
     const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select }));
     kit.managed = out.state;
     await this.host.save();
-    await this.templaterHotkey(out.results);
     return out.results;
   }
 
-  /** When the Alt+S menu template was written, it also goes into Templater's Template hotkeys (nothing is added twice, nothing is ever removed). */
-  private async templaterHotkey(results: ManagedResult[]): Promise<void> {
-    const menu = results.find(r => r.id === MENU_ID && r.outcome !== "skipped");
-    if (!menu || !hasTemplater(this.app)) return;
-    try {
-      if (await addTemplaterHotkey(this.app, menu.dest)) new Notice("Added Insert snippet to Templater's Template hotkeys. Now set Alt+S for it in Obsidian → Hotkeys.", 12000);
-    } catch (e) { console.error(e); }
+  /**
+   * Lists everything a write would touch (files created or updated, files left alone because they exist, folders, settings) and carries it
+   * out only after the user confirms; Cancel writes nothing. Asks on a kit's first install (`ask`), when a folder would be created, or when
+   * a setting would change; otherwise runs straight away. Resolves once it ran or was cancelled.
+   */
+  confirmThen(o: { title: string; yes: string; items: ManagedItem[]; select: (it: ManagedItem) => boolean; settings?: SettingChange[]; notes?: PreviewNote[]; ask?: boolean; run: () => Promise<void> }): Promise<void> {
+    return new Promise<void>(resolve => {
+      const settings = o.settings ?? [];
+      const go = async (chosen: SettingChange[]): Promise<void> => {
+        try {
+          await o.run();
+          for (const c of chosen) await c.apply();
+        } catch (e) { this.failed(e); }
+        resolve();
+      };
+      void previewInstall(this.app.vault.adapter, o.items, o.select).then(preview => {
+        if (!o.ask && !preview.folders.length && !settings.length) return go([]);
+        new KitInstallModal(this.app, o.title, o.yes, preview, settings, o.notes ?? [], go, resolve).open();
+      }, e => { this.failed(e); resolve(); });
+    });
+  }
+
+  /** Settings a kit's first install offers to change: its CSS snippet, and Templater's user scripts folder when Templater has none. */
+  private firstInstallSettings(): SettingChange[] {
+    const opts = firstInstallOptions(this.bundle, { installed: hasTemplater(this.app), folder: templaterUserScriptsFolder(this.app) }, this.roles().userScripts);
+    const out: SettingChange[] = [];
+    const css = opts.css, folder = opts.templaterFolder;
+    if (css) out.push({ name: "Turn on the CSS snippet", desc: css.enable.join(", "), apply: () => setCssSnippets(this.app, css.enable, css.disable) });
+    if (folder) out.push({ name: "Set Templater's user scripts folder", desc: `To ${folder}. Templater has none yet; the snippet forms need it.`, apply: () => setTemplaterUserScripts(this.app, folder) });
+    return out;
+  }
+
+  /** The Alt+S menu template goes into Templater's Template hotkeys when it is written and isn't listed there yet (nothing is ever removed). */
+  private hotkeySetting(items: ManagedItem[], select: (it: ManagedItem) => boolean): SettingChange[] {
+    const menu = items.find(i => i.file.id === MENU_ID && select(i));
+    if (!menu || !hasTemplater(this.app) || hasTemplaterHotkey(this.app, menu.dest)) return [];
+    return [{ name: "Add Insert snippet to Templater's Template hotkeys", desc: `${menu.dest}. Then set Alt+S for it in Obsidian → Hotkeys.`,
+      apply: async () => { await addTemplaterHotkey(this.app, menu.dest); } }];
   }
 
   /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
@@ -84,17 +114,21 @@ export class KitManaged {
     if (!left) m.installedKitVersion = this.version;
   }
 
-  /** Install / update / recreate / merge ONE file. */
+  /** Install / update / recreate / merge ONE file (asks first when it needs a new folder or a settings change). */
   async updateOne(id: string): Promise<ManagedResult[]> {
     const kit = this.slot;
     const items = await this.plan();
     const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge");
-    const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true }));
-    kit.managed = out.state;
-    await this.settleVersion();
-    await this.host.save();
-    await this.templaterHotkey(out.results);
-    return out.results.filter(r => r.id === id);
+    let results: ManagedResult[] = [];
+    const item = items.find(go);
+    await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, settings: this.hotkeySetting(items, go), run: async () => {
+      const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true }));
+      kit.managed = out.state;
+      await this.settleVersion();
+      await this.host.save();
+      results = out.results.filter(r => r.id === id);
+    } });
+    return results;
   }
 
   /**
@@ -196,35 +230,36 @@ export class KitManaged {
     return ok;
   }
 
-  /** "Update all safe files": new files and unmodified files only. Asks first on the very first install. */
+  /** "Update all safe files": new files and unmodified files only. Asks first on the kit's first install, and before any new folder or settings change. */
   async updateSafe(): Promise<void> {
     try {
       const items = await this.plan();
+      const select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action);
       const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
-      const go = async (): Promise<void> => {
-        try { new KitReportModal(this.app, await this.apply(items, it => SAFE_ACTIONS.includes(it.action))).open(); }
-        catch (e) { this.failed(e); }
-      };
-      if (!this.slot.managed && writes) {
-        const opts = firstInstallOptions(this.bundle, { installed: hasTemplater(this.app), folder: templaterUserScriptsFolder(this.app) }, this.roles().userScripts);
-        const choice = { css: !!opts.css, templater: !!opts.templaterFolder };
-        const ticks: ConfirmTick[] = [];
-        if (opts.css) ticks.push({ name: "Turn on the CSS snippet", desc: opts.css.enable.join(", "), value: true, onChange: v => { choice.css = v; } });
-        if (opts.templaterFolder) ticks.push({ name: "Set Templater's user scripts folder", desc: `To ${opts.templaterFolder}. Templater has none yet; the snippet forms need it.`, value: true, onChange: v => { choice.templater = v; } });
-        const first = async (): Promise<void> => {
-          await go();
-          try {
-            if (choice.css && opts.css) await setCssSnippets(this.app, opts.css.enable, opts.css.disable);
-            if (choice.templater && opts.templaterFolder) await setTemplaterUserScripts(this.app, opts.templaterFolder);
-          } catch (e) { console.error(e); }
-        };
-        new ConfirmModal(this.app, `Create ${writes} kit files?`,
-          "Templates, scripts and the CSS snippet are added to your vault. A file that already exists and differs is never overwritten.", `Create ${writes} files`, first, undefined, ticks).open();
-      } else await go();
+      const first = !this.slot.managed && writes > 0;
+      await this.confirmThen({
+        title: first ? `Create ${writes} kit files?` : `Update ${writes} kit files?`, yes: first ? `Create ${writes} files` : "Update", ask: first,
+        items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)],
+        run: async () => { new KitReportModal(this.app, await this.apply(items, select)).open(); },
+      });
     } catch (e) { this.failed(e); }
   }
 
-  /** The "Set up Templater" button: points Templater's user scripts folder at the kit's scripts (only when it can't find them now) and adds Insert snippet to its Template hotkeys. */
+  /** Called by the review window's Apply: the same confirmation as "Update all safe files", for the files ticked there. */
+  async applyReviewed(items: ManagedItem[], select: (it: ManagedItem) => boolean, report: (results: ManagedResult[]) => void): Promise<void> {
+    const first = !this.slot.managed;
+    await this.confirmThen({
+      title: first ? "Install the kit?" : "Apply these changes?", yes: "Apply", ask: first,
+      items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)],
+      run: async () => report(await this.apply(items, select)),
+    });
+  }
+
+  /**
+   * The "Set up Templater" button. Lists every change first and makes them only when confirmed: Templater's user scripts folder (only when
+   * it has none; a folder that is set is never changed, issue #34: when the kit's scripts are outside it, fresh copies go into a lab-kit folder
+   * inside it and the old copies stay), its template folder (only when empty), and Insert snippet in its Template hotkeys.
+   */
   async setupTemplater(): Promise<void> {
     if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
     try {
@@ -232,43 +267,48 @@ export class KitManaged {
       const menu = kitJoin(roles.templates, "Insert snippet.md");
       if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
       const done: string[] = [];
+      const settings: SettingChange[] = [];
       const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake
-      // A user scripts folder that is set is never changed (issue #34): the lab scripts move into a lab-kit folder inside it instead, after asking
       const scripts = templaterScriptsAction(current, roles.userScripts);
-      if (scripts.kind === "set") {
-        await setTemplaterUserScripts(this.app, scripts.folder);
-        done.push(`User scripts folder set to ${scripts.folder}.`);
-      }
+      if (scripts.kind === "set") settings.push({ name: "Set Templater's user scripts folder", desc: `To ${scripts.folder}. Templater has none yet; the snippet forms need it.`,
+        apply: async () => { await setTemplaterUserScripts(this.app, scripts.folder); done.push(`User scripts folder set to ${scripts.folder}.`); } });
       // The template folder is only filled in when Templater has none; one that is set is never changed
       const tplFolder = kitInBackup(templaterTemplatesFolder(this.app) ?? "") ? "" : templaterTemplatesFolder(this.app)?.trim();
       const target = templaterTemplatesTarget(roles.templates);
-      if (!tplFolder && target) { await setTemplaterTemplatesFolder(this.app, target); done.push(`Template folder set to ${target}.`); }
+      if (!tplFolder && target) settings.push({ name: "Set Templater's template folder", desc: `To ${target}. Templater has none yet.`,
+        apply: async () => { await setTemplaterTemplatesFolder(this.app, target); done.push(`Template folder set to ${target}.`); } });
       else if (tplFolder && templaterScriptsNeedChange(tplFolder, roles.templates)) done.push(`Template folder left as ${tplFolder} (the kit's templates are in ${roles.templates}).`);
-      if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys.");
-      new Notice((done.length ? done.join("\n") : "Templater was already set up.") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
-      if (scripts.kind === "relocate") await this.relocateUserScripts(current ?? "", scripts.to);
-    } catch (e) { this.failed(e); }
-  }
+      if (!hasTemplaterHotkey(this.app, menu)) settings.push({ name: "Add Insert snippet to Templater's Template hotkeys", desc: menu,
+        apply: async () => { if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys."); } });
 
-  /** The kit's scripts are outside Templater's user scripts folder (an older install): asks, then installs fresh copies into `to` and tracks them there. The old copies are never moved or deleted. */
-  private async relocateUserScripts(folder: string, to: string): Promise<void> {
-    const kit = this.slot;
-    const moved = relocateRole(this.bundle, kit.managed, "userScripts");
-    const roles = { ...this.roles(), userScripts: to };
-    const items = (await planManaged(this.app.vault.adapter, this.bundle, moved.state, roles, this.legacy(), this.baseDir(), new Set(Object.keys(kit.off))))
-      .filter(it => it.file.role === "userScripts");
-    const old = moved.old.length ? ` The old copies are left in place; delete them when you like: ${moved.old.join(", ")}.` : "";
-    new ConfirmModal(this.app, `Install the lab scripts into ${to}?`,
-      `Templater loads scripts from ${folder}, which is left as it is. The kit's scripts are elsewhere, so the snippet forms can't find them.${old}`,
-      "Install copies", async () => {
-        try {
-          const out = await applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, this.applyOptions({ select: it => it.action === "create" || it.action === "up-to-date", keepVersion: true }));
+      // The kit's scripts are outside the folder Templater reads (an older install): fresh copies into <folder>/lab-kit, tracked there
+      const kit = this.slot;
+      const moved = scripts.kind === "relocate" ? relocateRole(this.bundle, kit.managed, "userScripts") : null;
+      const items = moved && scripts.kind === "relocate"
+        ? (await planManaged(this.app.vault.adapter, this.bundle, moved.state, { ...roles, userScripts: scripts.to }, this.legacy(), this.baseDir(), new Set(Object.keys(kit.off))))
+          .filter(it => it.file.role === "userScripts")
+        : [];
+      const select = (it: ManagedItem): boolean => it.action === "create" || it.action === "up-to-date";
+      if (!settings.length && !items.length) { new Notice(done.concat("Templater was already set up.").join("\n"), 10000); return; }
+      const notes: PreviewNote[] = moved?.old.length
+        ? [{ heading: "Old copies, left in place (delete them when you like)", paths: moved.old, text: `Templater loads scripts from ${current}, which is left as it is.` }]
+        : [];
+      let report: ManagedResult[] | null = null, ran = false;
+      await this.confirmThen({
+        title: "Set up Templater?", yes: "Set up", ask: true, items, select, settings, notes,
+        run: async () => {
+          ran = true;
+          if (!moved || scripts.kind !== "relocate") return;
+          const out = await applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, this.applyOptions({ select, keepVersion: true }));
           kit.managed = out.state;
-          kit.paths.userScripts = to;
+          kit.paths.userScripts = scripts.to;
           await this.host.save();
-          new KitReportModal(this.app, out.results).open();
-        } catch (e) { this.failed(e); }
-      }).open();
+          report = out.results;
+        },
+      });
+      if (report) new KitReportModal(this.app, report).open();
+      if (ran) new Notice(done.join("\n") + (done.length ? "\n" : "") + "Last step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
+    } catch (e) { this.failed(e); }
   }
 
   review(): void { new KitManagedModal(this.app, this).open(); }
@@ -391,11 +431,9 @@ class KitManagedModal extends Modal {
   private writes(): number { return this.items.filter(i => this.select(i) && i.action !== "up-to-date").length; }
 
   private async apply(): Promise<void> {
-    try {
-      const results = await this.managed.apply(this.items, this.select);
-      this.close();
-      new KitReportModal(this.app, results, new Set(this.items.filter(i => i.file.kind === "script").map(i => i.file.id))).open();
-    } catch (e) { this.managed.failed(e); }
+    const scripts = new Set(this.items.filter(i => i.file.kind === "script").map(i => i.file.id));
+    this.close();
+    await this.managed.applyReviewed(this.items, this.select, results => new KitReportModal(this.app, results, scripts).open());
   }
 
   onClose(): void { this.contentEl.empty(); }
@@ -533,17 +571,60 @@ class KitReportModal extends Modal {
   onClose(): void { this.contentEl.empty(); }
 }
 
-/** A tick box in a ConfirmModal. */
-interface ConfirmTick { name: string; desc: string; value: boolean; onChange: (v: boolean) => void }
+/** A change to Obsidian's or another plugin's settings: listed with a switch (on) in the confirmation dialog, made only when confirmed. */
+interface SettingChange { name: string; desc: string; apply: () => Promise<unknown> }
+/** An extra list in the confirmation dialog (e.g. old copies that are left in place). */
+interface PreviewNote { heading: string; paths: string[]; text?: string }
+
+/** The confirmation before a kit writes anything new: grouped lists with counts, a switch per settings change; Cancel writes nothing. */
+class KitInstallModal extends Modal {
+  private confirmed = false;
+  private on: boolean[];
+  constructor(app: App, private title: string, private yes: string, private preview: InstallPreview, private settings: SettingChange[], private notes: PreviewNote[],
+    private onYes: (chosen: SettingChange[]) => Promise<void>, private onCancel: () => void) { super(app); this.on = settings.map(() => true); }
+
+  onOpen(): void {
+    const { contentEl, preview } = this;
+    this.titleEl.setText(this.title);
+    contentEl.addClass("lab-kit-modal");
+    contentEl.createEl("p", { text: `Nothing is written until you press ${this.yes}. A file that is already there is never overwritten.` });
+    const group = (heading: string, paths: string[], text?: string): void => {
+      if (!paths.length) return;
+      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
+      det.open = paths.length <= 8;
+      det.createEl("summary", { text: `${heading} (${paths.length})` });
+      if (text) det.createEl("p", { text });
+      const ul = det.createEl("ul");
+      for (const p of paths) ul.createEl("li").createEl("code", { text: p });
+    };
+    group("Files to create", preview.create);
+    group("Files to update (the old copy is backed up first)", preview.update);
+    group("Files left alone, they already exist", preview.leftAlone);
+    group("Folders to create", preview.folders);
+    for (const n of this.notes) group(n.heading, n.paths, n.text);
+    if (this.settings.length) {
+      new Setting(contentEl).setName(`Settings to change (${this.settings.length})`).setHeading();
+      this.settings.forEach((c, i) => { new Setting(contentEl).setName(c.name).setDesc(c.desc).addToggle(g => g.setValue(true).onChange(v => { this.on[i] = v; })); });
+    }
+    new Setting(contentEl)
+      .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
+      .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => {
+        this.confirmed = true;
+        this.close();
+        void this.onYes(this.settings.filter((_, i) => this.on[i]));
+      }));
+  }
+
+  onClose(): void { this.contentEl.empty(); if (!this.confirmed) this.onCancel(); }
+}
 
 class ConfirmModal extends Modal {
   private confirmed = false;
-  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>, private onCancel?: () => void, private ticks: ConfirmTick[] = []) { super(app); }
+  constructor(app: App, private title: string, private text: string, private yes: string, private onYes: () => Promise<void>, private onCancel?: () => void) { super(app); }
 
   onOpen(): void {
     this.titleEl.setText(this.title);
     this.contentEl.createEl("p", { text: this.text });
-    for (const t of this.ticks) new Setting(this.contentEl).setName(t.name).setDesc(t.desc).addToggle(g => g.setValue(t.value).onChange(t.onChange));
     new Setting(this.contentEl)
       .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
       .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => { this.confirmed = true; this.close(); void this.onYes(); }));
