@@ -238,7 +238,7 @@ export class KitManaged {
       const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
       const first = !this.slot.managed && writes > 0;
       await this.confirmThen({
-        title: first ? `Create ${writes} kit files?` : `Update ${writes} kit files?`, yes: first ? `Create ${writes} files` : "Update", ask: first,
+        title: first ? `Create ${writes} kit files?` : writes ? `Update ${writes} kit files?` : "Change these settings?", yes: first ? `Create ${writes} files` : "Update", ask: first,
         items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)],
         run: async () => { new KitReportModal(this.app, await this.apply(items, select)).open(); },
       });
@@ -307,7 +307,7 @@ export class KitManaged {
         },
       });
       if (report) new KitReportModal(this.app, report).open();
-      if (ran) new Notice(done.join("\n") + (done.length ? "\n" : "") + "Last step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
+      if (ran && done.length) new Notice(done.join("\n") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
     } catch (e) { this.failed(e); }
   }
 
