@@ -122,4 +122,12 @@ describe("check setup (Phase 6)", () => {
     expect(r["metabind:buttons"].detail).toContain("3 of 26");
     expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });
   });
+
+  it("Methods folder Fix creates the suggested folder; ZotLit is a warning, not a tick", () => {
+    const r = byId(state({ planning: true, lab: { initials: "A", dataRoot: true, methodsFolder: "", labFolder: "L", chemicalFolder: "C" },
+      plugins: new Set(["templater-obsidian", "dataview", "zotlit"]), zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md" }));
+    expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "methods-folder", path: "Extras/methods" } });
+    expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true });
+    expect(r["zotlit:settings"].detail).toContain("07 How-tos/Obsidian/Set up ZotLit.md");
+  });
 });

@@ -250,7 +250,7 @@ export class KitController {
     const tracked = this.managed.stateOf(LAB_TEMPLATE_ID)?.path;
     const template = [tracked, kitJoin(this.managed.templatesFolder(), "Lab Book Template.md")]
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
-    const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder });
+    const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder, initials: this.kit.initials });
     if ("error" in target) { new Notice(target.error); return; }
     try {
       await ensureFolder(this.app.vault, target.folder);
@@ -261,7 +261,7 @@ export class KitController {
   }
 
   /** Opens the Check setup window. */
-  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id }).open(); }
+  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save() }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */
   async showWhatsNew(): Promise<void> {

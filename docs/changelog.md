@@ -1,6 +1,8 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Lab notes are named by your initials**: New lab entry (and the Lab Book Template) now names notes `ABC0001 - Title`, ABC being Settings → Lab Kit → Initials; without initials it stops with a notice and makes nothing. Notes named `0014 - …` still count, so the numbers carry on
+- **Check setup**: the Methods folder Fix creates `Extras/methods` and uses it; the ZotLit row is a warning (Lab Kit can't read ZotLit's settings) and says where the checklist note is
 - **Check setup lists more**: Lab Kit's own settings (Initials, a data folder root, Lab notes and Chemical folders, Methods folder as optional; Open goes to the settings), Templater's matching mode (Fix sets Folder templates when it is None), the old roll-over in Templater's startup templates (Fix removes just that entry), Dataview JavaScript queries (Projects overview needs them; inline JavaScript and task tracking don't matter), the planning buttons in Meta Bind (Fix adds the missing ones, yours are never changed), and a **Set up ZotLit** checklist note (new kit note; Lab Kit can't change ZotLit's settings)
 - **ZotLit's Open button** goes to ZotLit (it opened Zotero Integration)
 - **Enter saves** in the planning and lab name boxes (it did nothing; the note was only made through Esc)

@@ -94,7 +94,7 @@
 - [ ] Set Lab notes folder `03 Lab Book/Notes` and Chemical folder `05 Chemicals/Chemicals`, then Review update…: the confirmation lists the three files and the folders `03 Lab Book`, `05 Chemicals`
 - [ ] Open `Chemical database.base`: Table and **By class** (kanban grouped by Chemical class) views show the notes in `05 Chemicals/Chemicals`
 - [ ] Open `Lab book base.base`: the board groups experiments by Status (Planned, Started, Processing results, Closed)
-- [ ] Command **New lab entry**: asks for a title, makes `0001 - Title` in the Lab notes folder (folder made if missing), `Status: Planned` shows as text
+- [ ] Command **New lab entry**: asks for a title, makes `ABC0001 - Title` (ABC = Initials; refused with a notice when Initials is empty) in the Lab notes folder (folder made if missing), `Status: Planned` shows as text
 - [ ] Without Templater / with the Lab notes folder empty: New lab entry shows a notice, nothing is made
 
 ## 6c. Analysis methods (needs `npm run dev`, then Review update… for the new scripts and the Analysis table snippet)
@@ -117,6 +117,7 @@
 - [ ] Alt+S when another command already uses it: no Fix, the row names that command
 - [ ] Open on a missing plugin opens its page in Community plugins
 - [ ] Phone width: the list fits
+- [ ] Phase 6e: Check setup → Methods folder Fix creates `Extras/methods` and fills the setting; the ZotLit row shows "!" and names the checklist note
 - [ ] Phase 6d: Enter saves in the New to-do / New lab entry / Quick capture boxes; Check setup shows Lab Kit settings (Open → settings tab), Templater matching mode and startup templates, Dataview JS, Meta Bind buttons (Fix adds 26 or the missing ones), ZotLit (Open → Set up ZotLit note); ZotLit's plugin Open goes to ZotLit
 - [ ] Phase 6c: planning first install in a vault without its folders: the confirmation lists 00 Inbox, 01 Daily Notes, … each with what it is for; Apply makes them, Cancel makes none. Every file row shows its name, a line on what it is, and its path
 

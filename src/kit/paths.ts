@@ -190,8 +190,9 @@ export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder">): 
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 
 /** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
-export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string }): { template: string; folder: string } | { error: string } {
+export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
   if (!o.templater) return { error: "New lab entry needs the Templater plugin. Install and enable it, then try again." };
+  if (o.initials !== undefined && !o.initials.trim()) return { error: "Set your initials in Lab Kit settings first: lab notes are named ABC0001 - Title." };
   const folder = kitJoin(o.labFolder.trim());
   if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
   if (!o.template) return { error: "The Lab Book Template is not installed. Install it from Manage kit files." };

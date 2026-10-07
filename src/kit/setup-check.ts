@@ -58,13 +58,18 @@ export type SetupFix =
   | { kind: "folder-template"; folder: string; template: string }
   | { kind: "hotkey"; command: string; key: KitHotkey }
   | { kind: "settings" }
+  | { kind: "methods-folder"; path: string }
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
   | { kind: "dataview-js" }
   | { kind: "meta-bind" }
   | { kind: "open-note"; path: string };
 
-export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; detail: string; fix?: SetupFix }
+/** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
+export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
+
+/** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
+export const METHODS_DEFAULT = "Extras/methods";
 
 /** "Alt+S", "Mod+Shift+T": how a hotkey is written in the list. */
 export const hotkeyText = (k: KitHotkey): string => [...k.modifiers, k.key].join("+");
@@ -92,7 +97,8 @@ export function checkSetup(s: SetupState): SetupItem[] {
     ["methods-folder", "Methods folder", !!l.methodsFolder.trim(), "Optional: your own analysis methods next to NMR, GPC and DLS.", true],
   ];
   for (const [id, label, ok, what, optional] of labRows) {
-    out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : `Not set. ${what}`, fix: ok ? undefined : settings });
+    const fix: SetupFix | undefined = ok ? undefined : id === "methods-folder" ? { kind: "methods-folder", path: METHODS_DEFAULT } : settings;
+    out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : id === "methods-folder" ? `Not set. ${what} Fix creates ${METHODS_DEFAULT} and uses it.` : `Not set. ${what}`, fix });
   }
 
   for (const kit of ["lab", "planning"] as const) {
@@ -148,8 +154,9 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: missing ? { kind: "meta-bind" } : undefined });
   }
 
-  if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: true, optional: true,
-    detail: s.zotlitGuide ? "Lab Kit can't read ZotLit's settings: follow the checklist note (note folder, template folder)." : "Lab Kit can't read ZotLit's settings: install the planning kit for its checklist note.",
+  if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
+    detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`
+      : "Lab Kit can't read ZotLit's settings. Install the planning kit (Review update…) to get its checklist note, Set up ZotLit.",
     fix: s.zotlitGuide ? { kind: "open-note", path: s.zotlitGuide } : undefined });
 
   for (const c of s.css) {

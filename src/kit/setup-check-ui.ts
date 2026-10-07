@@ -11,7 +11,7 @@ import type { HeaderSettings } from "../header/settings";
 import { checkSetup, hotkeyText, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
-export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string }
+export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void> }
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
 const PLANNING_FOLDER_TEMPLATES = [
@@ -70,13 +70,14 @@ export class SetupCheckModal extends Modal {
     el.addClass("lab-kit-setup-check");
     this.setTitle("Check setup");
     const items = checkSetup(readSetupState(this.app, this.host));
-    const missing = items.filter(i => !i.ok && !i.optional).length;
+    const missing = items.filter(i => !i.ok && !i.optional && !i.warn).length;
     el.createEl("p", { text: missing ? `${missing} to fix. Nothing changes until you press Fix and confirm.` : "Everything the kits need is in place." });
     let group = "";
     for (const it of items) {
       if (it.group !== group) { group = it.group; el.createEl("h4", { text: group }); }
-      const row = el.createDiv({ cls: `lab-kit-setup-row ${it.ok ? "is-ok" : it.optional ? "is-optional" : "is-missing"}` });
-      row.createSpan({ cls: "lab-kit-setup-mark", text: it.ok ? "✓" : it.optional ? "–" : "✗" });
+      const state = it.ok ? "is-ok" : it.warn ? "is-warn" : it.optional ? "is-optional" : "is-missing";
+      const row = el.createDiv({ cls: `lab-kit-setup-row ${state}` });
+      row.createSpan({ cls: "lab-kit-setup-mark", text: it.ok ? "✓" : it.warn ? "!" : it.optional ? "–" : "✗" });
       const text = row.createDiv({ cls: "lab-kit-setup-text" });
       text.createDiv({ text: it.label });
       text.createDiv({ cls: "setting-item-description", text: it.detail });
@@ -92,6 +93,8 @@ export class SetupCheckModal extends Modal {
       await lab.confirmThen({ title: `Fix: ${it.label}?`, yes: "Fix", ask: true, items: [], select: () => false, settings: [change], run: async () => {} });
     };
     switch (fix.kind) {
+      case "methods-folder": await confirm({ name: `Create ${fix.path} and use it as the Methods folder`, desc: "Put one note per analysis method there; the Alt+S analysis snippets then offer them.",
+        apply: async () => { await ensureFolder(this.app.vault, fix.path); this.host.kit.methodsFolder = fix.path; await this.host.save(); } }); break;
       case "settings": this.close(); if (!openPluginSettings(this.app, this.host.pluginId)) new Notice("Couldn't open the settings: open them from the gear icon."); return;
       case "open-note": this.close(); void this.app.workspace.openLinkText(fix.path, "", false); return;
       case "matching-mode": await confirm({ name: "Set Templater's matching mode to Folder templates", desc: "It is None now, so folder templates never run.", apply: () => setTemplaterFolderMode(this.app) }); break;

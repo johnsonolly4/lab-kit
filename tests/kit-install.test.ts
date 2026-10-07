@@ -386,3 +386,18 @@ describe("lab kit completion (Phase 2)", () => {
     expect(newLabEntryTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Lab Book Template"));
   });
 });
+
+describe("New lab entry needs initials (Phase 6e)", () => {
+  it("refuses without initials, before Templater runs; with initials it goes ahead", () => {
+    const base = { templater: true, template: "T/Lab Book Template.md", labFolder: "03 Lab Book/Notes" };
+    expect(newLabEntryTarget({ ...base, initials: " " })).toEqual({ error: expect.stringContaining("initials") });
+    expect(newLabEntryTarget({ ...base, initials: "ABC" })).toEqual({ template: base.template, folder: "03 Lab Book/Notes" });
+  });
+
+  it("the Lab Book Template names notes by initials and stops without them", () => {
+    const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+    expect(tpl).toContain("`${initials}${next} - ${title}`");
+    expect(tpl).toMatch(/if \(!initials\) \{[\s\S]*throw new Error/);
+    expect(tpl).toContain("/^[A-Za-z]*(\\d+)/");   // old 0014 notes keep the count
+  });
+});
