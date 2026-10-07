@@ -20,8 +20,7 @@ const addDays = (d: Date, n: number): Date => new Date(d.getFullYear(), d.getMon
 /** A series hub read from its note: the series, or what is wrong with it (named field). `day` is Mon…Sun (first three letters, any case). */
 export function parseSeries(hub: NoteRec): SeriesRead {
   const bad = (error: string): SeriesRead => ({ name: hub.name, path: hub.path, error });
-  // `cadence` is the old name of `interval`: hubs made before the rename keep working (Tidy up notes renames it)
-  const interval = text(hub.fm.interval || hub.fm.cadence).toLowerCase();
+  const interval = text(hub.fm.interval).toLowerCase();
   if (!(INTERVALS as readonly string[]).includes(interval)) return bad(`interval must be weekly, fortnightly or monthly (it is "${interval}")`);
   const day = WEEKDAYS.findIndex(d => d.toLowerCase() === text(hub.fm.day).slice(0, 3).toLowerCase());
   if (day < 0) return bad(`day must be Mon, Tue, Wed, Thu, Fri, Sat or Sun (it is "${text(hub.fm.day)}")`);

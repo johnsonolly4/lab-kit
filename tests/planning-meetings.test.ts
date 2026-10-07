@@ -67,11 +67,6 @@ describe("series hub", () => {
     expect(error({ interval: "weekly", day: "Thu", start: "soon" })).toMatch(/^start/);
     expect(error({ interval: "Weekly", day: "thursday", start: "2026-10-01" })).toBe("");   // case and long day names are fine
   });
-
-  it("an old hub with cadence instead of interval still parses; interval wins when both are there", () => {
-    expect(read("Old", { cadence: "fortnightly", day: "Thu", start: "2026-10-01" }).interval).toBe("fortnightly");
-    expect(read("Both", { interval: "monthly", cadence: "weekly", day: "Thu", start: "2026-10-01" }).interval).toBe("monthly");
-  });
 });
 
 describe("since the last meeting", () => {

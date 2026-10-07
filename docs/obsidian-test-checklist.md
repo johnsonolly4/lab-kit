@@ -141,7 +141,6 @@
 - [ ] **New meeting** (command, and the New meeting note button) asks "Which meeting?" with three series, none with one; the note is named `YYYY-MM-DD <Series>`, sits in the series' folder, has `series` and `since`, and its lists cover the time since the last meeting of that series
 - [ ] **New to-do** asks "Raise at which meeting?" with several series (none with one); pick one: the to-do has `meeting: "[[Series]]"`. That series' meeting note lists it under Flagged for this meeting, the others don't; an old `meeting: true` to-do shows under the first series by name
 - [ ] **Open meeting deck** asks which series; the deck path comes from that series' note
-- [ ] Tidy up notes → Meetings: a series hub still written with `cadence:` (an old copy of Weekly meetings) shows the key renamed to `interval` with the same value; after applying, Next meetings still lists it (Phase 0 rename, not seen in Obsidian)
 - [ ] Check setup → Meetings: one row per series; break `interval` on one: red, names the field, Open goes to the note; a series without a deck path for this computer shows "!"
 
 ---

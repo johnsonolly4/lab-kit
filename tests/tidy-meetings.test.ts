@@ -43,16 +43,6 @@ describe("Tidy up notes: meetings (Phase 7c-1)", () => {
     expect(hub?.after).toBe("kind: meeting-series\ncssclasses:\n  - vt\ndeck_windows: \"\"\ninterval: fortnightly\nday: Tue\nstart: 2026-10-07");
   });
 
-  it("a series hub still written with cadence gets interval, same value; one with both is left alone", () => {
-    const m = vault();
-    m.set("08 Meetings/Review/Review.md", "---\nkind: meeting-series\ncadence: monthly\nday: Thu\nstart: 2026-10-08\n---\n");
-    m.set("08 Meetings/Both/Both.md", "---\nkind: meeting-series\ncadence: weekly\ninterval: monthly\nday: Thu\nstart: 2026-10-08\n---\n");
-    const g = group(ctx(), m, "meetings");
-    const review = g?.changes.find(c => c.path === "08 Meetings/Review/Review.md");
-    expect(review?.after).toBe("kind: meeting-series\ninterval: monthly\nday: Thu\nstart: 2026-10-08");
-    expect(g?.changes.some(c => c.path === "08 Meetings/Both/Both.md")).toBe(false);
-  });
-
   it("meeting notes get series from the hub in their folder; one without a hub is reported", () => {
     const c = ctx(), s = scan(files(vault(), c), c);
     const note = s.groups.find(g => g.id === "meetings")?.changes.find(x => x.path.endsWith("2026-09-24 Group meeting.md"));
