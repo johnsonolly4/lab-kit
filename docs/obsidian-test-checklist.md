@@ -145,7 +145,7 @@
 
 ---
 
-## 6h. Phase 7a/7b: Tidy up notes (needs `npm run dev`; use a copy of your notes in test-vault, never your real vault)
+## 6h. Phase 7a/7b/7c-1: Tidy up notes (needs `npm run dev`; use a copy of your notes in test-vault, never your real vault)
 - [ ] Command **Tidy up notes** opens a wide window with the backup banner; **Change notes…** is greyed out until the backup box is ticked
 - [ ] Put in test-vault: a lab note with `Status:` as a list, a note in the Knowledge folder with `Type: Wiki`, an `index` note without `kind`: each shows left (before) and right (after) with red / green / amber lines, readable in light and dark themes
 - [ ] Untick a rule, press **Copy report**, paste somewhere: the rule says "(not ticked)", only paths and counts, no note text
@@ -155,6 +155,8 @@
 - [ ] A lab note with no properties gets the template's block; a note with `vt` / `Calculations` keeps them
 - [ ] A `fonts` folder (and `Extras/Templates/Scripts`) moves: links in notes still resolve (Obsidian's unresolved-links count is unchanged), kit files still show as tracked in Manage kit files
 - [ ] Edit a listed note after the scan, then confirm: that note is skipped and named in the banner
+- [ ] 7c-1, planning kit on: an old hub in `08 Meetings/<Series>/` (`kind: hub`, no cadence) shows under **Meetings** with Held / on pickers; changing them updates the After column (cadence, day) and start is today; meeting notes in that folder get `series`; a to-do with `meeting: true` gets `meeting: "[[Series]]"`
+- [ ] 7c-1: a Projects / Literature / Knowledge / How-tos folder with no hub note shows **Add a hub note…** (new note); after Confirm the file exists with `kind: hub`, Go to on 00 Home lists the folder, and a file of that name made in the meantime is skipped, not replaced
 
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)

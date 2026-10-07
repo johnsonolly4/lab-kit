@@ -6,7 +6,10 @@ import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyScan } from "./tidy";
+import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { CADENCES, WEEKDAYS } from "../planning/meetings";
+import { todoFolder } from "./paths";
+import { ymd } from "../planning/todo";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
@@ -29,6 +32,7 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
       const gone = new Set(paths);
       return Object.entries(app.metadataCache.resolvedLinks).filter(([src, links]) => !gone.has(src) && paths.some(p => links[p])).map(([src]) => src);
     },
+    create: async (p, text) => { await ensureFolder(app.vault, kitParent(p)); await app.vault.create(p, text); },
     rename: async (from, to) => {
       const f = app.vault.getAbstractFileByPath(from);
       if (!f) return;
@@ -40,8 +44,12 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
 
 const top = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
 
+/** What the user chooses for the old weekly-meeting hub (the meetings rule). */
+export interface MeetingAnswers { cadence: string; day: string }
+const MEETING_DEFAULTS: MeetingAnswers = { cadence: "weekly", day: "Thu" };
+
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
-export function tidyContext(host: TidyHost): TidyContext {
+export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS): TidyContext {
   const planningOn = !!host.planning?.slot.enabled;
   const pf: PlanningFolders = planningOn ? host.kit.planningFolders : { ...PLANNING_FOLDER_DEFAULTS };
   const migrations: Migration[] = [host.managed, ...(planningOn && host.planning ? [host.planning] : [])].flatMap(k => k.bundle.manifest.migrations ?? []);
@@ -51,19 +59,19 @@ export function tidyContext(host: TidyHost): TidyContext {
     contractFolders: planningOn ? [...new Set(contract)] : [],
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
+    hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
+    meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
   };
 }
 
-/** Reads the vault (only the notes the scan needs) and runs the scan. Writes nothing. */
-export async function scanVault(app: App, host: TidyHost): Promise<TidyScan> {
-  const ctx = tidyContext(host);
+/** Reads the vault (only the notes the scan needs). Writes nothing. */
+async function readVault(app: App, ctx: TidyContext): Promise<TidyFile[]> {
   const paths = app.vault.getFiles().map(f => f.path);
   const readAll = paths.some(p => /(^|\/)view\.js$/.test(p));
-  const files = await Promise.all(paths.map(async path => {
+  return Promise.all(paths.map(async path => {
     const f = wantsText(path, ctx, readAll) ? app.vault.getFileByPath(path) : null;
     return { path, text: f ? await app.vault.cachedRead(f) : undefined };
   }));
-  return scan(files, ctx);
 }
 
 export class TidyNotesModal extends Modal {
@@ -71,6 +79,8 @@ export class TidyNotesModal extends Modal {
   private ticked = new Set<string>();
   private backedUp = false;
   private message = "";
+  private files: TidyFile[] = [];
+  private answers: MeetingAnswers = { ...MEETING_DEFAULTS };
 
   constructor(app: App, private host: TidyHost) { super(app); }
 
@@ -79,13 +89,20 @@ export class TidyNotesModal extends Modal {
     this.contentEl.addClass("lab-kit-tidy");
     this.setTitle("Tidy up notes");
     this.contentEl.createEl("p", { text: "Reading your notes…" });
-    void scanVault(this.app, this.host).then(r => {
-      this.result = r;
-      this.ticked = new Set(r.groups.map(g => g.id));
+    void this.load().then(() => {
+      this.ticked = new Set(this.result?.groups.map(g => g.id));
       this.render();
     }, () => { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read the vault. Nothing was changed." }); });
   }
   onClose(): void { this.contentEl.empty(); }
+
+  /** Reads the vault and scans it. */
+  private async load(): Promise<void> {
+    this.files = await readVault(this.app, tidyContext(this.host, this.answers));
+    this.rescan();
+  }
+  /** Scans again with the current answers (no reading: the answers only change what the meetings rule proposes). */
+  private rescan(): void { this.result = scan(this.files, tidyContext(this.host, this.answers)); }
 
   private render(): void {
     const el = this.contentEl, r = this.result;
@@ -107,9 +124,10 @@ export class TidyNotesModal extends Modal {
       const label = head.createDiv();
       label.createEl("strong", { text: `${g.title} (${g.changes.length})` });
       if (g.detail) label.createDiv({ cls: "setting-item-description", text: g.detail });
+      if (g.ask === "meetings") this.askMeetings(label);
       for (const c of g.changes) {
         if (c.to !== undefined) { el.createDiv({ cls: "lab-kit-tidy-path", text: `${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
-        el.createDiv({ cls: "lab-kit-tidy-path", text: c.path });
+        el.createDiv({ cls: "lab-kit-tidy-path", text: c.create ? `${c.path} (new note)` : c.path });
         const grid = el.createDiv({ cls: "lab-kit-tidy-diff" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "Before" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "After" });
@@ -151,6 +169,20 @@ export class TidyNotesModal extends Modal {
 
   private refreshChange: (() => void) | null = null;
 
+  /** The meetings rule's questions: how often and on which day the old hub's meeting is held. Changing one updates the rows below. */
+  private askMeetings(into: HTMLElement): void {
+    const row = into.createDiv({ cls: "lab-kit-tidy-foot" });
+    const pick = (label: string, options: readonly string[], value: string, set: (v: string) => void): void => {
+      row.createSpan({ text: label });
+      const sel = row.createEl("select");
+      for (const o of options) sel.createEl("option", { text: o, value: o });
+      sel.value = value;
+      sel.addEventListener("change", () => { set(sel.value); this.rescan(); this.render(); });
+    };
+    pick("Held", CADENCES, this.answers.cadence, v => { this.answers.cadence = v; });
+    pick("on", WEEKDAYS, this.answers.day, v => { this.answers.day = v; });
+  }
+
   /** The changes of the ticked rules. */
   private selected(): TidyChange[] { return this.result ? selectChanges(this.result, this.ticked) : []; }
 
@@ -165,12 +197,12 @@ export class TidyNotesModal extends Modal {
     const backups = this.host.managed.roles().backups;
     try {
       const out = await applyTidy(vaultIO(this.app, backups, new Date().toISOString()), changes);
-      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.skipped.length} skipped`];
+      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.created.length} created`, `${out.skipped.length} skipped`];
       this.message = `${parts.join(", ")}. Backups: ${backups}.${out.skipped.length ? ` Skipped: ${out.skipped.map(x => `${x.path} (${x.why})`).join("; ")}.` : ""}`;
       new Notice(parts.join(", ") + ".");
     } catch (e) { this.message = `Stopped: ${(e as Error).message}. Anything already changed is in the backups folder (${backups}).`; }
-    this.result = await scanVault(this.app, this.host);   // a second scan: what is left
-    this.ticked = new Set(this.result.groups.map(g => g.id));
+    await this.load();   // a second scan: what is left
+    this.ticked = new Set(this.result?.groups.map(g => g.id));
     this.backedUp = false;
     this.render();
   }

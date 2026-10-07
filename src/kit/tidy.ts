@@ -1,6 +1,8 @@
 // Tidy up notes (Phase 7a, plan docs/plans/phase-7-tidy-notes.md): scans a vault's notes against the kit layout and lists what would change, as
 // before / after text, plus what is only reported. Pure and read-only: the caller reads the vault into `files`; nothing here writes.
-// Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, leftovers, note bodies) are code.
+// Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, meetings, leftovers, note bodies) are code.
+import { unnumbered } from "../planning/lists";
+import { firstSeries } from "../planning/meetings";
 
 export type MigrationOp =
   /** A property with this value (e.g. `Type: Wiki`) becomes another property and value (`kind: concept`). Skipped when the new property exists. */
@@ -30,6 +32,10 @@ export interface TidyContext {
   /** Notes allowed at the vault root (the homepage). */
   rootNotes: string[];
   migrations: Migration[];
+  /** Top-level folders that should have a hub note (Go to link). Missing = the rule is off. */
+  hubFolders?: string[];
+  /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
+  meetings?: { folder: string; todos: string; today: string; cadence: string; day: string };
 }
 
 /** One vault file. `text` only for notes the scan needs to read (see `wantsText`). */
@@ -40,8 +46,11 @@ export interface TidyChange {
   path: string; before: string; after: string;
   /** A move: the new path (`before` / `after` are empty). `note` says what is moved (e.g. "12 files"). */
   to?: string; note?: string;
+  /** A new note at `path` whose properties are `after` (`before` is empty); never replaces a file. */
+  create?: boolean;
 }
-export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[] }
+/** `ask`: the window shows this rule's questions (the meetings rule asks how often and on which day). */
+export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[]; ask?: "meetings" }
 export interface TidyReported { id: string; title: string; detail: string; items: { path: string; note?: string }[] }
 export interface TidyScan { groups: TidyGroup[]; reported: TidyReported[] }
 
@@ -151,7 +160,9 @@ function isHubName(path: string): boolean {
 /** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js.) */
 export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
   if (!isNote(path) || hidden(path)) return false;
-  return readAll || inFolder(path, ctx.labFolder) || inFolder(path, ctx.knowledgeFolder) || isHubName(path);
+  return readAll || inFolder(path, ctx.labFolder) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
+    || (!!ctx.meetings && (inFolder(path, ctx.meetings.folder) || inFolder(path, ctx.meetings.todos)))
+    || (ctx.hubFolders ?? []).some(f => parentOf(path) === f);
 }
 
 const topFolder = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
@@ -190,6 +201,42 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     if (g.changes.length) groups.push(g);
   }
 
+  // Meetings (Phase 7c): old weekly-meeting hub → series hub, meeting notes get `series`, to-dos `meeting: true` → a link
+  const put = (path: string, after: string): void => {
+    const cur = effective.get(path) ?? "", s = split(cur);
+    effective.set(path, s ? `---\n${after}${after ? "\n" : ""}---${s.body}` : `---\n${after}\n---\n${cur}`);
+  };
+  const fmOf = (path: string): string[] => split(effective.get(path) ?? "")?.fm ?? [];
+  const kindOf = (path: string): string => values(find(fmOf(path), "kind")).map(lower)[0] ?? "";
+  const mt = ctx.meetings;
+  if (mt) {
+    const g: TidyGroup = { id: "meetings", title: "Meetings: series hub and links", detail: "The old weekly-meeting hub becomes a meeting series, meeting notes get a series link and to-dos flagged with meeting: true link to the first series.", changes: [], ask: "meetings" };
+    const inMeet = notes.filter(n => inFolder(n.path, mt.folder));
+    const propose = (path: string, fm: string[]): void => { g.changes.push({ path, before: split(effective.get(path) ?? "")?.fm.join("\n") ?? "", after: fm.join("\n") }); put(path, fm.join("\n")); };
+    for (const n of inMeet.filter(x => baseName(x.path) === baseName(parentOf(x.path)) && kindOf(x.path) === "hub" && !find(fmOf(x.path), "cadence"))) {
+      let fm = fmOf(n.path);
+      const k = find(fm, "kind");
+      fm = k ? [...fm.slice(0, k.start), "kind: meeting-series", ...fm.slice(k.end)] : [...fm, "kind: meeting-series"];
+      for (const [key, val] of [["cadence", mt.cadence], ["day", mt.day], ["start", mt.today]]) if (!find(fm, key)) fm.push(line(key, val));
+      propose(n.path, fm);
+    }
+    const series = inMeet.filter(x => kindOf(x.path) === "meeting-series").map(x => ({ name: baseName(x.path), folder: parentOf(x.path) }));
+    for (const n of inMeet.filter(x => kindOf(x.path) === "meeting" && !values(find(fmOf(x.path), "series")).length)) {
+      const hub = series.find(x => x.folder === parentOf(n.path));
+      if (!hub) { skipped.items.push({ path: n.path, note: "meeting note, but no series hub in the same folder: left as it is" }); continue; }
+      propose(n.path, [...fmOf(n.path), `series: "[[${hub.name}]]"`]);
+    }
+    const first = firstSeries(series)?.name;
+    for (const n of notes.filter(x => inFolder(x.path, mt.todos))) {
+      const p = find(fmOf(n.path), "meeting");
+      if (!p || values(p).length !== 1 || lower(values(p)[0]) !== "true") continue;
+      if (!first) { skipped.items.push({ path: n.path, note: "meeting: true, but there is no meeting series to link to: left as it is" }); continue; }
+      const fm = fmOf(n.path);
+      propose(n.path, [...fm.slice(0, p.start), `meeting: "[[${first}]]"`, ...fm.slice(p.end)]);
+    }
+    if (g.changes.length) groups.push(g);
+  }
+
   // Hubs: index / hub notes without `kind`
   const hubs: TidyGroup = { id: "hub-kind", title: "Add kind: hub to index notes", detail: "Notes named index, “… index” or like their folder that have no kind property.", changes: [] };
   for (const n of notes) {
@@ -199,6 +246,18 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     hubs.changes.push({ path: n.path, before: s ? s.fm.join("\n") : "", after: [...(s?.fm ?? []), "kind: hub"].join("\n") });
   }
   if (hubs.changes.length) groups.push(hubs);
+
+  // Folders without a hub note (same test as Go to): a new `<Folder>.md` with kind: hub. Only creates.
+  const missing: TidyGroup = { id: "hub-missing", title: "Add a hub note to folders without one", detail: "Go to links need a hub note (kind: hub) in the folder. The new note is empty apart from that.", changes: [] };
+  const proposed = new Set(hubs.changes.map(c => c.path));
+  for (const folder of ctx.hubFolders ?? []) {
+    if (folder.includes("/") || !files.some(f => inFolder(f.path, folder))) continue;
+    const has = files.some(f => parentOf(f.path) === folder && !hidden(f.path) && (f.path.endsWith(".base") || proposed.has(f.path)
+      || (isNote(f.path) && (baseName(f.path) === unnumbered(folder) || kindOf(f.path) === "hub"))));
+    const path = `${folder}/${unnumbered(folder)}.md`;
+    if (!has && !files.some(f => f.path === path)) missing.changes.push({ path, before: "", after: "kind: hub", create: true });
+  }
+  if (missing.changes.length) groups.push(missing);
 
   // Only reported
   const rep = (id: string, title: string, detail: string, items: { path: string; note?: string }[]): TidyReported | null => items.length ? { id, title, detail, items } : null;
