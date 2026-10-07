@@ -42,9 +42,9 @@ export interface KitData {
 
 export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "" };
 
-/** The saved state of one kit, created (switched on, nothing installed) when there is none yet. */
+/** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
-  return kit.kits[id] ??= { enabled: true, managed: null, paths: {}, off: {} };
+  return kit.kits[id] ??= { enabled: id === LAB_KIT, managed: null, paths: {}, off: {} };
 }
 
 /**

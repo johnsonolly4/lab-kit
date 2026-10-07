@@ -3,7 +3,8 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { applyManaged, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
-import { PLANNING_LAYOUT, kitJoin, planningRoles } from "../src/kit/paths";
+import { PLANNING_LAYOUT, kitJoin, kitLoad, kitSlot, planningRoles } from "../src/kit/paths";
+import { loadedPlugins } from "../src/kit/obsidian-private";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit, embeddedKits } from "../scripts/embed-kit.mjs";
 
@@ -107,5 +108,31 @@ describe("planning kit files (Phase 3)", () => {
   it("leaves the planning notes' text as supplied", () => {
     const home = planning.manifest.files.find(f => f.src === "00 Home.md")!;
     expect(planning.contents[home.id]).toBe(readFileSync("docs/plans/kit-files/planning/00 Home.md", "utf8").replace(/\r\n/g, "\n"));
+  });
+});
+
+describe("planning kit switch (Phase 6a)", () => {
+  it("a planning slot made on first read starts off; the lab slot starts on", () => {
+    const kit = kitLoad(undefined);
+    expect(kitSlot(kit, "planning").enabled).toBe(false);
+    expect(kitSlot(kit, "lab").enabled).toBe(true);
+  });
+
+  it("a saved planning switch survives a reload", () => {
+    const kit = kitLoad(undefined);
+    kitSlot(kit, "planning").enabled = true;
+    expect(kitLoad(JSON.parse(JSON.stringify(kit))).kits.planning.enabled).toBe(true);
+  });
+
+  it("ZotLit-only files install when ZotLit is loaded under its plugin id", async () => {
+    const withZot = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "obsidian-zotero-desktop-connector": {} } } } as any;
+    expect(loadedPlugins(withZot).has("zotlit")).toBe(true);
+    expect(loadedPlugins(app()).has("zotlit")).toBe(false);
+    const zotIds = planning.manifest.files.filter(f => f.needs === "plugin:zotlit").map(f => f.id);
+    expect(zotIds.length).toBeGreaterThan(0);
+    for (const id of zotIds) {
+      expect(offIds(planning, {}, {}, loadedPlugins(withZot)).has(id)).toBe(false);
+      expect(offIds(planning, {}, {}, loadedPlugins(app())).has(id)).toBe(true);
+    }
   });
 });

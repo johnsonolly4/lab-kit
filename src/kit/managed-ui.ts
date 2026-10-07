@@ -6,8 +6,8 @@ import {
   type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
-import { LAB_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
+import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, planningRoles, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
 const MENU_ID = "tpl-insert-snippet-md";
@@ -35,6 +35,7 @@ export class KitManaged {
     const old = this.oldRecord();
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
     const tracked = trackedRoles(this.bundle, slot.managed);
+    if (this.bundle.manifest.id === PLANNING_KIT) return { ...planningRoles(this.app, tracked), ...own };
     // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
     return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked), ...own };
   }
@@ -44,7 +45,7 @@ export class KitManaged {
 
   isOff(id: string): boolean { return this.offIds().has(id); }
   /** Switched off by you, or waiting for a folder setting (`needs`) that is empty. */
-  private offIds(): Set<string> { return offIds(this.bundle, this.slot.off, this.host.kit); }
+  private offIds(): Set<string> { return offIds(this.bundle, this.slot.off, this.host.kit, loadedPlugins(this.app)); }
 
   private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
 

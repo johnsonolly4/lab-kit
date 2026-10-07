@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, kitJoin, kitLoad, newLabEntryTarget, type KitData } from "./paths";
+import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, PLANNING_KIT, kitJoin, kitLoad, newLabEntryTarget, type KitData } from "./paths";
 import { hasTemplater, templaterCreateNote } from "./obsidian-private";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
@@ -92,6 +92,28 @@ class KitSettingTab extends PluginSettingTab {
           .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
       }
     });
+    const planning = this.ctl.planning;
+    if (planning) {
+      const pSlot = planning.slot, pInst = planning.installedVersion;
+      updates.push({ name: "Planning kit (preview)", desc: "Homepage, to-do board, planning notes and templates, with their own commands. Preview: some homepage buttons don't work yet. Switching it off removes nothing.",
+        render: b => {
+          b.addToggle(t => t.setValue(pSlot.enabled).onChange(async v => {
+            pSlot.enabled = v;
+            await this.ctl.save();
+            new Notice(v ? "Planning kit on. Install its files with Review update…, then reload Lab Kit (Settings → Community plugins) to start its commands." : "Planning kit off. Reload Lab Kit to stop its commands; its files stay.", 10000);
+            this.update();
+          }));
+        } });
+      if (pSlot.enabled) updates.push({
+        name: "Planning kit files",
+        desc: `Bundled v${planning.version} · ${pInst ? `installed v${pInst}, ${Object.keys(pSlot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
+        render: b => {
+          b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => planning.manage()))
+            .addButton(btn => btn.setButtonText("Review update…").onClick(() => planning.review()))
+            .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void planning.updateSafe()));
+        }
+      });
+    }
     const setup: SettingGroupItem[] = [];
     setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
       render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
@@ -159,11 +181,15 @@ class KitSettingTab extends PluginSettingTab {
 export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
   readonly managed: KitManaged;
+  /** The planning kit (switched off until the user turns it on in settings); null if main.js has none. */
+  readonly planning: KitManaged | null;
 
   constructor(readonly plugin: Plugin, private header: HeaderStore) {
     const lab = embedded.kits.find(k => k.manifest.id === LAB_KIT);
     if (!lab) throw new Error("Lab Kit: the lab kit is missing from main.js");
     this.managed = new KitManaged(plugin, this, lab);
+    const planning = embedded.kits.find(k => k.manifest.id === PLANNING_KIT);
+    this.planning = planning ? new KitManaged(plugin, this, planning) : null;
   }
 
   get app(): App { return this.plugin.app; }

@@ -27,6 +27,15 @@ const templater = (app: App): TemplaterPlugin | undefined => priv(app).plugins?.
 /** True when Obsidian has read every note's properties (`metadataCache.resolved`, not in the public typings). False when unknown. */
 export const metadataResolved = (app: App): boolean => (app.metadataCache as unknown as { resolved?: boolean }).resolved === true;
 
+/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`), by the plugin ids they may have. ZotLit's id is not checked against a real install. */
+const PLUGIN_ALIASES: Record<string, string[]> = { zotlit: ["zotlit", "obsidian-zotero-desktop-connector"] };
+/** Other plugins that are loaded (installed and on), as plugin ids plus the kit names in PLUGIN_ALIASES. */
+export function loadedPlugins(app: App): Set<string> {
+  const ids = new Set(Object.keys(priv(app).plugins?.plugins ?? {}));
+  for (const [name, aliases] of Object.entries(PLUGIN_ALIASES)) if (aliases.some(a => ids.has(a))) ids.add(name);
+  return ids;
+}
+
 /** Templater's settings, or {} when Templater isn't installed. */
 export const templaterSettings = (app: App): NonNullable<TemplaterPlugin["settings"]> => templater(app)?.settings ?? {};
 export const hasTemplater = (app: App): boolean => !!templater(app);
