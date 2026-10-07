@@ -3,17 +3,26 @@
 import type { App, TFile, TFolder } from "obsidian";
 
 interface TemplaterPlugin {
-  settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[] };
+  settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[];
+    trigger_on_file_creation?: boolean; enable_folder_templates?: boolean; folder_templates?: { folder?: string; template?: string }[] };
   command_handler?: { sync_template_hotkeys?: () => void; add_template_hotkey?: (old: string | null, template: string) => void };
   templater?: { create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
   save_settings?: () => Promise<void>;
   saveSettings?: () => Promise<void>;
 }
+/** One Obsidian hotkey: modifiers (Mod, Ctrl, Alt, Shift, Meta) and a key. */
+export interface KitHotkey { modifiers: string[]; key: string }
 interface PrivateApp {
   plugins?: {
     plugins?: Record<string, unknown>;
     disablePlugin(id: string): Promise<void>;
     enablePlugin(id: string): Promise<void>;
+  };
+  hotkeyManager?: {
+    customKeys?: Record<string, KitHotkey[]>;
+    defaultKeys?: Record<string, KitHotkey[]>;
+    setHotkeys?: (command: string, keys: KitHotkey[]) => void;
+    save?: () => Promise<void> | void;
   };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
@@ -108,3 +117,47 @@ export async function setCssSnippets(app: App, enable: string[], disable: string
   for (const s of disable) css.setCssEnabledStatus?.(s.replace(/\.css$/, ""), false);
 }
 
+
+/** Templater's folder templates (folder → template), or [] without Templater. Reads only. */
+export const templaterFolderTemplates = (app: App): { folder: string; template: string }[] =>
+  (templater(app)?.settings?.folder_templates ?? []).map(e => ({ folder: e?.folder ?? "", template: e?.template ?? "" }));
+
+/** Adds a folder template and turns on "Trigger Templater on new file creation" (needed for folder templates). Adds only: a folder that has an entry keeps it. True when added. */
+export async function addTemplaterFolderTemplate(app: App, folder: string, template: string): Promise<boolean> {
+  const tpl = templater(app);
+  if (!tpl?.settings) return false;
+  const list = tpl.settings.folder_templates ??= [];
+  if (list.some(e => e?.folder === folder)) return false;
+  // Templater keeps an empty first row for its settings page; fill that instead of adding a second one
+  const blank = list.find(e => !e?.folder && !e?.template);
+  if (blank) { blank.folder = folder; blank.template = template; } else list.push({ folder, template });
+  tpl.settings.trigger_on_file_creation = true;
+  if (tpl.settings.enable_folder_templates === false) tpl.settings.enable_folder_templates = true;
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+  return true;
+}
+
+/** True when this Obsidian exposes the hotkey manager we can read and set hotkeys with (private API). */
+export const hotkeysSupported = (app: App): boolean => typeof priv(app).hotkeyManager?.setHotkeys === "function";
+
+/** The hotkeys in use, per command id: your own hotkeys where set, else Obsidian's defaults. {} when unknown. */
+export function hotkeysInUse(app: App): Record<string, KitHotkey[]> {
+  const hm = priv(app).hotkeyManager;
+  return { ...(hm?.defaultKeys ?? {}), ...(hm?.customKeys ?? {}) };
+}
+
+/** Adds `key` to a command's own hotkeys (keeps the ones it has) and saves. False when the hotkey manager isn't there. */
+export async function addHotkey(app: App, command: string, key: KitHotkey): Promise<boolean> {
+  const hm = priv(app).hotkeyManager;
+  if (!hm?.setHotkeys) return false;
+  const own = hm.customKeys?.[command] ?? hm.defaultKeys?.[command] ?? [];
+  hm.setHotkeys(command, [...own, key]);
+  try { await hm.save?.(); } catch (e) { console.error(e); }
+  return true;
+}
+
+/** Every registered command, id → name (`app.commands`, private). {} when unknown. */
+export function commandNames(app: App): Record<string, string> {
+  const cmds = (app as unknown as { commands?: { commands?: Record<string, { name?: string }> } }).commands?.commands ?? {};
+  return Object.fromEntries(Object.entries(cmds).map(([id, c]) => [id, c?.name ?? id]));
+}

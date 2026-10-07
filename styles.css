@@ -139,3 +139,12 @@
 
 /* Planning kit text box (src/planning/ask.ts): a picker with no list underneath */
 .lab-kit-ask .prompt-results { display: none; }
+
+/* Check setup window (src/kit/setup-check-ui.ts) */
+.lab-kit-setup-check h4 { margin: 12px 0 4px; }
+.lab-kit-setup-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-setup-text { flex: 1 1 auto; min-width: 0; }
+.lab-kit-setup-mark { flex: 0 0 1.2em; font-weight: 600; }
+.lab-kit-setup-row.is-ok .lab-kit-setup-mark { color: var(--text-success); }
+.lab-kit-setup-row.is-missing .lab-kit-setup-mark { color: var(--text-error); }
+.lab-kit-setup-row.is-optional .lab-kit-setup-mark { color: var(--text-muted); }

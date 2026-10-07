@@ -102,7 +102,8 @@ export class KitManaged {
     const out: SettingChange[] = [];
     const css = opts.css, folder = opts.templaterFolder;
     if (css) out.push({ name: "Turn on the CSS snippet", desc: css.enable.join(", "), apply: () => setCssSnippets(this.app, css.enable, css.disable) });
-    if (folder) out.push({ name: "Set Templater's user scripts folder", desc: `To ${folder}. Templater has none yet; the snippet forms need it.`, apply: () => setTemplaterUserScripts(this.app, folder) });
+    // Only the lab kit sets it: the planning kit's scripts sit in a subfolder (vault/) beside lab-kit/, so its folder would hide the lab scripts
+    if (folder && this.bundle.manifest.id === LAB_KIT) out.push({ name: "Set Templater's user scripts folder", desc: `To ${folder}. Templater has none yet; the snippet forms need it.`, apply: () => setTemplaterUserScripts(this.app, folder) });
     return out;
   }
 
@@ -587,7 +588,7 @@ class KitReportModal extends Modal {
 }
 
 /** A change to Obsidian's or another plugin's settings: listed with a switch (on) in the confirmation dialog, made only when confirmed. */
-interface SettingChange { name: string; desc: string; apply: () => Promise<unknown> }
+export interface SettingChange { name: string; desc: string; apply: () => Promise<unknown> }
 /** An extra list in the confirmation dialog (e.g. old copies that are left in place). */
 interface PreviewNote { heading: string; paths: string[]; text?: string }
 

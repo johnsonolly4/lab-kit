@@ -6,6 +6,7 @@ import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
 import { KitManaged } from "./managed-ui";
+import { SetupCheckModal } from "./setup-check-ui";
 import { wideBox } from "./settings-box";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
@@ -117,6 +118,8 @@ class KitSettingTab extends PluginSettingTab {
     const setup: SettingGroupItem[] = [];
     setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
       render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
+    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater, CSS snippets, folders, hotkeys) and what is missing, with a Fix for each. Nothing changes until you confirm.",
+      render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
     updates.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     updates.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
@@ -213,6 +216,7 @@ export class KitController {
     plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
     plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
+    plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
@@ -251,6 +255,9 @@ export class KitController {
       if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
   }
+
+  /** Opens the Check setup window. */
+  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */
   async showWhatsNew(): Promise<void> {
