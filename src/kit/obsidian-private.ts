@@ -162,6 +162,12 @@ export function commandNames(app: App): Record<string, string> {
   return Object.fromEntries(Object.entries(cmds).map(([id, c]) => [id, c?.name ?? id]));
 }
 
+/** Runs a command by id (`app.commands.executeCommandById`, private): for Go to links that name a command. False when it can't. */
+export function runCommand(app: App, id: string): boolean {
+  const cmds = (app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;
+  return !!cmds?.executeCommandById?.(id);
+}
+
 /**
  * Runs `write` while Templater ignores new files at `paths`. With "Trigger Templater on new file creation" on, Templater runs the code in every
  * new note outside its template folder, so a kit template written there would be run (forms popping up, the file changed). Templater skips

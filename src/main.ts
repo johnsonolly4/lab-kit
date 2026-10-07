@@ -7,6 +7,7 @@ import { KitController } from "./kit/ui";
 import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
+import { PlanningBlocks } from "./planning/blocks";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
@@ -27,6 +28,10 @@ export default class LabKitPlugin extends Plugin {
 
     this.calc.register();
     this.header.register();
+    // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
+    const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
+    blocks.register();
+    this.kit.onChanged = () => blocks.refresh();
 
     // To-do engine and planning commands: once the planning kit is switched on and installed (at load, or right after its install)
     this.startPlanning();
@@ -53,6 +58,7 @@ export default class LabKitPlugin extends Plugin {
     this.store.onChange();
     await this.kit.load();
     this.kit.redrawSettings?.();
+    this.kit.onChanged?.();
   }
 
   /** Starts the to-do engine and registers the planning commands, once, when the planning kit is on and installed. Switching it off needs a reload. */

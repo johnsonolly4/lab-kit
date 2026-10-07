@@ -255,7 +255,10 @@ export class KitController {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;
     data.kit = this.kit;
     await this.plugin.saveData(data);
+    this.onChanged?.();
   }
+  /** Set by the plugin: runs after the settings were saved or reloaded (open blocks redraw). */
+  onChanged: (() => void) | null = null;
 
   setup(): void {
     const plugin = this.plugin;
