@@ -224,3 +224,24 @@ describe("Notebook Navigator homepage (Check setup)", () => {
     expect(await setNavigatorHomepage(nnApp({ source: "daily-note", file: null }).app, "00 Home.md")).toBe(false);
   });
 });
+
+describe("Phase 5b: the kit's meeting series", () => {
+  const text = (path: string): string => readFileSync(path, "utf8");
+  it("the example series hub is a valid series (weekly, Thursday)", async () => {
+    const { parseSeries } = await import("../src/planning/meetings");
+    const raw = text("kits/planning/08 Meetings/Weekly meetings/Weekly meetings.md");
+    const field = (k: string): string => new RegExp(`^${k}:[ \\t]*(.*)$`, "m").exec(raw)?.[1].trim() ?? "";
+    const read = parseSeries({ path: "08 Meetings/Weekly meetings/Weekly meetings.md", name: "Weekly meetings", folder: "08 Meetings/Weekly meetings",
+      fm: { kind: field("kind"), cadence: field("cadence"), day: field("day"), start: field("start") }, ctime: 0, mtime: 0 });
+    expect(field("kind")).toBe("meeting-series");
+    expect(read).toMatchObject({ series: { cadence: "weekly", day: 4 } });
+  });
+
+  it("the meeting template reads the hand-over and links its series; the homepage has the next-meetings card", () => {
+    const tpl = text("kits/planning/Extras/Templates/Weekly meeting.md");
+    expect(tpl).toContain("window.vtMeeting");
+    expect(tpl).toContain('series: "[[<% series %>]]"');
+    expect(tpl).not.toContain("dur(7 days)");   // the window is "since the last meeting of the series"
+    expect(text("kits/planning/00 Home.md")).toContain("show: next-meetings");
+  });
+});

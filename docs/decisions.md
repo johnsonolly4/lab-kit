@@ -5,6 +5,8 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-07 — Whole-vault Check setup in 5b adds only the meeting series hub rows; planning-note properties, a hub per top-level folder and unresolved kit links go to BACKLOG — keeps 5b one session — (user, 5b start)
+- 2026-10-07 — A to-do's meeting flag asks which series when there are several (`meeting: [[Series]]`); `meeting: true` still counts for the first series by name; with one series nothing is asked — (user, 5b start)
 - 2026-10-07 — A settings folder that has gone is never made again silently: commands stop with a notice, Check setup / the command **Find moved folders** suggest where it went; settings follow renames made inside Obsidian — a folder moved outside Obsidian sends no rename event, and an empty copy beside the moved folder would split the notes — (user, Phase 5a approval)
 - 2026-10-07 — Lab Kit reloads data.json when any sync tool changes it (`onExternalSettingsChange`) — otherwise its next save writes old values back; works the same with Obsidian Sync, iCloud, Dropbox, Syncthing, Git — (user asked; Claude, Phase 5a)
 - 2026-10-07 — Go to (`vault-goto`): one button per top-level folder with a hub (a `kind: hub` note in it, else a note named like the folder without its number, else a .base), labelled with the folder name without its number; Meetings, the deck, Weekly review and Shopping list are `extra:` lines — no per-folder setting needed; labels follow renamed folders — (Claude, Phase 5a; plan approved by user)

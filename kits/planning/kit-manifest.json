@@ -53,7 +53,7 @@
       "role": "home",
       "path": "00 Home.md",
       "version": "0.5.2",
-      "sha256": "2b457cde230653f1033064c5484fca6948b804091688559eae34cec8dda98b5d",
+      "sha256": "eec20683a183c52e96a308f0b74b96b5f87f47b7e63a14fef37586a435608528",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -153,7 +153,7 @@
       "role": "meetings",
       "path": "Weekly meetings/Weekly meetings.md",
       "version": "0.5.2",
-      "sha256": "2585d465ad4f2aacc8349a2612ffe65d0637fa222de7da9ea09f0d856f3fcc78",
+      "sha256": "bbc40cf2f01baf7d9b880d44f64fd52a080c6022aebb2da168098beb2130d268",
       "renamedFrom": [],
       "desc": "Meeting series hub",
       "policy": "keep"
@@ -246,7 +246,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "0.5.2",
-      "sha256": "b06940329d238eba67d82fc964cc9c4140afbd3d995ba5425689e6800696d21c",
+      "sha256": "c7514fe4daf7c91f340daf2676185042afd7e77003986f4350e79a0b1c831468",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },
@@ -257,7 +257,7 @@
       "role": "templates",
       "path": "Weekly meeting.md",
       "version": "0.5.2",
-      "sha256": "017920770edbc6e333dabad0d4d719c281520512a9415829f02cc186a9b7c9f4",
+      "sha256": "592ab39f4142cbada4819c25a54dfa234f5b5ddd221a6918c7b422734bfd6f93",
       "renamedFrom": [],
       "desc": "New meeting note"
     },

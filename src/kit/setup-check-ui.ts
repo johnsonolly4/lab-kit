@@ -1,12 +1,15 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
-import { Modal, Notice, type App } from "obsidian";
+import { Modal, Notice, Platform, type App } from "obsidian";
 import { kitJoin, todoFolder, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { deckPath } from "../planning/actions";
 import { PLANNING_BUTTONS } from "../planning/buttons";
+import { inFolder } from "../planning/lists";
+import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
 import { checkSetup, hotkeyText, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
@@ -33,6 +36,12 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     ...(planningOn ? (Object.keys(pf) as PlanningRole[]).filter(r => r !== "archive" && (r !== "literature" || zotlit)).map(r => pf[r]) : [])].filter(f => f);
   const folders = [...settingFolders, ...(planningOn ? folderTemplates.map(f => f.folder) : [])];
   const names = commandNames(app);
+  const meetings = !planningOn ? [] : app.vault.getMarkdownFiles().filter(f => inFolder(f.path, pf.meetings)).flatMap(f => {
+    const cache = app.metadataCache.getFileCache(f), fm = cache?.frontmatter ?? {};
+    if (fm.kind !== "meeting-series") return [];
+    const read = parseSeries({ path: f.path, name: f.basename, folder: f.parent?.path ?? "", fm, ctime: f.stat.ctime, mtime: f.stat.mtime });
+    return [{ name: f.basename, path: f.path, error: "error" in read ? read.error : undefined, deck: !!deckPath(fm, Platform.isMacOS) }];
+  }).sort((a, b) => a.name.localeCompare(b.name));
   const mbIds = metaBindButtonIds(app);
   const guideId = "note-obsidian-set-up-zotlit-md";
   const guide = planning?.stateOf(guideId)?.path ?? null;
@@ -54,6 +63,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     installed: { lab: !!lab.installedVersion, planning: !!planning?.installedVersion },
     css,
     folders: [...new Set(folders)].map(path => ({ path, exists: !!app.vault.getFolderByPath(path), setting: settingFolders.includes(path) })),
+    meetings,
     folderTemplates: planning ? folderTemplates.map(f => ({ folder: f.folder, template: kitJoin(planning.templatesFolder(), f.file) })) : [],
     // Templater names a template hotkey command `templater-obsidian:<template path>` (not checked against Templater's source)
     hotkeyCommands: { "Insert snippet": menuFile && names[`templater-obsidian:${menuFile}`] ? `templater-obsidian:${menuFile}` : null },

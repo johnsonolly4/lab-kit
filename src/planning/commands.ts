@@ -11,9 +11,9 @@ import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
-
-// The meetings hub the kit ships (one series until Phase 5b)
-const MEETINGS_HUB = "Weekly meetings";
+import { inFolder, type NoteRec } from "./lists";
+import { nextDate, parseSeries, sinceLast, type Series } from "./meetings";
+import { parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -24,7 +24,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string }
+interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
@@ -54,7 +54,7 @@ export class PlanningCommands {
     add("add-to-shopping", "Add to shopping list", () => this.addToShopping());
     add("sort-inbox", "Sort inbox", () => this.sortInbox());
     add("archive-todos", "Archive old to-dos", () => this.archiveTodos());
-    add("new-meeting", "New weekly meeting", () => this.fromTemplate(TPL.meeting, this.folders.meetings, kitJoin(this.folders.meetings, MEETINGS_HUB)));
+    add("new-meeting", "New meeting", () => this.newMeeting());
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
     add("new-project-note", "New project note", () => this.newProjectNote());
     add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
@@ -79,6 +79,39 @@ export class PlanningCommands {
     if (project) handoff().vtPresetProject = project;
     try { await this.fromTemplate(TPL.todo, this.folders.planning, todoFolder(this.folders), false); }   // not opened, as the old button
     finally { delete handoff().vtPresetProject; }   // the template deletes it when it runs; also gone when it didn't or failed
+  }
+
+  /** The meeting series hubs (`kind: meeting-series`) in the meetings folder, by name; a hub with a wrong field is left out (Check setup names it). */
+  seriesList(): Series[] {
+    const out: Series[] = [];
+    for (const f of this.app.vault.getMarkdownFiles()) {
+      if (!inFolder(f.path, this.folders.meetings)) continue;
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter ?? {};
+      if (fm.kind !== "meeting-series") continue;
+      const rec: NoteRec = { path: f.path, name: f.basename, folder: f.parent?.path ?? "", fm, ctime: f.stat.ctime, mtime: f.stat.mtime };
+      const read = parseSeries(rec);
+      if ("series" in read) out.push(read.series);
+    }
+    return out.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
+  private async pickSeries(): Promise<Series | null> {
+    const all = this.seriesList();
+    if (!all.length) { new Notice(`No meeting series yet: a note in ${this.folders.meetings} with kind: meeting-series, cadence, day and start.`); return null; }
+    return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
+  }
+
+  /** New meeting note in a series: dated from the series' cadence, "since" the last meeting of the series. The template reads `vtMeeting`. */
+  async newMeeting(): Promise<void> {
+    const series = await this.pickSeries();
+    if (!series) return;
+    const date = nextDate(series, new Date());
+    const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
+      .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
+    handoff().vtMeeting = { series: series.name, folder: series.folder, date: ymd(date), since: ymd(sinceLast(series, date, held)) };
+    try { await this.fromTemplate(TPL.meeting, this.folders.meetings, series.folder); }
+    finally { delete handoff().vtMeeting; }
   }
 
   /** New note in a project; `folder` (the project's folder) is used without asking: for project cards. */
@@ -215,12 +248,14 @@ export class PlanningCommands {
 
   /** Opens the deck set in the meetings hub (`deck_mac` / `deck_windows`) with this computer's default app. */
   private async openDeck(): Promise<void> {
-    const hub = this.app.metadataCache.getFirstLinkpathDest(MEETINGS_HUB, "");
+    const series = await this.pickSeries();
+    if (!series) return;
+    const hub = this.app.vault.getFileByPath(series.path);
     const fm = (hub && this.app.metadataCache.getFileCache(hub)?.frontmatter) || {};
     const isMac = Platform.isMacOS;
     const deck = deckPath(fm, isMac);
     if (!deck) {
-      new Notice(`No meeting deck set for ${isMac ? "Mac" : "this computer"} yet: add the path in ${MEETINGS_HUB} (${isMac ? "deck_mac" : "deck_windows"}).`);
+      new Notice(`No meeting deck set for ${isMac ? "Mac" : "this computer"} yet: add the path in ${series.name} (${isMac ? "deck_mac" : "deck_windows"}).`);
       if (hub) await this.app.workspace.getLeaf(false).openFile(hub);
       return;
     }

@@ -135,6 +135,14 @@
 - [ ] With Obsidian open, change a planning folder in `test-vault/.obsidian/plugins/lab-kit/data.json` from outside: the setting shows the new value without a reload; change another setting in Obsidian, then check data.json still has the outside value
 - [ ] Planning kit switched off: the homepage blocks say the planning kit is off (no raw code)
 
+## 6g. Phase 5b: meeting series (needs `npm run dev`; Restore kit original on 00 Home, To-do and Weekly meeting, and on Weekly meetings if you already had it)
+- [ ] 00 Home shows a **Next meetings** card with the series, the next date (Thu, d MMM) and how often; today's meeting says "today"
+- [ ] Add two more series (copy Weekly meetings into `08 Meetings/Group meeting/` with `cadence: fortnightly`, and `08 Meetings/Review/` with `cadence: monthly`, `day: Thu`, `start` = a 2nd Thursday): the card lists all three with the right dates
+- [ ] **New meeting** (command, and the New meeting note button) asks "Which meeting?" with three series, none with one; the note is named `YYYY-MM-DD <Series>`, sits in the series' folder, has `series` and `since`, and its lists cover the time since the last meeting of that series
+- [ ] **New to-do** asks "Raise at which meeting?" with several series (none with one); pick one: the to-do has `meeting: "[[Series]]"`. That series' meeting note lists it under Flagged for this meeting, the others don't; an old `meeting: true` to-do shows under the first series by name
+- [ ] **Open meeting deck** asks which series; the deck path comes from that series' note
+- [ ] Check setup → Meetings: one row per series; break `cadence` on one: red, names the field, Open goes to the note; a series without a deck path for this computer shows "!"
+
 ---
 
 ## 7. Lab header

@@ -5,6 +5,7 @@ import { folderMissingText } from "../kit/folder-guard";
 import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
+import { nextMeetingLines, nextMeetings } from "./meetings";
 import { blockOptions, experiments, gotoTargets, goalOf, inFolder, projectCards, projects, recentlyRead, thisWeek, unnumbered, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
@@ -125,8 +126,14 @@ class BlockView extends MarkdownRenderChild {
         if (!this.app.vault.getFolderByPath(f.literature) && !loadedPlugins(this.app).has("zotlit")) { box.createDiv({ cls: "vt-muted", text: "No literature notes yet." }); return; }
         if (this.need(box, f.literature)) this.list(box, recentlyRead(this.owner.notesIn(f.literature), o.limit ?? 5), "No literature notes yet.");
         return;
+      case "next-meetings": {
+        if (!this.need(box, f.meetings)) return;
+        const today = new Date();
+        this.list(box, nextMeetingLines(nextMeetings(this.owner.commands()?.seriesList() ?? [], today), today), "No meeting series yet.");
+        return;
+      }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects or recently-read.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read or next-meetings.` });
     }
   }
 

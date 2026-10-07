@@ -52,6 +52,8 @@ export interface SetupState {
   folders: { path: string; exists: boolean; setting?: boolean }[];
   /** Folder templates the planning kit wants (folder → template path). */
   folderTemplates: { folder: string; template: string }[];
+  /** Meeting series hubs (`kind: meeting-series`) in the meetings folder; `error` names the field that is wrong; `deck` = a deck path is set for this computer. */
+  meetings?: { name: string; path: string; error?: string; deck: boolean }[];
   /** Hotkey commands: the Templater command for Insert snippet, etc. Null when the command doesn't exist yet. */
   hotkeyCommands: Record<string, string | null>;
   /** Hotkeys in use, per command id; null when Obsidian's hotkey manager can't be read. */
@@ -185,6 +187,21 @@ export function checkSetup(s: SetupState): SetupItem[] {
     detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`
       : "Lab Kit can't read ZotLit's settings. Install the planning kit (Review update…) to get its checklist note, Set up ZotLit.",
     fix: s.zotlitGuide ? { kind: "open-note", path: s.zotlitGuide } : undefined });
+
+  // Meeting series hubs: a wrong cadence / day / start would make New meeting skip the series, so name the field
+  if (s.planning) {
+    const series = s.meetings ?? [];
+    if (!series.length) out.push({ id: "meetings:none", group: "Meetings", label: "Meeting series", ok: true, optional: true,
+      detail: "No meeting series yet. A note with kind: meeting-series, cadence, day and start in the meetings folder makes one." });
+    for (const m of series) {
+      const ok = !m.error;
+      out.push({ id: `meetings:${m.path}`, group: "Meetings", label: m.name, ok,
+        detail: m.error ? `${m.error[0].toUpperCase()}${m.error.slice(1)}. Open the note and correct it.` : "Series is set up.",
+        fix: ok ? undefined : { kind: "open-note", path: m.path } });
+      if (ok && !m.deck) out.push({ id: `meetings-deck:${m.path}`, group: "Meetings", label: `${m.name}: deck for this computer`, ok: false, warn: true, optional: true,
+        detail: "No deck path set for this computer yet (deck_windows / deck_mac). Only Open meeting deck needs it.", fix: { kind: "open-note", path: m.path } });
+    }
+  }
 
   for (const c of s.css) {
     const ok = c.enabled === true;

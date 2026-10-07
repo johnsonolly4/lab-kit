@@ -53,3 +53,8 @@ focus3_done: false
 > > show: recently-read
 > > limit: 5
 > > ```
+>
+> > [!question] Next meetings
+> > ```vault-card
+> > show: next-meetings
+> > ```

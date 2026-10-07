@@ -21,6 +21,9 @@ if (!project) {
   const hubs = app.vault.getMarkdownFiles().filter(isHub).map(f => f.basename).sort();
   project = await tp.system.suggester(["(no project)", ...hubs], ["", ...hubs], false, "Project? (Esc to skip)") || "";
 }
+// Meeting: asked only when there are several meeting series (Esc / "(none)" = not flagged); with one series nothing is asked: set meeting in Properties
+const series = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
+const meeting = series.length > 1 ? (await tp.system.suggester(["(none)", ...series], ["", ...series], false, "Raise at which meeting? (Esc to skip)") || "") : "";
 // Keep the day of the board column it was made in (the board writes it before this runs);
 // anything else (Ctrl+Shift+T, project cards) starts in Backlog.
 const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -40,7 +43,7 @@ done: false
 rolled: false
 project: <% project ? `"[[${project}]]"` : "" %>
 due:
-meeting: false
+meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 cssclasses:
   - vt
 ---
