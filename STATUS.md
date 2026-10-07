@@ -5,15 +5,16 @@ _Updated: 2026-10-07 by Opus 5.5 (feedback round sorted into BACKLOG; Phase 6 + 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phases 0–4 and 6 built and committed, not pushed. The planning kit can now be switched on (Settings → Built-in kit, preview), so Phase 4 "roll-over seen in test-vault" can be tried. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 313 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
+Phases 0–4 and 6 built and committed, not pushed. The planning kit can now be switched on (Settings → Built-in kit, preview), so Phase 4 "roll-over seen in test-vault" can be tried. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 314 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
 1. User retest in a fresh vault (Templater trigger on): install both kits, New to-do, New lab entry; the double-note and auto-name bugs are probably the trigger (BACKLOG "Multi-kit round bugs")
-2. Phase 5 (homepage blocks, meeting series) + the whole-vault Check setup folded in (decided 2026-10-07), then 7–8
-3. Multi-kit round fixes (BACKLOG "Multi-kit round bugs" / "quick changes", two "Decisions needed": Alt+S insert-only, minimum Obsidian version)
-4. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
-5. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
+2. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`)
+3. Phase 5 (homepage blocks, meeting series) + the whole-vault Check setup folded in (decided 2026-10-07), then 7–8
+4. Multi-kit round fixes (BACKLOG "Multi-kit round bugs" / "quick changes", two "Decisions needed": Alt+S insert-only, minimum Obsidian version)
+5. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
+6. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
 None.
