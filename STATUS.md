@@ -1,6 +1,6 @@
 # Status
 
-_Updated: 2026-10-07 by Opus 5.5 (feedback round sorted into BACKLOG; Phase 6 + 6c built, plus fixes from the fresh-vault test (kit install no longer runs its templates; planning commands start after install); earlier: Phases 2–4b). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-07 by Opus 5.5 (records fixed: two Phase 6 bugs were already fixed and retested; Next reordered: Phase 5 → Esc text → concept pages → tutorial). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
@@ -9,11 +9,13 @@ Phases 0–4 and 6 (6a–6e: planning kit switch, Check setup with Fixes, layout
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`)
-2. Phase 5 (homepage blocks, meeting series) + the whole-vault Check setup folded in (decided 2026-10-07), then 7–8
-3. Multi-kit round fixes (BACKLOG "Multi-kit round bugs" / "quick changes"; "Decisions needed": minimum Obsidian version, Status board colours, To-do box Esc text)
-4. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
-5. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
+1. Phase 5 (homepage blocks, meeting series) + the whole-vault Check setup folded in (decided 2026-10-07), then 7–8
+2. To-do box Esc text (BACKLOG "Multi-kit round bugs": the template says "Esc = Untitled", the box footer says "Esc to cancel")
+3. New concept template + knowledge pages: user asked for them to be made (2026-10-07); needs the rules first (BACKLOG "Decisions needed")
+4. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)
+5. Multi-kit round fixes (BACKLOG "Multi-kit round bugs" / "quick changes"; "Decisions needed": minimum Obsidian version, Status board colours)
+6. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
+7. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
 None.
@@ -22,7 +24,7 @@ None.
 - [ ] Try the last Phase 6 bits in test-vault: feedback note sections 8d–8e (Restore kit original on the Lab Book Template first) (`test-vault/Lab Kit feedback.md`), then paste it — by 2026-10-09
 - [ ] Merge PR #37 (`fix/34`), then review `feat/multi-kit` and say "push" for its PR — by 2026-10-09
 - [ ] Check the decisions taken while you were away: `docs/decisions.md` (2026-10-07, "Claude, unattended"), BACKLOG "Leftovers" (Phase 2, Phase 3) — by 2026-10-09
-- [ ] Supply the New concept template / knowledge rules, and check the font licence (BACKLOG "Decisions needed")
+- [ ] Supply the New concept template / knowledge rules (BACKLOG "Decisions needed")
 - [ ] Copy the personal preferences file from the adoption session to `~/.claude/CLAUDE.md` — by 2026-10-08
 - [ ] Try 0.5.1 in Obsidian: checklist 6b, sections 1 and 2; Solution prep (6b) with one real stock solution; Analysis methods (6c)
 - [ ] Local `dist/` and `legacy/main.js` (gitignored, this machine only): keep or delete

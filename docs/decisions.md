@@ -5,6 +5,7 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-07 — Planning kit leaves preview after Phase 5, the To-do box Esc text and the knowledge pages; tutorial waits for that; the font (`vault-fonts.css`) stays out of the kit, maybe later or given to whoever asks — screenshots of a preview would go stale — (user)
 - 2026-10-07 — Planning suite ships as a second kit in the same plugin, one shared install engine, a confirmation dialog listing every file / folder / setting before any write — two plugins would both write Templater's settings and undo each other — (user; `docs/plans/planning-suite-kit.md`)
 - 2026-10-07 — Confirmation (Phase 1b) asks on a kit's first install, on Set up, and on any write that creates a folder or changes a setting; plain updates in existing folders run without asking (as before). The Alt+S hotkey entry is a listed setting, no longer added silently. Lab defaults: `Lab Kit` / `lab-kit` subfolders of Templater's folders, else under `Extras/` — (Claude, unattended run approved by user; plan Phase 1b)
 - 2026-10-07 — Multi-kit layout: one folder per kit (`kits/<id>/`, own manifest with `id`, schema 2); state per kit in `data.json` `kit.kits.<id>` (`enabled`, `managed`, `paths`, `off`); the old folder updater record and the global settings (debug, notice, chemical/methods folders) stay at the top — Phase 1a; kit ids are stable like file ids — (Claude, unattended run approved by user; plan Phase 1a)

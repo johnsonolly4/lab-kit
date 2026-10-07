@@ -33,6 +33,8 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Lab vocabulary is the user's: keep their names (Exp. Class, CoSHH, RA, sample codes like ABC0014-A).
 - **The version only moves at release** (it is not a commit counter). Only `/release` touches the version fields (`package.json` + lock, `manifest.json`, every `kits/<id>/kit-manifest.json`, `versions.json`), and only the user picks a bump. `tests/versions.test.ts` fails if they differ.
 - Public repo: no real names, initials or real paths in any file. The GitHub username is fine (repo URL, commit author). Paths and personal values belong in plugin settings (empty defaults); the user's vault path goes in `.claude/settings.local.json` (not committed).
+- A result the user reports (in chat, a screenshot or `/feedback`) goes into `BACKLOG.md` in the same session: tick each item it confirms fixed (date + source), add what it finds broken. Recording it only in STATUS is not enough.
+- Before you tell the user an item is still open, check `STATUS.md` → Now and `git log` since the item's date.
 - Make claims (docs, UI text, reports) only from measured results. Say what was not verified (e.g. "not seen in Obsidian").
 - If the user's short reply could answer more than one open question, say which one you think it answers before acting.
 - Multi-line edits: use the Edit tool, not escaped shell scripts.

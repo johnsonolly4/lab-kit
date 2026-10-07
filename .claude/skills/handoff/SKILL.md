@@ -12,7 +12,7 @@ description: End-of-session routine. Updates STATUS.md and BACKLOG.md, commits, 
    - **Next:** remove the finished item; top item is the next session.
    - **Running:** any background job, its log path, how to resume.
    - **Waiting on owner:** anything only a human can do (check in Obsidian, phone test, push, deleting branches), with a suggested date.
-4. Anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) → `BACKLOG.md` as an unticked item with file:line pointers.
+4. Tick every `BACKLOG.md` item this session fixed or the user confirmed (date + source; check STATUS → Now for retest results). Then: anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) → `BACKLOG.md` as an unticked item with file:line pointers.
 5. New rule or decision made this session → one line in `CLAUDE.md` (rule) or `docs/decisions.md` (decision).
 6. Commit on the current branch. Do not push unless asked.
 7. Print this block for the user (optional to paste after `/clear`):

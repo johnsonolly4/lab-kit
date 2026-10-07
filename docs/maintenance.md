@@ -13,6 +13,7 @@ Claude: check this table at the end of every session (routine step 2).
 | A folder or entry file added, moved or removed | `docs/architecture.md` |
 | A command in `package.json` | `CLAUDE.md` → Commands, `README.md` → Development |
 | The version | Nothing by hand: only `/release` moves it |
+| A user test result (chat, screenshot, feedback note) | `BACKLOG.md`: tick what it confirms (date + source), add what is broken; STATUS → Now alone is not enough |
 | A decision (method, scope, rule) | One line in `docs/decisions.md` |
 
 Never copy code into docs. Link to the file instead: copies drift.
