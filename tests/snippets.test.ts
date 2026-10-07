@@ -8,8 +8,8 @@ import { extractBlocks, parseBlock, Workbook, type Env } from "../src/calc/engin
 import { editRows } from "../src/calc/rewrite";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 
 const MW: Record<string, number> = { "lipoic acid": 206.32, "benzyl alcohol": 108.14, "dcm": 84.93, "pabtc": 238.39, "dmam": 99.13, "daam": 169.23, "va-044": 323.33, "a": 100, "b": 200, "c": 50 };
 const close = (a: unknown, b: number, tol = 1e-4) => assert.ok(typeof a === "number" && Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)), `${JSON.stringify(a)} != ${b}`);

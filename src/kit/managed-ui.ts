@@ -7,7 +7,7 @@ import {
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
-import { kitCompare, kitDetectRoles, kitInBackup, kitJoin, type KitData, type KitRecord, type Roles } from "./paths";
+import { LAB_KIT, kitCompare, kitDetectRoles, kitInBackup, kitJoin, kitSlot, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
 const MENU_ID = "tpl-insert-snippet-md";
@@ -19,34 +19,39 @@ export class KitManaged {
 
   get app(): App { return this.plugin.app; }
   get version(): string { return this.bundle.manifest.kitVersion; }
-  stateOf(id: string): ManagedFileState | undefined { return this.host.kit.managed?.files[id]; }
-  get installedVersion(): string | null { return this.host.kit.managed?.installedKitVersion ?? null; }
+  /** This kit's saved state (installed files, folders, files switched off). */
+  get slot(): KitSlot { return kitSlot(this.host.kit, this.bundle.manifest.id); }
+  stateOf(id: string): ManagedFileState | undefined { return this.slot.managed?.files[id]; }
+  get installedVersion(): string | null { return this.slot.managed?.installedKitVersion ?? null; }
   updateAvailable(): boolean { const i = this.installedVersion; return i !== null && kitCompare(this.version, i) > 0; }
 
   /** Folders: detected from your vault and Templater, then your own entries from settings on top. */
   roles(): Roles {
-    const kit = this.host.kit;
-    const own: Roles = Object.fromEntries(Object.entries(kit.paths).filter(([, v]) => v && !kitInBackup(v)));
-    const old = kit.installed;
+    const slot = this.slot;
+    const own: Roles = Object.fromEntries(Object.entries(slot.paths).filter(([, v]) => v && !kitInBackup(v)));
+    const old = this.oldRecord();
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
-    return { ...kitDetectRoles(this.app, record, trackedRoles(this.bundle, kit.managed)), ...own };
+    return { ...kitDetectRoles(this.app, record, trackedRoles(this.bundle, slot.managed)), ...own };
   }
 
   /** Where the templates (Insert snippet.md, Snippets/) are: the Alt+S menu scans the Snippets folder next to it. */
   templatesFolder(): string { return this.roles().templates; }
 
-  isOff(id: string): boolean { return !!this.host.kit.off[id]; }
+  isOff(id: string): boolean { return !!this.slot.off[id]; }
 
   private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
 
+  /** The old folder updater's install record (it only ever installed the lab kit). */
+  private oldRecord(): KitRecord | null { return this.bundle.manifest.id === LAB_KIT ? this.host.kit.installed : null; }
+
   /** Files the old folder updater wrote, so they aren't mistaken for your edits. */
   private legacy(): LegacyRecord | null {
-    const old = this.host.kit.installed;
+    const old = this.oldRecord();
     return old ? { files: old.files, hash: kitSha1 } : null;
   }
 
   plan(): Promise<ManagedItem[]> {
-    return planManaged(this.app.vault.adapter, this.bundle, this.host.kit.managed, this.roles(), this.legacy(), this.baseDir(), new Set(Object.keys(this.host.kit.off)));
+    return planManaged(this.app.vault.adapter, this.bundle, this.slot.managed, this.roles(), this.legacy(), this.baseDir(), new Set(Object.keys(this.slot.off)));
   }
 
   private applyOptions(extra: Partial<ApplyOptions> = {}): ApplyOptions {
@@ -54,7 +59,7 @@ export class KitManaged {
   }
 
   async apply(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<ManagedResult[]> {
-    const kit = this.host.kit;
+    const kit = this.slot;
     const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select }));
     kit.managed = out.state;
     await this.host.save();
@@ -73,7 +78,7 @@ export class KitManaged {
 
   /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
   private async settleVersion(): Promise<void> {
-    const m = this.host.kit.managed;
+    const m = this.slot.managed;
     if (!m) return;
     const left = (await this.plan()).some(i => i.action === "create" || i.action === "fast-forward");
     if (!left) m.installedKitVersion = this.version;
@@ -81,7 +86,7 @@ export class KitManaged {
 
   /** Install / update / recreate / merge ONE file. */
   async updateOne(id: string): Promise<ManagedResult[]> {
-    const kit = this.host.kit;
+    const kit = this.slot;
     const items = await this.plan();
     const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge");
     const out = await applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true }));
@@ -97,7 +102,7 @@ export class KitManaged {
    * `done` runs afterwards, also when the user cancels, so the window can redraw.
    */
   async setUse(id: string, on: boolean, done: () => void): Promise<void> {
-    const kit = this.host.kit;
+    const kit = this.slot;
     if (on) {
       delete kit.off[id];
       await this.host.save();
@@ -128,7 +133,7 @@ export class KitManaged {
 
   /** Put the kit's copy of ONE file back (your copy is backed up first). */
   async restoreOne(id: string): Promise<ManagedResult | null> {
-    const kit = this.host.kit;
+    const kit = this.slot;
     const item = (await this.plan()).find(i => i.file.id === id);
     if (!item) return null;
     const out = await restoreManaged(this.app.vault.adapter, item, kit.managed, this.applyOptions());
@@ -141,7 +146,7 @@ export class KitManaged {
   /** Settles ONE conflict: write `text` (after a backup), or keep your file when `text` is null. Throws after telling the user, so the merge window stays open. */
   async resolveOne(id: string, text: string | null): Promise<void> {
     try {
-      const kit = this.host.kit;
+      const kit = this.slot;
       const item = (await this.plan()).find(i => i.file.id === id);
       if (!item) throw new Error("kit file not found");
       const out = await resolveManaged(this.app.vault.adapter, item, text, kit.managed, this.applyOptions());
@@ -176,17 +181,17 @@ export class KitManaged {
   }
 
   /** Files you have installed that the kit no longer ships (left in place). */
-  retired(): Promise<RetiredItem[]> { return planRetired(this.app.vault.adapter, this.bundle, this.host.kit.managed); }
+  retired(): Promise<RetiredItem[]> { return planRetired(this.app.vault.adapter, this.bundle, this.slot.managed); }
 
   /** Stops tracking a retired file; your copy stays in the vault. */
   async forget(id: string): Promise<void> {
-    const kit = this.host.kit;
+    const kit = this.slot;
     kit.managed = await forgetManaged(this.app.vault.adapter, kit.managed, id, this.baseDir());
     await this.host.save();
   }
 
   async detach(id: string, on: boolean): Promise<boolean> {
-    const ok = setDetached(this.host.kit.managed, id, on);
+    const ok = setDetached(this.slot.managed, id, on);
     if (ok) await this.host.save();
     return ok;
   }
@@ -200,7 +205,7 @@ export class KitManaged {
         try { new KitReportModal(this.app, await this.apply(items, it => SAFE_ACTIONS.includes(it.action))).open(); }
         catch (e) { this.failed(e); }
       };
-      if (!this.host.kit.managed && writes) {
+      if (!this.slot.managed && writes) {
         const opts = firstInstallOptions(this.bundle, { installed: hasTemplater(this.app), folder: templaterUserScriptsFolder(this.app) }, this.roles().userScripts);
         const choice = { css: !!opts.css, templater: !!opts.templaterFolder };
         const ticks: ConfirmTick[] = [];
@@ -247,7 +252,7 @@ export class KitManaged {
 
   /** The kit's scripts are outside Templater's user scripts folder (an older install): asks, then installs fresh copies into `to` and tracks them there. The old copies are never moved or deleted. */
   private async relocateUserScripts(folder: string, to: string): Promise<void> {
-    const kit = this.host.kit;
+    const kit = this.slot;
     const moved = relocateRole(this.bundle, kit.managed, "userScripts");
     const roles = { ...this.roles(), userScripts: to };
     const items = (await planManaged(this.app.vault.adapter, this.bundle, moved.state, roles, this.legacy(), this.baseDir(), new Set(Object.keys(kit.off))))

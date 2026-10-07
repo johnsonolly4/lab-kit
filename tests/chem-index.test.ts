@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import { TFile, TFolder } from "obsidian";
 import { chemicalEntries, chemicalLink, insertLink, listChemicals, matchChemicals, openLink } from "../src/chem";
 
-const labForm = createRequire(import.meta.url)("../kit/Extras/scripts/templater/labForm.js");
+const labForm = createRequire(import.meta.url)("../kits/lab/Extras/scripts/templater/labForm.js");
 
 // Shaped like the notes in a real chemical folder: Names as a list, as one value, empty or missing
 const FM: Record<string, Record<string, unknown>> = {

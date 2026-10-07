@@ -5,8 +5,8 @@ import { createRequire } from "node:module";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 
 const table = (name: string, codes: string[]) =>
   "```calc\nname: " + name + "\n| Code | Description | Notes |\n|---|---|---|\n" + codes.map(c => `| ${c} |  |  |`).join("\n") + "\n```\n";

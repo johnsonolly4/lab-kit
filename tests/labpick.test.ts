@@ -4,7 +4,7 @@ import assert from "node:assert";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const labPick = require("../kit/Extras/scripts/templater/labPick.js");
+const labPick = require("../kits/lab/Extras/scripts/templater/labPick.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 const KNOWN = ["test-tube", "flask-round", "magnet", "file-text"];

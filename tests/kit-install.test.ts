@@ -4,7 +4,8 @@ import {
   applyManaged, firstInstallOptions, planManaged, relocateRole, templaterScriptsAction, trackedRoles,
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
-import { kitCompare, kitDetectRoles } from "../src/kit/paths";
+import { readFileSync } from "fs";
+import { kitCompare, kitDetectRoles, kitLoad, kitSlot } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -144,5 +145,47 @@ describe("kitCompare (update notice)", () => {
     expect(kitCompare("0.10.0", "0.9.1")).toBeGreaterThan(0);
     expect(kitCompare("1.0", "1.0.0")).toBe(0);
     expect(kitCompare("0.4.8", "0.4.9")).toBeLessThan(0);
+  });
+});
+
+// Phase 1a: several kits (kits/<id>/), each with its own state in data.json
+describe("multi-kit manifest (schema 2)", () => {
+  it("embeds every kit under kits/, the lab kit with id 'lab' and the same files as before", async () => {
+    // @ts-expect-error plain .mjs build helper
+    const { embeddedKits } = await import("../scripts/embed-kit.mjs");
+    const all = embeddedKits();
+    expect(all.schema).toBe(2);
+    expect(all.kits.map((k: EmbeddedKit) => k.manifest.id)).toContain("lab");
+    const lab = all.kits.find((k: EmbeddedKit) => k.manifest.id === "lab");
+    expect(lab.manifest.files).toEqual(real.manifest.files);
+    expect(lab.contents).toEqual(real.contents);
+    expect(lab.manifest.schema).toBe(2);
+  });
+
+  it("a v0.5.2 data.json loads with the same managed state (hashes, folders, files switched off), now under kits.lab", () => {
+    const saved = JSON.parse(readFileSync("tests/fixtures/data-0.5.2.json", "utf8")).kit;
+    const kit = kitLoad(saved);
+    expect(kit.kits.lab.managed).toEqual(saved.managed);
+    expect(kit.kits.lab.paths).toEqual(saved.paths);
+    expect(kit.kits.lab.off).toEqual(saved.off);
+    expect(kit.kits.lab.enabled).toBe(true);
+    expect(trackedRoles(real, kit.kits.lab.managed)).toEqual(trackedRoles(real, saved.managed));
+    for (const k of ["managed", "paths", "off"]) expect(k in kit).toBe(false);
+    for (const k of ["seenChangelog", "snippetIcons", "notifyKitUpdate", "chemicalFolder", "mwProperty", "methodsFolder"]) expect((kit as any)[k]).toEqual(saved[k]);
+  });
+
+  it("loading is stable (schema 2 saved and loaded again), and an empty data.json gives no kit state", () => {
+    const once = kitLoad(JSON.parse(readFileSync("tests/fixtures/data-0.5.2.json", "utf8")).kit);
+    expect(kitLoad(JSON.parse(JSON.stringify(once)))).toEqual(once);
+    const fresh = kitLoad(undefined);
+    expect(fresh.kits).toEqual({});
+    expect(kitSlot(fresh, "lab")).toEqual({ enabled: true, managed: null, paths: {}, off: {} });
+    expect(fresh.kits.lab).toBeDefined();
+  });
+
+  it("drops the removed folder updater's settings; 'don't check at startup' turns the update notice off", () => {
+    const kit = kitLoad({ source: "x", checkOnStartup: false, makeBackups: true }) as any;
+    expect(kit.notifyKitUpdate).toBe(false);
+    expect("source" in kit || "checkOnStartup" in kit || "makeBackups" in kit).toBe(false);
   });
 });

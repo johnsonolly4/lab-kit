@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, kitJoin, type KitData } from "./paths";
+import { KIT_DEFAULTS, LAB_KIT, kitJoin, kitLoad, type KitData } from "./paths";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
@@ -57,7 +57,7 @@ class KitSettingTab extends PluginSettingTab {
 
   /** The kit files built into the plugin, as two groups: the update rows, then setup (Templater and the folders the kit's files go to). */
   private builtInGroups(): { updates: SettingGroupItem[]; setup: SettingGroupItem[] } {
-    const kit = this.ctl.kit, managed = this.ctl.managed, roles = managed.roles();
+    const kit = this.ctl.kit, managed = this.ctl.managed, slot = managed.slot, roles = managed.roles();
     const inst = managed.installedVersion;
     const isHidden = (path: string): boolean => path.split("/").some(p => p.startsWith("."));
     const folder = (key: string, name: string, desc: string, noHidden = false): SettingGroupItem => ({
@@ -65,10 +65,10 @@ class KitSettingTab extends PluginSettingTab {
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
-          t.setPlaceholder(roles[key] ?? "").setValue(kit.paths[key] ?? "").onChange(async v => {
+          t.setPlaceholder(roles[key] ?? "").setValue(slot.paths[key] ?? "").onChange(async v => {
             const path = v.trim() ? normalizePath(v.trim()) : "";
             if (noHidden && isHidden(path)) return;                 // not saved, the blur check below says why
-            if (path) kit.paths[key] = path; else delete kit.paths[key];
+            if (path) slot.paths[key] = path; else delete slot.paths[key];
             await this.ctl.save();
           });
           if (noHidden) t.inputEl.addEventListener("blur", () => {
@@ -81,7 +81,7 @@ class KitSettingTab extends PluginSettingTab {
     if (managed.updateAvailable()) updates.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
     updates.push({
       name: "Kit version",
-      desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(kit.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
+      desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(slot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
       render: b => {
         b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => managed.manage()))
           .addButton(btn => btn.setButtonText("Review update…").onClick(() => managed.review()))
@@ -149,20 +149,17 @@ export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
   readonly managed: KitManaged;
 
-  constructor(readonly plugin: Plugin, private header: HeaderStore) { this.managed = new KitManaged(plugin, this, embedded); }
+  constructor(readonly plugin: Plugin, private header: HeaderStore) {
+    const lab = embedded.kits.find(k => k.manifest.id === LAB_KIT);
+    if (!lab) throw new Error("Lab Kit: the lab kit is missing from main.js");
+    this.managed = new KitManaged(plugin, this, lab);
+  }
 
   get app(): App { return this.plugin.app; }
 
   async load(): Promise<void> {
-    const saved = (await this.plugin.loadData()) as { kit?: Partial<KitData> } | null;
-    const old = (saved?.kit ?? {}) as Partial<KitData> & { source?: unknown; checkOnStartup?: unknown; makeBackups?: unknown };
-    // Settings of the removed folder updater: "don't check at startup" carries over to the kit update notice
-    if (old.checkOnStartup === false && old.notifyKitUpdate === undefined) old.notifyKitUpdate = false;
-    delete old.source; delete old.checkOnStartup; delete old.makeBackups;
-    this.kit = Object.assign({}, KIT_DEFAULTS, old);
-    this.kit.snippetIcons = { ...this.kit.snippetIcons };
-    this.kit.paths = { ...this.kit.paths };
-    this.kit.off = { ...this.kit.off };
+    const saved = (await this.plugin.loadData()) as { kit?: unknown } | null;
+    this.kit = kitLoad(saved?.kit);   // a v0.5.2 single-kit state moves into kits.lab
   }
   async save(): Promise<void> {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;
@@ -186,7 +183,8 @@ export class KitController {
     });
     // Follow kit files the user moves or renames inside Obsidian
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {
-      let changed = followRename(this.kit.managed, oldPath, file.path);
+      let changed = false;
+      for (const slot of Object.values(this.kit.kits)) changed = followRename(slot.managed, oldPath, file.path) || changed;
       const rec = this.kit.installed?.files;
       if (rec) {
         for (const p of Object.keys(rec)) {

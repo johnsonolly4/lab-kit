@@ -19,13 +19,15 @@ export interface EmbeddedFile {
   /** Can be switched off (not installed, not in the Alt+S menu). Core files are never optional. */
   optional?: boolean;
 }
-/** The kit as built into main.js (see scripts/embed-kit.mjs). */
+/** One kit as built into main.js (see scripts/embed-kit.mjs): kits/<id>/kit-manifest.json and its files. */
 export interface EmbeddedKit {
-  manifest: { schema: number; kitVersion: string; files: EmbeddedFile[]; removed: string[]; rewrite?: Record<string, string>;
+  manifest: { schema: number; id: string; kitVersion: string; files: EmbeddedFile[]; removed: string[]; rewrite?: Record<string, string>;
     /** First install: CSS snippets to switch on / off, and whether the kit needs Templater's user scripts folder. */
     enableCss?: string[]; disableCss?: string[]; templater?: { userScripts?: boolean } };
   contents: Record<string, string>;
 }
+/** Every kit built into main.js (manifest schema 2), sorted by id. */
+export interface EmbeddedKits { schema: number; kits: EmbeddedKit[] }
 export interface ManagedFileState {
   path: string; installedVersion: string; installedHash: string;
   detached: boolean; userDeleted: boolean; pendingConflict: unknown;

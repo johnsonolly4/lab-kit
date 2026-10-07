@@ -4,8 +4,8 @@ import assert from "node:assert";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 

@@ -6,8 +6,8 @@ import { readFileSync } from "node:fs";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 const { parseMethod, loadMethods, planColumns, buildRows } = labMethods;
 
 type Fm = Record<string, unknown>;
@@ -233,7 +233,7 @@ describe("snippets with a Methods folder", () => {
 
 describe("Alt+S menu (Insert snippet.md)", () => {
   const AsyncFunction = Object.getPrototypeOf(async function () { /* */ }).constructor;
-  const code = readFileSync("kit/Templates/Insert snippet.md", "utf8").replace(/^<%\*/, "").replace(/%>\s*$/, "");
+  const code = readFileSync("kits/lab/Templates/Insert snippet.md", "utf8").replace(/^<%\*/, "").replace(/%>\s*$/, "");
   const menu = new AsyncFunction("tp", "app", "Notice", `let tR = ""; ${code}\n return tR;`);
   const snippetFile = (n: string) => ({ basename: n, parent: { path: "Templates/Snippets" } });
 

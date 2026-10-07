@@ -6,7 +6,7 @@ import process from "process";
 import { builtinModules } from "node:module";
 import { copyFileSync, mkdirSync, watchFile } from "fs";
 import { resolve } from "path";
-import { embeddedKit } from "./scripts/embed-kit.mjs";
+import { embeddedKits } from "./scripts/embed-kit.mjs";
 
 const prod = process.argv[2] === "production";
 const devDir = "test-vault/.obsidian/plugins/lab-kit";
@@ -19,13 +19,13 @@ if (!prod) {
   }
 }
 
-// "lab-kit-embedded": every kit file (see kit/kit-manifest.json) inlined into main.js, so the plugin carries the kit
+// "lab-kit-embedded": every kit (kits/<id>/kit-manifest.json and its files) inlined into main.js, so the plugin carries the kits
 const embedKit = {
   name: "embed-kit",
   setup(build) {
     build.onResolve({ filter: /^lab-kit-embedded$/ }, (a) => ({ path: a.path, namespace: "embed-kit" }));
     build.onLoad({ filter: /.*/, namespace: "embed-kit" }, () => {
-      const { paths, ...kit } = embeddedKit();
+      const { paths, ...kit } = embeddedKits();
       return { contents: `export default ${JSON.stringify(kit)};`, loader: "js", watchFiles: paths.map((p) => resolve(p)) };
     });
   },

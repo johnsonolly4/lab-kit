@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Ready for more than one kit** (no change in what you see): the kit's saved state in the plugin's `data.json` moves into a per-kit entry the first time the new version loads. Going back to v0.5.2 afterwards would lose that record, so v0.5.2 treats the kit as not installed yet (your files are untouched)
 - **Your Templater user scripts folder is never changed** (issue #34): the lab scripts (`labForm.js`, `labMethods.js`, …) now go into a `lab-kit` folder inside it, so your own scripts keep loading. With no folder set, the first install offers the folder above `lab-kit` (default `scripts`). If an older install put the kit's scripts outside your folder, **Set up** asks before installing fresh copies into `<your folder>/lab-kit`; the old copies stay where they are for you to delete. Kit scripts already inside your folder don't move
 
 ## v0.5.2 (2026-10-05)

@@ -397,7 +397,7 @@ describe("files from the old folder updater", () => {
 
 describe("embedded kit (the real one)", () => {
   const real = embeddedKit() as EmbeddedKit & { paths: string[] };
-  const listed = JSON.parse(readFileSync("kit/kit-manifest.json", "utf8")) as { files: { id: string; sha256: string; version: string }[] };
+  const listed = JSON.parse(readFileSync("kits/lab/kit-manifest.json", "utf8")) as { files: { id: string; sha256: string; version: string }[] };
   it("has unique ids, a kind per file and text for each", () => {
     const ids = real.manifest.files.map(f => f.id);
     expect(new Set(ids).size).toBe(ids.length);

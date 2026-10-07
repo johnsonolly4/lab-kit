@@ -5,6 +5,19 @@ import { templaterSettings } from "./obsidian-private";
 import type { ManagedState } from "./managed";
 
 export type Roles = Record<string, string>;
+/** Id of the lab kit (kits/lab/kit-manifest.json). */
+export const LAB_KIT = "lab";
+/** What the plugin keeps per kit (the `kit.kits.<id>` key of data.json). */
+export interface KitSlot {
+  /** The kit is switched on (installed and updated). */
+  enabled: boolean;
+  /** What was installed, per file id. */
+  managed: ManagedState | null;
+  /** Folders the user set for this kit (templates, scripts, backups). Empty = detected. */
+  paths: Roles;
+  /** Optional kit files the user switched off (ids): not installed, not updated. */
+  off: Record<string, true>;
+}
 /** What the old folder updater (removed) recorded. Kept so files it wrote are not mistaken for your edits. */
 export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
 /** The `kit` key of data.json. */
@@ -12,12 +25,8 @@ export interface KitData {
   /** Old folder updater's install record, read only for migration. */
   installed: KitRecord | null;
   seenChangelog: string; initials: string; snippetIcons: Record<string, string>;
-  /** Built-in kit (embedded in the plugin): what was installed, per file id. */
-  managed: ManagedState | null;
-  /** Folders the user set for the built-in kit (templates, scripts, backups). Empty = detected. */
-  paths: Roles;
-  /** Optional kit files the user switched off (ids): not installed, not updated. */
-  off: Record<string, true>;
+  /** Built-in kits (embedded in the plugin), by kit id: installed files, folders, files switched off. */
+  kits: Record<string, KitSlot>;
   /** Show a notice at startup when the plugin brings a newer kit. */
   notifyKitUpdate: boolean;
   debug: boolean;
@@ -29,7 +38,31 @@ export interface KitData {
   methodsFolder: string;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, managed: null, paths: {}, off: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "", mwProperty: "", methodsFolder: "" };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "", mwProperty: "", methodsFolder: "" };
+
+/** The saved state of one kit, created (switched on, nothing installed) when there is none yet. */
+export function kitSlot(kit: KitData, id: string): KitSlot {
+  return kit.kits[id] ??= { enabled: true, managed: null, paths: {}, off: {} };
+}
+
+/**
+ * The `kit` key of data.json as saved by any version, brought to the current shape. Up to v0.5.2 there was one kit, its state at the top
+ * (`managed`, `paths`, `off`): it moves into `kits.lab` unchanged. Settings of the removed folder updater are dropped
+ * ("don't check at startup" carries over to the kit update notice).
+ */
+export function kitLoad(saved: unknown): KitData {
+  const old = { ...((saved ?? {}) as Record<string, unknown>) };
+  if (old.checkOnStartup === false && old.notifyKitUpdate === undefined) old.notifyKitUpdate = false;
+  const single = { managed: old.managed, paths: old.paths, off: old.off };
+  for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
+  const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
+  kit.snippetIcons = { ...kit.snippetIcons };
+  kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
+  if (!kit.kits[LAB_KIT] && (single.managed || single.paths || single.off)) {
+    kit.kits[LAB_KIT] = { enabled: true, managed: (single.managed as ManagedState | null) ?? null, paths: { ...(single.paths as Roles) }, off: { ...(single.off as Record<string, true>) } };
+  }
+  return kit;
+}
 
 const kitVersionText = (v: unknown): string => typeof v === "string" || typeof v === "number" ? String(v) : "0";
 export function kitCompare(a: unknown, b: unknown): number {

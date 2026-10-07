@@ -1,0 +1,24 @@
+{
+  "header": { "dataRoot": "" },
+  "kit": {
+    "installed": null,
+    "seenChangelog": "v0.5.2 (2026-10-05)",
+    "initials": "",
+    "snippetIcons": { "Name samples": "flask-conical" },
+    "managed": {
+      "installedKitVersion": "0.5.2",
+      "files": {
+        "tpl-insert-snippet-md": { "path": "Templates/Lab Kit/Insert snippet.md", "installedVersion": "0.5.0", "installedHash": "4f2a9c0e1b7d3a6f5e8c2b1a0d9f8e7c6b5a4d3c2b1a0f9e8d7c6b5a4f3e2d1c", "detached": false, "userDeleted": false, "pendingConflict": null },
+        "script-labform-js": { "path": "scripts/labForm.js", "installedVersion": "0.4.9", "installedHash": "3acec997f788c75896b3842ab73b8718647a74b3c55c97fbd6a8fd9c0b77ab2d", "detached": false, "userDeleted": false, "pendingConflict": null, "merged": true },
+        "script-excel-to-calc-py": { "path": "scripts/excel_to_calc.py", "installedVersion": "0.4.5", "installedHash": "0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c", "detached": true, "userDeleted": false, "pendingConflict": null }
+      }
+    },
+    "paths": { "backups": "Extras/kit-backups" },
+    "off": { "tpl-snippets-14-analysis-table-md": true },
+    "notifyKitUpdate": false,
+    "debug": false,
+    "chemicalFolder": "Chemicals",
+    "mwProperty": "MW",
+    "methodsFolder": "Extras/methods"
+  }
+}

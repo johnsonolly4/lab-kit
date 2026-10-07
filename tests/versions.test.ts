@@ -5,10 +5,10 @@ import { readFileSync } from "fs";
 const version = (file: string): string => (JSON.parse(readFileSync(file, "utf8")) as { version: string }).version;
 
 describe("versions", () => {
-  it("package.json, manifest.json and kit/kit-manifest.json agree", () => {
+  it("package.json, manifest.json and kits/lab/kit-manifest.json agree", () => {
     const v = version("manifest.json");
     expect(version("package.json")).toBe(v);
-    expect(version("kit/kit-manifest.json")).toBe(v);
+    expect(version("kits/lab/kit-manifest.json")).toBe(v);
   });
 
   it("versions.json lists the current version with manifest.json's minAppVersion", () => {
