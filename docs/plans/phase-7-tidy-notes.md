@@ -32,6 +32,7 @@ From `docs/plans/planning-suite-kit.md` "Note correction rules", plus lab `Statu
 ### Phase 7b — Change notes (files and properties)
 - Depends on: 7a
 - Backup tick → step 1, second confirm window → step 2; per-file backup, then `processFrontMatter` for properties, `fileManager.renameFile` for moves (links update); only ticked rules
+- Adds rule (user, 2026-10-07): **add the lab template's missing properties to lab notes**: a partial block gets only the missing keys (empty), a note with no block gets the whole template block; existing values and extra properties are never touched; shown in the same before / after window; data in the lab manifest `migrations` (an `add-property` per template key; `applyMigration` in `src/kit/tidy.ts` must also handle a note with no block). Test: fixture notes with no block, a partial block and a full block
 - Adds rules: folder rename `Extras/Templates/Scripts/` → `Actions/`, `fonts/` → `Extras/fonts/`, `excel_to_calc.py` / `lab-config.json` → `Extras/scripts/lab-kit/` (lab kit tracks the new path), Templater help sheet → `07 How-tos/Obsidian/`
 - Files: `src/kit/tidy.ts`, `src/kit/tidy-ui.ts`, `src/kit/managed.ts` (tracked path after the script move), tests
 - Done when: tests: (a) Cancel at either step writes nothing; (b) unticked rule untouched; (c) every changed file has a backup equal to its old text; (d) no new unresolved links in the fixture vault after the moves; (e) a second scan finds nothing left for the applied rules
