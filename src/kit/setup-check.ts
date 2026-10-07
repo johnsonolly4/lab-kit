@@ -2,12 +2,20 @@
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
 
-/** Plugins the kits use, by plugin id (the id in `obsidian://show-plugin?id=`). */
-export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string }[] = [
-  { id: "templater-obsidian", name: "Templater", kit: "lab" },
-  { id: "dataview", name: "Dataview", kit: "lab" },
-  { id: "obsidian-meta-bind-plugin", name: "Meta Bind", kit: "planning" },
-  { id: "zotlit", name: "ZotLit", kit: "planning", optional: true },
+/** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
+export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [
+  { id: "templater-obsidian", name: "Templater", kit: "lab", why: "Runs the kit's templates and the Alt+S snippet forms." },
+  { id: "dataview", name: "Dataview", kit: "lab", why: "Lists and tables in the hub notes." },
+  { id: "table-editor-obsidian", name: "Advanced Tables", kit: "lab", optional: true, why: "Tab between table cells and keep tables aligned while you type." },
+  { id: "obsidian-meta-bind-plugin", name: "Meta Bind", kit: "planning", why: "The buttons on the homepage and in planning notes." },
+  { id: "obsidian-view-mode-by-frontmatter", name: "Force note view mode", kit: "planning", why: "Opens the homepage read-only, so a click can't edit it." },
+  { id: "omnisearch", name: "Omnisearch", kit: "planning", why: "Searches the whole vault by content, PDFs included." },
+  { id: "notebook-navigator", name: "Notebook Navigator", kit: "planning", why: "The folder and note list, and sets the homepage." },
+  { id: "zotlit", name: "ZotLit", kit: "planning", optional: true, why: "Literature notes and annotations from Zotero." },
+  { id: "obsidian-outliner", name: "Outliner", kit: "planning", optional: true, why: "Move and fold list items with the keyboard." },
+  { id: "editing-toolbar", name: "Editing Toolbar", kit: "planning", optional: true, why: "A formatting toolbar above notes (handy on a phone)." },
+  { id: "css-editor", name: "CSS Editor", kit: "planning", optional: true, why: "Edit the vault's CSS snippets inside Obsidian." },
+  { id: "advanced-canvas", name: "Advanced Canvas", kit: "planning", optional: true, why: "More shapes and connections in Canvas (for diagrams and plans)." },
 ];
 
 /** Hotkeys the kits recommend (never set without asking). Two-key rule: one modifier + one key. */
@@ -87,7 +95,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
   for (const p of SETUP_PLUGINS.filter(p => kitOn(p.kit))) {
     const ok = s.plugins.has(p.id) || (!!p.alias && s.plugins.has(p.alias));
     out.push({ id: `plugin:${p.id}`, group: "Plugins", label: p.name, ok, optional: p.optional,
-      detail: ok ? "Installed and on." : p.optional ? "Optional: the literature notes need it." : "Not installed or turned off. Lab Kit never installs plugins: open its page and install it.",
+      detail: ok ? `Installed and on. ${p.why}` : p.optional ? `Optional. ${p.why}` : `Needed. ${p.why} Not installed or turned off: Lab Kit never installs plugins, so open its page and install it.`,
       fix: ok ? undefined : { kind: "plugin", id: p.id } });
   }
 

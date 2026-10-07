@@ -10,7 +10,7 @@ const state = (o: Partial<SetupState> = {}): SetupState => ({
   metaBind: { missing: 0, total: 26 },
   zotlitGuide: null,
   propertiesView: "hidden",
-  plugins: new Set(["templater-obsidian", "dataview"]),
+  plugins: new Set(["templater-obsidian", "dataview", "table-editor-obsidian"]),
   planning: false,
   templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", menuHotkey: true, folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
   menu: MENU,
@@ -136,5 +136,16 @@ describe("check setup (Phase 6)", () => {
     expect(byId(state())["obsidian:properties"].ok).toBe(true);
     expect(byId(state({ propertiesView: "visible" }))["obsidian:properties"]).toMatchObject({ ok: false, fix: { kind: "hide-properties" } });
     expect(byId(state({ propertiesView: undefined }))["obsidian:properties"]).toMatchObject({ ok: false, warn: true });
+  });
+
+  it("planning plugins: Force note view mode, Omnisearch, Notebook Navigator needed; Outliner, Editing Toolbar, CSS Editor, Advanced Canvas optional with what they do", () => {
+    const r = byId(state({ planning: true }));
+    for (const id of ["obsidian-view-mode-by-frontmatter", "omnisearch", "notebook-navigator"]) expect(r[`plugin:${id}`]).toMatchObject({ ok: false, fix: { kind: "plugin", id } });
+    for (const id of ["obsidian-outliner", "editing-toolbar", "css-editor", "advanced-canvas", "zotlit"]) {
+      expect(r[`plugin:${id}`]).toMatchObject({ ok: false, optional: true });
+      expect(r[`plugin:${id}`].detail).toMatch(/^Optional\. ./);
+    }
+    expect(byId(state())["plugin:omnisearch"]).toBeUndefined();          // lab only: planning plugins not listed
+    expect(byId(state({ plugins: new Set(["templater-obsidian", "dataview"]) }))["plugin:table-editor-obsidian"].optional).toBe(true);
   });
 });

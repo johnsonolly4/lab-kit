@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Check setup: more plugins, each with what it is for**: needed for the planning kit: Force note view mode (homepage read-only), Omnisearch (search), Notebook Navigator (note list and homepage); optional: Advanced Tables, Outliner, Editing Toolbar, CSS Editor, Advanced Canvas, ZotLit. Every plugin row says what the plugin does
 - **Check setup: properties hidden in notes**: a row for Settings → Editor → Properties in document; Fix sets it to Hidden (asked first)
 - **Lab notes are named by your initials**: New lab entry (and the Lab Book Template) now names notes `ABC0001 - Title`, ABC being Settings → Lab Kit → Initials; without initials it stops with a notice and makes nothing. Notes named `0014 - …` still count, so the numbers carry on
 - **Check setup**: the Methods folder Fix creates `Extras/methods` and uses it; the ZotLit row is a warning (Lab Kit can't read ZotLit's settings) and says where the checklist note is
