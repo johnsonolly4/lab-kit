@@ -6,7 +6,6 @@ const MENU = "Extras/Templates/Lab Kit/Insert snippet.md";
 const CMD = `templater-obsidian:${MENU}`;
 const state = (o: Partial<SetupState> = {}): SetupState => ({
   lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" },
-  dataviewJs: true,
   metaBind: { missing: 0, total: 26 },
   zotlitGuide: null,
   propertiesView: "hidden",
@@ -122,12 +121,10 @@ describe("check setup (Phase 6)", () => {
     expect(mine.detail).toContain("Mine.md");
   });
 
-  it("Dataview JS, Meta Bind buttons and the ZotLit checklist (planning only)", () => {
-    const off = byId(state({ dataviewJs: false, metaBind: { missing: 3, total: 26 } }));
-    expect(off["dataview:js"]).toBeUndefined();               // lab only: not listed
-    const r = byId(state({ planning: true, dataviewJs: false, metaBind: { missing: 3, total: 26 }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
+  it("Meta Bind buttons and the ZotLit checklist (planning only); no Dataview JS row since Phase 5a (no DataviewJS in the kit)", () => {
+    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26 }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
       plugins: new Set(["templater-obsidian", "dataview", "obsidian-meta-bind-plugin", "zotlit"]) }));
-    expect(r["dataview:js"].fix).toEqual({ kind: "dataview-js" });
+    expect(r["dataview:js"]).toBeUndefined();
     expect(r["metabind:buttons"]).toMatchObject({ ok: false, fix: { kind: "meta-bind" } });
     expect(r["metabind:buttons"].detail).toContain("3 of 26");
     expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });

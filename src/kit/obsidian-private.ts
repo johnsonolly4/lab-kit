@@ -214,20 +214,6 @@ async function saveOther(p: SettingsPlugin): Promise<void> {
 }
 const pluginOf = (app: App, id: string): SettingsPlugin | undefined => priv(app).plugins?.plugins?.[id] as SettingsPlugin | undefined;
 
-/** Dataview's "Enable JavaScript queries" (`enableDataviewJs`), or null without Dataview. */
-export const dataviewJsEnabled = (app: App): boolean | null => {
-  const dv = pluginOf(app, "dataview");
-  return dv?.settings ? dv.settings.enableDataviewJs === true : null;
-};
-/** Turns on Dataview's JavaScript queries and saves. False without Dataview. */
-export async function enableDataviewJs(app: App): Promise<boolean> {
-  const dv = pluginOf(app, "dataview");
-  if (!dv?.settings) return false;
-  dv.settings.enableDataviewJs = true;
-  await saveOther(dv);
-  return true;
-}
-
 const META_BIND = "obsidian-meta-bind-plugin";
 /** Ids of Meta Bind's button templates, or null without Meta Bind. */
 export const metaBindButtonIds = (app: App): string[] | null => {

@@ -107,7 +107,7 @@ Created with the **New project** button (template `Extras/Templates/Project hub.
 Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue first, "+ N more"), counts of open to-dos / papers / notes, and three buttons - **New note** (straight into that project's folder), **New to-do**, **Open**.
 
 > [!note] The cards are DataviewJS
-> Meta Bind buttons can't be generated per project, so the cards are drawn by a `dataviewjs` block (Dataview > *Enable JavaScript queries* must be on) and styled by section 10 of `vault-theme.css`. Their buttons run the Templater templates directly. This is the one place buttons aren't Meta Bind button templates.
+> Meta Bind buttons can't be generated per project, so Lab Kit draws the cards (a `vault-projects` block, styled by section 10 of `vault-theme.css`). Their buttons call Lab Kit's New project note and New to-do. This is the one place buttons aren't Meta Bind button templates.
 
 ### To-do (`00 Planning/To-dos`)
 Created with the **New to-do** button / `Ctrl+Shift+T` (template `Extras/Templates/To-do.md`), or **New** at the top of a column on the board. A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).

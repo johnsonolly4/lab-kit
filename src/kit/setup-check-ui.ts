@@ -3,7 +3,7 @@ import { Modal, Notice, type App } from "obsidian";
 import { kitJoin, todoFolder, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
-import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, dataviewJsEnabled, enableDataviewJs, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
+import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { PLANNING_BUTTONS } from "../planning/buttons";
@@ -39,7 +39,6 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   return {
     lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder,
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
-    dataviewJs: dataviewJsEnabled(app),
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
@@ -110,7 +109,6 @@ export class SetupCheckModal extends Modal {
       case "matching-mode": await confirm({ name: "Set Templater's matching mode to Folder templates", desc: "It is None now, so folder templates never run.", apply: () => setTemplaterFolderMode(this.app) }); break;
       case "startup-remove": await confirm({ name: "Remove the old roll-over from Templater's startup templates", desc: `${fix.template}. Lab Kit's to-do engine does the roll-over now. The file itself stays.`,
         apply: () => removeTemplaterStartup(this.app, fix.template) }); break;
-      case "dataview-js": await confirm({ name: "Turn on Dataview's JavaScript queries", desc: "Projects overview uses a DataviewJS block.", apply: () => enableDataviewJs(this.app) }); break;
       case "meta-bind": await confirm({ name: "Add the planning buttons to Meta Bind", desc: "Only the ones missing (by id). Buttons you already have are never changed.",
         apply: () => addMetaBindButtons(this.app, PLANNING_BUTTONS) }); break;
       case "plugin": window.open(`obsidian://show-plugin?id=${encodeURIComponent(fix.id)}`); return;

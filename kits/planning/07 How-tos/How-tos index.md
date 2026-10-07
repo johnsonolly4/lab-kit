@@ -1,4 +1,5 @@
 ---
+kind: hub
 cssclasses:
   - vt
 ---

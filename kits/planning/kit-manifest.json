@@ -53,7 +53,7 @@
       "role": "home",
       "path": "00 Home.md",
       "version": "0.5.2",
-      "sha256": "80192bae734500ad622edabcf60540be34287ca954fcc883a5534e22644c9c9b",
+      "sha256": "2b457cde230653f1033064c5484fca6948b804091688559eae34cec8dda98b5d",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -65,7 +65,7 @@
       "role": "howtos",
       "path": "How-tos index.md",
       "version": "0.5.2",
-      "sha256": "cffd599a933e4bd2b6c40f5cdb3c4e3d2a70182a6b257b04914c3b49391f15a5",
+      "sha256": "8efb2471aa311af9cae56975fe0b778cc7c7ec2ff197ccbb30a6cc0fc2b062c3",
       "renamedFrom": [],
       "desc": "How-to notes by topic",
       "policy": "keep"
@@ -115,7 +115,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "c75298456eb2c6216d74759e5e6b1139f02d272f648e834503f352a517b018bb",
+      "sha256": "9b331e130b7a0d26ba43b975251dc3d9a289c617923008128a680f637c5b8a17",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -127,7 +127,7 @@
       "role": "knowledge",
       "path": "Knowledge index.md",
       "version": "0.5.2",
-      "sha256": "85469d370fa3b018a1092a8809d9332525624e7c25d169862ebd0fcff3d6a0ec",
+      "sha256": "4a3cb4782eed949a6b59f488ccfe4a249ad435634f08275ebeeabb57b2186c87",
       "renamedFrom": [],
       "desc": "Knowledge notes by topic",
       "policy": "keep"
@@ -201,7 +201,7 @@
       "role": "projects",
       "path": "Projects overview.md",
       "version": "0.5.2",
-      "sha256": "437e914ced395079e2b26d315c5b50d6385de4279fbe771f7dd171b8ce74f727",
+      "sha256": "1e170c8e8b5473c1081eac9e6c79a083cc4d49275f148701863d52ad48218e38",
       "renamedFrom": [],
       "desc": "All projects with their status",
       "policy": "keep"

@@ -29,8 +29,6 @@ export const OLD_ROLLOVER = "Actions/To-do roll-over.md";
 export interface SetupState {
   /** Lab Kit's own settings the kits read. */
   lab: { initials: string; dataRoot: boolean; methodsFolder: string; labFolder: string; chemicalFolder: string };
-  /** Dataview's "Enable JavaScript queries"; null without Dataview. */
-  dataviewJs: boolean | null;
   /** Meta Bind button templates the planning kit uses; null without Meta Bind. */
   metaBind: { missing: number; total: number } | null;
   /** Path of the "Set up ZotLit" checklist note when it is installed. */
@@ -77,7 +75,6 @@ export type SetupFix =
   | { kind: "navigator-home"; path: string }
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
-  | { kind: "dataview-js" }
   | { kind: "meta-bind" }
   | { kind: "open-note"; path: string };
 
@@ -176,8 +173,6 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: h.source === "none" ? { kind: "navigator-home", path: nav.home } : undefined });
   }
 
-  if (s.planning && s.dataviewJs !== null) out.push({ id: "dataview:js", group: "Dataview", label: "Dataview JavaScript queries", ok: s.dataviewJs,
-    detail: s.dataviewJs ? "On." : "Off. Projects overview needs it (inline JavaScript and task tracking aren't needed).", fix: s.dataviewJs ? undefined : { kind: "dataview-js" } });
 
   if (s.planning && s.metaBind) {
     const { missing, total } = s.metaBind;
