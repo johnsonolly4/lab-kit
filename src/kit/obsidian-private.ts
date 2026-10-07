@@ -1,10 +1,11 @@
 // The only place that touches Obsidian's private APIs (not in the public typings, may change between versions):
 // other plugins' settings (`app.plugins`) and the CSS snippet manager (`app.customCss`).
-import type { App } from "obsidian";
+import type { App, TFile, TFolder } from "obsidian";
 
 interface TemplaterPlugin {
   settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[] };
   command_handler?: { sync_template_hotkeys?: () => void; add_template_hotkey?: (old: string | null, template: string) => void };
+  templater?: { create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
   save_settings?: () => Promise<void>;
   saveSettings?: () => Promise<void>;
 }
@@ -28,6 +29,14 @@ export const templaterSettings = (app: App): NonNullable<TemplaterPlugin["settin
 export const hasTemplater = (app: App): boolean => !!templater(app);
 export const templaterTemplatesFolder = (app: App): string | undefined => templater(app)?.settings?.templates_folder;
 export const templaterUserScriptsFolder = (app: App): string | undefined => templater(app)?.settings?.user_scripts_folder;
+
+/** Creates a note from `template` in `folder` with Templater and opens it. False when this Templater has no such function (private API). */
+export async function templaterCreateNote(app: App, template: TFile, folder: TFolder): Promise<boolean> {
+  const create = templater(app)?.templater?.create_new_note_from_template;
+  if (typeof create !== "function") return false;
+  await create.call(templater(app)?.templater, template, folder, undefined, true);
+  return true;
+}
 
 /** Points Templater's "user scripts" folder at `folder` and saves its settings. */
 export async function setTemplaterUserScripts(app: App, folder: string): Promise<void> {

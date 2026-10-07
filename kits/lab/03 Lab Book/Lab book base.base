@@ -1,0 +1,18 @@
+filters:
+  and:
+    - file.inFolder("03 Lab Book/Notes")
+    - Status != "Closed" || file.mtime > now() - "30d"
+views:
+  - type: kanban
+    name: Experiments
+    groupBy:
+      property: Status
+      direction: ASC
+    groupOrder:
+      - Planned
+      - Started
+      - Processing results
+      - Closed
+    sort:
+      - property: file.name
+        direction: DESC

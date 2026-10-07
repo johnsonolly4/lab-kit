@@ -79,7 +79,7 @@
 - [ ] Copy still works
 
 ## 6b. Chemical database (needs `npm run dev`, then Review update… for the new forms)
-- [ ] Settings → Lab Kit → Lab notebook: **Chemical folder** and **Molecular weight property** are empty; typing `[[` in a calc cell suggests nothing
+- [ ] Settings → Lab Kit → Lab notebook: in a vault that used Lab Kit before, **Chemical folder** and **Molecular weight property** are empty (a new vault: Chemical folder `05 Chemicals/Chemicals`); with it empty, typing `[[` in a calc cell suggests nothing
 - [ ] Set Chemical folder to `Chemical database/Chemicals`: typing `[[tol` in a cell shows Toluene; click one, then Enter on another: the cell is filled, not saved half-typed
 - [ ] With the popup open, **Enter** picks the highlighted suggestion (does not save the cell); **Esc** closes the popup; with it closed they save / discard as before
 - [ ] A chemical found by its **Names** entry (e.g. DTT → Dithiothreitol) inserts `[[Note|name]]` and `=MW(...)` still works
@@ -88,6 +88,14 @@
 - [ ] Alt+S **Solution prep**: a solute with its own target in M / mg/mL / g gives the right Target (g); a row added in mL with a Density gives Added (g), without a Density shows an error; "Total concentration split by a ratio" splits the mass as expected; two solvents share the final volume
 - [ ] **Column** snippet: type DCM as Solvent: the density row is DCM's Density; a density typed in the form wins; no solvent leaves it blank
 - [ ] Folder empty or wrong: forms and cells behave as before
+
+## 6d. Phase 2: chemical database files, Lab book base, New lab entry
+- [ ] Vault that used Lab Kit before: Manage kit files lists Chemical database template, Chemical database.base and Lab book base.base as **Off**; switching one on says to set the folder first
+- [ ] Set Lab notes folder `03 Lab Book/Notes` and Chemical folder `05 Chemicals/Chemicals`, then Review update…: the confirmation lists the three files and the folders `03 Lab Book`, `05 Chemicals`
+- [ ] Open `Chemical database.base`: Table and **By class** (kanban grouped by Chemical class) views show the notes in `05 Chemicals/Chemicals`
+- [ ] Open `Lab book base.base`: the board groups experiments by Status (Planned, Started, Processing results, Closed)
+- [ ] Command **New lab entry**: asks for a title, makes `0001 - Title` in the Lab notes folder (folder made if missing), `Status: Planned` shows as text
+- [ ] Without Templater / with the Lab notes folder empty: New lab entry shows a notice, nothing is made
 
 ## 6c. Analysis methods (needs `npm run dev`, then Review update… for the new scripts and the Analysis table snippet)
 - [ ] Methods folder empty: Alt+S **NMR / GPC / DLS samples**, **Sample list** toggles and **Combined results** look and behave as before
@@ -116,4 +124,4 @@
 - [ ] Calc tables render and edit
 - [ ] Header says "Data folder: desktop only"
 - [ ] Built-in kit install works; merge cards fit at phone width
-- [ ] Settings page is usable
+- [ ] Settings page is usable: at phone width the Kit version row's buttons (Manage files / Review update / Update all safe files) and Set up stay on screen

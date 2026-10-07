@@ -2,15 +2,18 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
-import { LAB_KIT, kitCompare, kitDetectRoles, kitInBackup, kitJoin, kitSlot, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
+import { LAB_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
 const MENU_ID = "tpl-insert-snippet-md";
+
+/** Names of the settings a kit file can need (`needs` in kit-manifest.json), as the settings tab shows them. */
+const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder" };
 
 export interface ManagedHost { kit: KitData; save(): Promise<void> }
 
@@ -31,13 +34,17 @@ export class KitManaged {
     const own: Roles = Object.fromEntries(Object.entries(slot.paths).filter(([, v]) => v && !kitInBackup(v)));
     const old = this.oldRecord();
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
-    return { ...kitDetectRoles(this.app, record, trackedRoles(this.bundle, slot.managed)), ...own };
+    const tracked = trackedRoles(this.bundle, slot.managed);
+    // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
+    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked), ...own };
   }
 
   /** Where the templates (Insert snippet.md, Snippets/) are: the Alt+S menu scans the Snippets folder next to it. */
   templatesFolder(): string { return this.roles().templates; }
 
-  isOff(id: string): boolean { return !!this.slot.off[id]; }
+  isOff(id: string): boolean { return this.offIds().has(id); }
+  /** Switched off by you, or waiting for a folder setting (`needs`) that is empty. */
+  private offIds(): Set<string> { return offIds(this.bundle, this.slot.off, this.host.kit); }
 
   private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
 
@@ -51,7 +58,7 @@ export class KitManaged {
   }
 
   plan(): Promise<ManagedItem[]> {
-    return planManaged(this.app.vault.adapter, this.bundle, this.slot.managed, this.roles(), this.legacy(), this.baseDir(), new Set(Object.keys(this.slot.off)));
+    return planManaged(this.app.vault.adapter, this.bundle, this.slot.managed, this.roles(), this.legacy(), this.baseDir(), this.offIds());
   }
 
   private applyOptions(extra: Partial<ApplyOptions> = {}): ApplyOptions {
@@ -138,6 +145,13 @@ export class KitManaged {
   async setUse(id: string, on: boolean, done: () => void): Promise<void> {
     const kit = this.slot;
     if (on) {
+      // A file that goes next to a folder from the Lab notebook settings waits until that folder is set
+      const needs = this.bundle.manifest.files.find(f => f.id === id)?.needs;
+      if (needs && offIds(this.bundle, {}, this.host.kit).has(id)) {
+        new Notice(`Set the ${NEEDS_NAME[needs] ?? needs} in Lab Kit settings first.`);
+        done();
+        return;
+      }
       delete kit.off[id];
       await this.host.save();
       try { await this.updateOne(id); } catch (e) { this.failed(e); }
@@ -285,7 +299,7 @@ export class KitManaged {
       const kit = this.slot;
       const moved = scripts.kind === "relocate" ? relocateRole(this.bundle, kit.managed, "userScripts") : null;
       const items = moved && scripts.kind === "relocate"
-        ? (await planManaged(this.app.vault.adapter, this.bundle, moved.state, { ...roles, userScripts: scripts.to }, this.legacy(), this.baseDir(), new Set(Object.keys(kit.off))))
+        ? (await planManaged(this.app.vault.adapter, this.bundle, moved.state, { ...roles, userScripts: scripts.to }, this.legacy(), this.baseDir(), this.offIds()))
           .filter(it => it.file.role === "userScripts")
         : [];
       const select = (it: ManagedItem): boolean => it.action === "create" || it.action === "up-to-date";

@@ -28,6 +28,7 @@ export function embeddedKit(root = join(KITS, "lab")) {
       id: f.id, kind: f.kind, role: f.role, src: f.src, dest: f.path, version: f.version,
       sha256: sha256(raw), renamedFrom: f.renamedFrom ?? [], ...(f.policy ? { policy: f.policy } : {}),
       ...(f.desc ? { desc: f.desc } : {}), ...(f.optional ? { optional: true } : {}),
+      ...(f.needs ? { needs: f.needs } : {}),
     };
   });
   return {

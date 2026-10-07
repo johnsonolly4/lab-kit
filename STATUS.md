@@ -1,17 +1,17 @@
 # Status
 
-_Updated: 2026-10-07 by Opus 5.5 (Phases 0, 1a, 1b; one unattended run, user-approved). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-07 by Opus 5.5 (Phase 2, unattended at the user's request: "don't stop for an hour"). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phases 0, 1a, 1b done, committed, not pushed. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a + 1b, stacked on it; no PR yet). Tests 230 pass; nothing seen in Obsidian (BACKLOG "Not yet tested").
+Phases 0, 1a, 1b, 2 done, committed, not pushed. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a + 1b + 2, stacked on it; no PR yet). Tests 237 pass; nothing seen in Obsidian (BACKLOG "Not yet tested").
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
-2. Phase 2: lab kit completion (issues #32, #33, `new-lab-entry`, settings at phone width) — done when: per plan
-3. Phases 3–8: per plan
+1. Phase 3: planning kit files — done when: per plan
+2. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
+3. Phases 4–8: per plan
 4. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
 5. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
@@ -20,15 +20,14 @@ None.
 
 ## Waiting on owner (needs a human)
 - [ ] Merge PR #37 (`fix/34`), then review `feat/multi-kit` and say "push" for its PR — by 2026-10-09
+- [ ] Phase 2 decisions taken for you (reviewer notes, BACKLOG "Leftovers", Phase 2): existing vaults with a Chemical folder get the chemical files on update — by 2026-10-09
 - [ ] Review the confirmation dialog's wording (written unattended; BACKLOG "Not yet tested", Phase 1b) — by 2026-10-09
+- [ ] Try Phase 2 in test-vault: checklist 6d, and 9 (settings at phone width)
 - [ ] Try issue #34 in test-vault (checklist section 2, "Your scripts folder is kept")
 - [ ] Copy the personal preferences file from the adoption session to `~/.claude/CLAUDE.md`; add `/opt/homebrew/opt/node@20/bin` to your PATH (Node 20 installed 2026-10-07) — by 2026-10-08
-- [ ] Confirm the Next order above (seeded from the old STATUS and open issues) — next session
-- [ ] Try 0.5.1 in Obsidian: checklist 6b, sections 1 and 2 (settings groups, sort, Recipe g / M, RAFT co-solvent, live highlight)
-- [ ] Try Solution prep (checklist 6b) and give one real stock solution with a known answer for the test (BACKLOG "Decisions needed")
-- [ ] Try Analysis methods (checklist 6c, BACKLOG "Not yet tested")
-- [ ] Local `dist/` (old kit packages, gitignored): delete when you like
-- [ ] `legacy/main.js` (v0.3 source, never committed, only on this machine): keep a copy or delete
+- [ ] Try 0.5.1 in Obsidian: checklist 6b, sections 1 and 2; Solution prep (6b) with one real stock solution; Analysis methods (6c)
+- [ ] Untracked `docs/plans/kit-files/planning/.obsidian/snippets/vault-fonts.css`: Phase 3 input? (not committed)
+- [ ] Local `dist/` and `legacy/main.js` (gitignored, this machine only): keep or delete
 
 ## Known issues
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG "Repo / release")

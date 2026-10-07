@@ -24,3 +24,8 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-04 — Leave the two `ui/sentence-case` lint warnings — the rule misreads proper nouns — (user; BACKLOG "Repo / release")
 - 2026-10-04 — The version moves only at release, never per commit — the number is not a commit counter — (commit 0284285)
 - 2026-10-04 — Releases are built, attested and published by GitHub Actions on a pushed tag, not locally — (commit f07ee31)
+- 2026-10-07 — Lab notes and chemical folders come from settings (Lab notes folder new, default `03 Lab Book/Notes`; Chemical folder default `05 Chemicals/Chemicals`); the .base files go in the folder above and their filters are rewritten to match — (user, Phase 2)
+- 2026-10-07 — `Lab book base.base` ships in Phase 2 with the chemical files, both bases `policy: keep` — (user, Phase 2)
+- 2026-10-07 — Vaults that used Lab Kit before: Lab notes folder starts empty; files that need an empty folder setting count as off (no saved flag), Manage files says to set the folder first — (user, Phase 2)
+- 2026-10-07 — Chemical database.base filters the notes folder (`05 Chemicals/Chemicals`), not its parent, so the rewrite has one literal per setting — (Claude, Phase 2)
+- 2026-10-07 — Phone-width settings: flex wrap only, no `:has` (store check) — (Claude, Phase 2)

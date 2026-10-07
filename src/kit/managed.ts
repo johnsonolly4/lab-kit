@@ -10,7 +10,7 @@ import { merge3 } from "./merge";
 import { kitEnsureDir, kitIsBackup, kitJoin, kitParent, type Roles } from "./paths";
 
 /* ---- Types ---- */
-export type ManagedKind = "template" | "snippet" | "script";
+export type ManagedKind = "template" | "snippet" | "script" | "note";
 export interface EmbeddedFile {
   id: string; kind: ManagedKind; role: string; src: string; dest: string;
   version: string; sha256: string; renamedFrom: string[]; policy?: string;
@@ -18,6 +18,8 @@ export interface EmbeddedFile {
   desc?: string;
   /** Can be switched off (not installed, not in the Alt+S menu). Core files are never optional. */
   optional?: boolean;
+  /** Kit setting (a key of the kit data, e.g. chemicalFolder) that must be set for this file to be installed: while it is empty the file counts as switched off. */
+  needs?: string;
 }
 /** One kit as built into main.js (see scripts/embed-kit.mjs): kits/<id>/kit-manifest.json and its files. */
 export interface EmbeddedKit {
@@ -67,6 +69,14 @@ export const kitNormalise = (text: string): string => text.replace(/^\uFEFF/, ""
 export async function kitSha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(kitNormalise(text)));
   return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Files that count as switched off: the ones you switched off, plus optional files whose `needs` setting is empty. */
+export function offIds(bundle: EmbeddedKit, off: Record<string, true>, settings: object): Set<string> {
+  const out = new Set(Object.keys(off));
+  const value = (key: string): unknown => (settings as Record<string, unknown>)[key];
+  for (const f of bundle.manifest.files) if (f.optional && f.needs && !(typeof value(f.needs) === "string" && (value(f.needs) as string).trim())) out.add(f.id);
+  return out;
 }
 
 /** SHA-1 hex of the exact text (no normalising): the hash the old folder updater recorded for files it wrote. */

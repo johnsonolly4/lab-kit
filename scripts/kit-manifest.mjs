@@ -6,8 +6,8 @@ import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "
 import { join, relative, sep } from "path";
 import { KITS, sha256 } from "./embed-kit.mjs";
 
-const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", scripts: "script", userScripts: "script" };
-const PREFIX = { snippet: "snip", template: "tpl", script: "script" };
+const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", scripts: "script", userScripts: "script", labBase: "note", chemicalBase: "note" };
+const PREFIX = { snippet: "snip", template: "tpl", script: "script", note: "note" };
 
 /* ---- Per kit: which source folder holds which role, and the one-line descriptions ---- */
 const LAB_ROLE_BY_PREFIX = [
@@ -15,6 +15,8 @@ const LAB_ROLE_BY_PREFIX = [
   ["Extras/scripts/templater/", "userScripts"],
   ["Extras/scripts/", "scripts"],
   ["Templates/", "templates"],
+  ["03 Lab Book/", "labBase"],
+  ["05 Chemicals/", "chemicalBase"],
 ];
 // One line per kit file, shown in Manage kit files. Snippets (Templates/Snippets/) use their own "// desc:" line.
 const LAB_DESC = {
@@ -26,14 +28,19 @@ const LAB_DESC = {
   "Extras/scripts/templater/labSnippets.js": "The code behind every snippet",
   "Templates/Insert snippet.md": "The Alt+S menu: lists the snippets and inserts the one you pick",
   "Templates/Lab Book Template.md": "New experiment note: number, hazards, data folder button and sections",
+  "Templates/Chemical database template.md": "New chemical note: names, class, hazards, CAS number, MW and physical data",
+  "03 Lab Book/Lab book base.base": "Board of your experiments by Status, next to your Lab notes folder",
+  "05 Chemicals/Chemical database.base": "Table and by-class board of your chemical notes, next to your Chemical folder",
 };
 const CONFIG = {
   lab: {
     roleByPrefix: LAB_ROLE_BY_PREFIX, desc: LAB_DESC,
     // Snippets carry their own "// desc:" line and can be switched off; so can the Excel converter (not part of the plugin itself)
-    optionalPrefix: "Templates/Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py"]),
+    optionalPrefix: "Templates/Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py", "Templates/Chemical database template.md", "03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // policy "keep": installed once, never updated (notes that become the user's own)
-    keepFiles: new Set(),
+    keepFiles: new Set(["03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
+    // "needs": the setting (kit data key) that must be set for the file to be installed; empty = treated as switched off
+    needs: { "Templates/Chemical database template.md": "chemicalFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
   },
 };
 const SKIP = new Set(["kit-manifest.json"]);
@@ -102,6 +109,7 @@ function regenerate(KIT) {
       if (rel.startsWith(OPTIONAL_PREFIX) || OPTIONAL_FILES.has(rel)) entry.optional = true;
     const policy = cfg.keepFiles?.has(rel) ? "keep" : prev?.policy;   // a policy set by hand in the manifest is kept too
     if (policy) entry.policy = policy;
+    if (cfg.needs?.[rel]) entry.needs = cfg.needs[rel];
       return entry;
     })
     .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));

@@ -14,14 +14,14 @@ const nums = app.vault.getMarkdownFiles()
 const next = String(Math.max(0, ...nums) + 1).padStart(4, "0");
 
 // ---- 2. Title and rename ----
-const title = (await tp.system.prompt("Experiment title")) || "Untitled";
+// Text box: same look as the vault's pickers (vtAsk.js); falls back to Templater's box if it is missing
+const title = (await (tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title"))) || "Untitled";
 const name = `${next} - ${title}`.replace(/[\\/:*?"<>|]/g, "-");
 await tp.file.rename(name);
 -%>
 ---
 Type:
-Status:
-  - Planned
+Status: Planned
 Exp. Class:
 Plan date: <% tp.date.now("YYYY-MM-DD") %>
 Exp. Start:

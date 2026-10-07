@@ -30,15 +30,17 @@ export interface KitData {
   /** Show a notice at startup when the plugin brings a newer kit. */
   notifyKitUpdate: boolean;
   debug: boolean;
-  /** Vault folder of chemical notes (autocomplete in calc cells and forms). Empty = no chemical database. */
+  /** Vault folder of chemical notes (autocomplete in calc cells and forms; the kit's Chemical database files go next to it). Empty = no chemical database. */
   chemicalFolder: string;
+  /** Vault folder of lab notes (New lab entry; the kit's Lab book base goes next to it). Empty = not set. */
+  labFolder: string;
   /** Property of a chemical note that holds its molecular weight, tried before the built-in names. Empty = built-in names only. */
   mwProperty: string;
   /** Vault folder of analysis method notes (and, linked from them, machine notes), read by the Alt+S snippets. Empty = only the built-in NMR, GPC and DLS. */
   methodsFolder: string;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "", mwProperty: "", methodsFolder: "" };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "" };
 
 /** The saved state of one kit, created (switched on, nothing installed) when there is none yet. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -52,6 +54,8 @@ export function kitSlot(kit: KitData, id: string): KitSlot {
  */
 export function kitLoad(saved: unknown): KitData {
   const old = { ...((saved ?? {}) as Record<string, unknown>) };
+  // Saved by v0.5.2 or older: no folder default is put on a vault that already uses Lab Kit (Lab book base, New lab entry stay off until set)
+  if (saved && typeof saved === "object" && old.labFolder === undefined) old.labFolder = "";
   if (old.checkOnStartup === false && old.notifyKitUpdate === undefined) old.notifyKitUpdate = false;
   const single = { managed: old.managed, paths: old.paths, off: old.off };
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
@@ -96,6 +100,12 @@ export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir"
  * and `Extras/scripts/lab-kit` for the other scripts. A user scripts folder that is set is never changed (issue #34), so a hand copy of
  * labForm.js outside it is not followed. `record` (old folder updater) supplies scripts and backups.
  */
+/** Folders that come from the Lab notebook settings: the lab notes and chemical notes folders (rewritten into the .base filters) and their parents (where the .base files go). */
+export function kitFolderRoles(kit: Pick<KitData, "labFolder" | "chemicalFolder">): Roles {
+  const lab = kitJoin(kit.labFolder.trim()), chem = kitJoin(kit.chemicalFolder.trim());
+  return { labNotes: lab, labBase: kitParent(lab), chemicalNotes: chem, chemicalBase: kitParent(chem) };
+}
+
 /** Where the lab kit goes in a vault with no kit files yet (the folder contract). */
 export const LAB_LAYOUT = { templates: "Extras/Templates", templatesSub: "Lab Kit", userScripts: "Extras/scripts/templater", userScriptsSub: "lab-kit", scripts: "Extras/scripts/lab-kit" };
 
@@ -119,4 +129,16 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
     templates: tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || LAB_LAYOUT.templates, LAB_LAYOUT.templatesSub)),
     backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
   };
+}
+
+/** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
+export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
+
+/** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
+export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string }): { template: string; folder: string } | { error: string } {
+  if (!o.templater) return { error: "New lab entry needs the Templater plugin. Install and enable it, then try again." };
+  const folder = kitJoin(o.labFolder.trim());
+  if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
+  if (!o.template) return { error: "The Lab Book Template is not installed. Install it from Manage kit files." };
+  return { template: o.template, folder };
 }

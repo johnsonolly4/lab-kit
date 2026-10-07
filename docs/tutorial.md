@@ -27,7 +27,7 @@ flowchart LR
 
 ## 1. Starting an experiment
 
-1. Create a new note in **Notes**.
+1. Run **New lab entry** from the command palette (or create a new note in your Lab notes folder).
 2. Type the title in the box that pops up (e.g. `Batch esterification of PABTC`).
 3. You get `0016 - Batch esterification of PABTC` with:
    - 📁 **Open data folder**: opens `<your data folder>/0016 - …` (made when you press the button; set the data folder in Settings → Lab Kit)
@@ -216,7 +216,8 @@ flowchart LR
 | Change | Where |
 |---|---|
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
-| Your chemical notes | Settings → Lab Kit → Chemical folder (empty = no suggestions). Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts |
+| Your chemical notes | Settings → Lab Kit → Chemical folder (new vaults: `05 Chemicals/Chemicals`; empty = no suggestions, and no Chemical database template or base). New chemical notes: the kit's **Chemical database template**; the **Chemical database** base in the folder above lists them. Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts |
+| Where new experiment notes go | Settings → Lab Kit → Lab notes folder (used by **New lab entry**; the kit's **Lab book base**, a board of experiments by Status, goes in the folder above it) |
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |

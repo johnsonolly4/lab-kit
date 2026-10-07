@@ -5,9 +5,25 @@
   "version": "0.5.2",
   "date": "2026-10-04",
   "rewrite": {
-    "Extras/scripts": "scripts"
+    "Extras/scripts": "scripts",
+    "03 Lab Book/Notes": "labNotes",
+    "05 Chemicals/Chemicals": "chemicalNotes"
   },
   "files": [
+    {
+      "id": "note-chemical-database-base",
+      "kind": "note",
+      "src": "05 Chemicals/Chemical database.base",
+      "role": "chemicalBase",
+      "path": "Chemical database.base",
+      "version": "0.5.2",
+      "sha256": "16c3920e6c2e0ad1726d26bd386ff8e52ceb910c64bba07156fb2591c143058e",
+      "renamedFrom": [],
+      "desc": "Table and by-class board of your chemical notes, next to your Chemical folder",
+      "optional": true,
+      "policy": "keep",
+      "needs": "chemicalFolder"
+    },
     {
       "id": "snip-scrolling-mermaid-css",
       "kind": "snippet",
@@ -20,6 +36,20 @@
       "desc": "Lets wide Mermaid diagrams scroll sideways inside a note"
     },
     {
+      "id": "note-lab-book-base-base",
+      "kind": "note",
+      "src": "03 Lab Book/Lab book base.base",
+      "role": "labBase",
+      "path": "Lab book base.base",
+      "version": "0.5.2",
+      "sha256": "6756830ca5210ca4b2ee05a50fa6b954bed6685af291a1277dfb9ba784b83622",
+      "renamedFrom": [],
+      "desc": "Board of your experiments by Status, next to your Lab notes folder",
+      "optional": true,
+      "policy": "keep",
+      "needs": "labFolder"
+    },
+    {
       "id": "script-excel-to-calc-py",
       "kind": "script",
       "src": "Extras/scripts/excel_to_calc.py",
@@ -30,6 +60,19 @@
       "renamedFrom": [],
       "desc": "Command-line tool that turns an Excel file into calc tables",
       "optional": true
+    },
+    {
+      "id": "tpl-chemical-database-template-md",
+      "kind": "template",
+      "src": "Templates/Chemical database template.md",
+      "role": "templates",
+      "path": "Chemical database template.md",
+      "version": "0.5.2",
+      "sha256": "902a692002583f7fe74579c4fb547799df08f95cbd74b302eb720b2bf964749c",
+      "renamedFrom": [],
+      "desc": "New chemical note: names, class, hazards, CAS number, MW and physical data",
+      "optional": true,
+      "needs": "chemicalFolder"
     },
     {
       "id": "tpl-insert-snippet-md",
@@ -48,8 +91,8 @@
       "src": "Templates/Lab Book Template.md",
       "role": "templates",
       "path": "Lab Book Template.md",
-      "version": "0.4.9",
-      "sha256": "3eb4f56452c6cf6d4bccc57069417f5f26179fda17a1390bb84c68c4c4ef7aae",
+      "version": "0.5.2",
+      "sha256": "be997fd7434fc5a782ec650945cc04dbafafcae9fae1772711ee8d9a40709e3e",
       "renamedFrom": [],
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },

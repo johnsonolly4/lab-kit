@@ -1,6 +1,7 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, kitJoin, kitLoad, type KitData } from "./paths";
+import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, kitJoin, kitLoad, newLabEntryTarget, type KitData } from "./paths";
+import { hasTemplater, templaterCreateNote } from "./obsidian-private";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
@@ -11,7 +12,10 @@ import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
 
 class KitSettingTab extends PluginSettingTab {
-  constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) { super(app, plugin); }
+  constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) {
+    super(app, plugin);
+    this.containerEl.addClass("lab-kit-settings");   // scopes the phone-width rules in styles.css to this tab
+  }
 
   /** Built-in icon of each snippet (from its `// icon:` line), read before the rows are drawn so no row changes after it is shown. */
   private builtInIcons = new Map<string, string>();
@@ -117,6 +121,13 @@ class KitSettingTab extends PluginSettingTab {
             t.setValue(kit.chemicalFolder).onChange(async v => { kit.chemicalFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
           });
         } },
+      { name: "Lab notes folder", desc: "The folder of your experiment notes. New lab entry creates notes here, and the kit's Lab book base (a board of your experiments by Status) goes in the folder above it. Empty: neither is used.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.labFolder).onChange(async v => { kit.labFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+          });
+        } },
       { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
       { name: "Methods folder", desc: "The folder of your analysis method notes (one note per method, with its columns and machines). The Alt+S analysis snippets then offer them next to the built-in NMR, GPC and DLS. Empty: only the built-in methods. A folder that does not exist yet is created.",
@@ -176,6 +187,7 @@ export class KitController {
     plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
     plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
+    plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
       const section = latestSection(changelog);
@@ -197,6 +209,21 @@ export class KitController {
     }));
     // The plugin brought a newer kit: say so once per start, with a button to the review window
     this.app.workspace.onLayoutReady(() => window.setTimeout(() => this.notifyUpdate(), 4000));
+  }
+
+  /** New lab entry: a note from the Lab Book Template in the Lab notes folder (created if missing), made and opened by Templater. */
+  async newLabEntry(): Promise<void> {
+    const tracked = this.managed.stateOf(LAB_TEMPLATE_ID)?.path;
+    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Lab Book Template.md")]
+      .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
+    const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder });
+    if ("error" in target) { new Notice(target.error); return; }
+    try {
+      await ensureFolder(this.app.vault, target.folder);
+      const folder = this.app.vault.getFolderByPath(target.folder);
+      if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
+      if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+    } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
   }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */

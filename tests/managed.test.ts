@@ -401,7 +401,7 @@ describe("embedded kit (the real one)", () => {
   it("has unique ids, a kind per file and text for each", () => {
     const ids = real.manifest.files.map(f => f.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const f of real.manifest.files) { expect(["template", "snippet", "script"]).toContain(f.kind); expect(real.contents[f.id].length).toBeGreaterThan(0); }
+    for (const f of real.manifest.files) { expect(["template", "snippet", "script", "note"]).toContain(f.kind); expect(real.contents[f.id].length).toBeGreaterThan(0); }
   });
   it("matches kit-manifest.json (run npm run kit:manifest if this fails)", async () => {
     for (const f of real.manifest.files) {

@@ -1,11 +1,11 @@
 // First install of the built-in kit (CSS snippet, Templater's user scripts folder) and the version compare behind the update notice.
 import { describe, it, expect } from "vitest";
 import {
-  applyManaged, firstInstallOptions, planManaged, previewInstall, relocateRole, templaterScriptsAction, trackedRoles,
+  applyManaged, firstInstallOptions, offIds, planManaged, previewInstall, relocateRole, templaterScriptsAction, trackedRoles,
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { kitCompare, kitDetectRoles, kitLoad, kitSlot } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, newLabEntryTarget } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -299,5 +299,90 @@ describe("install preview and folder contract (Phase 1b)", () => {
     await applyManaged(v, newer, items, first.state, opts);
     expect(v.files["00 Home.md"]).toBe("home\n");
     expect(v.files["00 Planning/To-do board.base"]).toBe("board v2\n");
+  });
+});
+
+// Phase 2: chemical database and lab book base, placed by the Lab notebook folder settings; New lab entry
+describe("lab kit completion (Phase 2)", () => {
+  const opts = { baseDir: ".obsidian/plugins/lab-kit/kit-base", backups: "Backups", stamp: "2026-10-07T12:00:00.000Z" };
+  const memVault = (files: Record<string, string> = {}): ManagedAdapter & { files: Record<string, string> } => ({
+    files,
+    exists: async (p: string) => p in files,
+    read: async (p: string) => { if (!(p in files)) throw new Error("ENOENT " + p); return files[p]; },
+    write: async (p: string, d: string) => { files[p] = d; },
+    mkdir: async () => {},
+  }) as unknown as ManagedAdapter & { files: Record<string, string> };
+  const base = { templates: "Extras/Templates/Lab Kit", userScripts: "Extras/scripts/templater/lab-kit", scripts: "Extras/scripts/lab-kit", cssSnippets: ".obsidian/snippets", backups: "Backups" };
+  const NEW = ["tpl-chemical-database-template-md", "note-chemical-database-base", "note-lab-book-base-base"];
+  const byId = (items: { file: { id: string } }[], id: string) => items.find(i => i.file.id === id) as any;
+
+  it("Lab Book Template: Status is text (issue #32) and the title box uses vtAsk with Templater's prompt as fallback", () => {
+    const text = real.contents["tpl-lab-book-template-md"];
+    expect(text).toMatch(/^Status: Planned$/m);
+    expect(text).toContain('tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title")');
+  });
+
+  it("a fresh vault (default folders) installs the chemical template and both bases next to the default folders", async () => {
+    const data = kitLoad(undefined);
+    expect([data.labFolder, data.chemicalFolder]).toEqual(["03 Lab Book/Notes", "05 Chemicals/Chemicals"]);
+    const v = memVault();
+    const items = await planManaged(v, real, null, { ...kitFolderRoles(data), ...base }, null, null, offIds(real, {}, data));
+    for (const id of NEW) expect(byId(items, id).action).toBe("create");
+    expect(byId(items, "note-chemical-database-base").dest).toBe("05 Chemicals/Chemical database.base");
+    expect(byId(items, "note-lab-book-base-base").dest).toBe("03 Lab Book/Lab book base.base");
+    expect(byId(items, "tpl-chemical-database-template-md").dest).toBe("Extras/Templates/Lab Kit/Chemical database template.md");
+  });
+
+  it("the bases' filters follow the folder settings", async () => {
+    const roles = { ...kitFolderRoles({ labFolder: "Lab/Entries", chemicalFolder: "Chem" }), ...base };
+    const items = await planManaged(memVault(), real, null, roles);
+    const chem = byId(items, "note-chemical-database-base"), lab = byId(items, "note-lab-book-base-base");
+    expect(chem.dest).toBe("Chemical database.base");                // folder at the vault root: the base goes at the root
+    expect(chem.text).toContain('file.inFolder("Chem")');
+    expect(lab.dest).toBe("Lab/Lab book base.base");
+    expect(lab.text).toContain('file.inFolder("Lab/Entries")');
+    expect(lab.text).not.toContain("03 Lab Book");
+  });
+
+  it("an existing install (saved before this version, no chemical folder) gets none of the new files", async () => {
+    const saved = JSON.parse(readFileSync("tests/fixtures/data-0.5.2.json", "utf8")).kit;
+    const data = kitLoad({ ...saved, chemicalFolder: "" });
+    expect(data.labFolder).toBe("");
+    const off = offIds(real, kitSlot(data, "lab").off, data);
+    for (const id of NEW) expect(off.has(id), id).toBe(true);
+    const v = memVault();
+    const items = await planManaged(v, real, null, { ...kitFolderRoles(data), ...base }, null, null, off);
+    for (const id of NEW) expect(byId(items, id).action).toBe("off");
+    await applyManaged(v, real, items, null, opts);
+    expect(Object.keys(v.files).some(p => p.endsWith(".base") || p.endsWith("Chemical database template.md"))).toBe(false);
+  });
+
+  it("setting the folders later switches them on; a same-named base already there is left alone", async () => {
+    const data = { ...KIT_DEFAULTS, labFolder: "", chemicalFolder: "" };
+    expect(offIds(real, {}, data).has("note-lab-book-base-base")).toBe(true);
+    data.labFolder = "03 Lab Book/Notes"; data.chemicalFolder = "05 Chemicals/Chemicals";
+    const off = offIds(real, {}, data);
+    for (const id of NEW) expect(off.has(id)).toBe(false);
+    const mine = "views:\n  - type: table\n";
+    const v = memVault({ "03 Lab Book/Lab book base.base": mine });
+    const items = await planManaged(v, real, null, { ...kitFolderRoles(data), ...base }, null, null, off);
+    expect(byId(items, "note-lab-book-base-base").action).toBe("keep");
+    expect(byId(items, "note-chemical-database-base").action).toBe("create");
+    await applyManaged(v, real, items, null, opts);
+    expect(v.files["03 Lab Book/Lab book base.base"]).toBe(mine);
+    expect(v.files["05 Chemicals/Chemical database.base"]).toContain('file.inFolder("05 Chemicals/Chemicals")');
+  });
+
+  it("files you switch off stay off even with the folder set", () => {
+    expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
+    expect(offIds(real, {}, KIT_DEFAULTS).size).toBe(0);
+  });
+
+  it("New lab entry: says what is missing, else gives the template and folder", () => {
+    const ok = { templater: true, template: "Extras/Templates/Lab Kit/Lab Book Template.md", labFolder: " 03 Lab Book/Notes/ " };
+    expect(newLabEntryTarget(ok)).toEqual({ template: ok.template, folder: "03 Lab Book/Notes" });
+    expect(newLabEntryTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
+    expect(newLabEntryTarget({ ...ok, labFolder: "" })).toHaveProperty("error", expect.stringContaining("Lab notes folder"));
+    expect(newLabEntryTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Lab Book Template"));
   });
 });

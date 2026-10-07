@@ -131,7 +131,7 @@ Settings → Lab Kit is searchable and grouped:
 |---|---|
 | **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), What's new, update notice, Backup folder |
 | **Kit folders and setup** | Templater **Set up**, Templates folder, Scripts folder, Snippets folder, console log |
-| **Lab notebook** | Initials, Chemical folder, Molecular weight property, Methods folder |
+| **Lab notebook** | Initials, Chemical folder, Lab notes folder, Molecular weight property, Methods folder |
 | **Snippet menu** | A Lucide icon for each snippet |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
@@ -145,6 +145,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 |---|---|
 | Insert empty calc block | Adds a small example calc table at the cursor |
 | Insert lab header block | Adds the hazard / data-folder header at the cursor |
+| New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |
