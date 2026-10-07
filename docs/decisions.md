@@ -33,3 +33,5 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-07 — Planning notes ship as supplied (buttons, deck, roll-over references dead until Phases 4–6); the planning kit is not offered in the UI until then — (Claude, unattended)
 - 2026-10-07 — No `rewrite` in the planning kit until Phase 5 adds folder settings (every literal equals its default); planning templates follow Templater's template folder, vtAsk.js goes in `<user scripts>/vault` — (Claude, unattended)
 - 2026-10-07 — ZotLit files: optional, `needs: "plugin:zotlit"` (plugin id `zotlit` not checked against the store) — (Claude, unattended)
+- 2026-10-07 — Phase 4 split: 4a to-do engine (this session), 4b commands — (Claude, unattended)
+- 2026-10-07 — To-do engine stands down (writes nothing, one notice) while the old roll-over startup template runs, instead of stopping it — never two engines writing, never touching the user's script — (Claude, unattended; reviewer)

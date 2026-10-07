@@ -4,6 +4,8 @@ import { CalcRenderer } from "./calc/render";
 import { HeaderRenderer } from "./header/render";
 import { HeaderStore } from "./header/settings";
 import { KitController } from "./kit/ui";
+import { PLANNING_KIT, PLANNING_LAYOUT, kitJoin } from "./kit/paths";
+import { TodoEngine } from "./planning/engine";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
@@ -21,6 +23,10 @@ export default class LabKitPlugin extends Plugin {
 
     this.calc.register();
     this.header.register();
+
+    // To-do engine: only in a vault where the planning kit is switched on and installed (read once, at load)
+    const planning = this.kit.kit.kits[PLANNING_KIT];
+    if (planning?.enabled && planning.managed) new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos")).start();
 
     this.addCommand({
       id: "insert-calc-block",
