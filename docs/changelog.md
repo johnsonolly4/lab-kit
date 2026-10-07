@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Your Templater user scripts folder is never changed** (issue #34): the lab scripts (`labForm.js`, `labMethods.js`, …) now go into a `lab-kit` folder inside it, so your own scripts keep loading. With no folder set, the first install offers the folder above `lab-kit` (default `scripts`). If an older install put the kit's scripts outside your folder, **Set up** asks before installing fresh copies into `<your folder>/lab-kit`; the old copies stay where they are for you to delete. Kit scripts already inside your folder don't move
+
 ## v0.5.2 (2026-10-05)
 - **Docs only: no change to how the plugin or the kit works** (the kit files are identical, so there is nothing to update in Review update…)
 - **README rewritten for the store page**: contents, quick start, a section for each feature (calc tables, chemical database, snippet forms, analysis methods, header, built-in kit), the settings groups, the commands, troubleshooting and where to report problems. The "install by hand" steps are gone: Lab Kit is in the community store

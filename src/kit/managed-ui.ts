@@ -2,7 +2,7 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
   type ApplyOptions, type EmbeddedKit, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -228,9 +228,11 @@ export class KitManaged {
       if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
       const done: string[] = [];
       const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake
-      if (templaterScriptsNeedChange(current, roles.userScripts)) {
-        await setTemplaterUserScripts(this.app, roles.userScripts);
-        done.push(`User scripts folder set to ${roles.userScripts}${current?.trim() ? ` (was ${current})` : ""}.`);
+      // A user scripts folder that is set is never changed (issue #34): the lab scripts move into a lab-kit folder inside it instead, after asking
+      const scripts = templaterScriptsAction(current, roles.userScripts);
+      if (scripts.kind === "set") {
+        await setTemplaterUserScripts(this.app, scripts.folder);
+        done.push(`User scripts folder set to ${scripts.folder}.`);
       }
       // The template folder is only filled in when Templater has none; one that is set is never changed
       const tplFolder = kitInBackup(templaterTemplatesFolder(this.app) ?? "") ? "" : templaterTemplatesFolder(this.app)?.trim();
@@ -239,7 +241,29 @@ export class KitManaged {
       else if (tplFolder && templaterScriptsNeedChange(tplFolder, roles.templates)) done.push(`Template folder left as ${tplFolder} (the kit's templates are in ${roles.templates}).`);
       if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys.");
       new Notice((done.length ? done.join("\n") : "Templater was already set up.") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
+      if (scripts.kind === "relocate") await this.relocateUserScripts(current ?? "", scripts.to);
     } catch (e) { this.failed(e); }
+  }
+
+  /** The kit's scripts are outside Templater's user scripts folder (an older install): asks, then installs fresh copies into `to` and tracks them there. The old copies are never moved or deleted. */
+  private async relocateUserScripts(folder: string, to: string): Promise<void> {
+    const kit = this.host.kit;
+    const moved = relocateRole(this.bundle, kit.managed, "userScripts");
+    const roles = { ...this.roles(), userScripts: to };
+    const items = (await planManaged(this.app.vault.adapter, this.bundle, moved.state, roles, this.legacy(), this.baseDir(), new Set(Object.keys(kit.off))))
+      .filter(it => it.file.role === "userScripts");
+    const old = moved.old.length ? ` The old copies are left in place; delete them when you like: ${moved.old.join(", ")}.` : "";
+    new ConfirmModal(this.app, `Install the lab scripts into ${to}?`,
+      `Templater loads scripts from ${folder}, which is left as it is. The kit's scripts are elsewhere, so the snippet forms can't find them.${old}`,
+      "Install copies", async () => {
+        try {
+          const out = await applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, this.applyOptions({ select: it => it.action === "create" || it.action === "up-to-date", keepVersion: true }));
+          kit.managed = out.state;
+          kit.paths.userScripts = to;
+          await this.host.save();
+          new KitReportModal(this.app, out.results).open();
+        } catch (e) { this.failed(e); }
+      }).open();
   }
 
   review(): void { new KitManagedModal(this.app, this).open(); }

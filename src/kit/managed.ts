@@ -349,12 +349,42 @@ export function templaterTemplatesTarget(kitTemplates: string): string | null {
   return parts.length ? parts.join("/") : null;
 }
 
+/** The folder to give Templater as its user scripts folder when it has none: the folder above the kit's `lab-kit` folder, so the user's own scripts beside it load too. */
+export function templaterScriptsTarget(kitUserScripts: string): string {
+  const kit = kitJoin(kitUserScripts.trim().replace(/\\/g, "/"));
+  return kit.endsWith("/lab-kit") ? kitParent(kit) : kit;
+}
+
+/**
+ * What "Set up Templater" does about the user scripts folder. A folder that is set is never changed (issue #34):
+ * `set` when Templater has none, `ok` when it already finds the kit's scripts, else `relocate` (install copies into `<folder>/lab-kit`).
+ */
+export type TemplaterScriptsAction = { kind: "ok" } | { kind: "set"; folder: string } | { kind: "relocate"; to: string };
+export function templaterScriptsAction(current: string | undefined, kitUserScripts: string): TemplaterScriptsAction {
+  const cur = kitJoin((current ?? "").trim().replace(/\\/g, "/"));
+  if (!cur) return { kind: "set", folder: templaterScriptsTarget(kitUserScripts) };
+  if (!templaterScriptsNeedChange(cur, kitUserScripts)) return { kind: "ok" };
+  return { kind: "relocate", to: kitJoin(cur, "lab-kit") };
+}
+
+/** Forgets the installed files of one role, so the next plan creates them afresh in the role's (new) folder. The old copies stay in the vault; their paths are returned. */
+export function relocateRole(bundle: EmbeddedKit, state: ManagedState | null, role: string): { state: ManagedState | null; old: string[] } {
+  if (!state) return { state, old: [] };
+  const files = { ...state.files }, old: string[] = [];
+  for (const f of bundle.manifest.files) {
+    if (f.role !== role || !files[f.id]) continue;
+    if (!kitIsBackup(files[f.id].path)) old.push(files[f.id].path);
+    delete files[f.id];
+  }
+  return { state: { ...state, files }, old };
+}
+
 /** What the first-install dialog offers: CSS snippets to switch on, and Templater's user scripts folder (only when Templater has none). */
 export interface FirstInstallOptions { css: { enable: string[]; disable: string[] } | null; templaterFolder: string | null }
 export function firstInstallOptions(bundle: EmbeddedKit, templater: { installed: boolean; folder?: string }, userScripts: string): FirstInstallOptions {
   const m = bundle.manifest;
   return {
     css: m.enableCss?.length ? { enable: m.enableCss, disable: m.disableCss ?? [] } : null,
-    templaterFolder: m.templater?.userScripts && templater.installed && !templater.folder?.trim() ? userScripts : null,
+    templaterFolder: m.templater?.userScripts && templater.installed && !templater.folder?.trim() ? templaterScriptsTarget(userScripts) : null,
   };
 }

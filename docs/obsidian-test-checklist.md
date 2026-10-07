@@ -29,6 +29,7 @@
 - [ ] **Existing vault** (flat layout): nothing moves; a kit file added later lands beside `Insert snippet.md`
 - [ ] Review update… asks before first install, then Apply creates the files
 - [ ] **First install switches**: with Templater's user scripts folder empty, the question shows **Turn on the CSS snippet** and **Set Templater's user scripts folder**; afterwards the snippet is on (Settings → Appearance) and Templater's folder is set. With a folder already set in Templater: only the CSS switch, and Templater's folder is unchanged
+- [ ] **Your scripts folder is kept** (issue #34): set Templater's user scripts folder to a folder with one script of your own, first install: Templater's folder is unchanged, `labForm.js` is in `<folder>/lab-kit/`, your script still runs, a snippet opens its form. Then point Templater at another folder and press **Set up**: it asks to install copies into `<new folder>/lab-kit/`, lists the old copies, Cancel writes nothing, Install copies creates them and the form still opens
 - [ ] **Update notice**: in `.obsidian/plugins/lab-kit/data.json` lower `kit.managed.installedKitVersion` (e.g. to 0.4.0), reload: a notice says **Lab kit vX is ready**, and **Review** opens the review window. Switch off **Tell me when a kit update is ready**, reload: no notice
 - [ ] Report window lists them; nothing broken in the file tree
 - [ ] Edit an installed template, Review again: it says "changed by you"

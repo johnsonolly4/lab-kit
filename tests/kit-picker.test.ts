@@ -131,17 +131,17 @@ describe("folder layout", () => {
   });
   const tplSettings = { templates_folder: "Templater/Templates", user_scripts_folder: "Templater/Scripts" };
 
-  it("a new vault uses Templater's own folders, with no subfolders", () => {
+  it("a new vault uses Templater's own folders; the lab scripts go into a lab-kit folder inside its user scripts folder (issue #34)", () => {
     const r = kitDetectRoles(vault([], tplSettings), null, {});
     expect(r.templates).toBe("Templater/Templates");
-    expect(r.userScripts).toBe("Templater/Scripts");
+    expect(r.userScripts).toBe("Templater/Scripts/lab-kit");
     expect(r.scripts).toBe("scripts");
   });
 
   it("without Templater folders: Templates and scripts at the vault root", () => {
     const r = kitDetectRoles(vault([], {}), null, {});
     expect(r.templates).toBe("Templates");
-    expect(r.userScripts).toBe("scripts");
+    expect(r.userScripts).toBe("scripts/lab-kit");
   });
 
   it("follows the files the kit already installed, not Templater's folders", () => {
@@ -151,9 +151,15 @@ describe("folder layout", () => {
   });
 
   it("follows an existing Insert snippet.md / labForm.js (hand-installed or from the folder updater)", () => {
-    const r = kitDetectRoles(vault(["Mine/Insert snippet.md", "Mine/js/labForm.js"], tplSettings), null, {});
+    const r = kitDetectRoles(vault(["Mine/Insert snippet.md", "Mine/js/labForm.js"], {}), null, {});
     expect(r.templates).toBe("Mine");
     expect(r.userScripts).toBe("Mine/js");
+  });
+
+  it("follows a labForm.js only inside Templater's user scripts folder, flat or in a subfolder", () => {
+    expect(kitDetectRoles(vault(["Templater/Scripts/labForm.js"], tplSettings), null, {}).userScripts).toBe("Templater/Scripts");
+    expect(kitDetectRoles(vault(["Templater/Scripts/js/labForm.js"], tplSettings), null, {}).userScripts).toBe("Templater/Scripts/js");
+    expect(kitDetectRoles(vault(["Mine/js/labForm.js"], tplSettings), null, {}).userScripts).toBe("Templater/Scripts/lab-kit");
   });
 
   it("the old folder updater's record still gives the scripts and backup folders", () => {
@@ -200,7 +206,7 @@ describe("backup copies are not kit files", () => {
     const none: any = { vault: { configDir: ".obsidian", getAbstractFileByPath: () => null, getFiles: () => [] },
       plugins: { plugins: { "templater-obsidian": { settings: { user_scripts_folder: bad, templates_folder: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates" } } } } };
     const r = kitDetectRoles(none, null, {});
-    expect(r.userScripts).toBe("scripts");
+    expect(r.userScripts).toBe("scripts/lab-kit");
     expect(r.templates).toBe("Templates");
   });
 
