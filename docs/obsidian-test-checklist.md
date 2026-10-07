@@ -117,6 +117,7 @@
 - [ ] Alt+S when another command already uses it: no Fix, the row names that command
 - [ ] Open on a missing plugin opens its page in Community plugins
 - [ ] Phone width: the list fits
+- [ ] Phase 6c: planning first install in a vault without its folders: the confirmation lists 00 Inbox, 01 Daily Notes, … each with what it is for; Apply makes them, Cancel makes none. Every file row shows its name, a line on what it is, and its path
 
 ---
 

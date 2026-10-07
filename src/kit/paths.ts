@@ -159,6 +159,33 @@ export function planningRoles(app: App, tracked: Partial<Roles>): Roles {
   };
 }
 
+/** A folder a kit makes empty at install so the layout is complete, with what it is for (shown in the confirmation). */
+export interface KitFolder { path: string; desc: string }
+
+/** The planning kit's folder-contract folders (docs/plans/planning-suite-kit.md), through its roles so a moved role is followed. Never 99 Archive (yours). */
+export function planningFolders(roles: Roles, zotlit: boolean): KitFolder[] {
+  const list: KitFolder[] = [
+    { path: "00 Inbox", desc: "Quick captures wait here until you sort them." },
+    { path: "01 Daily Notes", desc: "Daily notes (Templater fills them from the Daily note template)." },
+    { path: kitJoin(roles.planning, "To-dos"), desc: "One note per to-do; the to-do board shows them." },
+    { path: roles.projects, desc: "One folder per project, with its hub note." },
+    ...(zotlit ? [{ path: roles.literature, desc: "Literature notes from ZotLit." }] : []),
+    { path: roles.knowledge, desc: "Concept notes, one folder per topic." },
+    { path: roles.howtos, desc: "How-to notes, one folder per topic." },
+    { path: roles.meetings, desc: "Meeting series and their notes." },
+    { path: "Extras/attachments", desc: "Pasted images and files." },
+  ];
+  return list.filter(f => f.path);
+}
+
+/** The lab kit's note folders from the Lab notebook settings (empty = not set, not made). */
+export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder">): KitFolder[] {
+  return [
+    { path: kit.labFolder, desc: "Your experiment notes (New lab entry puts them here)." },
+    { path: kit.chemicalFolder, desc: "Your chemical notes (suggested in calc cells and forms)." },
+  ].filter(f => f.path);
+}
+
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 

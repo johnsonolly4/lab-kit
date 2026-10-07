@@ -156,10 +156,28 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
 
 /* ---- Preview (the confirmation dialog) ---- */
 /** What carrying out `items` (those `select` picks) would touch: files written new, files left alone because they already exist, folders created. */
-export interface InstallPreview { create: string[]; update: string[]; leftAlone: string[]; folders: string[] }
-export async function previewInstall(adapter: Pick<DataAdapter, "exists">, items: ManagedItem[], select: (it: ManagedItem) => boolean = it => SAFE_ACTIONS.includes(it.action)): Promise<InstallPreview> {
-  const out: InstallPreview = { create: [], update: [], leftAlone: [], folders: [] };
+/** What a file of each role is, when its manifest entry has no `desc`. */
+const ROLE_ABOUT: Record<string, string> = {
+  templates: "Template.", userScripts: "Script the templates and forms use (Templater loads it).", scripts: "Script.", cssSnippets: "CSS snippet (look of the notes).",
+  home: "Homepage.", planning: "Planning note.", projects: "Projects note.", literature: "Literature note.", knowledge: "Knowledge note.", howtos: "How-to note.", meetings: "Meetings note.",
+  labBase: "Board of your experiments.", chemicalBase: "Table of your chemicals.",
+};
+export interface InstallPreview {
+  create: string[]; update: string[]; leftAlone: string[]; folders: string[];
+  /** What each listed file or folder is for (path → one line). */
+  about: Record<string, string>;
+}
+/** `extraFolders`: folders the kit makes empty so its layout is complete; listed (with what they are for) when they don't exist yet. */
+export async function previewInstall(adapter: Pick<DataAdapter, "exists">, items: ManagedItem[], select: (it: ManagedItem) => boolean = it => SAFE_ACTIONS.includes(it.action),
+  extraFolders: { path: string; desc: string }[] = []): Promise<InstallPreview> {
+  const out: InstallPreview = { create: [], update: [], leftAlone: [], folders: [], about: {} };
   const folders = new Set<string>();
+  for (const it of items) out.about[it.dest] = it.file.desc ? `${it.file.desc}.`.replace(/\.\.$/, ".") : ROLE_ABOUT[it.file.role] ?? "Kit file.";
+  for (const f of extraFolders) {
+    if (folders.has(f.path) || await adapter.exists(f.path)) continue;
+    folders.add(f.path);
+    out.about[f.path] = f.desc;
+  }
   for (const it of items) {
     const writes = select(it) && it.action !== "up-to-date";
     if (writes && (it.action === "create" || it.action === "missing")) out.create.push(it.dest);
@@ -170,6 +188,7 @@ export async function previewInstall(adapter: Pick<DataAdapter, "exists">, items
     for (let dir = kitParent(it.dest); dir && !folders.has(dir); dir = kitParent(dir)) {
       if (await adapter.exists(dir)) break;
       folders.add(dir);
+      out.about[dir] ??= "Holds kit files.";
     }
   }
   out.folders = [...folders].sort();

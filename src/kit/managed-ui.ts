@@ -7,7 +7,8 @@ import {
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
-import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, planningRoles, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
+import { ensureFolder } from "./ensure-folder";
+import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
 const MENU_ID = "tpl-insert-snippet-md";
@@ -79,21 +80,29 @@ export class KitManaged {
    * out only after the user confirms; Cancel writes nothing. Asks on a kit's first install (`ask`), when a folder would be created, or when
    * a setting would change; otherwise runs straight away. Resolves once it ran or was cancelled.
    */
-  confirmThen(o: { title: string; yes: string; items: ManagedItem[]; select: (it: ManagedItem) => boolean; settings?: SettingChange[]; notes?: PreviewNote[]; ask?: boolean; run: () => Promise<void> }): Promise<void> {
+  confirmThen(o: { title: string; yes: string; items: ManagedItem[]; select: (it: ManagedItem) => boolean; settings?: SettingChange[]; notes?: PreviewNote[]; folders?: KitFolder[]; ask?: boolean; run: () => Promise<void> }): Promise<void> {
     return new Promise<void>(resolve => {
       const settings = o.settings ?? [];
+      let extra: string[] = [];
       const go = async (chosen: SettingChange[]): Promise<void> => {
         try {
+          for (const path of extra) await ensureFolder(this.app.vault, path);   // the layout's empty folders (files make their own)
           await o.run();
           for (const c of chosen) await c.apply();
         } catch (e) { this.failed(e); }
         resolve();
       };
-      void previewInstall(this.app.vault.adapter, o.items, o.select).then(preview => {
+      void previewInstall(this.app.vault.adapter, o.items, o.select, o.folders).then(preview => {
+        extra = (o.folders ?? []).map(f => f.path).filter(p => preview.folders.includes(p));
         if (!o.ask && !preview.folders.length && !settings.length) return go([]);
         new KitInstallModal(this.app, o.title, o.yes, preview, settings, o.notes ?? [], go, resolve).open();
       }, e => { this.failed(e); resolve(); });
     });
+  }
+
+  /** Folders this kit makes empty at its first install so the layout is complete (the planning kit's folder contract; the lab kit's note folders). */
+  kitFolders(): KitFolder[] {
+    return this.bundle.manifest.id === PLANNING_KIT ? planningFolders(this.roles(), loadedPlugins(this.app).has("zotlit")) : labFolders(this.host.kit);
   }
 
   /** Settings a kit's first install offers to change: its CSS snippet, and Templater's user scripts folder when Templater has none. */
@@ -255,7 +264,7 @@ export class KitManaged {
       const first = !this.slot.managed && writes > 0;
       await this.confirmThen({
         title: first ? `Create ${writes} kit files?` : writes ? `Update ${writes} kit files?` : "Change these settings?", yes: first ? `Create ${writes} files` : "Update", ask: first,
-        items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)],
+        items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [],
         run: async () => { new KitReportModal(this.app, await this.apply(items, select)).open(); },
       });
     } catch (e) { this.failed(e); }
@@ -266,7 +275,7 @@ export class KitManaged {
     const first = !this.slot.managed;
     await this.confirmThen({
       title: first ? "Install the kit?" : "Apply these changes?", yes: "Apply", ask: first,
-      items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)],
+      items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [],
       run: async () => report(await this.apply(items, select)),
     });
   }
@@ -604,19 +613,25 @@ class KitInstallModal extends Modal {
     this.titleEl.setText(this.title);
     contentEl.addClass("lab-kit-modal");
     contentEl.createEl("p", { text: `Nothing is written until you press ${this.yes}. A file that is already there is never overwritten.` });
+    // One row per file or folder, like the Check setup list: its name, what it is for, then where it goes
     const group = (heading: string, paths: string[], text?: string): void => {
       if (!paths.length) return;
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
       det.open = paths.length <= 8;
       det.createEl("summary", { text: `${heading} (${paths.length})` });
-      if (text) det.createEl("p", { text });
-      const ul = det.createEl("ul");
-      for (const p of paths) ul.createEl("li").createEl("code", { text: p });
+      if (text) det.createEl("p", { cls: "setting-item-description", text });
+      for (const p of paths) {
+        const row = det.createDiv({ cls: "lab-kit-install-row" });
+        row.createDiv({ cls: "lab-kit-install-name", text: p.slice(p.lastIndexOf("/") + 1) });
+        const about = preview.about?.[p];
+        if (about) row.createDiv({ cls: "setting-item-description", text: about });
+        row.createEl("code", { cls: "lab-kit-install-path", text: p });
+      }
     };
-    group("Files to create", preview.create);
-    group("Files to update (the old copy is backed up first)", preview.update);
-    group("Files left alone, they already exist", preview.leftAlone);
-    group("Folders to create", preview.folders);
+    group("Files to create", preview.create, "New files, written now.");
+    group("Files to update", preview.update, "Kit files you haven't changed. The old copy is backed up first.");
+    group("Files left alone", preview.leftAlone, "A file with this name is already there. It is never changed.");
+    group("Folders to create", preview.folders, "Made empty where needed, so the layout is complete.");
     for (const n of this.notes) group(n.heading, n.paths, n.text);
     if (this.settings.length) {
       new Setting(contentEl).setName(`Settings to change (${this.settings.length})`).setHeading();

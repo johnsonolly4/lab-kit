@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { applyManaged, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
-import { PLANNING_LAYOUT, kitJoin, kitLoad, kitSlot, planningRoles } from "../src/kit/paths";
+import { PLANNING_LAYOUT, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
 import { loadedPlugins } from "../src/kit/obsidian-private";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit, embeddedKits } from "../scripts/embed-kit.mjs";
@@ -134,5 +134,37 @@ describe("planning kit switch (Phase 6a)", () => {
       expect(offIds(planning, {}, {}, loadedPlugins(withZot)).has(id)).toBe(false);
       expect(offIds(planning, {}, {}, loadedPlugins(app())).has(id)).toBe(true);
     }
+  });
+});
+
+describe("layout folders at install (Phase 6c)", () => {
+  const roles = planningRoles(app(), {});
+  it("lists the contract folders; Literature only with ZotLit; never 99 Archive", () => {
+    const without = planningFolders(roles, false).map(f => f.path);
+    expect(without).toEqual(expect.arrayContaining(["00 Inbox", "01 Daily Notes", "00 Planning/To-dos", "06 Knowledge", "07 How-tos", "08 Meetings"]));
+    expect(without).not.toContain("04 Literature");
+    expect(planningFolders(roles, true).map(f => f.path)).toContain("04 Literature");
+    expect([...without, ...planningFolders(roles, true).map(f => f.path)].some(p => p.startsWith("99"))).toBe(false);
+  });
+
+  it("follows a moved role", () => {
+    expect(planningFolders({ ...roles, meetings: "Meetings" }, false).map(f => f.path)).toContain("Meetings");
+  });
+
+  it("the preview adds only missing folders, with what each is for, and says what each file is", async () => {
+    const v = memVault();
+    const items = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
+    v.files["00 Inbox"] = "";   // exists
+    const p = await previewInstall(v, items, it => it.action === "create", planningFolders(roles, false));
+    expect(p.folders).toContain("01 Daily Notes");
+    expect(p.folders).not.toContain("00 Inbox");
+    expect(p.about["01 Daily Notes"]).toMatch(/Daily notes/);
+    const withDesc = planning.manifest.files.find(f => f.desc)!;
+    expect(p.about[kitJoin(roles[withDesc.role], withDesc.dest)]).toContain(withDesc.desc!.replace(/\.$/, ""));
+    for (const c of p.create) expect(p.about[c]).toBeTruthy();
+  });
+
+  it("lab note folders only when set", () => {
+    expect(labFolders({ labFolder: "03 Lab Book/Notes", chemicalFolder: "" }).map(f => f.path)).toEqual(["03 Lab Book/Notes"]);
   });
 });
