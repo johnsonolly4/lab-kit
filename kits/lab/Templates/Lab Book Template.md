@@ -12,16 +12,15 @@ try { kitData = JSON.parse(await app.vault.adapter.read(`${app.vault.configDir ?
 const initials = String(kitData?.initials ?? "").trim();
 if (!initials) {
   new Notice("Set your initials in Lab Kit settings first: lab notes are named ABC0001 - Title.", 8000);
-  const empty = tp.config.target_file;
-  if (empty && !(await app.vault.read(empty)).trim()) await app.fileManager.trashFile(empty);
-  throw new Error("Lab Book Template: no initials set in Lab Kit settings");
+  throw new Error("Lab Book Template: no initials set in Lab Kit settings");   // Templater stops; nothing is written
 }
 
-// ---- 1. Next note number (notes named 0014 - … or ABC0014 - … both count) ----
+// ---- 1. Next note number (notes named 0014 - … or ABC0014 - … both count; other names don't) ----
 const folder = tp.file.folder(true);
+const numbered = new RegExp(`^(?:${initials.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})?(\\d+)`);
 const nums = app.vault.getMarkdownFiles()
   .filter(f => f.parent.path === folder)
-  .map(f => parseInt(f.basename.match(/^[A-Za-z]*(\d+)/)?.[1] ?? "0", 10));
+  .map(f => parseInt(f.basename.match(numbered)?.[1] ?? "0", 10));
 const next = String(Math.max(0, ...nums) + 1).padStart(4, "0");
 
 // ---- 2. Title and rename ----

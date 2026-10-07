@@ -398,6 +398,17 @@ describe("New lab entry needs initials (Phase 6e)", () => {
     const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
     expect(tpl).toContain("`${initials}${next} - ${title}`");
     expect(tpl).toMatch(/if \(!initials\) \{[\s\S]*throw new Error/);
-    expect(tpl).toContain("/^[A-Za-z]*(\\d+)/");   // old 0014 notes keep the count
+  });
+
+  it("the template's note-number pattern counts 0014 and ABC0014 notes, not other names", () => {
+    const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+    const line = tpl.split("\n").find(l => l.startsWith("const numbered = "))!;
+    const make = new Function("initials", `${line.replace("const numbered = ", "return ")}`) as (i: string) => RegExp;
+    const num = (i: string, name: string) => parseInt(name.match(make(i))?.[1] ?? "0", 10);
+    expect(num("ABC", "0014 - Old")).toBe(14);
+    expect(num("ABC", "ABC0015 - New")).toBe(15);
+    expect(num("ABC", "Analysis 2")).toBe(0);
+    expect(num("AB2", "AB20005 - x")).toBe(5);
+    expect(num("A.B", "AxB0003")).toBe(0);
   });
 });
