@@ -37,9 +37,9 @@ describe("planning commands", () => {
 
 describe("Meta Bind buttons (kit-files source, shipped in Phase 6)", () => {
   it("every lab-kit: command is registered", () => {
-    const ids = new Set(registered());
+    const ids = new Set([...registered(), "new-lab-entry"]);   // New lab entry is registered by the lab kit's UI (`src/kit/ui.ts`)
     const used = actions.filter(a => a.command?.startsWith("lab-kit:"));
-    expect(used.length).toBe(9);
+    expect(used.length).toBe(10);
     for (const a of used) expect(ids.has(a.command!.slice("lab-kit:".length)), a.button).toBe(true);
   });
 
