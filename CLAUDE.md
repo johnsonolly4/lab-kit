@@ -22,6 +22,7 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Tests: `npm test` (vitest, failures only) · Lint: `npm run lint` · Build: `npm run build`
 - Run: `npm run dev` (watch build into `test-vault/.obsidian/plugins/lab-kit/`)
 - After editing anything in `kits/`: `npm run kit:manifest`
+- New-vault starter (settings + plugin list, from the kits): `npm run starter` (writes `dist/starter/`)
 
 ## Hard rules
 - Never read or write the user's real vault. Only `test-vault/`.

@@ -1,6 +1,13 @@
 // Setup check (Phase 6): what the kits need from other plugins, Templater, CSS snippets, folders and hotkeys, as a list of ok / missing items.
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
+import { todoFolder, type PlanningFolders } from "./paths";
+
+/** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
+export const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
+  { folder: f.daily, file: "Daily note.md" },
+  { folder: todoFolder(f), file: "To-do.md" },
+];
 
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [

@@ -186,6 +186,7 @@ npm run dev          # builds into test-vault/.obsidian/plugins/lab-kit/ and wat
 npm test             # vitest
 npm run lint
 npm run build
+npm run starter     # new-vault settings + plugin list, from the kits, into dist/starter/
 ```
 Open `test-vault/` as a vault in Obsidian to try changes. Never develop in your real vault. The kit files live in `kit/` and are embedded in `main.js` at build.
 

@@ -1,6 +1,6 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
 import { Modal, Notice, Platform, type App } from "obsidian";
-import { kitJoin, todoFolder, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
+import { kitJoin, type KitData, type PlanningRole } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
@@ -11,16 +11,10 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { checkSetup, hotkeyText, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { checkSetup, hotkeyText, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): void }
-
-/** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
-const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
-  { folder: f.daily, file: "Daily note.md" },
-  { folder: todoFolder(f), file: "To-do.md" },
-];
 
 /** Reads the vault, Templater and Obsidian into the plain state checkSetup works on. */
 export function readSetupState(app: App, host: SetupHost): SetupState {

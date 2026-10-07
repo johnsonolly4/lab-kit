@@ -15,7 +15,7 @@ Moved from `CLAUDE.md` (Map) on 2026-10-07. Update this when a folder or entry f
   - `kits/lab/Extras/scripts/templater/`: Templater scripts: `labSnippets.js` (every snippet), `labMethods.js` (analysis methods + machines from the Methods folder; NMR/GPC/DLS built in), `labForm.js` (pop-up forms), `labPick.js` (Alt+S menu)
 - `docs/`: `tutorial.md`, `changelog.md`, `obsidian-test-checklist.md`, `reference/` (saved Obsidian docs: read these, don't fetch)
 - `tests/`: vitest; `tests/fixtures/` holds real experiment tables
-- `scripts/`: `kit-manifest.mjs` regenerates every `kits/<id>/kit-manifest.json` (per-kit folder → role table in `CONFIG`) · `embed-kit.mjs` embeds all kits in `main.js`
+- `scripts/`: `kit-manifest.mjs` regenerates every `kits/<id>/kit-manifest.json` (per-kit folder → role table in `CONFIG`) · `embed-kit.mjs` embeds all kits in `main.js` · `make-starter.mjs` (`npm run starter`) bundles `src/kit/starter.ts` (pure `buildStarter`: `.obsidian` settings, plugin list from `SETUP_PLUGINS`, Templater folders / folder templates / Alt+S from the kit manifests and `paths.ts`, contract folders, plugin install scripts) and writes `dist/starter/`; `tests/starter.test.ts` runs it plus both kits through `checkSetup`
 - `.github/workflows/release.yml`: builds, attests and publishes a release on a pushed tag
 - `test-vault/`: dev vault (only `Welcome.md` tracked; notes, kit copies and plugin build are gitignored)
 - `dist/`, `legacy/`: gitignored (old kit package output, no longer built; old v0.3 `main.js`, never committed)

@@ -8,7 +8,8 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run --reporter=dot",
     "lint": "eslint src",
-    "kit:manifest": "node scripts/kit-manifest.mjs"
+    "kit:manifest": "node scripts/kit-manifest.mjs",
+    "starter": "node scripts/make-starter.mjs"
   },
   "author": "johnsonolly4",
   "license": "MIT",
