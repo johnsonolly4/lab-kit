@@ -26,6 +26,7 @@ None.
 - [ ] Try Phase 5b in test-vault: checklist 6g (Restore kit original on 00 Home, To-do, Weekly meeting and Weekly meetings first) — by 2026-10-09
 - [ ] Try Phase 5a in test-vault: checklist 6f (`docs/obsidian-test-checklist.md`; run `npm run dev`, Restore kit original on 00 Home + Projects overview) — by 2026-10-09
 - [ ] Try the last Phase 6 bits in test-vault: feedback note sections 8d–8e (Restore kit original on the Lab Book Template first) (`test-vault/Lab Kit feedback.md`), then paste it — by 2026-10-09
+- [ ] Try the starter: `npm run starter`, copy `dist/starter/` to a new empty vault, run `install-plugins.sh`, then Check setup (BACKLOG "Phase 8a") — by 2026-10-12
 - [ ] Try checklist 6i in test-vault (feedback round: chips, Go to icons, buttons, Tidy count, Hotkeys note) — by 2026-10-10
 - [ ] Merge PR #37 (`fix/34`), then review `feat/multi-kit` and say "push" for its PR — by 2026-10-09
 - [ ] Check the decisions taken while you were away: `docs/decisions.md` (2026-10-07, "Claude, unattended"), BACKLOG "Leftovers" (Phase 2, Phase 3) — by 2026-10-09
