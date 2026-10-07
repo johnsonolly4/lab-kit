@@ -51,6 +51,18 @@
       ]
     },
     {
+      "label": "New lab entry",
+      "icon": "flask-conical",
+      "style": "default",
+      "id": "lab",
+      "actions": [
+        {
+          "type": "command",
+          "command": "lab-kit:new-lab-entry"
+        }
+      ]
+    },
+    {
       "label": "Search",
       "icon": "search",
       "style": "default",
