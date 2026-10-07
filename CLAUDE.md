@@ -31,7 +31,7 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Do only what was asked. Don't change user-facing text, layout or defaults beyond the task: ask first. Anything else you notice → `BACKLOG.md`, and mention it.
 - Follow the conventions already in the code. Don't reformat or reorganise files you aren't changing.
 - Lab vocabulary is the user's: keep their names (Exp. Class, CoSHH, RA, sample codes like ABC0014-A).
-- **The version only moves at release** (it is not a commit counter). Only `/release` touches the version fields (`package.json` + lock, `manifest.json`, `kits/lab/kit-manifest.json`, `versions.json`), and only the user picks a bump. `tests/versions.test.ts` fails if they differ.
+- **The version only moves at release** (it is not a commit counter). Only `/release` touches the version fields (`package.json` + lock, `manifest.json`, every `kits/<id>/kit-manifest.json`, `versions.json`), and only the user picks a bump. `tests/versions.test.ts` fails if they differ.
 - Public repo: no real names, initials or real paths in any file. The GitHub username is fine (repo URL, commit author). Paths and personal values belong in plugin settings (empty defaults); the user's vault path goes in `.claude/settings.local.json` (not committed).
 - Make claims (docs, UI text, reports) only from measured results. Say what was not verified (e.g. "not seen in Obsidian").
 - If the user's short reply could answer more than one open question, say which one you think it answers before acting.

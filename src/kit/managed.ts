@@ -71,11 +71,16 @@ export async function kitSha256(text: string): Promise<string> {
   return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Files that count as switched off: the ones you switched off, plus optional files whose `needs` setting is empty. */
-export function offIds(bundle: EmbeddedKit, off: Record<string, true>, settings: object): Set<string> {
+/**
+ * Files that count as switched off: the ones you switched off, plus optional files whose `needs` is not met:
+ * a kit setting (e.g. `chemicalFolder`) that is empty, or `plugin:<id>` for a plugin that is not installed (`plugins`).
+ */
+export function offIds(bundle: EmbeddedKit, off: Record<string, true>, settings: object, plugins: ReadonlySet<string> = new Set()): Set<string> {
   const out = new Set(Object.keys(off));
   const value = (key: string): unknown => (settings as Record<string, unknown>)[key];
-  for (const f of bundle.manifest.files) if (f.optional && f.needs && !(typeof value(f.needs) === "string" && (value(f.needs) as string).trim())) out.add(f.id);
+  const met = (needs: string): boolean => needs.startsWith("plugin:") ? plugins.has(needs.slice("plugin:".length))
+    : typeof value(needs) === "string" && (value(needs) as string).trim() !== "";
+  for (const f of bundle.manifest.files) if (f.optional && f.needs && !met(f.needs)) out.add(f.id);
   return out;
 }
 

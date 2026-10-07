@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Planning kit built in, not switched on yet** (no change in what you see): `main.js` now carries the planning suite (homepage, to-do board, planning notes, templates, theme) for a later version; nothing offers to install it yet
 - **Chemical database template and base** (issue #33): the kit now has a **Chemical database template** (Names, Chemical class, H_Phrase, CAS-No., Molecular weight, State at RTP, boiling / melting point, Density) and a **Chemical database.base** (a table and a board by Chemical class) that goes in the folder above your **Chemical folder** and lists the notes in it. A new vault gets the Chemical folder `05 Chemicals/Chemicals`; a vault that already uses Lab Kit keeps its setting, and with no Chemical folder set the two files stay off until you set one
 - **Lab book base and the Lab notes folder**: a new setting, **Lab notes folder** (new vaults: `03 Lab Book/Notes`; vaults that already use Lab Kit: empty until you set it). The kit's **Lab book base.base** (a board of your experiments by Status, closed ones hidden after 30 days) goes in the folder above it. Both .base files are installed once and are then yours: kit updates never change them
 - **New lab entry** command: a new experiment note from the Lab Book Template in your Lab notes folder (made if missing), so a button or hotkey needs no template path. Needs Templater

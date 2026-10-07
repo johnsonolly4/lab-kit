@@ -131,6 +131,34 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   };
 }
 
+/** Id of the planning kit (kits/planning/kit-manifest.json). */
+export const PLANNING_KIT = "planning";
+/** Where the planning kit goes (the folder contract): note folders at the vault root, templates in Extras/Templates, vtAsk.js in a `vault` subfolder of the user scripts folder. */
+export const PLANNING_LAYOUT = {
+  templates: "Extras/Templates", userScripts: "Extras/scripts/templater", userScriptsSub: "vault",
+  home: "", planning: "00 Planning", projects: "02 Projects", literature: "04 Literature", knowledge: "06 Knowledge", howtos: "07 How-tos", meetings: "08 Meetings",
+};
+
+/**
+ * Where each part of the planning kit lives in this vault. `tracked`: folders where the kit already put files (they win).
+ * Templates follow Templater's template folder (else Extras/Templates), the script goes into `<Templater's user scripts folder>/vault`
+ * (a set folder is never changed, issue #34; else Extras/scripts/templater/vault). Note folders are the folder contract's until Phase 5 adds settings.
+ */
+export function planningRoles(app: App, tracked: Partial<Roles>): Roles {
+  const sane = (p?: string): string => (p && !kitInBackup(p) ? kitJoin(p.trim().replace(/\\/g, "/")) : "");
+  const raw = templaterSettings(app);
+  const { userScriptsSub, templates, userScripts, ...notes } = PLANNING_LAYOUT;
+  const defined = Object.fromEntries(Object.entries(tracked).filter(([, v]) => v !== undefined)) as Roles;
+  return {
+    ...notes,
+    cssSnippets: kitJoin(app.vault.configDir, "snippets"),
+    templates: sane(raw.templates_folder) || templates,
+    userScripts: kitJoin(sane(raw.user_scripts_folder) || userScripts, userScriptsSub),
+    backups: kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),
+    ...defined,
+  };
+}
+
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 

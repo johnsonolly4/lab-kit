@@ -90,6 +90,8 @@ Every role is a setting; these are the defaults on a vault with nothing detected
 - Files: `kits/planning/…`, `kits/planning/kit-manifest.json`, tests
 - Done when: planning kit installs into an empty test-vault and into a vault that already has the old suite files without overwriting any of them
 
+- **Done 2026-10-07 (unattended), deviations**: see `docs/plans/phase-3-planning-files.md`. Held back: New concept template and knowledge rules (no source; user to supply), To-do roll-over (Phase 4), Open Thursday deck (Phase 5), `vault-fonts.css` (licence, now gitignored). Folder names are not rewritten yet (Phase 5 adds the settings). The kit is embedded but not offered in the UI.
+
 ### Phase 4 — Planning engine in the plugin
 - Depends on: Phase 3
 - Move the To-do roll-over startup template into plugin code (no startup template to forget per computer). Keep the 2026-10-07 behaviour: sync-safe change handling (only write a missing or wrong stamp; never answer changes that arrive through Obsidian Sync), roll-over only on devices set to do it (per-device, local storage; computers yes, phones no by default), 90 s start delay, column tagging (`data-vt-group`) on every redraw, tick-circle click, `vt-rolled` cards, today's column.

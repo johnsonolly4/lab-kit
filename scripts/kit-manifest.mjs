@@ -43,6 +43,58 @@ const CONFIG = {
     needs: { "Templates/Chemical database template.md": "chemicalFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
   },
 };
+// Planning kit: the planning suite (homepage, to-do board, planning notes, templates, Actions, vtAsk.js, theme). Source:
+// docs/plans/kit-files/planning (see docs/plans/phase-3-planning-files.md for what is shipped and what waits for later phases).
+// A prefix without a trailing "/" is one file at the vault root (its role's folder is the root).
+const PLANNING_ROLE_BY_PREFIX = [
+  [".obsidian/snippets/", "cssSnippets"],
+  ["Extras/scripts/templater/vault/", "userScripts"],
+  ["Extras/Templates/", "templates"],
+  ["00 Home.md", "home"],
+  ["00 Planning/", "planning"],
+  ["02 Projects/", "projects"],
+  ["04 Literature/", "literature"],
+  ["06 Knowledge/", "knowledge"],
+  ["07 How-tos/", "howtos"],
+  ["08 Meetings/", "meetings"],
+];
+const PLANNING_DESC = {
+  ".obsidian/snippets/vault-colours.css": "Colours of the planning notes, badges and board columns",
+  ".obsidian/snippets/vault-theme.css": "Planning theme: homepage layout, callouts, to-do board cards",
+  "Extras/scripts/templater/vault/vtAsk.js": "The text box every planning template asks with",
+  "Extras/Templates/To-do.md": "New to-do note (folder template for 00 Planning/To-dos)",
+  "Extras/Templates/Daily note.md": "Daily note (folder template for 01 Daily Notes)",
+  "Extras/Templates/Project hub.md": "New project: its folder and hub note",
+  "Extras/Templates/New project note.md": "New note inside a project",
+  "Extras/Templates/Weekly meeting.md": "New meeting note",
+  "Extras/Templates/Actions/Sort inbox.md": "Button action: files each inbox note where it belongs",
+  "Extras/Templates/Actions/Add to shopping list.md": "Button action: adds items to the shopping list",
+  "Extras/Templates/Actions/Archive old to-dos.md": "Button action: moves done to-dos to the archive",
+  "Extras/Templates/ZotLit/zotlit-note.liquid.md": "ZotLit literature note template",
+  "Extras/Templates/ZotLit/zotlit-lititem.liquid.md": "ZotLit template: one literature item",
+  "Extras/Templates/ZotLit/zotlit-content.liquid.md": "ZotLit template: annotations",
+  "00 Home.md": "Homepage: today, focus, this week, experiments, projects, recently read",
+  "00 Planning/To-do board.base": "To-do board: one column per day",
+  "00 Planning/Weekly review.md": "Weekly review note",
+  "00 Planning/Shopping list.md": "Lab shopping list",
+  "02 Projects/Projects overview.md": "All projects with their status",
+  "04 Literature/Literature.md": "Literature hub (ZotLit imports)",
+  "06 Knowledge/Knowledge index.md": "Knowledge notes by topic",
+  "07 How-tos/How-tos index.md": "How-to notes by topic",
+  "07 How-tos/Obsidian/How my vault works.md": "Guide to the vault layout and daily routine",
+  "07 How-tos/Obsidian/Setting up a computer.md": "Steps to set up Obsidian on a new computer",
+  "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
+  "08 Meetings/Weekly meetings/Weekly meetings.md": "Meeting series hub",
+};
+const ZOTLIT = ["04 Literature/Literature.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
+CONFIG.planning = {
+  roleByPrefix: PLANNING_ROLE_BY_PREFIX, desc: PLANNING_DESC,
+  // Only the ZotLit files can be off (and are, without the ZotLit plugin)
+  optionalPrefix: null, optionalFiles: new Set(ZOTLIT),
+  // Notes become the user's own: installed once, never updated. Templates, Actions, scripts and CSS are updated.
+  keepFiles: new Set(Object.keys(PLANNING_DESC).filter((rel) => !rel.startsWith("Extras/") && !rel.startsWith(".obsidian/"))),
+  needs: Object.fromEntries(ZOTLIT.map((rel) => [rel, "plugin:zotlit"])),
+};
 const SKIP = new Set(["kit-manifest.json"]);
 
 function walk(dir) {
@@ -59,7 +111,7 @@ function regenerate(KIT) {
   const cfg = CONFIG[manifest.id];
   if (!cfg) throw new Error(`${manifestPath}: no CONFIG entry for kit id "${manifest.id}" in scripts/kit-manifest.mjs`);
   const ROLE_BY_PREFIX = cfg.roleByPrefix, DESC = cfg.desc, OPTIONAL_PREFIX = cfg.optionalPrefix, OPTIONAL_FILES = cfg.optionalFiles;
-  const descOf = (rel, text) => rel.startsWith(OPTIONAL_PREFIX)
+  const descOf = (rel, text) => OPTIONAL_PREFIX && rel.startsWith(OPTIONAL_PREFIX)
     ? (text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim() ?? (() => { throw new Error(`${rel}: no "// desc:" line`); })())
     : (DESC[rel] ?? (() => { throw new Error(`${rel}: add a line to DESC in scripts/kit-manifest.mjs`); })());
 
@@ -89,8 +141,8 @@ function regenerate(KIT) {
       const hit = roleOf(rel);
       if (!hit) throw new Error(`${KIT}/${rel}: not under a known kit folder (see ROLE_BY_PREFIX)`);
       const role = hit[1];
-      const path = rel.slice(hit[0].length);
-      const kind = KIND_BY_ROLE[role];
+      const path = hit[0].endsWith("/") ? rel.slice(hit[0].length) : rel;
+      const kind = KIND_BY_ROLE[role] ?? "note";   // note folders (planning kit roles) are notes
       const oldSrc = oldSrcOf.get(rel);
       const prev = previous.get(rel) ?? (oldSrc ? previous.get(oldSrc) : undefined);
       if (oldSrc && !prev) throw new Error(`renames: "${oldSrc}" is not in the previous manifest`);
@@ -106,7 +158,7 @@ function regenerate(KIT) {
       const entry = { id: idFor({ kind, path, src: rel }, prev), kind, src: rel, role, path,
         version: prev?.sha256 === hash && prev.version ? prev.version : manifest.version, sha256: hash,
         renamedFrom, desc: descOf(rel, text) };
-      if (rel.startsWith(OPTIONAL_PREFIX) || OPTIONAL_FILES.has(rel)) entry.optional = true;
+      if ((OPTIONAL_PREFIX && rel.startsWith(OPTIONAL_PREFIX)) || OPTIONAL_FILES.has(rel)) entry.optional = true;
     const policy = cfg.keepFiles?.has(rel) ? "keep" : prev?.policy;   // a policy set by hand in the manifest is kept too
     if (policy) entry.policy = policy;
     if (cfg.needs?.[rel]) entry.needs = cfg.needs[rel];

@@ -16,3 +16,5 @@ CLAUDE.local.md
 .env
 *.key
 Thumbs.db
+# Font file for the planning kit: kept out of git until its licence is checked (docs/plans/planning-suite-kit.md, Phase 3)
+docs/plans/kit-files/planning/.obsidian/snippets/vault-fonts.css

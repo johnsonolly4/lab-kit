@@ -29,3 +29,7 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-07 — Vaults that used Lab Kit before: Lab notes folder starts empty; files that need an empty folder setting count as off (no saved flag), Manage files says to set the folder first — (user, Phase 2)
 - 2026-10-07 — Chemical database.base filters the notes folder (`05 Chemicals/Chemicals`), not its parent, so the rewrite has one literal per setting — (Claude, Phase 2)
 - 2026-10-07 — Phone-width settings: flex wrap only, no `:has` (store check) — (Claude, Phase 2)
+- 2026-10-07 — Phase 3 holds back To-do roll-over (Phase 4 moves it into the plugin), Open Thursday deck (Phase 5), settings/*.json (Phases 4–6), vault-fonts.css (licence) and the New concept template (no source, rules not written down: user) — (Claude, unattended; reviewer-checked plan `docs/plans/phase-3-planning-files.md`)
+- 2026-10-07 — Planning notes ship as supplied (buttons, deck, roll-over references dead until Phases 4–6); the planning kit is not offered in the UI until then — (Claude, unattended)
+- 2026-10-07 — No `rewrite` in the planning kit until Phase 5 adds folder settings (every literal equals its default); planning templates follow Templater's template folder, vtAsk.js goes in `<user scripts>/vault` — (Claude, unattended)
+- 2026-10-07 — ZotLit files: optional, `needs: "plugin:zotlit"` (plugin id `zotlit` not checked against the store) — (Claude, unattended)
