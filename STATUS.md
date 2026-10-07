@@ -9,7 +9,7 @@ Phases 0–4, 5a, 5b and 6 (5a: planning folder settings + homepage blocks, chec
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Phase 7 (note correction), then 8 (same plan). Phase 7 needs a **copy** of the owner's vault, never the real one
+1. Phase 7a, 7b, 7c (Tidy up notes): `docs/plans/phase-7-tidy-notes.md`, one per session; then Phase 8 (`planning-suite-kit.md`). The vault-copy run is the owner's (own copy outside the repo, pastes a summary)
 2. To-do box Esc text: DECIDED Esc = Untitled to-do; change only that box's footer to say so (`kits/planning/Extras/Templates/To-do.md:7`, `vtAsk.js:38`, `src/planning/ask.ts:12`)
 3. New concept template + knowledge hub pages: Claude drafts from the plan's fields (kind: concept, summary, sources, checked), user reviews in test-vault before they ship. Plan first
 4. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)

@@ -118,6 +118,7 @@ Every role is a setting; these are the defaults on a vault with nothing detected
 - Done when: on a fresh test-vault, every red item can be fixed from the list; existing Templater values unchanged
 
 ### Phase 7 — Note correction (check / fix)
+- **Replaced 2026-10-07** by `docs/plans/phase-7-tidy-notes.md` (one command "Tidy up notes", split before/after window, two-step confirm, 7a–7c). The rule table below still applies.
 - Depends on: Phases 3–6
 - Commands `check-notes` (writes a report note, changes nothing) and `fix-notes` (confirmation dialog → backup each file → apply). Callable from the Obsidian CLI: `obsidian command id=lab-kit:check-notes`, then `obsidian command id=lab-kit:fix-notes`.
 - Rules are data in the kit manifest (`migrations`), generic; anything personal is asked in the dialog, never stored in the repo. See "Note correction rules" below.
