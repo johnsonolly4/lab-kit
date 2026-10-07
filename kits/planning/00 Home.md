@@ -17,10 +17,10 @@ focus3_done: false
 
 > [!goto] Go to
 > ```vault-goto
-> extra: Meetings | Weekly meetings
-> extra: Thursday deck | lab-kit:open-deck
-> extra: Weekly review
-> extra: Shopping list
+> extra: Meetings | Weekly meetings | users
+> extra: Thursday deck | lab-kit:open-deck | presentation
+> extra: Weekly review | Weekly review | list-checks
+> extra: Shopping list | Shopping list | shopping-cart
 > ```
 
 > [!focus] Today's focus

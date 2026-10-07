@@ -167,6 +167,9 @@
 .lab-kit-setup-row.is-warn .lab-kit-setup-mark { color: var(--text-warning); }
 /* Planning homepage blocks (```vault-goto): one button per folder hub, wrapping */
 .lab-kit-goto { display: flex; flex-wrap: wrap; gap: 6px; }
+.lab-kit-goto-button { display: inline-flex; align-items: center; gap: 6px; }
+.lab-kit-goto-icon { display: inline-flex; }
+.lab-kit-goto-icon svg { width: var(--icon-s); height: var(--icon-s); }
 .lab-kit-vault-card ul, .lab-kit-vault-projects ul { margin-block: 0.25em; }
 
 /* Tidy up notes window (src/kit/tidy-ui.ts): before (left) / after (right); red removed, green added, amber changed */

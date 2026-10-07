@@ -1,6 +1,6 @@
 // Homepage blocks (Phase 5a): ```vault-card, ```vault-goto and ```vault-projects, drawn by the plugin from Obsidian's metadata cache
 // (no Dataview). Rules: src/planning/lists.ts. Plan: docs/plans/phase-5-homepage-meetings.md.
-import { Keymap, MarkdownRenderChild, Notice, TFile, TFolder, debounce, type App, type Plugin } from "obsidian";
+import { Keymap, MarkdownRenderChild, Notice, TFile, TFolder, debounce, setIcon, type App, type Plugin } from "obsidian";
 import { folderMissingText } from "../kit/folder-guard";
 import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
@@ -145,7 +145,9 @@ class BlockView extends MarkdownRenderChild {
     const links: GotoLink[] = [...gotoTargets(top.map(t => t.path), files, o.hide), ...o.extra.map(e => this.extra(e)).filter((l): l is GotoLink => !!l)];
     const row = box.createDiv({ cls: "lab-kit-goto" });
     for (const l of links) {
-      const b = row.createEl("button", { text: l.text });
+      const b = row.createEl("button", { cls: "lab-kit-goto-button" });
+      if (l.icon) setIcon(b.createSpan({ cls: "lab-kit-goto-icon" }), l.icon);
+      b.createSpan({ text: l.text });
       b.addEventListener("click", e => {
         if (l.command) { if (!runCommand(this.app, l.command)) new Notice(`Command not found: ${l.command}`); return; }
         if (l.path) void this.app.workspace.openLinkText(l.path, this.sourcePath, Keymap.isModEvent(e));
@@ -153,13 +155,13 @@ class BlockView extends MarkdownRenderChild {
     }
   }
 
-  /** An `extra:` line: `Label | target` or `target`. A target like `plugin-id:command` is a command, else a note or base (by link name or path). */
+  /** An `extra:` line: `Label | target`, `Label | target | icon` or `target`. A target like `plugin-id:command` is a command, else a note or base (by link name or path). */
   private extra(line: string): GotoLink | null {
-    const [a, b] = line.split("|").map(s => s.trim());
+    const [a, b, icon] = line.split("|").map(s => s.trim());
     const target = b ?? a, label = b ? a : unnumbered(target.replace(/\.(md|base)$/, "").split("/").pop() ?? target);
-    if (/^[\w-]+:[\w-]+$/.test(target)) return { text: label, command: target };
+    if (/^[\w-]+:[\w-]+$/.test(target)) return { text: label, command: target, icon: icon || "terminal" };
     const file = this.app.metadataCache.getFirstLinkpathDest(target, this.sourcePath);
-    return file ? { text: label, path: file.path } : null;
+    return file ? { text: label, path: file.path, icon: icon || "file-text" } : null;
   }
 
   private async projects(box: HTMLElement): Promise<void> {

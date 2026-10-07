@@ -119,7 +119,14 @@ export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[
 }
 
 /** One Go to link: a folder's hub note or base, or an extra note / base / command. */
-export interface GotoLink { text: string; path?: string; command?: string }
+export interface GotoLink { text: string; path?: string; command?: string; icon?: string }
+
+/** Lucide icon per folder, by its name without the number (the old Go to buttons' icons); any other folder gets `folder`. */
+const FOLDER_ICONS: [RegExp, string][] = [
+  [/^plan/i, "kanban"], [/^(lab|experiment)/i, "notebook-pen"], [/^literature/i, "library"], [/^chemical/i, "atom"], [/^knowledge/i, "lightbulb"],
+  [/^how-?to/i, "wrench"], [/^meeting/i, "users"], [/^project/i, "folder-kanban"], [/^inbox/i, "inbox"], [/^daily/i, "calendar"], [/^archive/i, "archive"],
+];
+export const folderIcon = (folder: string): string => FOLDER_ICONS.find(([re]) => re.test(unnumbered(folder)))?.[1] ?? "folder";
 
 /** The folder name without its number: "02 Projects" → "Projects". */
 export const unnumbered = (folder: string): string => folder.replace(/^\d+\s*[-_.]?\s*/, "");
@@ -136,7 +143,7 @@ export function gotoTargets(topFolders: string[], files: NoteRec[], hide: string
     const hub = direct.find(f => f.path.endsWith(".md") && f.fm.kind === "hub")
       ?? direct.find(f => f.path.endsWith(".md") && f.name === unnumbered(folder))
       ?? direct.find(f => f.path.endsWith(".base"));
-    if (hub) out.push({ text: unnumbered(folder), path: hub.path });
+    if (hub) out.push({ text: unnumbered(folder), path: hub.path, icon: folderIcon(folder) });
   }
   return out;
 }

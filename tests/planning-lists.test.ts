@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, experiments, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, type NoteRec } from "../src/planning/lists";
+import { blockOptions, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -126,11 +126,14 @@ describe("Go to and block options", () => {
   it("hub by kind, then by name without number, then a base; number order; folders without one left out; hide", () => {
     const top = ["06 Knowledge", "05 Chemicals", "04 Literature", "02 Projects", "00 Planning", "99 Archive"];
     expect(gotoTargets(top, files)).toEqual([
-      { text: "Planning", path: "00 Planning/Weekly review.md" },
-      { text: "Projects", path: "02 Projects/Projects overview.md" },
-      { text: "Literature", path: "04 Literature/Literature.md" },
-      { text: "Chemicals", path: "05 Chemicals/Chemical database.base" },
+      { text: "Planning", path: "00 Planning/Weekly review.md", icon: "kanban" },
+      { text: "Projects", path: "02 Projects/Projects overview.md", icon: "folder-kanban" },
+      { text: "Literature", path: "04 Literature/Literature.md", icon: "library" },
+      { text: "Chemicals", path: "05 Chemicals/Chemical database.base", icon: "atom" },
     ]);
+    expect(folderIcon("03 Lab Book")).toBe("notebook-pen");
+    expect(folderIcon("06 Knowledge")).toBe("lightbulb");
+    expect(folderIcon("12 Something else")).toBe("folder");
     expect(gotoTargets(top, files, ["Literature", "00 Planning"]).map(l => l.text)).toEqual(["Projects", "Chemicals"]);
     expect(unnumbered("10 - Work")).toBe("Work");
   });
