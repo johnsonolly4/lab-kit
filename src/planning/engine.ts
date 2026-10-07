@@ -111,8 +111,16 @@ export class TodoEngine {
     if (this.rollsHere() && !this.standDown()) void this.rollOver().catch(e => console.error("Lab Kit to-do engine", e));
   }
 
+  /** "Roll over to-dos now": on any device (the per-device switch is for the automatic run), unless the old startup template runs. */
+  async rollOverNow(): Promise<void> {
+    this.markToday();
+    if (this.standDown()) return;
+    const { rolled, cleared } = await this.rollOver();
+    if (!rolled && !cleared) new Notice("Nothing to roll over");
+  }
+
   /** Rolls unfinished cards over to today and clears last week's finished cards. */
-  async rollOver(now = new Date()): Promise<void> {
+  async rollOver(now = new Date()): Promise<{ rolled: number; cleared: number }> {
     let rolled = 0, cleared = 0;
     for (const f of this.todos()) {
       const out = rollOverPatch(this.fm(f), new Date(f.stat.mtime), now);
@@ -125,6 +133,7 @@ export class TodoEngine {
     const col = todayColumn(now);
     if (rolled) new Notice(`Moved ${rolled} unfinished to-do${rolled === 1 ? "" : "s"} to ${col}`);
     if (cleared) new Notice(`Cleared ${cleared} finished to-do${cleared === 1 ? "" : "s"} from last week`);
+    return { rolled, cleared };
   }
 
   /** Today's column for vault-theme.css (blue). Every device does this; it writes nothing. */

@@ -136,3 +136,6 @@
 .lab-hazard-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.85em; margin-top: 6px; align-items: flex-start; }
 .lab-hazard-legend-item.has-details { display: inline-flex; flex-direction: column; }
 .lab-hazard-legend-desc { font-size: 0.85em; }
+
+/* Planning kit text box (src/planning/ask.ts): a picker with no list underneath */
+.lab-kit-ask .prompt-results { display: none; }

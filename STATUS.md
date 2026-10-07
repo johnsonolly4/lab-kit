@@ -1,16 +1,15 @@
 # Status
 
-_Updated: 2026-10-07 by Opus 5.5 (Phases 2, 3, 4a, unattended at the user's request: "don't stop for an hour"; plans checked by the reviewer agent, not the user). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-07 by Opus 5.5 (Phase 4b planned with the user, 4b-1 built and reviewer-checked; earlier: Phases 2, 3, 4a unattended). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phases 0, 1a, 1b, 2, 3, 4a done, committed, not pushed. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4a, stacked on it; no PR yet). Tests 273 pass; nothing seen in Obsidian (BACKLOG "Not yet tested").
+Phases 0, 1a, 1b, 2, 3, 4a, 4b-1 done, committed, not pushed. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b-1, stacked on it; no PR yet). Tests 281 pass; nothing seen in Obsidian (BACKLOG "Not yet tested").
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Phase 4b-1: planning commands except sort inbox (plan `docs/plans/phase-4b-planning-commands.md`) — done when: per that plan
-1b. Phase 4b-2: sort inbox, buttons call `lab-kit:<id>`, Action templates out of the kit — done when: per that plan
+1. Phase 4b-2 (plan `docs/plans/phase-4b-planning-commands.md`): sort inbox, buttons call `lab-kit:<id>`, Action templates out of the kit — done when: per that plan
 2. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
 3. Phases 5–8: per plan
 4. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)

@@ -5,12 +5,15 @@ import { HeaderRenderer } from "./header/render";
 import { HeaderStore } from "./header/settings";
 import { KitController } from "./kit/ui";
 import { PLANNING_KIT, PLANNING_LAYOUT, kitJoin } from "./kit/paths";
+import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
   header!: HeaderRenderer;
   kit!: KitController;
+  /** Planning commands; null without the planning kit. Project cards call `newTodo(project)` / `newProjectNote(folder)`. */
+  planning: PlanningCommands | null = null;
 
   async onload(): Promise<void> {
     const store = new HeaderStore(this);
@@ -24,9 +27,14 @@ export default class LabKitPlugin extends Plugin {
     this.calc.register();
     this.header.register();
 
-    // To-do engine: only in a vault where the planning kit is switched on and installed (read once, at load)
+    // To-do engine and planning commands: only in a vault where the planning kit is switched on and installed (read once, at load)
     const planning = this.kit.kit.kits[PLANNING_KIT];
-    if (planning?.enabled && planning.managed) new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos")).start();
+    if (planning?.enabled && planning.managed) {
+      const engine = new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos"));
+      engine.start();
+      this.planning = new PlanningCommands(this, planning.managed, engine);
+      this.planning.register();
+    }
 
     this.addCommand({
       id: "insert-calc-block",
