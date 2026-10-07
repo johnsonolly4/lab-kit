@@ -145,12 +145,16 @@
 
 ---
 
-## 6h. Phase 7a: Tidy up notes (needs `npm run dev`; use a copy of your notes in test-vault, never your real vault)
-- [ ] Command **Tidy up notes** opens a wide window with the backup banner; **Change notes…** is greyed out
+## 6h. Phase 7a/7b: Tidy up notes (needs `npm run dev`; use a copy of your notes in test-vault, never your real vault)
+- [ ] Command **Tidy up notes** opens a wide window with the backup banner; **Change notes…** is greyed out until the backup box is ticked
 - [ ] Put in test-vault: a lab note with `Status:` as a list, a note in the Knowledge folder with `Type: Wiki`, an `index` note without `kind`: each shows left (before) and right (after) with red / green / amber lines, readable in light and dark themes
 - [ ] Untick a rule, press **Copy report**, paste somewhere: the rule says "(not ticked)", only paths and counts, no note text
 - [ ] Only reported lists an untitled note, a canvas in the inbox, a note outside the folders; nothing in the vault changed (check the files' modified times)
 - [ ] Phone width (`app.emulateMobile(true)`): the two columns stay readable, the buttons wrap
+- [ ] Change notes… → the second window says "Change N items (M rules)?"; Cancel changes nothing; Confirm: the notes change as the right side showed, the window scans again and lists nothing for those rules, a banner names the backups folder, and the backup copies equal the old notes
+- [ ] A lab note with no properties gets the template's block; a note with `vt` / `Calculations` keeps them
+- [ ] A `fonts` folder (and `Extras/Templates/Scripts`) moves: links in notes still resolve (Obsidian's unresolved-links count is unchanged), kit files still show as tracked in Manage kit files
+- [ ] Edit a listed note after the scan, then confirm: that note is skipped and named in the banner
 
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)

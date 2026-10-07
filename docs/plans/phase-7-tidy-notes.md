@@ -29,7 +29,7 @@ From `docs/plans/planning-suite-kit.md` "Note correction rules", plus lab `Statu
 - Done when: tests give the expected rows for every 7a rule on the fixture vault, and the scan writes nothing (all hashes unchanged); window seen in test-vault (desktop + phone width, light + dark)
 - New dependencies: none
 
-### Phase 7b — Change notes (files and properties)
+### Phase 7b — Change notes (files and properties) — built 2026-10-07 (properties via `vault.process` of the shown block, not `processFrontMatter`; script-move and help-sheet rules wait for the old paths)
 - Depends on: 7a
 - Backup tick → step 1, second confirm window → step 2; per-file backup, then `processFrontMatter` for properties, `fileManager.renameFile` for moves (links update); only ticked rules
 - Adds rule (user, 2026-10-07): **add the lab template's missing properties to lab notes**: a partial block gets only the missing keys (empty), a note with no block gets the whole template block; existing values and extra properties are never touched; shown in the same before / after window; data in the lab manifest `migrations` (an `add-property` per template key; `applyMigration` in `src/kit/tidy.ts` must also handle a note with no block). Test: fixture notes with no block, a partial block and a full block

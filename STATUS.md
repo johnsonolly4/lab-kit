@@ -1,15 +1,15 @@
 # Status
 
-_Updated: 2026-10-07 by Sonnet 5.5 (Phase 7a built: Tidy up notes scan + split window, read-only). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-07 by Sonnet 5.5 (Phase 7b built: Change notes, template properties, folder moves). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phases 0–4, 5a, 5b, 6 and 7a (7a: `src/kit/tidy.ts` + `tidy-ui.ts`, command Tidy up notes, Change notes… disabled, checklist 6h, not seen in Obsidian; 5a: planning folder settings + homepage blocks, checklist 6f; 5b: meeting series, `src/planning/meetings.ts`, checklist 6g, neither seen in Obsidian; whole-vault Check setup rows beyond meetings are in BACKLOG "Left out of Phase 5b"; 6a–6e: planning kit switch, Check setup with Fixes, layout folders, Templater-trigger fix, initials naming) built and committed, not pushed. User retest 2026-10-07: New to-do and New lab entry work; Meta Bind buttons work after a restart. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 370 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
+Phases 0–4, 5a, 5b, 6, 7a and 7b (7a/7b: `src/kit/tidy.ts`, `tidy-apply.ts`, `tidy-ui.ts`, command Tidy up notes with Change notes…, checklist 6h, not seen in Obsidian; 7b still lacks the script-move and help-sheet rules, BACKLOG; 5a: planning folder settings + homepage blocks, checklist 6f; 5b: meeting series, `src/planning/meetings.ts`, checklist 6g, neither seen in Obsidian; whole-vault Check setup rows beyond meetings are in BACKLOG "Left out of Phase 5b"; 6a–6e: planning kit switch, Check setup with Fixes, layout folders, Templater-trigger fix, initials naming) built and committed, not pushed. User retest 2026-10-07: New to-do and New lab entry work; Meta Bind buttons work after a restart. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 379 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Phase 7b, 7c (Tidy up notes): `docs/plans/phase-7-tidy-notes.md`, one per session (7b first); then Phase 8 (`planning-suite-kit.md`). The vault-copy run is the owner's (own copy outside the repo, pastes a summary)
+1. Phase 7c (Tidy up notes: meetings, hubs, buttons, settings paths; plus the 7b script-move / help-sheet rules once the owner gives the old paths): `docs/plans/phase-7-tidy-notes.md`; then Phase 8 (`planning-suite-kit.md`). The vault-copy run is the owner's (own copy outside the repo, pastes a summary)
 2. To-do box Esc text: DECIDED Esc = Untitled to-do; change only that box's footer to say so (`kits/planning/Extras/Templates/To-do.md:7`, `vtAsk.js:38`, `src/planning/ask.ts:12`)
 3. New concept template + knowledge hub pages: Claude drafts from the plan's fields (kind: concept, summary, sources, checked), user reviews in test-vault before they ship. Plan first
 4. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)
@@ -21,7 +21,8 @@ Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
 None.
 
 ## Waiting on owner (needs a human)
-- [ ] Try Phase 7a in test-vault: checklist 6h (copy of notes only), look at the split window in light, dark and phone width — by 2026-10-09
+- [ ] Tell Claude where `excel_to_calc.py`, `lab-config.json` and the Templater help sheet are in your vault now (paths only, no notes) so 7c can move them — by 2026-10-09
+- [ ] Try Phase 7a/7b in test-vault: checklist 6h (copy of notes only, incl. Change notes… and the backups), split window in light, dark and phone width — by 2026-10-09
 - [ ] Try Phase 5b in test-vault: checklist 6g (Restore kit original on 00 Home, To-do, Weekly meeting and Weekly meetings first) — by 2026-10-09
 - [ ] Try Phase 5a in test-vault: checklist 6f (`docs/obsidian-test-checklist.md`; run `npm run dev`, Restore kit original on 00 Home + Projects overview) — by 2026-10-09
 - [ ] Try the last Phase 6 bits in test-vault: feedback note sections 8d–8e (Restore kit original on the Lab Book Template first) (`test-vault/Lab Kit feedback.md`), then paste it — by 2026-10-09
