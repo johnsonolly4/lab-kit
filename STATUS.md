@@ -9,7 +9,8 @@ Phases 0, 1a, 1b, 2, 3, 4a done, committed, not pushed. `fix/34-user-scripts-fol
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Phase 4b: planning commands (`new-todo`, `quick-capture`, `add-to-shopping`, `sort-inbox`, `archive-todos`, `new-meeting`, `open-deck`, `new-project`, `new-project-note`, roll over now) — done when: per plan Phase 4 (command IDs fixed, every command a kit note / button calls exists)
+1. Phase 4b-1: planning commands except sort inbox (plan `docs/plans/phase-4b-planning-commands.md`) — done when: per that plan
+1b. Phase 4b-2: sort inbox, buttons call `lab-kit:<id>`, Action templates out of the kit — done when: per that plan
 2. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
 3. Phases 5–8: per plan
 4. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)

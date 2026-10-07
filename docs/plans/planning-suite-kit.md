@@ -97,6 +97,7 @@ Every role is a setting; these are the defaults on a vault with nothing detected
 - Move the To-do roll-over startup template into plugin code (no startup template to forget per computer). Keep the 2026-10-07 behaviour: sync-safe change handling (only write a missing or wrong stamp; never answer changes that arrive through Obsidian Sync), roll-over only on devices set to do it (per-device, local storage; computers yes, phones no by default), 90 s start delay, column tagging (`data-vt-group`) on every redraw, tick-circle click, `vt-rolled` cards, today's column.
 - Commands with fixed IDs (never renamed): `new-todo`, `quick-capture`, `add-to-shopping`, `sort-inbox`, `archive-todos`, `new-meeting`, `open-deck`, `new-project`, `new-project-note`, plus a per-project variant for project cards.
 - Test: every command a kit note or button calls exists; every file a button, hotkey or folder template points at is shipped by a kit.
+- Commands (4b): see `docs/plans/phase-4b-planning-commands.md` (split 4b-1 / 4b-2)
 - Files: `src/planning/*.ts` (new), `src/main.ts`, tests (port the 2026-10-07 sync scenarios: synced roll-over / drag / tick left alone; local drag, tick, untick, drag of carried-over card written)
 - Done when: scenario tests pass; roll-over seen in test-vault
 
