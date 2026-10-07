@@ -9,6 +9,7 @@ const state = (o: Partial<SetupState> = {}): SetupState => ({
   dataviewJs: true,
   metaBind: { missing: 0, total: 26 },
   zotlitGuide: null,
+  propertiesView: "hidden",
   plugins: new Set(["templater-obsidian", "dataview"]),
   planning: false,
   templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", menuHotkey: true, folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
@@ -129,5 +130,11 @@ describe("check setup (Phase 6)", () => {
     expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "methods-folder", path: "Extras/methods" } });
     expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true });
     expect(r["zotlit:settings"].detail).toContain("07 How-tos/Obsidian/Set up ZotLit.md");
+  });
+
+  it("properties view: hidden is ok, visible gets a Fix, unknown is a warning", () => {
+    expect(byId(state())["obsidian:properties"].ok).toBe(true);
+    expect(byId(state({ propertiesView: "visible" }))["obsidian:properties"]).toMatchObject({ ok: false, fix: { kind: "hide-properties" } });
+    expect(byId(state({ propertiesView: undefined }))["obsidian:properties"]).toMatchObject({ ok: false, warn: true });
   });
 });

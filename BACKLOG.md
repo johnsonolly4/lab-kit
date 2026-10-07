@@ -36,7 +36,7 @@ When an item is chosen, move it to `STATUS.md` → Next.
 - [ ] At phone width the **Set up** button in Settings → Kit folders and setup → Templater overlaps the end of the first description line ("kit's" is cut off; user screenshot). `styles.css:103-104` (`.lab-kit-settings`, `.is-phone`), row built in `src/kit/ui.ts:96`
 
 ## Multi-kit round quick changes (feedback, 2026-10-07)
-- [ ] Lab and planning notes: hide the properties view at the top of a note by default (user, 2026-10-07: "need to hide properties view from the top of the note by default"). Obsidian setting "Properties in document" (Editor → Hidden) or a `cssclasses` rule in vault-theme.css: decide which (changing the user's Obsidian setting needs a confirmed Fix)
+- [x] Hide the properties view by default: Check setup row + Fix (Settings → Editor → Properties in document = Hidden; `propertiesInDocument` via private `app.vault.getConfig` / `setConfig`, key not verified in Obsidian; `src/kit/obsidian-private.ts`)
 - [ ] Progress colours on the Lab book Status board (Planned → Started → Processing results → Closed), "like we did for the to-dos" (user, 2026-10-07). To-dos: the engine tags each kanban column `data-vt-group` (`src/planning/engine.ts:170`) and `kits/planning/.obsidian/snippets/vault-theme.css` colours them; the lab kit has no engine or theme, so decide where the tagging and CSS go (plugin `styles.css` keyed on column names, or share the engine's tagging)
 - [x] Dropped `wide` from `cssclasses` in every kit note and template (user, 2026-10-07: the planning theme makes every note wide): `Lab Book Template.md`, `Literature.md`, `How my vault works.md`, `Weekly meetings.md`, templates `Weekly meeting.md`, `Daily note.md`. Copies in `docs/plans/kit-files/` not changed
 

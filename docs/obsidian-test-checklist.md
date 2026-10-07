@@ -117,6 +117,7 @@
 - [ ] Alt+S when another command already uses it: no Fix, the row names that command
 - [ ] Open on a missing plugin opens its page in Community plugins
 - [ ] Phone width: the list fits
+- [ ] Check setup → Obsidian → Properties hidden in notes: Fix sets Settings → Editor → Properties in document to Hidden
 - [ ] Phase 6e: Check setup → Methods folder Fix creates `Extras/methods` and fills the setting; the ZotLit row shows "!" and names the checklist note
 - [ ] Phase 6d: Enter saves in the New to-do / New lab entry / Quick capture boxes; Check setup shows Lab Kit settings (Open → settings tab), Templater matching mode and startup templates, Dataview JS, Meta Bind buttons (Fix adds 26 or the missing ones), ZotLit (Open → Set up ZotLit note); ZotLit's plugin Open goes to ZotLit
 - [ ] Phase 6c: planning first install in a vault without its folders: the confirmation lists 00 Inbox, 01 Daily Notes, … each with what it is for; Apply makes them, Cancel makes none. Every file row shows its name, a line on what it is, and its path

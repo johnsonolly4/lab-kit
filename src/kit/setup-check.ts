@@ -27,6 +27,8 @@ export interface SetupState {
   metaBind: { missing: number; total: number } | null;
   /** Path of the "Set up ZotLit" checklist note when it is installed. */
   zotlitGuide: string | null;
+  /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
+  propertiesView?: string;
   /** Loaded plugin ids (plus kit names such as `zotlit`). */
   plugins: ReadonlySet<string>;
   planning: boolean;
@@ -59,6 +61,7 @@ export type SetupFix =
   | { kind: "hotkey"; command: string; key: KitHotkey }
   | { kind: "settings" }
   | { kind: "methods-folder"; path: string }
+  | { kind: "hide-properties" }
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
   | { kind: "dataview-js" }
@@ -100,6 +103,13 @@ export function checkSetup(s: SetupState): SetupItem[] {
     const fix: SetupFix | undefined = ok ? undefined : id === "methods-folder" ? { kind: "methods-folder", path: METHODS_DEFAULT } : settings;
     out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : id === "methods-folder" ? `Not set. ${what} Fix creates ${METHODS_DEFAULT} and uses it.` : `Not set. ${what}`, fix });
   }
+
+  const pv = s.propertiesView;
+  out.push({ id: "obsidian:properties", group: "Obsidian", label: "Properties hidden in notes", ok: pv === "hidden", warn: pv === undefined,
+    detail: pv === "hidden" ? "Hidden (open them from the note's menu when you need them)." : pv === undefined
+      ? "Can't read it in this Obsidian version: set Settings → Editor → Properties in document to Hidden."
+      : `Set to ${pv}. The kit's notes keep their details in properties, which fill the top of every note.`,
+    fix: pv && pv !== "hidden" ? { kind: "hide-properties" } : undefined });
 
   for (const kit of ["lab", "planning"] as const) {
     if (!kitOn(kit)) continue;

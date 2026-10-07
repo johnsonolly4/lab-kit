@@ -249,3 +249,17 @@ export function openPluginSettings(app: App, id: string): boolean {
   setting.openTabById(id);
   return true;
 }
+
+interface VaultConfig { getConfig?: (key: string) => unknown; setConfig?: (key: string, value: unknown) => void }
+/** Settings → Editor → Properties in document (`propertiesInDocument`: visible / hidden / source, `app.vault.getConfig`, private). undefined when unknown. */
+export function propertiesInDocument(app: App): string | undefined {
+  const v = (app.vault as unknown as VaultConfig).getConfig?.("propertiesInDocument");
+  return typeof v === "string" ? v : undefined;
+}
+/** Sets Properties in document to Hidden. False when Obsidian has no setConfig. */
+export function hidePropertiesInDocument(app: App): boolean {
+  const vault = app.vault as unknown as VaultConfig;
+  if (!vault.setConfig) return false;
+  vault.setConfig("propertiesInDocument", "hidden");
+  return true;
+}
