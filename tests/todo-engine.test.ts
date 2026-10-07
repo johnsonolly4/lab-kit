@@ -135,6 +135,6 @@ describe("which devices roll over", () => {
     expect(rollsOnDevice("off", false)).toBe(false);
     expect(rollsOnDevice(null, false)).toBe(true);
     expect(rollsOnDevice(null, true)).toBe(false);
-    expect(rollsOnDevice("maybe", true)).toBe(false);
+    expect(rollsOnDevice("maybe", false)).toBe(false);   // like the old template: any other stored value means off
   });
 });

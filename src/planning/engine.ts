@@ -2,6 +2,7 @@
 // Replaces the planning suite's To-do roll-over startup template. Rules: src/planning/todo.ts. Plan: docs/plans/phase-4a-todo-engine.md.
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
 import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
+import { metadataResolved } from "../kit/obsidian-private";
 import { applyPatch, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, type TodoFm, type TodoSnap } from "./todo";
 
 /** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
@@ -11,7 +12,7 @@ const RECHECK = 15 * 60 * 1000;     // a new day while Obsidian stays open
 const BOARD = '.bases-view[data-view-name="Board"]';
 
 /** Whether this device rolls cards over: the per-device switch, else not on phones and tablets. */
-export const rollsOnDevice = (stored: unknown, mobile: boolean): boolean => (stored === "on" || stored === "off" ? stored === "on" : !mobile);
+export const rollsOnDevice = (stored: unknown, mobile: boolean): boolean => (stored ? stored === "on" : !mobile);
 
 /** The old startup template's engine is running in this window (it sets window.vtTodoEngine). */
 const templateRunning = (): boolean => !!(window as unknown as { vtTodoEngine?: unknown }).vtTodoEngine;
@@ -58,6 +59,7 @@ export class TodoEngine {
         this.markToday();
         this.queueTag();
       };
+      if (metadataResolved(app)) begin();   // already read (normal start, or the plugin switched on later): seed now
       const ref = app.metadataCache.on("resolved", () => { app.metadataCache.offref(ref); begin(); });
       plugin.registerEvent(ref);
       plugin.register(() => window.clearTimeout(fallback));
@@ -143,7 +145,7 @@ export class TodoEngine {
   private onCardClick(e: MouseEvent): void {
     const target = e.target as Element | null;
     const box = target?.closest?.(`${BOARD} .bases-kanban-card [data-property="note.done"]`);
-    if (!box) return;
+    if (!box || templateRunning()) return;   // the old template toggles it too: two toggles would cancel out
     e.preventDefault(); e.stopPropagation();
     const f = this.cardFile(box.closest(".bases-kanban-card"));
     if (!f) { new Notice("Couldn't find this card's note: open it to tick done."); return; }

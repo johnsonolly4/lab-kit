@@ -24,6 +24,9 @@ interface PrivateApp {
 const priv = (app: App): PrivateApp => app as unknown as PrivateApp;
 const templater = (app: App): TemplaterPlugin | undefined => priv(app).plugins?.plugins?.["templater-obsidian"] as TemplaterPlugin | undefined;
 
+/** True when Obsidian has read every note's properties (`metadataCache.resolved`, not in the public typings). False when unknown. */
+export const metadataResolved = (app: App): boolean => (app.metadataCache as unknown as { resolved?: boolean }).resolved === true;
+
 /** Templater's settings, or {} when Templater isn't installed. */
 export const templaterSettings = (app: App): NonNullable<TemplaterPlugin["settings"]> => templater(app)?.settings ?? {};
 export const hasTemplater = (app: App): boolean => !!templater(app);
