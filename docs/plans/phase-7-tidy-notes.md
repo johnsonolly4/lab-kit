@@ -7,7 +7,7 @@ One command, **Tidy up notes**, shows every note of an existing vault that doesn
 
 ## Decision taken
 One command (id `tidy-notes`, callable from the Obsidian CLI) opening one window, instead of a separate `check-notes` report note and `fix-notes` command: the list and the Fix button sit together; closing the window changes nothing (user, 2026-10-07).
-Window: **left = before, right = after** (user's words "old … new on the left", read as old left / new right; confirm in 7a), changes marked red = removed, green = added, amber = changed, moves as `old path → new path`; grouped by rule, one tick box per rule, all ticked; last group "Only reported" (no tick box); **Copy report** button (Markdown to the clipboard; the user pastes a summary from their vault copy).
+Window: **left = before (old), right = after (new)** (user confirmed 2026-10-07), changes marked red = removed, green = added, amber = changed, moves as `old path → new path`; grouped by rule, one tick box per rule, all ticked; last group "Only reported" (no tick box); **Copy report** button (Markdown to the clipboard; the user pastes a summary from their vault copy).
 Safety: banner "Back up your whole vault before changing anything" (Lab Kit's per-file backups don't replace it); step 1: **Change notes…** stays disabled until "I have backed up my vault" is ticked; step 2: a second window "Change N notes (M rules)? Confirm / Cancel". Nothing is written before Confirm. Then each file is backed up (existing backup folder) and changed.
 Rejected: a report note in the vault (extra file that syncs); tick per note (list too long); all-or-nothing.
 
@@ -26,7 +26,7 @@ From `docs/plans/planning-suite-kit.md` "Note correction rules", plus lab `Statu
 - Rule engine (pure): scan → list of proposed changes per rule, each with before / after text; report-only finds. Rules in 7a: knowledge notes (`Type: Wiki` → `kind: concept`, add empty `summary`, `sources`, `checked: false`), lab `Status` list → text, `kind: hub` on hub notes missing it, all "Only reported" items (untitled notes, `. md.md`, canvases in the inbox, notes outside the folder contract, unused `view.js`, `###` headings / missing summary or sources in knowledge notes)
 - Window: split view, colours (light and dark), rule tick boxes, Only reported group, Copy report, the backup banner; Change notes… shown disabled ("comes in the next version")
 - Files: `src/kit/tidy.ts` (new, pure), `src/kit/tidy-ui.ts` (new), `src/main.ts`, `styles.css`, `kits/lab/kit-manifest.json` + `kits/planning/kit-manifest.json` (`migrations`; check that `scripts/kit-manifest.mjs` keeps the key), `tests/tidy.test.ts`, `tests/fixtures/tidy-vault/` (made-up notes)
-- Done when: tests give the expected rows for every 7a rule on the fixture vault, and the scan writes nothing (all hashes unchanged); window seen in test-vault (desktop + phone width, light + dark); user confirms left/right reading
+- Done when: tests give the expected rows for every 7a rule on the fixture vault, and the scan writes nothing (all hashes unchanged); window seen in test-vault (desktop + phone width, light + dark)
 - New dependencies: none
 
 ### Phase 7b — Change notes (files and properties)
