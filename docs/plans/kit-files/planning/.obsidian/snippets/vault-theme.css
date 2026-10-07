@@ -1,0 +1,422 @@
+/* =========================================================
+   vault-theme.css - the vault's look. Sets NO colours itself:
+   every colour, tint and contrast setting is in vault-colours.css.
+   Turn BOTH snippets on (Settings > Appearance > CSS snippets).
+   Rules live in: 07 How-tos/Obsidian/Vault spec.md
+   (scrolling-mermaid.css stays separate - the lab kit manages it)
+
+   Sections
+     1. (Palette moved to vault-colours.css)
+     2. Reading comfort (every note)
+     3. Links
+     4. Callout types
+     5. [!columns]
+     6. Status badges
+     7. Vault look (cssclasses: vt)
+     8. Sticky tabs
+     9. Homepage (cssclasses: home)
+    10. Project cards (Projects overview)
+    11. Kanban boards (Bases built-in kanban: To-do board, Experiments)
+    12. Text box (vtAsk) looks like the pickers
+   ========================================================= */
+
+/* ---- 2. Reading comfort (every note) ----
+   - Every note is wide (1200px) and has roomier line spacing.
+   - Headings coloured by level (vault-colours.css: --vt-h2 / h3 / h4).
+   - Tints the line the cursor is on, so you don't lose your place. */
+body {
+  --file-line-width: 1200px; /* every note is wide; use 100% to fill the whole pane */
+  --line-height-normal: 1.7;
+}
+.markdown-rendered h1, .cm-header-1 { color: var(--text-normal); }
+.markdown-rendered h2, .cm-header-2 { color: rgb(var(--vt-h2)); }
+.markdown-rendered h3, .cm-header-3 { color: rgb(var(--vt-h3)); }
+.markdown-rendered h4, .cm-header-4 { color: rgb(var(--vt-h4)); }
+.cm-active { background-color: rgba(var(--vt-doing), var(--vt-line-tint)); }
+
+/* ---- 3. Links ----
+   Internal links (notes) and external links (websites) have their own colour,
+   both change on hover. Inside vt cards, internal links read as plain text (section 7). */
+body {
+  --link-color: rgb(var(--vt-link));
+  --link-color-hover: rgb(var(--vt-link-hover));
+  --link-external-color: rgb(var(--vt-link-external));
+  --link-external-color-hover: rgb(var(--vt-link-hover));
+}
+.cm-s-obsidian span.cm-hmd-internal-link,
+.cm-s-obsidian span.cm-url:has([data-link-path$="md"]),
+.cm-s-obsidian span.cm-link:has([data-link-path$="md"]),
+.markdown-rendered .internal-link { color: rgb(var(--vt-link)); }
+/* Keep the brackets around external URLs faint in the editor */
+.cm-s-obsidian span.cm-url.cm-formatting-link-string { color: var(--text-faint); }
+
+/* ---- 4. Callout types ----
+   Text shades, so callout titles stay readable in light and dark mode. */
+.callout[data-callout="focus"]    { --callout-color: var(--vt-doing-text);   --callout-icon: lucide-target; }
+.callout[data-callout="projects"] { --callout-color: var(--vt-project-text); --callout-icon: lucide-folder-kanban; }
+.callout[data-callout="planning"] { --callout-color: var(--vt-waiting-text); --callout-icon: lucide-calendar-clock; }
+.callout[data-callout="lab"]      { --callout-color: var(--vt-done-text);    --callout-icon: lucide-flask-conical; }
+.callout[data-callout="goto"]     { --callout-color: var(--vt-neutral-text); --callout-icon: lucide-compass; }
+.callout[data-callout="overdue"]  { --callout-color: var(--vt-overdue-text); --callout-icon: lucide-alarm-clock; }
+.callout[data-callout="summary"]  { --callout-color: var(--vt-neutral-text); --callout-icon: lucide-list; }
+.callout[data-callout="question"] { --callout-color: var(--vt-waiting-text); --callout-icon: lucide-circle-help; }
+.callout[data-callout="comment"]  { --callout-color: var(--vt-neutral-text); --callout-icon: lucide-message-square; }
+
+/* ---- 5. [!columns]: callouts inside sit side by side - at most 2 per row, equal height ----
+   !important because themes add their own callout margins and title bars */
+.callout[data-callout="columns"],
+.cm-embed-block:has(> .callout[data-callout="columns"]),
+.cm-callout:has(> .callout[data-callout="columns"]) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.callout[data-callout="columns"] > .callout-title { display: none !important; }
+.callout[data-callout="columns"] > .callout-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(260px, calc(50% - 12px)), 1fr));
+  align-items: stretch;
+  gap: 12px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+}
+.callout[data-callout="columns"] > .callout-content > * {
+  margin: 0 !important;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+.callout[data-callout="columns"] > .callout-content .callout {
+  margin: 0 !important;
+  height: 100%;
+  box-sizing: border-box;
+}
+.callout[data-callout="columns"] > .callout-content > p { grid-column: 1 / -1; height: auto; }
+.callout[data-callout="columns"] > .callout-content > p:empty { display: none; }
+.callout[data-callout="columns"] table { width: 100%; font-size: 0.9em; }
+
+/* ---- 6. Status badges (Dataview: <span class='vt-badge vt-active'>) ----
+   Text in the meaning's text shade on a tint of its base colour. */
+.vt-badge {
+  display: inline-block;
+  font-size: 0.78em;
+  font-weight: 500;
+  line-height: 1.5;
+  padding: 0 8px;
+  margin-left: 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+  vertical-align: 1px;
+  color: rgb(var(--vt-badge-text));
+  background: rgba(var(--vt-badge), var(--vt-tint));
+}
+.vt-badge:is(.vt-active, .vt-closed, .vt-done)          { --vt-badge: var(--vt-done);    --vt-badge-text: var(--vt-done-text); }
+.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
+.vt-badge:is(.vt-started, .vt-today)                    { --vt-badge: var(--vt-doing);   --vt-badge-text: var(--vt-doing-text); }
+.vt-badge:is(.vt-planned, .vt-backlog)                  { --vt-badge: var(--vt-neutral); --vt-badge-text: var(--vt-neutral-text); }
+.vt-badge.vt-overdue                                    { --vt-badge: var(--vt-overdue); --vt-badge-text: var(--vt-overdue-text); }
+.vt-muted { color: var(--vt-hint); font-size: 0.9em; }
+.vt-label { display: block; color: var(--text-muted); font-size: 0.85em; margin: 10px 0 2px; }
+
+/* =========================================================
+   7. Vault look (cssclasses: vt) - flat cards.
+   Used by the homepage, hubs, meetings, review, literature and lab notes.
+   Card fill, border, title and icon strength: vault-colours.css dials.
+   ========================================================= */
+.vt :is(.markdown-rendered h1, .HyperMD-header-1, .cm-header-1) { color: var(--text-normal) !important; }
+
+.vt .callout:not([data-callout="columns"]) {
+  background: var(--vt-card-bg) !important;
+  border: 1px solid var(--vt-card-border) !important;
+  border-radius: var(--vt-card-radius) !important;
+  box-shadow: none !important;
+  padding: 14px 18px !important;
+  mix-blend-mode: normal !important;
+}
+.vt .callout:not([data-callout="columns"]) > .callout-title {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 0 8px 0 !important;
+  gap: 8px;
+}
+.vt .callout.is-collapsed:not([data-callout="columns"]) > .callout-title { padding-bottom: 0 !important; }
+.vt .callout:not([data-callout="columns"]) > .callout-title .callout-title-inner {
+  color: var(--vt-card-title) !important;
+  font-weight: 500 !important;
+  font-size: 0.95em;
+}
+.vt .callout:not([data-callout="columns"]) > .callout-title .callout-icon { color: rgb(var(--callout-color)) !important; opacity: var(--vt-card-icon-opacity); }
+.vt .callout:not([data-callout="columns"]) > .callout-content {
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+}
+.vt .callout[data-callout="focus"] { border: 2px solid rgb(var(--vt-doing)) !important; }
+.vt .callout[data-callout="comment"] { padding: 8px 14px !important; margin-left: 1.5em; }
+
+/* Lists inside cards: plain rows with a divider, no bullets */
+.vt .callout .dataview.list-view-ul { list-style: none; padding: 0; margin: 0; }
+.vt .callout .dataview.list-view-ul > li {
+  padding: 6px 0;
+  margin: 0;
+  border-bottom: 1px solid var(--vt-divider);
+}
+.vt .callout .dataview.list-view-ul > li:last-child { border-bottom: none; }
+.vt .callout .dataview.list-view-ul > li::marker { content: ""; }
+.vt .callout .dataview.list-view-ul > li::before,
+.vt .callout .dataview.list-view-ul .list-bullet { display: none !important; }
+
+/* Links inside cards read as text */
+.vt .callout a.internal-link { color: var(--text-normal); text-decoration: none; }
+.vt .callout a.internal-link:hover { text-decoration: underline; }
+
+/* Buttons: separate outlined pills */
+.vt :is(code, .cm-inline-code):has(.mb-button) { background: transparent !important; padding: 0 !important; border: none !important; }
+.vt .mb-button-group.mb-button-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  background: transparent !important;
+}
+.vt .mb-button-group > .mb-button > .mb-button-inner,
+.vt .mb-button > .mb-button-inner {
+  border-radius: 10px !important;
+  background: transparent !important;
+  border: 1px solid var(--vt-card-border) !important;
+  box-shadow: none !important;
+  color: var(--text-normal) !important;
+  padding: 6px 14px;
+  height: auto;
+}
+.vt .mb-button > .mb-button-inner:hover { background: var(--background-modifier-hover) !important; }
+.vt .mb-button > .mb-button-inner.mod-plain { border: none !important; color: var(--text-muted) !important; padding: 4px 0; }
+
+/* ---- 8. Sticky tabs (every note) ----
+   For tabs on the left of a ```tabs block (Tabbed plugin), the tab list stays
+   pinned while you scroll. (Width for every note is set in section 2.) */
+.tabbed.tabbed--left > .tabbed__list {
+  position: sticky;
+  top: 8px;
+  align-self: flex-start;
+  max-height: calc(100vh - 120px);
+}
+
+/* ---- 9. Homepage (cssclasses: home) ---- */
+/* "How it works" button sits at the right-hand end of the date heading */
+.home .markdown-rendered h1:has(.vt-help),
+.home h1:has(.vt-help) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.home .vt-help .mb-button-inner {
+  font-size: var(--font-ui-small) !important;
+  font-weight: 400 !important;
+  color: var(--text-muted) !important;
+  border: none !important;
+}
+.home .vt-help .mb-button-inner:hover { color: var(--text-normal) !important; }
+
+.home {
+  --file-line-width: 1150px;
+  --line-width: 1150px;
+  --max-width: 95%;
+}
+.home .inline-title { display: none; }
+.home .callout[data-callout="focus"] .callout-content > p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px 0;
+}
+.home .callout[data-callout="focus"] .mb-input-type-text { flex: 1 1 160px; display: flex; }
+.home .callout[data-callout="focus"] .mb-input-type-text input {
+  width: 100%;
+  border-radius: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--vt-card-border);
+  color: var(--text-normal);
+}
+.home .callout[data-callout="focus"] .mb-input-type-text input::placeholder { color: var(--vt-hint); opacity: 1; }
+
+/* ---- 10. Project cards (Projects overview, built by DataviewJS) ----
+   Same flat look as vt cards: same border, 2 per row at most,
+   to-dos as plain rows with dividers, buttons as outlined pills. */
+.vt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(260px, calc(50% - 12px)), 1fr));
+  gap: 12px;
+  margin: 12px 0 20px;
+}
+.vt-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--vt-card-bg);
+  border: 1px solid var(--vt-card-border);
+  border-radius: var(--vt-card-radius);
+  padding: 14px 18px;
+}
+.vt-card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vt-card a.vt-card-title { font-weight: 600; font-size: 1.05em; color: var(--text-normal); text-decoration: none; }
+.vt-card a.vt-card-title:hover { text-decoration: underline; }
+.vt-card-goal { color: var(--text-muted); font-size: 0.92em; }
+.vt-card ul { list-style: none; padding: 0; margin: 0; }
+.vt-card li { padding: 5px 0; margin: 0; border-bottom: 1px solid var(--vt-divider); }
+.vt-card li:last-child { border-bottom: none; }
+.vt-card li::marker { content: ""; }
+.vt-card li a.internal-link { color: var(--text-normal); text-decoration: none; }
+.vt-card li a.internal-link:hover { text-decoration: underline; }
+.vt-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
+.vt-card-actions button {
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--vt-card-border);
+  box-shadow: none;
+  color: var(--text-normal);
+  padding: 6px 14px;
+  height: auto;
+  cursor: pointer;
+}
+.vt-card-actions button:hover { background: var(--background-modifier-hover); }
+
+/* ---- 11. Kanban boards (Bases built-in kanban) ----
+   Columns are coloured by their NAME. The board only draws the columns on
+   screen, so counting columns (the old nth-child rules) changed colour as you
+   scrolled. The To-do roll-over script writes each column's name into
+   data-vt-group, so these rules need that script running (startup template).
+   Colours apply on any kanban board with these column names.
+   Each coloured column sets --vt-col (a meaning) and --vt-on: 1.          */
+
+/* Column colours by name */
+.bases-kanban-column:is([data-vt-group="Backlog"], [data-vt-group="Planned"]) { --vt-col: var(--vt-neutral); --vt-on: 1; }
+.bases-kanban-column[data-vt-group="Started"]            { --vt-col: var(--vt-doing);   --vt-on: 1; }
+.bases-kanban-column[data-vt-group="Processing results"] { --vt-col: var(--vt-waiting); --vt-on: 1; }
+.bases-kanban-column[data-vt-group="Closed"]             { --vt-col: var(--vt-done);    --vt-on: 1; }
+
+/* To-do board weekdays: two alternating neutral bands; today's column = doing */
+.bases-kanban-column:is([data-vt-group="Mon"], [data-vt-group="Wed"], [data-vt-group="Fri"]) { background-color: var(--vt-band-a-bg); }
+.bases-kanban-column:is([data-vt-group="Tue"], [data-vt-group="Thu"]) { background-color: var(--vt-band-b-bg); }
+body[data-vt-today="Mon"] .bases-kanban-column[data-vt-group="Mon"],
+body[data-vt-today="Tue"] .bases-kanban-column[data-vt-group="Tue"],
+body[data-vt-today="Wed"] .bases-kanban-column[data-vt-group="Wed"],
+body[data-vt-today="Thu"] .bases-kanban-column[data-vt-group="Thu"],
+body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: var(--vt-doing); --vt-on: 1; }
+
+/* To-do cards: done = green (the done property shown on the card),
+   carried over = amber (vt-rolled class, set by the roll-over script). */
+.bases-view[data-view-name="Board"] .bases-kanban-card:has([data-property="note.done"] input:checked) {
+  background-color: rgba(var(--vt-done), var(--vt-tint));
+  border-left: 3px solid rgb(var(--vt-done));
+  color: var(--text-muted);
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card.vt-rolled {
+  background-color: rgba(var(--vt-waiting), var(--vt-tint));
+  border-left: 3px solid rgb(var(--vt-waiting));
+}
+
+/* The done property becomes a small round tick box (clickable - the roll-over
+   script handles the click). The label and the "-" for empty are hidden. */
+.bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"] :is(.bases-kanban-card-label, .bases-kanban-card-line) { display: none; }
+.bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"] { cursor: pointer; }
+.bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"]::before {
+  content: "";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid var(--vt-hint);
+  border-radius: 50%;
+  font-size: 11px;
+  line-height: 1;
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"]:hover::before { border-color: rgb(var(--vt-done)); }
+.bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"]:has(input:checked)::before {
+  content: "\2713";
+  color: var(--background-primary);
+  background: rgb(var(--vt-done));
+  border-color: rgb(var(--vt-done));
+}
+
+/* Card layout. Obsidian places each card part with inline styles
+   (title: top 8px, height 24px; done: top 40px, height 40px; card 88px tall,
+   and the slot height is fixed from those). The !important rules re-place
+   them inside the same 88px: the title gets the whole card height and wraps
+   (up to 3 lines, then "..."), the tick circle moves to the top right.
+   Card height can't be changed - Obsidian works it out from what the card
+   shows (title + done). */
+.bases-view[data-view-name="Board"] .bases-kanban-card .bases-kanban-card-cover { display: none; }
+.bases-view[data-view-name="Board"] .bases-kanban-card .bases-kanban-card-property.mod-title {
+  top: 8px !important;
+  height: calc(100% - 16px) !important;
+  inset-inline-start: 0 !important;
+  inset-inline-end: 34px !important;
+  overflow: hidden;
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card .mod-title .bases-kanban-card-line {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  height: auto;
+  max-height: none;
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"] {
+  top: 8px !important;
+  height: 24px !important;
+  width: 34px;
+  inset-inline-start: auto !important;
+  inset-inline-end: 0 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 !important;
+}
+
+/* Shared column look: tinted column, coloured top edge, coloured dot before the name.
+   The tint is a layer on top, so it sits over the weekday bands above. */
+.bases-view[data-view-type="kanban"] .bases-kanban-column {
+  background-image: linear-gradient(rgba(var(--vt-col, 0, 0, 0), calc(var(--vt-column-tint) * var(--vt-on, 0))), rgba(var(--vt-col, 0, 0, 0), calc(var(--vt-column-tint) * var(--vt-on, 0))));
+  border-top: 3px solid rgba(var(--vt-col, 0, 0, 0), var(--vt-on, 0));
+}
+/* Header on one line: dot, name, count */
+.bases-view[data-view-type="kanban"] .bases-kanban-column-header .bases-group-heading {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.bases-view[data-view-type="kanban"] .bases-kanban-column-header .bases-group-value {
+  display: inline-flex;
+  align-items: center;
+}
+.bases-view[data-view-type="kanban"] .bases-kanban-column-header .bases-group-value * {
+  display: inline;
+  margin: 0;
+}
+.bases-view[data-view-type="kanban"] .bases-kanban-column-header .bases-group-heading::before {
+  content: "";
+  flex: none;
+  width: calc(8px * var(--vt-on, 0));
+  height: 8px;
+  margin-right: calc(-6px * (1 - var(--vt-on, 0))); /* no dot = no gap */
+  border-radius: 50%;
+  background: rgb(var(--vt-col, 0, 0, 0));
+}
+
+/* ---- 12. Text box (vtAsk) looks like the pickers ----
+   Templates ask for text with tp.user.vtAsk (Extras/scripts/templater/vault/vtAsk.js),
+   which is Obsidian's picker with no list. This hides the empty list. */
+.vt-ask .prompt-results { display: none; }

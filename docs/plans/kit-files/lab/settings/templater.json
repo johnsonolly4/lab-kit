@@ -1,0 +1,17 @@
+{
+  "note": "Templater settings the lab kit needs. Add only.",
+  "folder_templates": [
+    {
+      "folder": "03 Lab Book/Notes",
+      "template": "Extras/Templates/Lab Kit/Lab Book Template.md"
+    },
+    {
+      "folder": "05 Chemicals/Chemicals",
+      "template": "Extras/Templates/Lab Kit/Chemical database template.md"
+    }
+  ],
+  "enabled_templates_hotkeys": [
+    "Extras/Templates/Lab Kit/Insert snippet.md",
+    "Extras/Templates/Lab Kit/Lab Book Template.md"
+  ]
+}

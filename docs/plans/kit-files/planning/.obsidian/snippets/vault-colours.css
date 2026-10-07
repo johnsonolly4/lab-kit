@@ -1,0 +1,87 @@
+/* =========================================================
+   vault-colours.css - the ONE file to edit for colours and contrast.
+   vault-theme.css only reads the names below; it sets no colours itself.
+   Turn BOTH snippets on (Settings > Appearance > CSS snippets).
+   Rules: 07 How-tos/Obsidian/Vault spec.md > Visual theme
+
+   1. Palette       base colours (tints, borders, dots, board columns)
+   2. Text shades   the same colours as text: lighter in dark mode,
+                    darker in light mode, so badges and headings stay readable
+   3. Meanings      which colour means what - change one line here to
+                    recolour that meaning everywhere
+   4. Dials         how strong cards, borders, tints and hints are
+   ========================================================= */
+
+/* ---- 1. Palette (r, g, b) ---- */
+body {
+  --vt-blue:   59, 130, 246;
+  --vt-purple: 139, 92, 246;
+  --vt-amber:  245, 158, 11;
+  --vt-green:  16, 185, 129;
+  --vt-slate:  100, 116, 139;
+  --vt-red:    239, 68, 68;
+}
+
+/* ---- 2. Text shades (r, g, b) ----
+   Aim for at least 4.5:1 against the badge or card behind the text. */
+body.theme-dark {
+  --vt-blue-text:   147, 197, 253;
+  --vt-purple-text: 196, 181, 253;
+  --vt-amber-text:  252, 211, 77;
+  --vt-green-text:  110, 231, 183;
+  --vt-slate-text:  203, 213, 225;
+  --vt-red-text:    252, 165, 165;
+}
+body.theme-light {
+  --vt-blue-text:   29, 78, 216;
+  --vt-purple-text: 109, 40, 217;
+  --vt-amber-text:  146, 64, 14;
+  --vt-green-text:  6, 95, 70;
+  --vt-slate-text:  51, 65, 85;
+  --vt-red-text:    153, 27, 27;
+}
+
+/* ---- 3. Meanings ----
+   Each meaning has a base colour and a text colour: keep them the same hue. */
+body {
+  --vt-doing:   var(--vt-blue);    --vt-doing-text:   var(--vt-blue-text);    /* focus, Started, today */
+  --vt-project: var(--vt-purple);  --vt-project-text: var(--vt-purple-text);  /* projects */
+  --vt-waiting: var(--vt-amber);   --vt-waiting-text: var(--vt-amber-text);   /* planning, Processing results, carried over */
+  --vt-done:    var(--vt-green);   --vt-done-text:    var(--vt-green-text);   /* lab, Closed, done, Active */
+  --vt-neutral: var(--vt-slate);   --vt-neutral-text: var(--vt-slate-text);   /* Planned, Backlog, navigation */
+  --vt-overdue: var(--vt-red);     --vt-overdue-text: var(--vt-red-text);     /* overdue ONLY */
+
+  /* Headings and links (text shades) */
+  --vt-h2: var(--vt-amber-text);
+  --vt-h3: var(--vt-blue-text);
+  --vt-h4: var(--vt-green-text);
+  --vt-link: var(--vt-blue-text);
+  --vt-link-external: var(--vt-purple-text);
+  --vt-link-hover: var(--vt-amber-text);
+}
+
+/* ---- 4. Dials ----
+   Card fill, borders and dividers mix the text colour into the page colour,
+   so the same numbers work in light and dark mode. Higher % = more contrast. */
+body {
+  --vt-card-fill: 5%;           /* card background vs the page (0% = same as page) */
+  --vt-card-border-strength: 22%;
+  --vt-divider-strength: 14%;   /* lines between rows inside cards */
+  --vt-tint: 0.22;              /* badge fill, done / carried-over cards (0 to 1) */
+  --vt-column-tint: 0.14;       /* coloured board columns (0 to 1) */
+  --vt-line-tint: 0.10;         /* the line the cursor is on (0 to 1) */
+  --vt-band-a: 3%;              /* to-do board weekday bands: two alternating shades */
+  --vt-band-b: 6%;
+  --vt-card-radius: 14px;
+
+  --vt-card-title: var(--text-normal);   /* card headings (was muted grey) */
+  --vt-card-icon-opacity: 1;             /* card heading icons (was 0.7) */
+  --vt-hint: var(--text-muted);          /* hint text, "- Mon", placeholders (was faint) */
+
+  /* Worked out from the dials - normally leave these alone */
+  --vt-card-bg: color-mix(in srgb, var(--text-normal) var(--vt-card-fill), var(--background-primary));
+  --vt-card-border: color-mix(in srgb, var(--text-normal) var(--vt-card-border-strength), var(--background-primary));
+  --vt-divider: color-mix(in srgb, var(--text-normal) var(--vt-divider-strength), var(--background-primary));
+  --vt-band-a-bg: color-mix(in srgb, var(--text-normal) var(--vt-band-a), var(--background-primary));
+  --vt-band-b-bg: color-mix(in srgb, var(--text-normal) var(--vt-band-b), var(--background-primary));
+}

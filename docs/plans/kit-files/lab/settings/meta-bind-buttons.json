@@ -1,0 +1,19 @@
+{
+  "note": "Meta Bind button templates the lab kit needs.",
+  "buttonTemplates": [
+    {
+      "label": "New lab entry",
+      "icon": "flask-conical",
+      "style": "default",
+      "id": "lab",
+      "actions": [
+        {
+          "type": "templaterCreateNote",
+          "templateFile": "Extras/Templates/Lab Kit/Lab Book Template.md",
+          "folderPath": "03 Lab Book/Notes",
+          "openNote": true
+        }
+      ]
+    }
+  ]
+}

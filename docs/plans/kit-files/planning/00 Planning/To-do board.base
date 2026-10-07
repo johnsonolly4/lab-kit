@@ -1,0 +1,21 @@
+filters:
+  and:
+    - file.inFolder("00 Planning/To-dos")
+    - day != "Done"
+views:
+  - type: kanban
+    name: Board
+    groupBy:
+      property: day
+      direction: ASC
+    groupOrder:
+      - Backlog
+      - Mon
+      - Tue
+      - Wed
+      - Thu
+      - Fri
+    columnWidth: 270
+    order:
+      - file.name
+      - done
