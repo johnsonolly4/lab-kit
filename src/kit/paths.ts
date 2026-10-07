@@ -38,9 +38,52 @@ export interface KitData {
   mwProperty: string;
   /** Vault folder of analysis method notes (and, linked from them, machine notes), read by the Alt+S snippets. Empty = only the built-in NMR, GPC and DLS. */
   methodsFolder: string;
+  /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
+  planningFolders: PlanningFolders;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "" };
+/** The planning kit's note folders, one per role (the folder contract in docs/plans/planning-suite-kit.md). */
+export interface PlanningFolders { inbox: string; daily: string; planning: string; projects: string; literature: string; knowledge: string; howtos: string; meetings: string; archive: string }
+export const PLANNING_FOLDER_DEFAULTS: PlanningFolders = {
+  inbox: "00 Inbox", daily: "01 Daily Notes", planning: "00 Planning", projects: "02 Projects", literature: "04 Literature",
+  knowledge: "06 Knowledge", howtos: "07 How-tos", meetings: "08 Meetings", archive: "99 Archive",
+};
+export type PlanningRole = keyof PlanningFolders;
+
+/** Saved planning folders over the defaults: unknown keys dropped, an empty or missing one is the default. */
+export function planningFoldersLoad(saved: unknown): PlanningFolders {
+  const raw = (saved && typeof saved === "object" ? saved : {}) as Record<string, unknown>;
+  const out = { ...PLANNING_FOLDER_DEFAULTS };
+  for (const k of Object.keys(out) as PlanningRole[]) {
+    const v = typeof raw[k] === "string" ? kitJoin(raw[k].trim().replace(/\\/g, "/")) : "";
+    if (v) out[k] = v;
+  }
+  return out;
+}
+
+/** Where the to-dos live (a fixed subfolder of the Planning folder; the board, engine and New to-do use it). */
+export const todoFolder = (f: PlanningFolders): string => kitJoin(f.planning, "To-dos");
+/** Where Archive old to-dos and Sort inbox → Archive move notes (made when first needed). */
+export const archiveTodoFolder = (f: PlanningFolders): string => kitJoin(f.archive, "To-dos");
+export const archiveInboxFolder = (f: PlanningFolders): string => kitJoin(f.archive, "Inbox");
+
+/**
+ * Planning folders that should exist but don't (e.g. moved outside Obsidian, so no rename event let the setting follow).
+ * The archive is left out (it is made when first needed) and so is Literature without ZotLit (never made).
+ */
+export function missingPlanningFolders(f: PlanningFolders, exists: (path: string) => boolean, zotlit: boolean): PlanningRole[] {
+  const roles: PlanningRole[] = ["inbox", "daily", "planning", "projects", "literature", "knowledge", "howtos", "meetings"];
+  return roles.filter(r => (r !== "literature" || zotlit) && !exists(f[r]));
+}
+
+/** A planning folder setting after a folder was renamed inside Obsidian: the new path when it is (or is under) `oldPath`, else null. */
+export function followFolderRename(folder: string, oldPath: string, newPath: string): string | null {
+  if (folder === oldPath) return newPath;
+  if (folder.startsWith(oldPath + "/")) return newPath + folder.slice(oldPath.length);
+  return null;
+}
+
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -61,6 +104,7 @@ export function kitLoad(saved: unknown): KitData {
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
   kit.snippetIcons = { ...kit.snippetIcons };
+  kit.planningFolders = planningFoldersLoad(old.planningFolders);
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
   if (!kit.kits[LAB_KIT] && (single.managed || single.paths || single.off)) {
     kit.kits[LAB_KIT] = { enabled: true, managed: (single.managed as ManagedState | null) ?? null, paths: { ...(single.paths as Roles) }, off: { ...(single.off as Record<string, true>) } };
@@ -133,29 +177,29 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
 
 /** Id of the planning kit (kits/planning/kit-manifest.json). */
 export const PLANNING_KIT = "planning";
-/** Where the planning kit goes (the folder contract): note folders at the vault root, templates in Extras/Templates, vtAsk.js in a `vault` subfolder of the user scripts folder. */
-export const PLANNING_LAYOUT = {
-  templates: "Extras/Templates", userScripts: "Extras/scripts/templater", userScriptsSub: "vault",
-  home: "", planning: "00 Planning", projects: "02 Projects", literature: "04 Literature", knowledge: "06 Knowledge", howtos: "07 How-tos", meetings: "08 Meetings",
-};
+/** Where the planning kit's templates and script go (the folder contract): templates in Extras/Templates, vtAsk.js in a `vault` subfolder of the user scripts folder. Note folders: `PlanningFolders`. */
+export const PLANNING_LAYOUT = { templates: "Extras/Templates", userScripts: "Extras/scripts/templater", userScriptsSub: "vault" };
 
 /**
- * Where each part of the planning kit lives in this vault. `tracked`: folders where the kit already put files (they win).
- * Templates follow Templater's template folder (else Extras/Templates), the script goes into `<Templater's user scripts folder>/vault`
- * (a set folder is never changed, issue #34; else Extras/scripts/templater/vault). Note folders are the folder contract's until Phase 5 adds settings.
+ * Where each part of the planning kit lives in this vault. `tracked`: folders where the kit already put files (they win for templates,
+ * scripts and the homepage). Note folders always come from the Planning folders settings (`folders`), and `labNotes` from the Lab notes
+ * folder (planning notes list experiments). Templates follow Templater's template folder (else Extras/Templates), the script goes into
+ * `<Templater's user scripts folder>/vault` (a set folder is never changed, issue #34; else Extras/scripts/templater/vault).
  */
-export function planningRoles(app: App, tracked: Partial<Roles>): Roles {
+export function planningRoles(app: App, tracked: Partial<Roles>, folders: PlanningFolders, labFolder = ""): Roles {
   const sane = (p?: string): string => (p && !kitInBackup(p) ? kitJoin(p.trim().replace(/\\/g, "/")) : "");
   const raw = templaterSettings(app);
-  const { userScriptsSub, templates, userScripts, ...notes } = PLANNING_LAYOUT;
   const defined = Object.fromEntries(Object.entries(tracked).filter(([, v]) => v !== undefined)) as Roles;
+  const lab = kitJoin(labFolder.trim());
   return {
-    ...notes,
+    home: "",
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
-    templates: sane(raw.templates_folder) || templates,
-    userScripts: kitJoin(sane(raw.user_scripts_folder) || userScripts, userScriptsSub),
+    templates: sane(raw.templates_folder) || PLANNING_LAYOUT.templates,
+    userScripts: kitJoin(sane(raw.user_scripts_folder) || PLANNING_LAYOUT.userScripts, PLANNING_LAYOUT.userScriptsSub),
     backups: kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),
     ...defined,
+    ...folders,
+    ...(lab ? { labNotes: lab } : {}),
   };
 }
 
@@ -165,8 +209,8 @@ export interface KitFolder { path: string; desc: string }
 /** The planning kit's folder-contract folders (docs/plans/planning-suite-kit.md), through its roles so a moved role is followed. Never 99 Archive (yours). */
 export function planningFolders(roles: Roles, zotlit: boolean): KitFolder[] {
   const list: KitFolder[] = [
-    { path: "00 Inbox", desc: "Quick captures wait here until you sort them." },
-    { path: "01 Daily Notes", desc: "Daily notes (Templater fills them from the Daily note template)." },
+    { path: roles.inbox, desc: "Quick captures wait here until you sort them." },
+    { path: roles.daily, desc: "Daily notes (Templater fills them from the Daily note template)." },
     { path: kitJoin(roles.planning, "To-dos"), desc: "One note per to-do; the to-do board shows them." },
     { path: roles.projects, desc: "One folder per project, with its hub note." },
     ...(zotlit ? [{ path: roles.literature, desc: "Literature notes from ZotLit." }] : []),

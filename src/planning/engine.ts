@@ -19,15 +19,15 @@ const templateRunning = (): boolean => !!(window as unknown as { vtTodoEngine?: 
 
 export class TodoEngine {
   private seen = new Map<string, TodoSnap>();   // path -> last seen { day, done }: tells a drag or tick from our own writes
-  private folder: string;
   private tagQueued = false;
   private warned = false;
 
-  constructor(private plugin: Plugin, folder: string) { this.folder = normalizePath(folder) + "/"; }
+  /** `folder` is read each time, so a changed Planning folder setting needs no reload. A folder that doesn't exist matches nothing. */
+  constructor(private plugin: Plugin, private folder: () => string) {}
 
   get app(): App { return this.plugin.app; }
 
-  private isTodo = (f: unknown): f is TFile => f instanceof TFile && f.extension === "md" && f.path.startsWith(this.folder);
+  private isTodo = (f: unknown): f is TFile => f instanceof TFile && f.extension === "md" && f.path.startsWith(normalizePath(this.folder()) + "/");
   private fm = (f: TFile): TodoFm => this.app.metadataCache.getFileCache(f)?.frontmatter ?? {};
   private todos = (): TFile[] => this.app.vault.getMarkdownFiles().filter(this.isTodo);
 

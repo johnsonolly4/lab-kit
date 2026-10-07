@@ -5,6 +5,7 @@ import type { EmbeddedKit } from "../src/kit/managed";
 import { cleanName, sortedName, subfolders, todoFields } from "../src/planning/actions";
 import { PlanningCommands, TPL } from "../src/planning/commands";
 import type { TodoEngine } from "../src/planning/engine";
+import { kitLoad } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -18,7 +19,7 @@ const actions = buttons.buttonTemplates.flatMap(b => b.actions.map(a => ({ butto
 function registered(): string[] {
   const ids: string[] = [];
   const plugin = { app: {}, addCommand: (c: { id: string }) => { ids.push(c.id); } };
-  new PlanningCommands(plugin as never, null, {} as TodoEngine).register();
+  new PlanningCommands(plugin as never, null as never, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} }).register();
   return ids;
 }
 

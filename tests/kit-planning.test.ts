@@ -2,8 +2,8 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
-import { applyManaged, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
-import { PLANNING_LAYOUT, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
+import { applyManaged, kitText, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
+import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
 import { addMetaBindButtons, loadedPlugins, metaBindButtonIds, navigatorHomepage, setNavigatorHomepage } from "../src/kit/obsidian-private";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
 // @ts-expect-error plain .mjs build helper
@@ -24,7 +24,7 @@ const ZOTLIT = new Set(["zotlit"]);
 const dests = (kit: EmbeddedKit, roles: Record<string, string>) => kit.manifest.files.map(f => kitJoin(roles[f.role], f.dest));
 
 describe("planning kit files (Phase 3)", () => {
-  const roles = planningRoles(app(), {});
+  const roles = planningRoles(app(), {}, PLANNING_FOLDER_DEFAULTS);
 
   it("is embedded next to the lab kit, at the same version", () => {
     const all = embeddedKits() as { kits: EmbeddedKit[] };
@@ -66,7 +66,7 @@ describe("planning kit files (Phase 3)", () => {
     expect(Object.keys(v.files)).toEqual([]);
     const out = await applyManaged(v, planning, items, null, opts);
     for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Weekly meetings/Weekly meetings.md"]) expect(v.files[d], d).toBeDefined();
-    const again = await planManaged(v, planning, out.state, planningRoles(app(), trackedRoles(planning, out.state)), null, null, offIds(planning, {}, {}, ZOTLIT));
+    const again = await planManaged(v, planning, out.state, planningRoles(app(), trackedRoles(planning, out.state), PLANNING_FOLDER_DEFAULTS), null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(again.every(i => i.action === "up-to-date")).toBe(true);
   });
 
@@ -84,18 +84,33 @@ describe("planning kit files (Phase 3)", () => {
 
   it("a Templater user scripts folder that is set is kept: vtAsk.js goes into its vault/ subfolder", () => {
     const tpl = { user_scripts_folder: "My scripts", templates_folder: "Templates" };
-    const r = planningRoles(app(tpl), {});
+    const r = planningRoles(app(tpl), {}, PLANNING_FOLDER_DEFAULTS);
     expect(r.userScripts).toBe("My scripts/vault");
     expect(r.templates).toBe("Templates");
     expect(tpl.user_scripts_folder).toBe("My scripts");
-    expect(planningRoles(app(tpl), { templates: "Elsewhere" }).templates).toBe("Elsewhere");   // tracked wins
+    expect(planningRoles(app(tpl), { templates: "Elsewhere" }, PLANNING_FOLDER_DEFAULTS).templates).toBe("Elsewhere");   // tracked wins
   });
 
-  it("note folders are the folder contract (no rewrite until Phase 5): the files' folder literals are the defaults", () => {
-    expect(planning.manifest.rewrite).toEqual({});
+  it("with default settings each note lands where it sits in the kit's source (folder names inside the notes match)", () => {
     // each note sits in its role's folder in the kit's source too, so the folder names written inside the notes match where they land
     for (const f of planning.manifest.files.filter(x => x.kind === "note")) expect(kitJoin(roles[f.role], f.dest), f.src).toBe(f.src);
-    expect(roles.planning).toBe(PLANNING_LAYOUT.planning);
+    expect(roles.planning).toBe(PLANNING_FOLDER_DEFAULTS.planning);
+  });
+
+  it("Phase 5a: every planning folder setting is rewritten into the kit files: no default folder name is left", () => {
+    const moved = Object.fromEntries(Object.entries(PLANNING_FOLDER_DEFAULTS).map(([k, v]) => [k, `Z ${k}`])) as typeof PLANNING_FOLDER_DEFAULTS;
+    const r = planningRoles(app(), {}, moved, "Lab/Entries");
+    expect(r.planning).toBe("Z planning");
+    expect(r.labNotes).toBe("Lab/Entries");
+    expect(planningRoles(app(), { planning: "Old" }, moved).planning).toBe("Z planning");   // the setting wins over where files were tracked
+    const literals = [...Object.values(PLANNING_FOLDER_DEFAULTS), "03 Lab Book/Notes"];
+    for (const f of planning.manifest.files) {
+      const text = kitText(planning, f, r);
+      for (const lit of literals) expect(text.includes(lit), `${f.src}: ${lit}`).toBe(false);
+    }
+    // the To-do board reads the moved to-dos folder
+    const board = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
+    expect(kitText(planning, board, r)).toContain('file.inFolder("Z planning/To-dos")');
   });
 
   it("lab and planning kits together: no two files share a place, and the scripts sit in sibling folders", () => {
@@ -139,7 +154,7 @@ describe("planning kit switch (Phase 6a)", () => {
 });
 
 describe("layout folders at install (Phase 6c)", () => {
-  const roles = planningRoles(app(), {});
+  const roles = planningRoles(app(), {}, PLANNING_FOLDER_DEFAULTS);
   it("lists the contract folders; Literature only with ZotLit; never 99 Archive", () => {
     const without = planningFolders(roles, false).map(f => f.path);
     expect(without).toEqual(expect.arrayContaining(["00 Inbox", "01 Daily Notes", "00 Planning/To-dos", "06 Knowledge", "07 How-tos", "08 Meetings"]));

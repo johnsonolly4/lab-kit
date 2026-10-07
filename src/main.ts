@@ -4,7 +4,7 @@ import { CalcRenderer } from "./calc/render";
 import { HeaderRenderer } from "./header/render";
 import { HeaderStore } from "./header/settings";
 import { KitController } from "./kit/ui";
-import { PLANNING_KIT, PLANNING_LAYOUT, kitJoin } from "./kit/paths";
+import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
 
@@ -14,9 +14,10 @@ export default class LabKitPlugin extends Plugin {
   kit!: KitController;
   /** Planning commands; null without the planning kit. Project cards call `newTodo(project)` / `newProjectNote(folder)`. */
   planning: PlanningCommands | null = null;
+  private store!: HeaderStore;
 
   async onload(): Promise<void> {
-    const store = new HeaderStore(this);
+    const store = this.store = new HeaderStore(this);
     await store.load();
     this.calc = new CalcRenderer(this, () => this.kit.kit);
     this.header = new HeaderRenderer(this, store);
@@ -43,13 +44,24 @@ export default class LabKitPlugin extends Plugin {
     });
   }
 
+  /**
+   * data.json changed on disk while Obsidian is open (Obsidian Sync, iCloud, Dropbox, Syncthing, Git, another program): read it again,
+   * so open views show the new values and the next save doesn't write the old ones back over them.
+   */
+  async onExternalSettingsChange(): Promise<void> {
+    await this.store.load();
+    this.store.onChange();
+    await this.kit.load();
+    this.kit.redrawSettings?.();
+  }
+
   /** Starts the to-do engine and registers the planning commands, once, when the planning kit is on and installed. Switching it off needs a reload. */
   startPlanning(): void {
     const planning = this.kit.kit.kits[PLANNING_KIT];
     if (this.planning || !planning?.enabled || !planning.managed) return;
-    const engine = new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos"));
+    const engine = new TodoEngine(this, () => todoFolder(this.kit.kit.planningFolders));
     engine.start();
-    this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine);
+    this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine, () => this.kit.kit, this.kit.folderGuard);
     this.planning.register();
   }
 }

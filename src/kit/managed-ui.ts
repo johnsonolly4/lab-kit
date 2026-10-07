@@ -36,7 +36,7 @@ export class KitManaged {
     const old = this.oldRecord();
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
     const tracked = trackedRoles(this.bundle, slot.managed);
-    if (this.bundle.manifest.id === PLANNING_KIT) return { ...planningRoles(this.app, tracked), ...own };
+    if (this.bundle.manifest.id === PLANNING_KIT) return { ...planningRoles(this.app, tracked, this.host.kit.planningFolders, this.host.kit.labFolder), ...own };
     // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
     return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked), ...own };
   }

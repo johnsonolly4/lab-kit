@@ -1,6 +1,6 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
 import { Modal, Notice, type App } from "obsidian";
-import { PLANNING_LAYOUT, kitJoin, type KitData } from "./paths";
+import { kitJoin, todoFolder, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, dataviewJsEnabled, enableDataviewJs, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
@@ -11,12 +11,12 @@ import type { HeaderSettings } from "../header/settings";
 import { checkSetup, hotkeyText, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
-export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void> }
+export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): void }
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
-const PLANNING_FOLDER_TEMPLATES = [
-  { folder: "01 Daily Notes", file: "Daily note.md" },
-  { folder: kitJoin(PLANNING_LAYOUT.planning, "To-dos"), file: "To-do.md" },
+const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
+  { folder: f.daily, file: "Daily note.md" },
+  { folder: todoFolder(f), file: "To-do.md" },
 ];
 
 /** Reads the vault, Templater and Obsidian into the plain state checkSetup works on. */
@@ -26,8 +26,12 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   const menuFile = app.vault.getFileByPath(menu) ? menu : null;
   const css = [...(lab.bundle.manifest.enableCss ?? []), ...(planningOn ? planning?.bundle.manifest.enableCss ?? [] : [])]
     .map(name => ({ name: name.replace(/\.css$/, ""), enabled: isCssSnippetEnabled(app, name) }));
-  const folders = [host.kit.labFolder, host.kit.chemicalFolder].filter(f => f);
-  if (planningOn) folders.push(PLANNING_LAYOUT.planning, PLANNING_LAYOUT.projects, PLANNING_LAYOUT.meetings, ...PLANNING_FOLDER_TEMPLATES.map(f => f.folder));
+  const pf = host.kit.planningFolders, folderTemplates = planningFolderTemplates(pf);
+  const zotlit = loadedPlugins(app).has("zotlit");
+  // Folders named in a setting; the archive is made when first needed, Literature only with ZotLit
+  const settingFolders = [host.kit.labFolder, host.kit.chemicalFolder,
+    ...(planningOn ? (Object.keys(pf) as PlanningRole[]).filter(r => r !== "archive" && (r !== "literature" || zotlit)).map(r => pf[r]) : [])].filter(f => f);
+  const folders = [...settingFolders, ...(planningOn ? folderTemplates.map(f => f.folder) : [])];
   const names = commandNames(app);
   const mbIds = metaBindButtonIds(app);
   const guideId = "note-obsidian-set-up-zotlit-md";
@@ -50,8 +54,8 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     menu: menuFile,
     installed: { lab: !!lab.installedVersion, planning: !!planning?.installedVersion },
     css,
-    folders: [...new Set(folders)].map(path => ({ path, exists: !!app.vault.getFolderByPath(path) })),
-    folderTemplates: planning ? PLANNING_FOLDER_TEMPLATES.map(f => ({ folder: f.folder, template: kitJoin(planning.templatesFolder(), f.file) })) : [],
+    folders: [...new Set(folders)].map(path => ({ path, exists: !!app.vault.getFolderByPath(path), setting: settingFolders.includes(path) })),
+    folderTemplates: planning ? folderTemplates.map(f => ({ folder: f.folder, template: kitJoin(planning.templatesFolder(), f.file) })) : [],
     // Templater names a template hotkey command `templater-obsidian:<template path>` (not checked against Templater's source)
     hotkeyCommands: { "Insert snippet": menuFile && names[`templater-obsidian:${menuFile}`] ? `templater-obsidian:${menuFile}` : null },
     hotkeys: hotkeysSupported(app) ? hotkeysInUse(app) : null,
@@ -84,7 +88,7 @@ export class SetupCheckModal extends Modal {
       text.createDiv({ text: it.label });
       text.createDiv({ cls: "setting-item-description", text: it.detail });
       const fix = it.fix;
-      if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note"].includes(fix.kind) ? "Open" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
+      if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
     }
   }
 
@@ -113,6 +117,7 @@ export class SetupCheckModal extends Modal {
       case "install": this.close(); (fix.kit === "planning" ? this.host.planning ?? lab : lab).review(); return;
       case "templater": this.close(); await lab.setupTemplater(); return;
       case "css": await confirm({ name: "Turn on the CSS snippet", desc: fix.names.join(", "), apply: () => setCssSnippets(this.app, fix.names, []) }); break;
+      case "find-moved": this.close(); this.host.findMoved(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
         apply: () => addTemplaterFolderTemplate(this.app, fix.folder, fix.template) }); break;

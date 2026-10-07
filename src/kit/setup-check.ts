@@ -50,7 +50,8 @@ export interface SetupState {
   /** The kits' CSS snippets; `enabled` undefined when Obsidian can't tell. */
   css: { name: string; enabled: boolean | undefined }[];
   /** Folders the kits expect. */
-  folders: { path: string; exists: boolean }[];
+  /** `setting`: the folder is named in a folder setting (a missing one was most likely moved outside Obsidian: Find moved folders). */
+  folders: { path: string; exists: boolean; setting?: boolean }[];
   /** Folder templates the planning kit wants (folder → template path). */
   folderTemplates: { folder: string; template: string }[];
   /** Hotkey commands: the Templater command for Insert snippet, etc. Null when the command doesn't exist yet. */
@@ -67,6 +68,7 @@ export type SetupFix =
   | { kind: "templater" }
   | { kind: "css"; names: string[] }
   | { kind: "folder"; path: string }
+  | { kind: "find-moved" }
   | { kind: "folder-template"; folder: string; template: string }
   | { kind: "hotkey"; command: string; key: KitHotkey }
   | { kind: "settings" }
@@ -196,7 +198,14 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: c.enabled === false ? { kind: "css", names: [c.name] } : undefined });
   }
 
-  for (const f of s.folders) out.push({ id: `folder:${f.path}`, group: "Folders", label: f.path, ok: f.exists, detail: f.exists ? "Exists." : "Missing.", fix: f.exists ? undefined : { kind: "folder", path: f.path } });
+  // A settings folder that is missing after the install was most likely moved outside Obsidian: look for it rather than make it again
+  const installed = s.installed.lab || s.installed.planning;
+  for (const f of s.folders) {
+    const moved = !f.exists && !!f.setting && installed;
+    out.push({ id: `folder:${f.path}`, group: "Folders", label: f.path, ok: f.exists,
+      detail: f.exists ? "Exists." : moved ? "Missing. Moved outside Obsidian? Find looks for where it went (or makes it again)." : "Missing.",
+      fix: f.exists ? undefined : moved ? { kind: "find-moved" } : { kind: "folder", path: f.path } });
+  }
 
   for (const h of SETUP_HOTKEYS.filter(h => kitOn(h.kit))) {
     const command = s.hotkeyCommands[h.name] ?? null;

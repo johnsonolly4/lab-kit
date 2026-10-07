@@ -26,6 +26,15 @@ const state = (o: Partial<SetupState> = {}): SetupState => ({
 const byId = (s: SetupState) => Object.fromEntries(checkSetup(s).map(i => [i.id, i]));
 
 describe("check setup (Phase 6)", () => {
+  it("Phase 5a: a settings folder missing after the install offers Find (moved outside Obsidian?); other folders are made", () => {
+    const r = byId(state({ folders: [{ path: "20 Work", exists: false, setting: true }, { path: "00 Planning/To-dos", exists: false }] }));
+    expect(r["folder:20 Work"]).toMatchObject({ ok: false, fix: { kind: "find-moved" } });
+    expect(r["folder:20 Work"].detail).toMatch(/Moved outside Obsidian/);
+    expect(r["folder:00 Planning/To-dos"].fix).toEqual({ kind: "folder", path: "00 Planning/To-dos" });
+    const fresh = byId(state({ installed: { lab: false, planning: false }, folders: [{ path: "20 Work", exists: false, setting: true }] }));
+    expect(fresh["folder:20 Work"].fix).toEqual({ kind: "folder", path: "20 Work" });   // before the install: just make it
+  });
+
   it("a set-up lab vault is all green and lists no planning items", () => {
     const items = checkSetup(state());
     expect(items.filter(i => !i.ok)).toEqual([]);

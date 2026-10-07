@@ -1,7 +1,9 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, PLANNING_KIT, kitJoin, kitLoad, newLabEntryTarget, type KitData } from "./paths";
-import { hasTemplater, templaterCreateNote } from "./obsidian-private";
+import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
+import type { FolderGuardActions } from "./folder-guard";
+import { MovedFoldersModal } from "./moved-folders-ui";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
@@ -16,6 +18,7 @@ class KitSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: Plugin, private ctl: KitController, private header: HeaderStore) {
     super(app, plugin);
     this.containerEl.addClass("lab-kit-settings");   // scopes the phone-width rules in styles.css to this tab
+    ctl.redrawSettings = () => this.update();
   }
 
   /** Built-in icon of each snippet (from its `// icon:` line), read before the rows are drawn so no row changes after it is shown. */
@@ -135,6 +138,37 @@ class KitSettingTab extends PluginSettingTab {
     return { updates, setup };
   }
 
+  /** One folder box per planning role. Empty = the default; a folder that doesn't exist is outlined (moved outside Obsidian?). */
+  private planningFolderRows(): SettingGroupItem[] {
+    const pf = this.ctl.kit.planningFolders;
+    const rows: [PlanningRole, string, string][] = [
+      ["inbox", "Inbox", "Quick capture puts notes here; Sort inbox empties it."],
+      ["daily", "Daily notes", "Daily notes (Templater's folder template for this folder)."],
+      ["planning", "Planning", "To-dos (in its To-dos folder), the to-do board, weekly review and shopping list."],
+      ["projects", "Projects", "One folder per project, with its hub note."],
+      ["literature", "Literature", "Literature notes from ZotLit."],
+      ["knowledge", "Knowledge", "Concept notes, one folder per topic."],
+      ["howtos", "How-tos", "How-to notes, one folder per topic."],
+      ["meetings", "Meetings", "Meeting series and their notes."],
+      ["archive", "Archive", "Old to-dos and archived inbox notes (made when first needed)."],
+    ];
+    const intro: SettingGroupItem = { name: "Where the planning kit's notes go", desc: "And what its lists read. Changing a folder here doesn't move notes: rename the folder in Obsidian and the setting follows. Moved it outside Obsidian? Use Find moved folders.",
+      render: b => { b.addButton(btn => btn.setButtonText("Find moved folders…").onClick(() => this.ctl.findMovedFolders())); } };
+    return [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+      render: b => {
+        b.addText(t => {
+          wideBox(b, t, this.app);
+          const mark = (): void => { t.inputEl.toggleClass("lab-kit-folder-missing", role !== "archive" && !this.app.vault.getFolderByPath(pf[role])); };
+          t.setPlaceholder(PLANNING_FOLDER_DEFAULTS[role]).setValue(pf[role] === PLANNING_FOLDER_DEFAULTS[role] ? "" : pf[role]).onChange(async v => {
+            pf[role] = v.trim() ? normalizePath(v.trim()) : PLANNING_FOLDER_DEFAULTS[role];
+            mark();
+            await this.ctl.save();
+          });
+          mark();
+        });
+      } }))];
+  }
+
   getSettingDefinitions(): SettingDefinitionItem[] {
     const kit = this.ctl.kit;
     const notebook: SettingGroupItem[] = [
@@ -171,10 +205,12 @@ class KitSettingTab extends PluginSettingTab {
     ];
     const snippets = this.snippetRows();
     const builtIn = this.builtInGroups();
+    const planningOn = !!kit.kits[PLANNING_KIT]?.enabled;
     return [
       { type: "group", heading: "Built-in kit", items: builtIn.updates },
       { type: "group", heading: "Kit folders and setup", items: builtIn.setup },
       { type: "group", heading: "Lab notebook", items: notebook },
+      ...(planningOn ? [{ type: "group" as const, heading: "Planning folders", items: this.planningFolderRows() }] : []),
       ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
       ...this.header.definitions()
     ];
@@ -201,6 +237,16 @@ export class KitController {
 
   get app(): App { return this.plugin.app; }
 
+  /** What the "folder not found" notice's buttons do. */
+  readonly folderGuard: FolderGuardActions = {
+    openSettings: () => { openPluginSettings(this.app, this.plugin.manifest.id); },
+    findMoved: () => this.findMovedFolders(),
+  };
+  findMovedFolders(): void { new MovedFoldersModal(this.app, this).open(); }
+
+  /** Set by the settings tab: redraws it (after settings changed on disk). */
+  redrawSettings: (() => void) | null = null;
+
   async load(): Promise<void> {
     const saved = (await this.plugin.loadData()) as { kit?: unknown } | null;
     this.kit = kitLoad(saved?.kit);   // a v0.5.2 single-kit state moves into kits.lab
@@ -222,6 +268,7 @@ export class KitController {
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
+    plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
       const section = latestSection(changelog);
@@ -231,6 +278,16 @@ export class KitController {
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {
       let changed = false;
       for (const slot of Object.values(this.kit.kits)) changed = followRename(slot.managed, oldPath, file.path) || changed;
+      // Folder settings follow a folder renamed or moved inside Obsidian (moved outside it: Find moved folders)
+      const pf = this.kit.planningFolders;
+      for (const role of Object.keys(pf) as PlanningRole[]) {
+        const to = followFolderRename(pf[role], oldPath, file.path);
+        if (to) { pf[role] = to; changed = true; }
+      }
+      for (const key of ["labFolder", "chemicalFolder", "methodsFolder"] as const) {
+        const to = this.kit[key] ? followFolderRename(this.kit[key], oldPath, file.path) : null;
+        if (to) { this.kit[key] = to; changed = true; }
+      }
       const rec = this.kit.installed?.files;
       if (rec) {
         for (const p of Object.keys(rec)) {
@@ -261,7 +318,7 @@ export class KitController {
   }
 
   /** Opens the Check setup window. */
-  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save() }).open(); }
+  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save(), findMoved: () => this.findMovedFolders() }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */
   async showWhatsNew(): Promise<void> {
