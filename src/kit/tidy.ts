@@ -8,12 +8,16 @@ export type MigrationOp =
   /** Adds the property, empty or with `value`, when the note doesn't have it. */
   | { op: "add-property"; name: string; value: string }
   /** A property written as a list with one item becomes plain text (`Status: [Planned]` → `Status: Planned`). Several items: reported, not changed. */
-  | { op: "list-to-text"; name: string };
+  | { op: "list-to-text"; name: string }
+  /** Moves a folder or file (Obsidian's rename, so links update). Only for `scope: "vault"`. Not done when the new place is taken. */
+  | { op: "move"; from: string; to: string };
 
 export interface Migration {
   id: string; title: string;
-  /** Which notes it looks at: the Lab notes folder or the Knowledge folder (the folders in the settings). */
-  scope: "lab" | "knowledge";
+  /** Which notes it looks at: the Lab notes folder or the Knowledge folder (the folders in the settings), or the whole vault (moves). */
+  scope: "lab" | "knowledge" | "vault";
+  /** Only notes whose name matches this expression (without `.md`), e.g. numbered lab notes. */
+  nameMatch?: string;
   /** Apply the rest only when the first op changed the note. */
   onlyIfMatched?: boolean;
   ops: MigrationOp[];
@@ -32,7 +36,11 @@ export interface TidyContext {
 export interface TidyFile { path: string; text?: string }
 
 /** A proposed change to one note's properties: `before` / `after` are the properties block (between the `---` lines), nothing else. */
-export interface TidyChange { path: string; before: string; after: string }
+export interface TidyChange {
+  path: string; before: string; after: string;
+  /** A move: the new path (`before` / `after` are empty). `note` says what is moved (e.g. "12 files"). */
+  to?: string; note?: string;
+}
 export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[] }
 export interface TidyReported { id: string; title: string; detail: string; items: { path: string; note?: string }[] }
 export interface TidyScan { groups: TidyGroup[]; reported: TidyReported[] }
@@ -84,6 +92,7 @@ const line = (name: string, value: string): string => value === "" ? `${name}:` 
 type Result = { fm: string[] } | { reported: string } | null;
 
 function runOp(fm: string[], op: MigrationOp): Result {
+  if (op.op === "move") return null;
   if (op.op === "add-property") return find(fm, op.name) ? null : { fm: [...fm, line(op.name, op.value)] };
   if (op.op === "list-to-text") {
     const p = find(fm, op.name);
@@ -100,8 +109,7 @@ function runOp(fm: string[], op: MigrationOp): Result {
 
 /** Runs one migration on one note's text. A change, a reason it was left alone, or null (nothing to do). */
 export function applyMigration(text: string, mig: Migration): { change: { before: string; after: string } } | { reported: string } | null {
-  const s = split(text);
-  if (!s) return null;
+  const s = split(text) ?? { fm: [], body: text };   // no properties block: the ops see an empty one (add-property makes it)
   let fm = s.fm, changed = false;
   for (const [i, op] of mig.ops.entries()) {
     const r = runOp(fm, op);
@@ -110,6 +118,20 @@ export function applyMigration(text: string, mig: Migration): { change: { before
     else if (i === 0 && mig.onlyIfMatched) return null;
   }
   return changed ? { change: { before: s.fm.join("\n"), after: fm.join("\n") } } : null;
+}
+
+/**
+ * The note's text with its properties block changed from `before` to `after` (what the window showed). Null when the block is not `before`
+ * any more (the note changed since the scan). A note with no block (`before` empty) gets one. Line endings are kept.
+ */
+export function replaceProperties(text: string, before: string, after: string): string | null {
+  const crlf = text.includes("\r\n"), t = text.replace(/\r\n/g, "\n");
+  const s = split(t);
+  let out: string;
+  if (!s) { if (before !== "" || after === "") return null; out = `---\n${after}\n---\n${t}`; }
+  else if (s.fm.join("\n") !== before) return null;
+  else out = `---\n${after}${after ? "\n" : ""}---${s.body}`;
+  return crlf ? out.replace(/\n/g, "\r\n") : out;
 }
 
 /* ---- Scan ---- */
@@ -142,15 +164,28 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   for (const n of notes) effective.set(n.path, n.text ?? "");
 
   for (const mig of ctx.migrations) {
-    const folder = mig.scope === "lab" ? ctx.labFolder : ctx.knowledgeFolder;
     const g: TidyGroup = { id: mig.id, title: mig.title, detail: "", changes: [] };
-    for (const n of notes.filter(x => inFolder(x.path, folder))) {
+    if (mig.scope === "vault") {
+      for (const op of mig.ops) {
+        if (op.op !== "move") continue;
+        const from = op.from.replace(/\/+$/, ""), to = op.to.replace(/\/+$/, "");
+        const inside = files.filter(f => f.path === from || f.path.startsWith(from + "/"));
+        if (!inside.length) continue;
+        if (files.some(f => f.path === to || f.path.startsWith(to + "/"))) { skipped.items.push({ path: from, note: `${to} already exists: not moved` }); continue; }
+        g.changes.push({ path: from, before: "", after: "", to, note: `${inside.length} ${inside.length === 1 ? "file" : "files"}` });
+      }
+      if (g.changes.length) groups.push(g);
+      continue;
+    }
+    const folder = mig.scope === "lab" ? ctx.labFolder : ctx.knowledgeFolder;
+    const name = mig.nameMatch ? new RegExp(mig.nameMatch) : null;
+    for (const n of notes.filter(x => inFolder(x.path, folder) && (!name || name.test(baseName(x.path))))) {
       const r = applyMigration(effective.get(n.path) ?? "", mig);
       if (!r) continue;
       if ("reported" in r) { skipped.items.push({ path: n.path, note: r.reported }); continue; }
       g.changes.push({ path: n.path, ...r.change });
-      const s = split(effective.get(n.path) ?? "");
-      if (s) effective.set(n.path, `---\n${r.change.after}${r.change.after ? "\n" : ""}---${s.body}`);
+      const cur = effective.get(n.path) ?? "", s = split(cur);
+      effective.set(n.path, s ? `---\n${r.change.after}${r.change.after ? "\n" : ""}---${s.body}` : `---\n${r.change.after}\n---\n${cur}`);
     }
     if (g.changes.length) groups.push(g);
   }
@@ -199,6 +234,9 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
   return { groups, reported: reported.filter((r): r is TidyReported => !!r) };
 }
+
+/** The changes of the rules the user left ticked: the only ones Change notes… may carry out. */
+export const selectChanges = (s: TidyScan, ticked: ReadonlySet<string>): TidyChange[] => s.groups.filter(g => ticked.has(g.id)).flatMap(g => g.changes);
 
 /* ---- Before / after rows ---- */
 

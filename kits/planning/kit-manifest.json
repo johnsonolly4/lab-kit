@@ -46,6 +46,23 @@
           "value": "false"
         }
       ]
+    },
+    {
+      "id": "move-folders",
+      "title": "Move folders to the kit layout",
+      "scope": "vault",
+      "ops": [
+        {
+          "op": "move",
+          "from": "Extras/Templates/Scripts",
+          "to": "Extras/Templates/Actions"
+        },
+        {
+          "op": "move",
+          "from": "fonts",
+          "to": "Extras/fonts"
+        }
+      ]
     }
   ],
   "enableCss": [

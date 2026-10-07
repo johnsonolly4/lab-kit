@@ -20,6 +20,69 @@
           "name": "Status"
         }
       ]
+    },
+    {
+      "id": "lab-template-properties",
+      "title": "Lab notes: add the template's missing properties",
+      "scope": "lab",
+      "nameMatch": "^[A-Za-z]*[0-9]{2,}",
+      "ops": [
+        {
+          "op": "add-property",
+          "name": "Type",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Status",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Exp. Class",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Plan date",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Exp. Start",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Exp. End",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Chemicals",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "CoSHH",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "RA",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Objective",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Outcome",
+          "value": ""
+        }
+      ]
     }
   ],
   "files": [

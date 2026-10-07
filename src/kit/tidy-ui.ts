@@ -1,12 +1,42 @@
-// Tidy up notes window (Phase 7a): the scan's result as a before (left) / after (right) split view, one tick box per rule, an "Only reported" group,
-// Copy report. Changes nothing in the vault: the Change notes… button stays disabled until Phase 7b.
+// Tidy up notes window: the scan's result as a before (left) / after (right) split view, one tick box per rule, an "Only reported" group, Copy report.
+// Nothing is written until: the backup box is ticked, Change notes… is pressed and the second window is confirmed (Phase 7b).
 import { Modal, Notice, type App } from "obsidian";
-import { PLANNING_FOLDER_DEFAULTS, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
+import { PLANNING_FOLDER_DEFAULTS, kitParent, kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged } from "./managed-ui";
-import { diffRows, reportMarkdown, scan, wantsText, type Migration, type TidyContext, type TidyScan } from "./tidy";
+import { kitBackupPath } from "./managed";
+import { ensureFolder } from "./ensure-folder";
+import { applyTidy, type TidyIO } from "./tidy-apply";
+import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyScan } from "./tidy";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
+
+/** The vault as TidyIO: notes through the Vault API, backups into the kit's backups folder (inside the plugin folder), moves through fileManager. */
+export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
+  const file = (p: string) => app.vault.getFileByPath(p);
+  return {
+    read: async p => { const f = file(p); return f ? await app.vault.read(f) : null; },
+    write: async (p, text) => { const f = file(p); if (f) await app.vault.process(f, () => text); },
+    backup: async (p, text) => {
+      const to = kitBackupPath({ backups, stamp }, p);
+      await kitEnsureDir(app.vault.adapter, kitParent(to));
+      await app.vault.adapter.write(to, text);
+      return to;
+    },
+    exists: p => !!app.vault.getAbstractFileByPath(p),
+    filesIn: p => app.vault.getFiles().map(f => f.path).filter(x => x === p || x.startsWith(p + "/")),
+    linkedFrom: paths => {
+      const gone = new Set(paths);
+      return Object.entries(app.metadataCache.resolvedLinks).filter(([src, links]) => !gone.has(src) && paths.some(p => links[p])).map(([src]) => src);
+    },
+    rename: async (from, to) => {
+      const f = app.vault.getAbstractFileByPath(from);
+      if (!f) return;
+      await ensureFolder(app.vault, kitParent(to));
+      await app.fileManager.renameFile(f, to);
+    },
+  };
+}
 
 const top = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
 
@@ -39,6 +69,8 @@ export async function scanVault(app: App, host: TidyHost): Promise<TidyScan> {
 export class TidyNotesModal extends Modal {
   private result: TidyScan | null = null;
   private ticked = new Set<string>();
+  private backedUp = false;
+  private message = "";
 
   constructor(app: App, private host: TidyHost) { super(app); }
 
@@ -61,7 +93,8 @@ export class TidyNotesModal extends Modal {
     el.empty();
     const banner = el.createDiv({ cls: "lab-kit-tidy-banner" });
     banner.createEl("strong", { text: "Back up your whole vault before changing anything. " });
-    banner.createSpan({ text: "Lab Kit's backups of single files don't replace that. This window only shows what would change: nothing is changed yet." });
+    banner.createSpan({ text: "Lab Kit backs up each note it changes, but that doesn't replace a backup of the vault. Nothing changes until you tick the box below, press Change notes and confirm." });
+    if (this.message) el.createDiv({ cls: "lab-kit-tidy-banner", text: this.message });
 
     if (!r.groups.length && !r.reported.length) el.createEl("p", { text: "Nothing to tidy: every note matches the kit layout." });
     el.createEl("p", { cls: "setting-item-description", text: "Left is the note now, right is how it would look. Red: removed. Green: added. Amber: changed." });
@@ -70,11 +103,12 @@ export class TidyNotesModal extends Modal {
       const head = el.createDiv({ cls: "lab-kit-tidy-rule" });
       const box = head.createEl("input", { type: "checkbox" });
       box.checked = this.ticked.has(g.id);
-      box.addEventListener("change", () => { if (box.checked) this.ticked.add(g.id); else this.ticked.delete(g.id); });
+      box.addEventListener("change", () => { if (box.checked) this.ticked.add(g.id); else this.ticked.delete(g.id); this.refreshChange?.(); });
       const label = head.createDiv();
       label.createEl("strong", { text: `${g.title} (${g.changes.length})` });
       if (g.detail) label.createDiv({ cls: "setting-item-description", text: g.detail });
       for (const c of g.changes) {
+        if (c.to !== undefined) { el.createDiv({ cls: "lab-kit-tidy-path", text: `${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
         el.createDiv({ cls: "lab-kit-tidy-path", text: c.path });
         const grid = el.createDiv({ cls: "lab-kit-tidy-diff" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "Before" });
@@ -101,13 +135,56 @@ export class TidyNotesModal extends Modal {
 
     const foot = el.createDiv({ cls: "lab-kit-tidy-foot" });
     const backed = foot.createEl("label", { cls: "lab-kit-tidy-backup" });
-    backed.createEl("input", { type: "checkbox" });
+    const backBox = backed.createEl("input", { type: "checkbox" });
+    backBox.checked = this.backedUp;
+    backBox.addEventListener("change", () => { this.backedUp = backBox.checked; this.refreshChange?.(); });
     backed.createSpan({ text: "I have backed up my vault" });
     foot.createEl("button", { text: "Copy report" }).addEventListener("click", () => {
       void navigator.clipboard.writeText(reportMarkdown(r, this.ticked)).then(() => new Notice("Report copied."), () => new Notice("Couldn't copy the report."));
     });
-    const change = foot.createEl("button", { text: "Change notes…", attr: { title: "Comes in the next version" } });
-    change.disabled = true;
-    foot.createSpan({ cls: "setting-item-description", text: "Changing notes comes in the next version." });
+    const change = foot.createEl("button", { text: "Change notes…", cls: "mod-cta" });
+    this.refreshChange = () => { change.disabled = !this.backedUp || !this.selected().length; };
+    this.refreshChange();
+    change.addEventListener("click", () => this.confirm());
+    foot.createSpan({ cls: "setting-item-description", text: "Tick the box once your vault is backed up." });
   }
+
+  private refreshChange: (() => void) | null = null;
+
+  /** The changes of the ticked rules. */
+  private selected(): TidyChange[] { return this.result ? selectChanges(this.result, this.ticked) : []; }
+
+  /** Step 2: a second window; nothing is written before Confirm. */
+  private confirm(): void {
+    const changes = this.selected(), rules = (this.result?.groups ?? []).filter(g => this.ticked.has(g.id)).length;
+    if (!changes.length || !this.backedUp) return;
+    new TidyConfirmModal(this.app, changes.length, rules, () => void this.apply(changes)).open();
+  }
+
+  private async apply(changes: TidyChange[]): Promise<void> {
+    const backups = this.host.managed.roles().backups;
+    try {
+      const out = await applyTidy(vaultIO(this.app, backups, new Date().toISOString()), changes);
+      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.skipped.length} skipped`];
+      this.message = `${parts.join(", ")}. Backups: ${backups}.${out.skipped.length ? ` Skipped: ${out.skipped.map(x => `${x.path} (${x.why})`).join("; ")}.` : ""}`;
+      new Notice(parts.join(", ") + ".");
+    } catch (e) { this.message = `Stopped: ${(e as Error).message}. Anything already changed is in the backups folder (${backups}).`; }
+    this.result = await scanVault(this.app, this.host);   // a second scan: what is left
+    this.ticked = new Set(this.result.groups.map(g => g.id));
+    this.backedUp = false;
+    this.render();
+  }
+}
+
+/** Step 2 of Change notes: "Change N notes (M rules)?" with Confirm and Cancel. */
+class TidyConfirmModal extends Modal {
+  constructor(app: App, private n: number, private rules: number, private onConfirm: () => void) { super(app); }
+  onOpen(): void {
+    this.setTitle(`Change ${this.n} ${this.n === 1 ? "item" : "items"} (${this.rules} ${this.rules === 1 ? "rule" : "rules"})?`);
+    this.contentEl.createEl("p", { text: "Each note is backed up first. Notes you have edited since the scan are skipped." });
+    const row = this.contentEl.createDiv({ cls: "lab-kit-tidy-foot" });
+    row.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
+    row.createEl("button", { text: "Confirm", cls: "mod-warning" }).addEventListener("click", () => { this.close(); this.onConfirm(); });
+  }
+  onClose(): void { this.contentEl.empty(); }
 }

@@ -41,6 +41,25 @@ describe("Tidy up notes scan (Phase 7a)", () => {
     expect(left[1].note).toContain("kind is already set");
   });
 
+  it("Phase 7b: lab notes get the template's missing properties (empty): partial block, no block; a full block and an unnumbered note are left", () => {
+    const g = group(s, "lab-template-properties");
+    expect(g?.changes.map(c => c.path)).toEqual(["03 Lab Book/Notes/ABC0001-A.md", "03 Lab Book/Notes/ABC0002-A.md", "03 Lab Book/Notes/ABC0003-A.md", "03 Lab Book/Notes/ABC0004-A.md", "03 Lab Book/Notes/ABC0006-A.md"]);
+    // after the Status rule (the properties are read as they will be), existing values and extra properties stay, only missing keys are added
+    expect(g?.changes[0].after).toBe("Exp. Class: Test\nStatus: Planned\ndate: 2026-01-05\nType:\nPlan date:\nExp. Start:\nExp. End:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:");
+    expect(g?.changes[3].after).toBe("Status: Planned\nType:\nExp. Class:\nPlan date:\nExp. Start:\nExp. End:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:");
+    expect(g?.changes[4]).toMatchObject({ before: "" });
+  });
+
+  it("Phase 7b: moves: a folder and a file's folder, only when they exist and the new place is free", () => {
+    expect(group(s, "move-folders")?.changes).toEqual([
+      { path: "Extras/Templates/Scripts", before: "", after: "", to: "Extras/Templates/Actions", note: "1 file" },
+      { path: "fonts", before: "", after: "", to: "Extras/fonts", note: "1 file" },
+    ]);
+    const taken = scan([{ path: "fonts/a.woff" }, { path: "Extras/fonts/b.woff" }], ctx);
+    expect(taken.groups).toEqual([]);
+    expect(taken.reported[0].items[0]).toEqual({ path: "fonts", note: "Extras/fonts already exists: not moved" });
+  });
+
   it("knowledge notes: Type: Wiki → kind: concept, adds only the missing summary / sources / checked", () => {
     expect(group(s, "knowledge-concept")?.changes).toEqual([
       { path: "06 Knowledge/Polymer terms.md", before: "Type: Wiki\naliases: [terms]", after: "kind: concept\naliases: [terms]\nsummary:\nsources:\nchecked: false" },
@@ -70,7 +89,7 @@ describe("Tidy up notes scan (Phase 7a)", () => {
 
   it("a note that already matches is not listed anywhere", () => {
     const all = JSON.stringify(s);
-    for (const p of ["Done concept.md", "Knowledge index.md", "ABC0004-A.md", "Glovebox.md", "00 Home.md"]) expect(all).not.toContain(p);
+    for (const p of ["Done concept.md", "Knowledge index.md", "ABC0005-A.md", "Notes about this folder.md", "Glovebox.md", "00 Home.md"]) expect(all).not.toContain(p);
   });
 
   it("notes outside the layout are not reported when no contract is given (planning kit off)", () => {
@@ -94,7 +113,7 @@ describe("Tidy up notes scan (Phase 7a)", () => {
 
   it("report: counts, paths and not-ticked rules, no note text", () => {
     const md = reportMarkdown(s, new Set(["hub-kind"]));
-    expect(md).toContain("5 changes in 3 rules");
+    expect(md).toContain("12 changes in 5 rules");
     expect(md).toContain("## Add kind: hub to index notes (1)\n- 07 How-tos/Cooking index.md");
     expect(md).toContain("## Lab notes: Status list → text (2) (not ticked)");
     expect(md).toContain("## Only reported");
