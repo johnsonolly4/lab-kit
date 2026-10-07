@@ -177,6 +177,12 @@ export async function previewInstall(adapter: Pick<DataAdapter, "exists">, items
     if (folders.has(f.path) || await adapter.exists(f.path)) continue;
     folders.add(f.path);
     out.about[f.path] = f.desc;
+    // missing folders above it are made too: list them
+    for (let dir = kitParent(f.path); dir && !folders.has(dir); dir = kitParent(dir)) {
+      if (await adapter.exists(dir)) break;
+      folders.add(dir);
+      out.about[dir] ??= "Holds the folders below it.";
+    }
   }
   for (const it of items) {
     const writes = select(it) && it.action !== "up-to-date";
