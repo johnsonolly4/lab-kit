@@ -39,3 +39,22 @@ export function deckPath(fm: Record<string, unknown>, isMac: boolean): string {
   const v = isMac ? fm.deck_mac : fm.deck_windows;
   return (typeof v === "string" ? v : "").trim().replace(/^["']|["']$/g, "");
 }
+
+/* ---- Sort inbox ---- */
+/** A note name without the characters a file name or a wikilink can't hold (each becomes "-"), as the old Sort inbox template. */
+export const cleanName = (s: string): string => s.replace(/[\\/:*?"<>|#^[\]]/g, "-").trim();
+
+/** The name a sorted note gets: the typed name cleaned, else (empty, or nothing left after cleaning) its current name. */
+export const sortedName = (current: string, typed: string | null): string => cleanName(typed || current) || current;
+
+/** `root` and every folder below it, sorted: the choices for "Knowledge…", "How-to…", "Meetings…". */
+export const subfolders = (folders: string[], root: string): string[] =>
+  folders.filter(p => p === root || p.startsWith(root + "/")).sort();
+
+/** An inbox note made into a to-do: on the Backlog, open; project / due / meeting added only when missing. */
+export function todoFields(fm: Record<string, unknown>): void {
+  fm.kind = "todo"; fm.day = "Backlog"; fm.done = false; fm.rolled = false;
+  if (!("project" in fm)) fm.project = "";
+  if (!("due" in fm)) fm.due = "";
+  if (!("meeting" in fm)) fm.meeting = false;
+}

@@ -182,39 +182,6 @@
       "policy": "keep"
     },
     {
-      "id": "tpl-actions-add-to-shopping-list-md",
-      "kind": "template",
-      "src": "Extras/Templates/Actions/Add to shopping list.md",
-      "role": "templates",
-      "path": "Actions/Add to shopping list.md",
-      "version": "0.5.2",
-      "sha256": "27f55a66b60e821239d8bc063baf986e6bf7423f1e0b309c863b09fd519b3464",
-      "renamedFrom": [],
-      "desc": "Button action: adds items to the shopping list"
-    },
-    {
-      "id": "tpl-actions-archive-old-to-dos-md",
-      "kind": "template",
-      "src": "Extras/Templates/Actions/Archive old to-dos.md",
-      "role": "templates",
-      "path": "Actions/Archive old to-dos.md",
-      "version": "0.5.2",
-      "sha256": "8fb2dc6b956c327d17ae19551f2610ab3597dec5d78eb6bca207835ad4184e18",
-      "renamedFrom": [],
-      "desc": "Button action: moves done to-dos to the archive"
-    },
-    {
-      "id": "tpl-actions-sort-inbox-md",
-      "kind": "template",
-      "src": "Extras/Templates/Actions/Sort inbox.md",
-      "role": "templates",
-      "path": "Actions/Sort inbox.md",
-      "version": "0.5.2",
-      "sha256": "febe953e5a6abb0f241330521ffc825fdc4a70003ca7794a5325e2d4a4fa3012",
-      "renamedFrom": [],
-      "desc": "Button action: files each inbox note where it belongs"
-    },
-    {
       "id": "tpl-daily-note-md",
       "kind": "template",
       "src": "Extras/Templates/Daily note.md",
@@ -320,5 +287,9 @@
       "desc": "The text box every planning template asks with"
     }
   ],
-  "removed": []
+  "removed": [
+    "tpl-actions-add-to-shopping-list-md",
+    "tpl-actions-archive-old-to-dos-md",
+    "tpl-actions-sort-inbox-md"
+  ]
 }

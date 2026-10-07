@@ -1,5 +1,5 @@
 {
-  "note": "Meta Bind button templates the planning kit needs (Settings > Meta Bind > Button templates). Phase 4 replaces path-based actions with plugin commands.",
+  "note": "Meta Bind button templates the planning kit needs (Settings > Meta Bind > Button templates). Planning actions call Lab Kit commands (lab-kit:<id>, Phase 4b); shipped in Phase 6.",
   "buttonTemplates": [
     {
       "label": "Update literature note",
@@ -33,10 +33,8 @@
       "id": "todo",
       "actions": [
         {
-          "type": "templaterCreateNote",
-          "templateFile": "Extras/Templates/To-do.md",
-          "folderPath": "00 Planning/To-dos",
-          "openNote": false
+          "type": "command",
+          "command": "lab-kit:new-todo"
         }
       ]
     },
@@ -47,10 +45,8 @@
       "id": "capture",
       "actions": [
         {
-          "type": "createNote",
-          "folderPath": "00 Inbox",
-          "fileName": "Capture",
-          "openNote": true
+          "type": "command",
+          "command": "lab-kit:quick-capture"
         }
       ]
     },
@@ -221,8 +217,8 @@
       "id": "go-deck",
       "actions": [
         {
-          "type": "runTemplaterFile",
-          "templateFile": "Extras/Templates/Actions/Open Thursday deck.md"
+          "type": "command",
+          "command": "lab-kit:open-deck"
         }
       ]
     },
@@ -233,10 +229,8 @@
       "id": "new-meeting",
       "actions": [
         {
-          "type": "templaterCreateNote",
-          "templateFile": "Extras/Templates/Weekly meeting.md",
-          "folderPath": "08 Meetings/Weekly meetings",
-          "openNote": true
+          "type": "command",
+          "command": "lab-kit:new-meeting"
         }
       ]
     },
@@ -247,8 +241,8 @@
       "id": "archive-todos",
       "actions": [
         {
-          "type": "runTemplaterFile",
-          "templateFile": "Extras/Templates/Actions/Archive old to-dos.md"
+          "type": "command",
+          "command": "lab-kit:archive-todos"
         }
       ]
     },
@@ -274,8 +268,8 @@
       "id": "sort-inbox",
       "actions": [
         {
-          "type": "runTemplaterFile",
-          "templateFile": "Extras/Templates/Actions/Sort inbox.md"
+          "type": "command",
+          "command": "lab-kit:sort-inbox"
         }
       ]
     },
@@ -299,8 +293,8 @@
       "id": "shop-add",
       "actions": [
         {
-          "type": "runTemplaterFile",
-          "templateFile": "Extras/Templates/Actions/Add to shopping list.md"
+          "type": "command",
+          "command": "lab-kit:add-to-shopping"
         }
       ]
     },
@@ -387,9 +381,8 @@
       "id": "new-project",
       "actions": [
         {
-          "type": "templaterCreateNote",
-          "templateFile": "Extras/Templates/Project hub.md",
-          "folderPath": "02 Projects"
+          "type": "command",
+          "command": "lab-kit:new-project"
         }
       ]
     },
@@ -400,9 +393,8 @@
       "id": "project-note",
       "actions": [
         {
-          "type": "templaterCreateNote",
-          "templateFile": "Extras/Templates/New project note.md",
-          "folderPath": "02 Projects"
+          "type": "command",
+          "command": "lab-kit:new-project-note"
         }
       ]
     }

@@ -33,11 +33,11 @@ export const hasTemplater = (app: App): boolean => !!templater(app);
 export const templaterTemplatesFolder = (app: App): string | undefined => templater(app)?.settings?.templates_folder;
 export const templaterUserScriptsFolder = (app: App): string | undefined => templater(app)?.settings?.user_scripts_folder;
 
-/** Creates a note from `template` in `folder` with Templater and opens it. False when this Templater has no such function (private API). */
-export async function templaterCreateNote(app: App, template: TFile, folder: TFolder): Promise<boolean> {
+/** Creates a note from `template` in `folder` with Templater and opens it (unless `open` is false). False when this Templater has no such function (private API). */
+export async function templaterCreateNote(app: App, template: TFile, folder: TFolder, open = true): Promise<boolean> {
   const create = templater(app)?.templater?.create_new_note_from_template;
   if (typeof create !== "function") return false;
-  await create.call(templater(app)?.templater, template, folder, undefined, true);
+  await create.call(templater(app)?.templater, template, folder, undefined, open);
   return true;
 }
 

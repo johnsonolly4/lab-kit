@@ -1,5 +1,6 @@
-// Planning kit's text box: looks like Obsidian's pickers (same component) with no list underneath. Port of the kit's vtAsk.js.
-import { SuggestModal, type App } from "obsidian";
+// Planning kit's text box (looks like Obsidian's pickers, same component, with no list underneath: port of the kit's vtAsk.js)
+// and picker (a fuzzy list, as Templater's tp.system.suggester).
+import { FuzzySuggestModal, SuggestModal, type App } from "obsidian";
 
 class AskModal extends SuggestModal<never> {
   private settled = false;
@@ -35,3 +36,25 @@ class AskModal extends SuggestModal<never> {
 /** Asks for one line of text. The trimmed text, or null when Esc was pressed. */
 export const ask = (app: App, placeholder: string, value = ""): Promise<string | null> =>
   new Promise(resolve => new AskModal(app, placeholder, value, resolve).open());
+
+interface Choice<T> { label: string; value: T }
+
+class PickModal<T> extends FuzzySuggestModal<Choice<T>> {
+  private settled = false;
+
+  constructor(app: App, private choices: Choice<T>[], placeholder: string, private done: (v: T | null) => void) {
+    super(app);
+    this.setPlaceholder(placeholder);
+  }
+
+  getItems(): Choice<T>[] { return this.choices; }
+  getItemText(c: Choice<T>): string { return c.label; }
+  private finish(v: T | null): void { if (!this.settled) { this.settled = true; this.done(v); } }
+  onChooseItem(c: Choice<T>): void { this.finish(c.value); }
+  // Obsidian closes the modal before it calls onChooseItem: wait a tick so a choice wins over "closed"
+  onClose(): void { super.onClose(); window.setTimeout(() => this.finish(null), 0); }
+}
+
+/** Asks to pick one of `labels`; the matching entry of `values`, or null when Esc was pressed. */
+export const pick = <T>(app: App, labels: string[], values: T[], placeholder: string): Promise<T | null> =>
+  new Promise(resolve => new PickModal(app, labels.map((label, i) => ({ label, value: values[i] })), placeholder, resolve).open());
