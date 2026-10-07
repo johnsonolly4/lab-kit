@@ -49,7 +49,7 @@ export default class LabKitPlugin extends Plugin {
     if (this.planning || !planning?.enabled || !planning.managed) return;
     const engine = new TodoEngine(this, kitJoin(PLANNING_LAYOUT.planning, "To-dos"));
     engine.start();
-    this.planning = new PlanningCommands(this, planning.managed, engine);
+    this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine);
     this.planning.register();
   }
 }

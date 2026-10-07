@@ -30,7 +30,8 @@ interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string }
 const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
-  constructor(private plugin: Plugin, private managed: ManagedState | null, private engine: TodoEngine) {}
+  /** `state` reads the planning kit's install record when needed (it is replaced on every install). */
+  constructor(private plugin: Plugin, private state: () => ManagedState | null, private engine: TodoEngine) {}
 
   get app(): App { return this.plugin.app; }
 
@@ -79,7 +80,7 @@ export class PlanningCommands {
 
   /** Where the planning kit installed this template, else where it would install it. */
   private templateFile(tpl: { id: string; dest: string }): TFile | null {
-    const rec = this.managed?.files[tpl.id];
+    const rec = this.state()?.files[tpl.id];
     const tracked = rec && !rec.userDeleted && !kitIsBackup(rec.path) ? rec.path : "";
     return [tracked, kitJoin(planningRoles(this.app, {}).templates, tpl.dest)]
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;

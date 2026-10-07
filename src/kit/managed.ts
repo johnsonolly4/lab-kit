@@ -228,9 +228,12 @@ async function rememberFile(adapter: ManagedAdapter, next: ManagedState, it: Man
   await adapter.write(kitJoin(opts.baseDir, `${it.file.id}.txt`), it.text);
 }
 
+/** Where a write with these options backs up the file at `dest`: <backups>/<timestamp>/<its path>. */
+export const kitBackupPath = (opts: Pick<ApplyOptions, "backups" | "stamp">, dest: string): string => kitJoin(opts.backups, folderStamp(opts.stamp), dest);
+
 /** Copies the current file to <backups>/<timestamp>/<its path> and returns that path. */
 async function backupFile(adapter: ManagedAdapter, it: ManagedItem, opts: ApplyOptions): Promise<string> {
-  const backup = kitJoin(opts.backups, folderStamp(opts.stamp), it.dest);
+  const backup = kitBackupPath(opts, it.dest);
   await kitEnsureDir(adapter, kitParent(backup));
   await adapter.write(backup, await adapter.read(it.dest));
   return backup;

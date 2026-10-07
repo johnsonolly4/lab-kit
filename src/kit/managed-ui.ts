@@ -3,7 +3,7 @@
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
-  type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  kitBackupPath, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
@@ -60,8 +60,9 @@ export class KitManaged {
   }
 
   /** Writes kit files while Templater's "Trigger on new file creation" leaves them alone: a template must land as text, not be run. */
-  private quietly<T>(items: ManagedItem[], write: () => Promise<T>): Promise<T> {
-    return withoutTemplaterTrigger(this.app, items.map(i => i.dest), write);
+  private quietly<T>(items: ManagedItem[], opts: ApplyOptions, write: (opts: ApplyOptions) => Promise<T>): Promise<T> {
+    const paths = items.flatMap(i => [i.dest, kitBackupPath(opts, i.dest)]);   // backup copies are new notes too
+    return withoutTemplaterTrigger(this.app, paths, () => write(opts));
   }
 
   plan(): Promise<ManagedItem[]> {
@@ -74,7 +75,7 @@ export class KitManaged {
 
   async apply(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<ManagedResult[]> {
     const kit = this.slot;
-    const out = await this.quietly(items, () => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select })));
+    const out = await this.quietly(items, this.applyOptions({ select }), o => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, o));
     kit.managed = out.state;
     await this.host.save();
     this.host.installed?.();
@@ -146,7 +147,7 @@ export class KitManaged {
     let results: ManagedResult[] = [];
     const item = items.find(go);
     await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, settings: this.hotkeySetting(items, go), run: async () => {
-      const out = await this.quietly(items, () => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, this.applyOptions({ select: go, keepVersion: true })));
+      const out = await this.quietly(items, this.applyOptions({ select: go, keepVersion: true }), o => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, o));
       kit.managed = out.state;
       await this.settleVersion();
       await this.host.save();
@@ -201,7 +202,7 @@ export class KitManaged {
     const kit = this.slot;
     const item = (await this.plan()).find(i => i.file.id === id);
     if (!item) return null;
-    const out = await restoreManaged(this.app.vault.adapter, item, kit.managed, this.applyOptions());
+    const out = await this.quietly([item], this.applyOptions(), o => restoreManaged(this.app.vault.adapter, item, kit.managed, o));
     kit.managed = out.state;
     await this.settleVersion();
     await this.host.save();
@@ -214,7 +215,7 @@ export class KitManaged {
       const kit = this.slot;
       const item = (await this.plan()).find(i => i.file.id === id);
       if (!item) throw new Error("kit file not found");
-      const out = await resolveManaged(this.app.vault.adapter, item, text, kit.managed, this.applyOptions());
+      const out = await this.quietly([item], this.applyOptions(), o => resolveManaged(this.app.vault.adapter, item, text, kit.managed, o));
       kit.managed = out.state;
       await this.settleVersion();
       await this.host.save();
@@ -330,7 +331,7 @@ export class KitManaged {
         run: async () => {
           ran = true;
           if (!moved || scripts.kind !== "relocate") return;
-          const out = await this.quietly(items, () => applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, this.applyOptions({ select, keepVersion: true })));
+          const out = await this.quietly(items, this.applyOptions({ select, keepVersion: true }), o => applyManaged(this.app.vault.adapter, this.bundle, items, moved.state, o));
           kit.managed = out.state;
           kit.paths.userScripts = scripts.to;
           await this.host.save();
