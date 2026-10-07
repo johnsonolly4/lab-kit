@@ -9,7 +9,8 @@ Phases 0–4 and 6 (6a–6e: planning kit switch, Check setup with Fixes, layout
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. Phase 5 (homepage blocks, meeting series) + the whole-vault Check setup folded in (decided 2026-10-07), then 7–8
+1. Phase 5a: planning folder settings + homepage blocks (`docs/plans/phase-5-homepage-meetings.md`)
+1b. Phase 5b: meeting series + whole-vault Check setup (same plan); then 7–8
 2. To-do box Esc text: DECIDED Esc = Untitled to-do; change only that box's footer to say so (`kits/planning/Extras/Templates/To-do.md:7`, `vtAsk.js:38`, `src/planning/ask.ts:12`)
 3. New concept template + knowledge hub pages: Claude drafts from the plan's fields (kind: concept, summary, sources, checked), user reviews in test-vault before they ship. Plan first
 4. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)

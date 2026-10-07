@@ -5,6 +5,7 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-07 — Phase 5 in two sessions: 5a folder settings (all planning folders) + plugin blocks on 00 Home and Projects overview (project hub / meeting notes keep Dataview); 5b meeting series + whole-vault Check setup. Monthly meetings = same weekday of the month — (user, `/phase-plan`; `docs/plans/phase-5-homepage-meetings.md`)
 - 2026-10-07 — To-do box: Esc keeps making "Untitled to-do"; the footer text changes to match — no empty note left behind — (user)
 - 2026-10-07 — Knowledge pages (New concept template, hub notes): Claude drafts them, user reviews before they ship — no source file exists — (user)
 - 2026-10-07 — Planning kit leaves preview after Phase 5, the To-do box Esc text and the knowledge pages; tutorial waits for that; the font (`vault-fonts.css`) stays out of the kit, maybe later or given to whoever asks — screenshots of a preview would go stale — (user)
