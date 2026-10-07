@@ -16,6 +16,8 @@ module.exports = function vtAsk(tp, placeholder, value) {
       renderSuggestion() {}
       onChooseSuggestion() {}
       submit() { finish(this.inputEl.value.trim()); this.close(); }
+      // The picker's own Enter picks the highlighted (absent) suggestion: make it save instead
+      selectActiveSuggestion() { this.submit(); }
       onOpen() {
         super.onOpen();
         this.modalEl.addClass("vt-ask"); // vault-theme.css hides the empty list
@@ -28,6 +30,8 @@ module.exports = function vtAsk(tp, placeholder, value) {
     }
 
     const m = new AskModal(window.app);
+    // The picker registered its own Enter first, and the first match wins: drop it so ours runs
+    for (const k of [...(m.scope.keys || [])]) if (k.key === "Enter" && !k.modifiers) m.scope.unregister(k);
     m.scope.register([], "Enter", () => { m.submit(); return false; });
     m.setPlaceholder(placeholder || "");
     m.emptyStateText = "";

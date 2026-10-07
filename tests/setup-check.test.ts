@@ -5,9 +5,13 @@ import { checkSetup, type SetupState } from "../src/kit/setup-check";
 const MENU = "Extras/Templates/Lab Kit/Insert snippet.md";
 const CMD = `templater-obsidian:${MENU}`;
 const state = (o: Partial<SetupState> = {}): SetupState => ({
+  lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" },
+  dataviewJs: true,
+  metaBind: { missing: 0, total: 26 },
+  zotlitGuide: null,
   plugins: new Set(["templater-obsidian", "dataview"]),
   planning: false,
-  templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", menuHotkey: true, folderTemplates: [] },
+  templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", menuHotkey: true, folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
   menu: MENU,
   installed: { lab: true, planning: false },
   css: [{ name: "scrolling-mermaid", enabled: true }],
@@ -58,7 +62,7 @@ describe("check setup (Phase 6)", () => {
       folderTemplates: [{ folder: "01 Daily Notes", template: "T/Daily note.md" }, { folder: "00 Planning/To-dos", template: "T/To-do.md" }],
     }));
     expect(r["plugin:obsidian-meta-bind-plugin"].ok).toBe(false);
-    expect(r["plugin:obsidian-zotero-desktop-connector"]).toMatchObject({ ok: false, optional: true });
+    expect(r["plugin:zotlit"]).toMatchObject({ ok: false, optional: true });
     expect(r["folder-template:01 Daily Notes"].fix).toEqual({ kind: "folder-template", folder: "01 Daily Notes", template: "T/Daily note.md" });
     expect(r["folder-template:00 Planning/To-dos"]).toMatchObject({ ok: true, fix: undefined });
     expect(r["folder-template:00 Planning/To-dos"].detail).toContain("Mine.md");
@@ -66,7 +70,7 @@ describe("check setup (Phase 6)", () => {
 
   it("ZotLit counts as present under its kit name", () => {
     const r = byId(state({ planning: true, plugins: new Set(["templater-obsidian", "dataview", "zotlit"]) }));
-    expect(r["plugin:obsidian-zotero-desktop-connector"].ok).toBe(true);
+    expect(r["plugin:zotlit"].ok).toBe(true);
   });
 
   it("hotkey: offered when free, not offered on a clash, the user's own key is left alone", () => {
@@ -86,5 +90,36 @@ describe("check setup (Phase 6)", () => {
     expect(r["folder-template:01 Daily Notes"].ok).toBe(false);
     expect(r["folder-template:01 Daily Notes"].fix).toBeUndefined();
     expect(r["folder-template:01 Daily Notes"].detail).toContain("Install the planning kit first");
+  });
+
+  it("Lab Kit settings: empty initials, data root, folders are red and open settings; methods folder is optional", () => {
+    const r = byId(state({ lab: { initials: "", dataRoot: false, methodsFolder: "", labFolder: "", chemicalFolder: "" } }));
+    for (const id of ["initials", "data-root", "lab-folder", "chemical-folder"]) expect(r[`lab:${id}`]).toMatchObject({ ok: false, fix: { kind: "settings" } });
+    expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true });
+  });
+
+  it("Templater (planning): matching mode None is fixed, a chosen mode is left alone; only the old roll-over startup entry is offered for removal", () => {
+    const planned = (t: Partial<SetupState["templater"]>) => byId(state({ planning: true, installed: { lab: true, planning: true },
+      templater: { templatesFolder: "T", userScriptsFolder: "S", menuHotkey: true, folderTemplates: [], ...t } }));
+    expect(planned({ matchingMode: "none" })["templater:matching-mode"].fix).toEqual({ kind: "matching-mode" });
+    const regex = planned({ matchingMode: "regex" })["templater:matching-mode"];
+    expect(regex.ok).toBe(false);
+    expect(regex.fix).toBeUndefined();
+    const st = planned({ matchingMode: "folder", startupTemplates: ["Extras/Templates/Actions/To-do roll-over.md", "Mine.md"] })["templater:startup"];
+    expect(st.fix).toEqual({ kind: "startup-remove", template: "Extras/Templates/Actions/To-do roll-over.md" });
+    const mine = planned({ matchingMode: "folder", startupTemplates: ["Mine.md"] })["templater:startup"];
+    expect(mine.ok).toBe(true);
+    expect(mine.detail).toContain("Mine.md");
+  });
+
+  it("Dataview JS, Meta Bind buttons and the ZotLit checklist (planning only)", () => {
+    const off = byId(state({ dataviewJs: false, metaBind: { missing: 3, total: 26 } }));
+    expect(off["dataview:js"]).toBeUndefined();               // lab only: not listed
+    const r = byId(state({ planning: true, dataviewJs: false, metaBind: { missing: 3, total: 26 }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
+      plugins: new Set(["templater-obsidian", "dataview", "obsidian-meta-bind-plugin", "zotlit"]) }));
+    expect(r["dataview:js"].fix).toEqual({ kind: "dataview-js" });
+    expect(r["metabind:buttons"]).toMatchObject({ ok: false, fix: { kind: "meta-bind" } });
+    expect(r["metabind:buttons"].detail).toContain("3 of 26");
+    expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });
   });
 });

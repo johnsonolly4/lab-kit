@@ -80,10 +80,11 @@ const PLANNING_DESC = {
   "07 How-tos/How-tos index.md": "How-to notes by topic",
   "07 How-tos/Obsidian/How my vault works.md": "Guide to the vault layout and daily routine",
   "07 How-tos/Obsidian/Setting up a computer.md": "Steps to set up Obsidian on a new computer",
+  "07 How-tos/Obsidian/Set up ZotLit.md": "Checklist: ZotLit's note folder and template folder",
   "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
   "08 Meetings/Weekly meetings/Weekly meetings.md": "Meeting series hub",
 };
-const ZOTLIT = ["04 Literature/Literature.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
+const ZOTLIT = ["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
 CONFIG.planning = {
   roleByPrefix: PLANNING_ROLE_BY_PREFIX, desc: PLANNING_DESC,
   // Only the ZotLit files can be off (and are, without the ZotLit plugin)

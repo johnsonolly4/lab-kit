@@ -72,6 +72,20 @@
       "policy": "keep"
     },
     {
+      "id": "note-obsidian-set-up-zotlit-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/Set up ZotLit.md",
+      "role": "howtos",
+      "path": "Obsidian/Set up ZotLit.md",
+      "version": "0.5.2",
+      "sha256": "d217d960f58bc24ebae36368a8ff0968adfc807a8e78b3fe979d76b9fee181b4",
+      "renamedFrom": [],
+      "desc": "Checklist: ZotLit's note folder and template folder",
+      "optional": true,
+      "policy": "keep",
+      "needs": "plugin:zotlit"
+    },
+    {
       "id": "note-obsidian-setting-up-a-computer-md",
       "kind": "note",
       "src": "07 How-tos/Obsidian/Setting up a computer.md",
@@ -282,7 +296,7 @@
       "role": "userScripts",
       "path": "vtAsk.js",
       "version": "0.5.2",
-      "sha256": "4c568c61774bd930e32bac1d5bff9f2bba5d53c44900bd3e24e5f57f9ae5b5c8",
+      "sha256": "2410f7e2b216bca94a6ace13e0cb228eac59d6692d437330df6267575a25672c",
       "renamedFrom": [],
       "desc": "The text box every planning template asks with"
     }

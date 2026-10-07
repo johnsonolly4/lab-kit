@@ -4,7 +4,8 @@ import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { applyManaged, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
 import { PLANNING_LAYOUT, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
-import { loadedPlugins } from "../src/kit/obsidian-private";
+import { addMetaBindButtons, loadedPlugins, metaBindButtonIds } from "../src/kit/obsidian-private";
+import { PLANNING_BUTTONS } from "../src/planning/buttons";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit, embeddedKits } from "../scripts/embed-kit.mjs";
 
@@ -58,7 +59,7 @@ describe("planning kit files (Phase 3)", () => {
     expect(roles.userScripts).toBe("Extras/scripts/templater/vault");
     const without = await planManaged(memVault(), planning, null, roles, null, null, offIds(planning, {}, {}));
     const off = without.filter(i => i.action === "off").map(i => i.file.src).sort();
-    expect(off).toEqual(["04 Literature/Literature.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
+    expect(off).toEqual(["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
     const v = memVault();
     const items = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(items.every(i => i.action === "create")).toBe(true);
@@ -124,8 +125,8 @@ describe("planning kit switch (Phase 6a)", () => {
     expect(kitLoad(JSON.parse(JSON.stringify(kit))).kits.planning.enabled).toBe(true);
   });
 
-  it("ZotLit-only files install when ZotLit is loaded under its plugin id", async () => {
-    const withZot = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "obsidian-zotero-desktop-connector": {} } } } as any;
+  it("ZotLit-only files install when ZotLit (plugin id zotlit) is loaded", async () => {
+    const withZot = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "zotlit": {} } } } as any;
     expect(loadedPlugins(withZot).has("zotlit")).toBe(true);
     expect(loadedPlugins(app()).has("zotlit")).toBe(false);
     const zotIds = planning.manifest.files.filter(f => f.needs === "plugin:zotlit").map(f => f.id);
@@ -166,5 +167,18 @@ describe("layout folders at install (Phase 6c)", () => {
 
   it("lab note folders only when set", () => {
     expect(labFolders({ labFolder: "03 Lab Book/Notes", chemicalFolder: "" }).map(f => f.path)).toEqual(["03 Lab Book/Notes"]);
+  });
+});
+
+describe("Meta Bind buttons (Phase 6d)", () => {
+  it("adds only the buttons whose id is missing; yours stay as they are", async () => {
+    const mine = { id: "today", label: "My today" };
+    const mb = { settings: { buttonTemplates: [mine] }, saveSettings: async () => {} };
+    const a = { plugins: { plugins: { "obsidian-meta-bind-plugin": mb } } } as any;
+    const added = await addMetaBindButtons(a, PLANNING_BUTTONS);
+    expect(added).toBe(PLANNING_BUTTONS.length - 1);
+    expect(mb.settings.buttonTemplates[0]).toBe(mine);
+    expect(await addMetaBindButtons(a, PLANNING_BUTTONS)).toBe(0);
+    expect(new Set(metaBindButtonIds(a)).size).toBe(PLANNING_BUTTONS.length);
   });
 });

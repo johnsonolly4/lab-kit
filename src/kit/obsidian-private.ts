@@ -4,7 +4,7 @@ import type { App, TFile, TFolder } from "obsidian";
 
 interface TemplaterPlugin {
   settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[];
-    folder_templates?: { folder?: string; template?: string }[] };
+    folder_templates?: { folder?: string; template?: string }[]; trigger_on_file_creation_mode?: string; startup_templates?: string[] };
   command_handler?: { sync_template_hotkeys?: () => void; add_template_hotkey?: (old: string | null, template: string) => void };
   templater?: { files_with_pending_templates?: Set<string>; create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
   save_settings?: () => Promise<void>;
@@ -37,8 +37,8 @@ const templater = (app: App): TemplaterPlugin | undefined => priv(app).plugins?.
 /** True when Obsidian has read every note's properties (`metadataCache.resolved`, not in the public typings). False when unknown. */
 export const metadataResolved = (app: App): boolean => (app.metadataCache as unknown as { resolved?: boolean }).resolved === true;
 
-/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`), by the plugin ids they may have. ZotLit's id is not checked against a real install. */
-const PLUGIN_ALIASES: Record<string, string[]> = { zotlit: ["zotlit", "obsidian-zotero-desktop-connector"] };
+/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`) that differ from the plugin id (none today: ZotLit's id is `zotlit`, checked in its manifest). */
+const PLUGIN_ALIASES: Record<string, string[]> = {};
 /** Other plugins that are loaded (installed and on), as plugin ids plus the kit names in PLUGIN_ALIASES. */
 export function loadedPlugins(app: App): Set<string> {
   const ids = new Set(Object.keys(priv(app).plugins?.plugins ?? {}));
@@ -175,4 +175,73 @@ export async function withoutTemplaterTrigger<T>(app: App, paths: string[], writ
   for (const p of added) pending.add(p);
   try { return await write(); }
   finally { window.setTimeout(() => { for (const p of added) pending.delete(p); }, 3000); }
+}
+
+/** Templater's "Template matching mode" (`none`, `folder`, `regex`), or undefined without Templater. */
+export const templaterMatchingMode = (app: App): string | undefined => templater(app)?.settings?.trigger_on_file_creation_mode;
+/** Templater's startup templates (vault paths), or []. */
+export const templaterStartupTemplates = (app: App): string[] => (templater(app)?.settings?.startup_templates ?? []).filter(t => typeof t === "string");
+
+/** Sets Templater's matching mode to Folder templates, only when it is None (a mode the user chose is kept). True when changed. */
+export async function setTemplaterFolderMode(app: App): Promise<boolean> {
+  const tpl = templater(app);
+  if (!tpl?.settings || (tpl.settings.trigger_on_file_creation_mode ?? "none") !== "none") return false;
+  tpl.settings.trigger_on_file_creation_mode = "folder";
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+  return true;
+}
+
+/** Removes one entry from Templater's startup templates (the others stay). True when removed. */
+export async function removeTemplaterStartup(app: App, template: string): Promise<boolean> {
+  const tpl = templater(app);
+  const list = tpl?.settings?.startup_templates;
+  if (!tpl?.settings || !list?.includes(template)) return false;
+  tpl.settings.startup_templates = list.filter(t => t !== template);
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+  return true;
+}
+
+interface SettingsPlugin { settings?: Record<string, unknown>; saveSettings?: () => Promise<void> }
+const pluginOf = (app: App, id: string): SettingsPlugin | undefined => priv(app).plugins?.plugins?.[id] as SettingsPlugin | undefined;
+
+/** Dataview's "Enable JavaScript queries" (`enableDataviewJs`), or null without Dataview. */
+export const dataviewJsEnabled = (app: App): boolean | null => {
+  const dv = pluginOf(app, "dataview");
+  return dv?.settings ? dv.settings.enableDataviewJs === true : null;
+};
+/** Turns on Dataview's JavaScript queries and saves. False without Dataview. */
+export async function enableDataviewJs(app: App): Promise<boolean> {
+  const dv = pluginOf(app, "dataview");
+  if (!dv?.settings) return false;
+  dv.settings.enableDataviewJs = true;
+  try { await dv.saveSettings?.(); } catch (e) { console.error(e); }
+  return true;
+}
+
+const META_BIND = "obsidian-meta-bind-plugin";
+/** Ids of Meta Bind's button templates, or null without Meta Bind. */
+export const metaBindButtonIds = (app: App): string[] | null => {
+  const list = pluginOf(app, META_BIND)?.settings?.buttonTemplates;
+  return Array.isArray(list) ? list.map(b => (b as { id?: string })?.id ?? "").filter(id => id) : null;
+};
+/** Adds button templates whose id Meta Bind doesn't have yet (the user's own stay as they are) and saves. Number added. */
+export async function addMetaBindButtons(app: App, buttons: { id: string }[]): Promise<number> {
+  const mb = pluginOf(app, META_BIND);
+  const list = mb?.settings?.buttonTemplates;
+  if (!mb?.settings || !Array.isArray(list)) return 0;
+  const have = new Set(list.map(b => (b as { id?: string })?.id));
+  const add = buttons.filter(b => !have.has(b.id)).map(b => structuredClone(b));
+  if (!add.length) return 0;
+  mb.settings.buttonTemplates = [...(list as unknown[]), ...add];
+  try { await mb.saveSettings?.(); } catch (e) { console.error(e); }
+  return add.length;
+}
+
+/** Opens Obsidian's settings on a plugin's tab (`app.setting`, private). False when it can't. */
+export function openPluginSettings(app: App, id: string): boolean {
+  const setting = (app as unknown as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
+  if (!setting?.open || !setting.openTabById) return false;
+  setting.open();
+  setting.openTabById(id);
+  return true;
 }

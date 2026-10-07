@@ -7,7 +7,7 @@ export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning";
   { id: "templater-obsidian", name: "Templater", kit: "lab" },
   { id: "dataview", name: "Dataview", kit: "lab" },
   { id: "obsidian-meta-bind-plugin", name: "Meta Bind", kit: "planning" },
-  { id: "obsidian-zotero-desktop-connector", name: "ZotLit", kit: "planning", optional: true, alias: "zotlit" },
+  { id: "zotlit", name: "ZotLit", kit: "planning", optional: true },
 ];
 
 /** Hotkeys the kits recommend (never set without asking). Two-key rule: one modifier + one key. */
@@ -15,11 +15,22 @@ export const SETUP_HOTKEYS: { name: string; key: KitHotkey; kit: "lab" | "planni
   { name: "Insert snippet", key: { modifiers: ["Alt"], key: "S" }, kit: "lab" },
 ];
 
+/** The old roll-over startup template (replaced by the plugin's to-do engine). */
+export const OLD_ROLLOVER = "Actions/To-do roll-over.md";
+
 export interface SetupState {
+  /** Lab Kit's own settings the kits read. */
+  lab: { initials: string; dataRoot: boolean; methodsFolder: string; labFolder: string; chemicalFolder: string };
+  /** Dataview's "Enable JavaScript queries"; null without Dataview. */
+  dataviewJs: boolean | null;
+  /** Meta Bind button templates the planning kit uses; null without Meta Bind. */
+  metaBind: { missing: number; total: number } | null;
+  /** Path of the "Set up ZotLit" checklist note when it is installed. */
+  zotlitGuide: string | null;
   /** Loaded plugin ids (plus kit names such as `zotlit`). */
   plugins: ReadonlySet<string>;
   planning: boolean;
-  templater: { templatesFolder: string; userScriptsFolder: string; menuHotkey: boolean; folderTemplates: { folder: string; template: string }[] };
+  templater: { templatesFolder: string; userScriptsFolder: string; menuHotkey: boolean; folderTemplates: { folder: string; template: string }[]; matchingMode?: string; startupTemplates?: string[] };
   /** Path of the installed Insert snippet template; null when the lab kit isn't installed. */
   menu: string | null;
   /** Kit installed (has tracked files), per kit. */
@@ -45,7 +56,13 @@ export type SetupFix =
   | { kind: "css"; names: string[] }
   | { kind: "folder"; path: string }
   | { kind: "folder-template"; folder: string; template: string }
-  | { kind: "hotkey"; command: string; key: KitHotkey };
+  | { kind: "hotkey"; command: string; key: KitHotkey }
+  | { kind: "settings" }
+  | { kind: "matching-mode" }
+  | { kind: "startup-remove"; template: string }
+  | { kind: "dataview-js" }
+  | { kind: "meta-bind" }
+  | { kind: "open-note"; path: string };
 
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; detail: string; fix?: SetupFix }
 
@@ -64,6 +81,18 @@ export function checkSetup(s: SetupState): SetupItem[] {
     out.push({ id: `plugin:${p.id}`, group: "Plugins", label: p.name, ok, optional: p.optional,
       detail: ok ? "Installed and on." : p.optional ? "Optional: the literature notes need it." : "Not installed or turned off. Lab Kit never installs plugins: open its page and install it.",
       fix: ok ? undefined : { kind: "plugin", id: p.id } });
+  }
+
+  const l = s.lab, settings: SetupFix = { kind: "settings" };
+  const labRows: [string, string, boolean, string, boolean?][] = [
+    ["initials", "Initials", !!l.initials.trim(), "Used in sample codes (ABC0014-A).", false],
+    ["data-root", "Data folder root", l.dataRoot, "Windows or macOS / Linux root, for the header's Data folder button.", false],
+    ["lab-folder", "Lab notes folder", !!l.labFolder.trim(), "Where New lab entry puts experiment notes.", false],
+    ["chemical-folder", "Chemical folder", !!l.chemicalFolder.trim(), "Your chemical notes, suggested in calc cells and forms.", false],
+    ["methods-folder", "Methods folder", !!l.methodsFolder.trim(), "Optional: your own analysis methods next to NMR, GPC and DLS.", true],
+  ];
+  for (const [id, label, ok, what, optional] of labRows) {
+    out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : `Not set. ${what}`, fix: ok ? undefined : settings });
   }
 
   for (const kit of ["lab", "planning"] as const) {
@@ -93,6 +122,35 @@ export function checkSetup(s: SetupState): SetupItem[] {
         fix: ok || !s.installed.planning ? undefined : { kind: "folder-template", folder: ft.folder, template: ft.template } });
     }
   }
+
+  if (s.planning && s.plugins.has("templater-obsidian")) {
+    const mode = s.templater.matchingMode ?? "none";
+    out.push({ id: "templater:matching-mode", group: "Templater", label: "Template matching mode: Folder templates", ok: mode === "folder",
+      detail: mode === "folder" ? "Set." : mode === "none" ? "Set to None, so folder templates never run." : `Set to ${mode} (yours, left as it is); folder templates don't run in this mode.`,
+      fix: mode === "none" ? { kind: "matching-mode" } : undefined });
+    out.push({ id: "templater:trigger", group: "Templater", label: "Trigger Templater on new file creation", ok: true, optional: true,
+      detail: "Needed for folder templates. Templater keeps it per device, so Lab Kit can't read it: check it's on in Templater's settings on each device." });
+    const old = (s.templater.startupTemplates ?? []).filter(t => t === OLD_ROLLOVER || t.endsWith("/" + OLD_ROLLOVER));
+    const others = (s.templater.startupTemplates ?? []).filter(t => t && !old.includes(t));
+    out.push({ id: "templater:startup", group: "Templater", label: "Startup templates", ok: !old.length,
+      detail: old.length ? `Lists the old roll-over (${old[0]}). Lab Kit's to-do engine does this now; the old one makes it stand down.`
+        : others.length ? `Yours, left as they are: ${others.join(", ")}.` : "None (the to-do roll-over is built into Lab Kit).",
+      fix: old.length ? { kind: "startup-remove", template: old[0] } : undefined });
+  }
+
+  if (s.planning && s.dataviewJs !== null) out.push({ id: "dataview:js", group: "Dataview", label: "Dataview JavaScript queries", ok: s.dataviewJs,
+    detail: s.dataviewJs ? "On." : "Off. Projects overview needs it (inline JavaScript and task tracking aren't needed).", fix: s.dataviewJs ? undefined : { kind: "dataview-js" } });
+
+  if (s.planning && s.metaBind) {
+    const { missing, total } = s.metaBind;
+    out.push({ id: "metabind:buttons", group: "Meta Bind", label: "Meta Bind buttons", ok: !missing,
+      detail: missing ? `${missing} of ${total} buttons the planning notes use are missing. Fix adds them; buttons you have are never changed.` : `All ${total} there.`,
+      fix: missing ? { kind: "meta-bind" } : undefined });
+  }
+
+  if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: true, optional: true,
+    detail: s.zotlitGuide ? "Lab Kit can't read ZotLit's settings: follow the checklist note (note folder, template folder)." : "Lab Kit can't read ZotLit's settings: install the planning kit for its checklist note.",
+    fix: s.zotlitGuide ? { kind: "open-note", path: s.zotlitGuide } : undefined });
 
   for (const c of s.css) {
     const ok = c.enabled === true;

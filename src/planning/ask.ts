@@ -1,6 +1,6 @@
 // Planning kit's text box (looks like Obsidian's pickers, same component, with no list underneath: port of the kit's vtAsk.js)
 // and picker (a fuzzy list, as Templater's tp.system.suggester).
-import { FuzzySuggestModal, SuggestModal, type App } from "obsidian";
+import { FuzzySuggestModal, SuggestModal, type App, type KeymapEventHandler } from "obsidian";
 
 class AskModal extends SuggestModal<never> {
   private settled = false;
@@ -10,8 +10,14 @@ class AskModal extends SuggestModal<never> {
     this.setPlaceholder(placeholder);
     this.emptyStateText = "";
     this.setInstructions([{ command: "Enter", purpose: "to save" }, { command: "Esc", purpose: "to cancel" }]);
+    // SuggestModal registered its own Enter first, and the first match wins: drop it so ours runs (`scope.keys` is private)
+    const keys = (this.scope as unknown as { keys?: KeymapEventHandler[] }).keys ?? [];
+    for (const k of [...keys]) if (k.key === "Enter" && !k.modifiers) this.scope.unregister(k);
     this.scope.register([], "Enter", (e) => { if (!e.isComposing) { e.preventDefault(); this.submit(); } return false; });
   }
+
+  /** The list's own Enter picks the highlighted (absent) suggestion: save instead. */
+  selectActiveSuggestion(): void { this.submit(); }
 
   getSuggestions(): never[] { return []; }
   renderSuggestion(): void { /* no list */ }

@@ -1,6 +1,9 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Check setup lists more**: Lab Kit's own settings (Initials, a data folder root, Lab notes and Chemical folders, Methods folder as optional; Open goes to the settings), Templater's matching mode (Fix sets Folder templates when it is None), the old roll-over in Templater's startup templates (Fix removes just that entry), Dataview JavaScript queries (Projects overview needs them; inline JavaScript and task tracking don't matter), the planning buttons in Meta Bind (Fix adds the missing ones, yours are never changed), and a **Set up ZotLit** checklist note (new kit note; Lab Kit can't change ZotLit's settings)
+- **ZotLit's Open button** goes to ZotLit (it opened Zotero Integration)
+- **Enter saves** in the planning and lab name boxes (it did nothing; the note was only made through Esc)
 - **Installing the kit no longer runs its templates**: with Templater's "Trigger Templater on new file creation" on, writing the kit's templates outside Templater's template folder made Templater run them (every snippet form popped up and the files changed). The kit now tells Templater to leave the files it writes alone
 - **Planning commands start right after the planning install** (no reload); the planning kit can set an empty Templater user scripts folder to the folder above both kits' script folders
 - **Review update… rows** show each file's name, what it is and its path

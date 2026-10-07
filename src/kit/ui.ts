@@ -261,7 +261,7 @@ export class KitController {
   }
 
   /** Opens the Check setup window. */
-  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning }).open(); }
+  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */
   async showWhatsNew(): Promise<void> {
