@@ -7,6 +7,7 @@
 //  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
 import { merge3 } from "./merge";
+import type { Migration } from "./tidy";
 import { kitEnsureDir, kitIsBackup, kitJoin, kitParent, type Roles } from "./paths";
 
 /* ---- Types ---- */
@@ -25,7 +26,9 @@ export interface EmbeddedFile {
 export interface EmbeddedKit {
   manifest: { schema: number; id: string; kitVersion: string; files: EmbeddedFile[]; removed: string[]; rewrite?: Record<string, string>;
     /** First install: CSS snippets to switch on / off, and whether the kit needs Templater's user scripts folder. */
-    enableCss?: string[]; disableCss?: string[]; templater?: { userScripts?: boolean } };
+    enableCss?: string[]; disableCss?: string[]; templater?: { userScripts?: boolean };
+    /** Note correction rules for Tidy up notes (src/kit/tidy.ts). */
+    migrations?: Migration[] };
   contents: Record<string, string>;
 }
 /** Every kit built into main.js (manifest schema 2), sorted by id. */

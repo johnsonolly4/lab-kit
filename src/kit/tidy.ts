@@ -1,0 +1,245 @@
+// Tidy up notes (Phase 7a, plan docs/plans/phase-7-tidy-notes.md): scans a vault's notes against the kit layout and lists what would change, as
+// before / after text, plus what is only reported. Pure and read-only: the caller reads the vault into `files`; nothing here writes.
+// Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, leftovers, note bodies) are code.
+
+export type MigrationOp =
+  /** A property with this value (e.g. `Type: Wiki`) becomes another property and value (`kind: concept`). Skipped when the new property exists. */
+  | { op: "replace-property"; from: string; whenValue: string; to: string; value: string }
+  /** Adds the property, empty or with `value`, when the note doesn't have it. */
+  | { op: "add-property"; name: string; value: string }
+  /** A property written as a list with one item becomes plain text (`Status: [Planned]` → `Status: Planned`). Several items: reported, not changed. */
+  | { op: "list-to-text"; name: string };
+
+export interface Migration {
+  id: string; title: string;
+  /** Which notes it looks at: the Lab notes folder or the Knowledge folder (the folders in the settings). */
+  scope: "lab" | "knowledge";
+  /** Apply the rest only when the first op changed the note. */
+  onlyIfMatched?: boolean;
+  ops: MigrationOp[];
+}
+
+export interface TidyContext {
+  labFolder: string; knowledgeFolder: string; inboxFolder: string;
+  /** Top-level folders notes belong in. Empty = don't report notes outside the contract. */
+  contractFolders: string[];
+  /** Notes allowed at the vault root (the homepage). */
+  rootNotes: string[];
+  migrations: Migration[];
+}
+
+/** One vault file. `text` only for notes the scan needs to read (see `wantsText`). */
+export interface TidyFile { path: string; text?: string }
+
+/** A proposed change to one note's properties: `before` / `after` are the properties block (between the `---` lines), nothing else. */
+export interface TidyChange { path: string; before: string; after: string }
+export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[] }
+export interface TidyReported { id: string; title: string; detail: string; items: { path: string; note?: string }[] }
+export interface TidyScan { groups: TidyGroup[]; reported: TidyReported[] }
+
+export interface DiffRow { kind: "same" | "added" | "removed" | "changed"; left: string | null; right: string | null }
+
+/* ---- Properties block ---- */
+
+const norm = (s: string): string => s.toLowerCase().replace(/\s+/g, " ").trim();
+const unquote = (s: string): string => { const t = s.trim(); return /^(".*"|'.*')$/.test(t) && t.length >= 2 ? t.slice(1, -1) : t; };
+const lower = (s: string): string => s.toLowerCase();
+
+/** The properties lines and the text after them; null when the note has no properties block. */
+function split(text: string): { fm: string[]; body: string } | null {
+  const t = text.replace(/\r\n/g, "\n");
+  if (!t.startsWith("---\n")) return null;
+  let end = t.indexOf("\n---", 3);
+  while (end !== -1 && !(t.length === end + 4 || t[end + 4] === "\n")) end = t.indexOf("\n---", end + 1);
+  if (end === -1) return null;
+  const block = t.slice(4, Math.max(4, end));
+  return { fm: block === "" ? [] : block.split("\n"), body: t.slice(end + 4) };
+}
+
+interface Prop { key: string; start: number; end: number; inline: string; items: string[] | null }
+const KEY = /^([^\s#-][^:]*):(.*)$/;
+
+function props(lines: string[]): Prop[] {
+  const out: Prop[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const m = KEY.exec(lines[i]);
+    if (!m) continue;
+    let end = i + 1;
+    while (end < lines.length && (!KEY.test(lines[end]) || /^\s*-/.test(lines[end]))) end++;
+    const inline = m[2].trim();
+    let items: string[] | null = null;
+    if (inline.startsWith("[") && inline.endsWith("]")) items = inline.slice(1, -1).split(",").map(unquote).filter(Boolean);
+    else if (inline === "") items = lines.slice(i + 1, end).map(l => /^\s*-\s*(.*)$/.exec(l)).filter((x): x is RegExpExecArray => !!x).map(x => unquote(x[1])).filter(Boolean);
+    out.push({ key: m[1].trim(), start: i, end, inline, items });
+    i = end - 1;
+  }
+  return out;
+}
+
+const find = (lines: string[], name: string): Prop | undefined => props(lines).find(p => norm(p.key) === norm(name));
+/** A property's values as text: the list items, or the one plain value; empty when missing or blank. */
+const values = (p: Prop | undefined): string[] => !p ? [] : p.items ?? (p.inline ? [unquote(p.inline)] : []);
+const line = (name: string, value: string): string => value === "" ? `${name}:` : `${name}: ${value}`;
+
+type Result = { fm: string[] } | { reported: string } | null;
+
+function runOp(fm: string[], op: MigrationOp): Result {
+  if (op.op === "add-property") return find(fm, op.name) ? null : { fm: [...fm, line(op.name, op.value)] };
+  if (op.op === "list-to-text") {
+    const p = find(fm, op.name);
+    if (!p || p.items === null || p.items.length === 0) return null;
+    if (p.items.length > 1) return { reported: `${p.key} has ${p.items.length} values (${p.items.join(", ")}): left as it is` };
+    return { fm: [...fm.slice(0, p.start), line(p.key, p.items[0]), ...fm.slice(p.end)] };
+  }
+  const p = find(fm, op.from);
+  const vals = values(p);
+  if (!p || vals.length !== 1 || lower(vals[0]) !== lower(op.whenValue)) return null;
+  if (find(fm, op.to)) return { reported: `${p.key}: ${vals[0]} but ${op.to} is already set: left as it is` };
+  return { fm: [...fm.slice(0, p.start), line(op.to, op.value), ...fm.slice(p.end)] };
+}
+
+/** Runs one migration on one note's text. A change, a reason it was left alone, or null (nothing to do). */
+export function applyMigration(text: string, mig: Migration): { change: { before: string; after: string } } | { reported: string } | null {
+  const s = split(text);
+  if (!s) return null;
+  let fm = s.fm, changed = false;
+  for (const [i, op] of mig.ops.entries()) {
+    const r = runOp(fm, op);
+    if (r && "reported" in r) return changed ? null : r;
+    if (r) { fm = r.fm; changed = true; }
+    else if (i === 0 && mig.onlyIfMatched) return null;
+  }
+  return changed ? { change: { before: s.fm.join("\n"), after: fm.join("\n") } } : null;
+}
+
+/* ---- Scan ---- */
+
+export const inFolder = (path: string, folder: string): boolean => !!folder && path.startsWith(folder.replace(/\/+$/, "") + "/");
+const isNote = (p: string): boolean => p.endsWith(".md");
+const baseName = (p: string): string => p.slice(p.lastIndexOf("/") + 1).replace(/\.[^.]+$/, "");
+const parentOf = (p: string): string => p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "";
+const hidden = (p: string): boolean => p.split("/").some(s => s.startsWith("."));
+
+/** Index and hub notes: named "index", "… index", or like their folder. */
+function isHubName(path: string): boolean {
+  const name = lower(baseName(path)), parent = lower(baseName(parentOf(path)));
+  return name === "index" || name.endsWith(" index") || (!!parent && name === parent);
+}
+
+/** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js.) */
+export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
+  if (!isNote(path) || hidden(path)) return false;
+  return readAll || inFolder(path, ctx.labFolder) || inFolder(path, ctx.knowledgeFolder) || isHubName(path);
+}
+
+const topFolder = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
+
+export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
+  const groups: TidyGroup[] = [];
+  const skipped: TidyReported = { id: "left-alone", title: "Left as they are", detail: "A rule matched, but changing the note would mean guessing.", items: [] };
+  const effective = new Map<string, string>();   // each note's text with the proposed changes applied
+  const notes = files.filter(f => isNote(f.path) && !hidden(f.path) && f.text !== undefined).sort((a, b) => a.path.localeCompare(b.path));
+  for (const n of notes) effective.set(n.path, n.text ?? "");
+
+  for (const mig of ctx.migrations) {
+    const folder = mig.scope === "lab" ? ctx.labFolder : ctx.knowledgeFolder;
+    const g: TidyGroup = { id: mig.id, title: mig.title, detail: "", changes: [] };
+    for (const n of notes.filter(x => inFolder(x.path, folder))) {
+      const r = applyMigration(effective.get(n.path) ?? "", mig);
+      if (!r) continue;
+      if ("reported" in r) { skipped.items.push({ path: n.path, note: r.reported }); continue; }
+      g.changes.push({ path: n.path, ...r.change });
+      const s = split(effective.get(n.path) ?? "");
+      if (s) effective.set(n.path, `---\n${r.change.after}${r.change.after ? "\n" : ""}---${s.body}`);
+    }
+    if (g.changes.length) groups.push(g);
+  }
+
+  // Hubs: index / hub notes without `kind`
+  const hubs: TidyGroup = { id: "hub-kind", title: "Add kind: hub to index notes", detail: "Notes named index, “… index” or like their folder that have no kind property.", changes: [] };
+  for (const n of notes) {
+    if (!isHubName(n.path) || !n.path.includes("/") || inFolder(n.path, "Extras")) continue;
+    const s = split(effective.get(n.path) ?? "");
+    if (s && find(s.fm, "kind")) continue;
+    hubs.changes.push({ path: n.path, before: s ? s.fm.join("\n") : "", after: [...(s?.fm ?? []), "kind: hub"].join("\n") });
+  }
+  if (hubs.changes.length) groups.push(hubs);
+
+  // Only reported
+  const rep = (id: string, title: string, detail: string, items: { path: string; note?: string }[]): TidyReported | null => items.length ? { id, title, detail, items } : null;
+  const all = files.filter(f => !hidden(f.path)).map(f => f.path).sort();
+  const reported = [
+    rep("untitled", "Untitled notes", "Name them, or delete them if they are empty.", all.filter(p => isNote(p) && /^untitled( \d+)?$/i.test(baseName(p))).map(path => ({ path }))),
+    rep("double-extension", "Double extensions", "The file name ends in a second .md (like “. md.md”); rename it in Obsidian.", all.filter(p => /\.\s*md\.md$/i.test(p)).map(path => ({ path }))),
+    rep("inbox-canvas", "Canvases in the inbox", "The inbox is for notes you will sort; move the canvas.", all.filter(p => p.endsWith(".canvas") && inFolder(p, ctx.inboxFolder)).map(path => ({ path }))),
+    rep("outside-contract", "Notes outside the folder layout", "Not in any folder the kits use. Move them in Obsidian (links update).",
+      ctx.contractFolders.length ? all.filter(p => isNote(p) && !ctx.contractFolders.includes(topFolder(p)) && !(topFolder(p) === "" && ctx.rootNotes.includes(p))).map(path => ({ path })) : []),
+  ];
+  const viewJs = all.filter(p => /(^|\/)view\.js$/.test(p));
+  const used = (dir: string): boolean => [...effective.values()].some(t => t.includes("dv.view") && t.includes(dir));
+  reported.push(rep("unused-view-js", "view.js scripts no note uses", "No note calls this folder with dv.view. Delete it yourself if you don't need it.",
+    viewJs.filter(p => !used(parentOf(p))).map(path => ({ path }))));
+
+  // Knowledge notes (as they will be after the changes above): ### headings, no summary, no sources
+  const concept = notes.filter(n => inFolder(n.path, ctx.knowledgeFolder)).filter(n => { const s = split(effective.get(n.path) ?? ""); return !!s && values(find(s.fm, "kind")).map(lower).includes("concept"); });
+  const heads: { path: string }[] = [], noSummary: { path: string }[] = [], noSources: { path: string }[] = [];
+  for (const n of concept) {
+    const s = split(effective.get(n.path) ?? "");
+    if (!s) continue;
+    if (!values(find(s.fm, "summary")).length) noSummary.push({ path: n.path });
+    if (!values(find(s.fm, "sources")).length) noSources.push({ path: n.path });
+    let fence = false;
+    if (s.body.split("\n").some(l => { if (/^\s*(```|~~~)/.test(l)) fence = !fence; return !fence && /^###\s/.test(l); })) heads.push({ path: n.path });
+  }
+  reported.push(
+    rep("knowledge-headings", "Knowledge notes with ### headings", "Section headings use ## in the kit's concept notes. Change them by hand.", heads),
+    rep("knowledge-summary", "Knowledge notes without a summary", "Write one line in the summary property.", noSummary),
+    rep("knowledge-sources", "Knowledge notes without sources", "Add the sources property (links or references).", noSources));
+  if (skipped.items.length) reported.unshift(skipped);
+
+  return { groups, reported: reported.filter((r): r is TidyReported => !!r) };
+}
+
+/* ---- Before / after rows ---- */
+
+/** Line diff of two property blocks, as side-by-side rows: a removed line next to an added one is one "changed" row. */
+export function diffRows(before: string, after: string): DiffRow[] {
+  const a = before === "" ? [] : before.split("\n"), b = after === "" ? [] : after.split("\n");
+  const lcs: number[][] = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--) lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+  const rows: DiffRow[] = [];
+  let i = 0, j = 0, gone: string[] = [], came: string[] = [];
+  const flush = (): void => {
+    for (let k = 0; k < Math.max(gone.length, came.length); k++) {
+      const l = gone[k] ?? null, r = came[k] ?? null;
+      rows.push({ kind: l !== null && r !== null ? "changed" : l !== null ? "removed" : "added", left: l, right: r });
+    }
+    gone = []; came = [];
+  };
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && a[i] === b[j]) { flush(); rows.push({ kind: "same", left: a[i], right: b[j] }); i++; j++; }
+    else if (j >= b.length || (i < a.length && lcs[i + 1][j] >= lcs[i][j + 1])) gone.push(a[i++]);
+    else came.push(b[j++]);
+  }
+  flush();
+  return rows;
+}
+
+/** The scan as Markdown, for Copy report (paths and counts only; no note text). `ticked` = rule ids the user left ticked (default: all). */
+export function reportMarkdown(s: TidyScan, ticked?: ReadonlySet<string>): string {
+  const out = ["# Tidy up notes: report", ""];
+  const changes = s.groups.reduce((n, g) => n + g.changes.length, 0);
+  out.push(`${changes} change${changes === 1 ? "" : "s"} in ${s.groups.length} rule${s.groups.length === 1 ? "" : "s"}; ${s.reported.reduce((n, r) => n + r.items.length, 0)} only reported.`, "");
+  for (const g of s.groups) {
+    out.push(`## ${g.title} (${g.changes.length})${ticked && !ticked.has(g.id) ? " (not ticked)" : ""}`);
+    for (const c of g.changes) out.push(`- ${c.path}`);
+    out.push("");
+  }
+  if (s.reported.length) out.push("## Only reported", "");
+  for (const r of s.reported) {
+    out.push(`### ${r.title} (${r.items.length})`);
+    for (const it of r.items) out.push(`- ${it.path}${it.note ? `: ${it.note}` : ""}`);
+    out.push("");
+  }
+  return out.join("\n").trimEnd() + "\n";
+}

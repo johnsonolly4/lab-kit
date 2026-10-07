@@ -16,6 +16,38 @@
     "99 Archive": "archive",
     "03 Lab Book/Notes": "labNotes"
   },
+  "migrations": [
+    {
+      "id": "knowledge-concept",
+      "title": "Knowledge notes: Type: Wiki → kind: concept",
+      "scope": "knowledge",
+      "onlyIfMatched": true,
+      "ops": [
+        {
+          "op": "replace-property",
+          "from": "Type",
+          "whenValue": "Wiki",
+          "to": "kind",
+          "value": "concept"
+        },
+        {
+          "op": "add-property",
+          "name": "summary",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "sources",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "checked",
+          "value": "false"
+        }
+      ]
+    }
+  ],
   "enableCss": [
     "vault-colours.css",
     "vault-theme.css"

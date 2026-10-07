@@ -162,3 +162,16 @@
 /* Planning homepage blocks (```vault-goto): one button per folder hub, wrapping */
 .lab-kit-goto { display: flex; flex-wrap: wrap; gap: 6px; }
 .lab-kit-vault-card ul, .lab-kit-vault-projects ul { margin-block: 0.25em; }
+
+/* Tidy up notes window (src/kit/tidy-ui.ts): before (left) / after (right); red removed, green added, amber changed */
+.lab-kit-tidy-banner { padding: 8px 12px; margin-bottom: 8px; border-left: 3px solid var(--text-warning); background: var(--background-secondary); }
+.lab-kit-tidy-rule { display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; }
+.lab-kit-tidy-path { margin-top: 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
+.lab-kit-tidy-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; margin-top: 2px; font-family: var(--font-monospace); font-size: var(--font-smallest); }
+.lab-kit-tidy-head { font-family: var(--font-interface); font-weight: 600; color: var(--text-muted); padding: 0 4px; }
+.lab-kit-tidy-line { padding: 1px 4px; min-height: 1.4em; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--background-secondary); }
+.lab-kit-tidy-line.is-removed { background: rgba(var(--color-red-rgb), 0.22); }
+.lab-kit-tidy-line.is-added { background: rgba(var(--color-green-rgb), 0.22); }
+.lab-kit-tidy-line.is-changed { background: rgba(var(--color-orange-rgb), 0.25); }
+.lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }

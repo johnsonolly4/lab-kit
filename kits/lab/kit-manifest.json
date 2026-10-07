@@ -9,6 +9,19 @@
     "03 Lab Book/Notes": "labNotes",
     "05 Chemicals/Chemicals": "chemicalNotes"
   },
+  "migrations": [
+    {
+      "id": "lab-status-text",
+      "title": "Lab notes: Status list → text",
+      "scope": "lab",
+      "ops": [
+        {
+          "op": "list-to-text",
+          "name": "Status"
+        }
+      ]
+    }
+  ],
   "files": [
     {
       "id": "note-chemical-database-base",

@@ -145,6 +145,13 @@
 
 ---
 
+## 6h. Phase 7a: Tidy up notes (needs `npm run dev`; use a copy of your notes in test-vault, never your real vault)
+- [ ] Command **Tidy up notes** opens a wide window with the backup banner; **Change notes…** is greyed out
+- [ ] Put in test-vault: a lab note with `Status:` as a list, a note in the Knowledge folder with `Type: Wiki`, an `index` note without `kind`: each shows left (before) and right (after) with red / green / amber lines, readable in light and dark themes
+- [ ] Untick a rule, press **Copy report**, paste somewhere: the rule says "(not ticked)", only paths and counts, no note text
+- [ ] Only reported lists an untitled note, a canvas in the inbox, a note outside the folders; nothing in the vault changed (check the files' modified times)
+- [ ] Phone width (`app.emulateMobile(true)`): the two columns stay readable, the buttons wrap
+
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)
 - [ ] Change a chemical's `H_Phrase`: header redraws, no stutter

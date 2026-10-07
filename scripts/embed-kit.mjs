@@ -34,7 +34,7 @@ export function embeddedKit(root = join(KITS, "lab")) {
   return {
     manifest: {
       schema: m.schema ?? 1, id: m.id, kitVersion: m.version, files, removed: m.removed ?? [], rewrite: m.rewrite ?? {},
-      ...(m.enableCss ? { enableCss: m.enableCss } : {}), ...(m.disableCss ? { disableCss: m.disableCss } : {}), ...(m.templater ? { templater: m.templater } : {}),
+      ...(m.migrations ? { migrations: m.migrations } : {}), ...(m.enableCss ? { enableCss: m.enableCss } : {}), ...(m.disableCss ? { disableCss: m.disableCss } : {}), ...(m.templater ? { templater: m.templater } : {}),
     },
     contents,
     paths,

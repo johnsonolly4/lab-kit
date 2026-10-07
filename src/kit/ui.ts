@@ -9,6 +9,7 @@ import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
 import { KitManaged } from "./managed-ui";
 import { SetupCheckModal } from "./setup-check-ui";
+import { TidyNotesModal } from "./tidy-ui";
 import { wideBox } from "./settings-box";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
@@ -272,6 +273,7 @@ export class KitController {
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
+    plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
     this.app.workspace.onLayoutReady(() => {
       const section = latestSection(changelog);
@@ -321,6 +323,7 @@ export class KitController {
   }
 
   /** Opens the Check setup window. */
+  tidyNotes(): void { new TidyNotesModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning }).open(); }
   checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save(), findMoved: () => this.findMovedFolders() }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */

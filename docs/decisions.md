@@ -52,3 +52,4 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-07 — Alt+S stays a Templater template hotkey (Set up adds it; no Lab Kit insert command) — (user, multi-kit feedback round)
 - 2026-10-07 — Planning kit offered now as a "preview" switch (before Phase 5), so the to-do engine and commands can be tried — (user, Phase 6 plan)
 - 2026-10-07 — Check setup recommends only Alt+S (Insert snippet) as a hotkey; other planning hotkeys wait for the user's choice — (Claude, Phase 6; BACKLOG)
+- 2026-10-07 — Tidy up notes: simple rules are `migrations` data in each kit manifest (replace-property, add-property, list-to-text), cross-note rules are code; a Status list with several values or a Type: Wiki note that already has kind is reported, not changed (never guess) — (Claude, Phase 7a)
