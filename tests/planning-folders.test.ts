@@ -70,3 +70,11 @@ describe("Find moved folders", () => {
     expect(findMoved(m, folders, notes, files, [])).toEqual([]);
   });
 });
+
+describe("Phase 5a reviewer fixes", () => {
+  it("an old per-kit override of a planning folder becomes the setting once; a saved setting wins", () => {
+    const old = { kits: { planning: { enabled: true, managed: null, paths: { projects: "Work", templates: "T" }, off: {} } } };
+    expect(kitLoad(old).planningFolders.projects).toBe("Work");
+    expect(kitLoad({ ...old, planningFolders: { projects: "Mine" } }).planningFolders.projects).toBe("Mine");
+  });
+});

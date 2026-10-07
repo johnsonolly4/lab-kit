@@ -132,11 +132,12 @@ Settings → Lab Kit is searchable and grouped:
 | **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Backup folder |
 | **Kit folders and setup** | Templater **Set up**, **Check setup…**, Templates folder, Scripts folder, Snippets folder, console log |
 | **Lab notebook** | Initials, Chemical folder, Lab notes folder, Molecular weight property, Methods folder |
+| **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…** |
 | **Snippet menu** | A Lucide icon for each snippet |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
 
-Folder settings left empty are detected; the data folder roots are empty until you set them.
+Folder settings left empty are detected; the data folder roots are empty until you set them. Rename or move folders **inside Obsidian** and the folder settings follow; a folder moved outside Obsidian (Finder, File Explorer, a sync tool) is found again with **Find moved folders**. Settings changed on another device (Obsidian Sync, iCloud, Dropbox, Syncthing, Git) are read again when they arrive.
 
 ## Commands
 Open the command palette and type *Lab Kit*. There are no default hotkeys.
@@ -149,6 +150,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |
+| Find moved folders | For each folder in the settings that no longer exists (moved outside Obsidian), suggests where it went; Apply changes only the settings |
 | Check setup | Lists what the kits need (plugins, Templater, CSS snippets, folders, the Alt+S hotkey) with a Fix for each missing item; nothing changes until you confirm |
 
 ## Privacy & permissions
@@ -170,6 +172,7 @@ Calc tables, the hazard header and the built-in kit work on mobile. The data-fol
 | `#REF!` | The formula points at a deleted row, or a table name that doesn't exist or is used twice |
 | A calc table looks like plain code | Lab Kit isn't enabled |
 | Hazard table empty | Chemicals property empty, or the chemical notes have no `H_Phrase` list |
+| "Folder … not found", or homepage lists empty after moving folders outside Obsidian | Command **Find moved folders** (or Check setup → Find): pick where each folder went |
 
 More in the [tutorial](docs/tutorial.md#8-troubleshooting).
 

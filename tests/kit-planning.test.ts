@@ -108,6 +108,13 @@ describe("planning kit files (Phase 3)", () => {
       const text = kitText(planning, f, r);
       for (const lit of literals) expect(text.includes(lit), `${f.src}: ${lit}`).toBe(false);
     }
+    // one pass: a folder written in is not rewritten again (planning inside the old projects name, and swapped names)
+    const nested = planningRoles(app(), {}, { ...PLANNING_FOLDER_DEFAULTS, planning: "02 Projects/Plan", projects: "Work" });
+    const tpl = planning.manifest.files.find(f => f.dest === "To-do.md")!;
+    expect(kitText(planning, tpl, nested)).toContain('"02 Projects/Plan/To-dos"');
+    const swapped = planningRoles(app(), {}, { ...PLANNING_FOLDER_DEFAULTS, planning: "02 Projects", projects: "00 Planning" });
+    const board0 = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
+    expect(kitText(planning, board0, swapped)).toContain('file.inFolder("02 Projects/To-dos")');
     // the To-do board reads the moved to-dos folder
     const board = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
     expect(kitText(planning, board, r)).toContain('file.inFolder("Z planning/To-dos")');

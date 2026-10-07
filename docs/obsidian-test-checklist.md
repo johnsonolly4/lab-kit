@@ -120,8 +120,20 @@
 - [ ] Check setup → Notebook Navigator → Homepage: with no homepage set, Fix sets `00 Home.md` (Notebook Navigator settings show it; it opens at startup); a homepage you chose is left alone
 - [ ] Check setup → Obsidian → Properties hidden in notes: Fix sets Settings → Editor → Properties in document to Hidden
 - [ ] Phase 6e: Check setup → Methods folder Fix creates `Extras/methods` and fills the setting; the ZotLit row shows "!" and names the checklist note
-- [ ] Phase 6d: Enter saves in the New to-do / New lab entry / Quick capture boxes; Check setup shows Lab Kit settings (Open → settings tab), Templater matching mode and startup templates, Dataview JS, Meta Bind buttons (Fix adds 26 or the missing ones), ZotLit (Open → Set up ZotLit note); ZotLit's plugin Open goes to ZotLit
+- [ ] Phase 6d: Enter saves in the New to-do / New lab entry / Quick capture boxes; Check setup shows Lab Kit settings (Open → settings tab), Templater matching mode and startup templates, Meta Bind buttons (Fix adds 26 or the missing ones), ZotLit (Open → Set up ZotLit note); ZotLit's plugin Open goes to ZotLit
 - [ ] Phase 6c: planning first install in a vault without its folders: the confirmation lists 00 Inbox, 01 Daily Notes, … each with what it is for; Apply makes them, Cancel makes none. Every file row shows its name, a line on what it is, and its path
+
+## 6f. Phase 5a: planning folders, Find moved folders, homepage blocks (needs `npm run dev`)
+- [ ] Before updating: copy `00 Home.md` to `Home (Dataview).md` (old lists, to compare). Then Manage files → **Restore kit original** on 00 Home and Projects overview
+- [ ] 00 Home: Go to shows one button per folder with a hub (Planning → To-do board, Projects, Lab Book, Literature, Chemicals, Knowledge, How-tos) plus Meetings, Thursday deck, Weekly review, Shopping list; each opens the right note / runs the deck command
+- [ ] This week, Inbox (+ Sort inbox), Experiments on the go, Projects, Recently read show the same notes in the same order as in `Home (Dataview).md`; tick a to-do or change a Status: the list redraws within a second
+- [ ] Projects overview: one card per project with goal, top 3 to-dos, counts; New note / New to-do / Open work
+- [ ] Settings → **Planning folders** (only with the planning kit on): empty boxes show the defaults as grey text
+- [ ] Rename `00 Planning` to `10 Plan` and `02 Projects` to `20 Work` **in Obsidian**: the two settings follow; homepage lists still fill; New to-do lands in `10 Plan/To-dos`; Check setup shows no ✗ for them
+- [ ] Rename `20 Work` in **Finder / File Explorer**: New project shows "Folder "20 Work" not found…" with Find moved folders / Open settings / Create it, and no new `20 Work` appears; the Projects block shows the same line; the settings box is outlined red; Check setup lists it with **Find**
+- [ ] **Find moved folders** proposes the moved folder (with why); Apply sets it; Manage files shows no Missing for kit files that were in it
+- [ ] With Obsidian open, change a planning folder in `test-vault/.obsidian/plugins/lab-kit/data.json` from outside: the setting shows the new value without a reload; change another setting in Obsidian, then check data.json still has the outside value
+- [ ] Planning kit switched off: the homepage blocks say the planning kit is off (no raw code)
 
 ---
 

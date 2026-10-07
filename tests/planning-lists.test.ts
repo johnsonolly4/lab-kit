@@ -55,6 +55,9 @@ describe("Experiments on the go (00 Home)", () => {
     expect(l[2].badges).toEqual([{ text: "processing results", cls: "vt-badge vt-processing-results" }]);
   });
   it("limit", () => { expect(experiments(notes, 2)).toHaveLength(2); });
+  it("a Status kept as a one-item list (notes from before issue #32) counts like text", () => {
+    expect(experiments([note("Lab/Old.md", { Status: ["Started"] }), note("Lab/Shut.md", { Status: ["Closed"] })]).map(l => l.text)).toEqual(["Old"]);
+  });
 });
 
 describe("Projects and Recently read (00 Home)", () => {

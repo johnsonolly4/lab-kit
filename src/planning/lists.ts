@@ -9,7 +9,8 @@ export interface NoteRec { path: string; name: string; folder: string; fm: Recor
 export interface Badge { text: string; cls: string }
 export interface ListLine { path: string; text: string; badges: Badge[] }
 
-const str = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
+/** A property as text; a list gives its first item (lab notes from before issue #32 keep Status as a one-item list). */
+const str = (v: unknown): string => (Array.isArray(v) ? str(v[0]) : typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
 /** `path` is in `folder` or a folder below it (as Dataview's FROM "folder"). */
 export const inFolder = (path: string, folder: string): boolean => !!folder && path.startsWith(folder + "/");
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

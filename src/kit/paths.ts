@@ -104,8 +104,10 @@ export function kitLoad(saved: unknown): KitData {
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
   kit.snippetIcons = { ...kit.snippetIcons };
-  kit.planningFolders = planningFoldersLoad(old.planningFolders);
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
+  // Saved before Phase 5a: a planning note folder set as a per-kit override (Review window) becomes the setting
+  const overrides = old.planningFolders === undefined ? (kit.kits[PLANNING_KIT]?.paths ?? {}) : {};
+  kit.planningFolders = planningFoldersLoad({ ...overrides, ...(old.planningFolders as object | undefined) });
   if (!kit.kits[LAB_KIT] && (single.managed || single.paths || single.off)) {
     kit.kits[LAB_KIT] = { enabled: true, managed: (single.managed as ManagedState | null) ?? null, paths: { ...(single.paths as Roles) }, off: { ...(single.off as Record<string, true>) } };
   }

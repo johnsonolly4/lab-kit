@@ -92,12 +92,17 @@ export async function kitSha1(text: string): Promise<string> {
 
 /** Kit content for this vault: the folder rewrites (e.g. Extras/scripts -> your scripts folder) applied, like the old folder updater did. */
 export function kitText(bundle: EmbeddedKit, file: EmbeddedFile, roles: Roles): string {
-  let text = bundle.contents[file.id] ?? "";
+  const text = bundle.contents[file.id] ?? "";
+  const map = new Map<string, string>();
   for (const [literal, role] of Object.entries(bundle.manifest.rewrite ?? {})) {
     const to = roles[role];
-    if (to && to !== literal) text = text.split(literal).join(to);
+    if (to && to !== literal) map.set(literal, to);
   }
-  return text;
+  if (!map.size) return text;
+  // One pass, longest literal first: a folder written in by one rewrite is never rewritten again by another (e.g. planning = "02 Projects/Plan")
+  const esc = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp([...map.keys()].sort((a, b) => b.length - a.length).map(esc).join("|"), "g");
+  return text.replace(re, m => map.get(m) ?? m);
 }
 
 /** Folders where this system has already put files: each role's folder, read back from the tracked files' paths (a file you moved is skipped). */

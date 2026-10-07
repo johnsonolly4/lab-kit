@@ -5,6 +5,9 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-07 — A settings folder that has gone is never made again silently: commands stop with a notice, Check setup / the command **Find moved folders** suggest where it went; settings follow renames made inside Obsidian — a folder moved outside Obsidian sends no rename event, and an empty copy beside the moved folder would split the notes — (user, Phase 5a approval)
+- 2026-10-07 — Lab Kit reloads data.json when any sync tool changes it (`onExternalSettingsChange`) — otherwise its next save writes old values back; works the same with Obsidian Sync, iCloud, Dropbox, Syncthing, Git — (user asked; Claude, Phase 5a)
+- 2026-10-07 — Go to (`vault-goto`): one button per top-level folder with a hub (a `kind: hub` note in it, else a note named like the folder without its number, else a .base), labelled with the folder name without its number; Meetings, the deck, Weekly review and Shopping list are `extra:` lines — no per-folder setting needed; labels follow renamed folders — (Claude, Phase 5a; plan approved by user)
 - 2026-10-07 — Phase 5 in two sessions: 5a folder settings (all planning folders) + plugin blocks on 00 Home and Projects overview (project hub / meeting notes keep Dataview); 5b meeting series + whole-vault Check setup. Monthly meetings = same weekday of the month — (user, `/phase-plan`; `docs/plans/phase-5-homepage-meetings.md`)
 - 2026-10-07 — To-do box: Esc keeps making "Untitled to-do"; the footer text changes to match — no empty note left behind — (user)
 - 2026-10-07 — Knowledge pages (New concept template, hub notes): Claude drafts them, user reviews before they ship — no source file exists — (user)

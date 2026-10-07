@@ -315,5 +315,6 @@ After an update, a **What's new** popup opens once. Open it again from **Setting
 | Table looks like plain code | Lab Kit isn't enabled (Settings → Community plugins) |
 | No update notice | It only shows when the plugin brings a newer kit than the one installed, and **Tell me when a kit update is ready** is on (Settings → Lab Kit). **Review update…** works any time |
 | Hazard table empty | Chemicals property empty, or chemical notes missing `H_Phrase` |
+| "Folder … not found. Moved outside Obsidian?", or empty homepage lists | A folder named in the settings was moved or renamed outside Obsidian, so its setting couldn't follow. Run **Find moved folders** (command palette, the notice's button, or Check setup → Find): it suggests where each folder went; Apply changes only the settings. Move folders inside Obsidian to avoid this |
 
 Related: [Changelog](changelog.md)

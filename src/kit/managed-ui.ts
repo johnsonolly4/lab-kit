@@ -36,7 +36,12 @@ export class KitManaged {
     const old = this.oldRecord();
     const record: KitRecord = { version: old?.version ?? "0", files: old?.files ?? {}, installedAt: old?.installedAt ?? "", roles: { ...(old?.roles ?? {}), ...own } };
     const tracked = trackedRoles(this.bundle, slot.managed);
-    if (this.bundle.manifest.id === PLANNING_KIT) return { ...planningRoles(this.app, tracked, this.host.kit.planningFolders, this.host.kit.labFolder), ...own };
+    // Planning note folders: Settings → Planning folders win over a per-kit override (kitLoad copied an old override into the setting once)
+    if (this.bundle.manifest.id === PLANNING_KIT) {
+      const pf = this.host.kit.planningFolders;
+      const ownOther = Object.fromEntries(Object.entries(own).filter(([k]) => !(k in pf)));
+      return { ...planningRoles(this.app, tracked, pf, this.host.kit.labFolder), ...ownOther };
+    }
     // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
     return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked), ...own };
   }
