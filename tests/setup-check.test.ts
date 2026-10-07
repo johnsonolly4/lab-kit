@@ -170,12 +170,12 @@ describe("check setup: meeting series (Phase 5b)", () => {
   it("each series is a row; a wrong field is named and Open goes to the note; a missing deck is a warning", () => {
     const r = byId(state({ planning: true, meetings: [
       { name: "Group", path: "08 Meetings/Group/Group.md", deck: true },
-      { name: "Odd", path: "08 Meetings/Odd/Odd.md", deck: true, error: 'cadence must be weekly, fortnightly or monthly (it is "daily")' },
+      { name: "Odd", path: "08 Meetings/Odd/Odd.md", deck: true, error: 'interval must be weekly, fortnightly or monthly (it is "daily")' },
       { name: "NoDeck", path: "08 Meetings/NoDeck/NoDeck.md", deck: false },
     ] }));
     expect(r["meetings:08 Meetings/Group/Group.md"].ok).toBe(true);
     expect(r["meetings:08 Meetings/Odd/Odd.md"]).toMatchObject({ ok: false, fix: { kind: "open-note", path: "08 Meetings/Odd/Odd.md" } });
-    expect(r["meetings:08 Meetings/Odd/Odd.md"].detail).toMatch(/^Cadence must be/);
+    expect(r["meetings:08 Meetings/Odd/Odd.md"].detail).toMatch(/^Interval must be/);
     expect(r["meetings-deck:08 Meetings/NoDeck/NoDeck.md"]).toMatchObject({ ok: false, warn: true, optional: true });
     expect(r["meetings-deck:08 Meetings/Odd/Odd.md"]).toBeUndefined();   // not asked while the series itself is broken
   });

@@ -35,7 +35,7 @@ export interface TidyContext {
   /** Top-level folders that should have a hub note (Go to link). Missing = the rule is off. */
   hubFolders?: string[];
   /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
-  meetings?: { folder: string; todos: string; today: string; cadence: string; day: string };
+  meetings?: { folder: string; todos: string; today: string; interval: string; day: string };
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
 }
@@ -235,12 +235,18 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     const g: TidyGroup = { id: "meetings", title: "Meetings: series hub and links", detail: "The old weekly-meeting hub becomes a meeting series, meeting notes get a series link and to-dos flagged with meeting: true link to the first series.", changes: [], ask: "meetings" };
     const inMeet = notes.filter(n => inFolder(n.path, mt.folder));
     const propose = (path: string, fm: string[]): void => { g.changes.push({ path, before: split(effective.get(path) ?? "")?.fm.join("\n") ?? "", after: fm.join("\n") }); put(path, fm.join("\n")); };
-    for (const n of inMeet.filter(x => baseName(x.path) === baseName(parentOf(x.path)) && kindOf(x.path) === "hub" && !find(fmOf(x.path), "cadence"))) {
+    for (const n of inMeet.filter(x => baseName(x.path) === baseName(parentOf(x.path)) && kindOf(x.path) === "hub" && !find(fmOf(x.path), "interval") && !find(fmOf(x.path), "cadence"))) {
       let fm = fmOf(n.path);
       const k = find(fm, "kind");
       fm = k ? [...fm.slice(0, k.start), "kind: meeting-series", ...fm.slice(k.end)] : [...fm, "kind: meeting-series"];
-      for (const [key, val] of [["cadence", mt.cadence], ["day", mt.day], ["start", mt.today]]) if (!find(fm, key)) fm.push(line(key, val));
+      for (const [key, val] of [["interval", mt.interval], ["day", mt.day], ["start", mt.today]]) if (!find(fm, key)) fm.push(line(key, val));
       propose(n.path, fm);
+    }
+    // Series hubs made before `cadence` was renamed `interval`: same value under the new key. Both present: left alone.
+    for (const n of inMeet.filter(x => kindOf(x.path) === "meeting-series")) {
+      const fm = fmOf(n.path), old = find(fm, "cadence");
+      if (!old || find(fm, "interval")) continue;
+      propose(n.path, [...fm.slice(0, old.start), line("interval", values(old).join(", ")), ...fm.slice(old.end)]);
     }
     const series = inMeet.filter(x => kindOf(x.path) === "meeting-series").map(x => ({ name: baseName(x.path), folder: parentOf(x.path) }));
     for (const n of inMeet.filter(x => kindOf(x.path) === "meeting" && !values(find(fmOf(x.path), "series")).length)) {

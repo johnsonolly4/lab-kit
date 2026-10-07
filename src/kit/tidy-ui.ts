@@ -8,7 +8,7 @@ import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
 import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
-import { CADENCES, WEEKDAYS } from "../planning/meetings";
+import { INTERVALS, WEEKDAYS } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
 
@@ -49,8 +49,8 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
 const top = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : p;
 
 /** What the user chooses for the old weekly-meeting hub (the meetings rule). */
-export interface MeetingAnswers { cadence: string; day: string }
-const MEETING_DEFAULTS: MeetingAnswers = { cadence: "weekly", day: "Thu" };
+export interface MeetingAnswers { interval: string; day: string }
+const MEETING_DEFAULTS: MeetingAnswers = { interval: "weekly", day: "Thu" };
 
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
 export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App): TidyContext {
@@ -184,7 +184,7 @@ export class TidyNotesModal extends Modal {
       sel.value = value;
       sel.addEventListener("change", () => { set(sel.value); this.rescan(); this.render(); });
     };
-    pick("Held", CADENCES, this.answers.cadence, v => { this.answers.cadence = v; });
+    pick("Held", INTERVALS, this.answers.interval, v => { this.answers.interval = v; });
     pick("on", WEEKDAYS, this.answers.day, v => { this.answers.day = v; });
   }
 

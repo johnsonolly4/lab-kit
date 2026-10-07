@@ -1,6 +1,6 @@
 <%*
 // Meeting template - creates "YYYY-MM-DD <Series>" in the series' folder. The New meeting command works out the series, the date
-// (from the series' cadence, day and start) and "since the last meeting" and hands them over as window.vtMeeting; run by hand
+// (from the series' interval, day and start) and "since the last meeting" and hands them over as window.vtMeeting; run by hand
 // (no hand-over) it makes a Weekly meetings note for the next Thursday.
 const vt = window.vtMeeting;
 delete window.vtMeeting;

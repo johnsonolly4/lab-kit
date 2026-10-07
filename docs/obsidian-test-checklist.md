@@ -137,11 +137,12 @@
 
 ## 6g. Phase 5b: meeting series (needs `npm run dev`; Restore kit original on 00 Home, To-do and Weekly meeting, and on Weekly meetings if you already had it)
 - [ ] 00 Home shows a **Next meetings** card with the series, the next date (Thu, d MMM) and how often; today's meeting says "today"
-- [ ] Add two more series (copy Weekly meetings into `08 Meetings/Group meeting/` with `cadence: fortnightly`, and `08 Meetings/Review/` with `cadence: monthly`, `day: Thu`, `start` = a 2nd Thursday): the card lists all three with the right dates
+- [ ] Add two more series (copy Weekly meetings into `08 Meetings/Group meeting/` with `interval: fortnightly`, and `08 Meetings/Review/` with `interval: monthly`, `day: Thu`, `start` = a 2nd Thursday): the card lists all three with the right dates
 - [ ] **New meeting** (command, and the New meeting note button) asks "Which meeting?" with three series, none with one; the note is named `YYYY-MM-DD <Series>`, sits in the series' folder, has `series` and `since`, and its lists cover the time since the last meeting of that series
 - [ ] **New to-do** asks "Raise at which meeting?" with several series (none with one); pick one: the to-do has `meeting: "[[Series]]"`. That series' meeting note lists it under Flagged for this meeting, the others don't; an old `meeting: true` to-do shows under the first series by name
 - [ ] **Open meeting deck** asks which series; the deck path comes from that series' note
-- [ ] Check setup → Meetings: one row per series; break `cadence` on one: red, names the field, Open goes to the note; a series without a deck path for this computer shows "!"
+- [ ] Tidy up notes → Meetings: a series hub still written with `cadence:` (an old copy of Weekly meetings) shows the key renamed to `interval` with the same value; after applying, Next meetings still lists it (Phase 0 rename, not seen in Obsidian)
+- [ ] Check setup → Meetings: one row per series; break `interval` on one: red, names the field, Open goes to the note; a series without a deck path for this computer shows "!"
 
 ---
 
@@ -155,7 +156,7 @@
 - [ ] A lab note with no properties gets the template's block; a note with `vt` / `Calculations` keeps them
 - [ ] A `fonts` folder (and `Extras/Templates/Scripts`) moves: links in notes still resolve (Obsidian's unresolved-links count is unchanged), kit files still show as tracked in Manage kit files
 - [ ] Edit a listed note after the scan, then confirm: that note is skipped and named in the banner
-- [ ] 7c-1, planning kit on: an old hub in `08 Meetings/<Series>/` (`kind: hub`, no cadence) shows under **Meetings** with Held / on pickers; changing them updates the After column (cadence, day) and start is today; meeting notes in that folder get `series`; a to-do with `meeting: true` gets `meeting: "[[Series]]"`
+- [ ] 7c-1, planning kit on: an old hub in `08 Meetings/<Series>/` (`kind: hub`, no interval) shows under **Meetings** with Held / on pickers; changing them updates the After column (interval, day) and start is today; meeting notes in that folder get `series`; a to-do with `meeting: true` gets `meeting: "[[Series]]"`
 - [ ] 7c-1: a Projects / Literature / Knowledge / How-tos folder with no hub note shows **Add a hub note…** (new note); after Confirm the file exists with `kind: hub`, Go to on 00 Home lists the folder, and a file of that name made in the meantime is skipped, not replaced
 - [ ] 7c-2: with a Templater startup / folder template / template hotkey pointing into `Extras/Templates/Scripts/`, tick the folder move and the **Templater: paths** rule: Templater's settings show the `Actions` paths afterwards and the template hotkey still fires
 - [ ] 7c-2: a Meta Bind button template that runs `Sort inbox.md` (runTemplaterFile) shows under **Meta Bind: buttons**; after Confirm the button runs the command (restart not needed?); a button of your own that runs another template stays and is listed under Only reported

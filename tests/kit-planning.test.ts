@@ -232,9 +232,9 @@ describe("Phase 5b: the kit's meeting series", () => {
     const raw = text("kits/planning/08 Meetings/Weekly meetings/Weekly meetings.md");
     const field = (k: string): string => new RegExp(`^${k}:[ \\t]*(.*)$`, "m").exec(raw)?.[1].trim() ?? "";
     const read = parseSeries({ path: "08 Meetings/Weekly meetings/Weekly meetings.md", name: "Weekly meetings", folder: "08 Meetings/Weekly meetings",
-      fm: { kind: field("kind"), cadence: field("cadence"), day: field("day"), start: field("start") }, ctime: 0, mtime: 0 });
+      fm: { kind: field("kind"), interval: field("interval"), day: field("day"), start: field("start") }, ctime: 0, mtime: 0 });
     expect(field("kind")).toBe("meeting-series");
-    expect(read).toMatchObject({ series: { cadence: "weekly", day: 4 } });
+    expect(read).toMatchObject({ series: { interval: "weekly", day: 4 } });
   });
 
   it("the meeting template reads the hand-over and links its series; the homepage has the next-meetings card", () => {

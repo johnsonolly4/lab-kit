@@ -98,11 +98,11 @@ export class PlanningCommands {
   /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
   private async pickSeries(): Promise<Series | null> {
     const all = this.seriesList();
-    if (!all.length) { new Notice(`No meeting series yet: a note in ${this.folders.meetings} with kind: meeting-series, cadence, day and start.`); return null; }
+    if (!all.length) { new Notice(`No meeting series yet: a note in ${this.folders.meetings} with kind: meeting-series, interval, day and start.`); return null; }
     return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
   }
 
-  /** New meeting note in a series: dated from the series' cadence, "since" the last meeting of the series. The template reads `vtMeeting`. */
+  /** New meeting note in a series: dated from the series' interval, "since" the last meeting of the series. The template reads `vtMeeting`. */
   async newMeeting(): Promise<void> {
     const series = await this.pickSeries();
     if (!series) return;

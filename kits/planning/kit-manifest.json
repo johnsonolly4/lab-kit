@@ -214,7 +214,7 @@
       "role": "meetings",
       "path": "Weekly meetings/Weekly meetings.md",
       "version": "0.5.2",
-      "sha256": "bbc40cf2f01baf7d9b880d44f64fd52a080c6022aebb2da168098beb2130d268",
+      "sha256": "b05c2dfbfaea871ece14b44f763a6047bd6bc52d2841ac6efaf8ed2ea8c069ac",
       "renamedFrom": [],
       "desc": "Meeting series hub",
       "policy": "keep"
@@ -318,7 +318,7 @@
       "role": "templates",
       "path": "Weekly meeting.md",
       "version": "0.5.2",
-      "sha256": "592ab39f4142cbada4819c25a54dfa234f5b5ddd221a6918c7b422734bfd6f93",
+      "sha256": "47e3ef392c11720defe91908da92de2505ed0351318dfa1a20cd44fe85e8670f",
       "renamedFrom": [],
       "desc": "New meeting note"
     },

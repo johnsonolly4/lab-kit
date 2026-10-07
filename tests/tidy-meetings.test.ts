@@ -19,7 +19,7 @@ const vault = (): Map<string, string> => new Map([
 const ctx = (over: Partial<NonNullable<TidyContext["meetings"]>> = {}): TidyContext => ({
   labFolder: "03 Lab Book/Notes", knowledgeFolder: "06 Knowledge", inboxFolder: "00 Inbox", contractFolders: [], rootNotes: [],
   migrations: [], hubFolders: ["02 Projects", "04 Literature", "06 Knowledge", "07 How-tos"],
-  meetings: { folder: "08 Meetings", todos: "00 Planning/To-dos", today: "2026-10-07", cadence: "weekly", day: "Thu", ...over },
+  meetings: { folder: "08 Meetings", todos: "00 Planning/To-dos", today: "2026-10-07", interval: "weekly", day: "Thu", ...over },
 });
 const files = (m: Map<string, string>, c: TidyContext): TidyFile[] => [...m.keys()].map(path => ({ path, text: wantsText(path, c, false) ? m.get(path) : undefined }));
 function io(m: Map<string, string>): TidyIO & { backups: Map<string, string> } {
@@ -36,11 +36,21 @@ function io(m: Map<string, string>): TidyIO & { backups: Map<string, string> } {
 const group = (c: TidyContext, m: Map<string, string>, id: string) => scan(files(m, c), c).groups.find(g => g.id === id);
 
 describe("Tidy up notes: meetings (Phase 7c-1)", () => {
-  it("the old hub becomes a series with the chosen cadence and day; start is today", () => {
-    const g = group(ctx({ cadence: "fortnightly", day: "Tue" }), vault(), "meetings");
+  it("the old hub becomes a series with the chosen interval and day; start is today", () => {
+    const g = group(ctx({ interval: "fortnightly", day: "Tue" }), vault(), "meetings");
     const hub = g?.changes.find(c => c.path.endsWith("Group meeting/Group meeting.md"));
     expect(hub?.before).toBe("kind: hub\ncssclasses:\n  - vt\ndeck_windows: \"\"");
-    expect(hub?.after).toBe("kind: meeting-series\ncssclasses:\n  - vt\ndeck_windows: \"\"\ncadence: fortnightly\nday: Tue\nstart: 2026-10-07");
+    expect(hub?.after).toBe("kind: meeting-series\ncssclasses:\n  - vt\ndeck_windows: \"\"\ninterval: fortnightly\nday: Tue\nstart: 2026-10-07");
+  });
+
+  it("a series hub still written with cadence gets interval, same value; one with both is left alone", () => {
+    const m = vault();
+    m.set("08 Meetings/Review/Review.md", "---\nkind: meeting-series\ncadence: monthly\nday: Thu\nstart: 2026-10-08\n---\n");
+    m.set("08 Meetings/Both/Both.md", "---\nkind: meeting-series\ncadence: weekly\ninterval: monthly\nday: Thu\nstart: 2026-10-08\n---\n");
+    const g = group(ctx(), m, "meetings");
+    const review = g?.changes.find(c => c.path === "08 Meetings/Review/Review.md");
+    expect(review?.after).toBe("kind: meeting-series\ninterval: monthly\nday: Thu\nstart: 2026-10-08");
+    expect(g?.changes.some(c => c.path === "08 Meetings/Both/Both.md")).toBe(false);
   });
 
   it("meeting notes get series from the hub in their folder; one without a hub is reported", () => {

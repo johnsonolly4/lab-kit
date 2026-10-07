@@ -15,9 +15,9 @@ const read = (name: string, fm: Record<string, unknown>): Series => {
 const d = (y: number, m: number, day: number): Date => new Date(y, m - 1, day);
 const next = (s: Series, from: Date): string => ymd(nextDate(s, from));
 
-const weekly = read("Weekly meetings", { cadence: "weekly", day: "Thu", start: "2026-09-03" });
-const fortnightly = read("Group meeting", { cadence: "fortnightly", day: "Thu", start: "2026-10-01" });
-const monthly = read("Review", { cadence: "monthly", day: "Thu", start: "2026-10-08" });   // 2nd Thursday
+const weekly = read("Weekly meetings", { interval: "weekly", day: "Thu", start: "2026-09-03" });
+const fortnightly = read("Group meeting", { interval: "fortnightly", day: "Thu", start: "2026-10-01" });
+const monthly = read("Review", { interval: "monthly", day: "Thu", start: "2026-10-08" });   // 2nd Thursday
 
 describe("next meeting date", () => {
   it("weekly: today counts, otherwise the next Thursday", () => {
@@ -48,11 +48,11 @@ describe("next meeting date", () => {
 
   it("nothing before the first meeting; a start that is not the day moves to the next one", () => {
     expect(next(weekly, d(2026, 1, 1))).toBe("2026-09-03");
-    expect(next(read("Late", { cadence: "weekly", day: "Fri", start: "2026-10-01" }), d(2026, 1, 1))).toBe("2026-10-02");
+    expect(next(read("Late", { interval: "weekly", day: "Fri", start: "2026-10-01" }), d(2026, 1, 1))).toBe("2026-10-02");
   });
 
   it("monthly 5th weekday becomes the last one in a short month", () => {
-    const fifth = read("Fifth", { cadence: "monthly", day: "Thu", start: "2026-10-29" });   // 5th Thursday of October
+    const fifth = read("Fifth", { interval: "monthly", day: "Thu", start: "2026-10-29" });   // 5th Thursday of October
     expect(next(fifth, d(2026, 10, 30))).toBe("2026-11-26");   // Nov has four Thursdays: the last
   });
 });
@@ -60,17 +60,22 @@ describe("next meeting date", () => {
 describe("series hub", () => {
   it("names the field that is wrong", () => {
     const error = (fm: Record<string, unknown>): string => { const r = parseSeries(hub("S", fm)); return "error" in r ? r.error : ""; };
-    expect(error({ day: "Thu", start: "2026-10-01" })).toMatch(/^cadence/);
-    expect(error({ cadence: "daily", day: "Thu", start: "2026-10-01" })).toMatch(/^cadence/);
-    expect(error({ cadence: "weekly", start: "2026-10-01" })).toMatch(/^day/);
-    expect(error({ cadence: "weekly", day: "Thu" })).toMatch(/^start/);
-    expect(error({ cadence: "weekly", day: "Thu", start: "soon" })).toMatch(/^start/);
-    expect(error({ cadence: "Weekly", day: "thursday", start: "2026-10-01" })).toBe("");   // case and long day names are fine
+    expect(error({ day: "Thu", start: "2026-10-01" })).toMatch(/^interval/);
+    expect(error({ interval: "daily", day: "Thu", start: "2026-10-01" })).toMatch(/^interval/);
+    expect(error({ interval: "weekly", start: "2026-10-01" })).toMatch(/^day/);
+    expect(error({ interval: "weekly", day: "Thu" })).toMatch(/^start/);
+    expect(error({ interval: "weekly", day: "Thu", start: "soon" })).toMatch(/^start/);
+    expect(error({ interval: "Weekly", day: "thursday", start: "2026-10-01" })).toBe("");   // case and long day names are fine
+  });
+
+  it("an old hub with cadence instead of interval still parses; interval wins when both are there", () => {
+    expect(read("Old", { cadence: "fortnightly", day: "Thu", start: "2026-10-01" }).interval).toBe("fortnightly");
+    expect(read("Both", { interval: "monthly", cadence: "weekly", day: "Thu", start: "2026-10-01" }).interval).toBe("monthly");
   });
 });
 
 describe("since the last meeting", () => {
-  it("the latest earlier meeting note of the series, else one cadence back", () => {
+  it("the latest earlier meeting note of the series, else one interval back", () => {
     expect(ymd(sinceLast(weekly, d(2026, 10, 15), [d(2026, 10, 1), d(2026, 10, 8), d(2026, 10, 15)]))).toBe("2026-10-08");
     expect(ymd(sinceLast(weekly, d(2026, 10, 15), []))).toBe("2026-10-08");
     expect(ymd(sinceLast(fortnightly, d(2026, 10, 15), []))).toBe("2026-10-01");
