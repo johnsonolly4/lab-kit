@@ -130,25 +130,7 @@ flowchart LR
 
 ## Shortcuts
 
-> [!tip] How to remember them
-> **Alt** = go to. **Ctrl+Shift** = make new. **Alt+Shift** = do something to this note.
-> **H** home - **D** day - **T** to-do - **L** lab - **Z** Zotero paper - **F** find.
-
-| Keys | Does |
-|---|---|
-| `Alt+H` | Homepage |
-| `Alt+D` | Today's note |
-| `Alt+F` | Search |
-| `Alt+Z` | Open a paper's note |
-| `Ctrl+N` | Quick note into the inbox |
-| `Ctrl+Shift+T` | New to-do |
-| `Ctrl+Shift+L` | New lab entry |
-| `Alt+Shift+Z` | Update this paper's highlights |
-| `Alt+Shift+C` | Insert a citation |
-| `Alt+Shift+I` | Insert a lab snippet |
-| `Ctrl+E` | Switch between reading and editing |
-
-In Zotero: `1` yellow, `2` red, `3` green.
+One rule: **Alt + the first letter** of what you want. The full list, and how to set them, is in [[Hotkeys]].
 
 ## When something looks wrong
 

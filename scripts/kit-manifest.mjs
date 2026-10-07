@@ -80,6 +80,7 @@ const PLANNING_DESC = {
   "07 How-tos/How-tos index.md": "How-to notes by topic",
   "07 How-tos/Obsidian/How my vault works.md": "Guide to the vault layout and daily routine",
   "07 How-tos/Obsidian/Setting up a computer.md": "Steps to set up Obsidian on a new computer",
+  "07 How-tos/Obsidian/Hotkeys.md": "Recommended hotkeys (Alt + first letter); never set for you",
   "07 How-tos/Obsidian/Set up ZotLit.md": "Checklist: ZotLit's note folder and template folder",
   "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
   "08 Meetings/Weekly meetings/Weekly meetings.md": "Meeting series hub",

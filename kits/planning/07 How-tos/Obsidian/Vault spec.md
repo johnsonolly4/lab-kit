@@ -110,7 +110,7 @@ Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue 
 > Meta Bind buttons can't be generated per project, so Lab Kit draws the cards (a `vault-projects` block, styled by section 10 of `vault-theme.css`). Their buttons call Lab Kit's New project note and New to-do. This is the one place buttons aren't Meta Bind button templates.
 
 ### To-do (`00 Planning/To-dos`)
-Created with the **New to-do** button / `Ctrl+Shift+T` (template `Extras/Templates/To-do.md`), or **New** at the top of a column on the board. A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).
+Created with the **New to-do** button / `Alt+T` (template `Extras/Templates/To-do.md`), or **New** at the top of a column on the board. A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).
 
 | Property | Values | Set by |
 |---|---|---|
@@ -255,21 +255,15 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 
 | When | What |
 |---|---|
-| Every day | Homepage (`Alt+H`), focus 3 things, capture with `Ctrl+N` (lands in `00 Inbox`), new to-do `Ctrl+Shift+T` |
+| Every day | Homepage (`Alt+H`), focus 3 things, capture with `Alt+N` (lands in `00 Inbox`), new to-do `Alt+T` |
 | Wednesday / Thursday | **New meeting note**, copy into the deck, flagged to-dos |
 | Friday | [[Weekly review]] |
 | First Friday of the month | Archive old to-dos (button in the weekly review) |
 
 ### Hotkeys
 
-> [!tip] The modifier says *what*, the letter says *which thing*
-> | Modifier | Means |
-> |---|---|
-> | `Alt` + letter | **Go to** something |
-> | `Ctrl+Shift` + letter | **Make** something new |
-> | `Alt+Shift` + letter | **Do something to this note** |
->
-> Same letter = same thing: **H** home, **D** day, **T** to-do, **L** lab, **Z** Zotero paper, **F** find/fold.
+> [!tip] One rule: `Alt` + the first letter of what you want
+> The recommended keys are in [[Hotkeys]]. They are suggestions: Lab Kit never sets them for you (Obsidian → Settings → Hotkeys).
 
 | Keys | Command | Plugin |
 |---|---|---|
@@ -277,13 +271,12 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 | `Alt+D` | Open today's daily note | Daily notes (core) |
 | `Alt+F` | Search | Omnisearch |
 | `Alt+Z` | Open a literature note | ZotLit |
-| `Ctrl+N` | Quick capture (new note in `00 Inbox`) | core (default) |
-| `Ctrl+Shift+T` | New to-do | Templater (`To-do.md`) |
-| `Ctrl+Shift+L` | New lab entry | Templater (Lab Book Template) |
-| `Ctrl+Shift+Z` | *not used* - it is Redo | core |
-| `Alt+Shift+Z` | Update this literature note | ZotLit |
-| `Alt+Shift+C` | Insert citation | ZotLit |
-| `Alt+Shift+I` | Insert snippet | Templater (Lab Kit `Insert snippet.md`) |
+| `Alt+N` | Quick capture (new note in `00 Inbox`) | Lab Kit |
+| `Alt+T` | New to-do | Lab Kit |
+| `Alt+L` | New lab entry | Lab Kit |
+| `Alt+U` | Update this literature note | ZotLit |
+| `Alt+C` | Insert citation | ZotLit |
+| `Alt+S` | Insert snippet | Templater (Lab Kit `Insert snippet.md`) |
 | `Alt+Shift+F` / `Alt+Shift+U` | Fold all / unfold all | core |
 | `Alt+Shift+↑` / `↓` | Move line up / down | core |
 | `Alt+Shift+S` | Toggle source mode | core |

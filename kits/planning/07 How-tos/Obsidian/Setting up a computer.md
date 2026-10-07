@@ -41,9 +41,8 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 
 | Windows | Mac |
 |---|---|
-| `Ctrl+N`, `Ctrl+E`, `Ctrl+P` | `Cmd+N`, `Cmd+E`, `Cmd+P` |
-| `Ctrl+Shift+T` / `L` | `Cmd+Shift+T` / `L` |
-| `Alt+H` / `D` / `F` / `Z` | `Option+H` / `D` / `F` / `Z` |
+| `Ctrl+E`, `Ctrl+P` | `Cmd+E`, `Cmd+P` |
+| `Alt+` + letter (see [[Hotkeys]]) | `Option+` + letter |
 | `Alt+Shift+...` | `Option+Shift+...` |
 
 ## 4. Every term

@@ -1,22 +1,21 @@
 # Status
 
-_Updated: 2026-10-07 by Sonnet 5.5 (Phase 7c-2 built: Tidy settings rules). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-08 by Sonnet 5.5 (test-vault feedback round built). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Phases 0–4, 5a, 5b, 6, 7a, 7b, 7c-1 and 7c-2 (7c-2: Templater paths + Meta Bind buttons in `tidy.ts`, `obsidian-private.ts`, `tests/tidy-settings.test.ts`, not seen in Obsidian; 7c-1: meetings series + missing hub notes in `tidy.ts` `scan`, `tests/tidy-meetings.test.ts`, checklist 6h, not seen in Obsidian; 7a/7b: `src/kit/tidy.ts`, `tidy-apply.ts`, `tidy-ui.ts`, command Tidy up notes with Change notes…, checklist 6h, not seen in Obsidian; 7b still lacks the script-move and help-sheet rules, BACKLOG; 5a: planning folder settings + homepage blocks, checklist 6f; 5b: meeting series, `src/planning/meetings.ts`, checklist 6g, neither seen in Obsidian; whole-vault Check setup rows beyond meetings are in BACKLOG "Left out of Phase 5b"; 6a–6e: planning kit switch, Check setup with Fixes, layout folders, Templater-trigger fix, initials naming) built and committed, not pushed. User retest 2026-10-07: New to-do and New lab entry work; Meta Bind buttons work after a restart. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 399 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
+Feedback round 2026-10-08 built, not seen in Obsidian (checklist 6i, BACKLOG "Not yet tested"): action chips in both kit windows, Go to icons, `lab` button, Tidy contract-folder fix, `Hotkeys.md` note (Alt + first letter; no Check setup hotkey rows). Open from it: Weekly meetings buttons at install, Dataview JS message (BACKLOG "Feedback 2026-10-07"). Earlier: phases 0–4, 5a, 5b, 6, 7a, 7b, 7c-1 and 7c-2 (7c-2: Templater paths + Meta Bind buttons in `tidy.ts`, `obsidian-private.ts`, `tests/tidy-settings.test.ts`, not seen in Obsidian; 7c-1: meetings series + missing hub notes in `tidy.ts` `scan`, `tests/tidy-meetings.test.ts`, checklist 6h, not seen in Obsidian; 7a/7b: `src/kit/tidy.ts`, `tidy-apply.ts`, `tidy-ui.ts`, command Tidy up notes with Change notes…, checklist 6h, not seen in Obsidian; 7b still lacks the script-move and help-sheet rules, BACKLOG; 5a: planning folder settings + homepage blocks, checklist 6f; 5b: meeting series, `src/planning/meetings.ts`, checklist 6g, neither seen in Obsidian; whole-vault Check setup rows beyond meetings are in BACKLOG "Left out of Phase 5b"; 6a–6e: planning kit switch, Check setup with Fixes, layout folders, Templater-trigger fix, initials naming) built and committed, not pushed. User retest 2026-10-07: New to-do and New lab entry work; Meta Bind buttons work after a restart. `fix/34-user-scripts-folder` (PR #37) → `feat/multi-kit` (1a–4b, stacked on it; no PR yet). Tests 399 pass. Seen in Obsidian 2026-10-07: Phase 1b, issue #34, most of Phase 2 (feedback note: `test-vault/Lab Kit feedback.md`, local only).
 
 ## Next (ordered: top item is the next session)
 Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
-1. **Test-vault feedback round** (user, 2026-10-07: do ALL in one session, plan mode first, phases): BACKLOG "Feedback 2026-10-07" (Kit files / Review windows: symbol + colour + action per row; Go to icons; `lab` button; button ids missing on Weekly meetings; Dataview JS note) + Check setup hotkeys for the whole kit + the Tidy contract-folder bug ("Phase 7c leftovers") + "Multi-kit round bugs" if room
-2. Phase 8 (`planning-suite-kit.md`); the 7b script-move / help-sheet rules wait for the owner's old paths (BACKLOG "Phase 7c leftovers"). The vault-copy run is the owner's (own copy outside the repo, pastes a summary)
-3. To-do box Esc text: DECIDED Esc = Untitled to-do; change only that box's footer to say so (`kits/planning/Extras/Templates/To-do.md:7`, `vtAsk.js:38`, `src/planning/ask.ts:12`)
-4. New concept template + knowledge hub pages: Claude drafts from the plan's fields (kind: concept, summary, sources, checked), user reviews in test-vault before they ship. Plan first
-5. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)
-6. Multi-kit round fixes (BACKLOG "Multi-kit round bugs" / "quick changes"; "Decisions needed": minimum Obsidian version, Status board colours)
-7. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
-8. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
+1. Phase 8 (`planning-suite-kit.md`); the 7b script-move / help-sheet rules wait for the owner's old paths (BACKLOG "Phase 7c leftovers"). The vault-copy run is the owner's (own copy outside the repo, pastes a summary)
+2. To-do box Esc text: DECIDED Esc = Untitled to-do; change only that box's footer to say so (`kits/planning/Extras/Templates/To-do.md:7`, `vtAsk.js:38`, `src/planning/ask.ts:12`)
+3. New concept template + knowledge hub pages: Claude drafts from the plan's fields (kind: concept, summary, sources, checked), user reviews in test-vault before they ship. Plan first
+4. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)
+5. Multi-kit round fixes (BACKLOG "Multi-kit round bugs" / "quick changes"; "Decisions needed": minimum Obsidian version, Status board colours)
+6. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
+7. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
 None.
@@ -27,6 +26,7 @@ None.
 - [ ] Try Phase 5b in test-vault: checklist 6g (Restore kit original on 00 Home, To-do, Weekly meeting and Weekly meetings first) — by 2026-10-09
 - [ ] Try Phase 5a in test-vault: checklist 6f (`docs/obsidian-test-checklist.md`; run `npm run dev`, Restore kit original on 00 Home + Projects overview) — by 2026-10-09
 - [ ] Try the last Phase 6 bits in test-vault: feedback note sections 8d–8e (Restore kit original on the Lab Book Template first) (`test-vault/Lab Kit feedback.md`), then paste it — by 2026-10-09
+- [ ] Try checklist 6i in test-vault (feedback round: chips, Go to icons, buttons, Tidy count, Hotkeys note) — by 2026-10-10
 - [ ] Merge PR #37 (`fix/34`), then review `feat/multi-kit` and say "push" for its PR — by 2026-10-09
 - [ ] Check the decisions taken while you were away: `docs/decisions.md` (2026-10-07, "Claude, unattended"), BACKLOG "Leftovers" (Phase 2, Phase 3) — by 2026-10-09
 - [ ] Copy the personal preferences file from the adoption session to `~/.claude/CLAUDE.md` — by 2026-10-08

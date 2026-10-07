@@ -120,13 +120,25 @@
       "policy": "keep"
     },
     {
+      "id": "note-obsidian-hotkeys-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/Hotkeys.md",
+      "role": "howtos",
+      "path": "Obsidian/Hotkeys.md",
+      "version": "0.5.2",
+      "sha256": "5818cdcc0b67d3dc65a421e28ba660cf6c9e2a1b8af10fbf65782d086c0fd75d",
+      "renamedFrom": [],
+      "desc": "Recommended hotkeys (Alt + first letter); never set for you",
+      "policy": "keep"
+    },
+    {
       "id": "note-obsidian-how-my-vault-works-md",
       "kind": "note",
       "src": "07 How-tos/Obsidian/How my vault works.md",
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "0.5.2",
-      "sha256": "2fb813af9ca15fa2780fc9a40239d5e259b8f8df25fd444f46c5ae114c946250",
+      "sha256": "0c2388f27a7399a36ec152f5e1df4efeff3604eff17cdce994b8e4d7d4ed2336",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -152,7 +164,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "0.5.2",
-      "sha256": "d4e03612609ee4296d07d7a8f24875b9f3c311e3562b9427635a1c29a5f57b27",
+      "sha256": "b1f250d984308362490f1e7651cdab3be2788ca5d3a09054c365c9f3a22b8341",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer",
       "policy": "keep"
@@ -164,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "9b331e130b7a0d26ba43b975251dc3d9a289c617923008128a680f637c5b8a17",
+      "sha256": "16bb0f85452d484ac2470b9cf68171f0b440fd4aaa160286033f3352a2126c7c",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -188,7 +200,7 @@
       "role": "literature",
       "path": "Literature.md",
       "version": "0.5.2",
-      "sha256": "1e29feb910c9680e45f2cb0a5560128800c7359f619a7a231a1fcccd0109ea33",
+      "sha256": "0af3d1bb1e5918529147af7272ca0f61ad67650b1958d0f6a192192c2845fed3",
       "renamedFrom": [],
       "desc": "Literature hub (ZotLit imports)",
       "optional": true,

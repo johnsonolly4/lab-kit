@@ -161,6 +161,13 @@
 - [ ] 7c-2: a Meta Bind button template that runs `Sort inbox.md` (runTemplaterFile) shows under **Meta Bind: buttons**; after Confirm the button runs the command (restart not needed?); a button of your own that runs another template stays and is listed under Only reported
 - [ ] 7c-2: the backups folder has `settings/*.json` with the old values
 
+## 6i. Test-vault feedback round (2026-10-08; needs `npm run dev`)
+- [ ] Review update… and Manage kit files: each row starts with a chip (symbol + words, coloured); readable in light, dark and phone width; "Kept…" group title explains itself
+- [ ] 00 Home: the Go to bar shows an icon on each button; the top row's third button is **New lab entry** (flask) and works (Restore kit original on 00 Home, then Check setup → Meta Bind → Fix if the button is missing)
+- [ ] Weekly meetings hub: `go-deck` and `new-meeting` buttons show (Check setup → Meta Bind → Fix first)
+- [ ] Tidy up notes on a copy of your notes: "Notes outside the folder layout" lists only notes really outside the kit's folders
+- [ ] `07 How-tos/Obsidian/Hotkeys.md` is installed (Review update…); try two of its keys in Settings → Hotkeys
+
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)
 - [ ] Change a chemical's `H_Phrase`: header redraws, no stutter
