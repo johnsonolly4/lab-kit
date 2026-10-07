@@ -1,0 +1,11 @@
+filters:
+  and:
+    - file.inFolder("05 Chemicals")
+views:
+  - type: table
+    name: Table
+  - type: kanban
+    name: By class
+    groupBy:
+      property: Chemical class
+      direction: ASC

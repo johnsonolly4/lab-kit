@@ -1,0 +1,22 @@
+{
+  "note": "Templater settings the planning kit needs. Add only; never replace values the user already has.",
+  "templates_folder": "Extras/Templates",
+  "user_scripts_folder": "Extras/scripts/templater",
+  "trigger_on_file_creation_mode": "folder",
+  "folder_templates": [
+    {
+      "folder": "01 Daily Notes",
+      "template": "Extras/Templates/Daily note.md"
+    },
+    {
+      "folder": "00 Planning/To-dos",
+      "template": "Extras/Templates/To-do.md"
+    }
+  ],
+  "enabled_templates_hotkeys": [
+    "Extras/Templates/To-do.md"
+  ],
+  "startup_templates": [
+    "Extras/Templates/Actions/To-do roll-over.md"
+  ]
+}

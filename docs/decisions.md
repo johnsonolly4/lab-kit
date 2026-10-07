@@ -5,6 +5,9 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-07 — Planning suite ships as a second kit in the same plugin, one shared install engine, a confirmation dialog listing every file / folder / setting before any write — two plugins would both write Templater's settings and undo each other — (user; `docs/plans/planning-suite-kit.md`)
+- 2026-10-07 — A set Templater user scripts folder is never changed; lab scripts go in `<folder>/lab-kit/`; an older install outside it gets new copies there on confirm, old copies left in place — issue #34; Templater loads subfolders — (user; `/phase-plan`)
+- 2026-10-07 — `vault-fonts.css` stays out of git until the embedded font's licence is checked — public repo — (user; `/phase-plan`)
 - 2026-10-07 — Adopted the Claude starter kit (STATUS sections, docs/INDEX, maintenance, decisions, reviewer agent, handoff and phase-plan skills, PR test workflow) — keeps sessions short; the repo is the memory — (adoption session)
 - 2026-10-05 — Leave out Init eq, NMR standard row and the lab-book reagent table from the RAFT snippet — user's choice; ask again if wanted — (user; BACKLOG "v0.4 quick changes")
 - 2026-10-04 — Keep Solution prep and Recipe separate: Solution prep = stock solutions, Recipe = experiments — (user; BACKLOG "Decisions needed")

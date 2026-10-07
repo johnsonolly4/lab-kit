@@ -1,0 +1,410 @@
+{
+  "note": "Meta Bind button templates the planning kit needs (Settings > Meta Bind > Button templates). Phase 4 replaces path-based actions with plugin commands.",
+  "buttonTemplates": [
+    {
+      "label": "Update literature note",
+      "hidden": false,
+      "tooltip": "This will fetch new annotations from Zotero",
+      "id": "update-litnote",
+      "style": "primary",
+      "actions": [
+        {
+          "type": "command",
+          "command": "zotlit:update-note"
+        }
+      ]
+    },
+    {
+      "label": "Today's note",
+      "icon": "calendar",
+      "style": "primary",
+      "id": "today",
+      "actions": [
+        {
+          "type": "command",
+          "command": "daily-notes"
+        }
+      ]
+    },
+    {
+      "label": "New to-do",
+      "icon": "list-plus",
+      "style": "default",
+      "id": "todo",
+      "actions": [
+        {
+          "type": "templaterCreateNote",
+          "templateFile": "Extras/Templates/To-do.md",
+          "folderPath": "00 Planning/To-dos",
+          "openNote": false
+        }
+      ]
+    },
+    {
+      "label": "Quick capture",
+      "icon": "zap",
+      "style": "default",
+      "id": "capture",
+      "actions": [
+        {
+          "type": "createNote",
+          "folderPath": "00 Inbox",
+          "fileName": "Capture",
+          "openNote": true
+        }
+      ]
+    },
+    {
+      "label": "Search",
+      "icon": "search",
+      "style": "default",
+      "id": "search",
+      "actions": [
+        {
+          "type": "command",
+          "command": "omnisearch:show-modal"
+        }
+      ]
+    },
+    {
+      "label": "Clear for tomorrow",
+      "icon": "rotate-ccw",
+      "style": "plain",
+      "id": "clear-focus",
+      "actions": [
+        {
+          "type": "updateMetadata",
+          "bindTarget": "focus1",
+          "evaluate": false,
+          "value": ""
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "focus2",
+          "evaluate": false,
+          "value": ""
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "focus3",
+          "evaluate": false,
+          "value": ""
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "focus1_done",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "focus2_done",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "focus3_done",
+          "evaluate": true,
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "label": "To-do board",
+      "icon": "kanban",
+      "style": "default",
+      "id": "go-todo",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[To-do board.base]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Experiments",
+      "icon": "notebook-pen",
+      "style": "default",
+      "id": "go-lab",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Lab book base.base]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Literature",
+      "icon": "library",
+      "style": "default",
+      "id": "go-lit",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Literature]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Chemicals",
+      "icon": "atom",
+      "style": "default",
+      "id": "go-chem",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Chemical database.base]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Knowledge",
+      "icon": "lightbulb",
+      "style": "default",
+      "id": "go-know",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Knowledge index]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "How-tos",
+      "icon": "wrench",
+      "style": "default",
+      "id": "go-howto",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[How-tos index]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Meetings",
+      "icon": "users",
+      "style": "default",
+      "id": "go-meetings",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Weekly meetings]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Weekly review",
+      "icon": "list-checks",
+      "style": "default",
+      "id": "go-review",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Weekly review]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Thursday deck",
+      "icon": "presentation",
+      "style": "default",
+      "id": "go-deck",
+      "actions": [
+        {
+          "type": "runTemplaterFile",
+          "templateFile": "Extras/Templates/Actions/Open Thursday deck.md"
+        }
+      ]
+    },
+    {
+      "label": "New meeting note",
+      "icon": "calendar-plus",
+      "style": "default",
+      "id": "new-meeting",
+      "actions": [
+        {
+          "type": "templaterCreateNote",
+          "templateFile": "Extras/Templates/Weekly meeting.md",
+          "folderPath": "08 Meetings/Weekly meetings",
+          "openNote": true
+        }
+      ]
+    },
+    {
+      "label": "Archive old to-dos",
+      "icon": "archive",
+      "style": "default",
+      "id": "archive-todos",
+      "actions": [
+        {
+          "type": "runTemplaterFile",
+          "templateFile": "Extras/Templates/Actions/Archive old to-dos.md"
+        }
+      ]
+    },
+    {
+      "label": "How it works",
+      "icon": "info",
+      "style": "plain",
+      "class": "vt-help",
+      "tooltip": "How this vault works and how to use it",
+      "id": "help",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[How my vault works]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Sort inbox",
+      "icon": "inbox",
+      "style": "default",
+      "id": "sort-inbox",
+      "actions": [
+        {
+          "type": "runTemplaterFile",
+          "templateFile": "Extras/Templates/Actions/Sort inbox.md"
+        }
+      ]
+    },
+    {
+      "label": "Shopping list",
+      "icon": "shopping-cart",
+      "style": "default",
+      "id": "go-shop",
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Shopping list]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "Add to shopping",
+      "icon": "shopping-basket",
+      "style": "default",
+      "id": "shop-add",
+      "actions": [
+        {
+          "type": "runTemplaterFile",
+          "templateFile": "Extras/Templates/Actions/Add to shopping list.md"
+        }
+      ]
+    },
+    {
+      "label": "Clear ticked",
+      "icon": "eraser",
+      "style": "plain",
+      "id": "shop-clear",
+      "actions": [
+        {
+          "type": "regexpReplaceInNote",
+          "regexp": "^[ \\t]*- \\[[xX]\\] .*(\\r?\\n|$)",
+          "regexpFlags": "gm",
+          "replacement": ""
+        }
+      ]
+    },
+    {
+      "label": "Start a new review",
+      "icon": "rotate-ccw",
+      "style": "plain",
+      "id": "clear-review",
+      "actions": [
+        {
+          "type": "updateMetadata",
+          "bindTarget": "r1",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "r2",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "r3",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "r4",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "r5",
+          "evaluate": true,
+          "value": "false"
+        },
+        {
+          "type": "updateMetadata",
+          "bindTarget": "r6",
+          "evaluate": true,
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "label": "Projects",
+      "icon": "folder-kanban",
+      "style": "default",
+      "class": "",
+      "cssStyle": "",
+      "backgroundImage": "",
+      "tooltip": "",
+      "id": "go-projects",
+      "hidden": false,
+      "actions": [
+        {
+          "type": "open",
+          "link": "[[Projects overview]]",
+          "newTab": false
+        }
+      ]
+    },
+    {
+      "label": "New project",
+      "icon": "folder-plus",
+      "style": "default",
+      "id": "new-project",
+      "actions": [
+        {
+          "type": "templaterCreateNote",
+          "templateFile": "Extras/Templates/Project hub.md",
+          "folderPath": "02 Projects"
+        }
+      ]
+    },
+    {
+      "label": "New note",
+      "icon": "file-plus",
+      "style": "default",
+      "id": "project-note",
+      "actions": [
+        {
+          "type": "templaterCreateNote",
+          "templateFile": "Extras/Templates/New project note.md",
+          "folderPath": "02 Projects"
+        }
+      ]
+    }
+  ]
+}

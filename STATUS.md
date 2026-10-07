@@ -5,15 +5,18 @@ _Updated: 2026-10-07 by Opus 5.5. Cap 40 lines. History lives in git and `docs/c
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
 ## Now
-Nothing in progress. Starter-kit adoption is done on `adopt/starter-kit` (6 commits, docs and config only; 215 tests pass, lint 0 errors; reviewer: ready; not pushed).
+Nothing in progress. Planning-suite plan checked with `/phase-plan` (`docs/plans/planning-suite-kit.md`). Starter-kit adoption done on `adopt/starter-kit` (not pushed).
 
 ## Next (ordered: top item is the next session)
-1. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
-2. Issue #34 "Overwrites user scripts on setup" (no details yet: ask for steps; may be BACKLOG "v0.4 quick changes", old scripts item) — done when: reproduced and fixed with a test, or closed
-3. Issue #32 Lab note template: Status is a list, should be text (`kit/Templates/`) — done when: template changed, manifest regenerated, tests pass
-4. Issue #33 Missing chemical database template (no details yet: ask what it should hold) — done when: template in `kit/Templates/`, tutorial updated
-5. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
-6. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
+Plan: `docs/plans/planning-suite-kit.md` (phases 0–8; one per session)
+1. Phase 0: issue #34, never change a set Templater user scripts folder; lab scripts in `<folder>/lab-kit/` (needs `adopt/starter-kit` merged; plan mode first: 5 files) — done when: plan's Phase 0 tests (a)–(e) pass
+2. Feedback round: user fills the feedback page, then `/feedback` — done when: items sorted into `BACKLOG.md`
+3. Phase 1a: multi-kit manifest, `kit/` → `kits/lab/`, no behaviour change — done when: per plan
+4. Phase 1b: confirmation dialog, `Extras/` defaults, `policy: keep` — done when: per plan
+5. Phase 2: lab kit completion (issues #32, #33, `new-lab-entry`, settings at phone width) — done when: per plan
+6. Phases 3–8: per plan
+7. "Make my own copy" snippet and per-snippet script files (BACKLOG "v0.4 quick changes") — plan first (`/phase-plan`)
+8. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
 None.
