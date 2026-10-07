@@ -45,7 +45,8 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
   };
 }
 
-const top = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
+/** The first segment of a folder path; a folder with no slash ("00 Inbox", "Extras") is its own top folder. */
+const top = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : p;
 
 /** What the user chooses for the old weekly-meeting hub (the meetings rule). */
 export interface MeetingAnswers { cadence: string; day: string }
