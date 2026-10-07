@@ -38,7 +38,7 @@ From `docs/plans/planning-suite-kit.md` "Note correction rules", plus lab `Statu
 - Done when: tests: (a) Cancel at either step writes nothing; (b) unticked rule untouched; (c) every changed file has a backup equal to its old text; (d) no new unresolved links in the fixture vault after the moves; (e) a second scan finds nothing left for the applied rules
 - New dependencies: none
 
-### Phase 7c — Meetings, hubs, buttons, settings paths (split 2026-10-07: 7c-1 meetings + missing hubs built; 7c-2 buttons, settings paths, script moves next)
+### Phase 7c — Meetings, hubs, buttons, settings paths (split 2026-10-07: 7c-1 meetings + missing hubs built; 7c-2 buttons + settings paths built; script moves wait for old paths)
 - Depends on: 7b
 - Meetings: old weekly-meeting hub → series hub (name, cadence, day asked in the window), meeting notes get `series: [[…]]`, to-dos `meeting: true` → `meeting: [[Series]]`; create a hub note for top-level folders without one (create only); path-based Meta Bind buttons whose action has a command → command action; paths into the renamed `Actions/` folder in Templater (startup / folder templates / template hotkeys) and Obsidian hotkeys, shown as before / after in the window like notes
 - Files: `src/kit/tidy.ts`, `src/kit/tidy-ui.ts`, `src/kit/obsidian-private.ts`, `src/planning/meetings.ts` (reuse the series parser), tests

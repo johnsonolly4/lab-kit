@@ -1,7 +1,7 @@
 // Tidy up notes, Phase 7b: carries out the changes the user ticked and confirmed. Properties are replaced exactly as the window showed them (only when the
 // note still has the "before" block), moves use Obsidian's rename so links update. Every file that is rewritten, or whose links a move rewrites, is
 // backed up first. All file access goes through TidyIO, so the rules are tested without Obsidian.
-import { replaceProperties, type TidyChange } from "./tidy";
+import { replaceProperties, type TidyChange, type TidySetting, type TidySettingTarget } from "./tidy";
 
 export interface TidyIO {
   /** Text of a note; null when it is gone. */
@@ -17,23 +17,28 @@ export interface TidyIO {
   rename(from: string, to: string): Promise<void>;
   /** Makes a new note (folders as needed). Only called when `exists(path)` is false. */
   create(path: string, text: string): Promise<void>;
+  /** The saved value of a settings target as text (JSON), for the backup. */
+  settingSnapshot(target: TidySettingTarget): string;
+  /** Changes the setting while it still equals `from`; null when done, else why not. */
+  setSetting(s: TidySetting): Promise<string | null>;
 }
 
 export interface TidyOutcome {
   changed: string[];
   moved: { from: string; to: string }[];
   created: string[];
+  settings: string[];
   skipped: { path: string; why: string }[];
   /** Backup copy per original path. */
   backups: Record<string, string>;
 }
 
-/** Applies the changes: properties first, then moves, then new notes. A change that no longer fits (note edited, place taken) is skipped and named, never forced. */
+/** Applies the changes: properties first, then moves, then new notes, then plugin settings (backed up as JSON under settings/). A change that no longer fits (note edited, place taken) is skipped and named, never forced. */
 export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<TidyOutcome> {
-  const out: TidyOutcome = { changed: [], moved: [], created: [], skipped: [], backups: {} };
+  const out: TidyOutcome = { changed: [], moved: [], created: [], settings: [], skipped: [], backups: {} };
   const backUp = async (path: string, text: string): Promise<void> => { if (!(path in out.backups)) out.backups[path] = await io.backup(path, text); };
 
-  for (const c of changes.filter(x => x.to === undefined && !x.create)) {
+  for (const c of changes.filter(x => x.to === undefined && !x.create && !x.setting)) {
     try {
       const text = await io.read(c.path);
       if (text === null) { out.skipped.push({ path: c.path, why: "the note is gone" }); continue; }
@@ -66,6 +71,17 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
       if (io.exists(c.path)) { out.skipped.push({ path: c.path, why: "a file with this name already exists" }); continue; }
       await io.create(c.path, `---\n${c.after}\n---\n`);
       out.created.push(c.path);
+    } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
+  }
+
+  for (const c of changes.filter(x => x.setting)) {
+    const st = c.setting as TidySetting;
+    try {
+      if (st.target !== "metabind-button" && !io.exists(st.to as string)) { out.skipped.push({ path: c.path, why: `${String(st.to)} is not there` }); continue; }
+      await backUp(`settings/${st.target}.json`, io.settingSnapshot(st.target));
+      const why = await io.setSetting(st);
+      if (why !== null) { out.skipped.push({ path: c.path, why }); continue; }
+      out.settings.push(c.path);
     } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
   }
   return out;

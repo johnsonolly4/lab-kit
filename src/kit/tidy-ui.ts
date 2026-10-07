@@ -7,6 +7,7 @@ import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
 import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { CADENCES, WEEKDAYS } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
@@ -32,6 +33,8 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
       const gone = new Set(paths);
       return Object.entries(app.metadataCache.resolvedLinks).filter(([src, links]) => !gone.has(src) && paths.some(p => links[p])).map(([src]) => src);
     },
+    settingSnapshot: target => settingSnapshot(app, target),
+    setSetting: async c => c.target === "metabind-button" ? setMetaBindActions(app, c.key, c.from, c.to) : setTemplaterPath(app, c.target, c.key, c.from as string, c.to as string),
     create: async (p, text) => { await ensureFolder(app.vault, kitParent(p)); await app.vault.create(p, text); },
     rename: async (from, to) => {
       const f = app.vault.getAbstractFileByPath(from);
@@ -49,7 +52,7 @@ export interface MeetingAnswers { cadence: string; day: string }
 const MEETING_DEFAULTS: MeetingAnswers = { cadence: "weekly", day: "Thu" };
 
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
-export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS): TidyContext {
+export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App): TidyContext {
   const planningOn = !!host.planning?.slot.enabled;
   const pf: PlanningFolders = planningOn ? host.kit.planningFolders : { ...PLANNING_FOLDER_DEFAULTS };
   const migrations: Migration[] = [host.managed, ...(planningOn && host.planning ? [host.planning] : [])].flatMap(k => k.bundle.manifest.migrations ?? []);
@@ -60,6 +63,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
+    settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
   };
 }
@@ -98,11 +102,11 @@ export class TidyNotesModal extends Modal {
 
   /** Reads the vault and scans it. */
   private async load(): Promise<void> {
-    this.files = await readVault(this.app, tidyContext(this.host, this.answers));
+    this.files = await readVault(this.app, tidyContext(this.host, this.answers, this.app));
     this.rescan();
   }
   /** Scans again with the current answers (no reading: the answers only change what the meetings rule proposes). */
-  private rescan(): void { this.result = scan(this.files, tidyContext(this.host, this.answers)); }
+  private rescan(): void { this.result = scan(this.files, tidyContext(this.host, this.answers, this.app)); }
 
   private render(): void {
     const el = this.contentEl, r = this.result;
@@ -197,7 +201,7 @@ export class TidyNotesModal extends Modal {
     const backups = this.host.managed.roles().backups;
     try {
       const out = await applyTidy(vaultIO(this.app, backups, new Date().toISOString()), changes);
-      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.created.length} created`, `${out.skipped.length} skipped`];
+      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.created.length} created`, `${out.settings.length} settings`, `${out.skipped.length} skipped`];
       this.message = `${parts.join(", ")}. Backups: ${backups}.${out.skipped.length ? ` Skipped: ${out.skipped.map(x => `${x.path} (${x.why})`).join("; ")}.` : ""}`;
       new Notice(parts.join(", ") + ".");
     } catch (e) { this.message = `Stopped: ${(e as Error).message}. Anything already changed is in the backups folder (${backups}).`; }

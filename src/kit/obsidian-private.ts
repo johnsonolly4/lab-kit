@@ -207,6 +207,50 @@ export async function removeTemplaterStartup(app: App, template: string): Promis
   return true;
 }
 
+/** Templater's startup templates, folder templates and template hotkeys as paths, or undefined without Templater. */
+export function templaterPaths(app: App): { startup: string[]; folders: { folder: string; template: string }[]; hotkeys: string[] } | undefined {
+  const st = templater(app)?.settings;
+  if (!st) return undefined;
+  return {
+    startup: (st.startup_templates ?? []).filter((t): t is string => typeof t === "string"),
+    folders: (st.folder_templates ?? []).map(e => ({ folder: e?.folder ?? "", template: e?.template ?? "" })),
+    hotkeys: (st.enabled_templates_hotkeys ?? []).map(h => typeof h === "string" ? h : h?.template ?? "").filter(Boolean),
+  };
+}
+
+/** The saved value of one Templater / Meta Bind setting as JSON text (for a backup before it is changed). "" when the plugin isn't there. */
+export function settingSnapshot(app: App, target: "templater-startup" | "templater-folder" | "templater-hotkey" | "metabind-button"): string {
+  const st = templater(app)?.settings;
+  const value = target === "templater-startup" ? st?.startup_templates : target === "templater-folder" ? st?.folder_templates
+    : target === "templater-hotkey" ? st?.enabled_templates_hotkeys : pluginOf(app, META_BIND)?.settings?.buttonTemplates;
+  return value === undefined ? "" : JSON.stringify(value, null, 2);
+}
+
+/**
+ * Changes one Templater path that still equals `from` (startup / hotkey: the entry; folder: the template of the entry for folder `key`) and saves.
+ * Null when done, else why not. Hotkeys: Templater registers a command per template, so its table is rebuilt after the change (private API, not checked against a real install).
+ */
+export async function setTemplaterPath(app: App, target: "templater-startup" | "templater-folder" | "templater-hotkey", key: string, from: string, to: string): Promise<string | null> {
+  const tpl = templater(app);
+  if (!tpl?.settings) return "Templater is not available";
+  const st = tpl.settings;
+  if (target === "templater-startup") {
+    if (!st.startup_templates?.includes(from)) return "the setting changed since the scan";
+    st.startup_templates = st.startup_templates.map(t => t === from ? to : t);
+  } else if (target === "templater-folder") {
+    const e = st.folder_templates?.find(x => x?.folder === key && x?.template === from);
+    if (!e) return "the setting changed since the scan";
+    e.template = to;
+  } else {
+    const list = st.enabled_templates_hotkeys, hit = (h: string | { template?: string }): boolean => (typeof h === "string" ? h : h?.template) === from;
+    if (!list?.some(hit)) return "the setting changed since the scan";
+    st.enabled_templates_hotkeys = list.map(h => !hit(h) ? h : typeof h === "string" ? to : { ...h, template: to });
+  }
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+  if (target === "templater-hotkey") { try { tpl.command_handler?.sync_template_hotkeys?.(); } catch (e) { console.error(e); } }
+  return null;
+}
+
 interface SettingsPlugin { settings?: Record<string, unknown>; saveSettings?: () => Promise<void>; saveData?: (data: unknown) => Promise<void> }
 /** Saves another plugin's settings: its own saveSettings, else Obsidian's saveData with its settings object (Dataview has no saveSettings, not checked). */
 async function saveOther(p: SettingsPlugin): Promise<void> {
@@ -220,6 +264,22 @@ export const metaBindButtonIds = (app: App): string[] | null => {
   const list = pluginOf(app, META_BIND)?.settings?.buttonTemplates;
   return Array.isArray(list) ? list.map(b => (b as { id?: string })?.id ?? "").filter(id => id) : null;
 };
+/** Meta Bind's button templates (id and actions), or null without Meta Bind. */
+export const metaBindButtons = (app: App): { id: string; actions: { type?: string; command?: string; templateFile?: string }[] }[] | null => {
+  const list = pluginOf(app, META_BIND)?.settings?.buttonTemplates;
+  return Array.isArray(list) ? list.map(b => ({ id: (b as { id?: string })?.id ?? "", actions: ((b as { actions?: unknown[] })?.actions ?? []) as { type?: string }[] })).filter(b => b.id) : null;
+};
+/** Replaces the actions of button template `id` while they still equal `from` (compared as JSON), keeping the button's other fields, and saves. Null when done, else why not. */
+export async function setMetaBindActions(app: App, id: string, from: unknown, to: unknown): Promise<string | null> {
+  const mb = pluginOf(app, META_BIND);
+  const list = mb?.settings?.buttonTemplates;
+  if (!mb?.settings || !Array.isArray(list)) return "Meta Bind is not available";
+  const b = list.find(x => (x as { id?: string })?.id === id) as { actions?: unknown } | undefined;
+  if (!b || JSON.stringify(b.actions) !== JSON.stringify(from)) return "the setting changed since the scan";
+  b.actions = structuredClone(to);
+  await saveOther(mb);
+  return null;
+}
 /** Adds button templates whose id Meta Bind doesn't have yet (the user's own stay as they are) and saves. Number added. */
 export async function addMetaBindButtons(app: App, buttons: { id: string }[]): Promise<number> {
   const mb = pluginOf(app, META_BIND);

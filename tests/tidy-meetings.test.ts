@@ -30,6 +30,7 @@ function io(m: Map<string, string>): TidyIO & { backups: Map<string, string> } {
     backup: async (p, t) => { backups.set(p, t); return `backups/${p}`; },
     exists: p => m.has(p), filesIn: p => [...m.keys()].filter(k => k === p), linkedFrom: () => [], rename: async () => undefined,
     create: async (p, t) => { m.set(p, t); },
+    settingSnapshot: () => "", setSetting: async () => null,
   };
 }
 const group = (c: TidyContext, m: Map<string, string>, id: string) => scan(files(m, c), c).groups.find(g => g.id === id);

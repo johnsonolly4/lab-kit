@@ -36,7 +36,21 @@ export interface TidyContext {
   hubFolders?: string[];
   /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
   meetings?: { folder: string; todos: string; today: string; cadence: string; day: string };
+  /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
+  settings?: TidySettings;
 }
+
+/** A Meta Bind button action as saved (`type` plus its own fields). */
+export type ButtonAction = { type?: string; command?: string; templateFile?: string; [k: string]: unknown };
+export interface TidySettings {
+  templater?: { startup: string[]; folders: { folder: string; template: string }[]; hotkeys: string[] };
+  metaBind?: { id: string; actions: ButtonAction[] }[];
+  /** Ids of the commands that have an Obsidian hotkey (only `templater-obsidian:` ones matter). */
+  hotkeyCommands?: string[];
+}
+export type TidySettingTarget = "templater-startup" | "templater-folder" | "templater-hotkey" | "metabind-button";
+/** One settings value to change: `key` finds it (the old path, the folder, the button id); it is changed only while it still equals `from`. */
+export interface TidySetting { target: TidySettingTarget; key: string; from: unknown; to: unknown }
 
 /** One vault file. `text` only for notes the scan needs to read (see `wantsText`). */
 export interface TidyFile { path: string; text?: string }
@@ -48,6 +62,8 @@ export interface TidyChange {
   to?: string; note?: string;
   /** A new note at `path` whose properties are `after` (`before` is empty); never replaces a file. */
   create?: boolean;
+  /** A plugin setting rather than a note: `path` is the label shown, `before` / `after` the lines shown. */
+  setting?: TidySetting;
 }
 /** `ask`: the window shows this rule's questions (the meetings rule asks how often and on which day). */
 export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[]; ask?: "meetings" }
@@ -167,6 +183,12 @@ export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boo
 
 const topFolder = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
 
+/** Lab Kit commands that replace the old template-file buttons, by the template's file name (lower case, without .md). */
+const BUTTON_COMMANDS: Record<string, string> = {
+  "sort inbox": "lab-kit:sort-inbox", "archive old to-dos": "lab-kit:archive-todos", "open thursday deck": "lab-kit:open-deck",
+  "new weekly meeting": "lab-kit:new-meeting", "new to-do": "lab-kit:new-todo",
+};
+
 export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   const groups: TidyGroup[] = [];
   const skipped: TidyReported = { id: "left-alone", title: "Left as they are", detail: "A rule matched, but changing the note would mean guessing.", items: [] };
@@ -259,6 +281,44 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   }
   if (missing.changes.length) groups.push(missing);
 
+  // Plugin settings (Phase 7c-2): Templater paths into moved folders, Meta Bind buttons that run a template file
+  const settingsReported: TidyReported[] = [];
+  const st = ctx.settings;
+  if (st) {
+    const moves = ctx.migrations.filter(m => m.scope === "vault").flatMap(m => m.ops).flatMap(o => o.op === "move" ? [{ from: o.from.replace(/\/+$/, ""), to: o.to.replace(/\/+$/, "") }] : []);
+    const remap = (v: string): string | null => { for (const m of moves) if (v === m.from || v.startsWith(m.from + "/")) return m.to + v.slice(m.from.length); return null; };
+    const moving = (v: string): boolean => groups.some(g => g.changes.some(c => c.to !== undefined && (v === c.path || v.startsWith(c.path + "/"))));
+    const there = (to: string, from: string): boolean => files.some(f => f.path === to) || moving(from);
+    const tp: TidyGroup = { id: "templater-paths", title: "Templater: paths into renamed folders", detail: "Startup templates, folder templates and template hotkeys that point into a folder this tidy moves.", changes: [] };
+    const add = (target: TidySettingTarget, label: string, key: string, from: string, to: string): void => {
+      if (!there(to, from)) { skipped.items.push({ path: label, note: `${to} is not there yet: left as it is` }); return; }
+      tp.changes.push({ path: label, before: from, after: to, setting: { target, key, from, to } });
+    };
+    for (const v of st.templater?.startup ?? []) { const n = remap(v); if (n) add("templater-startup", "Templater › Startup templates", v, v, n); }
+    for (const f of st.templater?.folders ?? []) { const n = remap(f.template); if (n) add("templater-folder", `Templater › Folder template for ${f.folder}`, f.folder, f.template, n); }
+    for (const v of st.templater?.hotkeys ?? []) { const n = remap(v); if (n) add("templater-hotkey", "Templater › Template hotkeys", v, v, n); }
+    if (tp.changes.length) groups.push(tp);
+
+    const mb: TidyGroup = { id: "metabind-buttons", title: "Meta Bind: buttons that run a template", detail: "A button that runs a Templater file becomes a button that runs the matching Lab Kit command.", changes: [] };
+    const unknown: { path: string; note: string }[] = [];
+    const show = (a: ButtonAction): string => `${a.type ?? "?"}${a.command ? ` ${a.command}` : a.templateFile ? ` ${a.templateFile}` : ""}`;
+    for (const b of st.metaBind ?? []) {
+      let changed = false;
+      const actions = b.actions.map((a): ButtonAction => {
+        if (a.type !== "runTemplaterFile" || typeof a.templateFile !== "string") return a;
+        const command = BUTTON_COMMANDS[lower(baseName(a.templateFile))];
+        if (!command) { unknown.push({ path: `Meta Bind › button ${b.id}`, note: `runs ${a.templateFile}: no matching command known` }); return a; }
+        changed = true;
+        return { type: "command", command };
+      });
+      if (changed) mb.changes.push({ path: `Meta Bind › button ${b.id}`, before: b.actions.map(show).join("\n"), after: actions.map(show).join("\n"), setting: { target: "metabind-button", key: b.id, from: b.actions, to: actions } });
+    }
+    if (mb.changes.length) groups.push(mb);
+    if (unknown.length) settingsReported.push({ id: "metabind-unknown", title: "Buttons that run a template file", detail: "No Lab Kit command is known for these; change them in Meta Bind's settings.", items: unknown });
+    const keys = (st.hotkeyCommands ?? []).filter(c => c.startsWith("templater-obsidian:") && remap(c.slice("templater-obsidian:".length)));
+    if (keys.length) settingsReported.push({ id: "hotkeys-renamed", title: "Hotkeys for templates in a renamed folder", detail: "Obsidian keeps these under the old template path; set them again in Settings → Hotkeys.", items: keys.map(path => ({ path })) });
+  }
+
   // Only reported
   const rep = (id: string, title: string, detail: string, items: { path: string; note?: string }[]): TidyReported | null => items.length ? { id, title, detail, items } : null;
   const all = files.filter(f => !hidden(f.path)).map(f => f.path).sort();
@@ -289,6 +349,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     rep("knowledge-headings", "Knowledge notes with ### headings", "Section headings use ## in the kit's concept notes. Change them by hand.", heads),
     rep("knowledge-summary", "Knowledge notes without a summary", "Write one line in the summary property.", noSummary),
     rep("knowledge-sources", "Knowledge notes without sources", "Add the sources property (links or references).", noSources));
+  reported.push(...settingsReported);
   if (skipped.items.length) reported.unshift(skipped);
 
   return { groups, reported: reported.filter((r): r is TidyReported => !!r) };

@@ -27,6 +27,7 @@ function memory(): { files: Map<string, string>; io: TidyIO; backups: Map<string
     filesIn: p => [...files.keys()].filter(k => k === p || k.startsWith(p + "/")),
     linkedFrom: paths => [...files].filter(([k, t]) => !paths.includes(k) && link(t).some(l => paths.some(p => p.replace(/\.md$/, "") === l))).map(([k]) => k),
     create: async (p, t) => { files.set(p, t); },
+    settingSnapshot: () => "", setSetting: async () => null,
     rename: async (from, to) => {
       for (const [k, t] of [...files]) if (k === from || k.startsWith(from + "/")) { files.delete(k); files.set(to + k.slice(from.length), t); }
       const stem = (p: string): string => p.replace(/\.md$/, "");
@@ -48,7 +49,7 @@ describe("Change notes (Phase 7b)", () => {
   it("(a) no changes: nothing is written, no backup", async () => {
     const m = memory();
     const out = await applyTidy(m.io, []);
-    expect(m.writes).toEqual([]); expect(m.backups.size).toBe(0); expect(out).toEqual({ changed: [], moved: [], created: [], skipped: [], backups: {} });
+    expect(m.writes).toEqual([]); expect(m.backups.size).toBe(0); expect(out).toEqual({ changed: [], moved: [], created: [], settings: [], skipped: [], backups: {} });
   });
 
   it("(b) a rule the user unticked is left alone", async () => {
