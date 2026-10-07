@@ -201,7 +201,11 @@ export async function removeTemplaterStartup(app: App, template: string): Promis
   return true;
 }
 
-interface SettingsPlugin { settings?: Record<string, unknown>; saveSettings?: () => Promise<void> }
+interface SettingsPlugin { settings?: Record<string, unknown>; saveSettings?: () => Promise<void>; saveData?: (data: unknown) => Promise<void> }
+/** Saves another plugin's settings: its own saveSettings, else Obsidian's saveData with its settings object (Dataview has no saveSettings, not checked). */
+async function saveOther(p: SettingsPlugin): Promise<void> {
+  try { await (p.saveSettings ? p.saveSettings() : p.saveData?.(p.settings)); } catch (e) { console.error(e); }
+}
 const pluginOf = (app: App, id: string): SettingsPlugin | undefined => priv(app).plugins?.plugins?.[id] as SettingsPlugin | undefined;
 
 /** Dataview's "Enable JavaScript queries" (`enableDataviewJs`), or null without Dataview. */
@@ -214,7 +218,7 @@ export async function enableDataviewJs(app: App): Promise<boolean> {
   const dv = pluginOf(app, "dataview");
   if (!dv?.settings) return false;
   dv.settings.enableDataviewJs = true;
-  try { await dv.saveSettings?.(); } catch (e) { console.error(e); }
+  await saveOther(dv);
   return true;
 }
 
@@ -233,7 +237,7 @@ export async function addMetaBindButtons(app: App, buttons: { id: string }[]): P
   const add = buttons.filter(b => !have.has(b.id)).map(b => structuredClone(b));
   if (!add.length) return 0;
   mb.settings.buttonTemplates = [...(list as unknown[]), ...add];
-  try { await mb.saveSettings?.(); } catch (e) { console.error(e); }
+  await saveOther(mb);
   return add.length;
 }
 
