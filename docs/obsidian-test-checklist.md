@@ -108,6 +108,16 @@
 - [ ] **Sample list** shows a toggle for your method; **Combined results** has a toggle and the right columns, filled from the table (with two tables of the method: the second is used for codes missing from the first)
 - [ ] A note with no Columns in the Methods folder is ignored; a note called GPC replaces the built-in GPC
 
+## 6e. Phase 6: planning kit switch and Check setup
+- [ ] Settings → Built-in kit → **Planning kit (preview)**: off at first. Switch on: a notice, and a **Planning kit files** row appears (not installed yet). Review update… lists the planning files and folders; Apply installs them; reload Lab Kit: New to-do, Quick capture etc. are in the command palette
+- [ ] Planning first install with Templater's user scripts folder empty: no "Set Templater's user scripts folder" switch (only the lab kit sets it)
+- [ ] ZotLit on: the literature files are offered; ZotLit off: they show as Off
+- [ ] Command **Check setup** and the **Check setup…** button open the same list; a set-up vault is all ✓
+- [ ] Each Fix asks first (Cancel changes nothing), then the row turns ✓: CSS snippet, missing folder, Templater folder template (planning on; a folder that already has one is left as it is), Alt+S
+- [ ] Alt+S when another command already uses it: no Fix, the row names that command
+- [ ] Open on a missing plugin opens its page in Community plugins
+- [ ] Phone width: the list fits
+
 ---
 
 ## 7. Lab header

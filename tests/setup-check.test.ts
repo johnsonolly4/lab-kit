@@ -80,4 +80,11 @@ describe("check setup (Phase 6)", () => {
     expect(own.detail).toContain("Mod+I");
     expect(byId(state({ hotkeys: null }))["hotkey:Insert snippet"].fix).toBeUndefined();
   });
+
+  it("folder template: no Fix until the planning kit is installed", () => {
+    const r = byId(state({ planning: true, installed: { lab: true, planning: false } }));
+    expect(r["folder-template:01 Daily Notes"].ok).toBe(false);
+    expect(r["folder-template:01 Daily Notes"].fix).toBeUndefined();
+    expect(r["folder-template:01 Daily Notes"].detail).toContain("Install the planning kit first");
+  });
 });

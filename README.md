@@ -129,8 +129,8 @@ Settings → Lab Kit is searchable and grouped:
 
 | Group | What is in it |
 |---|---|
-| **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), What's new, update notice, Backup folder |
-| **Kit folders and setup** | Templater **Set up**, Templates folder, Scripts folder, Snippets folder, console log |
+| **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Backup folder |
+| **Kit folders and setup** | Templater **Set up**, **Check setup…**, Templates folder, Scripts folder, Snippets folder, console log |
 | **Lab notebook** | Initials, Chemical folder, Lab notes folder, Molecular weight property, Methods folder |
 | **Snippet menu** | A Lucide icon for each snippet |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
@@ -149,6 +149,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |
+| Check setup | Lists what the kits need (plugins, Templater, CSS snippets, folders, the Alt+S hotkey) with a Fix for each missing item; nothing changes until you confirm |
 
 ## Privacy & permissions
 - **No network use.** Lab Kit never connects to the internet, has no account, no ads, no telemetry and no paid features. The "full changelog" button only opens a link in your browser when you press it.

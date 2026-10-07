@@ -23,6 +23,7 @@ interface PrivateApp {
     defaultKeys?: Record<string, KitHotkey[]>;
     setHotkeys?: (command: string, keys: KitHotkey[]) => void;
     save?: () => Promise<void> | void;
+    bake?: () => void;
   };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
@@ -152,6 +153,7 @@ export async function addHotkey(app: App, command: string, key: KitHotkey): Prom
   if (!hm?.setHotkeys) return false;
   const own = hm.customKeys?.[command] ?? hm.defaultKeys?.[command] ?? [];
   hm.setHotkeys(command, [...own, key]);
+  hm.bake?.();   // Obsidian rebuilds its key table this way after a change in Settings → Hotkeys (not checked against a real install)
   try { await hm.save?.(); } catch (e) { console.error(e); }
   return true;
 }

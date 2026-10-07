@@ -82,14 +82,15 @@ export function checkSetup(s: SetupState): SetupItem[] {
     ];
     for (const [id, label, ok] of items) {
       if (id === "menu-hotkey" && !s.menu) continue;
-      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : "Not set. Set up fills in only what is empty.", fix: ok || !s.menu ? undefined : { kind: "templater" } });
+      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Set up fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
+        fix: ok || !s.menu ? undefined : { kind: "templater" } });
     }
     if (s.planning) for (const ft of s.folderTemplates) {
       const have = t.folderTemplates.find(e => e.folder === ft.folder);
       const ok = !!have;
       out.push({ id: `folder-template:${ft.folder}`, group: "Templater", label: `Folder template for ${ft.folder}`, ok,
-        detail: !have ? `Not set. Adds ${ft.template}.` : have.template === ft.template ? "Set." : `Set to ${have.template} (yours, left as it is).`,
-        fix: ok ? undefined : { kind: "folder-template", folder: ft.folder, template: ft.template } });
+        detail: have ? (have.template === ft.template ? "Set." : `Set to ${have.template} (yours, left as it is).`) : s.installed.planning ? `Not set. Adds ${ft.template}.` : "Not set. Install the planning kit first (its template isn't there yet).",
+        fix: ok || !s.installed.planning ? undefined : { kind: "folder-template", folder: ft.folder, template: ft.template } });
     }
   }
 

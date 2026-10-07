@@ -40,3 +40,5 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-07 — Per-project to-do / note: a plugin method with an optional project, no extra commands — (user, `/phase-plan` 4b)
 - 2026-10-07 — Planning commands are registered only when the planning kit is on and installed (gate read at load, as the to-do engine) — (user, `/phase-plan` 4b)
 - 2026-10-07 — Alt+S stays a Templater template hotkey (Set up adds it; no Lab Kit insert command) — (user, multi-kit feedback round)
+- 2026-10-07 — Planning kit offered now as a "preview" switch (before Phase 5), so the to-do engine and commands can be tried — (user, Phase 6 plan)
+- 2026-10-07 — Check setup recommends only Alt+S (Insert snippet) as a hotkey; other planning hotkeys wait for the user's choice — (Claude, Phase 6; BACKLOG)
