@@ -31,7 +31,7 @@ None.
 - [ ] Local `dist/` and `legacy/main.js` (gitignored, this machine only): keep or delete
 - [ ] Try release-test fix (b) in test-vault: checklist 6g, first and fifth lines (fresh install has no series; Meetings hub; Go to) — by 2026-10-10
 - [ ] Try release-test fix (c) in test-vault: checklist 6i, the three new lines (Esc in each box, New lab entry, lab folder template) — by 2026-10-10
-- [ ] Try the sample-code fix in test-vault: Alt+S → Variant naming matrix in a note named `OLJ0001 - …` shows `OLJ0001-A`; and the Sort inbox side picker (checklist 6i, last line: small box at the right, note readable behind it) — by 2026-10-10
+- [ ] Try the sample-code fix in test-vault: Alt+S → Variant naming matrix in a note named `OLJ0001 - …` shows `OLJ0001-A`; and the Sort inbox side picker (checklist 6i, last line: small box at the right, note readable behind it); the Check setup Script and Homepage read-only rows (checklist 6i, new line) — by 2026-10-10
 - [ ] Try release-test fix (a) in test-vault: checklist 6f, the two rename lines (settings tab open while renaming; edited template kept) — by 2026-10-10
 
 ## Known issues
