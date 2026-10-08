@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Sort inbox picker sits at the side**: the "where does it go?" picker (and the project, folder and delete pickers after it) is a small box at the right edge with no dark backdrop, so the note being sorted stays readable and scrollable; on a phone it stays centred. The name box is unchanged. Not seen in Obsidian.
 - **Alt+S sample codes read the number after the initials**: in a lab note named `OLJ0001 - Title` the Variant naming matrix, sample list and timetable showed `OLJXXXX-A`; they now show `OLJ0001-A` (a note named `0001 - …` still works; `XXXX` only when the name has no number). Tests only, not seen in Obsidian
 - **Esc cancels**: in New to-do, Esc in the text box, the project picker or the meeting picker now makes nothing (it used to make "Untitled to-do" or skip). To skip, press Enter on an empty box (Untitled to-do) or on **(no project)** / **(none)**. Your own To-do template is kept: **Restore kit original** to get the new one. Tests only (template text), not seen in Obsidian
 - **New lab entry asks with Lab Kit's own box** (like the planning commands) and Esc makes nothing; an empty title is "Untitled". A note made by hand in the Lab notes folder still asks through the template (Esc cancels there too). Restore kit original on the Lab Book Template to get it. Tests only, not seen in Obsidian

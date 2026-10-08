@@ -149,6 +149,13 @@
 /* Planning kit text box (src/planning/ask.ts): a picker with no list underneath */
 .lab-kit-ask .prompt-results { display: none; }
 
+/* Sort inbox picker (src/planning/ask.ts `pick` with side): small, at the right edge, no backdrop, so the note stays readable; centred as usual on a phone */
+@media (min-width: 701px) {
+  .modal-container.lab-kit-pick-side { pointer-events: none; }
+  .modal-container.lab-kit-pick-side .modal-bg { display: none; }
+  .modal.lab-kit-pick-side { position: fixed; top: 12vh; right: 16px; left: auto; width: 320px; max-height: 70vh; transform: none; pointer-events: auto; }
+}
+
 /* Check setup window (src/kit/setup-check-ui.ts) */
 .lab-kit-setup-check h4 { margin: 12px 0 4px; }
 .lab-kit-setup-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--background-modifier-border); }

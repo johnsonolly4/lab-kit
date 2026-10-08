@@ -216,7 +216,7 @@ export class PlanningCommands {
   /** A folder in `root` (or a new one in it); null when Esc was pressed. */
   private async pickFolder(root: string): Promise<string | null> {
     const folders = subfolders(this.app.vault.getAllFolders().map(f => f.path), root);
-    const picked = await pick(this.app, [...folders, "+ New folder in " + root], [...folders, ""], "Which folder?");
+    const picked = await pick(this.app, [...folders, "+ New folder in " + root], [...folders, ""], "Which folder?", true);
     if (picked !== "") return picked;
     const name = await ask(this.app, "New folder name");
     return name ? `${root}/${cleanName(name)}` : null;
@@ -235,7 +235,7 @@ export class PlanningCommands {
       const where = await pick(this.app,
         ["To-do (goes to Backlog)", "Project...", "Knowledge...", "How-to...", "Meetings...", "Archive", "Delete", "Skip for now", "Stop"],
         ["todo", "project", "knowledge", "howto", "meetings", "archive", "delete", "skip", "stop"] as const,
-        `${file.basename} - where does it go? (${sorted + skipped + 1} of ${total})`);
+        `${file.basename} - where does it go? (${sorted + skipped + 1} of ${total})`, true);
       if (where === null || where === "stop") break;
       if (where === "skip") { skipped++; continue; }
 
@@ -248,7 +248,7 @@ export class PlanningCommands {
         const hubs = this.app.vault.getMarkdownFiles()
           .filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project")
           .sort((a, b) => a.basename.localeCompare(b.basename));
-        const hub = await pick(this.app, hubs.map(h => h.basename), hubs, "Which project?");
+        const hub = await pick(this.app, hubs.map(h => h.basename), hubs, "Which project?", true);
         if (!hub) { skipped++; continue; }
         await this.moveTo(file, hub.parent?.path ?? f.projects, await this.askName(file));
       } else if (where === "knowledge" || where === "howto" || where === "meetings") {
@@ -259,7 +259,7 @@ export class PlanningCommands {
       } else if (where === "archive") {
         await this.moveTo(file, archiveInboxFolder(f));
       } else if (where === "delete") {
-        const sure = await pick(this.app, ["Yes, delete it", "No, keep it"], [true, false], `Delete "${file.basename}"?`);
+        const sure = await pick(this.app, ["Yes, delete it", "No, keep it"], [true, false], `Delete "${file.basename}"?`, true);
         if (!sure) { skipped++; continue; }
         await this.app.fileManager.trashFile(file);   // the trash setting the user chose (system or .trash), never a hard delete
       }

@@ -171,6 +171,7 @@
 - [ ] Esc cancels (release-test fix c; Restore kit original on To-do and Lab Book Template first): New to-do: Esc in the text box, the project picker and the meeting picker (needs two series) each make no note and leave no empty note behind; Enter on an empty box gives "Untitled to-do"; "(no project)" skips
 - [ ] New lab entry: the Lab Kit box opens (not Templater's), Esc makes nothing, Enter on empty gives `0001 - Untitled`, a title gives one note named from it
 - [ ] Check setup → Templater: "Folder template for <Lab notes folder>" appears with only the lab kit on; Fix adds it; then a note made by hand in that folder starts the Lab Book Template (asks its title once, no second note)
+- [ ] Sort inbox (planning kit on, a few inbox notes): the picker sits small at the right edge, no dark backdrop; the note behind can be read and scrolled; Esc still stops; the follow-up pickers (project, folder, delete) sit there too; at phone width the picker is centred as before. The name box (Enter keeps it) is still centred
 
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)

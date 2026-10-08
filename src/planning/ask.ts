@@ -48,9 +48,14 @@ interface Choice<T> { label: string; value: T }
 class PickModal<T> extends FuzzySuggestModal<Choice<T>> {
   private settled = false;
 
-  constructor(app: App, private choices: Choice<T>[], placeholder: string, private done: (v: T | null) => void) {
+  constructor(app: App, private choices: Choice<T>[], placeholder: string, private done: (v: T | null) => void, private side = false) {
     super(app);
     this.setPlaceholder(placeholder);
+  }
+
+  onOpen(): void {
+    void super.onOpen();
+    if (this.side) { this.containerEl.addClass("lab-kit-pick-side"); this.modalEl.addClass("lab-kit-pick-side"); }   // styles.css
   }
 
   getItems(): Choice<T>[] { return this.choices; }
@@ -61,6 +66,6 @@ class PickModal<T> extends FuzzySuggestModal<Choice<T>> {
   onClose(): void { super.onClose(); window.setTimeout(() => this.finish(null), 0); }
 }
 
-/** Asks to pick one of `labels`; the matching entry of `values`, or null when Esc was pressed. */
-export const pick = <T>(app: App, labels: string[], values: T[], placeholder: string): Promise<T | null> =>
-  new Promise(resolve => new PickModal(app, labels.map((label, i) => ({ label, value: values[i] })), placeholder, resolve).open());
+/** Asks to pick one of `labels`; the matching entry of `values`, or null when Esc was pressed. `side`: a small picker at the right edge, so the note behind stays readable. */
+export const pick = <T>(app: App, labels: string[], values: T[], placeholder: string, side = false): Promise<T | null> =>
+  new Promise(resolve => new PickModal(app, labels.map((label, i) => ({ label, value: values[i] })), placeholder, resolve, side).open());
