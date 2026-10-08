@@ -30,6 +30,8 @@ None.
 - [ ] Try 0.5.1 in Obsidian: checklist 6b, sections 1 and 2; Solution prep (6b) with one real stock solution; Analysis methods (6c)
 - [ ] Local `dist/` and `legacy/main.js` (gitignored, this machine only): keep or delete
 
+- [ ] Try release-test fix (a) in test-vault: checklist 6f, the two rename lines (settings tab open while renaming; edited template kept) — by 2026-10-10
+
 ## Known issues
 - `npm run lint`: 0 errors, 2 sentence-case warnings left on purpose (BACKLOG "Repo / release")
 - Many features are tests-only, not seen in Obsidian: BACKLOG "Not yet tested by the user"
