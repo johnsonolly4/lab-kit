@@ -67,6 +67,7 @@ const PLANNING_DESC = {
   "Extras/Templates/Project hub.md": "New project: its folder and hub note",
   "Extras/Templates/New project note.md": "New note inside a project",
   "Extras/Templates/Weekly meeting.md": "New meeting note",
+  "Extras/Templates/Meeting series.md": "New meeting series: its hub note",
   "Extras/Templates/ZotLit/zotlit-note.liquid.md": "ZotLit literature note template",
   "Extras/Templates/ZotLit/zotlit-lititem.liquid.md": "ZotLit template: one literature item",
   "Extras/Templates/ZotLit/zotlit-content.liquid.md": "ZotLit template: annotations",

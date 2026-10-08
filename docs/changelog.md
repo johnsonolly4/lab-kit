@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **New meeting series** (command, no button yet): asks the name, how often (weekly, fortnightly, monthly), the day, the date of the first meeting (prefilled with the next matching day; it must fall on that day) and the deck path for this computer (empty = fill in later), then makes the series folder under Meetings and its hub note from the new **Meeting series** template. A name already used by a series or folder is asked again; Esc at any box makes nothing. Tests only, not seen in Obsidian
 - **Kit files: what Apply does, per row**: every row in Review update… and Manage kit files starts with a coloured chip, symbol and words (green `+` Add / Recreate, orange `↑` Update / `⇄` Merge, red `!` Conflict: left as is, grey `•` Leave, `=` Same); "Kept" now says it is a file you are meant to edit and the kit never updates
 - **Go to icons**: each Go to button on 00 Home has an icon (by folder name; any other folder gets a folder icon); an `extra:` line can take a third part for the icon, `Label | target | icon`
 - **New lab entry button** on 00 Home works (the Meta Bind template `lab` was missing)

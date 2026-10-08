@@ -12,19 +12,21 @@ import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitIte
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
 import { inFolder, type NoteRec } from "./lists";
-import { nextDate, parseSeries, sinceLast, type Series } from "./meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, INTERVALS, nextDate, parseSeries, sinceLast, WEEKDAYS, type Series } from "./meetings";
 import { parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
   todo: { id: "tpl-to-do-md", dest: "To-do.md" },
   meeting: { id: "tpl-weekly-meeting-md", dest: "Weekly meeting.md" },
+  series: { id: "tpl-meeting-series-md", dest: "Meeting series.md" },
   project: { id: "tpl-project-hub-md", dest: "Project hub.md" },
   projectNote: { id: "tpl-new-project-note-md", dest: "New project note.md" },
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string } }
+interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string };
+  vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
@@ -55,6 +57,7 @@ export class PlanningCommands {
     add("sort-inbox", "Sort inbox", () => this.sortInbox());
     add("archive-todos", "Archive old to-dos", () => this.archiveTodos());
     add("new-meeting", "New meeting", () => this.newMeeting());
+    add("new-meeting-series", "New meeting series", () => this.newSeries());
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
     add("new-project-note", "New project note", () => this.newProjectNote());
     add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
@@ -112,6 +115,42 @@ export class PlanningCommands {
     handoff().vtMeeting = { series: series.name, folder: series.folder, date: ymd(date), since: ymd(sinceLast(series, date, held)) };
     try { await this.fromTemplate(TPL.meeting, this.folders.meetings, series.folder); }
     finally { delete handoff().vtMeeting; }
+  }
+
+  /**
+   * New meeting series: asks name, interval, day, first date and deck path (one box at a time; Esc at any point stops, nothing is made), then the
+   * Meeting series template makes the folder's hub note. Stops with a notice when a series or folder of that name exists. The template reads `vtSeries`.
+   */
+  async newSeries(): Promise<void> {
+    const root = this.folders.meetings;
+    if (!this.app.vault.getFolderByPath(root)) { missingFolderNotice(this.app, root, this.guard); return; }
+    const taken = (name: string): boolean => !!this.app.vault.getAbstractFileByPath(kitJoin(root, name)) || this.seriesList().some(s => s.name.toLowerCase() === name.toLowerCase());
+    let name = "";
+    for (let typed = await ask(this.app, "Name of the meeting series (for example Group meeting)"); ; typed = await ask(this.app, "Name of the meeting series", typed ?? "")) {
+      if (typed === null) return;
+      const checked = checkSeriesName(typed);
+      if ("error" in checked) { new Notice(checked.error); continue; }
+      if (taken(checked.name)) { new Notice(`A meeting series called ${checked.name} already exists in ${root}. Choose another name.`); continue; }
+      name = checked.name;
+      break;
+    }
+    const interval = await pick(this.app, [...INTERVALS], [...INTERVALS], "How often?");
+    if (!interval) return;
+    const day = await pick(this.app, [...WEEKDAYS], WEEKDAYS.map((_, i) => i), "On which day?");
+    if (day === null) return;
+    let start = ymd(firstDefaultDate(day, new Date()));
+    for (let date = await ask(this.app, "Date of the first meeting (YYYY-MM-DD)", start); ; date = await ask(this.app, "Date of the first meeting (YYYY-MM-DD)", date ?? "")) {
+      if (date === null) return;
+      const checked = checkFirstDate(date, day);
+      if ("error" in checked) { new Notice(checked.error); continue; }
+      start = ymd(checked.date);
+      break;
+    }
+    const deck = await ask(this.app, `Path of the meeting deck on ${Platform.isMacOS ? "this Mac" : "this computer"} (Enter to leave empty)`);
+    if (deck === null) return;
+    handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck: cleanDeckPath(deck) };
+    try { await this.fromTemplate(TPL.series, root, kitJoin(root, name)); }
+    finally { delete handoff().vtSeries; }
   }
 
   /** New note in a project; `folder` (the project's folder) is used without asking: for project cards. */

@@ -279,6 +279,17 @@
       "desc": "Daily note (folder template for 01 Daily Notes)"
     },
     {
+      "id": "tpl-meeting-series-md",
+      "kind": "template",
+      "src": "Extras/Templates/Meeting series.md",
+      "role": "templates",
+      "path": "Meeting series.md",
+      "version": "0.5.2",
+      "sha256": "b365f8efcc7c65e0129b69a9bbe9797812e31ce6c602008d3ae52682081574c1",
+      "renamedFrom": [],
+      "desc": "New meeting series: its hub note"
+    },
+    {
       "id": "tpl-new-project-note-md",
       "kind": "template",
       "src": "Extras/Templates/New project note.md",

@@ -2,7 +2,8 @@
 // 1 Oct 2026 is a Thursday, 1 Nov 2026 a Sunday, 1 Dec 2026 a Tuesday, 1 Jan 2027 a Friday.
 import { describe, it, expect } from "vitest";
 import type { NoteRec } from "../src/planning/lists";
-import { firstSeries, flaggedFor, nextDate, nextMeetingLines, nextMeetings, parseSeries, sinceLast, type Series } from "../src/planning/meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, firstSeries, flaggedFor, nextDate, nextMeetingLines, nextMeetings, parseSeries, sinceLast, WEEKDAYS, type Series } from "../src/planning/meetings";
+import { readFileSync } from "fs";
 import { ymd } from "../src/planning/todo";
 
 const hub = (name: string, fm: Record<string, unknown>): NoteRec =>
@@ -102,5 +103,57 @@ describe("next-meetings card", () => {
   it("lines: weekday and date, how often; today says today", () => {
     const lines = nextMeetingLines(nextMeetings([weekly, monthly], d(2026, 11, 5)), d(2026, 11, 5));
     expect(lines.map(l => [l.text, l.badges.map(b => b.text)])).toEqual([["Weekly meetings", ["today", "weekly"]], ["Review", ["· Thu 12 Nov", "monthly"]]]);
+  });
+});
+
+describe("New meeting series: defaults and checks", () => {
+  it("the first date offered is the next matching day (today counts)", () => {
+    expect(ymd(firstDefaultDate(4, d(2026, 10, 8)))).toBe("2026-10-08");   // Thursday
+    expect(ymd(firstDefaultDate(4, d(2026, 10, 9)))).toBe("2026-10-15");
+    expect(ymd(firstDefaultDate(0, d(2026, 12, 29)))).toBe("2027-01-03");   // Sunday, over the year end
+  });
+
+  it("a name keeps to what a folder can be called", () => {
+    expect(checkSeriesName(" Group: meeting? ")).toEqual({ name: "Group- meeting-" });
+    expect(checkSeriesName("..hidden")).toEqual({ name: "hidden" });
+    expect(checkSeriesName("  ")).toHaveProperty("error");
+    expect(checkSeriesName("...")).toHaveProperty("error");
+  });
+
+  it("the first date must be a real day on the chosen weekday", () => {
+    expect(checkFirstDate("2026-10-15", 4)).toHaveProperty("date");
+    expect(checkFirstDate("2026-10-14", 4)).toEqual({ error: "2026-10-14 is a Wed, not a Thu." });
+    expect(checkFirstDate("2026-02-30", 4)).toHaveProperty("error");
+    expect(checkFirstDate("15 Oct", 4)).toHaveProperty("error");
+  });
+
+  it("a pasted deck path loses the quotes Copy as path adds", () => {
+    expect(cleanDeckPath(' "C:\\Decks\\a.pptx" ')).toBe("C:\\Decks\\a.pptx");
+    expect(cleanDeckPath("")).toBe("");
+  });
+});
+
+describe("New meeting series: the template's hub note reads back", () => {
+  /** The template's front matter with its <% vt.x %> places filled as Templater would. */
+  const render = (vt: Record<string, string>): Record<string, string> => {
+    const raw = readFileSync("kits/planning/Extras/Templates/Meeting series.md", "utf8");
+    const front = /^---\n([\s\S]*?)\n---$/m.exec(raw.slice(raw.indexOf("-%>")))![1];
+    const out: Record<string, string> = {};
+    for (const line of front.split("\n")) {
+      const m = /^(\w+):[ \t]*(.*)$/.exec(line);
+      if (m) out[m[1]] = m[2].replace(/<% vt\.(\w+) %>/g, (_, k) => vt[k]).replace(/<% deck\("(\w+)"\) %>/, (_, k) => JSON.stringify(k === vt.deckKey ? vt.deck : ""));
+    }
+    return out;
+  };
+
+  it("the same name, interval, day and start; the next date is the chosen first date", () => {
+    for (const [interval, day, start] of [["weekly", "Thu", "2026-10-15"], ["fortnightly", "Mon", "2026-10-12"], ["monthly", "Wed", "2026-10-14"]]) {
+      const fm = render({ name: "Group meeting", folder: "08 Meetings/Group meeting", interval, day, start, deckKey: "deck_mac", deck: "/Users/x/deck.pptx" });
+      expect(fm).toMatchObject({ kind: "meeting-series", deck_windows: '""', deck_mac: '"/Users/x/deck.pptx"' });
+      const s = read("Group meeting", fm);
+      expect(s).toMatchObject({ name: "Group meeting", interval, start: d(...(start.split("-").map(Number) as [number, number, number])) });
+      expect(WEEKDAYS[s.day]).toBe(day);
+      expect(next(s, d(2026, 10, 1))).toBe(start);
+    }
   });
 });

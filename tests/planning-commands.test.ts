@@ -1,5 +1,5 @@
 // Phase 4b: the planning commands (src/planning/commands.ts) and the kit's Meta Bind buttons that call them.
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { readFileSync } from "fs";
 import type { EmbeddedKit } from "../src/kit/managed";
 import { cleanName, sortedName, subfolders, todoFields } from "../src/planning/actions";
@@ -8,6 +8,18 @@ import type { TodoEngine } from "../src/planning/engine";
 import { kitLoad } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
+
+// The text box, the picker and Templater are Obsidian's: the tests answer the boxes and record what the template is handed.
+const answers: unknown[] = [];
+vi.mock("../src/planning/ask", () => ({ ask: async () => answers.shift() ?? null, pick: async () => answers.shift() ?? null }));
+const created: { template: string; folder: string; handoff: unknown }[] = [];
+vi.mock("../src/kit/obsidian-private", () => ({
+  hasTemplater: () => true,
+  templaterSettings: () => ({ templates_folder: "Extras/Templates" }),
+  templaterCreateNote: async (_app: unknown, template: { path: string }, folder: { path: string }) => {
+    created.push({ template: template.path, folder: folder.path, handoff: structuredClone((window as unknown as { vtSeries?: unknown }).vtSeries) }); return true;
+  },
+}));
 
 const planning = embeddedKit("kits/planning") as EmbeddedKit;
 const lab = embeddedKit("kits/lab") as EmbeddedKit;
@@ -25,7 +37,7 @@ function registered(): string[] {
 
 describe("planning commands", () => {
   it("registers the fixed IDs (never renamed: buttons call them)", () => {
-    expect(registered().sort()).toEqual(["add-to-shopping", "archive-todos", "new-meeting", "new-project", "new-project-note", "new-todo",
+    expect(registered().sort()).toEqual(["add-to-shopping", "archive-todos", "new-meeting", "new-meeting-series", "new-project", "new-project-note", "new-todo",
       "open-deck", "quick-capture", "roll-over-todos", "sort-inbox"]);
   });
 
@@ -73,5 +85,44 @@ describe("sort inbox rules", () => {
     const kept: Record<string, unknown> = { project: "[[P]]", due: "2026-10-09", meeting: true, done: true, day: "Mon" };
     todoFields(kept);
     expect(kept).toMatchObject({ project: "[[P]]", due: "2026-10-09", meeting: true, done: false, day: "Backlog" });
+  });
+});
+
+describe("New meeting series command", () => {
+  const MEETINGS = "08 Meetings";
+  const tpl = { path: "Extras/Templates/Meeting series.md" };
+  const makeCommands = (existing: string[] = []): PlanningCommands => {
+    const files = existing.map(path => ({ path, basename: path.split("/").pop()!.replace(/\.md$/, ""), parent: { path: path.split("/").slice(0, -1).join("/") }, stat: { ctime: 0, mtime: 0 } }));
+    const app = { vault: {
+      getFolderByPath: (p: string) => (p === MEETINGS || p.startsWith(MEETINGS + "/") ? { path: p } : null),
+      getAbstractFileByPath: (p: string) => existing.includes(p) || existing.some(e => e.startsWith(p + "/")) ? { path: p } : null,
+      getFileByPath: (p: string) => (p === tpl.path ? tpl : null),
+      getMarkdownFiles: () => files, createFolder: async () => undefined },
+      metadataCache: { getFileCache: () => ({ frontmatter: { kind: "meeting-series", interval: "weekly", day: "Thu", start: "2026-10-01" } }) } };
+    const plugin = { app, addCommand: () => undefined };
+    return new PlanningCommands(plugin as never, () => null, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} });
+  };
+  beforeEach(() => { answers.length = 0; created.length = 0; });
+
+  it("asks name, interval, day, first date, deck path and hands them to the Meeting series template", async () => {
+    answers.push("Group: meeting", "fortnightly", 4, "2026-10-15", '"C:\\Decks\\group.pptx"');
+    await makeCommands().newSeries();
+    expect(created).toHaveLength(1);
+    expect(created[0].template).toBe(tpl.path);
+    expect(created[0].folder).toBe("08 Meetings/Group- meeting");
+    expect(created[0].handoff).toMatchObject({ name: "Group- meeting", folder: "08 Meetings/Group- meeting", interval: "fortnightly", day: "Thu", start: "2026-10-15", deck: "C:\\Decks\\group.pptx" });
+    expect(window).not.toHaveProperty("vtSeries");   // the hand-over is gone afterwards
+  });
+
+  it("Esc at any box makes nothing", async () => {
+    answers.push("Group meeting", "weekly", null);
+    await makeCommands().newSeries();
+    expect(created).toEqual([]);
+  });
+
+  it("a name already used (series or folder) is asked again; the wrong weekday is asked again", async () => {
+    answers.push("weekly meetings", "Journal club", "monthly", 3, "2026-10-15", "2026-10-14", "");
+    await makeCommands(["08 Meetings/Weekly meetings/Weekly meetings.md"]).newSeries();
+    expect(created[0].handoff).toMatchObject({ name: "Journal club", interval: "monthly", day: "Wed", start: "2026-10-14", deck: "" });
   });
 });

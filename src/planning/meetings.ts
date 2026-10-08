@@ -1,6 +1,7 @@
 // Meeting series (Phase 5b): a hub note with `kind: meeting-series` says how often a meeting is held; this works out the next date,
 // the "since the last meeting" start and which to-dos are flagged for a series. Pure (no Obsidian runtime).
 // Plan: docs/plans/phase-5-homepage-meetings.md.
+import { cleanName } from "./actions";
 import { dayMonth, linkTarget, pointsTo, type ListLine, type NoteRec } from "./lists";
 import { parseDay, ymd } from "./todo";
 
@@ -68,6 +69,26 @@ export function sinceLast(s: Series, date: Date, held: Date[]): Date {
   const before = held.filter(d => ymd(d) < ymd(date)).sort((a, b) => b.getTime() - a.getTime())[0];
   return before ?? addDays(date, -LOOK_BACK[s.interval]);
 }
+
+/** The first `day` (0 = Sunday) on or after `today`: the date New meeting series offers first. */
+export const firstDefaultDate = (day: number, today: Date): Date => onOrAfter(new Date(today.getFullYear(), today.getMonth(), today.getDate()), day);
+
+/** A series name for a folder and a note: characters Obsidian can't use in a file name replaced by "-". Error text when nothing usable is left. */
+export function checkSeriesName(typed: string): { name: string } | { error: string } {
+  const name = cleanName(typed).replace(/^\.+/, "").trim();
+  return name ? { name } : { error: "Type a name for the series." };
+}
+
+/** The first meeting date typed as YYYY-MM-DD: it must be a real day and fall on the series' `day` (else the hub's start and its day disagree). */
+export function checkFirstDate(typed: string, day: number): { date: Date } | { error: string } {
+  const date = parseDay(typed.trim());
+  if (!date) return { error: "Type the date as YYYY-MM-DD, for example 2026-10-15." };
+  if (date.getDay() !== day) return { error: `${typed.trim()} is a ${WEEKDAYS[date.getDay()]}, not a ${WEEKDAYS[day]}.` };
+  return { date };
+}
+
+/** A deck path as the user pastes it: "Copy as path" puts quotes around it. Empty when none. */
+export const cleanDeckPath = (typed: string): string => typed.trim().replace(/^"(.*)"$/, "$1").trim();
 
 /** The first series by name: a to-do's old `meeting: true` counts for it. */
 export const firstSeries = <T extends { name: string }>(all: T[]): T | undefined => [...all].sort((a, b) => a.name.localeCompare(b.name))[0];
