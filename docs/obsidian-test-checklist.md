@@ -130,6 +130,7 @@
 - [ ] Projects overview: one card per project with goal, top 3 to-dos, counts; New note / New to-do / Open work
 - [ ] Settings → **Planning folders** (only with the planning kit on): empty boxes show the defaults as grey text
 - [ ] Rename `00 Planning` to `10 Plan` and `02 Projects` to `20 Work` **in Obsidian**: the two settings follow; homepage lists still fill; New to-do lands in `10 Plan/To-dos`; Check setup shows no ✗ for them
+- [ ] After that rename (settings tab left open): the Planning and Projects boxes show `10 Plan` / `20 Work` at once (no stale empty or red box); a notice says kit files were updated; the To-do and Project hub templates now say `10 Plan/To-dos` / `20 Work`; New project makes its folder under `20 Work`, not a new `02 Projects`. Edit the To-do template by hand first, rename again: a notice says your edit was kept
 - [ ] Rename `20 Work` in **Finder / File Explorer**: New project shows "Folder "20 Work" not found…" with Find moved folders / Open settings / Create it, and no new `20 Work` appears; the Projects block shows the same line; the settings box is outlined red; Check setup lists it with **Find**
 - [ ] **Find moved folders** proposes the moved folder (with why); Apply sets it; Manage files shows no Missing for kit files that were in it
 - [ ] With Obsidian open, change a planning folder in `test-vault/.obsidian/plugins/lab-kit/data.json` from outside: the setting shows the new value without a reload; change another setting in Obsidian, then check data.json still has the outside value

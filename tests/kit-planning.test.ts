@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
-import { applyManaged, kitText, offIds, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
+import { applyManaged, kitText, offIds, planFolderReapply, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
 import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
 import { addMetaBindButtons, loadedPlugins, metaBindButtonIds, navigatorHomepage, setNavigatorHomepage } from "../src/kit/obsidian-private";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
@@ -118,6 +118,31 @@ describe("planning kit files (Phase 3)", () => {
     // the To-do board reads the moved to-dos folder
     const board = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
     expect(kitText(planning, board, r)).toContain('file.inFolder("Z planning/To-dos")');
+  });
+
+  it("a folder setting changed after install: unedited kit files get the new folder (backed up), edited ones are kept and reported", async () => {
+    const v = memVault();
+    const first = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
+    const out = await applyManaged(v, planning, first, null, opts);
+    const todo = planning.manifest.files.find(f => f.dest === "To-do.md")!;
+    const hub = planning.manifest.files.find(f => f.dest === "Project hub.md")!;
+    const todoPath = kitJoin(roles.templates, "To-do.md"), hubPath = kitJoin(roles.templates, "Project hub.md");
+    expect(v.files[todoPath]).toContain('"00 Planning/To-dos"');
+    v.files[hubPath] += "\n// my own note\n";   // the user edited the project hub template
+    const moved = planningRoles(app(), trackedRoles(planning, out.state), { ...PLANNING_FOLDER_DEFAULTS, planning: "10 Plan", projects: "20 Work" });
+    const items = await planManaged(v, planning, out.state, moved, null, opts.baseDir, offIds(planning, {}, {}, ZOTLIT));
+    const plan = await planFolderReapply(v, items, out.state, opts.baseDir);
+    expect(plan.rewrite.map(i => i.file.id)).toContain(todo.id);
+    expect(plan.kept.map(i => i.file.id)).toEqual([hub.id]);
+    const res = await applyManaged(v, planning, plan.rewrite, out.state, { ...opts, keepVersion: true, select: () => true });
+    expect(v.files[todoPath]).toContain('"10 Plan/To-dos"');
+    expect(v.files[todoPath]).not.toContain("00 Planning");
+    expect(v.files[hubPath]).toContain("02 Projects/${name}");   // edited: untouched
+    expect(res.results.find(r => r.id === todo.id)?.backup).toBeDefined();
+    // nothing left to do on a second pass
+    const again = await planFolderReapply(v, await planManaged(v, planning, res.state, moved, null, opts.baseDir, offIds(planning, {}, {}, ZOTLIT)), res.state, opts.baseDir);
+    expect(again.rewrite).toEqual([]);
+    expect(again.kept.map(i => i.file.id)).toEqual([hub.id]);
   });
 
   it("lab and planning kits together: no two files share a place, and the scripts sit in sibling folders", () => {

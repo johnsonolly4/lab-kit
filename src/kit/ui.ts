@@ -166,6 +166,8 @@ class KitSettingTab extends PluginSettingTab {
             await this.ctl.save();
           });
           mark();
+          // once the box is left (not on every key): the kit files get the new folder
+          t.inputEl.addEventListener("change", () => void this.ctl.foldersChanged(false));
         });
       } }))];
   }
@@ -281,17 +283,17 @@ export class KitController {
     });
     // Follow kit files the user moves or renames inside Obsidian
     plugin.registerEvent(this.app.vault.on("rename", async (file, oldPath) => {
-      let changed = false;
+      let changed = false, foldersMoved = false;
       for (const slot of Object.values(this.kit.kits)) changed = followRename(slot.managed, oldPath, file.path) || changed;
       // Folder settings follow a folder renamed or moved inside Obsidian (moved outside it: Find moved folders)
       const pf = this.kit.planningFolders;
       for (const role of Object.keys(pf) as PlanningRole[]) {
         const to = followFolderRename(pf[role], oldPath, file.path);
-        if (to) { pf[role] = to; changed = true; }
+        if (to) { pf[role] = to; changed = foldersMoved = true; }
       }
       for (const key of ["labFolder", "chemicalFolder", "methodsFolder"] as const) {
         const to = this.kit[key] ? followFolderRename(this.kit[key], oldPath, file.path) : null;
-        if (to) { this.kit[key] = to; changed = true; }
+        if (to) { this.kit[key] = to; changed = foldersMoved = true; }
       }
       const rec = this.kit.installed?.files;
       if (rec) {
@@ -302,9 +304,28 @@ export class KitController {
         for (const [k, v] of Object.entries(roles)) if (v === oldPath || v.startsWith(oldPath + "/")) { roles[k] = file.path + v.slice(oldPath.length); changed = true; }
       }
       if (changed) await this.save();
+      if (foldersMoved) await this.foldersChanged();
     }));
     // The plugin brought a newer kit: say so once per start, with a button to the review window
     this.app.workspace.onLayoutReady(() => window.setTimeout(() => this.notifyUpdate(), 4000));
+  }
+
+  /**
+   * A folder setting changed (renamed in Obsidian, picked in Find moved folders, or typed in a Planning folders box): the installed kit files
+   * you have not edited get the new folder names, and the settings tab shows the new values. Edited files are named in a notice.
+   */
+  async foldersChanged(redraw = true): Promise<void> {
+    if (redraw) this.redrawSettings?.();
+    try {
+      const rewritten: string[] = [], kept: string[] = [];
+      for (const kit of [this.managed, this.planning]) {
+        if (!kit) continue;
+        const r = await kit.reapplyFolders();
+        rewritten.push(...r.rewritten); kept.push(...r.kept);
+      }
+      if (rewritten.length) new Notice(`Updated ${rewritten.length} kit file${rewritten.length === 1 ? "" : "s"} to the new folders. The old copies are in the backup folder.`, 8000);
+      if (kept.length) new Notice(`Your edits were kept, so these still use the old folders: ${kept.join(", ")}. Restore kit original in Manage files writes the new ones.`, 12000);
+    } catch (e) { console.error(e); new Notice("Could not update the kit files to the new folders. See the developer console for details."); }
   }
 
   /** New lab entry: a note from the Lab Book Template in the Lab notes folder (created if missing), made and opened by Templater. */

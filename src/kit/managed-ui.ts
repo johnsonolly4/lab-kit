@@ -2,7 +2,7 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
   kitBackupPath, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -142,6 +142,23 @@ export class KitManaged {
     if (!m) return;
     const left = (await this.plan()).some(i => i.action === "create" || i.action === "fast-forward");
     if (!left) m.installedKitVersion = this.version;
+  }
+
+  /**
+   * A folder setting changed: writes the new folder names into installed kit files you have not edited (each backed up first).
+   * Returns what was rewritten and which edited files were left on the old folders.
+   */
+  async reapplyFolders(): Promise<{ rewritten: string[]; kept: string[] }> {
+    const kit = this.slot;
+    if (!kit.managed) return { rewritten: [], kept: [] };
+    const items = await this.plan();
+    const { rewrite, kept } = await planFolderReapply(this.app.vault.adapter, items, kit.managed, this.baseDir());
+    if (rewrite.length) {
+      const out = await this.quietly(rewrite, this.applyOptions({ keepVersion: true, select: () => true }), o => applyManaged(this.app.vault.adapter, this.bundle, rewrite, kit.managed, o));
+      kit.managed = out.state;
+      await this.host.save();
+    }
+    return { rewritten: rewrite.map(i => i.dest), kept: kept.map(i => i.dest) };
   }
 
   /** Install / update / recreate / merge ONE file (asks first when it needs a new folder or a settings change). */

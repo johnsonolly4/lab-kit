@@ -8,7 +8,7 @@ import { kitJoin, missingPlanningFolders, PLANNING_KIT, type KitData, type Plann
 import { loadedPlugins } from "./obsidian-private";
 import { wideBox } from "./settings-box";
 
-export interface MovedHost { kit: KitData; save(): Promise<void> }
+export interface MovedHost { kit: KitData; save(): Promise<void>; /** After the folder settings changed: kit files get the new folders, the settings tab redraws. */ foldersChanged?(): Promise<void> }
 
 /** Folder settings whose folder is missing now (planning folders only while the planning kit is on). */
 export function missingNow(app: App, kit: KitData): MissingFolder[] {
@@ -92,6 +92,7 @@ export class MovedFoldersModal extends Modal {
     }
     await this.host.save();
     this.close();
+    await this.host.foldersChanged?.();
     new Notice(done.length ? done.join("\n") : "Nothing changed.");
   }
 }

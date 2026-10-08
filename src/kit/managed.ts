@@ -162,6 +162,30 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
   return items;
 }
 
+/* ---- Folder change ---- */
+export interface FolderReapply {
+  /** Files still exactly as the kit wrote them: safe to write again with the new folders (action "fast-forward"). */
+  rewrite: ManagedItem[];
+  /** Files you edited whose kit text would change with the new folders: left alone. */
+  kept: ManagedItem[];
+}
+/**
+ * After a folder setting changed: which installed files need the new folder names written in. `items` is a fresh plan (kit text rendered with the new folders).
+ * Only files of the installed kit version count, so this never brings in newer kit text; an edited file is reported, not touched.
+ */
+export async function planFolderReapply(adapter: Pick<DataAdapter, "exists" | "read">, items: ManagedItem[], state: ManagedState | null, baseDir: string | null): Promise<FolderReapply> {
+  const out: FolderReapply = { rewrite: [], kept: [] };
+  for (const it of items) {
+    const st = state?.files[it.file.id];
+    if (!st || st.detached || st.installedVersion !== it.file.version) continue;
+    if (it.curHash === null || it.curHash === it.kitHash || it.action === "off" || it.action === "detached" || it.action === "missing") continue;
+    if (it.curHash === st.installedHash) { out.rewrite.push({ ...it, action: "fast-forward" }); continue; }
+    const baseFile = baseDir ? kitJoin(baseDir, `${it.file.id}.txt`) : null;
+    if (baseFile && await adapter.exists(baseFile) && kitNormalise(await adapter.read(baseFile)) !== kitNormalise(it.text)) out.kept.push(it);
+  }
+  return out;
+}
+
 /* ---- Preview (the confirmation dialog) ---- */
 /** What carrying out `items` (those `select` picks) would touch: files written new, files left alone because they already exist, folders created. */
 /** What a file of each role is, when its manifest entry has no `desc`. */
