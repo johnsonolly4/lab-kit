@@ -124,7 +124,7 @@ Created with the **New to-do** button / `Alt+T` (template `Extras/Templates/To-d
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | me |
 | `meeting` | tick box - raise this at the next Thursday meeting | me |
 
-The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It fills in `project` by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; otherwise it asks (Esc = no project). New to-dos get `cssclasses: [vt]`.
+The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It fills in `project` by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; otherwise it asks (pick "(no project)" for none; Esc cancels the to-do). New to-dos get `cssclasses: [vt]`.
 
 **Roll-over** (`Extras/Templates/Actions/To-do roll-over.md`, a Templater **startup template**, so it runs whenever Obsidian opens and re-checks every 15 minutes):
 - A card's day means *the first such weekday on or after `planned`*. So a card dragged onto Mon on a Friday waits for next Monday.

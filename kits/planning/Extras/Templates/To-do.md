@@ -1,10 +1,12 @@
 <%*
 // To-do template - always files the new to-do in 00 Planning/To-dos (see Vault spec)
 // Project is filled in automatically when started from a project card or from inside a project;
-// otherwise it asks (Esc = no project).
+// otherwise it asks (Enter on "(no project)" = none). Esc in any box cancels the whole to-do.
 const folder = "00 Planning/To-dos";
 // Text box: same look as the project picker (Extras/scripts/templater/vault/vtAsk.js)
-const text = ((await tp.user.vtAsk(tp, "To-do? (Esc = Untitled)")) || "Untitled to-do").trim();
+const asked = await tp.user.vtAsk(tp, "To-do? (Esc to cancel, Enter on empty = Untitled)");
+if (asked === null) { throw new Error("Cancelled - no to-do"); }
+const text = (asked || "Untitled to-do").trim();
 const isHub = f => f && app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project";
 let project = window.vtPresetProject || "";
 delete window.vtPresetProject;
@@ -19,11 +21,18 @@ if (!project) {
 }
 if (!project) {
   const hubs = app.vault.getMarkdownFiles().filter(isHub).map(f => f.basename).sort();
-  project = await tp.system.suggester(["(no project)", ...hubs], ["", ...hubs], false, "Project? (Esc to skip)") || "";
+  const picked = await tp.system.suggester(["(no project)", ...hubs], ["", ...hubs], false, "Project? (Esc to cancel)");
+  if (picked === null || picked === undefined) { throw new Error("Cancelled - no project picked"); }
+  project = picked;
 }
-// Meeting: asked only when there are several meeting series (Esc / "(none)" = not flagged); with one series nothing is asked: set meeting in Properties
+// Meeting: asked only when there are several meeting series ("(none)" = not flagged; Esc cancels); with one series nothing is asked: set meeting in Properties
 const series = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
-const meeting = series.length > 1 ? (await tp.system.suggester(["(none)", ...series], ["", ...series], false, "Raise at which meeting? (Esc to skip)") || "") : "";
+let meeting = "";
+if (series.length > 1) {
+  const chosen = await tp.system.suggester(["(none)", ...series], ["", ...series], false, "Raise at which meeting? (Esc to cancel)");
+  if (chosen === null || chosen === undefined) { throw new Error("Cancelled - no meeting picked"); }
+  meeting = chosen;
+}
 // Keep the day of the board column it was made in (the board writes it before this runs);
 // anything else (Ctrl+Shift+T, project cards) starts in Backlog.
 const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];

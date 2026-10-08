@@ -2,7 +2,7 @@
 // Looks exactly like Obsidian's pickers (same component), but with no list underneath.
 // Every template that asks for text uses this instead of tp.system.prompt.
 //
-//   const name = await tp.user.vtAsk(tp, "To-do? (Esc = Untitled)");
+//   const name = await tp.user.vtAsk(tp, "To-do? (Esc to cancel)");
 //   const name = await tp.user.vtAsk(tp, "Name (Enter keeps it)", file.basename);
 //
 // Returns the trimmed text, or null if Esc was pressed.

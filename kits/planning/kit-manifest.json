@@ -138,7 +138,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "0.5.2",
-      "sha256": "3b210262dca6c4d94442ef942d9accc6e20f6052c557968d6222815605b5831e",
+      "sha256": "e091d1b58cafb20a6bb2dd055f0bdd7b14045a97d5286dabec801ba01f65ca4d",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "1ab0043e527d1380c069827dcb22b736c868dd5a77bb605432024276400fd7cc",
+      "sha256": "7573ee673ca5146d6f8dc2fe4582e88f0e9d85ed4ba0e5eb3b32b4d39c010a6a",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -307,7 +307,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "0.5.2",
-      "sha256": "f18d5faab806ff87f3bb8e3ffad4d8eb5cd9e58b65a6fd5577cdb5c26410ea1e",
+      "sha256": "644562a218592748f5f55c41d57920baeb7389e977dcfc38a3cc765adaaf0e1d",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },
@@ -318,7 +318,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "0.5.2",
-      "sha256": "c7514fe4daf7c91f340daf2676185042afd7e77003986f4350e79a0b1c831468",
+      "sha256": "14ed5d9f5f3282341a2cf8e4d0811f372fd5150abf1c2e8ced52a0b40a3049ea",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },
@@ -379,7 +379,7 @@
       "role": "userScripts",
       "path": "vtAsk.js",
       "version": "0.5.2",
-      "sha256": "2410f7e2b216bca94a6ace13e0cb228eac59d6692d437330df6267575a25672c",
+      "sha256": "dee7f23585c9ec7b19cecea05684afb42848b3a51a5a608e6d665d59413dc51f",
       "renamedFrom": [],
       "desc": "The text box every planning template asks with"
     }

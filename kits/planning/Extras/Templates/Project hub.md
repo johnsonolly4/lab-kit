@@ -1,7 +1,7 @@
 <%*
 // Project hub template - asks for a name, then files the note as 02 Projects/<Name>/<Name>.md (a folder note)
 let name = await tp.user.vtAsk(tp, "Project name (same as its Zotero collection under Projects/)");
-if (!name) { throw new Error("Cancelled - no project name"); }
+if (!name) { throw new Error("Cancelled - no project name"); }   // Esc (null) or empty
 name = name.replace(/['&\\/:*?"<>|#^\[\]]/g, "").trim();
 const folder = `02 Projects/${name}`;
 if (!app.vault.getAbstractFileByPath(folder)) { await app.vault.createFolder(folder); }

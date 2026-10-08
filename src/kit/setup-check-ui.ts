@@ -11,7 +11,7 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { checkSetup, hotkeyText, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { checkSetup, hotkeyText, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): void }
@@ -28,6 +28,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   // Folders named in a setting; the archive is made when first needed, Literature only with ZotLit
   const settingFolders = [host.kit.labFolder, host.kit.chemicalFolder,
     ...(planningOn ? (Object.keys(pf) as PlanningRole[]).filter(r => r !== "archive" && (r !== "literature" || zotlit)).map(r => pf[r]) : [])].filter(f => f);
+  const labTemplates = labFolderTemplates(host.kit.labFolder);
   const folders = [...settingFolders, ...(planningOn ? folderTemplates.map(f => f.folder) : [])];
   const names = commandNames(app);
   const meetings = !planningOn ? [] : app.vault.getMarkdownFiles().filter(f => inFolder(f.path, pf.meetings)).flatMap(f => {
@@ -58,7 +59,10 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     css,
     folders: [...new Set(folders)].map(path => ({ path, exists: !!app.vault.getFolderByPath(path), setting: settingFolders.includes(path) })),
     meetings,
-    folderTemplates: planning ? folderTemplates.map(f => ({ folder: f.folder, template: kitJoin(planning.templatesFolder(), f.file) })) : [],
+    folderTemplates: [
+      ...labTemplates.map(f => ({ folder: f.folder, template: kitJoin(lab.templatesFolder(), f.file), kit: "lab" as const })),
+      ...(planning ? folderTemplates.map(f => ({ folder: f.folder, template: kitJoin(planning.templatesFolder(), f.file) })) : []),
+    ],
     // Templater names a template hotkey command `templater-obsidian:<template path>` (not checked against Templater's source)
     hotkeyCommands: { "Insert snippet": menuFile && names[`templater-obsidian:${menuFile}`] ? `templater-obsidian:${menuFile}` : null },
     hotkeys: hotkeysSupported(app) ? hotkeysInUse(app) : null,

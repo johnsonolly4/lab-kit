@@ -25,7 +25,7 @@ cssclasses:
 > | I want to... | Do this |
 > |---|---|
 > | Note down a thought quickly | `Ctrl+N` or **Quick capture** - it goes to the inbox |
-> | Remember to do something | **New to-do** (`Ctrl+Shift+T`) - type it, press Enter, pick a project or press Esc. Started from a project? It picks the project for you. Or press **New** at the top of a day on the board - it lands on that day |
+> | Remember to do something | **New to-do** (`Ctrl+Shift+T`) - type it, press Enter, pick a project (or "(no project)"). Esc cancels. Started from a project? It picks the project for you. Or press **New** at the top of a day on the board - it lands on that day |
 > | Start an experiment | **New lab entry** (`Ctrl+Shift+L`) - it numbers itself and asks for a title |
 > | Find anything | **Search** (`Alt+F`) |
 > | Make a note for a paper | `Ctrl+P`, then **ZotLit: Create literature note** |

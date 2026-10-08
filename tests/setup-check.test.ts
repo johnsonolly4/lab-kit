@@ -1,6 +1,6 @@
 // Phase 6: the setup check's list (pure: a SetupState in, items out).
 import { describe, it, expect } from "vitest";
-import { checkSetup, type SetupState } from "../src/kit/setup-check";
+import { checkSetup, labFolderTemplates, type SetupState } from "../src/kit/setup-check";
 
 const MENU = "Extras/Templates/Lab Kit/Insert snippet.md";
 const CMD = `templater-obsidian:${MENU}`;
@@ -75,6 +75,19 @@ describe("check setup (Phase 6)", () => {
     expect(r["folder-template:01 Daily Notes"].fix).toEqual({ kind: "folder-template", folder: "01 Daily Notes", template: "T/Daily note.md" });
     expect(r["folder-template:00 Planning/To-dos"]).toMatchObject({ ok: true, fix: undefined });
     expect(r["folder-template:00 Planning/To-dos"].detail).toContain("Mine.md");
+  });
+
+  it("lab folder template: shown without the planning kit, Fix adds it, set one is kept, none without a Lab notes folder", () => {
+    const lab = { folder: "03 Lab Book/Notes", template: "T/Lab Book Template.md", kit: "lab" as const };
+    const r = byId(state({ folderTemplates: [lab] }));
+    expect(r["folder-template:03 Lab Book/Notes"]).toMatchObject({ ok: false, fix: { kind: "folder-template", folder: lab.folder, template: lab.template } });
+    expect(r["templater:matching-mode"]).toBeDefined();   // folder templates need the mode, with or without planning
+    const set = byId(state({ folderTemplates: [lab], templater: { ...state().templater, folderTemplates: [{ folder: lab.folder, template: "Mine.md" }] } }));
+    expect(set["folder-template:03 Lab Book/Notes"]).toMatchObject({ ok: true, fix: undefined });
+    const notInstalled = byId(state({ folderTemplates: [lab], installed: { lab: false, planning: false } }));
+    expect(notInstalled["folder-template:03 Lab Book/Notes"].fix).toBeUndefined();
+    expect(labFolderTemplates("")).toEqual([]);
+    expect(labFolderTemplates("03 Lab Book/Notes")).toEqual([{ folder: "03 Lab Book/Notes", file: "Lab Book Template.md" }]);
   });
 
   it("ZotLit counts as present under its kit name", () => {

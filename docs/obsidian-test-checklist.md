@@ -168,6 +168,9 @@
 - [ ] Fresh install: no meeting series; `08 Meetings/Meetings.md` shows the three buttons (Check setup → Meta Bind → Fix first) and "No meeting series yet."; Go to → Meetings opens it; Go to has no Meeting deck; New meeting series then makes a series that the card lists
 - [ ] Tidy up notes on a copy of your notes: "Notes outside the folder layout" lists only notes really outside the kit's folders
 - [ ] `07 How-tos/Obsidian/Hotkeys.md` is installed (Review update…); try two of its keys in Settings → Hotkeys
+- [ ] Esc cancels (release-test fix c; Restore kit original on To-do and Lab Book Template first): New to-do: Esc in the text box, the project picker and the meeting picker (needs two series) each make no note and leave no empty note behind; Enter on an empty box gives "Untitled to-do"; "(no project)" skips
+- [ ] New lab entry: the Lab Kit box opens (not Templater's), Esc makes nothing, Enter on empty gives `0001 - Untitled`, a title gives one note named from it
+- [ ] Check setup → Templater: "Folder template for <Lab notes folder>" appears with only the lab kit on; Fix adds it; then a note made by hand in that folder starts the Lab Book Template (asks its title once, no second note)
 
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)

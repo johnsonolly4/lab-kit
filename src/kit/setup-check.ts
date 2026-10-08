@@ -9,6 +9,10 @@ export const planningFolderTemplates = (f: PlanningFolders): { folder: string; f
   { folder: todoFolder(f), file: "To-do.md" },
 ];
 
+/** The lab kit's folder template: a note made by hand in the Lab notes folder starts the Lab Book Template. None when the setting is empty. */
+export const labFolderTemplates = (labFolder: string): { folder: string; file: string }[] =>
+  labFolder.trim() ? [{ folder: labFolder.trim(), file: "Lab Book Template.md" }] : [];
+
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [
   { id: "templater-obsidian", name: "Templater", kit: "lab", why: "Runs the kit's templates and the Alt+S snippet forms." },
@@ -57,8 +61,8 @@ export interface SetupState {
   /** Folders the kits expect. */
   /** `setting`: the folder is named in a folder setting (a missing one was most likely moved outside Obsidian: Find moved folders). */
   folders: { path: string; exists: boolean; setting?: boolean }[];
-  /** Folder templates the planning kit wants (folder → template path). */
-  folderTemplates: { folder: string; template: string }[];
+  /** Folder templates the kits want (folder → template path); `kit` defaults to planning. */
+  folderTemplates: { folder: string; template: string; kit?: "lab" | "planning" }[];
   /** Meeting series hubs (`kind: meeting-series`) in the meetings folder; `error` names the field that is wrong; `deck` = a deck path is set for this computer. */
   meetings?: { name: string; path: string; error?: string; deck: boolean }[];
   /** Hotkey commands: the Templater command for Insert snippet, etc. Null when the command doesn't exist yet. */
@@ -149,16 +153,19 @@ export function checkSetup(s: SetupState): SetupItem[] {
       out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Set up fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
         fix: ok || !s.menu ? undefined : { kind: "templater" } });
     }
-    if (s.planning) for (const ft of s.folderTemplates) {
+    for (const ft of s.folderTemplates) {
+      const kit = ft.kit ?? "planning";
+      if (kit === "planning" && !s.planning) continue;
+      const installed = s.installed[kit];
       const have = t.folderTemplates.find(e => e.folder === ft.folder);
       const ok = !!have;
       out.push({ id: `folder-template:${ft.folder}`, group: "Templater", label: `Folder template for ${ft.folder}`, ok,
-        detail: have ? (have.template === ft.template ? "Set." : `Set to ${have.template} (yours, left as it is).`) : s.installed.planning ? `Not set. Adds ${ft.template}.` : "Not set. Install the planning kit first (its template isn't there yet).",
-        fix: ok || !s.installed.planning ? undefined : { kind: "folder-template", folder: ft.folder, template: ft.template } });
+        detail: have ? (have.template === ft.template ? "Set." : `Set to ${have.template} (yours, left as it is).`) : installed ? `Not set. Adds ${ft.template}.` : `Not set. Install the ${kit} kit first (its template isn't there yet).`,
+        fix: ok || !installed ? undefined : { kind: "folder-template", folder: ft.folder, template: ft.template } });
     }
   }
 
-  if (s.planning && s.plugins.has("templater-obsidian")) {
+  if ((s.planning || s.folderTemplates.some(f => f.kit === "lab")) && s.plugins.has("templater-obsidian")) {
     const mode = s.templater.matchingMode ?? "none";
     out.push({ id: "templater:matching-mode", group: "Templater", label: "Template matching mode: Folder templates", ok: mode === "folder",
       detail: mode === "folder" ? "Set." : mode === "none" ? "Set to None, so folder templates never run." : `Set to ${mode} (yours, left as it is); folder templates don't run in this mode.`,

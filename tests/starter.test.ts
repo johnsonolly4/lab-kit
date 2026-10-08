@@ -1,8 +1,8 @@
 // Phase 8: the new-vault starter (src/kit/starter.ts) plus both kits passes the setup check, for everything a starter can set.
 import { describe, it, expect } from "vitest";
 import { applyManaged, offIds, planManaged, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
-import { KIT_DEFAULTS, PLANNING_FOLDER_DEFAULTS, kitDetectRoles, kitFolderRoles, kitJoin, planningRoles, todoFolder } from "../src/kit/paths";
-import { SETUP_PLUGINS, checkSetup, planningFolderTemplates, type SetupState } from "../src/kit/setup-check";
+import { KIT_DEFAULTS, LAB_LAYOUT, PLANNING_FOLDER_DEFAULTS, kitDetectRoles, kitFolderRoles, kitJoin, planningRoles, todoFolder } from "../src/kit/paths";
+import { SETUP_PLUGINS, checkSetup, labFolderTemplates, planningFolderTemplates, type SetupState } from "../src/kit/setup-check";
 import { buildStarter, starterMenu, starterPlugins } from "../src/kit/starter";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKits } from "../scripts/embed-kit.mjs";
@@ -49,6 +49,7 @@ describe("new-vault starter (Phase 8)", () => {
     const menu = starterMenu(lab);
     expect(v.files[menu], "Insert snippet.md installed where the starter points").toBeDefined();
     expect(Object.keys(labOut.state.files).length).toBeGreaterThan(0);
+    for (const f of labFolderTemplates(KIT_DEFAULTS.labFolder)) expect(v.files[kitJoin(tpl.templates_folder, LAB_LAYOUT.templatesSub, f.file)], f.file).toBeDefined();
     for (const f of planningFolderTemplates(PLANNING_FOLDER_DEFAULTS)) expect(v.files[kitJoin(tpl.templates_folder, f.file)], f.file).toBeDefined();
 
     const exists = new Set(starter.folders);
@@ -69,7 +70,10 @@ describe("new-vault starter (Phase 8)", () => {
       css: css.map(name => ({ name, enabled: (read(".obsidian/appearance.json").enabledCssSnippets as string[]).includes(name) })),
       folders: [KIT_DEFAULTS.labFolder, KIT_DEFAULTS.chemicalFolder, ...Object.entries(PLANNING_FOLDER_DEFAULTS).filter(([r]) => r !== "archive").map(([, f]) => f),
         ...planningFolderTemplates(PLANNING_FOLDER_DEFAULTS).map(f => f.folder)].map(path => ({ path, exists: exists.has(path) })),
-      folderTemplates: planningFolderTemplates(PLANNING_FOLDER_DEFAULTS).map(f => ({ folder: f.folder, template: kitJoin(tpl.templates_folder, f.file) })),
+      folderTemplates: [
+        ...labFolderTemplates(KIT_DEFAULTS.labFolder).map(f => ({ folder: f.folder, template: kitJoin(tpl.templates_folder, LAB_LAYOUT.templatesSub, f.file), kit: "lab" as const })),
+        ...planningFolderTemplates(PLANNING_FOLDER_DEFAULTS).map(f => ({ folder: f.folder, template: kitJoin(tpl.templates_folder, f.file) })),
+      ],
       hotkeyCommands: { "Insert snippet": cmd },
       hotkeys: hk,
       commandNames: {},

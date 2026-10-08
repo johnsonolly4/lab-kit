@@ -24,8 +24,13 @@ const nums = app.vault.getMarkdownFiles()
 const next = String(Math.max(0, ...nums) + 1).padStart(4, "0");
 
 // ---- 2. Title and rename ----
-// Text box: same look as the vault's pickers (vtAsk.js); falls back to Templater's box if it is missing
-const title = (await (tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title"))) || "Untitled";
+// New lab entry asks first (Lab Kit's own box) and hands the title over; a note made in the folder by hand asks here:
+// vtAsk (same look as the vault's pickers) or Templater's box. Esc cancels, an empty title is "Untitled".
+let title = window.labKitPresetTitle;
+delete window.labKitPresetTitle;
+if (title === undefined) title = await (tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title"));
+if (title === null) throw new Error("Cancelled - no experiment title");
+title = title || "Untitled";
 const name = `${initials}${next} - ${title}`.replace(/[\\/:*?"<>|]/g, "-");
 await tp.file.rename(name);
 -%>

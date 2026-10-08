@@ -1,6 +1,7 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { ask } from "../planning/ask";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
 import type { FolderGuardActions } from "./folder-guard";
 import { MovedFoldersModal } from "./moved-folders-ui";
@@ -335,12 +336,17 @@ export class KitController {
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
     const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder, initials: this.kit.initials });
     if ("error" in target) { new Notice(target.error); return; }
+    const title = await ask(this.app, "Experiment title (Esc to cancel, Enter on empty = Untitled)");
+    if (title === null) return;
+    const w = window as unknown as { labKitPresetTitle?: string };
     try {
       await ensureFolder(this.app.vault, target.folder);
       const folder = this.app.vault.getFolderByPath(target.folder);
       if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
+      w.labKitPresetTitle = title;   // the template reads and clears it (as the to-do template does for projects)
       if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
+    finally { delete w.labKitPresetTitle; }
   }
 
   /** Opens the Check setup window. */

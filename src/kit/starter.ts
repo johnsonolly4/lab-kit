@@ -1,7 +1,7 @@
 // New-vault starter (Phase 8): the Obsidian settings a fresh vault needs for the kits, generated from the kit manifests and the setup check's own lists so they can't drift.
 // Pure (no Node): `npm run starter` writes the result to dist/starter/ (scripts/make-starter.mjs). Settings and plugin list only, no notes: the plugin installs the kit files.
 import { LAB_LAYOUT, PLANNING_FOLDER_DEFAULTS, KIT_DEFAULTS, kitJoin, todoFolder } from "./paths";
-import { SETUP_HOTKEYS, SETUP_PLUGINS, planningFolderTemplates } from "./setup-check";
+import { SETUP_HOTKEYS, SETUP_PLUGINS, labFolderTemplates, planningFolderTemplates } from "./setup-check";
 import type { EmbeddedKit } from "./managed";
 
 /** Id of this plugin in the community store (manifest.json). */
@@ -46,7 +46,10 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
       templates_folder: templates,
       user_scripts_folder: LAB_LAYOUT.userScripts,
       enabled_templates_hotkeys: [menu],
-      folder_templates: planningFolderTemplates(pf).map(f => ({ folder: f.folder, template: kitJoin(templates, f.file) })),
+      folder_templates: [
+        ...labFolderTemplates(KIT_DEFAULTS.labFolder).map(f => ({ folder: f.folder, template: kitJoin(templates, LAB_LAYOUT.templatesSub, f.file) })),   // the lab kit's templates sit in a Lab Kit subfolder
+        ...planningFolderTemplates(pf).map(f => ({ folder: f.folder, template: kitJoin(templates, f.file) })),
+      ],
       trigger_on_file_creation_mode: "folder",
       startup_templates: [],
     }),
