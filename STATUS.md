@@ -1,6 +1,6 @@
 # Status
 
-_Updated: 2026-10-08 by Sonnet 5.5 (release-test fix d, project hub). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-08 by Sonnet 5.5 (release-test fix d, sample code). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
