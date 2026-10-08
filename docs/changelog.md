@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Check setup: scripts and homepage**: a row per Templater user script the kits call (labSnippets, labForm, labPick, labMethods; vtAsk with the planning kit) that is red when the file isn't where the kit put it (Alt+S and the planning boxes fail without them), and, with Force note view mode, a row that the homepage has `obsidianUIMode: preview` (Open goes to the note; nothing is edited). Tests only, not seen in Obsidian
 - **Sort inbox picker sits at the side**: the "where does it go?" picker (and the project, folder and delete pickers after it) is a small box at the right edge with no dark backdrop, so the note being sorted stays readable and scrollable; on a phone it stays centred. The name box is unchanged. Not seen in Obsidian.
 - **Alt+S sample codes read the number after the initials**: in a lab note named `OLJ0001 - Title` the Variant naming matrix, sample list and timetable showed `OLJXXXX-A`; they now show `OLJ0001-A` (a note named `0001 - …` still works; `XXXX` only when the name has no number). Tests only, not seen in Obsidian
 - **Esc cancels**: in New to-do, Esc in the text box, the project picker or the meeting picker now makes nothing (it used to make "Untitled to-do" or skip). To skip, press Enter on an empty box (Untitled to-do) or on **(no project)** / **(none)**. Your own To-do template is kept: **Restore kit original** to get the new one. Tests only (template text), not seen in Obsidian

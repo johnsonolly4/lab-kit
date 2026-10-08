@@ -170,7 +170,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |
 | Find moved folders | For each folder in the settings that no longer exists (moved outside Obsidian), suggests where it went; Apply changes only the settings |
-| Check setup | Lists what the kits need (plugins, Templater, CSS snippets, folders, the Alt+S hotkey) with a Fix for each missing item; nothing changes until you confirm |
+| Check setup | Lists what the kits need (plugins, Templater and its scripts, the homepage's read-only mode, CSS snippets, folders, the Alt+S hotkey) with a Fix for each missing item; nothing changes until you confirm |
 | Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; **Change notes…** rewrites only what you tick, after a backup and a second confirmation |
 
 With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are added. Open meeting deck is desktop only.

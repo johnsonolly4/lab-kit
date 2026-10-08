@@ -52,6 +52,10 @@ export interface SetupState {
   plugins: ReadonlySet<string>;
   planning: boolean;
   templater: { templatesFolder: string; userScriptsFolder: string; menuHotkey: boolean; folderTemplates: { folder: string; template: string }[]; matchingMode?: string; startupTemplates?: string[] };
+  /** The kits' Templater user scripts (tp.user.<name>): `exists` is false when the file isn't where the kit put it. */
+  scripts?: { name: string; kit: "lab" | "planning"; exists: boolean }[];
+  /** The homepage note's `obsidianUIMode` (Force note view mode reads it); null when the note isn't there. */
+  homepageMode?: string | null;
   /** Path of the installed Insert snippet template; null when the lab kit isn't installed. */
   menu: string | null;
   /** Kit installed (has tracked files), per kit. */
@@ -153,6 +157,13 @@ export function checkSetup(s: SetupState): SetupItem[] {
       out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Set up fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
         fix: ok || !s.menu ? undefined : { kind: "templater" } });
     }
+    for (const sc of s.scripts ?? []) {
+      if (!kitOn(sc.kit)) continue;
+      const installed = s.installed[sc.kit];
+      out.push({ id: `script:${sc.name}`, group: "Templater", label: `Script ${sc.name}`, ok: sc.exists,
+        detail: sc.exists ? "There." : installed ? "Missing. Review update… in Settings → Lab Kit puts it back." : `Missing. Install the ${sc.kit} kit first.`,
+        fix: sc.exists || installed ? undefined : { kind: "install", kit: sc.kit } });
+    }
     for (const ft of s.folderTemplates) {
       const kit = ft.kit ?? "planning";
       if (kit === "planning" && !s.planning) continue;
@@ -189,6 +200,13 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: h.source === "none" ? { kind: "navigator-home", path: nav.home } : undefined });
   }
 
+  if (s.planning && s.plugins.has("obsidian-view-mode-by-frontmatter") && s.homepageMode !== undefined && s.navigator) {
+    const ok = s.homepageMode === "preview";
+    out.push({ id: "viewmode:homepage", group: "Notebook Navigator", label: "Homepage opens read-only", ok,
+      detail: s.homepageMode === null ? "The homepage note isn't there yet." : ok ? "Set (obsidianUIMode: preview)."
+        : `obsidianUIMode is ${s.homepageMode || "empty"}, so a click can edit the homepage. Open it and set obsidianUIMode to preview.`,
+      fix: s.homepageMode === null ? undefined : ok ? undefined : { kind: "open-note", path: s.navigator.home } });
+  }
 
   if (s.planning && s.metaBind) {
     const { missing, total } = s.metaBind;

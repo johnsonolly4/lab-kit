@@ -65,6 +65,10 @@ describe("new-vault starter (Phase 8)", () => {
       planning: true,
       templater: { templatesFolder: tpl.templates_folder, userScriptsFolder: tpl.user_scripts_folder, menuHotkey: tpl.enabled_templates_hotkeys.includes(menu),
         folderTemplates: tpl.folder_templates, matchingMode: tpl.trigger_on_file_creation_mode, startupTemplates: tpl.startup_templates },
+      scripts: [lab, planning].flatMap(k => k.manifest.files.filter(f => f.role === "userScripts" && !f.optional).map(f => {
+        const name = f.dest.split("/").pop()!.replace(/\.js$/, "");
+        return { name, kit: k.manifest.id as "lab" | "planning", exists: Object.keys(v.files).some(p => p.endsWith(`/${name}.js`)) };
+      })),
       menu: v.files[menu] !== undefined ? menu : null,
       installed: { lab: true, planning: true },
       css: css.map(name => ({ name, enabled: (read(".obsidian/appearance.json").enabledCssSnippets as string[]).includes(name) })),
@@ -79,6 +83,7 @@ describe("new-vault starter (Phase 8)", () => {
       commandNames: {},
     };
     const items = checkSetup(state);
+    expect(items.filter(i => i.id.startsWith("script:")).length).toBe(5);
     expect(items.length).toBeGreaterThan(25);
     const red = items.filter(i => !i.ok && !i.optional && !i.warn);
     expect(red.map(i => `${i.id}: ${i.detail}`)).toEqual([]);

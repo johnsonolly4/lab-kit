@@ -197,4 +197,23 @@ describe("check setup: meeting series (Phase 5b)", () => {
     expect(byId(state({ planning: true, meetings: [] }))["meetings:none"]).toMatchObject({ ok: true, optional: true });
     expect(checkSetup(state({ meetings: [{ name: "X", path: "X.md", deck: false, error: "bad" }] })).some(i => i.group === "Meetings")).toBe(false);
   });
+
+  it("Templater user scripts: missing ones are red; the planning script only counts with the planning kit", () => {
+    const scripts = [{ name: "labSnippets", kit: "lab" as const, exists: true }, { name: "labForm", kit: "lab" as const, exists: false }, { name: "vtAsk", kit: "planning" as const, exists: false }];
+    const r = byId(state({ scripts }));
+    expect(r["script:labSnippets"].ok).toBe(true);
+    expect(r["script:labForm"]).toMatchObject({ ok: false });
+    expect(r["script:labForm"].fix).toBeUndefined();   // installed: Review update… puts it back
+    expect(r["script:vtAsk"]).toBeUndefined();
+    const fresh = byId(state({ scripts, installed: { lab: false, planning: false } }));
+    expect(fresh["script:labForm"].fix).toEqual({ kind: "install", kit: "lab" });
+  });
+
+  it("homepage opens read-only: obsidianUIMode must be preview", () => {
+    const on = { planning: true, plugins: new Set(["templater-obsidian", "dataview", "obsidian-view-mode-by-frontmatter"]), navigator: { homepage: null, home: "00 Home.md" } };
+    expect(byId(state({ ...on, homepageMode: "preview" }))["viewmode:homepage"].ok).toBe(true);
+    expect(byId(state({ ...on, homepageMode: "" }))["viewmode:homepage"]).toMatchObject({ ok: false, fix: { kind: "open-note", path: "00 Home.md" } });
+    expect(byId(state({ ...on, homepageMode: null }))["viewmode:homepage"]).toMatchObject({ ok: false, fix: undefined });
+    expect(byId(state({ ...on, homepageMode: "preview", plugins: new Set(["templater-obsidian"]) }))["viewmode:homepage"]).toBeUndefined();
+  });
 });

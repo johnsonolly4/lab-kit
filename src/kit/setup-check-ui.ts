@@ -38,11 +38,19 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     return [{ name: f.basename, path: f.path, error: "error" in read ? read.error : undefined, deck: !!deckPath(fm, Platform.isMacOS) }];
   }).sort((a, b) => a.name.localeCompare(b.name));
   const mbIds = metaBindButtonIds(app);
+  const scripts = [lab, ...(planningOn && planning ? [planning] : [])].flatMap(k => k.bundle.manifest.files.filter(f => f.role === "userScripts" && !f.optional).map(f => {
+    const path = k.stateOf(f.id)?.path;
+    return { name: f.dest.split("/").pop()!.replace(/\.js$/, ""), kit: k.bundle.manifest.id as "lab" | "planning", exists: !!path && !!app.vault.getFileByPath(path) };
+  }));
+  const homePath = planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md";
+  const homeFile = app.vault.getFileByPath(homePath);
+  const homepageMode = homeFile ? String(app.metadataCache.getFileCache(homeFile)?.frontmatter?.obsidianUIMode ?? "") : null;
   const guideId = "note-obsidian-set-up-zotlit-md";
   const guide = planning?.stateOf(guideId)?.path ?? null;
   return {
     lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder,
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
+    scripts, homepageMode,
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
