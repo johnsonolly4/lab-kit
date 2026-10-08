@@ -8,6 +8,8 @@ import {
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
+import { makeMyCopy } from "./snippet-copy-ui";
+import { canCopy, snippetKey } from "./snippet-copy";
 import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
@@ -583,7 +585,11 @@ class KitFilesModal extends Modal {
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
       // A snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so snippet rows have no Open button
-      const file = it.file.dest.startsWith("Snippets/") ? null : this.app.vault.getFileByPath(it.dest);
+      const isSnippet = it.file.dest.startsWith("Snippets/");
+      if (isSnippet && canCopy(snippetKey(it.text)) && this.app.vault.getFileByPath(it.dest)) {
+        row.addButton(b => b.setButtonText("Make my own copy").onClick(() => void makeMyCopy(this.app, it.dest).then(() => this.refresh())));
+      }
+      const file = isSnippet ? null : this.app.vault.getFileByPath(it.dest);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
         this.close();
         void this.app.workspace.getLeaf(false).openFile(file);

@@ -186,6 +186,8 @@
 - [ ] Command "Show what's new" and the Settings button open the popup; GitHub link works
 - [ ] Open `docs/tutorial.md` in a vault **with Dataview on**: no inline `=` errors
 
+- [ ] Manage files… → a snippet row (not Analysis table): **Make my own copy** asks a name (prefilled `… (mine)`; Esc makes nothing); the copy appears in Snippets and in Alt+S; a second copy with the same name becomes `… 2`; Review update… does not list it; a sample snippet's Notice says the codes are fixed. On a phone too
+
 ## 9. Mobile (or phone emulation: `app.emulateMobile(true)` in the dev console)
 - [ ] Plugin loads without errors
 - [ ] Calc tables render and edit

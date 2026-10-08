@@ -61,12 +61,21 @@ export async function renderCopy(run: (tp: HeadlessTp) => Promise<string>, user:
   return "";
 }
 
-/** `<folder>/<name> (mine).md`, or `(mine 2)`, `(mine 3)`… when that path is taken. */
+/** The snippet a stub note runs: `tp.user.labSnippets(tp, "solution")` → "solution". */
+export const snippetKey = (stub: string): string | null => stub.match(/labSnippets\(\s*tp\s*,\s*"([^":]+)"/)?.[1] ?? null;
+
+/** Row 14 (key `method`) is left out: run without answers it only gives the NMR table (user, 2026-10-09). */
+export const canCopy = (key: string | null): key is string => !!key && key !== "method";
+
+/** The name offered in the box: `<name> (mine)`. */
+export const defaultCopyName = (name: string): string => `${name} (mine)`;
+
+/** `<folder>/<name>.md`, or `<name> 2.md`, `<name> 3.md`… when that path is taken. */
 export function copyPath(folder: string, name: string, exists: (path: string) => boolean): string {
   const dir = folder.replace(/^\/+|\/+$/g, "");
-  const at = (suffix: string) => (dir ? `${dir}/` : "") + `${name} (${suffix}).md`;
-  let path = at("mine");
-  for (let n = 2; exists(path); n++) path = at(`mine ${n}`);
+  const at = (n: string) => (dir ? `${dir}/` : "") + `${n}.md`;
+  let path = at(name);
+  for (let n = 2; exists(path); n++) path = at(`${name} ${n}`);
   return path;
 }
 
@@ -77,13 +86,13 @@ export interface CopyResult { path: string; fixedCodes: boolean }
  * so no empty note is made. Nothing here records the copy as a managed kit file, so Review update… ignores it.
  */
 export async function makeSnippetCopy(opts: {
-  key: string; name: string; folder: string; user: Record<string, unknown>;
+  key: string; /** Name of the snippet, for the error message. */ name: string; /** Name of the copy, without .md. */ copyName: string; folder: string; user: Record<string, unknown>;
   run: (tp: HeadlessTp) => Promise<string>;
   exists: (path: string) => boolean; write: (path: string, text: string) => Promise<void>; today?: Date;
 }): Promise<CopyResult> {
   const text = await renderCopy(opts.run, opts.user, opts.today);
   if (!text) throw new Error(`The snippet "${opts.name}" gives no text without answers, so there is nothing to copy.`);
-  const path = copyPath(opts.folder, opts.name, opts.exists);
+  const path = copyPath(opts.folder, opts.copyName, opts.exists);
   await opts.write(path, text);
   return { path, fixedCodes: hasFixedCodes(opts.key) };
 }
