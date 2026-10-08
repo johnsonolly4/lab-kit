@@ -212,6 +212,21 @@ describe("snippets with a Methods folder", () => {
     assert.strictEqual(cell("results", "D3"), 20000);   // Mass error column, found by header, not by a fixed letter
   });
 
+  it("Analysis table: the combined results toggle is off by default and, when on, adds a results table linked to that method's table", async () => {
+    const h = harness();
+    const off = await h.run("method", { method: "mass_spec", codes: "ABC0001-A" });
+    assert.strictEqual(h.forms["Analysis table"][1].key, "results");
+    assert.strictEqual(h.forms["Analysis table"][1].value, false);
+    assert.ok(!off.includes("name: results"), off);
+    const h2 = harness();
+    const on = await h2.run("method", { method: "mass_spec", codes: "ABC0001-A, ABC0001-B", results: true });
+    assert.ok(on.includes("name: mass_spec") && on.includes("name: results") && on.includes("XLOOKUP(A2, mass_spec!"), on);
+    h2.note = h2.note.replace("| [[Machine A]] | ESI | NaI |  |", "| [[Machine A]] | ESI | NaI | 101 |");
+    assert.strictEqual(h2.evaluate()("results", "B2"), 101);   // m/z of A, read from the method table
+    const h3 = harness();
+    assert.ok(!(await h3.run("method:mass_spec", { codes: "ABC0001-A", results: true })).includes("name: results"));   // form-free entries ignore it
+  });
+
   it("method:<key> goes straight to that method's form, without the Method select", async () => {
     const h = harness();
     const md = await h.run("method:mass_spec", { codes: "ABC0001-A" });

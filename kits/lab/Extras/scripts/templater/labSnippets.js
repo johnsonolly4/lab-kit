@@ -161,7 +161,7 @@ ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c =>
     ]);
   };
   /** Ask for one method's table and build it. A field left at the default machine's value follows the machine that was picked. */
-  const runMethod = async (m) => {
+  const runMethod = async (m, withResults = false) => {
     const v = await methodForm(m);
     if (!v) return "";
     const machine = machineOf(m, v.machine), dm = machineOf(m, m.defaultMachine);
@@ -169,7 +169,9 @@ ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c =>
       if (v[c.key] === (M.columnDefault(c, dm.fm) ?? "")) v[c.key] = M.columnDefault(c, machine.fm) ?? "";
     }
     tag(m.tag);
-    return methodTable(m, list(v.codes), { machine, values: v }).md;
+    const codes = list(v.codes);
+    const t = methodTable(m, codes, { machine, values: v });
+    return withResults && m.results.length ? t.md + "\n" + resultsTable(codes, [{ method: m, tables: [t] }]) : t.md;
   };
   /** One row per sample, pulling values from the methods' tables by sample code. links = [{ method, tables }]; no tables = columns typed in. */
   const resultsTable = (codes, links) => {
@@ -396,9 +398,10 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
       }
       const v = await form("Analysis table", [
         { key: "method", label: "Method", type: "select", options: methods.map(m => ({ value: m.key, label: m.name })), value: methods[0]?.key },
+        { key: "results", label: "Also add a combined results table", type: "toggle", value: false },
       ]);
       const m = v && methods.find(x => x.key === v.method);
-      return m ? runMethod(m) : "";
+      return m ? runMethod(m, !!v.results) : "";
     },
 
     async results() {

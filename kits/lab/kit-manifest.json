@@ -380,7 +380,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.5.2",
-      "sha256": "060b9e482ed0e52dc41faf11aa5c1c92baf727484986fc974219ab47a2f6e870",
+      "sha256": "57f70fa3e354a5c318ae855abbfc306d06238904990bb577845b5cc933cb29da",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }

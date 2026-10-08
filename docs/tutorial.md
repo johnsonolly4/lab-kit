@@ -63,7 +63,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **GPC samples** | GPC | Sample · eluent · Mn · Mw · Đ (calculated) · tags `GPC` |
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
-| **Analysis table** | Any other method | Pick a method (NMR, GPC, DLS or a note in your Methods folder), then its sample table, machine and checklist |
+| **Analysis table** | Any other method | Pick a method (NMR, GPC, DLS or a note in your Methods folder), then its sample table, machine and checklist; the switch **Also add a combined results table** adds a Results table for it |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
 | **Blank calc table** | Anything else | Your own columns |
