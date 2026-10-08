@@ -145,6 +145,12 @@ describe("planning kit files (Phase 3)", () => {
     expect(again.kept.map(i => i.file.id)).toEqual([hub.id]);
   });
 
+  it("the Project hub template writes kind, Status and the vt / project classes; the New project note template only vt", () => {
+    const front = (dest: string): string => readFileSync(join("kits/planning/Extras/Templates", dest), "utf8").replace(/\r\n/g, "\n").split("-%>\n")[1].split("---")[1];
+    expect(front("Project hub.md")).toMatch(/kind: project\nStatus: Active\ncssclasses:\n {2}- vt\n {2}- project\n/);
+    expect(front("New project note.md")).toBe("\ncssclasses:\n  - vt\n");
+  });
+
   it("lab and planning kits together: no two files share a place, and the scripts sit in sibling folders", () => {
     const labRoles = { templates: "Extras/Templates/Lab Kit", userScripts: "Extras/scripts/templater/lab-kit", scripts: "Extras/scripts/lab-kit", cssSnippets: ".obsidian/snippets", labBase: "03 Lab Book", chemicalBase: "05 Chemicals" };
     const all = [...dests(lab, labRoles), ...dests(planning, roles)];
