@@ -39,7 +39,7 @@ A button on each kit snippet row in Manage files… saves a plain Markdown copy 
 - Files: `src/kit/managed-ui.ts` (snippet row next to Detach, ~line 584), `docs/` per `docs/maintenance.md`, `docs/obsidian-test-checklist.md`, `STATUS.md`, `BACKLOG.md`.
 - Done when: button on snippet rows only; Notice names the new file; copy appears in Alt+S (checked in test-vault, reported as seen / not seen); works on mobile (no `hasNode()` use).
 
-### Phase 4 — Split `labSnippets.js` (later, own plan if it grows)
+### Phase 4 — DROPPED 2026-10-09 (replaced by `docs/plans/snippet-token-templates.md`; was: split `labSnippets.js`)
 - Depends on: Phase 3; plan first again before building (touches the manifest, update logic, tests, `docs/architecture.md`).
 - Done when: set at that session's `/phase-plan`.
 

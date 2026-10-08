@@ -5,6 +5,7 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-09 — Snippets as token templates: header block in the file lists the questions, body uses `{{tokens}}`, plugin fills at Alt+S; first build = matrix, samples, timetable, blank, column, rt; computed snippets stay in `labSnippets.js`; Phase 4 split of `labSnippets.js` dropped — (user, `/phase-plan`; `docs/plans/snippet-token-templates.md`)
 - 2026-10-08 — Make my own copy: button on kit snippet rows in Manage files…, saves a plain Markdown copy (snippet run once with empty answers) as a user file; kit original stays managed; the `labSnippets.js` split is a later phase after the button — (user, `/phase-plan`; `docs/plans/make-my-own-copy.md`)
 - 2026-10-07 — Phase 7 is one command, **Tidy up notes**: split window (old left / new right, user confirmed; changes coloured), one tick per rule, Copy report; banner to back up the vault; two-step confirm (backup tick enables Change notes…, then a Confirm window); three sessions 7a scan + window / 7b file and property changes / 7c meetings, hubs, buttons, settings paths; owner runs it on their own vault copy and pastes a summary — a separate report note + fix command was hard to follow — (user, `/phase-plan`; `docs/plans/phase-7-tidy-notes.md`)
 - 2026-10-07 — Whole-vault Check setup in 5b adds only the meeting series hub rows; planning-note properties, a hub per top-level folder and unresolved kit links go to BACKLOG — keeps 5b one session — (user, 5b start)
