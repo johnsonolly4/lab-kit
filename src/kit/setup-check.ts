@@ -29,11 +29,6 @@ export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning";
   { id: "advanced-canvas", name: "Advanced Canvas", kit: "planning", optional: true, why: "More shapes and connections in Canvas (for diagrams and plans)." },
 ];
 
-/** Hotkeys the kits recommend (never set without asking). Two-key rule: one modifier + one key. */
-export const SETUP_HOTKEYS: { name: string; key: KitHotkey; kit: "lab" | "planning" }[] = [
-  { name: "Insert snippet", key: { modifiers: ["Alt"], key: "S" }, kit: "lab" },
-];
-
 /** The old roll-over startup template (replaced by the plugin's to-do engine). */
 export const OLD_ROLLOVER = "Actions/To-do roll-over.md";
 
@@ -69,12 +64,6 @@ export interface SetupState {
   folderTemplates: { folder: string; template: string; kit?: "lab" | "planning" }[];
   /** Meeting series hubs (`kind: meeting-series`) in the meetings folder; `error` names the field that is wrong; `deck` = a deck path is set for this computer. */
   meetings?: { name: string; path: string; error?: string; deck: boolean }[];
-  /** Hotkey commands: the Templater command for Insert snippet, etc. Null when the command doesn't exist yet. */
-  hotkeyCommands: Record<string, string | null>;
-  /** Hotkeys in use, per command id; null when Obsidian's hotkey manager can't be read. */
-  hotkeys: Record<string, KitHotkey[]> | null;
-  /** Command names by id, to name a clash. */
-  commandNames: Record<string, string>;
 }
 
 export type SetupFix =
@@ -85,7 +74,6 @@ export type SetupFix =
   | { kind: "folder"; path: string }
   | { kind: "find-moved" }
   | { kind: "folder-template"; folder: string; template: string }
-  | { kind: "hotkey"; command: string; key: KitHotkey }
   | { kind: "settings" }
   | { kind: "methods-folder"; path: string }
   | { kind: "hide-properties" }
@@ -103,7 +91,7 @@ export const METHODS_DEFAULT = "Extras/methods";
 
 /** "Alt+S", "Mod+Shift+T": how a hotkey is written in the list. */
 export const hotkeyText = (k: KitHotkey): string => [...k.modifiers, k.key].join("+");
-const sameKey = (a: KitHotkey, b: KitHotkey): boolean =>
+export const sameKey = (a: KitHotkey, b: KitHotkey): boolean =>
   a.key.toLowerCase() === b.key.toLowerCase() && [...a.modifiers].sort().join() === [...b.modifiers].sort().join();
 
 /** Every check for the kits that are on, in display order. */
@@ -251,17 +239,5 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: f.exists ? undefined : moved ? { kind: "find-moved" } : { kind: "folder", path: f.path } });
   }
 
-  for (const h of SETUP_HOTKEYS.filter(h => kitOn(h.kit))) {
-    const command = s.hotkeyCommands[h.name] ?? null;
-    const id = `hotkey:${h.name}`, label = `${h.name}: ${hotkeyText(h.key)}`;
-    if (!command) { out.push({ id, group: "Hotkeys", label, ok: false, detail: "The command doesn't exist yet: install the kit and run Templater set up first." }); continue; }
-    if (!s.hotkeys) { out.push({ id, group: "Hotkeys", label, ok: false, detail: "Can't read hotkeys in this Obsidian version: set it in Settings → Hotkeys." }); continue; }
-    const own = s.hotkeys[command] ?? [];
-    if (own.length) { out.push({ id, group: "Hotkeys", label, ok: true, detail: own.some(k => sameKey(k, h.key)) ? "Set." : `Set to ${own.map(hotkeyText).join(", ")} (yours, left as it is).` }); continue; }
-    const clash = Object.entries(s.hotkeys).find(([cmd, keys]) => cmd !== command && keys.some(k => sameKey(k, h.key)))?.[0];
-    out.push({ id, group: "Hotkeys", label, ok: false,
-      detail: clash ? `Not set. ${hotkeyText(h.key)} is already used by ${s.commandNames[clash] ?? clash}: pick another key in Settings → Hotkeys.` : "Not set.",
-      fix: clash ? undefined : { kind: "hotkey", command, key: h.key } });
-  }
   return out;
 }

@@ -3,7 +3,7 @@ import { Modal, Notice, Platform, type App } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
-import { addHotkey, addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, commandNames, hasTemplaterHotkey, hotkeysInUse, hotkeysSupported,
+import { addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { deckPath } from "../planning/actions";
@@ -11,7 +11,7 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { checkSetup, hotkeyText, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { checkSetup, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): void }
@@ -30,7 +30,6 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     ...(planningOn ? (Object.keys(pf) as PlanningRole[]).filter(r => r !== "archive" && (r !== "literature" || zotlit)).map(r => pf[r]) : [])].filter(f => f);
   const labTemplates = labFolderTemplates(host.kit.labFolder);
   const folders = [...settingFolders, ...(planningOn ? folderTemplates.map(f => f.folder) : [])];
-  const names = commandNames(app);
   const meetings = !planningOn ? [] : app.vault.getMarkdownFiles().filter(f => inFolder(f.path, pf.meetings)).flatMap(f => {
     const cache = app.metadataCache.getFileCache(f), fm = cache?.frontmatter ?? {};
     if (fm.kind !== "meeting-series") return [];
@@ -71,10 +70,6 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
       ...labTemplates.map(f => ({ folder: f.folder, template: kitJoin(lab.templatesFolder(), f.file), kit: "lab" as const })),
       ...(planning ? folderTemplates.map(f => ({ folder: f.folder, template: kitJoin(planning.templatesFolder(), f.file) })) : []),
     ],
-    // Templater names a template hotkey command `templater-obsidian:<template path>` (not checked against Templater's source)
-    hotkeyCommands: { "Insert snippet": menuFile && names[`templater-obsidian:${menuFile}`] ? `templater-obsidian:${menuFile}` : null },
-    hotkeys: hotkeysSupported(app) ? hotkeysInUse(app) : null,
-    commandNames: names,
   };
 }
 
@@ -135,8 +130,6 @@ export class SetupCheckModal extends Modal {
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
         apply: () => addTemplaterFolderTemplate(this.app, fix.folder, fix.template) }); break;
-      case "hotkey": await confirm({ name: `Set ${hotkeyText(fix.key)}`, desc: `For ${it.label.split(":")[0]} (Settings → Hotkeys shows it afterwards).`,
-        apply: async () => { if (!(await addHotkey(this.app, fix.command, fix.key))) new Notice("Couldn't set it here. Set it in the hotkeys settings."); } }); break;
     }
     this.render();
   }

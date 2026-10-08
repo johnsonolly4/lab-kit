@@ -17,9 +17,6 @@ const state = (o: Partial<SetupState> = {}): SetupState => ({
   css: [{ name: "scrolling-mermaid", enabled: true }],
   folders: [{ path: "03 Lab Book/Notes", exists: true }],
   folderTemplates: [{ folder: "01 Daily Notes", template: "Extras/Templates/Daily note.md" }],
-  hotkeyCommands: { "Insert snippet": CMD },
-  hotkeys: { [CMD]: [{ modifiers: ["Alt"], key: "S" }] },
-  commandNames: { "editor:save": "Save" },
   ...o,
 });
 const byId = (s: SetupState) => Object.fromEntries(checkSetup(s).map(i => [i.id, i]));
@@ -45,7 +42,6 @@ describe("check setup (Phase 6)", () => {
       plugins: new Set(["templater-obsidian"]), installed: { lab: false, planning: false }, menu: null,
       templater: { templatesFolder: "", userScriptsFolder: "", menuHotkey: true, folderTemplates: [] },
       css: [{ name: "scrolling-mermaid", enabled: false }], folders: [{ path: "03 Lab Book/Notes", exists: false }],
-      hotkeyCommands: { "Insert snippet": null },
     }));
     expect(r["plugin:dataview"]).toMatchObject({ ok: false, fix: { kind: "plugin", id: "dataview" } });
     expect(r["install:lab"]).toMatchObject({ ok: false, fix: { kind: "install", kit: "lab" } });
@@ -54,8 +50,6 @@ describe("check setup (Phase 6)", () => {
     expect(r["templater:menu-hotkey"]).toBeUndefined();
     expect(r["css:scrolling-mermaid"].fix).toEqual({ kind: "css", names: ["scrolling-mermaid"] });
     expect(r["folder:03 Lab Book/Notes"].fix).toEqual({ kind: "folder", path: "03 Lab Book/Notes" });
-    expect(r["hotkey:Insert snippet"].ok).toBe(false);
-    expect(r["hotkey:Insert snippet"].fix).toBeUndefined();
   });
 
   it("Templater values already set are ok and get no fix", () => {
@@ -95,16 +89,8 @@ describe("check setup (Phase 6)", () => {
     expect(r["plugin:zotlit"].ok).toBe(true);
   });
 
-  it("hotkey: offered when free, not offered on a clash, the user's own key is left alone", () => {
-    expect(byId(state({ hotkeys: {} }))["hotkey:Insert snippet"].fix).toEqual({ kind: "hotkey", command: CMD, key: { modifiers: ["Alt"], key: "S" } });
-    const clash = byId(state({ hotkeys: { "editor:save": [{ modifiers: ["Alt"], key: "s" }] } }))["hotkey:Insert snippet"];
-    expect(clash).toMatchObject({ ok: false, fix: undefined });
-    expect(clash.detail).toContain("Save");
-    const own = byId(state({ hotkeys: { [CMD]: [{ modifiers: ["Mod"], key: "I" }] } }))["hotkey:Insert snippet"];
-    expect(own.ok).toBe(true);
-    expect(own.fix).toBeUndefined();
-    expect(own.detail).toContain("Mod+I");
-    expect(byId(state({ hotkeys: null }))["hotkey:Insert snippet"].fix).toBeUndefined();
+  it("sets no hotkey: Check setup has no Hotkeys group (Check hotkeys reports them)", () => {
+    expect(checkSetup(state()).some(i => i.group === "Hotkeys" || i.fix?.kind === ("hotkey" as string))).toBe(false);
   });
 
   it("folder template: no Fix until the planning kit is installed", () => {

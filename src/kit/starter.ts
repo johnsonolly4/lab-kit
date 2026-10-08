@@ -1,7 +1,7 @@
 // New-vault starter (Phase 8): the Obsidian settings a fresh vault needs for the kits, generated from the kit manifests and the setup check's own lists so they can't drift.
 // Pure (no Node): `npm run starter` writes the result to dist/starter/ (scripts/make-starter.mjs). Settings and plugin list only, no notes: the plugin installs the kit files.
 import { LAB_LAYOUT, PLANNING_FOLDER_DEFAULTS, KIT_DEFAULTS, kitJoin, todoFolder } from "./paths";
-import { SETUP_HOTKEYS, SETUP_PLUGINS, labFolderTemplates, planningFolderTemplates } from "./setup-check";
+import { SETUP_PLUGINS, labFolderTemplates, planningFolderTemplates } from "./setup-check";
 import type { EmbeddedKit } from "./managed";
 
 /** Id of this plugin in the community store (manifest.json). */
@@ -19,7 +19,7 @@ const json = (v: unknown): string => JSON.stringify(v, null, 2) + "\n";
 /** Plugin ids the starter installs and turns on: Lab Kit itself, then every plugin the setup check needs (optional ones are left to the user). */
 export const starterPlugins = (): string[] => [PLUGIN_ID, ...SETUP_PLUGINS.filter(p => !p.optional).map(p => p.id)];
 
-/** The Insert snippet template's vault path (the lab kit's default layout), the command Alt+S is bound to. */
+/** The Insert snippet template's vault path (the lab kit's default layout). */
 export function starterMenu(lab: EmbeddedKit): string {
   const f = lab.manifest.files.find(x => x.dest.endsWith("Insert snippet.md"));
   if (!f) throw new Error("lab kit has no Insert snippet.md");
@@ -31,8 +31,6 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
   const lab = kits.find(k => k.manifest.id === "lab"), planning = kits.find(k => k.manifest.id === "planning");
   if (!lab || !planning) throw new Error("the starter needs the lab and planning kits");
   const menu = starterMenu(lab);
-  const insert = SETUP_HOTKEYS.find(h => h.name === "Insert snippet");
-  if (!insert) throw new Error("no Insert snippet hotkey in SETUP_HOTKEYS");
   const pf = PLANNING_FOLDER_DEFAULTS;
   const templates = kitJoin(LAB_LAYOUT.templates);
   const snippets = kits.flatMap(k => k.manifest.enableCss ?? []).map(n => n.replace(/\.css$/, ""));
@@ -41,7 +39,6 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
     [`${CONFIG}/community-plugins.json`]: json(starterPlugins()),
     [`${CONFIG}/app.json`]: json({ propertiesInDocument: "hidden" }),
     [`${CONFIG}/appearance.json`]: json({ enabledCssSnippets: snippets }),
-    [`${CONFIG}/hotkeys.json`]: json({ [`templater-obsidian:${menu}`]: [insert.key] }),
     [`${CONFIG}/plugins/templater-obsidian/data.json`]: json({
       templates_folder: templates,
       user_scripts_folder: LAB_LAYOUT.userScripts,

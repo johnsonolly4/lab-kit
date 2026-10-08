@@ -173,6 +173,7 @@
 - [ ] Check setup → Templater: "Folder template for <Lab notes folder>" appears with only the lab kit on; Fix adds it; then a note made by hand in that folder starts the Lab Book Template (asks its title once, no second note)
 - [ ] Sort inbox (planning kit on, a few inbox notes): the picker sits small at the right edge, no dark backdrop; the note behind can be read and scrolled; Esc still stops; the follow-up pickers (project, folder, delete) sit there too; at phone width the picker is centred as before. The name box (Enter keeps it) is still centred
 - [ ] Check setup → Templater: a `Script …` row per Templater user script (all there = green); delete `labForm.js` from the scripts folder → red, Fix-less, "Review update…" puts it back. With Force note view mode on: "Homepage opens read-only" is green; remove `obsidianUIMode` from 00 Home → red with Open
+- [ ] Settings → Lab Kit → **Check hotkeys…**: the list shows each Hotkeys-note key with ✓ set / ✗ not set / ! your own key, and the command name Obsidian really has; check the third-party ones (Navigator, Daily notes, Omnisearch, ZotLit ×3) say "No command with this name" only when the plugin is off (if not, tell me the real name); set Alt+S in Obsidian → reopen → ✓; Copy as Markdown pastes a table. Check setup shows no Hotkeys group
 
 ## 7. Lab header
 - [ ] ```` ```lab-header ```` draws hazards (chips and table layouts)

@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "0.5.2",
-      "sha256": "5818cdcc0b67d3dc65a421e28ba660cf6c9e2a1b8af10fbf65782d086c0fd75d",
+      "sha256": "ebcea8ddf9fb105cc71a9289651970c1a34108e85bd6137f9e7a4cea17520222",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you",
       "policy": "keep"

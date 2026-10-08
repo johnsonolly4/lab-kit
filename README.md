@@ -149,7 +149,7 @@ Settings → Lab Kit is searchable and grouped:
 | Group | What is in it |
 |---|---|
 | **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Backup folder |
-| **Kit folders and setup** | Templater **Set up**, **Check setup…**, Templates folder, Scripts folder, Snippets folder, console log |
+| **Kit folders and setup** | Templater **Set up**, **Check setup…**, **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, console log |
 | **Lab notebook** | Initials, Chemical folder, Lab notes folder, Molecular weight property, Methods folder |
 | **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…** |
 | **Snippet menu** | A Lucide icon for each snippet |
@@ -170,7 +170,8 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |
 | Find moved folders | For each folder in the settings that no longer exists (moved outside Obsidian), suggests where it went; Apply changes only the settings |
-| Check setup | Lists what the kits need (plugins, Templater and its scripts, the homepage's read-only mode, CSS snippets, folders, the Alt+S hotkey) with a Fix for each missing item; nothing changes until you confirm |
+| Check hotkeys | Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now (also a button in Settings → Lab Kit); sets nothing |
+| Check setup | Lists what the kits need (plugins, Templater and its scripts, the homepage's read-only mode, CSS snippets, folders) with a Fix for each missing item; nothing changes until you confirm |
 | Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; **Change notes…** rewrites only what you tick, after a backup and a second confirmation |
 
 With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are added. Open meeting deck is desktop only.

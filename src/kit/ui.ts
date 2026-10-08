@@ -10,6 +10,7 @@ import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
 import { KitManaged } from "./managed-ui";
 import { SetupCheckModal } from "./setup-check-ui";
+import { HotkeyCheckModal } from "./hotkey-check-ui";
 import { TidyNotesModal } from "./tidy-ui";
 import { wideBox } from "./settings-box";
 import { ensureFolder } from "./ensure-folder";
@@ -124,8 +125,10 @@ class KitSettingTab extends PluginSettingTab {
     const setup: SettingGroupItem[] = [];
     setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
       render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
-    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater, CSS snippets, folders, hotkeys) and what is missing, with a Fix for each. Nothing changes until you confirm.",
+    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater, CSS snippets, folders) and what is missing, with a Fix for each. Nothing changes until you confirm.",
       render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
+    setup.push({ name: "Check hotkeys", desc: "Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now. Changes nothing: set keys in Obsidian's Hotkeys settings.",
+      render: b => { b.addButton(btn => btn.setButtonText("Check hotkeys…").onClick(() => this.ctl.checkHotkeys())); } });
     updates.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     updates.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
@@ -274,6 +277,7 @@ export class KitController {
     plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
+    plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
@@ -351,6 +355,7 @@ export class KitController {
 
   /** Opens the Check setup window. */
   tidyNotes(): void { new TidyNotesModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning }).open(); }
+  checkHotkeys(): void { new HotkeyCheckModal(this.app, this.planning?.slot.enabled === true).open(); }
   checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save(), findMoved: () => this.findMovedFolders() }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */

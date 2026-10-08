@@ -21,7 +21,7 @@ These are suggestions. Lab Kit never sets a hotkey for you, so nothing changes u
 | `Alt+L` | New lab entry | Lab Kit: New lab entry |
 | `Alt+U` | Update this paper's highlights | ZotLit: Update literature note |
 | `Alt+C` | Insert a citation | ZotLit: insert citation |
-| `Alt+S` | Insert a lab snippet | Templater: Insert snippet.md (Lab Kit → Check setup can set this one) |
+| `Alt+S` | Insert a lab snippet | Templater: Insert snippet.md (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
 | `Ctrl+E` | Switch between reading and editing | Obsidian's own key, nothing to set |
 
 No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New meeting, New project, New project note, Roll over to-dos now, Archive old to-dos.

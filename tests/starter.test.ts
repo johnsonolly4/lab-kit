@@ -54,8 +54,6 @@ describe("new-vault starter (Phase 8)", () => {
 
     const exists = new Set(starter.folders);
     const css = [...(lab.manifest.enableCss ?? []), ...(planning.manifest.enableCss ?? [])].map(n => n.replace(/\.css$/, ""));
-    const hk = read(".obsidian/hotkeys.json") as Record<string, { modifiers: string[]; key: string }[]>;
-    const cmd = `templater-obsidian:${menu}`;
     const state: SetupState = {
       // Personal values the starter can't know: the user fills these in (Lab Kit settings)
       lab: { initials: "ABC", dataRoot: true, methodsFolder: "", labFolder: KIT_DEFAULTS.labFolder, chemicalFolder: KIT_DEFAULTS.chemicalFolder },
@@ -78,9 +76,6 @@ describe("new-vault starter (Phase 8)", () => {
         ...labFolderTemplates(KIT_DEFAULTS.labFolder).map(f => ({ folder: f.folder, template: kitJoin(tpl.templates_folder, LAB_LAYOUT.templatesSub, f.file), kit: "lab" as const })),
         ...planningFolderTemplates(PLANNING_FOLDER_DEFAULTS).map(f => ({ folder: f.folder, template: kitJoin(tpl.templates_folder, f.file) })),
       ],
-      hotkeyCommands: { "Insert snippet": cmd },
-      hotkeys: hk,
-      commandNames: {},
     };
     const items = checkSetup(state);
     expect(items.filter(i => i.id.startsWith("script:")).length).toBe(5);
@@ -94,7 +89,8 @@ describe("new-vault starter (Phase 8)", () => {
     expect(exists.has(todoFolder(PLANNING_FOLDER_DEFAULTS))).toBe(true);
   });
 
-  it("settings only: no notes, no personal values", () => {
+  it("settings only: no notes, no personal values, no hotkeys", () => {
+    expect(starter.files[".obsidian/hotkeys.json"]).toBeUndefined();
     expect(Object.keys(starter.files).filter(p => p.endsWith(".md"))).toEqual([]);
     expect(JSON.stringify(starter.files)).not.toMatch(/[A-Za-z]:\\|\/Users\/|\/home\//);
   });
