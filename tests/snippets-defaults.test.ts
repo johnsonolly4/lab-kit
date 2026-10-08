@@ -9,7 +9,7 @@ const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js")
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 
-function harness(files: Record<string, string>) {
+function harness(files: Record<string, string>, basename = "0014 - Test") {
   const notices: string[] = [];
   const fields: Record<string, any[]> = {};
   const g = globalThis as any;
@@ -22,8 +22,8 @@ function harness(files: Record<string, string>) {
   };
   const run = async (key: string, overrides: Record<string, unknown> = {}): Promise<string> => {
     const tp = {
-      config: { target_file: { basename: "0014 - Test", path: "0014 - Test.md" } },
-      file: { title: "0014 - Test" },
+      config: { target_file: { basename, path: `${basename}.md` } },
+      file: { title: basename },
       date: { now: () => "2026_10_03" },
       user: {
         labMethods,
@@ -39,6 +39,15 @@ function harness(files: Record<string, string>) {
   };
   return { run, notices, fields };
 }
+
+describe("experiment number", () => {
+  it("is read after the initials in the note name (OLJ0001 - Title), and is XXXX only when the name has none", async () => {
+    const data = { [DATA]: JSON.stringify({ kit: { initials: "OLJ" } }) };
+    assert.ok((await harness(data, "OLJ0001 - Test").run("samples", { codes: "", count: "1" })).includes("OLJ0001-A"));
+    assert.ok((await harness(data, "0001 - Test").run("samples", { codes: "", count: "1" })).includes("OLJ0001-A"));
+    assert.ok((await harness(data, "Untitled").run("samples", { codes: "", count: "1" })).includes("OLJXXXX-A"));
+  });
+});
 
 describe("initials", () => {
   it("come from the plugin settings (an old lab-config.json is no longer read)", async () => {

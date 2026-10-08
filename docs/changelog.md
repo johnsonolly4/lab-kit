@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Alt+S sample codes read the number after the initials**: in a lab note named `OLJ0001 - Title` the Variant naming matrix, sample list and timetable showed `OLJXXXX-A`; they now show `OLJ0001-A` (a note named `0001 - …` still works; `XXXX` only when the name has no number). Tests only, not seen in Obsidian
 - **Esc cancels**: in New to-do, Esc in the text box, the project picker or the meeting picker now makes nothing (it used to make "Untitled to-do" or skip). To skip, press Enter on an empty box (Untitled to-do) or on **(no project)** / **(none)**. Your own To-do template is kept: **Restore kit original** to get the new one. Tests only (template text), not seen in Obsidian
 - **New lab entry asks with Lab Kit's own box** (like the planning commands) and Esc makes nothing; an empty title is "Untitled". A note made by hand in the Lab notes folder still asks through the template (Esc cancels there too). Restore kit original on the Lab Book Template to get it. Tests only, not seen in Obsidian
 - **Check setup: Templater folder template for the Lab notes folder** (a new note there starts the Lab Book Template), with a Fix; it needs only the lab kit. The new-vault starter sets it too. Tests only, not seen in Obsidian

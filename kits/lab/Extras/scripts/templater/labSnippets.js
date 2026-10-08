@@ -29,7 +29,7 @@ module.exports = async function labSnippets(tp, snippet) {
   const saved = kitData?.initials;
   const initials = String(saved || "").trim() || "XX";
   if (!saved && ["samples", "timetable", "matrix"].includes(key)) new Notice("Set your initials in Settings → Lab Kit → Initials. Using XX for now.");
-  const num = (file?.basename ?? tp.file.title).match(/^\d+/)?.[0] ?? "XXXX";
+  const num = (file?.basename ?? tp.file.title).match(/^[A-Za-z]*(\d+)/)?.[1] ?? "XXXX";
   const prefix = `${initials}${num}-`;
 
   /** The chemical notes (Settings → Lab Kit → Chemical folder) as { name, aliases } for the forms' suggestions; undefined when no folder is set. */
