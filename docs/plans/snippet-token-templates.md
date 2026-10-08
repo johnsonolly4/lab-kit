@@ -29,7 +29,7 @@ The simple kit snippets become plain editable Markdown files with a small header
 - Done when: this plan gives the header syntax, the token list (with the computed tokens), and per snippet the exact template text, shown as a table; a Node spike fills each of the six templates with default answers and the output equals `labSnippets(tp, key)` run on the stub `tp` (byte for byte, after table-id uniqueness). Anything that cannot match is listed with a fallback (stay code). Decision recorded in `docs/decisions.md`. No code in `src/` or `kits/`.
 - New dependencies: none
 
-### Phase 2 — Engine: parse and fill
+### Phase 2 — Engine: parse and fill (DONE 2026-10-09, see "Phase 2 result")
 - Depends on: Phase 1
 - Files: new `src/kit/snippet-template.ts` (pure: parse the header block, fill tokens, computed tokens passed in), `tests/snippet-template.test.ts` on fixtures from Phase 1.
 - Done when: for each of the six, filled template with default answers equals the script's output; unknown token, missing field and malformed header give a clear error, never a half-filled note; `npm test` and `npm run lint` clean. Engine change → fixtures; known answers 0005 and 0011 unaffected.
@@ -364,3 +364,16 @@ Nothing in the six. Left out on purpose: the "Also add" toggles of Sample list a
 - Phase 2 file list gains: the six templates as test fixtures under `tests/fixtures/` (the text above), and the 21 scenarios as table-driven tests against `labSnippets` (keep it until the six are removed from the script in Phase 4).
 - Phase 3: an "Also add" replacement is not needed; Alt+S must show `title`, `icon`, `desc` from the header; `Insert snippet.md` reads icon / desc with a regex today and needs a second path for the header.
 - Existing Make my own copy files (plain text, no header) keep working unchanged.
+
+## Phase 2 result (2026-10-09)
+
+Built: `src/kit/snippet-template.ts`, `tests/snippet-template.test.ts` (47 tests), the six templates as `tests/fixtures/snippet-templates/*.md`. 28 scenarios run the script and the filled template on the same stub answers: identical byte for byte. Engine only; tests only, not seen in Obsidian. The spike code was gone, so the engine was written from the spec above.
+
+Changes to the spec found while building (the fixtures hold the new text):
+- `{{#each key as L or ""}}`: when the list is empty the block runs once with that item. Needed because the script treats a blank "Sample letters" answer as one sample (`[""]`); a plain `#each` would give no rows. Only Sampling timetable uses it.
+- A note counts as a token template only when its header has a `fields` key (an empty list is allowed). Any other note with properties is a plain snippet.
+- Field keys may not be `prefix` or `code`; keys are letters, digits, `-`, `_`.
+- `{{#repeat key|N}}` without `|N` falls back to 1.
+- `{{#if key ^= "h"}}` is false for an empty answer.
+- Env for the engine (Phase 3 provides the real one): `prefix`, `nextFreeIndex(table?)`, `uniqueTable(base)`, `tableRows(name)`, `noteProperty(note, property)`. The tests build one from the note text (`envFor` in the test file); Phase 3 can move that into `src/`.
+- Tests use a small test-only YAML reader for the six headers, because the repo has no YAML library. Real `parseYaml` (Obsidian) is untested until Phase 3.
