@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "7573ee673ca5146d6f8dc2fe4582e88f0e9d85ed4ba0e5eb3b32b4d39c010a6a",
+      "sha256": "3d8db6b33445d687923c1d95095df09b65293515a0248228b05126d81730452e",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -188,7 +188,7 @@
       "role": "knowledge",
       "path": "Knowledge index.md",
       "version": "0.5.2",
-      "sha256": "4a3cb4782eed949a6b59f488ccfe4a249ad435634f08275ebeeabb57b2186c87",
+      "sha256": "669383fad0aacf0db44f6b8517951bd4476503669bf6ac21afc7189060215e5e",
       "renamedFrom": [],
       "desc": "Knowledge notes by topic",
       "policy": "keep"
@@ -288,6 +288,17 @@
       "sha256": "fde02b9deca5f2f2e8b72dd95f1c300f07c61cb185a830d77d55dbf649f8af44",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
+    },
+    {
+      "id": "tpl-new-concept-md",
+      "kind": "template",
+      "src": "Extras/Templates/New concept.md",
+      "role": "templates",
+      "path": "New concept.md",
+      "version": "0.5.2",
+      "sha256": "d99284060321ec4dfa2ed69ea3a02c7c626ebfadf8e2b64a24922a9716c659bb",
+      "renamedFrom": [],
+      "desc": "New concept: a knowledge note in a topic folder"
     },
     {
       "id": "tpl-new-project-note-md",

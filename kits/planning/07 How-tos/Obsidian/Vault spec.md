@@ -45,6 +45,18 @@ cssclasses:
 >
 > A concept used by a project lives in Knowledge; the project hub links to it.
 
+**Knowledge notes** are made from the *New concept* template (`Extras/Templates/New concept.md`): it asks for the title and the topic, then files the note as `06 Knowledge/<Topic>/<Title>.md`.
+
+| Property | Value | Set by |
+|---|---|---|
+| `kind` | `concept` (a comparison is a concept note with a table) | template |
+| `summary` | one line saying what the note is | me |
+| `sources` | links or references that back it up | me |
+| `checked` | `false`; `true` once checked against the sources | template / me |
+| `cssclasses` | `[vt]` | template |
+
+Sections use `##` (`What it is`, `Why it matters`, `Related`), never `###`. A topic hub is the index note of a topic folder, with `kind: hub`. Tidy up notes lists concept notes with `###` headings or no summary / sources.
+
 ```mermaid
 flowchart LR
   A[New note] --> B{What is it?}

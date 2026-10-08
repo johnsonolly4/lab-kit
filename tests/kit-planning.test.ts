@@ -6,6 +6,7 @@ import { applyManaged, kitText, offIds, planFolderReapply, planManaged, previewI
 import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
 import { addMetaBindButtons, loadedPlugins, metaBindButtonIds, navigatorHomepage, setNavigatorHomepage } from "../src/kit/obsidian-private";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
+import { scan, type TidyContext } from "../src/kit/tidy";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit, embeddedKits } from "../scripts/embed-kit.mjs";
 
@@ -149,6 +150,26 @@ describe("planning kit files (Phase 3)", () => {
     const front = (dest: string): string => readFileSync(join("kits/planning/Extras/Templates", dest), "utf8").replace(/\r\n/g, "\n").split("-%>\n")[1].split("---")[1];
     expect(front("Project hub.md")).toMatch(/kind: project\nStatus: Active\ncssclasses:\n {2}- vt\n {2}- project\n/);
     expect(front("New project note.md")).toBe("\ncssclasses:\n  - vt\n");
+  });
+
+  it("the New concept template: shipped, asks with vtAsk, Esc cancels, filed under Knowledge, no ### headings, and Tidy only asks for its summary and sources", () => {
+    const file = planning.manifest.files.find(f => f.dest === "New concept.md")!;
+    expect(file).toMatchObject({ kind: "template", role: "templates", src: "Extras/Templates/New concept.md" });
+    const text = planning.contents[file.id].replace(/\r\n/g, "\n");
+    expect(text).toContain("tp.user.vtAsk");
+    expect(text).not.toContain("tp.system.prompt");
+    expect(text).toContain("Cancelled - no title");
+    expect(text).toContain("06 Knowledge");
+    const [code, note] = text.split("-%>\n");
+    expect(code).toContain("tp.file.move");
+    expect(note.startsWith("---\nkind: concept\nsummary:\nsources: []\nchecked: false\ncssclasses:\n  - vt\n---\n\n## ")).toBe(true);
+    expect(note).not.toMatch(/^###\s/m);
+    const ctx: TidyContext = { labFolder: "03 Lab Book/Notes", knowledgeFolder: "06 Knowledge", inboxFolder: "00 Inbox", contractFolders: ["06 Knowledge"], rootNotes: [], migrations: [] };
+    const s = scan([{ path: "06 Knowledge/Polymers/Chain growth.md", text: note }], ctx);
+    const ids = (id: string): string[] | undefined => s.reported.find(r => r.id === id)?.items.map(i => i.path);
+    expect(ids("knowledge-summary")).toEqual(["06 Knowledge/Polymers/Chain growth.md"]);
+    expect(ids("knowledge-sources")).toEqual(["06 Knowledge/Polymers/Chain growth.md"]);
+    expect(ids("knowledge-headings") ?? []).toEqual([]);
   });
 
   it("lab and planning kits together: no two files share a place, and the scripts sit in sibling folders", () => {
