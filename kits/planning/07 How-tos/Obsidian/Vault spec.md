@@ -34,7 +34,7 @@ cssclasses:
 | `05 Chemicals/` | Chemical database notes and base. |
 | `06 Knowledge/` | Concepts and theory, by topic subfolder. Index: [[Knowledge index]]. |
 | `07 How-tos/` | Procedures and software tips, by topic subfolder. Index: [[How-tos index]]. |
-| `08 Meetings/` | One folder per meeting series: the series hub (e.g. [[Weekly meetings]]) and its meeting notes. |
+| `08 Meetings/` | One folder per meeting series: the [[Meetings]] hub, then one folder per series with its hub note and meeting notes. |
 | `Extras/` | Templates, scripts, attachments. Managed partly by the lab kit; due to be replaced by a kit update. |
 | `99 Archive/` | Anything finished or retired. Never deleted outright. |
 
@@ -220,7 +220,7 @@ Everything captured quickly lands here (`Ctrl+N`, **Quick capture**). The homepa
 
 Every move offers a rename first and goes through Obsidian, so links update.
 
-### Weekly meeting (`08 Meetings/Weekly meetings`)
+### Meeting note (`08 Meetings/<series>`)
 `YYYY-MM-DD Weekly meeting`, created by **New meeting note** for the coming Thursday. Properties: `kind: meeting`, `date`. It fills itself with the 7 days before `date`: experiments edited, to-dos ticked done (`done_on`), papers imported, and open to-dos flagged `meeting`.
 
 The deck is **one rolling PowerPoint per term** on Google Drive (newest week's slides first). The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the meeting series' note and opens that location with this computer's default app. The location is either a folder with all the decks in, or the path to one deck file. Update both paths at the start of each term.

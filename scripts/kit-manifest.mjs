@@ -84,7 +84,7 @@ const PLANNING_DESC = {
   "07 How-tos/Obsidian/Hotkeys.md": "Recommended hotkeys (Alt + first letter); never set for you",
   "07 How-tos/Obsidian/Set up ZotLit.md": "Checklist: ZotLit's note folder and template folder",
   "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
-  "08 Meetings/Weekly meetings/Weekly meetings.md": "Meeting series hub",
+  "08 Meetings/Meetings.md": "Meetings hub: next meeting of each series",
 };
 const ZOTLIT = ["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
 CONFIG.planning = {

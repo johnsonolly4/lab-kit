@@ -31,6 +31,7 @@ A **New meeting series** command (and a button on each series hub) asks name, in
 - New dependencies: none
 
 ### Phase 2 — Button, docs, checklist
+_Part done 2026-10-08 with the Meetings hub (release-test fix b): button template `new-meeting-series`, `kits/planning/08 Meetings/Meetings.md` (the Weekly meetings hub no longer exists)._
 - Depends on: Phase 1
 - Files: `docs/plans/kit-files/planning/settings/meta-bind-buttons.json` (template `new-meeting-series`, icon, command `lab-kit:new-meeting-series`), `kits/planning/08 Meetings/Weekly meetings/Weekly meetings.md:13` and `Meeting series.md` button rows, `tests/planning-buttons.test.ts` (already checks every `BUTTON[…]` id), `README.md` commands list, `docs/obsidian-test-checklist.md` (new item), BACKLOG (tick the item, date + source).
 - Done when: tests and lint pass; the buttons test fails without the template entry; checklist item exists for the owner to try the command and button in test-vault (phone width too).

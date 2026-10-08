@@ -1,6 +1,6 @@
 // Phase 3: the planning kit's files (kits/planning): roles, policies, installs next to an old copy of the suite without overwriting it.
 import { describe, it, expect } from "vitest";
-import { readdirSync, readFileSync, statSync } from "fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { applyManaged, kitText, offIds, planFolderReapply, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
 import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
@@ -65,7 +65,7 @@ describe("planning kit files (Phase 3)", () => {
     expect(items.every(i => i.action === "create")).toBe(true);
     expect(Object.keys(v.files)).toEqual([]);
     const out = await applyManaged(v, planning, items, null, opts);
-    for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Weekly meetings/Weekly meetings.md"]) expect(v.files[d], d).toBeDefined();
+    for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Meetings.md"]) expect(v.files[d], d).toBeDefined();
     const again = await planManaged(v, planning, out.state, planningRoles(app(), trackedRoles(planning, out.state), PLANNING_FOLDER_DEFAULTS), null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(again.every(i => i.action === "up-to-date")).toBe(true);
   });
@@ -252,14 +252,15 @@ describe("Notebook Navigator homepage (Check setup)", () => {
 
 describe("Phase 5b: the kit's meeting series", () => {
   const text = (path: string): string => readFileSync(path, "utf8");
-  it("the example series hub is a valid series (weekly, Thursday)", async () => {
-    const { parseSeries } = await import("../src/planning/meetings");
-    const raw = text("kits/planning/08 Meetings/Weekly meetings/Weekly meetings.md");
-    const field = (k: string): string => new RegExp(`^${k}:[ \\t]*(.*)$`, "m").exec(raw)?.[1].trim() ?? "";
-    const read = parseSeries({ path: "08 Meetings/Weekly meetings/Weekly meetings.md", name: "Weekly meetings", folder: "08 Meetings/Weekly meetings",
-      fm: { kind: field("kind"), interval: field("interval"), day: field("day"), start: field("start") }, ctime: 0, mtime: 0 });
-    expect(field("kind")).toBe("meeting-series");
-    expect(read).toMatchObject({ series: { interval: "weekly", day: 4 } });
+  it("no meeting series ships; the Meetings hub shows the next-meetings card and Go to has no deck link", () => {
+    expect(existsSync("kits/planning/08 Meetings/Weekly meetings")).toBe(false);
+    const hub = text("kits/planning/08 Meetings/Meetings.md");
+    expect(hub).not.toContain("kind: meeting-series");
+    expect(hub).toContain("show: next-meetings");
+    expect(hub).toContain("new-meeting-series");
+    const home = text("kits/planning/00 Home.md");
+    expect(home).toContain("extra: Meetings | Meetings |");
+    expect(home).not.toContain("lab-kit:open-deck");
   });
 
   it("the meeting template reads the hand-over and links its series; the homepage has the next-meetings card", () => {

@@ -136,9 +136,9 @@
 - [ ] With Obsidian open, change a planning folder in `test-vault/.obsidian/plugins/lab-kit/data.json` from outside: the setting shows the new value without a reload; change another setting in Obsidian, then check data.json still has the outside value
 - [ ] Planning kit switched off: the homepage blocks say the planning kit is off (no raw code)
 
-## 6g. Phase 5b: meeting series (needs `npm run dev`; Restore kit original on 00 Home, To-do and Weekly meeting, and on Weekly meetings if you already had it)
+## 6g. Phase 5b: meeting series (needs `npm run dev`; Restore kit original on 00 Home, To-do and Weekly meeting; an older vault keeps its Weekly meetings note)
 - [ ] 00 Home shows a **Next meetings** card with the series, the next date (Thu, d MMM) and how often; today's meeting says "today"
-- [ ] Add two more series (copy Weekly meetings into `08 Meetings/Group meeting/` with `interval: fortnightly`, and `08 Meetings/Review/` with `interval: monthly`, `day: Thu`, `start` = a 2nd Thursday): the card lists all three with the right dates
+- [ ] Add two more series (make them with **New meeting series**, or copy a series hub into `08 Meetings/Group meeting/` with `interval: fortnightly`, and `08 Meetings/Review/` with `interval: monthly`, `day: Thu`, `start` = a 2nd Thursday): the card lists all three with the right dates
 - [ ] **New meeting** (command, and the New meeting note button) asks "Which meeting?" with three series, none with one; the note is named `YYYY-MM-DD <Series>`, sits in the series' folder, has `series` and `since`, and its lists cover the time since the last meeting of that series
 - [ ] **New to-do** asks "Raise at which meeting?" with several series (none with one); pick one: the to-do has `meeting: "[[Series]]"`. That series' meeting note lists it under Flagged for this meeting, the others don't; an old `meeting: true` to-do shows under the first series by name
 - [ ] **Open meeting deck** asks which series; the deck path comes from that series' note
@@ -165,7 +165,7 @@
 ## 6i. Test-vault feedback round (2026-10-08; needs `npm run dev`)
 - [ ] Review update… and Manage kit files: each row starts with a chip (symbol + words, coloured); readable in light, dark and phone width; "Kept…" group title explains itself
 - [ ] 00 Home: the Go to bar shows an icon on each button; the top row's third button is **New lab entry** (flask) and works (Restore kit original on 00 Home, then Check setup → Meta Bind → Fix if the button is missing)
-- [ ] Weekly meetings hub: `go-deck` and `new-meeting` buttons show (Check setup → Meta Bind → Fix first)
+- [ ] Fresh install: no meeting series; `08 Meetings/Meetings.md` shows the three buttons (Check setup → Meta Bind → Fix first) and "No meeting series yet."; Go to → Meetings opens it; Go to has no Meeting deck; New meeting series then makes a series that the card lists
 - [ ] Tidy up notes on a copy of your notes: "Notes outside the folder layout" lists only notes really outside the kit's folders
 - [ ] `07 How-tos/Obsidian/Hotkeys.md` is installed (Review update…); try two of its keys in Settings → Hotkeys
 

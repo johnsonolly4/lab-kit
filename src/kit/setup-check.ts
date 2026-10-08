@@ -199,7 +199,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
   if (s.planning) {
     const series = s.meetings ?? [];
     if (!series.length) out.push({ id: "meetings:none", group: "Meetings", label: "Meeting series", ok: true, optional: true,
-      detail: "No meeting series yet. A note with kind: meeting-series, interval, day and start in the meetings folder makes one." });
+      detail: "No meeting series yet. The New meeting series command makes one." });
     for (const m of series) {
       const ok = !m.error;
       out.push({ id: `meetings:${m.path}`, group: "Meetings", label: m.name, ok,

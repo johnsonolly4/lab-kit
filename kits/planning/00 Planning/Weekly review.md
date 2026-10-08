@@ -21,7 +21,7 @@ r6: false
 >
 > `INPUT[toggle:r4]` **Process one paper** - write its takeaway `BUTTON[go-lit]`
 >
-> `INPUT[toggle:r5]` **Thursday prep** - flag anything for the meeting `BUTTON[go-meetings]`
+> `INPUT[toggle:r5]` **Meeting prep** - flag anything for the meeting `BUTTON[go-meetings]`
 >
 > `INPUT[toggle:r6]` **First Friday of the month:** archive finished to-dos older than 30 days `BUTTON[archive-todos]`
 >

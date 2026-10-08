@@ -204,7 +204,7 @@
       "actions": [
         {
           "type": "open",
-          "link": "[[Weekly meetings]]",
+          "link": "[[Meetings]]",
           "newTab": false
         }
       ]
@@ -243,6 +243,18 @@
         {
           "type": "command",
           "command": "lab-kit:new-meeting"
+        }
+      ]
+    },
+    {
+      "label": "New meeting series",
+      "icon": "calendar-range",
+      "style": "default",
+      "id": "new-meeting-series",
+      "actions": [
+        {
+          "type": "command",
+          "command": "lab-kit:new-meeting-series"
         }
       ]
     },

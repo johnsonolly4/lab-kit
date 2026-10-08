@@ -101,7 +101,7 @@ export class PlanningCommands {
   /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
   private async pickSeries(): Promise<Series | null> {
     const all = this.seriesList();
-    if (!all.length) { new Notice(`No meeting series yet: a note in ${this.folders.meetings} with kind: meeting-series, interval, day and start.`); return null; }
+    if (!all.length) { new Notice("No meeting series yet. Make one with the meeting series command first."); return null; }
     return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
   }
 

@@ -102,7 +102,7 @@
       "role": "home",
       "path": "00 Home.md",
       "version": "0.5.2",
-      "sha256": "62c0b88b2a190efd51c4a7075eae9e5757125551318319962058d8323f17e9a2",
+      "sha256": "e898b8e1414e858d49f0e686eb50969bbfa46025da3964d14eed834e4cbcbb8c",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -138,7 +138,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "0.5.2",
-      "sha256": "1956c9dc8c6d187baf24a02af52469b2b057a7db86529350b3b480fd6c3ffe48",
+      "sha256": "3b210262dca6c4d94442ef942d9accc6e20f6052c557968d6222815605b5831e",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -164,7 +164,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "0.5.2",
-      "sha256": "8f2639c398e5e0adaf8a5fef761f14aeeb5d0812a825253c058d92d66f4ae97a",
+      "sha256": "e781aaa75c6d661c55cc7e470782d8d0b7afc7dbc9171718464d2783d729bc9d",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "f5f56520e714193735fb5da4330a0942d11413658c00a5e78e94077be2e47410",
+      "sha256": "1ab0043e527d1380c069827dcb22b736c868dd5a77bb605432024276400fd7cc",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -208,15 +208,15 @@
       "needs": "plugin:zotlit"
     },
     {
-      "id": "note-weekly-meetings-weekly-meetings-md",
+      "id": "note-meetings-md",
       "kind": "note",
-      "src": "08 Meetings/Weekly meetings/Weekly meetings.md",
+      "src": "08 Meetings/Meetings.md",
       "role": "meetings",
-      "path": "Weekly meetings/Weekly meetings.md",
+      "path": "Meetings.md",
       "version": "0.5.2",
-      "sha256": "6893fe726c9ee1592922d85cffd6590084d1ab1e61f0ccbee04e4d7aadb6cddb",
+      "sha256": "50ddc28b7d09f4826a0b5b71f7c69163baed84be158fe5ae53d83741db5dbe82",
       "renamedFrom": [],
-      "desc": "Meeting series hub",
+      "desc": "Meetings hub: next meeting of each series",
       "policy": "keep"
     },
     {
@@ -250,7 +250,7 @@
       "role": "planning",
       "path": "Weekly review.md",
       "version": "0.5.2",
-      "sha256": "7a095795285158b6f1ce47d99fa47a8632c0a5d5ece331929ddc7663e2a0288e",
+      "sha256": "0daf59028c07abdb56023355aea096fe4180f003554453f8b82e0ec229516187",
       "renamedFrom": [],
       "desc": "Weekly review note",
       "policy": "keep"
@@ -387,6 +387,7 @@
   "removed": [
     "tpl-actions-add-to-shopping-list-md",
     "tpl-actions-archive-old-to-dos-md",
-    "tpl-actions-sort-inbox-md"
+    "tpl-actions-sort-inbox-md",
+    "note-weekly-meetings-weekly-meetings-md"
   ]
 }

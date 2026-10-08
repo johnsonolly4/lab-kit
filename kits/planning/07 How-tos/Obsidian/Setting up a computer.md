@@ -17,7 +17,7 @@ cssclasses:
 |---|---|---|
 | **Obsidian** - full installer, not just the in-app update | ZotLit needs installer 1.13.4 or newer | Settings > About > *Installer version* |
 | **Zotero** 7 or newer | Reading and highlighting | Help > About Zotero |
-| **Google Drive for desktop** | Meeting deck button opens the deck through it | The deck path in [[Weekly meetings]] opens |
+| **Google Drive for desktop** | Meeting deck button opens the deck through it | The deck path in your meeting series note opens |
 
 ## 2. Zotero add-ons and settings
 
@@ -47,7 +47,7 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 
 ## 4. Every term
 
-- Update **both** deck paths, `deck_windows` and `deck_mac`, in [[Weekly meetings]].
+- Update **both** deck paths, `deck_windows` and `deck_mac`, in your meeting series note.
 
 ## 5. Quick test on the new computer
 
