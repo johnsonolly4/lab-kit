@@ -102,7 +102,7 @@
       "role": "home",
       "path": "00 Home.md",
       "version": "0.5.2",
-      "sha256": "f40878b30f7325b1c3230dcdc36589df8010b58a4f4047ae71f2a3070496cd45",
+      "sha256": "62c0b88b2a190efd51c4a7075eae9e5757125551318319962058d8323f17e9a2",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -138,7 +138,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "0.5.2",
-      "sha256": "0c2388f27a7399a36ec152f5e1df4efeff3604eff17cdce994b8e4d7d4ed2336",
+      "sha256": "1956c9dc8c6d187baf24a02af52469b2b057a7db86529350b3b480fd6c3ffe48",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -164,7 +164,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "0.5.2",
-      "sha256": "b1f250d984308362490f1e7651cdab3be2788ca5d3a09054c365c9f3a22b8341",
+      "sha256": "8f2639c398e5e0adaf8a5fef761f14aeeb5d0812a825253c058d92d66f4ae97a",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "16bb0f85452d484ac2470b9cf68171f0b440fd4aaa160286033f3352a2126c7c",
+      "sha256": "f5f56520e714193735fb5da4330a0942d11413658c00a5e78e94077be2e47410",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -214,7 +214,7 @@
       "role": "meetings",
       "path": "Weekly meetings/Weekly meetings.md",
       "version": "0.5.2",
-      "sha256": "b05c2dfbfaea871ece14b44f763a6047bd6bc52d2841ac6efaf8ed2ea8c069ac",
+      "sha256": "6893fe726c9ee1592922d85cffd6590084d1ab1e61f0ccbee04e4d7aadb6cddb",
       "renamedFrom": [],
       "desc": "Meeting series hub",
       "policy": "keep"
@@ -285,7 +285,7 @@
       "role": "templates",
       "path": "Meeting series.md",
       "version": "0.5.2",
-      "sha256": "b365f8efcc7c65e0129b69a9bbe9797812e31ce6c602008d3ae52682081574c1",
+      "sha256": "fde02b9deca5f2f2e8b72dd95f1c300f07c61cb185a830d77d55dbf649f8af44",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },

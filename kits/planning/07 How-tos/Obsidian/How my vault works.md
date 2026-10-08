@@ -94,7 +94,7 @@ flowchart LR
 
 1. On Wednesday or Thursday morning, open [[Weekly meetings]] and press **New meeting note**.
 2. It fills itself: experiments you touched, to-dos you ticked done, papers you read, and anything you flagged for the meeting.
-3. Press **Thursday deck**, copy what you need onto this week's slides (newest week at the front).
+3. Press **Meeting deck**, copy what you need onto this week's slides (newest week at the front).
 4. After the meeting, note the outcomes and turn actions into to-dos.
 
 ## Friday review (15 minutes)

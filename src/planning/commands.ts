@@ -146,7 +146,7 @@ export class PlanningCommands {
       start = ymd(checked.date);
       break;
     }
-    const deck = await ask(this.app, `Path of the meeting deck on ${Platform.isMacOS ? "this Mac" : "this computer"} (Enter to leave empty)`);
+    const deck = await ask(this.app, `Meeting deck on ${Platform.isMacOS ? "this Mac" : "this computer"}: a folder of decks, or the path to one deck file (Enter to leave empty)`);
     if (deck === null) return;
     handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck: cleanDeckPath(deck) };
     try { await this.fromTemplate(TPL.series, root, kitJoin(root, name)); }
@@ -294,7 +294,7 @@ export class PlanningCommands {
     const isMac = Platform.isMacOS;
     const deck = deckPath(fm, isMac);
     if (!deck) {
-      new Notice(`No meeting deck set for ${isMac ? "Mac" : "this computer"} yet: add the path in ${series.name} (${isMac ? "deck_mac" : "deck_windows"}).`);
+      new Notice(`No meeting deck set for ${isMac ? "Mac" : "this computer"} yet: add a folder of decks or the path to one deck file in ${series.name} (${isMac ? "deck_mac" : "deck_windows"}).`);
       if (hub) await this.app.workspace.getLeaf(false).openFile(hub);
       return;
     }

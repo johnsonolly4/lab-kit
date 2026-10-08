@@ -206,7 +206,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
         detail: m.error ? `${m.error[0].toUpperCase()}${m.error.slice(1)}. Open the note and correct it.` : "Series is set up.",
         fix: ok ? undefined : { kind: "open-note", path: m.path } });
       if (ok && !m.deck) out.push({ id: `meetings-deck:${m.path}`, group: "Meetings", label: `${m.name}: deck for this computer`, ok: false, warn: true, optional: true,
-        detail: "No deck path set for this computer yet (deck_windows / deck_mac). Only Open meeting deck needs it.", fix: { kind: "open-note", path: m.path } });
+        detail: "No deck location set for this computer yet (deck_windows / deck_mac: a folder of decks, or the path to one deck file). Only Open meeting deck needs it.", fix: { kind: "open-note", path: m.path } });
     }
   }
 

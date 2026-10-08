@@ -223,7 +223,7 @@ Every move offers a rename first and goes through Obsidian, so links update.
 ### Weekly meeting (`08 Meetings/Weekly meetings`)
 `YYYY-MM-DD Weekly meeting`, created by **New meeting note** for the coming Thursday. Properties: `kind: meeting`, `date`. It fills itself with the 7 days before `date`: experiments edited, to-dos ticked done (`done_on`), papers imported, and open to-dos flagged `meeting`.
 
-The deck is **one rolling PowerPoint per term** on Google Drive (newest week's slides first). The **Thursday deck** button works on Windows and Mac: it runs `Extras/Templates/Actions/Open Thursday deck.md`, which picks `deck_windows` or `deck_mac` from the [[Weekly meetings]] note and opens the file through Google Drive for desktop. Update both paths at the start of each term.
+The deck is **one rolling PowerPoint per term** on Google Drive (newest week's slides first). The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the meeting series' note and opens that location with this computer's default app. The location is either a folder with all the decks in, or the path to one deck file. Update both paths at the start of each term.
 
 ### Weekly review ([[Weekly review]])
 Friday, 15 minutes: inbox, close experiments, plan next week, process one paper, Thursday prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`).
@@ -325,7 +325,7 @@ Rules: one key per command, no duplicates. Don't use `Ctrl+Alt` (it is AltGr on 
 
 1. Date heading, with **How it works** at the right-hand end - opens [[How my vault works]]
 2. Action buttons: Today's note, New to-do, New lab entry, Quick capture, Add to shopping, Search
-3. Go to: To-do board, Experiments, Projects, Literature, Chemicals, Knowledge, How-tos, Meetings, Thursday deck, Weekly review, Shopping list
+3. Go to: To-do board, Experiments, Projects, Literature, Chemicals, Knowledge, How-tos, Meetings, Meeting deck, Weekly review, Shopping list
 4. Today's focus - 3 slots side by side, Clear for tomorrow
 5. Four cards, two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count at the bottom) - **Experiments on the go** / **Projects** - **Recently read** (last 5 imports, processed or to process)
 

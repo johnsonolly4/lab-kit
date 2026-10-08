@@ -30,6 +30,8 @@ deck_mac: <% deck("deck_mac") %>
 >
 > Mac `INPUT[text(placeholder(Mac path)):deck_mac]`
 >
+> The **Meeting deck** button opens this location: either a folder with all the decks in, or the path to one deck file.
+>
 > To copy a path: on Windows, Shift + right-click the file > *Copy as path*. On a Mac, right-click the file in Finder, hold Option > *Copy ... as Pathname*. Change both at the start of each term.
 
 > [!note]- How meeting prep works

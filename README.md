@@ -183,7 +183,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | Sort inbox | Opens each Inbox note in turn and asks where it goes; Esc or Stop ends it |
 | Archive old to-dos | Moves to-dos finished more than 30 days ago into the Archive folder |
 | New meeting | A note for a meeting series (asks which when there are several) |
-| Open meeting deck | Opens the deck file of this computer |
+| Open meeting deck | Opens the deck location of this computer: set in the series' note (`deck_windows` / `deck_mac`) as a folder with all the decks in, or the path to one deck file |
 | New project · New project note | A project hub, or a note inside a project |
 | Roll over to-dos now | Carries unfinished to-dos over to today |
 

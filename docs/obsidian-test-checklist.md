@@ -125,7 +125,7 @@
 
 ## 6f. Phase 5a: planning folders, Find moved folders, homepage blocks (needs `npm run dev`)
 - [ ] Before updating: copy `00 Home.md` to `Home (Dataview).md` (old lists, to compare). Then Manage files → **Restore kit original** on 00 Home and Projects overview
-- [ ] 00 Home: Go to shows one button per folder with a hub (Planning → To-do board, Projects, Lab Book, Literature, Chemicals, Knowledge, How-tos) plus Meetings, Thursday deck, Weekly review, Shopping list; each opens the right note / runs the deck command
+- [ ] 00 Home: Go to shows one button per folder with a hub (Planning → To-do board, Projects, Lab Book, Literature, Chemicals, Knowledge, How-tos) plus Meetings, Meeting deck, Weekly review, Shopping list; each opens the right note / runs the deck command
 - [ ] This week, Inbox (+ Sort inbox), Experiments on the go, Projects, Recently read show the same notes in the same order as in `Home (Dataview).md`; tick a to-do or change a Status: the list redraws within a second
 - [ ] Projects overview: one card per project with goal, top 3 to-dos, counts; New note / New to-do / Open work
 - [ ] Settings → **Planning folders** (only with the planning kit on): empty boxes show the defaults as grey text

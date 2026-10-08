@@ -17,7 +17,7 @@ cssclasses:
 |---|---|---|
 | **Obsidian** - full installer, not just the in-app update | ZotLit needs installer 1.13.4 or newer | Settings > About > *Installer version* |
 | **Zotero** 7 or newer | Reading and highlighting | Help > About Zotero |
-| **Google Drive for desktop** | Thursday deck button opens the deck through it | The deck path in [[Weekly meetings]] opens |
+| **Google Drive for desktop** | Meeting deck button opens the deck through it | The deck path in [[Weekly meetings]] opens |
 
 ## 2. Zotero add-ons and settings
 
@@ -54,7 +54,7 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 1. `Alt+H` opens the homepage.
 2. `Alt+D` makes today's note with the template filled in.
 3. Make a ZotLit note for a paper you've already highlighted - colours land in the right sections and its filename matches the other computer.
-4. **Thursday deck** opens the deck.
+4. **Meeting deck** opens the deck (or the folder of decks).
 5. **Projects** on the homepage shows a card per project, and a card's **New note** button makes a note in that project's folder.
 6. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check Settings > Templater > *Startup templates* lists `Extras/Templates/Actions/To-do roll-over.md` (it arrives with the vault, but Templater must be enabled), then restart Obsidian.
 
