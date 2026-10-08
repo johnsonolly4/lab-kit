@@ -1,6 +1,6 @@
 # Status
 
-_Updated: 2026-10-08 by Sonnet 5.5 (release-test fix d, Sort inbox picker). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-08 by Sonnet 5.5 (new meeting series Phase 2, docs). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
@@ -9,7 +9,7 @@ Release test run 2026-10-08 in a clean test-vault (`test-vault/Release test chec
 
 ## Next (ordered: top item is the next session; plan: `docs/plans/planning-suite-kit.md`)
 0. Release-test fixes (BACKLOG "Release test 2026-10-08"), plan first, in this order: (a) DONE 2026-10-08 (tests only: folder changes re-write unedited kit files, settings tab redraws after rename; BACKLOG "Folder changes re-apply"); (b) DONE 2026-10-08 (tests only: no default series, `08 Meetings/Meetings.md` hub, Go to Meetings / no Meeting deck; BACKLOG "Left from the Meetings hub change"); (c) DONE 2026-10-08 (tests only: Esc cancels, New lab entry plugin box, lab folder template row); (d) the rest of the list (project hub kind + status: DONE 2026-10-08, not a bug, guard test added; `OLJXXXX-A` sample code: DONE 2026-10-08, tests only; Sort inbox side picker: DONE 2026-10-08, tests only, not seen; `since`: CLOSED 2026-10-08, by design (previous meeting, else one interval back); still open: Notebook Navigator settings (needs a clean-vault reproduction in Obsidian), Check setup plugins)
-1. New meeting series command + button (user, 2026-10-08; BACKLOG "No way to make a new meeting series"): asks name, interval, day, first date, deck path; makes folder + hub note; button on each series hub. Plan agreed: `docs/plans/new-meeting-series.md`; Phases 0 (rename) and 1 (command + template) are done, so next is Phase 2: README, checklist (the button template is in)
+1. DONE 2026-10-08: New meeting series command + button (user, 2026-10-08; BACKLOG "No way to make a new meeting series"): asks name, interval, day, first date, deck path; makes folder + hub note; button on each series hub. Plan agreed: `docs/plans/new-meeting-series.md`; DONE 2026-10-08 (all phases: README row, changelog, button on the Meetings hub; checklist items 6g already there)
 2. 7b script-move / help-sheet rules: wait for the owner's old paths (BACKLOG "Phase 7c leftovers"); the vault-copy run is the owner's. Not blocking
 3. (done in 0c: Esc cancels everywhere)
 4. New concept template + knowledge hub pages: Claude drafts from the plan's fields (kind: concept, summary, sources, checked), user reviews in test-vault before they ship. Plan first

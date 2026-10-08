@@ -182,6 +182,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | Add to shopping list | Adds comma-separated items to `Shopping list.md` in the Planning folder |
 | Sort inbox | Opens each Inbox note in turn and asks where it goes; Esc or Stop ends it |
 | Archive old to-dos | Moves to-dos finished more than 30 days ago into the Archive folder |
+| New meeting series | Asks name, how often, day, date of the first meeting and the deck path; makes the series folder under Meetings and its hub note. Also a button on the Meetings hub |
 | New meeting | A note for a meeting series (asks which when there are several) |
 | Open meeting deck | Opens the deck location of this computer: set in the series' note (`deck_windows` / `deck_mac`) as a folder with all the decks in, or the path to one deck file |
 | New project · New project note | A project hub, or a note inside a project |
