@@ -30,6 +30,7 @@ None.
 - [ ] Try 0.5.1 in Obsidian: checklist 6b, sections 1 and 2; Solution prep (6b) with one real stock solution; Analysis methods (6c)
 - [ ] Local `dist/` and `legacy/main.js` (gitignored, this machine only): keep or delete
 
+- [ ] Try release-test fix (b) in test-vault: checklist 6g, first and fifth lines (fresh install has no series; Meetings hub; Go to) — by 2026-10-10
 - [ ] Try release-test fix (a) in test-vault: checklist 6f, the two rename lines (settings tab open while renaming; edited template kept) — by 2026-10-10
 
 ## Known issues
