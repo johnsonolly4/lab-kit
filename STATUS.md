@@ -29,7 +29,6 @@ None.
 - [ ] Copy the personal preferences file from the adoption session to `~/.claude/CLAUDE.md` — by 2026-10-08
 - [ ] Try 0.5.1 in Obsidian: checklist 6b, sections 1 and 2; Solution prep (6b) with one real stock solution; Analysis methods (6c)
 - [ ] Local `dist/` and `legacy/main.js` (gitignored, this machine only): keep or delete
-
 - [ ] Try release-test fix (b) in test-vault: checklist 6g, first and fifth lines (fresh install has no series; Meetings hub; Go to) — by 2026-10-10
 - [ ] Try release-test fix (c) in test-vault: checklist 6i, the three new lines (Esc in each box, New lab entry, lab folder template) — by 2026-10-10
 - [ ] Try the sample-code fix in test-vault: Alt+S → Variant naming matrix in a note named `OLJ0001 - …` shows `OLJ0001-A` — by 2026-10-10
