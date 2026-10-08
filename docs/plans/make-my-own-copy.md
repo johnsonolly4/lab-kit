@@ -22,6 +22,13 @@ A button on each kit snippet row in Manage files… saves a plain Markdown copy 
 - Done when: this plan says, per snippet (28 manifest entries, `kits/lab/kit-manifest.json`), whether `labSnippets(tp, name)` can run with a stub `tp` whose form returns empty/default values, and what it returns. Snippets that cannot (forms needing a live UI) are listed with the fallback (copy the stub text, or hide the button). Decision recorded in `docs/decisions.md`.
 - New dependencies: none
 
+**Phase 1 result (spike done 2026-10-08, Node stub `tp`, form returns each field's default; not seen in Obsidian).** The kit has 14 snippet stubs (the plan's "28" counted each stub and its manifest row twice). Every snippet runs headless: `labForm` is the only UI and is stubbed; `app` reads need only a small stub (`tests/snippets-defaults.test.ts` already has one).
+- **Runs with defaults, 10 snippets:** samples, timetable, nmr, gpc, dls, results, column, rt, blank, and method (the select defaults to the first method, NMR, so "Analysis table" copies as NMR only).
+- **Returns "" with defaults, 4 snippets:** solution, recipe, raft, matrix (their required list field has an empty default). Fallback: answer an empty text field with its `placeholder` text (e.g. "solute 1, solute 2"); tried, all four then give valid tables with example names.
+- **Caveat, sample codes:** samples, timetable, matrix, nmr, gpc, dls and results build codes from the note's name and the Initials setting, so a copy run outside a lab note would hold a fixed code (`ABCXXXX-A`) and the date line "Made on" is fixed at copy time. The Phase 2 engine must run with a neutral note name and say so in the Notice, or the copy keeps the code of whatever note is open.
+- **Needs a user decision before Phase 3:** the "Analysis table" row (14). Recommendation: no button on it (it is only NMR when run headless; Methods-folder entries are out of scope).
+- Spike script was scratch only (not committed); Phase 2 turns it into `tests/snippet-copy.test.ts`.
+
 ### Phase 2 — Engine: build the copy
 - Depends on: Phase 1
 - Files: new `src/kit/snippet-copy.ts` (pure: name the copy `<name> (mine)`, avoid clashes, write only if absent), `tests/snippet-copy.test.ts`; Engine change → fixtures: copy output compared with the snippet run on the stub `tp`.

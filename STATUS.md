@@ -1,6 +1,6 @@
 # Status
 
-_Updated: 2026-10-08 by Sonnet 5.5 (New concept template + knowledge rules drafted). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-08 by Sonnet 5.5 (Make my own copy, Phase 1 spike). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
@@ -14,7 +14,7 @@ New concept template + knowledge rules drafted 2026-10-08 (`kits/planning/Extras
 4. DONE 2026-10-08: New concept template + knowledge rules drafted (tests only); the user reviews the wording in test-vault (checklist 6i, last line)
 5. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)
 6. Multi-kit round fixes, looked at 2026-10-08, nothing built: every open item needs the user (phone-width Set up overlap needs the screenshot or an Obsidian look; To-do box text, Set up row text need wording OK; Status board colours is a decision) (BACKLOG "Multi-kit round bugs" / "quick changes"; "Decisions needed": minimum Obsidian version, Status board colours)
-7. "Make my own copy" for kit snippets: PLANNED 2026-10-08, `docs/plans/make-my-own-copy.md`; next is Phase 1 (spike: can snippets run headless with empty answers), then 2 engine, 3 button, 4 split `labSnippets.js` (BACKLOG "v0.4 quick changes")
+7. "Make my own copy" for kit snippets: `docs/plans/make-my-own-copy.md`; Phase 1 spike DONE 2026-10-08 (all 14 run headless; 4 need placeholder text as answers; result in the plan); next is Phase 2 engine (`src/kit/snippet-copy.ts`), then 3 button (needs the user's call on the Analysis table row, BACKLOG), 4 split `labSnippets.js`
 8. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
