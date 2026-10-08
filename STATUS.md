@@ -1,6 +1,6 @@
 # Status
 
-_Updated: 2026-10-09 by Sonnet 5.5 (Make my own copy Phase 3 button). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-09 by Sonnet 5.5 (token templates Phase 1 spike). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 0.5.2 (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 
@@ -14,7 +14,7 @@ Analysis table has a "combined results table" switch (built 2026-10-08, tests on
 4. DONE 2026-10-08: New concept template + knowledge rules drafted (tests only); the user reviews the wording in test-vault (checklist 6i, last line)
 5. Tutorial with screenshots (user, 2026-10-07): rewrite `docs/tutorial.md` from a fresh demo vault; Claude drives the screen if computer use is on, else a shot list for the user. Screenshots must show no real names or paths (public repo). Plan first (`/phase-plan`) Waits until the planning kit is out of preview (user, 2026-10-07)
 6. Multi-kit round fixes, looked at 2026-10-08, nothing built: every open item needs the user (phone-width Set up overlap needs the screenshot or an Obsidian look; To-do box text, Set up row text need wording OK; Status board colours is a decision) (BACKLOG "Multi-kit round bugs" / "quick changes"; "Decisions needed": minimum Obsidian version, Status board colours)
-7. "Make my own copy" for kit snippets: `docs/plans/make-my-own-copy.md`; Phase 1 spike DONE 2026-10-08; Phase 2 engine DONE 2026-10-09; Phase 3 button DONE 2026-10-09 (`src/kit/snippet-copy-ui.ts`, name box per copy, no button on Analysis table; tests only, not seen in Obsidian; BACKLOG "Make my own copy, Phase 3"); Phase 4 split DROPPED, replaced by token templates: plan `docs/plans/snippet-token-templates.md` (agreed 2026-10-09), next is its Phase 1 (spike + format spec, no code); snippet groups by type are in BACKLOG "Future features"
+7. "Make my own copy" for kit snippets: `docs/plans/make-my-own-copy.md`; Phase 1 spike DONE 2026-10-08; Phase 2 engine DONE 2026-10-09; Phase 3 button DONE 2026-10-09 (`src/kit/snippet-copy-ui.ts`, name box per copy, no button on Analysis table; tests only, not seen in Obsidian; BACKLOG "Make my own copy, Phase 3"); Phase 4 split DROPPED, replaced by token templates: plan `docs/plans/snippet-token-templates.md` (agreed 2026-10-09), Phase 1 DONE 2026-10-09 (spike: 6 templates = script output byte for byte in 21 scenarios; spec + templates in the plan; Sample list / timetable lose the "Also add" toggles, user decision); next is its Phase 2 (engine `src/kit/snippet-template.ts` + tests, plan first); open point for Phase 3: chemical-name suggestions on the Solvent field (BACKLOG); snippet groups by type are in BACKLOG "Future features"
 8. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running
