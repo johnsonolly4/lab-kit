@@ -159,7 +159,16 @@ class KitSettingTab extends PluginSettingTab {
     ];
     const intro: SettingGroupItem = { name: "Where the planning kit's notes go", desc: "And what its lists read. Changing a folder here doesn't move notes: rename the folder in Obsidian and the setting follows. Moved it outside Obsidian? Use Find moved folders.",
       render: b => { b.addButton(btn => btn.setButtonText("Find moved folders…").onClick(() => this.ctl.findMovedFolders())); } };
-    return [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    const countdown: SettingGroupItem = { name: "Due-date countdown", desc: "A badge on the to-do board card with the days left until its due property (for example 3d, Today, 2d late). Only to-dos with countdown: true shows it for the notes you pick; every to-do shows it for any note with a due date. Done cards show none.",
+      render: b => {
+        b.addDropdown(d => d.addOption("off", "Off").addOption("marked", "Only to-dos with countdown: true").addOption("all", "Every to-do with a due date")
+          .setValue(this.ctl.kit.dueCountdown).onChange(async v => {
+            this.ctl.kit.dueCountdown = v === "marked" || v === "all" ? v : "off";
+            await this.ctl.save();
+            this.ctl.dueCountdownChanged?.();
+          }));
+      } };
+    return [intro, countdown, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
@@ -252,6 +261,9 @@ export class KitController {
     findMoved: () => this.findMovedFolders(),
   };
   findMovedFolders(): void { new MovedFoldersModal(this.app, this).open(); }
+
+  /** Set by the plugin when the to-do engine runs: redraws the board's countdown badges. */
+  dueCountdownChanged: (() => void) | null = null;
 
   /** Set by the settings tab: redraws it (after settings changed on disk). */
   redrawSettings: (() => void) | null = null;

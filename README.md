@@ -153,7 +153,7 @@ Settings → Lab Kit is searchable and grouped:
 | **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Backup folder |
 | **Kit folders and setup** | Templater **Set up**, **Check setup…**, **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, console log |
 | **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder |
-| **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…** |
+| **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…**, **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card) |
 | **Snippet menu** | A Lucide icon for each snippet |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |

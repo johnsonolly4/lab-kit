@@ -1,6 +1,6 @@
 // Phase 4a: the to-do board rules (src/planning/todo.ts), including the 2026-10-07 Obsidian Sync scenarios.
 import { describe, it, expect } from "vitest";
-import { applyPatch, cardDate, changePatch, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { applyPatch, cardDate, changePatch, dueCountdown, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
 
 const day = (s: string): Date => parseDay(s)!;
 const WED = day("2026-10-07");   // a Wednesday
@@ -136,5 +136,34 @@ describe("which devices roll over", () => {
     expect(rollsOnDevice(null, false)).toBe(true);
     expect(rollsOnDevice(null, true)).toBe(false);
     expect(rollsOnDevice("maybe", false)).toBe(false);   // like the old template: any other stored value means off
+  });
+});
+
+describe("due-date countdown", () => {
+  const cd = (fm: Partial<TodoFm>, mode: "off" | "marked" | "all" = "all", now = WED) => dueCountdown(todo(fm), mode, now);
+  it("counts whole days", () => {
+    expect(cd({ due: "2026-10-07" })).toEqual({ text: "Today", level: "soon" });
+    expect(cd({ due: "2026-10-08" })).toEqual({ text: "Tomorrow", level: "soon" });
+    expect(cd({ due: "2026-10-09" })).toEqual({ text: "2d", level: "soon" });
+    expect(cd({ due: "2026-10-12" })).toEqual({ text: "5d", level: "later" });
+    expect(cd({ due: "2026-10-05" })).toEqual({ text: "2d late", level: "late" });
+  });
+  it("crosses a month end and the clock change", () => {
+    expect(cd({ due: "2026-11-02" }, "all", day("2026-10-30"))?.text).toBe("3d");
+    expect(cd({ due: "2026-10-26" }, "all", day("2026-10-24"))?.text).toBe("2d");   // Europe clocks go back 25 -> 26 Oct
+    expect(cd({ due: "2026-03-30" }, "all", day("2026-03-27"))?.text).toBe("3d");   // and forward 29 Mar
+  });
+  it("ignores the time of day", () => {
+    expect(cd({ due: "2026-10-08" }, "all", new Date(2026, 9, 7, 23, 59))?.text).toBe("Tomorrow");
+  });
+  it("shows nothing when off, done, unmarked or without a valid date", () => {
+    expect(cd({ due: "2026-10-09" }, "off")).toBeNull();
+    expect(cd({ due: "2026-10-09", done: true })).toBeNull();
+    expect(cd({ due: "2026-10-09" }, "marked")).toBeNull();
+    expect(cd({ due: "2026-10-09", countdown: false }, "marked")).toBeNull();
+    expect(cd({ due: "2026-10-09", countdown: true }, "marked")?.text).toBe("2d");
+    expect(cd({ due: "" })).toBeNull();
+    expect(cd({ due: "2026-02-30" })).toBeNull();
+    expect(cd({})).toBeNull();
   });
 });

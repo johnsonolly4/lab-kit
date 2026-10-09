@@ -69,7 +69,8 @@ export default class LabKitPlugin extends Plugin {
   startPlanning(): void {
     const planning = this.kit.kit.kits[PLANNING_KIT];
     if (this.planning || !planning?.enabled || !planning.managed) return;
-    const engine = new TodoEngine(this, () => todoFolder(this.kit.kit.planningFolders));
+    const engine = new TodoEngine(this, () => todoFolder(this.kit.kit.planningFolders), () => this.kit.kit.dueCountdown);
+    this.kit.dueCountdownChanged = () => engine.retag();
     engine.start();
     this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine, () => this.kit.kit, this.kit.folderGuard);
     this.planning.register();

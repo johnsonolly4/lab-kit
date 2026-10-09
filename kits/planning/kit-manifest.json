@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "0.5.2",
-      "sha256": "84b5139a99a3d4abd2b2f5e19242b34e2c20fd64b491790716e25eaab26ed6b7",
+      "sha256": "f8829a03380b1f7433a4c1689a29305335900d2fb5ff165c12b7f85d6a01905c",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "3d8db6b33445d687923c1d95095df09b65293515a0248228b05126d81730452e",
+      "sha256": "af76027df6d2a7235fbe478052e80af2e44768942a469ba15fefe0182d080903",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -329,7 +329,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "0.5.2",
-      "sha256": "14ed5d9f5f3282341a2cf8e4d0811f372fd5150abf1c2e8ced52a0b40a3049ea",
+      "sha256": "4d166d02a2f7e3b7985e9dcbd8146eb536c0ada77ea8f7228ea0c28706b20ddf",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },

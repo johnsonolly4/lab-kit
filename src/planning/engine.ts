@@ -3,7 +3,7 @@
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
 import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
-import { applyPatch, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, type TodoFm, type TodoSnap } from "./todo";
+import { applyPatch, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
 
 /** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
 export const ROLL_KEY = "vt-rollover";
@@ -23,7 +23,10 @@ export class TodoEngine {
   private warned = false;
 
   /** `folder` is read each time, so a changed Planning folder setting needs no reload. A folder that doesn't exist matches nothing. */
-  constructor(private plugin: Plugin, private folder: () => string) {}
+  constructor(private plugin: Plugin, private folder: () => string, private countdown: () => CountdownMode = () => "off") {}
+
+  /** Draw the board's tags again (a setting changed). */
+  retag(): void { this.queueTag(); }
 
   get app(): App { return this.plugin.app; }
 
@@ -91,7 +94,7 @@ export class TodoEngine {
       plugin.register(() => window.clearTimeout(timer));
       plugin.registerInterval(window.setInterval(() => {
         const today = ymd(new Date());
-        if (today !== lastRun) { lastRun = today; this.runRollOver(); }
+        if (today !== lastRun) { lastRun = today; this.runRollOver(); this.queueTag(); }   // the countdown counts days
       }, RECHECK));
       plugin.register(() => this.cleanUp());
     });
@@ -167,7 +170,7 @@ export class TodoEngine {
     window.requestAnimationFrame(() => this.tag());
   }
 
-  /** Every kanban column gets data-vt-group="<its name>" (the hidden measuring column has none); carried-over cards get vt-rolled. */
+  /** Every kanban column gets data-vt-group="<its name>" (the hidden measuring column has none); carried-over cards get vt-rolled; cards with a countdown get data-vt-due. */
   private tag(): void {
     this.tagQueued = false;
     const root = this.app.workspace.containerEl;
@@ -181,6 +184,10 @@ export class TodoEngine {
         const f = this.cardFile(card);
         const fm = f ? this.fm(f) : null;
         card.classList.toggle("vt-rolled", !!fm && fm.rolled === true && fm.done !== true);
+        const cd = fm ? dueCountdown(fm, this.countdown(), new Date()) : null;
+        const el = card as HTMLElement;
+        if (cd) { el.dataset.vtDue = cd.text; el.dataset.vtDueLevel = cd.level; }
+        else { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
       } catch (e) { console.error("Lab Kit to-do engine", e); }
     }
   }
@@ -190,5 +197,6 @@ export class TodoEngine {
     const root = this.app.workspace.containerEl;
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-group]"))) delete el.dataset.vtGroup;
     for (const el of Array.from(root.querySelectorAll(".vt-rolled"))) el.classList.remove("vt-rolled");
+    for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-due]"))) { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
   }
 }

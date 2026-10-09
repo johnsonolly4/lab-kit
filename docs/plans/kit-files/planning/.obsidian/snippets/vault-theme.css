@@ -345,6 +345,24 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   border-color: rgb(var(--vt-done));
 }
 
+/* Due-date countdown (Settings > Lab Kit > Due-date countdown): the plugin sets data-vt-due
+   ("3d", "Today", "2d late") and data-vt-due-level (later / soon / late) on the card. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due]::after {
+  content: attr(data-vt-due);
+  position: absolute;
+  inset-inline-end: 8px;
+  bottom: 6px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: var(--font-ui-smaller);
+  line-height: 1.5;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  pointer-events: none;
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="soon"]::after { color: rgb(var(--vt-waiting-text)); background: rgba(var(--vt-waiting), var(--vt-tint)); }
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="late"]::after { color: rgb(var(--vt-overdue-text)); background: rgba(var(--vt-overdue), var(--vt-tint)); }
+
 /* Card layout. Obsidian places each card part with inline styles
    (title: top 8px, height 24px; done: top 40px, height 40px; card 88px tall,
    and the slot height is fixed from those). The !important rules re-place

@@ -6,7 +6,7 @@
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
 
 /** The properties of a to-do note this engine reads. */
-export interface TodoFm { kind?: unknown; day?: unknown; done?: unknown; done_on?: unknown; planned?: unknown; rolled?: unknown }
+export interface TodoFm { kind?: unknown; day?: unknown; done?: unknown; done_on?: unknown; planned?: unknown; rolled?: unknown; due?: unknown; countdown?: unknown }
 /** What the engine last saw of a card: tells a drag or tick from its own writes. */
 export interface TodoSnap { day: string; done: boolean }
 /** Properties to set and to remove in one write. */
@@ -100,4 +100,22 @@ export function rollOverPatch(fm: TodoFm, mtime: Date, now: Date): { patch: Todo
 export function applyPatch(x: Record<string, unknown>, p: TodoPatch): void {
   for (const [k, v] of Object.entries(p.set)) x[k] = v;
   for (const k of p.remove) delete x[k];
+}
+
+/** Due-date countdown on the board: off, only to-dos that set `countdown: true`, or every to-do with a due date. */
+export type CountdownMode = "off" | "marked" | "all";
+/** `level`: "late" (overdue), "soon" (today to 2 days), "later". */
+export interface Countdown { text: string; level: "late" | "soon" | "later" }
+
+/** The badge for a card: null when off, done, not marked (mode "marked") or with no valid `due`. Whole local days, so DST can't shift it. */
+export function dueCountdown(fm: TodoFm, mode: CountdownMode, now: Date): Countdown | null {
+  if (mode === "off" || fm.done === true) return null;
+  if (mode === "marked" && fm.countdown !== true) return null;
+  const due = parseDay(fm.due);
+  if (!due) return null;
+  const n = Math.round((due.getTime() - dayOf(now).getTime()) / 864e5);
+  if (n < 0) return { text: `${-n}d late`, level: "late" };
+  if (n === 0) return { text: "Today", level: "soon" };
+  if (n === 1) return { text: "Tomorrow", level: "soon" };
+  return { text: `${n}d`, level: n <= 2 ? "soon" : "later" };
 }
