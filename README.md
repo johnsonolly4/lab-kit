@@ -168,6 +168,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Insert empty calc block | Adds a small example calc table at the cursor |
 | Insert lab header block | Adds the hazard / data-folder header at the cursor |
 | New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
+| New chemical | A new note from the Chemical database template in your Chemical folder, opened as Untitled (needs Templater) |
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |
@@ -189,6 +190,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | New meeting | A note for a meeting series (asks which when there are several) |
 | Open meeting deck | Opens the deck location of this computer: set in the series' note (`deck_windows` / `deck_mac`) as a folder with all the decks in, or the path to one deck file |
 | New project · New project note | A project hub, or a note inside a project |
+| New concept | A knowledge note: asks title and topic, files it in the Knowledge folder under the topic |
 | Roll over to-dos now | Carries unfinished to-dos over to today |
 
 ## Privacy & permissions

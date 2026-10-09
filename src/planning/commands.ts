@@ -22,6 +22,7 @@ export const TPL = {
   series: { id: "tpl-meeting-series-md", dest: "Meeting series.md" },
   project: { id: "tpl-project-hub-md", dest: "Project hub.md" },
   projectNote: { id: "tpl-new-project-note-md", dest: "New project note.md" },
+  concept: { id: "tpl-new-concept-md", dest: "New concept.md" },
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
@@ -60,6 +61,7 @@ export class PlanningCommands {
     add("new-meeting-series", "New meeting series", () => this.newSeries());
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
     add("new-project-note", "New project note", () => this.newProjectNote());
+    add("new-concept", "New concept", () => this.fromTemplate(TPL.concept, this.folders.knowledge));   // the template asks title + topic and files the note
     add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
     // Desktop only: opening a file in another app needs Electron
     this.plugin.addCommand({

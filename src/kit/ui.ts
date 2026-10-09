@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
 import { ask } from "../planning/ask";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
 import type { FolderGuardActions } from "./folder-guard";
@@ -293,6 +293,7 @@ export class KitController {
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
+    plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
@@ -378,6 +379,21 @@ export class KitController {
       if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
     finally { delete w.labKitPresetTitle; }
+  }
+
+  /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Templater. */
+  async newChemical(): Promise<void> {
+    const tracked = this.managed.stateOf(CHEMICAL_TEMPLATE_ID)?.path;
+    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Chemical database template.md")]
+      .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
+    const target = newChemicalTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, chemicalFolder: this.kit.chemicalFolder });
+    if ("error" in target) { new Notice(target.error); return; }
+    try {
+      await ensureFolder(this.app.vault, target.folder);
+      const folder = this.app.vault.getFolderByPath(target.folder);
+      if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
+      if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+    } catch (e) { console.error(e); new Notice("New chemical failed. See the developer console for details."); }
   }
 
   /** Opens the Check setup window. */

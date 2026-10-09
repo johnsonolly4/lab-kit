@@ -5,7 +5,7 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, newLabEntryTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, newChemicalTarget, newLabEntryTarget } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -384,6 +384,16 @@ describe("lab kit completion (Phase 2)", () => {
     expect(newLabEntryTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
     expect(newLabEntryTarget({ ...ok, labFolder: "" })).toHaveProperty("error", expect.stringContaining("Lab notes folder"));
     expect(newLabEntryTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Lab Book Template"));
+  });
+});
+
+describe("New chemical", () => {
+  it("says what is missing, else gives the template and folder", () => {
+    const ok = { templater: true, template: "Extras/Templates/Lab Kit/Chemical database template.md", chemicalFolder: " 05 Chemicals/Chemicals/ " };
+    expect(newChemicalTarget(ok)).toEqual({ template: ok.template, folder: "05 Chemicals/Chemicals" });
+    expect(newChemicalTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
+    expect(newChemicalTarget({ ...ok, chemicalFolder: "" })).toHaveProperty("error", expect.stringContaining("Chemical folder"));
+    expect(newChemicalTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Chemical database template"));
   });
 });
 

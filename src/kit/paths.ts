@@ -238,6 +238,7 @@ export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder">): 
 
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
+export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";
 
 /** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
 export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
@@ -246,5 +247,14 @@ export function newLabEntryTarget(o: { templater: boolean; template: string | nu
   const folder = kitJoin(o.labFolder.trim());
   if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
   if (!o.template) return { error: "The Lab Book Template is not installed. Install it from Manage kit files." };
+  return { template: o.template, folder };
+}
+
+/** What New chemical needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
+export function newChemicalTarget(o: { templater: boolean; template: string | null; chemicalFolder: string }): { template: string; folder: string } | { error: string } {
+  if (!o.templater) return { error: "New chemical needs the Templater plugin. Install and enable it, then try again." };
+  const folder = kitJoin(o.chemicalFolder.trim());
+  if (!folder) return { error: "Set the Chemical folder in Lab Kit settings first." };
+  if (!o.template) return { error: "The Chemical database template is not installed. Install it from Manage kit files." };
   return { template: o.template, folder };
 }
