@@ -24,6 +24,13 @@ After a planning, lab or chemical folder is renamed or changed in settings, the 
 - Done when: the failing case is named in `docs/plans` ("Phase 1 result") and BACKLOG; or all pass, then ask the user for exact Obsidian steps. No fix in this phase unless it is a one-line change in the same file set.
 - New dependencies: none
 
+#### Phase 1 result (2026-10-09, `tests/base-folders.test.ts`, 19 tests, tests only, not seen in Obsidian)
+- Works: all three bases, unedited and at the current version, are rewritten after a folder setting change and after a vault rename of the planning folder, the lab Notes folder, the Lab Book parent folder, the Chemicals folder and the Chemicals parent folder. Edited bases (with or without a saved original) are put in `kept`.
+- Gap 1 (named failing case): a base whose recorded `installedVersion` differs from the kit's is skipped by `planFolderReapply` (`src/kit/managed.ts:182`) and is in neither `rewrite` nor `kept`, so nothing is rewritten and no notice names it. The filter stays on the old folder and the board is empty.
+- Gap 2: renaming only the `To-dos` subfolder (`00 Planning/To-dos`) changes no setting (it is always `<planning>/To-dos`), so nothing follows it and nothing is reported.
+- Not reproduced: the user's exact failure (planning folder renamed, board empty). It matches gap 1 only if the recorded version was older than the kit's; the test vault showed 0.5.2. Need the exact Obsidian steps (BACKLOG item).
+- Phase 2 should: report gaps 1 and 2 in the notice, and flip the two "skipped AND not reported" tests.
+
 ### Phase 2 — Fix and report
 - Depends on: Phase 1
 - Files: `src/kit/managed.ts` (`planFolderReapply`), `src/kit/managed-ui.ts` (`reapplyFolders`), `src/kit/ui.ts` (Notices ~345-346), tests.
