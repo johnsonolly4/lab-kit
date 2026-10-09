@@ -169,4 +169,8 @@ describe("Project deadline countdown", () => {
     expect(projects([hub], Infinity, "all", WED)[0].badges.map(b => b.text)).toEqual(["active", "deadline 5d"]);
     expect(projectCards([hub], [], [], [], {}, WED, "all")[0].hub.badges.map(b => b.text)).toEqual(["active", "deadline 5d"]);
   });
+  it("Go to labels the planning folder's to-do board as To-do", () => {
+    const files = [note("00 Planning/To-do board.base"), note("02 Projects/Projects overview.md", { kind: "hub" })];
+    expect(gotoTargets(["00 Planning", "02 Projects"], files).map(l => l.text)).toEqual(["To-do", "Projects"]);
+  });
 });

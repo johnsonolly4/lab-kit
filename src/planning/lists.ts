@@ -154,7 +154,8 @@ export function gotoTargets(topFolders: string[], files: NoteRec[], hide: string
     const hub = direct.find(f => f.path.endsWith(".md") && f.fm.kind === "hub")
       ?? direct.find(f => f.path.endsWith(".md") && f.name === unnumbered(folder))
       ?? direct.find(f => f.path.endsWith(".base"));
-    if (hub) out.push({ text: unnumbered(folder), path: hub.path, icon: folderIcon(folder) });
+    // The planning folder opens the to-do board: label it for what it opens
+    if (hub) out.push({ text: hub.path.endsWith("/To-do board.base") ? "To-do" : unnumbered(folder), path: hub.path, icon: folderIcon(folder) });
   }
   return out;
 }

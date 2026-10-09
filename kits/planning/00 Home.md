@@ -27,7 +27,7 @@ focus3_done: false
 > `BUTTON[clear-focus]`
 
 > [!columns]
-> > [!planning] [[To-do board|This week]]
+> > [!planning] [[To-do board.base|This week]]
 > > ```vault-card
 > > show: this-week
 > > ```
@@ -35,7 +35,7 @@ focus3_done: false
 > > show: inbox
 > > ```
 >
-> > [!lab] [[Lab book base|Experiments on the go]]
+> > [!lab] [[Lab book base.base|Experiments on the go]]
 > > ```vault-card
 > > show: experiments
 > > limit: 8
