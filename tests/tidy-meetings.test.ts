@@ -80,6 +80,15 @@ describe("Tidy up notes: folders without a hub (Phase 7c-1)", () => {
   });
 });
 
+describe("Tidy up notes: empty values count as missing", () => {
+  it("a hub with empty interval / day / start is migrated and those lines are filled in place", () => {
+    const m = vault();
+    m.set("08 Meetings/Group meeting/Group meeting.md", "---\nkind: hub\ninterval:\nday:\nstart: 2026-01-01\n---\n");
+    const hub = group(ctx({ interval: "fortnightly", day: "Tue" }), m, "meetings")?.changes.find(c => c.path.endsWith("Group meeting/Group meeting.md"));
+    expect(hub?.after).toBe("kind: meeting-series\ninterval: fortnightly\nday: Tue\nstart: 2026-01-01");
+  });
+});
+
 describe("Tidy up notes: to-dos without a kind", () => {
   it("adds the board's properties to notes with no kind and leaves notes that have one", () => {
     const m = vault();

@@ -112,6 +112,12 @@ function props(lines: string[]): Prop[] {
 const find = (lines: string[], name: string): Prop | undefined => props(lines).find(p => norm(p.key) === norm(name));
 /** A property's values as text: the list items, or the one plain value; empty when missing or blank. */
 const values = (p: Prop | undefined): string[] => !p ? [] : p.items ?? (p.inline ? [unquote(p.inline)] : []);
+/** Sets a property only when it is missing or empty (an empty `key:` is filled in place, a filled one is kept). */
+const fillProp = (fm: string[], name: string, value: string): string[] => {
+  const p = find(fm, name);
+  if (!p) return [...fm, line(name, value)];
+  return values(p).length ? fm : [...fm.slice(0, p.start), line(p.key, value), ...fm.slice(p.end)];
+};
 const line = (name: string, value: string): string => value === "" ? `${name}:` : `${name}: ${value}`;
 
 type Result = { fm: string[] } | { reported: string } | null;
@@ -235,11 +241,11 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     const g: TidyGroup = { id: "meetings", title: "Meetings: series hub and links", detail: "The old weekly-meeting hub becomes a meeting series, meeting notes get a series link and to-dos flagged with meeting: true link to the first series.", changes: [], ask: "meetings" };
     const inMeet = notes.filter(n => inFolder(n.path, mt.folder));
     const propose = (path: string, fm: string[]): void => { g.changes.push({ path, before: split(effective.get(path) ?? "")?.fm.join("\n") ?? "", after: fm.join("\n") }); put(path, fm.join("\n")); };
-    for (const n of inMeet.filter(x => baseName(x.path) === baseName(parentOf(x.path)) && kindOf(x.path) === "hub" && !find(fmOf(x.path), "interval"))) {
+    for (const n of inMeet.filter(x => baseName(x.path) === baseName(parentOf(x.path)) && kindOf(x.path) === "hub" && !values(find(fmOf(x.path), "interval")).length)) {
       let fm = fmOf(n.path);
       const k = find(fm, "kind");
       fm = k ? [...fm.slice(0, k.start), "kind: meeting-series", ...fm.slice(k.end)] : [...fm, "kind: meeting-series"];
-      for (const [key, val] of [["interval", mt.interval], ["day", mt.day], ["start", mt.today]]) if (!find(fm, key)) fm.push(line(key, val));
+      for (const [key, val] of [["interval", mt.interval], ["day", mt.day], ["start", mt.today]]) fm = fillProp(fm, key, val);
       propose(n.path, fm);
     }
     const series = inMeet.filter(x => kindOf(x.path) === "meeting-series").map(x => ({ name: baseName(x.path), folder: parentOf(x.path) }));
@@ -280,8 +286,8 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   for (const n of notes) {
     if (!isHubName(n.path) || !n.path.includes("/") || inFolder(n.path, "Extras")) continue;
     const s = split(effective.get(n.path) ?? "");
-    if (s && find(s.fm, "kind")) continue;
-    hubs.changes.push({ path: n.path, before: s ? s.fm.join("\n") : "", after: [...(s?.fm ?? []), "kind: hub"].join("\n") });
+    if (s && values(find(s.fm, "kind")).length) continue;
+    hubs.changes.push({ path: n.path, before: s ? s.fm.join("\n") : "", after: fillProp(s?.fm ?? [], "kind", "hub").join("\n") });
   }
   if (hubs.changes.length) groups.push(hubs);
 

@@ -72,6 +72,10 @@ describe("Tidy up notes scan (Phase 7a)", () => {
     const bare = scan([{ path: "07 How-tos/Index.md", text: "# Index\n" }], { ...ctx, migrations: [] });
     expect(group(bare, "hub-kind")?.changes[0]).toMatchObject({ before: "", after: "kind: hub" });
   });
+  it("hubs: an index note with an empty kind gets it filled in place, no second kind line", () => {
+    const empty = scan([{ path: "07 How-tos/Index.md", text: "---\nkind:\ntags: [a]\n---\n# Index\n" }], { ...ctx, migrations: [] });
+    expect(group(empty, "hub-kind")?.changes[0]).toMatchObject({ before: "kind:\ntags: [a]", after: "kind: hub\ntags: [a]" });
+  });
 
   it("only reported: untitled, double extension, canvas in the inbox, outside the layout, unused view.js", () => {
     expect(reported(s, "untitled")).toEqual(["00 Inbox/Untitled.md"]);
