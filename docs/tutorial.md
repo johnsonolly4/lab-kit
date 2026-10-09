@@ -57,8 +57,8 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, the first reagent's amount in mmol, g or M (× volume), solvent "rest" row, total mass, wt% |
 | **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent (and an optional co-solvent as % of its mass), Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |
-| **Sample list** | Samples without times | Typed or generated codes · can add NMR/GPC/DLS + results |
-| **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · can add NMR/GPC/DLS + results |
+| **Sample list** | Samples without times | Typed or generated codes · add the analysis tables afterwards (NMR / GPC / DLS / Analysis table, Combined results) |
+| **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · add the analysis tables afterwards |
 | **NMR samples** | NMR submissions | Sample · solvent · method · conversion · dataset · checklist · tags the note `NMR` |
 | **GPC samples** | GPC | Sample · eluent · Mn · Mw · Đ (calculated) · tags `GPC` |
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
@@ -69,7 +69,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Blank calc table** | Anything else | Your own columns |
 
 > [!example] A typical analysis workflow
-> 1. **Sampling timetable** → times `0, 30, 60, 120`, letters `A, B`, start `10:30`, tick **NMR** and **Combined results**.
+> 1. **Sampling timetable** → times `0, 30, 60, 120`, letters `A, B`, start `10:30`. Then **NMR samples** and **Combined results** (they take the codes from the timetable).
 > 2. On the day, type the real times in **Taken at**.
 > 3. Type conversions into the **NMR** table: the **Results** table fills itself in.
 > 4. **Copy** on the Results table → paste into Excel or Origin.
@@ -222,8 +222,8 @@ flowchart LR
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
-| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`) |
-| What a snippet builds | `labSnippets.js` in your Templater user scripts folder (one section per snippet) |
+| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table) has `icon:` and `desc:` in its header |
+| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, Analysis table and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other six are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
 | A new snippet | copy a file in the `Snippets` folder, give it a new number and name |
 | Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 

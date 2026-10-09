@@ -101,7 +101,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 | **Recipe by equivalents** | Planning amounts from equivalents relative to any reagent; the first amount in mmol, g or M; solvent "rest" row; total mass and wt% |
 | **RAFT recipe generator** | RAFT / PISA: monomer mass, DP, CTA:I, solids → every mass, solvent (and optional co-solvent), theoretical Mn |
 | **Variant naming matrix** | A grid of conditions, with sample codes `ABC0016-A`, `-B`… |
-| **Sample list** · **Sampling timetable** | Sample codes, with target clock times for kinetics; can add the analysis tables below |
+| **Sample list** · **Sampling timetable** | Sample codes, with target clock times for kinetics (add the analysis tables below afterwards) |
 | **NMR / GPC / DLS samples** · **Analysis table** | Sample tables with machine, checklist and result columns |
 | **Combined results** | One row per sample with the results of every method |
 | **Flow column prep** · **Residence times** | Packing a column, reactor volume, flow rates |

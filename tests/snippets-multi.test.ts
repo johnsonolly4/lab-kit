@@ -7,6 +7,7 @@ import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
 const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
+import { isTokenSnippet, runToken } from "./token-snippets";
 
 const table = (name: string, codes: string[]) =>
   "```calc\nname: " + name + "\n| Code | Description | Notes |\n|---|---|---|\n" + codes.map(c => `| ${c} |  |  |`).join("\n") + "\n```\n";
@@ -35,7 +36,7 @@ function harness(initial: string) {
         }
       }
     };
-    const md: string = await labSnippets(tp, key);
+    const md: string = isTokenSnippet(key) ? runToken(key, { note, prefix: "ABC0001-", answers: overrides }) : await labSnippets(tp, key);
     note += "\n" + md;
     return md;
   };

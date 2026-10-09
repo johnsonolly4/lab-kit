@@ -185,11 +185,11 @@ describe("snippets with a Methods folder", () => {
     assert.strictEqual(h.evaluate()("mass_spec", "F2"), 10000);
   });
 
-  it("sample list toggles include the folder's methods and tag them", async () => {
+  it("the folder's methods and the combined results table are added with the Analysis table snippet, after the sample list", async () => {
     const h = harness();
-    await h.run("samples", { count: "2", mass_spec: true, nmr: true, results: true });
-    assert.deepStrictEqual(h.forms["Sample list"].filter((f: any) => f.type === "toggle").map((f: any) => f.label),
-      ["NMR sample list", "GPC sample list", "DLS sample list", "Mass spec sample list", "Combined results table"]);
+    await h.run("method", { method: "mass_spec", codes: "ABC0001-A, ABC0001-B" });
+    await h.run("nmr", { codes: "ABC0001-A, ABC0001-B" });
+    await h.run("results", { codes: "ABC0001-A, ABC0001-B", gpc: false, dls: false });
     assert.ok(h.note.includes("name: mass_spec") && h.note.includes("name: nmr") && h.note.includes("name: results"));
     const header = h.note.match(/name: results[\s\S]*?\n\| (.*) \|/)![1];
     assert.strictEqual(header, "Sample | Conversion (%) | m/z | Mass error (ppm)");

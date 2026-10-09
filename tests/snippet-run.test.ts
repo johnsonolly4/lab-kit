@@ -143,6 +143,24 @@ describe("SnippetTemplates", () => {
     expect(Notice.messages.some(m => m.includes("initials"))).toBe(true);
   });
 
+  it("run: the experiment number is read after the initials in the note name; XXXX when the name has none", async () => {
+    const { st } = setup({ files: { "S/a.md": LIST }, kit: { initials: "OLJ" } });
+    const at = (basename: string) => st.run({ ...tpWith({ codes: "A" }), config: { target_file: { basename } } }, file("S/a.md"));
+    expect(await at("OLJ0001 - Test")).toBe("OLJ0001-A\n");
+    expect(await at("0001 - Test")).toBe("OLJ0001-A\n");
+    expect(await at("Untitled")).toBe("OLJXXXX-A\n");
+  });
+
+  it("run: initials come from the settings; a body without the prefix gives no initials Notice", async () => {
+    const plainBody = header({ fields: [{ key: "a", label: "A" }] }, "{{a}}");
+    const { st } = setup({ files: { "S/a.md": LIST, "S/p.md": plainBody }, kit: { initials: "" } });
+    await st.run(tpWith({ a: "x" }), file("S/p.md"));
+    expect(Notice.messages).toEqual([]);
+    const set = setup({ files: { "S/a.md": LIST }, kit: { initials: "QRS" } });
+    expect(await set.st.run(tpWith({ codes: "A" }), file("S/a.md"))).toBe("QRS0016-A\n");
+    expect(Notice.messages).toEqual([]);
+  });
+
   it("run: sample letters continue from the note", async () => {
     const t = header({ fields: [] }, "{{code}} {{code}}");
     const { st } = setup({ files: { "S/t.md": t }, note: "ABC0016-A and ABC0016-B" });
@@ -153,6 +171,8 @@ describe("SnippetTemplates", () => {
     const t = header({ fields: [{ key: "solvent", label: "Solvent", value: "toluene" }] }, "{{note-number:solvent.Density}}");
     const { st } = setup({ files: { "S/t.md": t }, chems: [] });
     expect(await st.run(tpWith({}), file("S/t.md"))).toBe("0.867");
+    const linked = setup({ files: { "S/t.md": t.replace("toluene", "[[toluene]]") }, chems: [] });
+    expect(await linked.st.run(tpWith({}), file("S/t.md"))).toBe("0.867");
     const none = setup({ files: { "S/t.md": t.replace("toluene", "unknown") } });
     expect(await none.st.run(tpWith({}), file("S/t.md"))).toBe("");
   });

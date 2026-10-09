@@ -1,38 +1,16 @@
-// Snippet token templates (engine): each of the six templates, filled with the form's answers, equals what labSnippets.js writes.
+// Snippet token templates (engine): each of the six shipped templates, filled with the form's answers, equals what labSnippets.js wrote before they moved out of it.
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import {
   TemplateError, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, type TemplateEnv,
 } from "../src/kit/snippet-template";
 import { makeEnv } from "../src/kit/snippet-env";
+import { miniYaml, runToken } from "./token-snippets";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
-
-const DATA = ".obsidian/plugins/lab-kit/data.json";
 const PREFIX = "ABC0016-";
-const FIXTURES = "tests/fixtures/snippet-templates/";
+const EXPECTED_FILE = "tests/fixtures/snippet-templates/expected.json";
 const F = "```";
-
-/** Test-only YAML: the header shapes of the six fixtures (top-level keys, one list of `- key:` mappings, plain or "quoted" strings). */
-function miniYaml(src: string): unknown {
-  const out: Record<string, unknown> = {};
-  let list: Record<string, string>[] = [];
-  let cur: Record<string, string> = {};
-  const val = (s: string) => { const t = s.trim(); const q = /^"(.*)"$/.exec(t); return q ? q[1] : t; };
-  for (const line of src.split("\n")) {
-    let m: RegExpExecArray | null;
-    if (!line.trim()) continue;
-    if ((m = /^(\w+):\s*(.*)$/.exec(line))) { if (m[2] === "") { list = []; out[m[1]] = list; } else out[m[1]] = val(m[2]); }
-    else if ((m = /^\s+-\s+(\w+):\s*(.*)$/.exec(line))) { cur = {}; list.push(cur); cur[m[1]] = val(m[2]); }
-    else if ((m = /^\s+(\w+):\s*(.*)$/.exec(line))) cur[m[1]] = val(m[2]);
-    else throw new Error("mini yaml: " + line);
-  }
-  return out;
-}
 
 /* ---------- a note and its vault, for the engine (src/kit/snippet-env.ts mirrors the helpers inside labSnippets.js) ---------- */
 
@@ -40,118 +18,71 @@ type Props = Record<string, string>;
 
 const envFor = (note: string, props: Props): TemplateEnv => makeEnv(note, PREFIX, (n, p) => props[`${n}.${p}`] ?? "");
 
-/* ---------- the script side: labSnippets.js on a stub tp and app ---------- */
-
-function stubApp(note: string, props: Props): void {
-  const g = globalThis as any;
-  g.Notice = class { constructor(_m: string) { /* not under test */ } };
-  g.app = {
-    vault: {
-      configDir: ".obsidian",
-      adapter: { read: async (p: string) => { if (p === DATA) return JSON.stringify({ kit: { initials: "ABC" } }); throw new Error("ENOENT " + p); } },
-      getFolderByPath: () => null,
-    },
-    workspace: { activeEditor: { editor: { getValue: () => note } } },
-    metadataCache: {
-      getFileCache: (f: { basename: string }) => ({ frontmatter: { Density: props[`${f.basename}.Density`] } }),
-      getFirstLinkpathDest: (name: string) => (props[`${name}.Density`] !== undefined ? { basename: name } : null),
-    },
-    fileManager: { processFrontMatter: async () => { /* tags not under test */ } },
-  };
-}
-
-/** The form answers its defaults, then the scenario's answers on top; null = the form was cancelled. */
-function labForm(answers: Record<string, string> | null) {
-  return async (_tp: unknown, _title: string, fields: { key?: string; type?: string; value?: unknown }[]) => {
-    if (!answers) return null;
-    const out: Record<string, unknown> = {};
-    for (const f of fields) {
-      if (!f.key || f.type === "heading") continue;
-      out[f.key] = f.type === "toggle" ? false : f.value ?? "";
-    }
-    return { ...out, ...answers };
-  };
-}
-
-async function viaScript(key: string, note: string, answers: Record<string, string>, props: Props): Promise<string> {
-  stubApp(note, props);
-  const tp = {
-    config: { target_file: { basename: "ABC0016 - test", path: "ABC0016 - test.md" } },
-    file: { title: "ABC0016 - test" },
-    date: { now: () => "2026-10-09" },
-    user: { labMethods, labForm: labForm(answers) },
-  };
-  return labSnippets(tp, key) as Promise<string>;
-}
-
-function viaTemplate(file: string, note: string, answers: Record<string, string>, props: Props): string {
-  const parsed = parseTemplate(readFileSync(FIXTURES + file, "utf8"), miniYaml);
-  assert.ok(parsed, file + " has a header");
-  const env = envFor(note, props);
-  const all = { ...defaultAnswers(parsed.header, env), ...answers };
-  if (isCancelled(parsed.header, all)) return "";
-  return fillTemplate(parsed.body, all, env);
+function viaTemplate(key: string, note: string, answers: Record<string, string>, props: Props): string {
+  return runToken(key, { note, prefix: PREFIX, answers, props });
 }
 
 const COLUMN_NOTE = `${F}calc\nname: column\n| State | Value |\n|---|---|\n| a | 1 |\n${F}\n`;
 const SAMPLING_NOTE = `${F}calc\nname: sampling\n| Code | Time (min) |\n|---|---|\n| ABC0016-A0 | 0 |\n| ABC0016-B30 | 30 |\n${F}\n`;
 const TOLUENE: Props = { "toluene.Density": "0.867" };
 
-interface Scenario { name: string; key: string; file: string; note?: string; answers?: Record<string, string>; props?: Props; empty?: boolean }
+interface Scenario { name: string; key: string; note?: string; answers?: Record<string, string>; props?: Props; empty?: boolean }
 
 const SCENARIOS: Scenario[] = [
-  { name: "matrix: defaults (no rows = cancel)", key: "matrix", file: "04-matrix.md", empty: true },
-  { name: "matrix: rows and columns", key: "matrix", file: "04-matrix.md", answers: { rows: "acid 1, acid 2", cols: "alc 1, alc 2, alc 3" } },
-  { name: "matrix: rows only", key: "matrix", file: "04-matrix.md", answers: { rows: "a, b, c" } },
-  { name: "matrix: codes continue, id taken", key: "matrix", file: "04-matrix.md", note: `ABC0016-A ABC0016-C\n${F}calc\nname: variants\n| x |\n${F}\n`, answers: { rows: "a, b", cols: "x, y" } },
+  { name: "matrix: defaults (no rows = cancel)", key: "matrix", empty: true },
+  { name: "matrix: rows and columns", key: "matrix", answers: { rows: "acid 1, acid 2", cols: "alc 1, alc 2, alc 3" } },
+  { name: "matrix: rows only", key: "matrix", answers: { rows: "a, b, c" } },
+  { name: "matrix: codes continue, id taken", key: "matrix", note: `ABC0016-A ABC0016-C\n${F}calc\nname: variants\n| x |\n${F}\n`, answers: { rows: "a, b", cols: "x, y" } },
   { name: "samples: defaults (6 generated)", key: "samples", file: "05-samples.md" },
-  { name: "samples: typed codes, one per line", key: "samples", file: "05-samples.md", answers: { codes: "X1, X2\nX3" } },
-  { name: "samples: count 0 gives one", key: "samples", file: "05-samples.md", answers: { count: "0" } },
-  { name: "samples: letters continue", key: "samples", file: "05-samples.md", note: "ABC0016-D was made", answers: { count: "3" } },
-  { name: "samples: id taken", key: "samples", file: "05-samples.md", note: `${F}calc\nname: samples\n| x |\n${F}\n`, answers: { count: "2" } },
+  { name: "samples: typed codes, one per line", key: "samples", answers: { codes: "X1, X2\nX3" } },
+  { name: "samples: count 0 gives one", key: "samples", answers: { count: "0" } },
+  { name: "samples: letters continue", key: "samples", note: "ABC0016-D was made", answers: { count: "3" } },
+  { name: "samples: id taken", key: "samples", note: `${F}calc\nname: samples\n| x |\n${F}\n`, answers: { count: "2" } },
   { name: "timetable: defaults", key: "timetable", file: "06-timetable.md" },
-  { name: "timetable: hours, two letters, start", key: "timetable", file: "06-timetable.md", answers: { unit: "h", letters: "A, B", start: "09:30", times: "0, 1, 2" } },
-  { name: "timetable: no letters = one sample", key: "timetable", file: "06-timetable.md", answers: { letters: "" } },
-  { name: "timetable: next letter from an earlier table", key: "timetable", file: "06-timetable.md", note: SAMPLING_NOTE },
-  { name: "timetable: no times = cancel", key: "timetable", file: "06-timetable.md", answers: { times: "" }, empty: true },
-  { name: "timetable: capital H", key: "timetable", file: "06-timetable.md", answers: { unit: "H", times: "1, 2" } },
-  { name: "timetable: ids taken", key: "timetable", file: "06-timetable.md", note: `${F}calc\nname: sampling\n| x |\n${F}\n${F}calc\nname: sampling_start\n| x |\n${F}\n` },
+  { name: "timetable: hours, two letters, start", key: "timetable", answers: { unit: "h", letters: "A, B", start: "09:30", times: "0, 1, 2" } },
+  { name: "timetable: no letters = one sample", key: "timetable", answers: { letters: "" } },
+  { name: "timetable: next letter from an earlier table", key: "timetable", note: SAMPLING_NOTE },
+  { name: "timetable: no times = cancel", key: "timetable", answers: { times: "" }, empty: true },
+  { name: "timetable: capital H", key: "timetable", answers: { unit: "H", times: "1, 2" } },
+  { name: "timetable: ids taken", key: "timetable", note: `${F}calc\nname: sampling\n| x |\n${F}\n${F}calc\nname: sampling_start\n| x |\n${F}\n` },
   { name: "column: defaults", key: "column", file: "11-column.md" },
-  { name: "column: density from the solvent's note", key: "column", file: "11-column.md", answers: { solvent: "toluene" }, props: TOLUENE },
-  { name: "column: typed density wins", key: "column", file: "11-column.md", answers: { solvent: "toluene", density: "0.9" }, props: TOLUENE },
-  { name: "column: own id, packing, id taken", key: "column", file: "11-column.md", note: COLUMN_NOTE, answers: { packing: "glass beads" } },
+  { name: "column: density from the solvent's note", key: "column", answers: { solvent: "toluene" }, props: TOLUENE },
+  { name: "column: typed density wins", key: "column", answers: { solvent: "toluene", density: "0.9" }, props: TOLUENE },
+  { name: "column: own id, packing, id taken", key: "column", note: COLUMN_NOTE, answers: { packing: "glass beads" } },
   { name: "rt: defaults, no column table", key: "rt", file: "12-rt.md" },
-  { name: "rt: volume linked to the column table", key: "rt", file: "12-rt.md", note: COLUMN_NOTE },
-  { name: "rt: flow rates add a table", key: "rt", file: "12-rt.md", answers: { flows: "1, 2.5" }, note: COLUMN_NOTE },
-  { name: "rt: no residence times = cancel", key: "rt", file: "12-rt.md", answers: { rts: "" }, empty: true },
+  { name: "rt: volume linked to the column table", key: "rt", note: COLUMN_NOTE },
+  { name: "rt: flow rates add a table", key: "rt", answers: { flows: "1, 2.5" }, note: COLUMN_NOTE },
+  { name: "rt: no residence times = cancel", key: "rt", answers: { rts: "" }, empty: true },
   { name: "blank: defaults", key: "blank", file: "13-blank.md" },
-  { name: "blank: own columns, rows and id", key: "blank", file: "13-blank.md", answers: { cols: "A, B", rows: "2", id: "t" } },
-  { name: "blank: rows 0 gives 3", key: "blank", file: "13-blank.md", answers: { rows: "0" } },
-  { name: "blank: no columns = cancel", key: "blank", file: "13-blank.md", answers: { cols: "" }, empty: true },
+  { name: "blank: own columns, rows and id", key: "blank", answers: { cols: "A, B", rows: "2", id: "t" } },
+  { name: "blank: rows 0 gives 3", key: "blank", answers: { rows: "0" } },
+  { name: "blank: no columns = cancel", key: "blank", answers: { cols: "" }, empty: true },
 ];
 
-describe("token templates equal the script", () => {
+/** What labSnippets.js wrote for each scenario before the six moved out of it (recorded 2026-10-09, byte for byte). */
+const EXPECTED: Record<string, string> = JSON.parse(readFileSync(EXPECTED_FILE, "utf8"));
+
+describe("token templates equal what the script wrote", () => {
   for (const s of SCENARIOS) {
-    it(s.name, async () => {
-      const note = s.note ?? "";
-      const props = s.props ?? {};
-      const answers = s.answers ?? {};
-      const fromScript = await viaScript(s.key, note, answers, props);
-      const fromTemplate = viaTemplate(s.file, note, answers, props);
+    it(s.name, () => {
+      const fromTemplate = viaTemplate(s.key, s.note ?? "", s.answers ?? {}, s.props ?? {});
       if (s.empty) assert.strictEqual(fromTemplate, "");
       else assert.ok(fromTemplate.length > 20, "has text");
-      assert.strictEqual(fromTemplate, fromScript);
+      assert.strictEqual(fromTemplate, EXPECTED[s.name]);
     });
   }
+  it("has a recorded output for every scenario", () => {
+    assert.deepStrictEqual(Object.keys(EXPECTED).sort(), SCENARIOS.map(s => s.name).sort());
+  });
 });
 
 describe("intended differences from the script", () => {
   it("a negative number of rows gives the fallback 3 (the script made an empty table)", () => {
-    const out = viaTemplate("13-blank.md", "", { rows: "-2" }, {});
+    const out = viaTemplate("blank", "", { rows: "-2" }, {});
     assert.strictEqual(out.split("\n").filter(l => /^\|\s+\|/.test(l)).length, 3);
   });
   it("answers are trimmed", () => {
-    const out = viaTemplate("13-blank.md", "", { cols: "  A ,B  ", id: "  t  " }, {});
+    const out = viaTemplate("blank", "", { cols: "  A ,B  ", id: "  t  " }, {});
     assert.ok(out.includes("name: t\n"));
     assert.ok(out.includes("| A | B |"));
   });

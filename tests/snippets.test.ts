@@ -10,6 +10,7 @@ import { editRows } from "../src/calc/rewrite";
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
 const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
+import { isTokenSnippet, runToken } from "./token-snippets";
 
 const MW: Record<string, number> = { "lipoic acid": 206.32, "benzyl alcohol": 108.14, "dcm": 84.93, "pabtc": 238.39, "dmam": 99.13, "daam": 169.23, "va-044": 323.33, "a": 100, "b": 200, "c": 50 };
 const close = (a: unknown, b: number, tol = 1e-4) => assert.ok(typeof a === "number" && Math.abs(a - b) <= tol * Math.max(1, Math.abs(b)), `${JSON.stringify(a)} != ${b}`);
@@ -45,7 +46,7 @@ describe("snippets", () => {
           }
         }
       };
-      const md: string = await labSnippets(tp, key);
+      const md: string = isTokenSnippet(key) ? runToken(key, { note, prefix: "ABC0016-", answers: overrides }) : await labSnippets(tp, key);
       note += "\n" + md;
       return { md };
     }
@@ -167,7 +168,8 @@ describe("snippets", () => {
     assert.ok(r.md.includes("Co-solvent (% of solvent mass) | 20"));
 
     // Sample list + NMR/GPC + results
-    r = await run("samples", { codes: "", count: "3", nmr: true, gpc: true, results: true });
+    r = await run("samples", { codes: "", count: "3" });
+    await run("nmr"); await run("gpc"); await run("results");
     note = note.replace("| 1 | ABC0016-A | CDCl3 | 1H |  |  |", "| 1 | ABC0016-A | CDCl3 | 1H | 42 |  |")
                .replace("| ABC0016-B | THF |  |  |", "| ABC0016-B | THF | 10000 | 12000 |");
     ev = evalNote();
@@ -178,7 +180,8 @@ describe("snippets", () => {
     assert.ok(/XLOOKUP\(A2, nmr!B\$2:B\$5, nmr!E\$2:E\$5, ""\)/.test(note), "results ranges should grow");
 
     // Timetable with start time + DLS
-    r = await run("timetable", { times: "0, 30, 90", letters: "A, B", start: "10:37", dls: true });
+    r = await run("timetable", { times: "0, 30, 90", letters: "A, B", start: "10:37" });
+    await run("dls");
     ev = evalNote();
     assert.strictEqual(ev.g("sampling", "C4"), "12:07");
     assert.ok(r.md.includes("ABC0016-B90"));

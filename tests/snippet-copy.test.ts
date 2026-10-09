@@ -2,7 +2,8 @@
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
-import { canCopy, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, type HeadlessTp } from "../src/kit/snippet-copy";
+import { readFileSync } from "node:fs";
+import { canCopy, isStubSnippet, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, type HeadlessTp } from "../src/kit/snippet-copy";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
@@ -26,12 +27,12 @@ function stubApp(): void {
   };
 }
 
-const KEYS = ["samples", "timetable", "nmr", "gpc", "dls", "results", "column", "rt", "blank", "method", "solution", "recipe", "raft", "matrix"];
+const KEYS = ["nmr", "gpc", "dls", "results", "method", "solution", "recipe", "raft"];   // the six token-template snippets are not code any more (copying them: Phase 5)
 const user = { labMethods };
 const run = (key: string) => (tp: HeadlessTp) => labSnippets(tp, key) as Promise<string>;
 
 describe("renderCopy", () => {
-  it("gives a note for each of the 14 snippets (the four chemical ones from their example text)", async () => {
+  it("gives a note for each of the 8 code snippets (the chemical ones from their example text)", async () => {
     stubApp();
     for (const key of KEYS) {
       const md = await renderCopy(run(key), user, TODAY);
@@ -40,26 +41,31 @@ describe("renderCopy", () => {
     }
   });
 
-  it("holds fixed sample codes from a neutral note name", async () => {
-    stubApp();
-    const md = await renderCopy(run("samples"), user, TODAY);
-    assert.ok(md.includes("OLJXXXX-A"), md);
-  });
-
   it("fixes the 'Made on' date at copy time", async () => {
     stubApp();
     assert.ok((await renderCopy(run("solution"), user, TODAY)).includes("Made on: 2026-10-09"));
   });
 
-  it("is what the snippet itself gives for the same answers (matrix, defaults then examples)", async () => {
+  it("is what the snippet itself gives for the same answers (solution, defaults then examples)", async () => {
     stubApp();
-    const md = await renderCopy(run("matrix"), user, TODAY);
+    const md = await renderCopy(run("solution"), user, TODAY);
     assert.ok(!md.includes("e.g."), md);
-    assert.ok(md.includes("acid 1") && md.includes("alcohol 1"), md);
+    assert.ok(md.includes("solute 1"), md);
   });
 
   it("is empty when the snippet gives nothing even with examples", async () => {
     assert.strictEqual(await renderCopy(async () => "  ", user), "");
+  });
+});
+
+describe("isStubSnippet", () => {
+  it("is true for the stubs that call labSnippets.js and false for token templates, which the settings window can open", () => {
+    const dir = "kits/lab/Templates/Snippets/";
+    assert.ok(isStubSnippet(readFileSync(dir + "01 Solution prep.md", "utf8")));
+    assert.ok(isStubSnippet(readFileSync(dir + "07 NMR samples.md", "utf8")));
+    for (const f of ["04 Variant naming matrix", "05 Sample list", "06 Sampling timetable", "11 Flow column prep", "12 Residence times", "13 Blank calc table"]) {
+      assert.ok(!isStubSnippet(readFileSync(`${dir}${f}.md`, "utf8")), f);
+    }
   });
 });
 

@@ -214,8 +214,8 @@
       "src": "Templates/Snippets/04 Variant naming matrix.md",
       "role": "templates",
       "path": "Snippets/04 Variant naming matrix.md",
-      "version": "0.3.0",
-      "sha256": "22c098cd67e195ad7262918f26d1c296ae0e6eaf2e70d77d715a52c26a48f72b",
+      "version": "0.5.2",
+      "sha256": "babb4b5f04101c3924abc464f9aa56af45ba170cb8ece2a6771746cc2cae8ae3",
       "renamedFrom": [],
       "desc": "Rows × columns → sample codes; Copy gives one column",
       "optional": true
@@ -226,10 +226,10 @@
       "src": "Templates/Snippets/05 Sample list.md",
       "role": "templates",
       "path": "Snippets/05 Sample list.md",
-      "version": "0.3.0",
-      "sha256": "0f14aeeb5e66276667969d2339e8d99a8c5de9ddc1dde6871fedb9213fe33d91",
+      "version": "0.5.2",
+      "sha256": "852bd520b8688d2c04359ea58ba48c990cec642918a42ed96ea5a4a18eabc06f",
       "renamedFrom": [],
-      "desc": "Untimed list of sample codes, typed or generated; can add NMR / GPC / DLS",
+      "desc": "Untimed list of sample codes, typed or generated",
       "optional": true
     },
     {
@@ -238,10 +238,10 @@
       "src": "Templates/Snippets/06 Sampling timetable.md",
       "role": "templates",
       "path": "Snippets/06 Sampling timetable.md",
-      "version": "0.3.0",
-      "sha256": "47cbe71ff78d11d5d392af049a31103d2aa6ec0defc5fcacc5bc32a587a02e26",
+      "version": "0.5.2",
+      "sha256": "0dcf9bf0a1db67c26c450bb49ef8a282ff44b5c5bc34d5cb6fb60f6946182e81",
       "renamedFrom": [],
-      "desc": "Codes per time point with target clock times; can add NMR / GPC / DLS",
+      "desc": "Codes per time point with target clock times",
       "optional": true
     },
     {
@@ -298,8 +298,8 @@
       "src": "Templates/Snippets/11 Flow column prep.md",
       "role": "templates",
       "path": "Snippets/11 Flow column prep.md",
-      "version": "0.3.0",
-      "sha256": "24d9f833e382759e6fecd07aaa1238f11d7db2dd4010878fa5935ac766282c9a",
+      "version": "0.5.2",
+      "sha256": "1a179b60d5a795017827215e4cee3e040553266244864e28f4c215ab33774843",
       "renamedFrom": [],
       "desc": "Column weighing → bead mass → reactor volume",
       "optional": true
@@ -310,8 +310,8 @@
       "src": "Templates/Snippets/12 Residence times.md",
       "role": "templates",
       "path": "Snippets/12 Residence times.md",
-      "version": "0.3.0",
-      "sha256": "f307a4ebaf9fa168c1cea949d0e590c355e1c877a0c8384965656c4724a4d709",
+      "version": "0.5.2",
+      "sha256": "fba16afef0645002b62c39b8d2ebc0cdd6f5d7b3db4b90f7c503ccd907bada11",
       "renamedFrom": [],
       "desc": "Flow rate for each residence time from a reactor volume",
       "optional": true
@@ -322,8 +322,8 @@
       "src": "Templates/Snippets/13 Blank calc table.md",
       "role": "templates",
       "path": "Snippets/13 Blank calc table.md",
-      "version": "0.3.0",
-      "sha256": "58b4816822afb0b6db4e2333c10071a3c1e3aa6f7eaf6a7f0ecff22bbd8d8a44",
+      "version": "0.5.2",
+      "sha256": "5cf3b265599c457cfe8cb631bc7373c83a4f0633c27f60ae22402b95a92791ac",
       "renamedFrom": [],
       "desc": "Your own columns and rows",
       "optional": true
@@ -380,7 +380,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.5.2",
-      "sha256": "970db74d9fd88df6d203523030fa1b652891a16731c1b56a0d70fc411bdf1374",
+      "sha256": "730483bf0c154e18d453e97ffeebb97e347afd9a5d9335339399ab8689bf867c",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }

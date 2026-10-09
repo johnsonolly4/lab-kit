@@ -3,11 +3,11 @@
    ---------------------------------------------------------------------
    Each file in the Snippets folder calls:
        tR += await tp.user.labSnippets(tp, "solution")
-   Keys: solution, recipe, raft, matrix, samples, timetable, nmr, gpc,
-         dls, method, results, column, rt, blank
+   Keys: solution, recipe, raft, nmr, gpc, dls, method, results
+   (the simple snippets, matrix / samples / timetable / column / rt / blank, are token
+   templates in the Snippets folder; the Lab Kit plugin fills them)
 
-   Needs labForm.js and labMethods.js in the same folder. Initials come from the Lab Kit
-   plugin settings (Settings → Lab Kit → Initials).
+   Needs labForm.js and labMethods.js in the same folder.
    ===================================================================== */
 
 const F = "```";
@@ -19,18 +19,11 @@ module.exports = async function labSnippets(tp, snippet) {
   const form = (title, fields, opts) => tp.user.labForm(tp, title, fields, opts);
   const list = (s) => String(s ?? "").split(/[,\n]/).map(x => x.trim()).filter(Boolean);
   const letter = (i) => { let s = ""; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; };
-  /** Inverse of letter(): A → 0, Z → 25, AA → 26. */
-  const letterIndex = (s) => [...s].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
   const file = tp.config.target_file;
   const noteText = () => app.workspace.activeEditor?.editor?.getValue() ?? "";
 
   const readJson = async (path) => { try { return JSON.parse(await app.vault.adapter.read(path)); } catch (e) { return null; } };
   const kitData = (await readJson(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`))?.kit;
-  const saved = kitData?.initials;
-  const initials = String(saved || "").trim() || "XX";
-  if (!saved && ["samples", "timetable", "matrix"].includes(key)) new Notice("Set your initials in Settings → Lab Kit → Initials. Using XX for now.");
-  const num = (file?.basename ?? tp.file.title).match(/^[A-Za-z]*(\d+)/)?.[1] ?? "XXXX";
-  const prefix = `${initials}${num}-`;
 
   /** The chemical notes (Settings → Lab Kit → Chemical folder) as { name, aliases, classes } for the forms' suggestions; undefined when no folder is set. */
   const chemList = () => {
@@ -119,19 +112,6 @@ module.exports = async function labSnippets(tp, snippet) {
     }
     return [];
   };
-  /** Index of the first sample letter not used yet: one past the highest letter after this note's prefix (ABC0016-A, ABC0016-C12 → 3). Looks at the whole note, or at the cells of the given tables. */
-  const nextFreeIndex = (tables) => {
-    const text = tables ? tables.flatMap(t => t.rows.flat()).join("\n") : noteText();
-    const rx = new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([A-Z]+)", "g");
-    let next = 0, m;
-    while ((m = rx.exec(text))) next = Math.max(next, letterIndex(m[1]) + 1);
-    return next;
-  };
-  /** Number of body rows in the calc table with exactly this name, or 0. */
-  const tableRows = (name) => {
-    const t = calcTables().find(x => x.name === String(name).toLowerCase());
-    return t ? Math.max(0, t.rows.length - 1) : 0;
-  };
   /** A method's tables in the note (nmr, nmr2…) with their sample counts and headers, for the results table to read. */
   const techTables = (base) => tablesNamed(base).map(t => ({ id: t.name, n: t.rows.length - 1, header: t.rows[0] ?? [] })).filter(t => t.n > 0);
   /** Add method tags (NMR, GPC, DLS…) to the note's tags property, after the snippet is inserted. */
@@ -207,23 +187,6 @@ ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c =>
     return `## Results
 ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
   };
-  const techToggles = [
-    { type: "heading", label: "Also add (appended below)" },
-    ...methods.map(m => ({ key: m.key, label: `${m.name} sample list`, type: "toggle", value: false })),
-    { key: "results", label: "Combined results table", hint: `one row per sample with ${methods.map(m => m.name).join(" / ")} values`, type: "toggle", value: false },
-  ];
-  const addTechniques = (v, codes) => {
-    let out = ""; const links = []; const tags = [];
-    for (const m of methods) {
-      if (!v[m.key]) continue;
-      const t = methodTable(m, codes, { machine: machineOf(m, m.defaultMachine) });
-      out += "\n" + t.md; links.push({ method: m, tables: [t] }); tags.push(m.tag);
-    }
-    if (v.results) out += "\n" + resultsTable(codes, links.length ? links : methods.map(method => ({ method, tables: [] })));
-    tag(...tags);
-    return out;
-  };
-
   /* ---------- snippets ---------- */
   const S = {
     async solution() {
@@ -343,59 +306,6 @@ ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "
 `;
     },
 
-    async matrix() {
-      const v = await form("Variant naming matrix", [
-        { key: "rows", label: "Row items", hint: "e.g. acids, comma separated", value: "", placeholder: "e.g. acid 1, acid 2" },
-        { key: "cols", label: "Column items", hint: "e.g. alcohols, comma separated", value: "", placeholder: "e.g. alcohol 1, alcohol 2" },
-      ]);
-      if (!v || !list(v.rows).length) return "";
-      const rows = list(v.rows), cols = list(v.cols);
-      let n = nextFreeIndex();
-      const body = cols.length
-        ? rows.map(r => [`**${r}**`, ...cols.map(() => prefix + letter(n++))])
-        : rows.map(r => [`**${r}**`, prefix + letter(n++)]);
-      return `## Variant naming matrix
-${calc({ name: unique("variants"), title: "Variant naming matrix", icon: "grid-3x3", copy: "list" }, ["", ...(cols.length ? cols : ["Code"])], body)}
-`;
-    },
-
-    async samples() {
-      const v = await form("Sample list", [
-        { key: "codes", label: "Sample codes", type: "textarea", hint: "one per line or comma separated · leave blank to generate", value: "" },
-        { key: "count", label: "…or generate this many", type: "number", value: "6" },
-        ...techToggles,
-      ]);
-      if (!v) return "";
-      let codes = list(v.codes);
-      const start = nextFreeIndex();
-      if (!codes.length) codes = Array.from({ length: Math.max(1, parseInt(v.count, 10) || 1) }, (_, i) => prefix + letter(start + i));
-      return `## Samples
-${calc({ name: unique("samples"), title: "Samples", icon: "list", copy: "column A" }, ["Code", "Description", "Notes"], codes.map(c => [c, "", ""]))}${addTechniques(v, codes)}`;
-    },
-
-    async timetable() {
-      const v = await form("Sampling timetable", [
-        { key: "times", label: "Time points", hint: "comma separated", value: "0, 30, 60, 120" },
-        { key: "unit", label: "Time unit", hint: "min or h", value: "min" },
-        { key: "letters", label: "Sample letters", hint: "comma separated · blank = one sample", value: letter(nextFreeIndex(tablesNamed("sampling"))) },
-        { key: "start", label: "Start time (hh:mm)", hint: "blank = fill in on the day", value: "" },
-        ...techToggles,
-      ]);
-      if (!v || !list(v.times).length) return "";
-      const id = unique("sampling"), st = unique(`${id}_start`);
-      const hours = /^h/i.test(v.unit);
-      const letters = list(v.letters).length ? list(v.letters) : [""];
-      const codes = [], rows = [];
-      for (const L of letters) for (const t of list(v.times)) {
-        const r = rows.length + 2, code = `${prefix}${L}${t}`;
-        codes.push(code);
-        rows.push([code, t, `=CLOCK(${st}!$B$2, B${r}${hours ? "*60" : ""})`, "", ""]);
-      }
-      return `## Sampling timetable
-${calc({ name: st, title: "Start", icon: "timer" }, ["Setting", "Value"], [["Start time (hh:mm)", v.start ?? ""]])}
-${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" }, ["Code", `Time (${v.unit || "min"})`, "Target time", "Taken at", "Notes"], rows)}${addTechniques(v, codes)}`;
-    },
-
     nmr: () => runMethod(methods.find(m => m.key === "nmr")),
     gpc: () => runMethod(methods.find(m => m.key === "gpc")),
     dls: () => runMethod(methods.find(m => m.key === "dls")),
@@ -428,56 +338,6 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
       if (!v) return "";
       const links = withResults.filter(m => v[m.key]).map(method => ({ method, tables: tech[method.key] }));
       return resultsTable(list(v.codes), links);
-    },
-
-    async column() {
-      const v = await form("Flow column prep", [
-        { key: "id", label: "Table id", hint: "other tables use e.g. column!B10 for the reactor volume", value: "column" },
-        { key: "solvent", label: "Solvent", hint: "optional · its note's Density fills the density below", value: "", placeholder: "e.g. solvent name", suggest: chemsFor("solvent") },
-        { key: "density", label: "Solvent density (g/mL)", hint: "blank = from the solvent's note, or fill in later", value: "" },
-        { key: "dead", label: "End-fitting dead volume (mL)", value: "0.21" },
-        { key: "packing", label: "Packing material", hint: "blank = fill in later", value: "", placeholder: "e.g. glass beads, 100 µm" },
-      ]);
-      if (!v) return "";
-      return `## Column prep
-${calc({ name: unique(v.id || "column"), title: "Column weighing", icon: "cylinder" }, ["State", "Value"], [
-  ["Empty column (blanking plugs, glass wool) (g)", ""], ["Packed column (beads, plugs, glass wool) (g)", ""],
-  ["Packed + full of solvent (g)", ""], ["Solvent density (g/mL)", String(v.density ?? "").trim() || (v.solvent ? noteNumber(v.solvent, "Density") : "")], ["End-fitting dead volume (mL)", v.dead ?? ""],
-  ["Mass of beads (g)", "=B3-B2"], ["Mass of solvent (g)", "=B4-B3"], ["Solvent volume (mL)", "=B8/B5"], ["Reactor volume (mL)", "=B9-B6"],
-  ["Packing material", v.packing ?? ""]])}`;
-    },
-
-    async rt() {
-      const hasColumn = tableRows("column") > 0;
-      const v = await form("Residence times", [
-        { key: "volume", label: "Reactor volume (mL)", hint: hasColumn ? "linked to this note's column table; type a number to override" : "type the volume, or link it like =column!B10", value: hasColumn ? "=column!B10" : "" },
-        { key: "rts", label: "Target residence times (min)", hint: "comma separated", value: "2, 10, 20, 30" },
-        { key: "flows", label: "Flow rates to check (mL/min)", hint: "optional, comma separated", value: "" },
-      ]);
-      if (!v || !list(v.rts).length) return "";
-      const inp = unique("rt_in"), id = unique("rt");
-      let out = `## Residence times
-> [!info] Residence time
-> $$\\tau = \\frac{V_{\\text{reactor}}}{Q}$$
-
-${calc({ name: inp, title: "Reactor", icon: "waves" }, ["Setting", "Value"], [["Reactor volume (mL)", v.volume ?? ""]])}
-${calc({ name: id, title: "Flow rate for each residence time", icon: "waves" }, ["Residence time (min)", "Flow rate (mL/min)", "Time to steady state, 3 RTs (min)"],
-  list(v.rts).map((t, i) => [t, `=${inp}!$B$2/A${i + 2}`, `=A${i + 2}*3`]))}`;
-      if (list(v.flows).length) out += `
-${calc({ name: unique("rt_check"), title: "Residence time for each flow rate", icon: "waves" }, ["Flow rate (mL/min)", "Residence time (min)"],
-  list(v.flows).map((q, i) => [q, `=${inp}!$B$2/A${i + 2}`]))}`;
-      return out;
-    },
-
-    async blank() {
-      const v = await form("Blank calc table", [
-        { key: "cols", label: "Column headings", hint: "comma separated", value: "Item, Value, Result" },
-        { key: "rows", label: "Rows", type: "number", value: "3" },
-        { key: "id", label: "Table id", hint: "used in formulas from other tables", value: "calc1" },
-      ]);
-      if (!v || !list(v.cols).length) return "";
-      const cols = list(v.cols);
-      return calc({ name: unique(v.id || "calc1"), icon: "calculator" }, cols, Array.from({ length: parseInt(v.rows, 10) || 3 }, () => cols.map(() => "")));
     },
   };
 

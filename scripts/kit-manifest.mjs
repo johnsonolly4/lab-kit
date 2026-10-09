@@ -113,7 +113,7 @@ function regenerate(KIT) {
   if (!cfg) throw new Error(`${manifestPath}: no CONFIG entry for kit id "${manifest.id}" in scripts/kit-manifest.mjs`);
   const ROLE_BY_PREFIX = cfg.roleByPrefix, DESC = cfg.desc, OPTIONAL_PREFIX = cfg.optionalPrefix, OPTIONAL_FILES = cfg.optionalFiles;
   const descOf = (rel, text) => OPTIONAL_PREFIX && rel.startsWith(OPTIONAL_PREFIX)
-    ? (text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim() ?? (() => { throw new Error(`${rel}: no "// desc:" line`); })())
+    ? (text.match(/^(?:\/\/\s*)?desc:\s*(.+)$/m)?.[1]?.trim() ?? (() => { throw new Error(`${rel}: no "// desc:" or header "desc:" line`); })())
     : (DESC[rel] ?? (() => { throw new Error(`${rel}: add a line to DESC in scripts/kit-manifest.mjs`); })());
 
   const previous = new Map((manifest.files ?? []).map((f) => [f.src, f]));

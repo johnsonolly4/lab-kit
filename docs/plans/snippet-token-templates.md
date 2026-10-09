@@ -39,7 +39,7 @@ The simple kit snippets become plain editable Markdown files with a small header
 - Files: `kits/lab/Templates/Insert snippet.md`, the form call (reuse `labForm.js` from the header fields), a Lab Kit command or Templater-callable entry in `src/` for the fill, `npm run kit:manifest`, tests.
 - Done when: a token template in Snippets/ shows its form in Alt+S and inserts the filled text; plain snippets (no header) still insert as before; works with `hasNode()` false (mobile); Obsidian check in test-vault reported as seen / not seen.
 
-### Phase 4 — Ship the six as token templates
+### Phase 4 — Ship the six as token templates (DONE 2026-10-09, see "Phase 4 result")
 - Depends on: Phase 3
 - Files: the six stubs in `kits/lab/Templates/Snippets/` (05, 06, 04, 13, 11, 12), `kits/lab/kit-manifest.json` via `npm run kit:manifest`, `labSnippets.js` (remove the six only after the templates are proven), tests, `docs/architecture.md`, `docs/maintenance.md` items, `docs/obsidian-test-checklist.md`, `docs/changelog.md`.
 - Done when: all six produce the same output as before (old tests re-pointed, not deleted); Review update… treats the new files as ordinary managed files; no version field changes (release only).
@@ -385,3 +385,13 @@ Built: `src/kit/snippet-env.ts` (`makeEnv` = the real `TemplateEnv`, moved out o
 Added to the spec:
 - Field options `suggest: chemicals` and `class: <text | list>` (any class name, never checked against a list). Setting `chemClassOnly` (Settings → Lab Kit): only the asked class, or asked class first then the rest (default). The same filter is in `labSnippets.js` (`chemsFor`) for the code snippets: monomers → monomer, CTA → CTA, initiator → initiator, solvents → solvent; reagents and solutes unfiltered.
 - Missing `labForm` or a bad header/token: a Notice naming the snippet, nothing inserted.
+
+## Phase 4 result (2026-10-09)
+
+Built: the six files in `kits/lab/Templates/Snippets/` are the token templates (same names; manifest regenerated; `scripts/kit-manifest.mjs` also reads `desc:` from a header). The six are gone from `labSnippets.js` with the code only they used (prefix / initials Notice, `nextFreeIndex`, `tableRows`, `letterIndex`, the "Also add" toggles). Tests: `tests/token-snippets.ts` (helper: `runToken`, `miniYaml`) runs a key the way Alt+S does; `snippets*.test.ts` use it for the six and `labSnippets` for the rest. The 28 scenarios now compare with `tests/fixtures/snippet-templates/expected.json` (the script's output, recorded before the six were removed; the fixture copies of the templates are deleted, the shipped files are the source). Known answers 0005 and 0011 hold. Tests only, not seen in Obsidian.
+
+Changes to the spec:
+- Flow column prep's Solvent field has `suggest: chemicals` and `class: solvent` (the script had `chemsFor("solvent")`; Phase 1 left this open).
+- `isStubSnippet` (`src/kit/snippet-copy.ts`): Manage files… shows Open on token templates (it hid it on every snippet because they were stubs).
+- Tests that used the toggles now run the method snippets after the list (nmr, gpc, results, dls); the prefix / initials tests moved to `tests/snippet-run.test.ts`.
+- Make my own copy is not offered for the six until Phase 5 (their `snippetKey` is null). `CODE_SNIPPETS` / `hasFixedCodes` still list samples, timetable and matrix: Phase 5 cleans that.

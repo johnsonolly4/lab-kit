@@ -1,4 +1,4 @@
-// v0.4: initials come from the plugin settings, chemical fields and the NMR dataset start empty.
+// v0.4: chemical fields and the NMR dataset start empty. (Initials and the experiment number are tested in snippet-run.test.ts.)
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
 const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
+import { runToken, shippedTemplate } from "./token-snippets";
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 
@@ -40,61 +41,34 @@ function harness(files: Record<string, string>, basename = "0014 - Test") {
   return { run, notices, fields };
 }
 
-describe("experiment number", () => {
-  it("is read after the initials in the note name (OLJ0001 - Title), and is XXXX only when the name has none", async () => {
-    const data = { [DATA]: JSON.stringify({ kit: { initials: "OLJ" } }) };
-    assert.ok((await harness(data, "OLJ0001 - Test").run("samples", { codes: "", count: "1" })).includes("OLJ0001-A"));
-    assert.ok((await harness(data, "0001 - Test").run("samples", { codes: "", count: "1" })).includes("OLJ0001-A"));
-    assert.ok((await harness(data, "Untitled").run("samples", { codes: "", count: "1" })).includes("OLJXXXX-A"));
-  });
-});
-
-describe("initials", () => {
-  it("come from the plugin settings (an old lab-config.json is no longer read)", async () => {
-    const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "QRS" } }), "Extras/scripts/lab-config.json": JSON.stringify({ initials: "OLD" }) });
-    const md = await h.run("samples", { codes: "", count: "2" });
-    assert.ok(md.includes("QRS0014-A") && !md.includes("OLD"), md);
-    assert.deepStrictEqual(h.notices, []);
-  });
-
-  it("are XX with a notice when set nowhere", async () => {
-    const h = harness({});
-    assert.ok((await h.run("samples", { codes: "", count: "1" })).includes("XX0014-A"));
-    assert.strictEqual(h.notices.length, 1);
-    assert.ok(/Settings/.test(h.notices[0]));
-    // snippets that make no sample codes stay quiet
-    const h2 = harness({});
-    await h2.run("blank");
-    assert.deepStrictEqual(h2.notices, []);
-  });
-});
-
 describe("empty defaults", () => {
   it("chemical fields start empty, so an untouched form inserts nothing", async () => {
     const h = harness({});
-    for (const key of ["solution", "recipe", "raft", "matrix"]) assert.strictEqual(await h.run(key), "", key);
+    for (const key of ["solution", "recipe", "raft"]) assert.strictEqual(await h.run(key), "", key);
     const empty = (key: string) => h.fields[key].filter(f => ["reagents", "solutes", "solvents", "monomers", "cta", "init", "solvent", "rows", "cols"].includes(f.key));
-    for (const key of ["solution", "recipe", "raft", "matrix"]) {
+    for (const key of ["solution", "recipe", "raft"]) {
       for (const f of empty(key)) if (f.key !== "solvent" || key === "raft") assert.strictEqual(f.value, "", `${key}.${f.key}`);
     }
+    // the variant matrix is a token template: untouched, its form inserts nothing
+    assert.strictEqual(runToken("matrix", { note: "", prefix: "ABC0014-" }), "");
+    for (const f of shippedTemplate("matrix").header.fields) assert.strictEqual(f.value, "", `matrix.${f.key}`);
   });
 
-  it("sample list and timetable label the technique toggles as appended below", async () => {
-    const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "ABC" } }) });
-    for (const key of ["samples", "timetable"]) {
-      await h.run(key, { codes: "ABC0014-A", times: "0" });
-      const heading = h.fields[key].find(f => f.type === "heading" && /Also add/.test(f.label));
-      assert.strictEqual(heading?.label, "Also add (appended below)", key);
-    }
+  it("sample list and timetable have no technique toggles: the methods are added afterwards", () => {
+    for (const key of ["samples", "timetable"]) assert.ok(!shippedTemplate(key).header.fields.some(f => (f.type as string) === "toggle"), key);
   });
 
-  it("NMR dataset is empty by default, in the snippet and in the sample list", async () => {
+  it("the column's Solvent field suggests solvents, as the script did", () => {
+    const f = shippedTemplate("column").header.fields.find(x => x.key === "solvent")!;
+    assert.strictEqual(f.suggest, "chemicals");
+    assert.deepStrictEqual(f.classes, ["solvent"]);
+  });
+
+  it("NMR dataset is empty by default", async () => {
     const h = harness({ [DATA]: JSON.stringify({ kit: { initials: "ABC" } }) });
     const md = await h.run("nmr", { codes: "ABC0014-A" });
     assert.ok(/^Dataset: *$/m.test(md), md);
     assert.ok(!md.includes("Monty"));
-    const md2 = await h.run("samples", { codes: "ABC0014-A", nmr: true });
-    assert.ok(/^Dataset: *$/m.test(md2) && !md2.includes("Monty"), md2);
   });
 });
 
@@ -127,27 +101,5 @@ describe("chemical folder suggestions", () => {
       for (const key of ["solution", "recipe", "raft"]) await h.run(key);
       for (const key of ["solution", "recipe", "raft"]) assert.deepStrictEqual(suggestKeys(h, key), [], key);
     }
-  });
-});
-
-describe("column density from the solvent's note", () => {
-  const setup = (fm: Record<string, unknown>) => {
-    const h = harness({});
-    const app = (globalThis as any).app;
-    app.metadataCache.getFirstLinkpathDest = (n: string) => n === "DCM" ? { path: "Chem/DCM.md" } : null;
-    app.metadataCache.getFileCache = (f: any) => ({ frontmatter: f.path === "Chem/DCM.md" ? fm : {} });
-    return h;
-  };
-  const density = (md: string) => md.match(/\| Solvent density \(g\/mL\) \| (.*?) \|/)![1];
-
-  it("fills the density row from the note's Density (a link or a comma decimal works)", async () => {
-    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "DCM" })), "1.325");
-    assert.strictEqual(density(await setup({ density: "1,325" }).run("column", { solvent: "[[DCM]]" })), "1.325");
-  });
-  it("a density typed in the form wins; no solvent, an unknown solvent or an empty Density leave it blank", async () => {
-    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "DCM", density: "0.9" })), "0.9");
-    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "" })), "");
-    assert.strictEqual(density(await setup({ Density: 1.325 }).run("column", { solvent: "Nope" })), "");
-    assert.strictEqual(density(await setup({ Density: null }).run("column", { solvent: "DCM" })), "");
   });
 });

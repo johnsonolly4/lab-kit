@@ -63,7 +63,7 @@
 - [ ] Initials set: Sample list codes use them. Clear initials: notice appears and codes use `XX`
 - [ ] Forms start empty with placeholders; submitting an untouched form inserts nothing
 - [ ] RAFT with **3 monomers**: mol column sums right, Mn looks sane
-- [ ] Sample list form: toggle heading reads "Also add (appended below)"
+- [ ] Sample list and Sampling timetable forms have no "Also add" toggles; NMR samples afterwards takes the codes from the list
 - [ ] Second **Sample list** in the same note starts at the next letter (A–F, then G…); second **Sampling timetable** defaults to the next letter; a timetable after a sample list still starts at A
 - [ ] Column snippet has "Packing material"; residence time is in an info callout
 - [ ] Two tables `samples` and `samples2`: codes from both are found
@@ -98,7 +98,7 @@
 - [ ] Without Templater / with the Lab notes folder empty: New lab entry shows a notice, nothing is made
 
 ## 6c. Analysis methods (needs `npm run dev`, then Review update… for the new scripts and the Analysis table snippet)
-- [ ] Methods folder empty: Alt+S **NMR / GPC / DLS samples**, **Sample list** toggles and **Combined results** look and behave as before
+- [ ] Methods folder empty: Alt+S **NMR / GPC / DLS samples** and **Combined results** look and behave as before
 - [ ] Type a new folder name (e.g. `Analysis/Methods`) in **Methods folder** and click out of the box: the folder (and `Analysis`) appears in the file list with a notice; an existing folder is left alone; a name starting with `.` creates nothing
 - [ ] Settings → Lab Kit → Lab notebook: **Methods folder** is wide and suggests folders; picking one saves (also at phone width)
 - [ ] Alt+S **Analysis table**: the switch **Also add a combined results table** is off; on, a Results table follows the method table and shows its result columns by sample code; a method picked straight from the Alt+S menu (no form) adds none
@@ -106,7 +106,7 @@
 - [ ] Alt+S menu (after Review update… for the new Insert snippet.md): your method is listed at the end as *Name samples* with its icon and the machines in the description; picking it opens its form directly; add a second method note and it shows next time with no refresh
 - [ ] Pick the other machine without touching the fields: they take its values; type a value first: it stays
 - [ ] The formula column calculates; the Machine cell links to the machine note
-- [ ] **Sample list** shows a toggle for your method; **Combined results** has a toggle and the right columns, filled from the table (with two tables of the method: the second is used for codes missing from the first)
+- [ ] **Combined results** has a toggle for your method and the right columns, filled from the table (with two tables of the method: the second is used for codes missing from the first)
 - [ ] A note with no Columns in the Methods folder is ignored; a note called GPC replaces the built-in GPC
 
 ## 6e. Phase 6: planning kit switch and Check setup
@@ -188,6 +188,7 @@
 - [ ] Open `docs/tutorial.md` in a vault **with Dataview on**: no inline `=` errors
 
 - [ ] Manage files… → a snippet row (not Analysis table): **Make my own copy** asks a name (prefilled `… (mine)`; Esc makes nothing); the copy appears in Snippets and in Alt+S; a second copy with the same name becomes `… 2`; Review update… does not list it; a sample snippet's Notice says the codes are fixed. On a phone too
+- [ ] Token templates, Phase 4 (after Review update…): Alt+S → each of Variant naming matrix, Sample list, Sampling timetable, Flow column prep, Residence times, Blank calc table opens its form and inserts tables like before (compare with an older note); open one of the six files in the Snippets folder: header and `{{tokens}}` readable; Manage files… shows an **Open** button on those six and none on Solution prep; the Solvent field of Flow column prep suggests solvents; then NMR samples after a Sample list takes its codes
 
 ## 9. Mobile (or phone emulation: `app.emulateMobile(true)` in the dev console)
 - [ ] Plugin loads without errors

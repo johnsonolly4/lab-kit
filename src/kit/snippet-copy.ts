@@ -64,6 +64,9 @@ export async function renderCopy(run: (tp: HeadlessTp) => Promise<string>, user:
 /** The snippet a stub note runs: `tp.user.labSnippets(tp, "solution")` → "solution". */
 export const snippetKey = (stub: string): string | null => stub.match(/labSnippets\(\s*tp\s*,\s*"([^":]+)"/)?.[1] ?? null;
 
+/** True for a snippet note that is only a stub calling labSnippets.js; a token template is a real note (opening it is useful). */
+export const isStubSnippet = (text: string): boolean => snippetKey(text) !== null;
+
 /** Row 14 (key `method`) is left out: run without answers it only gives the NMR table (user, 2026-10-09). */
 export const canCopy = (key: string | null): key is string => !!key && key !== "method";
 
