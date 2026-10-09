@@ -199,7 +199,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
   if (s.planning && s.metaBind) {
     const { missing, total, names } = s.metaBind;
     out.push({ id: "metabind:buttons", group: "Meta Bind", label: "Meta Bind buttons", ok: !missing,
-      detail: missing ? `${missing} of ${total} buttons the planning notes use are missing${names?.length ? ` (${names.join(", ")})` : ""}. Fix adds them; buttons you have are never changed.` : `All ${total} there.`,
+      detail: missing ? `${missing} of ${total} buttons the planning notes use are missing${names?.length ? ` (${names.join(", ")})` : ""}. Fix adds them (buttons you have are never changed); then restart Obsidian, because Meta Bind loads its buttons at start-up.` : `All ${total} there. A note that still shows "Button ID not Found": restart Obsidian, Meta Bind loads its buttons at start-up.`,
       fix: missing ? { kind: "meta-bind" } : undefined });
   }
 
