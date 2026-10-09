@@ -1,6 +1,5 @@
 ---
-Type:
-  - Chemical database
+Type: Chemical database
 Names:
 Chemical class:
 H_Phrase:

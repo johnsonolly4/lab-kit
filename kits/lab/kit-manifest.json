@@ -144,7 +144,7 @@
       "role": "templates",
       "path": "Chemical database template.md",
       "version": "0.5.2",
-      "sha256": "902a692002583f7fe74579c4fb547799df08f95cbd74b302eb720b2bf964749c",
+      "sha256": "3b8b0ac4b26694f97011c1d74f3588423cc8897e8d6c05df6e97d313bc4dfbf2",
       "renamedFrom": [],
       "desc": "New chemical note: names, class, hazards, CAS number, MW and physical data",
       "optional": true,
