@@ -33,6 +33,23 @@ if (series.length > 1) {
   if (chosen === null || chosen === undefined) { throw new Error("Cancelled - no meeting picked"); }
   meeting = chosen;
 }
+// Due date: optional (Enter on empty = none); a countdown badge is offered only when a date is set. Esc cancels.
+// `due` is a date property in this vault (set once here, Obsidian keeps it in .obsidian/types.json).
+try { if (app.metadataTypeManager?.getAssignedType?.("due") !== "date") { await app.metadataTypeManager?.setType?.("due", "date"); } } catch (e) { /* older Obsidian: due stays text */ }
+let due = "", prompt = "Due date? (YYYY-MM-DD, Enter = none, Esc to cancel)";
+while (true) {
+  const d = await tp.user.vtAsk(tp, prompt);
+  if (d === null) { throw new Error("Cancelled - no due date"); }
+  if (d === "") { break; }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + "T00:00:00"))) { due = d; break; }
+  prompt = `"${d}" is not a date. Use YYYY-MM-DD (Enter = none, Esc to cancel)`;
+}
+let countdown = false;
+if (due) {
+  const c = await tp.system.suggester(["No countdown", "Show a countdown on the board"], [false, true], false, "Countdown on the board card? (Esc to cancel)");
+  if (c === null || c === undefined) { throw new Error("Cancelled - no countdown choice"); }
+  countdown = c;
+}
 // Keep the day of the board column it was made in (the board writes it before this runs);
 // anything else (Ctrl+Shift+T, project cards) starts in Backlog.
 const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -51,8 +68,8 @@ planned: <% tp.date.now("YYYY-MM-DD") %>
 done: false
 rolled: false
 project: <% project ? `"[[${project}]]"` : "" %>
-due:
-countdown: false
+due: <% due %>
+countdown: <% countdown %>
 meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 cssclasses:
   - vt

@@ -168,10 +168,16 @@ describe("due-date countdown", () => {
   });
 });
 
-describe("To-do template countdown property", () => {
-  it("is written as a tick box (false), not an empty text property", async () => {
+describe("To-do template due date and countdown", () => {
+  it("asks for a due date (Esc cancels), offers the countdown only with a date, writes a boolean, sets due to a date property", async () => {
     const { readFileSync } = await import("fs");
     const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
-    expect(tpl).toMatch(/^countdown: false$/m);
+    expect(tpl).toContain('d === null) { throw new Error("Cancelled');
+    expect(tpl).toMatch(/if \(due\) \{[^}]*suggester/s);
+    expect(tpl).toContain('c === null || c === undefined) { throw');
+    expect(tpl).toMatch(/^due: <% due %>$/m);
+    expect(tpl).toMatch(/^countdown: <% countdown %>$/m);
+    expect(tpl).toContain("let countdown = false;");
+    expect(tpl).toContain('setType?.("due", "date")');
   });
 });

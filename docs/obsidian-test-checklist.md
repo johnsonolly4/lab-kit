@@ -198,3 +198,4 @@
 - [ ] Header says "Data folder: desktop only"
 - [ ] Built-in kit install works; merge cards fit at phone width
 - [ ] Settings page is usable: at phone width the Kit version row's buttons (Manage files / Review update / Update all safe files) and Set up stay on screen
+- [ ] New to-do due date (Restore kit original on the To-do template first): New to-do asks title, project, (meeting), then **Due date?**. Enter on empty: `due` empty, no countdown question. A wrong text (`tomorrow`) asks again; Esc cancels the whole to-do. A date `2026-10-14`: asks Countdown, and `due` shows in Properties as a date (calendar icon), `countdown` as a tick box matching your answer. With the setting Only to-dos with countdown: true, the badge shows only after answering yes
