@@ -2,7 +2,7 @@
 // Works on mobile: only the vault adapter and crypto.subtle.
 import { Modal, Notice, Setting, parseYaml, type App, type Plugin } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
   kitBackupPath, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
@@ -148,19 +148,35 @@ export class KitManaged {
 
   /**
    * A folder setting changed: writes the new folder names into installed kit files you have not edited (each backed up first).
-   * Returns what was rewritten and which edited files were left on the old folders.
+   * Returns what was rewritten and which edited files were left on the old folders. A .base among those (edited, or re-saved by Obsidian
+   * with its keys in another order) is listed in `patchable` when only its folder filter needs changing; `patch()` does that after a backup.
    */
-  async reapplyFolders(): Promise<{ rewritten: string[]; kept: string[] }> {
+  async reapplyFolders(): Promise<{ rewritten: string[]; kept: string[]; skipped: string[]; patchable: string[]; patch: () => Promise<void> }> {
     const kit = this.slot;
-    if (!kit.managed) return { rewritten: [], kept: [] };
+    const none = { rewritten: [], kept: [], skipped: [], patchable: [], patch: async () => {} };
+    if (!kit.managed) return none;
     const items = await this.plan();
-    const { rewrite, kept } = await planFolderReapply(this.app.vault.adapter, items, kit.managed, this.baseDir());
+    const { rewrite, kept, skipped } = await planFolderReapply(this.app.vault.adapter, items, kit.managed, this.baseDir());
     if (rewrite.length) {
       const out = await this.quietly(rewrite, this.applyOptions({ keepVersion: true, select: () => true }), o => applyManaged(this.app.vault.adapter, this.bundle, rewrite, kit.managed, o));
       kit.managed = out.state;
       await this.host.save();
     }
-    return { rewritten: rewrite.map(i => i.dest), kept: kept.map(i => i.dest) };
+    // A .base whose filters already show the new folders needs nothing; one that only differs there can be patched
+    const patches: { item: ManagedItem; text: string }[] = [], rest = { kept: [] as ManagedItem[], skipped: [] as ManagedItem[] };
+    for (const [list, into] of [[kept, rest.kept], [skipped, rest.skipped]] as const) {
+      for (const it of list) {
+        if (!it.dest.endsWith(".base")) { into.push(it); continue; }
+        const cur = await this.app.vault.adapter.read(it.dest);
+        const text = patchFolders(cur, it.text);
+        if (text !== null) patches.push({ item: it, text });
+        else if (inFolders(cur).join("\n") !== inFolders(it.text).join("\n")) into.push(it);
+      }
+    }
+    const patch = async (): Promise<void> => {
+      await this.quietly(patches.map(p => p.item), this.applyOptions(), o => patchManagedFolders(this.app.vault.adapter, patches, o));
+    };
+    return { rewritten: rewrite.map(i => i.dest), kept: rest.kept.map(i => i.dest), skipped: rest.skipped.map(i => i.dest), patchable: patches.map(p => p.item.dest), patch };
   }
 
   /** Install / update / recreate / merge ONE file (asks first when it needs a new folder or a settings change). */

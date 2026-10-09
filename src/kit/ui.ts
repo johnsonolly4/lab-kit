@@ -336,14 +336,27 @@ export class KitController {
   async foldersChanged(redraw = true): Promise<void> {
     if (redraw) this.redrawSettings?.();
     try {
-      const rewritten: string[] = [], kept: string[] = [];
+      const rewritten: string[] = [], kept: string[] = [], skipped: string[] = [], patchable: string[] = [], patches: (() => Promise<void>)[] = [];
       for (const kit of [this.managed, this.planning]) {
         if (!kit) continue;
         const r = await kit.reapplyFolders();
-        rewritten.push(...r.rewritten); kept.push(...r.kept);
+        rewritten.push(...r.rewritten); kept.push(...r.kept); skipped.push(...r.skipped); patchable.push(...r.patchable); patches.push(r.patch);
       }
       if (rewritten.length) new Notice(`Updated ${rewritten.length} kit file${rewritten.length === 1 ? "" : "s"} to the new folders. The old copies are in the backup folder.`, 8000);
       if (kept.length) new Notice(`Your edits were kept, so these still use the old folders: ${kept.join(", ")}. Restore kit original in Manage files writes the new ones.`, 12000);
+      if (skipped.length) new Notice(`These come from another kit version, so they still use the old folders: ${skipped.join(", ")}. Update all safe files in Manage files first.`, 12000);
+      if (patchable.length) {
+        // A board you edited, or that Obsidian re-saved, keeps its old folder filter: offer to change only that line
+        const frag = createFragment(f => {
+          f.createDiv({ text: `These boards still look in the old folder, so they show nothing: ${patchable.join(", ")}.` });
+          const b = f.createEl("button", { text: "Patch folder only", cls: "lab-kit-notice-btn" });
+          b.addEventListener("click", () => {
+            notice.hide();
+            void Promise.all(patches.map(run => run())).then(() => new Notice("Changed the folder in the board filters. The old copies are in the backup folder.", 8000), e => { console.error(e); new Notice("Could not patch the boards. See the developer console for details."); });
+          });
+        });
+        const notice = new Notice(frag, 0);
+      }
     } catch (e) { console.error(e); new Notice("Could not update the kit files to the new folders. See the developer console for details."); }
   }
 

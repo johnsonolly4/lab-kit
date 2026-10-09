@@ -1,7 +1,7 @@
 // Phase 1 of docs/plans/base-filters-follow-folders.md: after a folder setting changes or a folder is renamed in Obsidian,
 // do the kit's three .base boards get the new folder in their filter line (planFolderReapply + applyManaged), or are they reported?
 import { describe, it, expect } from "vitest";
-import { applyManaged, offIds, planFolderReapply, planManaged, trackedRoles, followRename, type EmbeddedKit, type ManagedAdapter, type ManagedState, type Roles } from "../src/kit/managed";
+import { applyManaged, inFolders, offIds, patchFolders, patchManagedFolders, planFolderReapply, planManaged, trackedRoles, followRename, type EmbeddedKit, type ManagedAdapter, type ManagedState, type Roles } from "../src/kit/managed";
 import { PLANNING_FOLDER_DEFAULTS, followFolderRename, kitFolderRoles, planningRoles, type PlanningFolders } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -98,15 +98,15 @@ describe("kit .base filters follow a folder setting change", () => {
       expect(r.plan.kept.map(i => i.dest), "kept list (no base copy)").toContain(path);
     });
 
-    it(`${b.dest}: installed by an older kit version → skipped AND not reported (the gap; Phase 2 should report it)`, async () => {
+    it(`${b.dest}: installed by an older kit version → listed as skipped (reported, not rewritten)`, async () => {
       const s = defaults();
       const { v, state } = await install(b.kit, s);
       const path = pathOf(state, bundle(b.kit), b.dest);
       state.files[idOf(bundle(b.kit), b.dest)].installedVersion = "0.4.0";
       b.change(s);
       const r = await reapply(b.kit, s, v, state);
-      // FOUND in Phase 1: planFolderReapply skips files of another kit version without telling anyone, so the filter stays on the old folder
-      expect([...r.plan.rewrite, ...r.plan.kept].map(i => i.dest)).not.toContain(path);
+      expect(r.plan.rewrite.map(i => i.dest)).not.toContain(path);
+      expect(r.plan.skipped.map(i => i.dest)).toContain(path);
       expect(filterLine(v.files[path])).toContain(`"${b.old}`);
     });
   }
@@ -125,10 +125,32 @@ describe("Obsidian re-saves a .base (reproduced by the user 2026-10-09: planning
     renameFolder(v, [state], s, "00 Planning", "00 Planning moved");
     const r = await reapply("planning", s, v, state);
     const moved = "00 Planning moved/To-do board.base";
-    // CAUSE: not in rewrite; only a notice (kept) names it, and the filter stays on the old folder
+    // CAUSE: not rewritten as an unedited file; it is kept, and the filter stays on the old folder until patched
     expect(r.plan.rewrite.map(i => i.dest)).not.toContain(moved);
     expect(r.plan.kept.map(i => i.dest)).toContain(moved);
     expect(filterLine(v.files[moved])).toContain('"00 Planning/To-dos"');
+    // Phase 2: patch only the folder, after a backup; key order and the rest stay as Obsidian saved them
+    const item = r.plan.kept.find(i => i.dest === moved)!;
+    const before = v.files[moved];
+    const text = patchFolders(before, item.text)!;
+    expect(text).toBe(before.replace('"00 Planning/To-dos"', '"00 Planning moved/To-dos"'));
+    const hash = r.state.files[item.file.id].installedHash;
+    const backups = await patchManagedFolders(v, [{ item, text }], opts);
+    expect(v.files[backups[0]]).toBe(before);
+    expect(filterLine(v.files[moved])).toContain('"00 Planning moved/To-dos"');
+    expect(v.files[moved]).toBe(text);
+    expect(r.state.files[item.file.id].installedHash).toBe(hash);   // still "yours" for later updates
+    // second pass: the filter is right, so nothing is left to report
+    const again = await reapply("planning", s, v, r.state);
+    expect(inFolders(v.files[moved])).toEqual(inFolders(again.plan.kept.concat(again.plan.skipped).find(i => i.dest === moved)?.text ?? v.files[moved]));
+  });
+
+  it("patchFolders: nothing to change or filters that do not line up → null; only the folder strings change", () => {
+    const a = 'filters:\n  and:\n    - file.inFolder("A/x")\n    - file.inFolder("B")\nmine: true\n';
+    expect(patchFolders(a, 'file.inFolder("A/x") file.inFolder("B")')).toBeNull();
+    expect(patchFolders(a, 'file.inFolder("A/y")')).toBeNull();   // different count
+    expect(patchFolders("no filter here", 'file.inFolder("A/y")')).toBeNull();
+    expect(patchFolders(a, 'file.inFolder("A/y") file.inFolder("B")')).toBe(a.replace("A/x", "A/y"));
   });
 });
 

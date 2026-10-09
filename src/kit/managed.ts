@@ -168,22 +168,56 @@ export interface FolderReapply {
   rewrite: ManagedItem[];
   /** Files you edited whose kit text would change with the new folders: left alone. */
   kept: ManagedItem[];
+  /** Files written by another kit version whose text would change with the new folders: left alone (the kit never brings in newer text here), but named. */
+  skipped: ManagedItem[];
 }
 /**
  * After a folder setting changed: which installed files need the new folder names written in. `items` is a fresh plan (kit text rendered with the new folders).
  * Only files of the installed kit version count, so this never brings in newer kit text; an edited file is reported, not touched.
  */
 export async function planFolderReapply(adapter: Pick<DataAdapter, "exists" | "read">, items: ManagedItem[], state: ManagedState | null, baseDir: string | null): Promise<FolderReapply> {
-  const out: FolderReapply = { rewrite: [], kept: [] };
+  const out: FolderReapply = { rewrite: [], kept: [], skipped: [] };
   for (const it of items) {
     const st = state?.files[it.file.id];
-    if (!st || st.detached || st.installedVersion !== it.file.version) continue;
+    if (!st || st.detached) continue;
     if (it.curHash === null || it.curHash === it.kitHash || it.action === "off" || it.action === "detached" || it.action === "missing") continue;
+    if (st.installedVersion !== it.file.version) { out.skipped.push(it); continue; }
     if (it.curHash === st.installedHash) { out.rewrite.push({ ...it, action: "fast-forward" }); continue; }
     const baseFile = baseDir ? kitJoin(baseDir, `${it.file.id}.txt`) : null;
     if (baseFile && await adapter.exists(baseFile) && kitNormalise(await adapter.read(baseFile)) !== kitNormalise(it.text)) out.kept.push(it);
   }
   return out;
+}
+
+const IN_FOLDER = /file\.inFolder\("([^"]*)"\)/g;
+/** The folders a .base filters on, in file order. */
+export const inFolders = (text: string): string[] => [...text.matchAll(IN_FOLDER)].map(m => m[1]);
+/**
+ * A .base you edited, or one Obsidian re-saved with its keys in another order, still filters on the old folder after a folder change.
+ * Returns `current` with only the `file.inFolder("…")` folders replaced by those of `kitNew` (matched by position); everything else stays byte for byte.
+ * null when there is nothing to change or the filters do not line up (different count): then it is only reported.
+ */
+export function patchFolders(current: string, kitNew: string): string | null {
+  const want = inFolders(kitNew);
+  let i = 0, changed = false, count = 0;
+  const out = current.replace(IN_FOLDER, (whole, folder: string) => {
+    const to = want[i++];
+    count++;
+    if (to === undefined || to === folder) return whole;
+    changed = true;
+    return `file.inFolder("${to}")`;
+  });
+  return changed && count === want.length ? out : null;
+}
+
+/** Writes `patched` text over each item's file after a backup. Leaves the recorded hash and base copy alone: the file stays "yours" for later updates. */
+export async function patchManagedFolders(adapter: ManagedAdapter, patches: { item: ManagedItem; text: string }[], opts: ApplyOptions): Promise<string[]> {
+  const backups: string[] = [];
+  for (const { item, text } of patches) {
+    backups.push(await backupFile(adapter, item, opts));
+    await adapter.write(item.dest, text);
+  }
+  return backups;
 }
 
 /* ---- Preview (the confirmation dialog) ---- */

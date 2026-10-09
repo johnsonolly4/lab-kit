@@ -37,6 +37,9 @@ After a planning, lab or chemical folder is renamed or changed in settings, the 
 - Files: `src/kit/managed.ts` (`planFolderReapply`), `src/kit/managed-ui.ts` (`reapplyFolders`), `src/kit/ui.ts` (Notices ~345-346), tests.
 - Done when: the Phase 1 failing case passes; an edited `.base` is named in the notice with "patch folder only" (replace just the old folder string in the filter line, backup first, nothing else touched); tests for patch and for not-found string. Not seen in Obsidian is stated.
 
+#### Phase 2 result (2026-10-09, tests only, not seen in Obsidian)
+Built as planned: `patchFolders` (position-matched `file.inFolder` strings, null if nothing to change or counts differ), `patchManagedFolders` (backup, write, state and base copy untouched), `planFolderReapply` returns `skipped`, `reapplyFolders` returns `patchable` + `patch()`, `foldersChanged` shows a persistent notice with **Patch folder only**. A `.base` whose filters already match is no longer reported. Gap 2 (`To-dos` subfolder rename) left in BACKLOG "Board folder patch". Tests 548.
+
 ### Phase 3 — Check in Obsidian (user)
 - Depends on: Phase 2
 - Done when: the user renames each folder in `test-vault` and the three boards still list notes; result goes into BACKLOG.
