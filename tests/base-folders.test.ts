@@ -112,6 +112,26 @@ describe("kit .base filters follow a folder setting change", () => {
   }
 });
 
+describe("Obsidian re-saves a .base (reproduced by the user 2026-10-09: planning folder renamed to \"00 Planning moved\", board empty)", () => {
+  // Opening the board in Obsidian rewrote the file with the keys in another order: same meaning, different bytes
+  const reorder = (t: string): string => t.replace("    columnWidth: 270\n", "").replace("      - done\n", "      - done\n    columnWidth: 270\n");
+  it("To-do board: a re-ordered but unchanged file counts as edited, so the rename does not reach its filter", async () => {
+    const s = defaults();
+    const { v, state } = await install("planning", s);
+    const path = pathOf(state, planning, "To-do board.base");
+    v.files[path] = reorder(v.files[path]);
+    expect(v.files[path]).not.toBe(planning.contents[idOf(planning, "To-do board.base")]);
+    v.files[`${opts.baseDir}/${idOf(planning, "To-do board.base")}.txt`] = planning.contents[idOf(planning, "To-do board.base")];
+    renameFolder(v, [state], s, "00 Planning", "00 Planning moved");
+    const r = await reapply("planning", s, v, state);
+    const moved = "00 Planning moved/To-do board.base";
+    // CAUSE: not in rewrite; only a notice (kept) names it, and the filter stays on the old folder
+    expect(r.plan.rewrite.map(i => i.dest)).not.toContain(moved);
+    expect(r.plan.kept.map(i => i.dest)).toContain(moved);
+    expect(filterLine(v.files[moved])).toContain('"00 Planning/To-dos"');
+  });
+});
+
 describe("kit .base filters follow a folder renamed in Obsidian", () => {
   it("To-do board: planning folder renamed (the base moves with it)", async () => {
     const s = defaults();
