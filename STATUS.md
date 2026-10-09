@@ -31,6 +31,7 @@ None.
 - [ ] Read BACKLOG "Pre-release test 2026-10-09" (your results, recorded 2026-10-09) and say which items to take first; the countdown bug is fixed; due-date prompt built (try it: checklist 6i, last row)
 - [ ] Rename the planning folder in test-vault and click Patch folder only (checklist 6i, last row), then say what happened
 - [ ] Say if Status board colours should wait for a Bases kanban DOM check
+- [ ] Try Cmd+P New concept and New chemical (checklist 6i, last row); say if New chemical should ask for a name, and how the visible Summary field should look (BACKLOG New concept row) — by 2026-10-12
 - [ ] Try the Pre-release fixes row (checklist 6i, last row); say which vault state gave "Button ID not Found" and the missing hub (BACKLOG)
 
 ## Known issues
