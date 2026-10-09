@@ -123,7 +123,7 @@ class KitSettingTab extends PluginSettingTab {
       });
     }
     const setup: SettingGroupItem[] = [];
-    setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit. You still set the Alt+S key in Obsidian's hotkeys.",
+    setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit.",
       render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
     setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater, CSS snippets, folders) and what is missing, with a Fix for each. Nothing changes until you confirm.",
       render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
