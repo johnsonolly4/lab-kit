@@ -15,8 +15,8 @@ cssclasses:
 ```dataview
 LIST rows.file.link
 FROM "06 Knowledge"
-WHERE file.path != this.file.path
-GROUP BY replace(file.folder, "06 Knowledge/", "") AS Topic
+WHERE file.path != this.file.path AND file.name != replace(file.folder, "06 Knowledge/", "")
+GROUP BY link(file.folder + "/" + replace(file.folder, "06 Knowledge/", ""), replace(file.folder, "06 Knowledge/", "")) AS Topic
 SORT Topic ASC
 ```
 
