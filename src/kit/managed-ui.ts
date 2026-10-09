@@ -420,6 +420,8 @@ class KitManagedModal extends Modal {
   private recreate = new Set<string>();
   /** Clean merges are ticked by default; ids here were unticked. */
   private noMerge = new Set<string>();
+  /** New and updated files are ticked by default; ids here were unticked and are left as they are. */
+  private skip = new Set<string>();
 
   constructor(app: App, private managed: KitManaged) { super(app); }
 
@@ -442,7 +444,7 @@ class KitManagedModal extends Modal {
       `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
 
     // One click ticks every file with a box (recreate / merge); nothing is written until Apply
-    const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge");
+    const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge" || i.action === "create" || i.action === "fast-forward");
     if (boxed.length) {
       new Setting(contentEl).setName(`Tick or untick all ${boxed.length} files with a box`)
         .addButton(b => b.setButtonText("Tick all").setCta().onClick(() => this.tick(boxed, true)))
@@ -469,6 +471,12 @@ class KitManagedModal extends Modal {
           cb.checked = !this.noMerge.has(it.file.id);
           cb.addEventListener("change", () => { if (cb.checked) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); this.render(); });
           li.appendText(" merge ");
+        }
+        if (g.action === "create" || g.action === "fast-forward") {
+          const cb = li.createEl("input", { attr: { type: "checkbox" } });
+          cb.checked = !this.skip.has(it.file.id);
+          cb.addEventListener("change", () => { if (cb.checked) this.skip.delete(it.file.id); else this.skip.add(it.file.id); this.render(); });
+          li.appendText(g.action === "create" ? " add " : " update ");
         }
         li.addClass("lab-kit-review-row");
         actionChip(li, g.action);
@@ -506,12 +514,13 @@ class KitManagedModal extends Modal {
   private tick(items: ManagedItem[], on: boolean): void {
     for (const it of items) {
       if (it.action === "missing") { if (on) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); }
+      else if (it.action === "create" || it.action === "fast-forward") { if (on) this.skip.delete(it.file.id); else this.skip.add(it.file.id); }
       else if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id);
     }
     this.render();
   }
 
-  private select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action)
+  private select = (it: ManagedItem): boolean => (SAFE_ACTIONS.includes(it.action) && !this.skip.has(it.file.id))
     || (it.action === "missing" && this.recreate.has(it.file.id))
     || (it.action === "merge" && !this.noMerge.has(it.file.id));
   private writes(): number { return this.items.filter(i => this.select(i) && i.action !== "up-to-date").length; }
@@ -575,9 +584,10 @@ class KitFilesModal extends Modal {
     for (const it of ordered) {
       const id = it.file.id;
       const status = statusOf(it, this.managed.stateOf(id));
-      const row = new Setting(contentEl).setName(it.dest);
+      const row = new Setting(contentEl).setName(it.dest).setClass("lab-kit-manage-row");
       actionChip(row.nameEl, it.action);
-      row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
+      // A kept note's action chip already says "your settings": a second chip would repeat it
+      if (it.action !== "keep") row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
       const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
         : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";
       row.setDesc([it.file.desc, note].filter(Boolean).join(" · "));

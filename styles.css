@@ -69,6 +69,11 @@
 .lab-kit-group summary { cursor: pointer; font-weight: 600; }
 .lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }
 .lab-kit-group code { font-size: 0.85em; word-break: break-all; }
+/* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
+.setting-item.lab-kit-manage-row { flex-wrap: wrap; row-gap: 6px; }
+.lab-kit-manage-row > .setting-item-info { flex: 1 1 100%; min-width: 0; }
+.lab-kit-manage-row .setting-item-name { overflow-wrap: anywhere; }
+.lab-kit-manage-row > .setting-item-control { flex: 1 1 100%; justify-content: flex-start; flex-wrap: wrap; }
 .lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
 .lab-kit-badge.is-ok { color: var(--text-success); }
 .lab-kit-badge.is-info { color: var(--text-accent); }
