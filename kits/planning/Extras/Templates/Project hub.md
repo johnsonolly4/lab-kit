@@ -4,18 +4,27 @@ let name = await tp.user.vtAsk(tp, "Project name (same as its Zotero collection 
 if (!name) { throw new Error("Cancelled - no project name"); }   // Esc (null) or empty
 name = name.replace(/['&\\/:*?"<>|#^\[\]]/g, "").trim();
 const folder = `02 Projects/${name}`;
+// deadline: optional date property, set once here (Obsidian keeps it in .obsidian/types.json)
+try { if (app.metadataTypeManager?.getAssignedType?.("deadline") !== "date") { await app.metadataTypeManager?.setType?.("deadline", "date"); } } catch (e) { /* older Obsidian: deadline stays text */ }
 if (!app.vault.getAbstractFileByPath(folder)) { await app.vault.createFolder(folder); }
 await tp.file.move(`${folder}/${name}`);
 -%>
 ---
 kind: project
 Status: Active
+deadline:
 cssclasses:
   - vt
   - project
 ---
 
 **Status:** `INPUT[inlineSelect(option(Active), option(Paused), option(Done)):Status]`
+
+**Deadline:** `INPUT[datePicker:deadline]`
+
+```vault-card
+show: deadline
+```
 
 `BUTTON[todo, project-note]`
 

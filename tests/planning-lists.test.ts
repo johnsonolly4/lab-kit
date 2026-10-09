@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
+import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -146,5 +146,27 @@ describe("Go to and block options", () => {
   it("options: show, limit, hide lists, repeated extra", () => {
     expect(blockOptions("show: This-week\nlimit: 3\nhide: 99 Archive, Extras\nextra: To-do board\nextra: Deck | lab-kit:open-deck\nnonsense"))
       .toEqual({ show: "this-week", limit: 3, hide: ["99 Archive", "Extras"], extra: ["To-do board", "Deck | lab-kit:open-deck"] });
+  });
+});
+
+describe("Project deadline countdown", () => {
+  it("counts a hub's deadline like a to-do's due, under the same setting", () => {
+    expect(deadlineBadge({ Status: "Active", deadline: "2026-10-12" }, "all", WED)).toEqual({ text: "deadline 5d", cls: "vt-badge vt-planned" });
+    expect(deadlineBadge({ Status: "Active", deadline: "2026-10-08" }, "all", WED)).toEqual({ text: "deadline Tomorrow", cls: "vt-badge vt-today" });
+    expect(deadlineBadge({ Status: "Active", deadline: "2026-10-05" }, "all", WED)).toEqual({ text: "deadline 2d late", cls: "vt-badge vt-overdue" });
+  });
+  it("shows nothing when off, not marked, finished, or without a valid date", () => {
+    expect(deadlineBadge({ deadline: "2026-10-12" }, "off", WED)).toBeNull();
+    expect(deadlineBadge({ deadline: "2026-10-12" }, "marked", WED)).toBeNull();
+    expect(deadlineBadge({ deadline: "2026-10-12", countdown: true }, "marked", WED)).not.toBeNull();
+    expect(deadlineBadge({ Status: "Done", deadline: "2026-10-12" }, "all", WED)).toBeNull();
+    expect(deadlineBadge({ Status: "Active", deadline: "" }, "all", WED)).toBeNull();
+    expect(deadlineBadge({ Status: "Active", deadline: "soon" }, "all", WED)).toBeNull();
+  });
+  it("projects() and project cards carry the badge after the status badge", () => {
+    const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project", Status: "Active", deadline: "2026-10-12" });
+    expect(projects([hub]).map(l => l.badges.length)).toEqual([1]);   // setting off: status only
+    expect(projects([hub], Infinity, "all", WED)[0].badges.map(b => b.text)).toEqual(["active", "deadline 5d"]);
+    expect(projectCards([hub], [], [], [], {}, WED, "all")[0].hub.badges.map(b => b.text)).toEqual(["active", "deadline 5d"]);
   });
 });

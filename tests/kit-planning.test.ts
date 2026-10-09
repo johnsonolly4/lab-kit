@@ -148,7 +148,7 @@ describe("planning kit files (Phase 3)", () => {
 
   it("the Project hub template writes kind, Status and the vt / project classes; the New project note template only vt", () => {
     const front = (dest: string): string => readFileSync(join("kits/planning/Extras/Templates", dest), "utf8").replace(/\r\n/g, "\n").split("-%>\n")[1].split("---")[1];
-    expect(front("Project hub.md")).toMatch(/kind: project\nStatus: Active\ncssclasses:\n {2}- vt\n {2}- project\n/);
+    expect(front("Project hub.md")).toMatch(/kind: project\nStatus: Active\ndeadline:\ncssclasses:\n {2}- vt\n {2}- project\n/);
     expect(front("New project note.md")).toBe("\ncssclasses:\n  - vt\n");
   });
 

@@ -6,7 +6,7 @@ import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -119,13 +119,19 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       case "projects":
-        if (this.need(box, f.projects)) this.list(box, projects(this.owner.notesIn(f.projects), o.limit ?? TILE_ROWS), "No projects yet.");
+        if (this.need(box, f.projects)) this.list(box, projects(this.owner.notesIn(f.projects), o.limit ?? TILE_ROWS, kit.dueCountdown), "No projects yet.");
         return;
       case "recently-read":
         // Literature is only made with ZotLit: without it, an absent folder is normal
         if (!this.app.vault.getFolderByPath(f.literature) && !loadedPlugins(this.app).has("zotlit")) { box.createDiv({ cls: "vt-muted", text: "No literature notes yet." }); return; }
         if (this.need(box, f.literature)) this.list(box, recentlyRead(this.owner.notesIn(f.literature), o.limit ?? 5), "No literature notes yet.");
         return;
+      case "deadline": {   // on a project hub: this project's deadline countdown
+        const b = deadlineBadge((this.app.metadataCache.getCache(this.sourcePath)?.frontmatter ?? {}), kit.dueCountdown, new Date());
+        if (b) box.createSpan({ cls: b.cls, text: b.text });
+        else box.createDiv({ cls: "vt-muted", text: kit.dueCountdown === "off" ? "Deadline countdown is off (Settings → Lab Kit)." : "No deadline set." });
+        return;
+      }
       case "next-meetings": {
         if (!this.need(box, f.meetings)) return;
         const today = new Date();
@@ -133,7 +139,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline or next-meetings.` });
     }
   }
 
@@ -174,7 +180,7 @@ class BlockView extends MarkdownRenderChild {
       const file = this.app.vault.getFileByPath(h.path);
       if (file) goals[h.path] = goalOf(await this.app.vault.cachedRead(file));
     }
-    const cards = projectCards(hubs, this.owner.notesIn(todoFolder(f)), this.owner.notesIn(f.literature), inProjects, goals, new Date());
+    const cards = projectCards(hubs, this.owner.notesIn(todoFolder(f)), this.owner.notesIn(f.literature), inProjects, goals, new Date(), kit.dueCountdown);
     const grid = box.createDiv({ cls: "vt-cards" });
     if (!cards.length) grid.createDiv({ cls: "vt-muted", text: "No projects yet - press New project." });
     const commands = (): PlanningCommands | null => {

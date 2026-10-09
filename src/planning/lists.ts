@@ -1,7 +1,7 @@
 // Homepage and Projects overview lists (Phase 5a): which notes each block shows, in which order, with which badge.
 // Pure (no Obsidian runtime). Each rule is ported from the Dataview / DataviewJS query it replaced in kits/planning/00 Home.md and
 // 02 Projects/Projects overview.md (kit 0.5.2); docs/plans/phase-5-homepage-meetings.md.
-import { DAYS, isoWeekday, parseDay, ymd } from "./todo";
+import { DAYS, dueCountdown, isoWeekday, parseDay, ymd, type CountdownMode } from "./todo";
 
 /** A note as the lists see it. `links`: paths of the notes it links to (resolved). Times in ms. */
 export interface NoteRec { path: string; name: string; folder: string; fm: Record<string, unknown>; ctime: number; mtime: number; links?: string[] }
@@ -54,12 +54,23 @@ export function experiments(notes: NoteRec[], limit = 8): ListLine[] {
 
 const statusRank = (s: string): number => (s === "Active" ? 0 : s === "Paused" ? 1 : s === "Done" ? 2 : 3);
 
-/** Projects: project hubs, Active → Paused → Done (others last), then by name. */
-export function projects(notes: NoteRec[], limit = Infinity): ListLine[] {
+/** The deadline badge of a project hub: its `deadline` date counted down like a to-do's `due` (same Due-date countdown setting), none once the project is Done. */
+export function deadlineBadge(fm: Record<string, unknown>, mode: CountdownMode, now: Date): Badge | null {
+  if (str(fm.Status) === "Done") return null;
+  const cd = dueCountdown({ due: fm.deadline, countdown: fm.countdown }, mode, now);
+  if (!cd) return null;
+  return { text: `deadline ${cd.text}`, cls: `vt-badge ${cd.level === "late" ? "vt-overdue" : cd.level === "soon" ? "vt-today" : "vt-planned"}` };
+}
+
+/** Projects: project hubs, Active → Paused → Done (others last), then by name. A hub with a `deadline` gets the countdown badge (mode "off" = none). */
+export function projects(notes: NoteRec[], limit = Infinity, mode: CountdownMode = "off", now: Date = new Date()): ListLine[] {
   return notes.filter(n => n.fm.kind === "project")
     .sort((a, b) => statusRank(str(a.fm.Status)) - statusRank(str(b.fm.Status)) || a.name.localeCompare(b.name))
     .slice(0, limit)
-    .map(n => { const s = str(n.fm.Status); return { path: n.path, text: n.name, badges: s ? [{ text: s.toLowerCase(), cls: `vt-badge vt-${slug(s)}` }] : [] }; });
+    .map(n => {
+      const s = str(n.fm.Status), d = deadlineBadge(n.fm, mode, now);
+      return { path: n.path, text: n.name, badges: [...(s ? [{ text: s.toLowerCase(), cls: `vt-badge vt-${slug(s)}` }] : []), ...(d ? [d] : [])] };
+    });
 }
 
 /** When a literature note was imported: its `imported` property, else the file's creation time. */
@@ -99,8 +110,8 @@ export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; m
  * One card per project hub, in the projects order. Up to 3 open to-dos of the project (overdue first, then Mon → Fri → Backlog → other),
  * counts of open to-dos, papers (ZotLit collection `Projects/<name>`, or a link to the hub) and other notes in the project's folder.
  */
-export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[], notes: NoteRec[], goals: Record<string, string>, today: Date): ProjectCard[] {
-  const order = projects(hubs).map(l => hubs.find(h => h.path === l.path)!);
+export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[], notes: NoteRec[], goals: Record<string, string>, today: Date, mode: CountdownMode = "off"): ProjectCard[] {
+  const order = projects(hubs, Infinity, mode, today).map(l => hubs.find(h => h.path === l.path)!);
   const rank = (d: string): number => { const r = dayRank(d); return d === "Backlog" ? 6 : r === 6 ? 8 : r; };
   return order.map(h => {
     const mine = todos.filter(t => isOpenTodo(t) && pointsTo(t.fm.project, h))
@@ -109,7 +120,7 @@ export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[
     const cols = (p: NoteRec): string[] => (Array.isArray(p.fm.Collections) ? (p.fm.Collections as unknown[]).map(str) : [str(p.fm.Collections)]);
     const nPapers = papers.filter(p => p.fm.kind === "literature" && (cols(p).includes(`Projects/${h.name}`) || (p.links ?? []).includes(h.path))).length;
     return {
-      hub: projects([h])[0], goal: goals[h.path] ?? "", folder: h.folder,
+      hub: projects([h], Infinity, mode, today)[0], goal: goals[h.path] ?? "", folder: h.folder,
       todos: mine.slice(0, 3).map(({ t, late }) => ({ path: t.path, text: t.name,
         badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }] })),
       more: Math.max(0, mine.length - 3), open: mine.length, papers: nPapers,
