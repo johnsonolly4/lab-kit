@@ -188,6 +188,8 @@ class KitSettingTab extends PluginSettingTab {
             t.setValue(kit.chemicalFolder).onChange(async v => { kit.chemicalFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
           });
         } },
+      { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
+        render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
       { name: "Lab notes folder", desc: "The folder of your experiment notes. New lab entry creates notes here, and the kit's Lab book base (a board of your experiments by Status) goes in the folder above it. Empty: neither is used.",
         render: b => {
           b.addText(t => {

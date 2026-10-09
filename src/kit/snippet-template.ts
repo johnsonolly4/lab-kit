@@ -14,6 +14,10 @@ export interface TemplateField {
   type: "text" | "number" | "textarea";
   /** The default answer; may hold computed tokens such as {{next-letter:sampling}}. */
   value: string;
+  /** `suggest: chemicals` = the field suggests the chemical notes while typing. */
+  suggest?: "chemicals";
+  /** `class: monomer` or `class: [a, b]`: suggest chemicals of these Chemical classes (any text, never checked against a list). Needs `suggest: chemicals`. */
+  classes?: string[];
 }
 
 export interface TemplateHeader {
@@ -86,7 +90,13 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     if (fields.some(x => x.key === key)) throw new TemplateError(`The field key "${key}" is used twice.`);
     const type = asText(f.type) ?? "text";
     if (type !== "text" && type !== "number" && type !== "textarea") throw new TemplateError(`Field "${key}" has an unknown type "${type}".`);
-    fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "" });
+    const suggest = asText(f.suggest)?.trim();
+    if (suggest && suggest !== "chemicals") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals").`);
+    const classes = (Array.isArray(f.class) ? f.class : f.class === undefined ? [] : [f.class]).map(c => asText(c)?.trim() ?? "");
+    if (classes.some(c => !c)) throw new TemplateError(`Field "${key}": class must be text or a list of texts.`);
+    if (classes.length && !suggest) throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
+    fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "",
+      ...(suggest ? { suggest: "chemicals" as const } : {}), ...(classes.length ? { classes } : {}) });
   }
   const required = asText(raw.required)?.trim() || undefined;
   if (required && !fields.some(f => f.key === required)) throw new TemplateError(`required: "${required}" is not one of the fields.`);

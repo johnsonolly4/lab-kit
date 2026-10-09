@@ -32,7 +32,7 @@ module.exports = async function labSnippets(tp, snippet) {
   const num = (file?.basename ?? tp.file.title).match(/^[A-Za-z]*(\d+)/)?.[1] ?? "XXXX";
   const prefix = `${initials}${num}-`;
 
-  /** The chemical notes (Settings → Lab Kit → Chemical folder) as { name, aliases } for the forms' suggestions; undefined when no folder is set. */
+  /** The chemical notes (Settings → Lab Kit → Chemical folder) as { name, aliases, classes } for the forms' suggestions; undefined when no folder is set. */
   const chemList = () => {
     const path = String(kitData?.chemicalFolder ?? "").trim().replace(/^\/+|\/+$/g, "");
     const root = path ? app.vault.getFolderByPath(path) : null;
@@ -46,14 +46,25 @@ module.exports = async function labSnippets(tp, snippet) {
           const key = Object.keys(fm).find(k => k.trim().toLowerCase() === "names");
           const raw = key === undefined ? [] : [fm[key]].flat(Infinity);
           const aliases = raw.filter(a => a != null && a !== "").map(a => String(a).trim()).filter(a => a && a.toLowerCase() !== c.basename.toLowerCase());
-          out.push({ name: c.basename, aliases });
+          const ckey = Object.keys(fm).find(k => k.replace(/\s+/g, " ").trim().toLowerCase() === "chemical class");
+          const classes = ckey === undefined ? [] : [fm[ckey]].flat(Infinity).filter(a => a != null && a !== "").map(a => String(a).trim()).filter(Boolean);
+          out.push({ name: c.basename, aliases, classes });
         }
       }
     };
     walk(root.children);
     return out.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
   };
-  const chems = chemList();
+  const chemAll = chemList();
+  const chems = chemAll?.map(({ name, aliases }) => ({ name, aliases }));
+  /** The suggestions for a field that asks for Chemical classes (any text, never checked against a list; case-insensitive): those chemicals only (Settings → "Only suggest chemicals of the asked class") or first, then the rest. No class asked = all. src/kit/snippet-env.ts classFilter does the same for token templates. */
+  const chemsFor = (...want) => {
+    if (!chemAll || !want.length) return chems;
+    const w = new Set(want.map(c => c.trim().toLowerCase()));
+    const hit = (c) => c.classes.some(x => w.has(x.toLowerCase()));
+    const plain = (list) => list.map(({ name, aliases }) => ({ name, aliases }));
+    return kitData?.chemClassOnly === true ? plain(chemAll.filter(hit)) : plain([...chemAll.filter(hit), ...chemAll.filter(c => !hit(c))]);
+  };
   /** NMR / GPC / DLS and the notes of the Methods folder (Settings → Lab Kit → Methods folder), see labMethods.js. */
   const M = tp.user?.labMethods?.();
   const methods = M ? M.loadMethods(app, kitData?.methodsFolder, file?.path ?? "") : [];
@@ -219,7 +230,7 @@ ${calc({ name: id, title: "Results by sample", icon: "table" }, header, rows)}`;
       const v = await form("Solution prep", [
         { key: "label", label: "Solution name", value: "Solution 1" },
         { key: "solutes", label: "Solutes", hint: "comma separated", value: "", placeholder: "e.g. solute 1, solute 2", suggest: chems },
-        { key: "solvents", label: "Solvent(s)", hint: "optional · comma separated · several share the final volume equally", value: "", placeholder: "e.g. solvent name", suggest: chems },
+        { key: "solvents", label: "Solvent(s)", hint: "optional · comma separated · several share the final volume equally", value: "", placeholder: "e.g. solvent name", suggest: chemsFor("solvent") },
         { key: "volume", label: "Final volume (mL)", hint: "blank = fill in later", value: "" },
         { key: "mode", label: "Targets", type: "select", options: [{ value: "each", label: "Each solute has its own target" }, { value: "total", label: "Total concentration split by a ratio" }], value: "each" },
         { key: "unit", label: "Target unit (own targets)", type: "select", options: [{ value: "M", label: "M (mol/L)" }, { value: "mg/mL", label: "mg/mL" }, { value: "g", label: "g (mass)" }], value: "M" },
@@ -265,7 +276,7 @@ ${calc({ name: id, title: v.label, icon: "test-tube" }, header, rows)}${solvents
     async recipe() {
       const v = await form("Recipe by equivalents", [
         { key: "reagents", label: "Reagents", hint: "comma separated · the first is the reference", value: "", placeholder: "e.g. reagent 1, reagent 2", suggest: chems },
-        { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: "", suggest: chems },
+        { key: "solvent", label: "Solvent (makes up the rest)", hint: "leave blank for none", value: "", suggest: chemsFor("solvent") },
         { key: "amount", label: "Amount of the first reagent", hint: "leave blank to type it in the table", value: "" },
         { key: "amountUnit", label: "…in", type: "select", options: [{ value: "mmol", label: "mmol" }, { value: "g", label: "g (mass)" }, { value: "M", label: "M (concentration)" }], value: "mmol" },
         { key: "volume", label: "Total volume (mL)", hint: "only for a concentration: amount = M × mL", value: "" },
@@ -300,11 +311,11 @@ ${calc({ name: id, title: "Recipe by equivalents", icon: "flask-round" }, ["Reag
 
     async raft() {
       const v = await form("RAFT recipe generator", [
-        { key: "monomers", label: "Monomer(s)", hint: "comma separated", value: "", placeholder: "e.g. monomer 1, monomer 2", suggest: chems },
-        { key: "cta", label: "CTA / macro-CTA", value: "", placeholder: "e.g. CTA name", suggest: chems },
-        { key: "init", label: "Initiator", value: "", placeholder: "e.g. initiator name", suggest: chems },
-        { key: "solvent", label: "Solvent", value: "", placeholder: "e.g. solvent name", suggest: chems },
-        { key: "cosolvent", label: "Co-solvent", hint: "optional · leave blank for none", value: "", placeholder: "e.g. co-solvent name", suggest: chems },
+        { key: "monomers", label: "Monomer(s)", hint: "comma separated", value: "", placeholder: "e.g. monomer 1, monomer 2", suggest: chemsFor("monomer") },
+        { key: "cta", label: "CTA / macro-CTA", value: "", placeholder: "e.g. CTA name", suggest: chemsFor("CTA") },
+        { key: "init", label: "Initiator", value: "", placeholder: "e.g. initiator name", suggest: chemsFor("initiator") },
+        { key: "solvent", label: "Solvent", value: "", placeholder: "e.g. solvent name", suggest: chemsFor("solvent") },
+        { key: "cosolvent", label: "Co-solvent", hint: "optional · leave blank for none", value: "", placeholder: "e.g. co-solvent name", suggest: chemsFor("solvent") },
         { key: "cosolventPct", label: "Co-solvent (% of the solvent's mass)", value: "20" },
         { key: "mass", label: "Total monomer mass (g)", value: "" },
         { key: "dp", label: "Target DP", value: "" },
@@ -422,7 +433,7 @@ ${calc({ name: id, title: "Sampling timetable", icon: "timer", copy: "column A" 
     async column() {
       const v = await form("Flow column prep", [
         { key: "id", label: "Table id", hint: "other tables use e.g. column!B10 for the reactor volume", value: "column" },
-        { key: "solvent", label: "Solvent", hint: "optional · its note's Density fills the density below", value: "", placeholder: "e.g. solvent name", suggest: chems },
+        { key: "solvent", label: "Solvent", hint: "optional · its note's Density fills the density below", value: "", placeholder: "e.g. solvent name", suggest: chemsFor("solvent") },
         { key: "density", label: "Solvent density (g/mL)", hint: "blank = from the solvent's note, or fill in later", value: "" },
         { key: "dead", label: "End-fitting dead volume (mL)", value: "0.21" },
         { key: "packing", label: "Packing material", hint: "blank = fill in later", value: "", placeholder: "e.g. glass beads, 100 µm" },

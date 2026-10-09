@@ -75,6 +75,8 @@ Set **Chemical folder** to the folder that holds your chemical notes (one note p
 - Typing `[[` in a calc cell, or in a reagent, solvent, monomer, CTA or initiator field of a form, suggests your notes by file name or by their **Names** property (a list or a single value). A name found through **Names** inserts `[[Note|name]]`.
 - The hazard table lists each chemical from its `H_Phrase` property.
 
+Give a chemical a `Chemical class` (any text, or a list: `solvent`, `monomer`, `initiator`, `CTA`, or a class of your own). Form fields that ask for a class (Solvent, Monomer, CTA, Initiator) then suggest those chemicals first; switch on **Only suggest chemicals of the asked class** to hide the others. Reagents and solutes stay unfiltered.
+
 A chemical note is an ordinary note with properties, for example:
 
 ```yaml
@@ -150,7 +152,7 @@ Settings → Lab Kit is searchable and grouped:
 |---|---|
 | **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Backup folder |
 | **Kit folders and setup** | Templater **Set up**, **Check setup…**, **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, console log |
-| **Lab notebook** | Initials, Chemical folder, Lab notes folder, Molecular weight property, Methods folder |
+| **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder |
 | **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…** |
 | **Snippet menu** | A Lucide icon for each snippet |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |

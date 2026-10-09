@@ -6,6 +6,7 @@ import { createRequire } from "node:module";
 import {
   TemplateError, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, type TemplateEnv,
 } from "../src/kit/snippet-template";
+import { makeEnv } from "../src/kit/snippet-env";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
@@ -33,51 +34,11 @@ function miniYaml(src: string): unknown {
   return out;
 }
 
-/* ---------- a note and its vault, for the engine (mirrors the helpers inside labSnippets.js) ---------- */
+/* ---------- a note and its vault, for the engine (src/kit/snippet-env.ts mirrors the helpers inside labSnippets.js) ---------- */
 
 type Props = Record<string, string>;
 
-function calcTables(note: string): { name: string; rows: string[][] }[] {
-  const rx = new RegExp("^[ \\t>]*" + F + "calc[ \\t]*\\n([\\s\\S]*?)\\n[ \\t>]*" + F + "[ \\t]*$", "gim");
-  const out: { name: string; rows: string[][] }[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = rx.exec(note))) {
-    const lines = m[1].split("\n").map(l => l.replace(/^[ \t>]*/, ""));
-    const name = lines.map(l => /^name:\s*(.+?)\s*$/i.exec(l)).find(Boolean)?.[1].toLowerCase() ?? "";
-    const rows = lines.filter(l => l.startsWith("|") && !/^[\s|:-]+$/.test(l)).map(l => l.split("|").slice(1, -1).map(c => c.trim()));
-    out.push({ name, rows });
-  }
-  return out;
-}
-
-function envFor(note: string, props: Props): TemplateEnv {
-  const taken = new Set<string>();
-  const letterIndex = (s: string) => [...s].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
-  return {
-    prefix: PREFIX,
-    uniqueTable(base) {
-      const exists = (n: string) => taken.has(n) || new RegExp(`^\\s*(?:>\\s*)*name:\\s*${n}\\s*$`, "mi").test(note);
-      let n = base, k = 2;
-      while (exists(n)) n = `${base}${k++}`;
-      taken.add(n);
-      return n;
-    },
-    tableRows(name) {
-      const t = calcTables(note).find(x => x.name === name.toLowerCase());
-      return t ? Math.max(0, t.rows.length - 1) : 0;
-    },
-    nextFreeIndex(table) {
-      const text = table
-        ? calcTables(note).filter(t => new RegExp(`^${table.replace(/s$/, "s?")}\\d*$`, "i").test(t.name)).flatMap(t => t.rows.flat()).join("\n")
-        : note;
-      const rx = new RegExp(PREFIX + "([A-Z]+)", "g");
-      let next = 0, m: RegExpExecArray | null;
-      while ((m = rx.exec(text))) next = Math.max(next, letterIndex(m[1]) + 1);
-      return next;
-    },
-    noteProperty: (n, p) => props[`${n}.${p}`] ?? "",
-  };
-}
+const envFor = (note: string, props: Props): TemplateEnv => makeEnv(note, PREFIX, (n, p) => props[`${n}.${p}`] ?? "");
 
 /* ---------- the script side: labSnippets.js on a stub tp and app ---------- */
 

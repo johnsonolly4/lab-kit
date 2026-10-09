@@ -34,7 +34,7 @@ The simple kit snippets become plain editable Markdown files with a small header
 - Files: new `src/kit/snippet-template.ts` (pure: parse the header block, fill tokens, computed tokens passed in), `tests/snippet-template.test.ts` on fixtures from Phase 1.
 - Done when: for each of the six, filled template with default answers equals the script's output; unknown token, missing field and malformed header give a clear error, never a half-filled note; `npm test` and `npm run lint` clean. Engine change → fixtures; known answers 0005 and 0011 unaffected.
 
-### Phase 3 — Alt+S runs token templates
+### Phase 3 — Alt+S runs token templates (DONE 2026-10-09, see "Phase 3 result")
 - Depends on: Phase 2
 - Files: `kits/lab/Templates/Insert snippet.md`, the form call (reuse `labForm.js` from the header fields), a Lab Kit command or Templater-callable entry in `src/` for the fill, `npm run kit:manifest`, tests.
 - Done when: a token template in Snippets/ shows its form in Alt+S and inserts the filled text; plain snippets (no header) still insert as before; works with `hasNode()` false (mobile); Obsidian check in test-vault reported as seen / not seen.
@@ -377,3 +377,11 @@ Changes to the spec found while building (the fixtures hold the new text):
 - `{{#if key ^= "h"}}` is false for an empty answer.
 - Env for the engine (Phase 3 provides the real one): `prefix`, `nextFreeIndex(table?)`, `uniqueTable(base)`, `tableRows(name)`, `noteProperty(note, property)`. The tests build one from the note text (`envFor` in the test file); Phase 3 can move that into `src/`.
 - Tests use a small test-only YAML reader for the six headers, because the repo has no YAML library. Real `parseYaml` (Obsidian) is untested until Phase 3.
+
+## Phase 3 result (2026-10-09)
+
+Built: `src/kit/snippet-env.ts` (`makeEnv` = the real `TemplateEnv`, moved out of the test; `classFilter`), `src/kit/snippet-run.ts` (`SnippetTemplates.meta` / `.run`, on the plugin as `plugin.snippets`), `Insert snippet.md` (header snippets listed by `title` / `icon` / `desc`, run through the plugin; others through `tp.file.include`). Tests: `tests/snippet-run.test.ts`, `tests/snippets-chem-class.test.ts`; the Phase 2 tests now use `makeEnv`. Tests only, not seen in Obsidian; tests read headers as JSON (stub `parseYaml`), so Obsidian's real YAML reader is untested.
+
+Added to the spec:
+- Field options `suggest: chemicals` and `class: <text | list>` (any class name, never checked against a list). Setting `chemClassOnly` (Settings → Lab Kit): only the asked class, or asked class first then the rest (default). The same filter is in `labSnippets.js` (`chemsFor`) for the code snippets: monomers → monomer, CTA → CTA, initiator → initiator, solvents → solvent; reagents and solutes unfiltered.
+- Missing `labForm` or a bad header/token: a Notice naming the snippet, nothing inserted.

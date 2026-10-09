@@ -156,8 +156,8 @@
       "src": "Templates/Insert snippet.md",
       "role": "templates",
       "path": "Insert snippet.md",
-      "version": "0.4.9",
-      "sha256": "b880e77da9dde9a6342ed993e8623e24dfe1da3b735f6a5e3051dbac8f5ec037",
+      "version": "0.5.2",
+      "sha256": "d2eed79d532828df8927a82dadbe78d20ffecc7ba5e717c1f7c2c0495c9b2dd6",
       "renamedFrom": [],
       "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
     },
@@ -380,7 +380,7 @@
       "role": "userScripts",
       "path": "labSnippets.js",
       "version": "0.5.2",
-      "sha256": "57f70fa3e354a5c318ae855abbfc306d06238904990bb577845b5cc933cb29da",
+      "sha256": "970db74d9fd88df6d203523030fa1b652891a16731c1b56a0d70fc411bdf1374",
       "renamedFrom": [],
       "desc": "The code behind every snippet"
     }

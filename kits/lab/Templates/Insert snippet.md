@@ -8,6 +8,9 @@
 // Snippet files start with two comment lines:
 //   // icon: flask-round        (Lucide name, see lucide.dev)
 //   // desc: one-line description
+// A snippet can also start with a header between --- lines
+// (title, icon, desc, fields) and use {{tokens}} in its text:
+// the Lab Kit plugin then asks the fields and fills it in.
 // The number at the start of the file name sets the order.
 // Notes in the Methods folder (Settings → Lab Kit) are added
 // after them, one entry per method.
@@ -18,6 +21,9 @@ const files = app.vault.getMarkdownFiles()
   .filter(f => f.parent?.path === snippetFolder)
   .sort((a, b) => a.basename.localeCompare(b.basename, undefined, { numeric: true }));
 
+// Token templates are read and filled by the Lab Kit plugin (a snippet without a header is inserted as it is)
+const kitSnippets = app.plugins?.plugins?.["lab-kit"]?.snippets;
+
 const methods = (await tp.user?.labMethods?.().menuEntries(app)) ?? [];
 
 if (!files.length && !methods.length) {
@@ -26,11 +32,13 @@ if (!files.length && !methods.length) {
   const items = [];
   for (const f of files) {
     const text = await app.vault.cachedRead(f);
+    const meta = await kitSnippets?.meta(f);
     items.push({
-      name: f.basename.replace(/^\d+\s*[-.]?\s*/, ""),
-      icon: text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim(),
-      desc: text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim(),
-      value: f
+      name: meta?.title || f.basename.replace(/^\d+\s*[-.]?\s*/, ""),
+      icon: meta ? meta.icon?.trim() : text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim(),
+      desc: meta ? meta.desc?.trim() : text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim(),
+      value: f,
+      token: !!meta
     });
   }
   for (const m of methods) items.push({ name: m.name, icon: m.icon, desc: m.desc, value: { method: m.key } });
@@ -38,6 +46,9 @@ if (!files.length && !methods.length) {
     ? await tp.user.labPick(tp, items, "Insert snippet…")
     : await tp.system.suggester(items.map(i => i.name), files, false, "Insert snippet…");
   if (pick?.method) tR += await tp.user.labSnippets(tp, `method:${pick.method}`);
-  else if (pick) tR += await tp.file.include(pick);
+  else if (pick) {
+    const token = items.find(i => i.value === pick)?.token;
+    tR += token ? await kitSnippets.run(tp, pick) : await tp.file.include(pick);
+  }
 }
 %>

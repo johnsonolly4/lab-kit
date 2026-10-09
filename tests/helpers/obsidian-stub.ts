@@ -47,3 +47,5 @@ export const getIcon = (_name: string): SVGElement | null => null;
 export const MarkdownRenderer = {
   render: async (_app: unknown, md: string, el: any): Promise<void> => { el.innerHTML = "<p>" + md + "</p>"; },
 };
+/** Test stand-in: reads JSON (a subset of YAML), so tests write snippet headers as JSON. Obsidian's real parseYaml is not run in tests. */
+export const parseYaml = (s: string): unknown => JSON.parse(s);

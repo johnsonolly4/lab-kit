@@ -8,6 +8,7 @@ import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
 import { PlanningBlocks } from "./planning/blocks";
+import { SnippetTemplates } from "./kit/snippet-run";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
@@ -15,6 +16,8 @@ export default class LabKitPlugin extends Plugin {
   kit!: KitController;
   /** Planning commands; null without the planning kit. Project cards call `newTodo(project)` / `newProjectNote(folder)`. */
   planning: PlanningCommands | null = null;
+  /** Alt+S token templates; Insert snippet.md (Templater) calls `meta` and `run` on it. */
+  snippets!: SnippetTemplates;
   private store!: HeaderStore;
 
   async onload(): Promise<void> {
@@ -24,6 +27,7 @@ export default class LabKitPlugin extends Plugin {
     this.header = new HeaderRenderer(this, store);
     this.kit = new KitController(this, store);
     await this.kit.load();
+    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit);
     this.kit.setup();
 
     this.calc.register();
