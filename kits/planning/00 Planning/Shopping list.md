@@ -4,6 +4,6 @@ cssclasses:
   - vt
 ---
 
-# Lab shopping list
+# Shopping list
 
 `BUTTON[shop-add, shop-clear]`

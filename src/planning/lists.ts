@@ -148,6 +148,12 @@ export function gotoTargets(topFolders: string[], files: NoteRec[], hide: string
   return out;
 }
 
+/** The Go to links: the automatic ones, then the `extra:` ones that do not open a note an automatic link already opens. */
+export function withExtras(auto: GotoLink[], extras: GotoLink[]): GotoLink[] {
+  const taken = new Set(auto.flatMap(l => l.path ? [l.path] : []));
+  return [...auto, ...extras.filter(l => !l.path || !taken.has(l.path))];
+}
+
 /** `key: value` lines of a block (as lab-header's options); `extra:` / `hide:` may repeat or hold a comma list. */
 export function blockOptions(source: string): { show: string; limit?: number; hide: string[]; extra: string[] } {
   const out = { show: "", limit: undefined as number | undefined, hide: [] as string[], extra: [] as string[] };

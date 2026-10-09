@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
-import { canCopy, copyTokenTemplate, isStubSnippet, isTokenTemplate, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, type HeadlessTp } from "../src/kit/snippet-copy";
+import { canCopy, copyTokenTemplate, isStubSnippet, isTokenTemplate, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, withTitle, type HeadlessTp } from "../src/kit/snippet-copy";
 import { parseTemplate } from "../src/kit/snippet-template";
 import { miniYaml, shippedTemplate } from "./token-snippets";
 
@@ -121,7 +121,7 @@ describe("token template copy", () => {
     assert.ok(!isTokenTemplate("---\nfields:\n  - key: a b\n---\nx", () => { throw new Error("bad"); }));
   });
 
-  it("writes the template unchanged, never over an existing file, and the copy still fills like the original", async () => {
+  it("writes the template under the chosen title, never over an existing file, and the copy still fills like the original", async () => {
     const text = readFileSync(dir + "05 Sample list.md", "utf8");
     const files = new Map<string, string>([["S/05 Sample list (mine).md", "my edits"]]);
     const res = await copyTokenTemplate({ text, name: "05 Sample list", copyName: "05 Sample list (mine)", folder: "S",
@@ -130,9 +130,18 @@ describe("token template copy", () => {
     assert.strictEqual(res.fixedCodes, false);
     assert.strictEqual(files.get("S/05 Sample list (mine).md"), "my edits");
     const copy = files.get(res.path)!;
-    assert.strictEqual(copy, text);
+    assert.strictEqual(copy, text.replace("title: Sample list\n", "title: 05 Sample list (mine)\n"));
     const a = parseTemplate(copy, miniYaml)!, b = shippedTemplate("samples");
-    assert.deepStrictEqual(a, b);
+    assert.strictEqual(a.header.title, "05 Sample list (mine)");
+    assert.deepStrictEqual({ ...a, header: { ...a.header, title: "" } }, { ...b, header: { ...b.header, title: "" } });
+  });
+
+  it("withTitle changes only the header's title, quotes odd names and adds a missing title", () => {
+    const t = "---\ntitle: A\nicon: x\n---\n```calc\ntitle: A\n```\n";
+    assert.strictEqual(withTitle(t, "B (mine)"), "---\ntitle: B (mine)\nicon: x\n---\n```calc\ntitle: A\n```\n");
+    assert.ok(withTitle(t, "a: b").startsWith('---\ntitle: "a: b"\n'));
+    assert.strictEqual(withTitle("---\nicon: x\n---\nbody", "N"), "---\ntitle: N\nicon: x\n---\nbody");
+    assert.strictEqual(withTitle("no header", "N"), "no header");
   });
 
   it("writes nothing for an empty template", async () => {

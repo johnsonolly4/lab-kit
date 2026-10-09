@@ -106,13 +106,22 @@ export async function makeSnippetCopy(opts: {
   return { path, fixedCodes: hasFixedCodes(opts.key) };
 }
 
-/** Copy of a token template: the file itself (header and tokens kept), so the copy still asks its questions. Never overwrites. */
+/** The template text with the `title:` of its header (the first block between `---` lines) set to `name`; added when the header has none. Text without a header is returned as it is. */
+export function withTitle(text: string, name: string): string {
+  const m = /^(---\r?\n)([\s\S]*?\r?\n)(---)/.exec(text);
+  if (!m) return text;
+  const value = /^[\w][\w ()\-.]*$/.test(name) ? name : JSON.stringify(name);
+  const head = /^title:.*$/m.test(m[2]) ? m[2].replace(/^title:.*$/m, `title: ${value}`) : `title: ${value}\n${m[2]}`;
+  return m[1] + head + m[3] + text.slice(m[0].length);
+}
+
+/** Copy of a token template: the file itself (header and tokens kept) under its own title, so the copy still asks its questions. Never overwrites. */
 export async function copyTokenTemplate(opts: {
   text: string; /** Name of the snippet, for the error message. */ name: string; copyName: string; folder: string;
   exists: (path: string) => boolean; write: (path: string, text: string) => Promise<void>;
 }): Promise<CopyResult> {
   if (!opts.text.trim()) throw new Error(`The snippet "${opts.name}" is empty, so there is nothing to copy.`);
   const path = copyPath(opts.folder, opts.copyName, opts.exists);
-  await opts.write(path, opts.text);
+  await opts.write(path, withTitle(opts.text, opts.copyName));
   return { path, fixedCodes: false };
 }

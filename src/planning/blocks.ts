@@ -6,7 +6,7 @@ import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, projectCards, projects, recentlyRead, thisWeek, unnumbered, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, projectCards, projects, recentlyRead, thisWeek, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -142,7 +142,7 @@ class BlockView extends MarkdownRenderChild {
     const top = this.app.vault.getRoot().children.filter((c): c is TFolder => c instanceof TFolder && !c.name.startsWith("."));
     const files = top.flatMap(folder => folder.children.filter((c): c is TFile => c instanceof TFile && (c.extension === "md" || c.extension === "base")))
       .map(f => this.owner.rec(f));
-    const links: GotoLink[] = [...gotoTargets(top.map(t => t.path), files, o.hide), ...o.extra.map(e => this.extra(e)).filter((l): l is GotoLink => !!l)];
+    const links: GotoLink[] = withExtras(gotoTargets(top.map(t => t.path), files, o.hide), o.extra.map(e => this.extra(e)).filter((l): l is GotoLink => !!l));
     const row = box.createDiv({ cls: "lab-kit-goto" });
     for (const l of links) {
       const b = row.createEl("button", { cls: "lab-kit-goto-button" });

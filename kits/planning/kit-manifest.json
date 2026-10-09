@@ -102,7 +102,7 @@
       "role": "home",
       "path": "00 Home.md",
       "version": "0.5.2",
-      "sha256": "e898b8e1414e858d49f0e686eb50969bbfa46025da3964d14eed834e4cbcbb8c",
+      "sha256": "4dbbeb64f33413506e33fef7239a29986905d77b4e110509d30fd2f864f1edb6",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -226,7 +226,7 @@
       "role": "planning",
       "path": "Shopping list.md",
       "version": "0.5.2",
-      "sha256": "3d4d0d8abb2a23a7d55c478dcf12ab06f6afaca2ee5c59a0ee9d0d6de8afd9b7",
+      "sha256": "0a4c467958393a23a73a97de6dd3609a647a6e4a7522e90fdafcbae3e481dfab",
       "renamedFrom": [],
       "desc": "Lab shopping list",
       "policy": "keep"

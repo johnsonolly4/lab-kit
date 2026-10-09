@@ -17,7 +17,6 @@ focus3_done: false
 
 > [!goto] Go to
 > ```vault-goto
-> extra: Meetings | Meetings | users
 > extra: Weekly review | Weekly review | list-checks
 > extra: Shopping list | Shopping list | shopping-cart
 > ```

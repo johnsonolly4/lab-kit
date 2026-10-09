@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, type NoteRec } from "../src/planning/lists";
+import { blockOptions, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -123,6 +123,11 @@ describe("Go to and block options", () => {
     note("06 Knowledge/Random.md"),
     note("00 Planning/To-do board.base"), note("00 Planning/Weekly review.md", { kind: "hub" }),
   ];
+  it("an extra line that opens a note an automatic link opens is dropped; others and commands stay", () => {
+    const auto = [{ text: "Meetings", path: "08 Meetings/Meetings.md", icon: "users" }];
+    const extras = [{ text: "Meetings", path: "08 Meetings/Meetings.md", icon: "users" }, { text: "Weekly review", path: "00 Planning/Weekly review.md" }, { text: "Go", command: "a:b" }];
+    expect(withExtras(auto, extras).map(l => l.text)).toEqual(["Meetings", "Weekly review", "Go"]);
+  });
   it("hub by kind, then by name without number, then a base; number order; folders without one left out; hide", () => {
     const top = ["06 Knowledge", "05 Chemicals", "04 Literature", "02 Projects", "00 Planning", "99 Archive"];
     expect(gotoTargets(top, files)).toEqual([

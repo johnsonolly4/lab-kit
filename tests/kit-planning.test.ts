@@ -286,7 +286,7 @@ describe("Phase 5b: the kit's meeting series", () => {
     expect(hub).toContain("show: next-meetings");
     expect(hub).toContain("new-meeting-series");
     const home = text("kits/planning/00 Home.md");
-    expect(home).toContain("extra: Meetings | Meetings |");
+    expect(home).not.toContain("extra: Meetings |"); // the Go to bar finds the Meetings hub by its folder
     expect(home).not.toContain("lab-kit:open-deck");
   });
 
