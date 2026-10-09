@@ -50,7 +50,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder,
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
     scripts, homepageMode,
-    metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length } : null,
+    metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length, names: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).map(b => b.id) } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
     navigator: { homepage: navigatorHomepage(app), home: planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md" },

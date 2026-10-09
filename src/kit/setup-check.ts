@@ -36,7 +36,7 @@ export interface SetupState {
   /** Lab Kit's own settings the kits read. */
   lab: { initials: string; dataRoot: boolean; methodsFolder: string; labFolder: string; chemicalFolder: string };
   /** Meta Bind button templates the planning kit uses; null without Meta Bind. */
-  metaBind: { missing: number; total: number } | null;
+  metaBind: { missing: number; total: number; /** Ids of the missing buttons, for the row's text. */ names?: string[] } | null;
   /** Path of the "Set up ZotLit" checklist note when it is installed. */
   zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
@@ -197,9 +197,9 @@ export function checkSetup(s: SetupState): SetupItem[] {
   }
 
   if (s.planning && s.metaBind) {
-    const { missing, total } = s.metaBind;
+    const { missing, total, names } = s.metaBind;
     out.push({ id: "metabind:buttons", group: "Meta Bind", label: "Meta Bind buttons", ok: !missing,
-      detail: missing ? `${missing} of ${total} buttons the planning notes use are missing. Fix adds them; buttons you have are never changed.` : `All ${total} there.`,
+      detail: missing ? `${missing} of ${total} buttons the planning notes use are missing${names?.length ? ` (${names.join(", ")})` : ""}. Fix adds them; buttons you have are never changed.` : `All ${total} there.`,
       fix: missing ? { kind: "meta-bind" } : undefined });
   }
 

@@ -80,6 +80,28 @@ describe("Tidy up notes: folders without a hub (Phase 7c-1)", () => {
   });
 });
 
+describe("Tidy up notes: to-dos without a kind", () => {
+  it("adds the board's properties to notes with no kind and leaves notes that have one", () => {
+    const m = vault();
+    m.set("00 Planning/To-dos/Buy gloves.md", "---\ncssclasses:\n  - vt\ndone: true\n---\nbody\n");
+    m.set("00 Planning/To-dos/Bare.md", "Just text\n");
+    const g = group(ctx(), m, "todo-properties");
+    expect(g?.changes).toEqual([
+      { path: "00 Planning/To-dos/Bare.md", before: "", after: "kind: todo\nday: Backlog\ndone: false\nrolled: false" },
+      { path: "00 Planning/To-dos/Buy gloves.md", before: "cssclasses:\n  - vt\ndone: true", after: "cssclasses:\n  - vt\ndone: true\nkind: todo\nday: Backlog\nrolled: false" },
+    ]);
+  });
+  it("applies with a backup, and a second scan finds nothing", async () => {
+    const m = vault(); m.set("00 Planning/To-dos/Bare.md", "Just text\n");
+    const c = ctx(), s = scan(files(m, c), c), x = io(m);
+    await applyTidy(x, selectChanges(s, new Set(["todo-properties"])));
+    expect(m.get("00 Planning/To-dos/Bare.md")).toBe("---\nkind: todo\nday: Backlog\ndone: false\nrolled: false\n---\nJust text\n");
+    expect(x.backups.get("00 Planning/To-dos/Bare.md")).toBe("Just text\n");
+    expect(group(c, m, "todo-properties")).toBeUndefined();
+  });
+  it("the vault fixture has none (every to-do there has a kind)", () => { expect(group(ctx(), vault(), "todo-properties")).toBeUndefined(); });
+});
+
 describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
   const all = (c: TidyContext, m: Map<string, string>) => { const s = scan(files(m, c), c); return selectChanges(s, new Set(s.groups.map(g => g.id))); };
 

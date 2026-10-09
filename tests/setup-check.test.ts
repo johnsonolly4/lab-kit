@@ -121,11 +121,12 @@ describe("check setup (Phase 6)", () => {
   });
 
   it("Meta Bind buttons and the ZotLit checklist (planning only); no Dataview JS row since Phase 5a (no DataviewJS in the kit)", () => {
-    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26 }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
+    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26, names: ["new-meeting-series", "go-deck", "help"] }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
       plugins: new Set(["templater-obsidian", "dataview", "obsidian-meta-bind-plugin", "zotlit"]) }));
     expect(r["dataview:js"]).toBeUndefined();
     expect(r["metabind:buttons"]).toMatchObject({ ok: false, fix: { kind: "meta-bind" } });
     expect(r["metabind:buttons"].detail).toContain("3 of 26");
+    expect(r["metabind:buttons"].detail).toContain("new-meeting-series, go-deck, help");
     expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });
   });
 
