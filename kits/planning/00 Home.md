@@ -27,7 +27,7 @@ focus3_done: false
 > `BUTTON[clear-focus]`
 
 > [!columns]
-> > [!planning] This week
+> > [!planning] [[To-do board|This week]]
 > > ```vault-card
 > > show: this-week
 > > ```
@@ -35,24 +35,24 @@ focus3_done: false
 > > show: inbox
 > > ```
 >
-> > [!lab] Experiments on the go
+> > [!lab] [[Lab book base|Experiments on the go]]
 > > ```vault-card
 > > show: experiments
 > > limit: 8
 > > ```
 >
-> > [!projects] Projects
+> > [!projects] [[Projects overview|Projects]]
 > > ```vault-card
 > > show: projects
 > > ```
 >
-> > [!summary] Recently read
+> > [!summary] [[Literature|Recently read]]
 > > ```vault-card
 > > show: recently-read
 > > limit: 5
 > > ```
 >
-> > [!question] Next meetings
+> > [!question] [[Meetings|Next meetings]]
 > > ```vault-card
 > > show: next-meetings
 > > ```

@@ -309,4 +309,17 @@ describe("Phase 5b: the kit's meeting series", () => {
     expect(tpl).not.toContain("dur(7 days)");   // the window is "since the last meeting of the series"
     expect(text("kits/planning/00 Home.md")).toContain("show: next-meetings");
   });
+
+  it("the Home tile headings link to their hubs, and each linked note ships in a kit", () => {
+    const home = text("kits/planning/00 Home.md");
+    const links: Record<string, string> = {
+      "To-do board": "kits/planning/00 Planning/To-do board.base", "Lab book base": "kits/lab/03 Lab Book/Lab book base.base",
+      "Projects overview": "kits/planning/02 Projects/Projects overview.md", "Literature": "kits/planning/04 Literature/Literature.md",
+      "Meetings": "kits/planning/08 Meetings/Meetings.md",
+    };
+    for (const [name, file] of Object.entries(links)) {
+      expect(home, name).toMatch(new RegExp(`\\[!\\w+\\] \\[\\[${name}\\|`));
+      expect(existsSync(file), file).toBe(true);
+    }
+  });
 });

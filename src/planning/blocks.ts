@@ -6,7 +6,7 @@ import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, projectCards, projects, recentlyRead, thisWeek, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -100,7 +100,7 @@ class BlockView extends MarkdownRenderChild {
     const kit = this.owner.kit(), f = kit.planningFolders, o = blockOptions(this.source);
     switch (o.show) {
       case "this-week":
-        if (this.need(box, todoFolder(f))) this.list(box, thisWeek(this.owner.notesIn(todoFolder(f)), new Date()), "Nothing planned this week.");
+        if (this.need(box, todoFolder(f))) this.list(box, thisWeek(this.owner.notesIn(todoFolder(f)), new Date()).slice(0, o.limit ?? TILE_ROWS), "Nothing planned this week.");
         return;
       case "inbox": {
         if (!this.need(box, f.inbox)) return;
@@ -115,11 +115,11 @@ class BlockView extends MarkdownRenderChild {
       case "experiments": {
         const lab = kitJoin(kit.labFolder.trim());
         if (!lab) { box.createDiv({ cls: "vt-muted", text: "Set the Lab notes folder in Settings → Lab Kit." }); return; }
-        if (this.need(box, lab)) this.list(box, experiments(this.owner.notesIn(lab), o.limit ?? 8), "No experiments on the go.");
+        if (this.need(box, lab)) this.list(box, experiments(this.owner.notesIn(lab), o.limit ?? TILE_ROWS), "No experiments on the go.");
         return;
       }
       case "projects":
-        if (this.need(box, f.projects)) this.list(box, projects(this.owner.notesIn(f.projects), o.limit), "No projects yet.");
+        if (this.need(box, f.projects)) this.list(box, projects(this.owner.notesIn(f.projects), o.limit ?? TILE_ROWS), "No projects yet.");
         return;
       case "recently-read":
         // Literature is only made with ZotLit: without it, an absent folder is normal
@@ -129,7 +129,7 @@ class BlockView extends MarkdownRenderChild {
       case "next-meetings": {
         if (!this.need(box, f.meetings)) return;
         const today = new Date();
-        this.list(box, nextMeetingLines(nextMeetings(this.owner.commands()?.seriesList() ?? [], today), today), "No meeting series yet.");
+        this.list(box, nextMeetingLines(nextMeetings(this.owner.commands()?.seriesList() ?? [], today), today).slice(0, o.limit ?? TILE_ROWS), "No meeting series yet.");
         return;
       }
       default:

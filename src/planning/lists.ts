@@ -148,6 +148,9 @@ export function gotoTargets(topFolders: string[], files: NoteRec[], hide: string
   return out;
 }
 
+/** Rows a Home tile shows when its block has no `limit:`. */
+export const TILE_ROWS = 8;
+
 /** The Go to links: the automatic ones, then the `extra:` ones that do not open a note an automatic link already opens. */
 export function withExtras(auto: GotoLink[], extras: GotoLink[]): GotoLink[] {
   const taken = new Set(auto.flatMap(l => l.path ? [l.path] : []));
