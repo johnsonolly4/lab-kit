@@ -168,7 +168,9 @@ class KitSettingTab extends PluginSettingTab {
             this.ctl.dueCountdownChanged?.();
           }));
       } };
-    return [intro, countdown, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
+      render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
+    return [intro, countdown, progress, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);

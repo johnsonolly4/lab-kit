@@ -36,6 +36,8 @@ export interface KitData {
   chemClassOnly: boolean;
   /** Board countdown to a to-do's due date: off, only to-dos with `countdown: true`, or every to-do with a due date. */
   dueCountdown: "off" | "marked" | "all";
+  /** Write `progress: 3/7` (ticked / all check boxes) into lab notes and the Shopping list, for the kanban cards. Off by default. */
+  checklistProgress: boolean;
   /** Vault folder of lab notes (New lab entry; the kit's Lab book base goes next to it). Empty = not set. */
   labFolder: string;
   /** Property of a chemical note that holds its molecular weight, tried before the built-in names. Empty = built-in names only. */
@@ -87,7 +89,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
   return null;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {

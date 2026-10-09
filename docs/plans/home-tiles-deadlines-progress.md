@@ -1,6 +1,6 @@
 # Plan: Combined results, Home tiles, deadline countdown and progress
 
-_Agreed: 2026-10-09. Written by `/phase-plan`. Each phase = one session. Source: BACKLOG "Pre-release test 2026-10-09"._
+_BUILT 2026-10-09 in one session at the user's request ("do them now"): phase 3 (spike) was folded into phase 4 because the `order` card-property key is the one the To-do board already uses; nothing seen in Obsidian. Agreed: 2026-10-09. Written by `/phase-plan`. Each phase = one session. Source: BACKLOG "Pre-release test 2026-10-09"._
 
 ## Goal
 One Combined results snippet (no switch on Analysis table), Home tiles capped and linked to their hubs, and projects / lab notes show a deadline countdown and checklist progress on the built-in Bases kanban.

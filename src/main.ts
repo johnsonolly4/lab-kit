@@ -8,6 +8,7 @@ import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
 import { PlanningBlocks } from "./planning/blocks";
+import { ProgressWriter } from "./planning/progress";
 import { SnippetTemplates } from "./kit/snippet-run";
 
 export default class LabKitPlugin extends Plugin {
@@ -36,6 +37,8 @@ export default class LabKitPlugin extends Plugin {
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();
     this.kit.onChanged = () => blocks.refresh();
+
+    new ProgressWriter(this, () => this.kit.kit).start();
 
     // To-do engine and planning commands: once the planning kit is switched on and installed (at load, or right after its install)
     this.startPlanning();

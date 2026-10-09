@@ -85,6 +85,7 @@ Created from the lab kit's *Lab Book Template* (numbering + title prompt).
 |---|---|
 | `Status` | `Planned` -> `Started` -> `Processing results` -> `Closed` |
 | `Based on` | links to the papers (citekeys) the experiment builds on |
+| `progress` | ticked / all check boxes, e.g. `3/7`; written by the plugin when Settings > Lab Kit > Checklist progress is on (also on the Shopping list) |
 | `cssclasses` | includes `vt` |
 
 Any link from a lab entry to a paper - in `Based on` or in the text - shows up on that paper's note under *Used in experiments*.
@@ -96,6 +97,7 @@ The hub note has the same name as its folder (a Notebook Navigator folder note) 
 |---|---|
 | `kind` | `project` |
 | `Status` | `Active`, `Paused`, `Done` - picked with the inline selector under the title |
+| `deadline` | date (`YYYY-MM-DD`), optional - counted down like a to-do's `due` (needs Settings > Lab Kit > Due-date countdown); none once `Status` is `Done` |
 | `cssclasses` | `vt`, `project` |
 | `goal` | inline field in the *Goal* box - one line, what finishing looks like |
 

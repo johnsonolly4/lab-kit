@@ -16,3 +16,6 @@ views:
     sort:
       - property: file.name
         direction: DESC
+    order:
+      - file.name
+      - progress
