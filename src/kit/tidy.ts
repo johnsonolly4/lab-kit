@@ -261,13 +261,16 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
   // To-dos: a note in the to-dos folder with no `kind` (a quick capture, a hand-made note) gets the properties the board reads. Notes that have a kind are left alone.
   if (mt) {
-    const g: TidyGroup = { id: "todo-properties", title: "To-dos: add the properties the board needs", detail: "Notes in the to-dos folder without a kind property get kind: todo, day: Backlog, done: false and rolled: false (only the ones they lack).", changes: [] };
+    const g: TidyGroup = { id: "todo-properties", title: "To-dos: add the properties the board needs", detail: "Notes in the to-dos folder without a kind property (or with an empty one) get kind: todo, day: Backlog, done: false and rolled: false (only the ones they lack).", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, mt.todos))) {
       const fm = fmOf(n.path);
-      if (find(fm, "kind")) continue;
-      const add = ([["kind", "todo"], ["day", "Backlog"], ["done", "false"], ["rolled", "false"]] as const).filter(([k]) => !find(fm, k)).map(([k, v]) => line(k, v));
-      g.changes.push({ path: n.path, before: fm.join("\n"), after: [...fm, ...add].join("\n") });
-      put(n.path, [...fm, ...add].join("\n"));
+      const kind = find(fm, "kind");
+      if (kind && values(kind).length) continue;
+      // an empty `kind:` (Obsidian shows "Empty") counts as no kind: fill that line in place
+      const base = kind ? [...fm.slice(0, kind.start), line("kind", "todo"), ...fm.slice(kind.end)] : fm;
+      const add = ([["kind", "todo"], ["day", "Backlog"], ["done", "false"], ["rolled", "false"]] as const).filter(([k]) => !find(base, k)).map(([k, v]) => line(k, v));
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: [...base, ...add].join("\n") });
+      put(n.path, [...base, ...add].join("\n"));
     }
     if (g.changes.length) groups.push(g);
   }

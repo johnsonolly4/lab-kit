@@ -91,6 +91,14 @@ describe("Tidy up notes: to-dos without a kind", () => {
       { path: "00 Planning/To-dos/Buy gloves.md", before: "cssclasses:\n  - vt\ndone: true", after: "cssclasses:\n  - vt\ndone: true\nkind: todo\nday: Backlog\nrolled: false" },
     ]);
   });
+  it("treats an empty kind as no kind and fills that line in place", () => {
+    const m = vault();
+    m.set("00 Planning/To-dos/Empty kind.md", "---\nkind:\nday: Backlog\nplanned: 2026-10-09\n---\nbody\n");
+    const g = group(ctx(), m, "todo-properties");
+    expect(g?.changes).toEqual([
+      { path: "00 Planning/To-dos/Empty kind.md", before: "kind:\nday: Backlog\nplanned: 2026-10-09", after: "kind: todo\nday: Backlog\nplanned: 2026-10-09\ndone: false\nrolled: false" },
+    ]);
+  });
   it("applies with a backup, and a second scan finds nothing", async () => {
     const m = vault(); m.set("00 Planning/To-dos/Bare.md", "Just text\n");
     const c = ctx(), s = scan(files(m, c), c), x = io(m);
