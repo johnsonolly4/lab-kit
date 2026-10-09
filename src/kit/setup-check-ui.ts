@@ -121,7 +121,7 @@ export class SetupCheckModal extends Modal {
       case "startup-remove": await confirm({ name: "Remove the old roll-over from Templater's startup templates", desc: `${fix.template}. Lab Kit's to-do engine does the roll-over now. The file itself stays.`,
         apply: () => removeTemplaterStartup(this.app, fix.template) }); break;
       case "meta-bind": await confirm({ name: "Add the planning buttons to Meta Bind", desc: "Only the ones missing (by id). Buttons you already have are never changed.",
-        apply: async () => { if (await addMetaBindButtons(this.app, PLANNING_BUTTONS)) new Notice("Meta Bind buttons added. Restart Obsidian so Meta Bind loads them.", 10000); } }); break;
+        apply: async () => { if (await addMetaBindButtons(this.app, PLANNING_BUTTONS)) new Notice("Buttons added. Restart Obsidian so they load.", 10000); } }); break;
       case "plugin": window.open(`obsidian://show-plugin?id=${encodeURIComponent(fix.id)}`); return;
       case "install": this.close(); (fix.kit === "planning" ? this.host.planning ?? lab : lab).review(); return;
       case "templater": this.close(); await lab.setupTemplater(); return;
