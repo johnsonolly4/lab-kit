@@ -142,7 +142,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
     ];
     for (const [id, label, ok] of items) {
       if (id === "menu-hotkey" && !s.menu) continue;
-      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Set up fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
+      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
         fix: ok || !s.menu ? undefined : { kind: "templater" } });
     }
     for (const sc of s.scripts ?? []) {

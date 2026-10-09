@@ -252,7 +252,7 @@ describe("per-file actions (Manage kit files)", () => {
     const item = by(plan, "script-config");
     expect(item.action).toBe("keep");
     expect(kitHasNewer(item, state.files["script-config"])).toBe(true);
-    expect(statusOf(item, state.files["script-config"]).label).toBe("Newer kit version");
+    expect(statusOf(item, state.files["script-config"]).label).toBe("Newer kit version available");
     const none = by(await planManaged(v, V1, state, roles), "script-config");
     expect(kitHasNewer(none, state.files["script-config"])).toBe(false);
     expect(statusOf(none, state.files["script-config"]).label).toBe("Kept (your settings)");

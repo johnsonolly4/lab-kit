@@ -37,7 +37,7 @@ Needs Obsidian 1.13 or newer. For the snippet forms, also install [Templater](ht
 
 1. Settings → Community plugins → Browse → search **Lab Kit** → Install → Enable.
 2. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts. The first install can also turn on the CSS snippet and, if Templater has no user scripts folder yet, set one.
-3. For Alt+S: Settings → Lab Kit → Kit folders and setup → Templater → **Set up**, then Obsidian → Hotkeys → search *Insert snippet* → set **Alt+S**.
+3. For Alt+S: Settings → Lab Kit → Kit folders and setup → **Check setup…** → Fix the Templater rows, then Obsidian → Hotkeys → search *Insert snippet* → set **Alt+S**.
 4. Settings → Lab Kit → **Initials**: your initials go into sample codes (`ABC0016-A`). Until then the snippets use `XX`.
 
 The full walk-through, with every feature explained, is the [tutorial](docs/tutorial.md). What changed in each version: [changelog](docs/changelog.md).
@@ -151,7 +151,7 @@ Settings → Lab Kit is searchable and grouped:
 | Group | What is in it |
 |---|---|
 | **Built-in kit** | Update available, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Backup folder |
-| **Kit folders and setup** | Templater **Set up**, **Check setup…**, **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, console log |
+| **Kit folders and setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, console log |
 | **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder |
 | **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…**, **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card) |
 | **Snippet menu** | A Lucide icon for each snippet |
@@ -197,7 +197,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 ## Privacy & permissions
 - **No network use.** Lab Kit never connects to the internet, has no account, no ads, no telemetry and no paid features. The "full changelog" button only opens a link in your browser when you press it.
 - **Files in your vault**: the built-in kit reads and writes only the folders you set in Settings → Lab Kit, and copies a replaced file to a backup folder first. To find where your templates and scripts are, it lists the files in your vault.
-- **Other plugins' settings**: never changed without asking. Before the first kit install (and before Set up) a confirmation lists every file, folder and setting it will touch, each setting with a switch: the kit's CSS snippet, Templater's user scripts folder when Templater has none (a folder you set is never changed; the lab scripts go into a `lab-kit` folder inside it), Templater's template folder when it is empty (Set up only), and the Alt+S template in Templater's hotkeys.
+- **Other plugins' settings**: never changed without asking. Before the first kit install (and before a Check setup Fix) a confirmation lists every file, folder and setting it will touch, each setting with a switch: the kit's CSS snippet, Templater's user scripts folder when Templater has none (a folder you set is never changed; the lab scripts go into a `lab-kit` folder inside it), Templater's template folder when it is empty (Set up only), and the Alt+S template in Templater's hotkeys.
 - **Clipboard**: the **Copy** button on a table writes to the clipboard, only when you click it.
 - **Files outside your vault** (optional, desktop only): the **data-folder button** in the experiment header creates `<data folder root>/<note name>` on your computer and opens it in your file manager, only when you press it. The root is empty until you set it in Settings → Lab Kit → Lab header. Nothing else reads or writes outside your vault.
 
@@ -207,7 +207,7 @@ Calc tables, the hazard header and the built-in kit work on mobile. The data-fol
 ## Troubleshooting
 | Problem | Fix |
 |---|---|
-| Alt+S does nothing, or the forms ask one question at a time | Install Templater, press **Set up** (Settings → Lab Kit → Kit folders and setup), and set the Alt+S hotkey |
+| Alt+S does nothing, or the forms ask one question at a time | Install Templater, run **Check setup…** and Fix the Templater rows (Settings → Lab Kit → Kit folders and setup), and set the Alt+S hotkey |
 | `#NOTE?` in an MW cell | No chemical note with that name: check the spelling, or type the MW over the formula |
 | `#PROP?` in an MW cell | The note has no molecular weight property (set **Molecular weight property**) |
 | `#REF!` | The formula points at a deleted row, or a table name that doesn't exist or is used twice |

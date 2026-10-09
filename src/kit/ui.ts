@@ -11,6 +11,7 @@ import embedded from "lab-kit-embedded";
 import { KitManaged } from "./managed-ui";
 import { SetupCheckModal } from "./setup-check-ui";
 import { HotkeyCheckModal } from "./hotkey-check-ui";
+import { ClearBackupsModal } from "./backups-ui";
 import { TidyNotesModal } from "./tidy-ui";
 import { wideBox } from "./settings-box";
 import { ensureFolder } from "./ensure-folder";
@@ -123,9 +124,7 @@ class KitSettingTab extends PluginSettingTab {
       });
     }
     const setup: SettingGroupItem[] = [];
-    setup.push({ name: "Templater", desc: "Points Templater's user scripts folder at the kit's scripts, fills in its template folder if empty (a folder you set is never changed) and adds Insert snippet to its template hotkeys. Run it after installing the kit.",
-      render: b => { b.addButton(btn => btn.setButtonText("Set up").onClick(() => void managed.setupTemplater())); } });
-    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater, CSS snippets, folders) and what is missing, with a Fix for each. Nothing changes until you confirm.",
+    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater and its folders and hotkey, CSS snippets, folders) and what is missing, with a Fix for each. Nothing changes until you confirm.",
       render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
     setup.push({ name: "Check hotkeys", desc: "Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now. Changes nothing: set keys in Obsidian's Hotkeys settings.",
       render: b => { b.addButton(btn => btn.setButtonText("Check hotkeys…").onClick(() => this.ctl.checkHotkeys())); } });
@@ -133,6 +132,8 @@ class KitSettingTab extends PluginSettingTab {
       render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     updates.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
       render: b => { b.addToggle(t => t.setValue(kit.notifyKitUpdate).onChange(async v => { kit.notifyKitUpdate = v; await this.ctl.save(); })); } });
+    updates.push({ name: "Old backups", desc: "Every update copies the files it replaces into the backup folder and never removes them. Pick how old, then move those backups to the trash.",
+      render: b => { b.addButton(btn => btn.setButtonText("Clear old backups…").onClick(() => new ClearBackupsModal(this.app, managed.roles().backups).open())); } });
     setup.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
     setup.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
     updates.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));

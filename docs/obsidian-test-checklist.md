@@ -15,7 +15,7 @@
 - [ ] Type a value (Initials), close Obsidian settings, reload the plugin: value is still there
 - [ ] Settings search finds "legend"
 - [ ] "Per-note options" is its own row. Happy with it?
-- [ ] **Built-in kit** group = update rows only (Update available, Kit version, What's new, Tell me, Backup folder); **Kit folders and setup** group below it = Set up, Templates / Scripts / Snippets folders, console log
+- [ ] **Built-in kit** group = update rows only (Update available, Kit version, What's new, Tell me, Backup folder); **Kit folders and setup** group below it = Check setup, Check hotkeys, Templates / Scripts / Snippets folders, console log (no Templater Set up row any more)
 - [ ] Manage files…: Conflict / Merges cleanly / Missing / Update available / New / Changed by you come first, then Up to date, Kept, Detached, Off; Retired last. Review update…: "Changed by you" is below "Updated"
 - [ ] Alt+S **Recipe**: first reagent 0.5 g gives mmol = g ÷ MW in the Set mmol cell; 0.1 M with 10 mL gives 1 mmol; M without a volume leaves the cell empty and shows a notice
 - [ ] Alt+S **RAFT** with a co-solvent: an extra row, mass = % of the solvent's mass; blank co-solvent: no extra row
@@ -208,5 +208,7 @@
 - [ ] Alt+S no longer lists **Analysis table**; your Methods-folder methods and NMR / GPC / DLS are still there; **Combined results** still builds the results table
 - [ ] Project deadline (Review update… for the Project hub template; Settings → Lab Kit → Due-date countdown on): New project has a **Deadline** date picker and a deadline line; a date shows a badge (`deadline 5d`, `Tomorrow`, `2d late`) on the hub, the Projects overview card and the Home Projects tile; `Status: Done` hides it; countdown Off shows "Deadline countdown is off"
 - [ ] Checklist progress (Settings → Lab Kit → Checklist progress on; Restore kit original on the Lab book base for the new card property): ticking a box in a lab note or the Shopping list writes `progress: 3/7` about two seconds later; the kanban card shows it; removing every box removes the property; Off writes nothing
-- [ ] Manage kit files: **00 Home** and the Lab book base (kept files) show **Newer kit version** and **Replace with new version…**; the prompt says your copy is deleted and a backup is saved first; after Replace the row is Up to date and the backup exists
+- [ ] Manage kit files: **00 Home** and the Lab book base (kept files) show **Newer kit version available** and **Replace with new version…**; the prompt says your copy is deleted and a backup is saved first; after Replace the row is Up to date and the backup exists
 - [ ] Lab book base has the **Experiments** kanban and an **All experiments** list including Closed notes older than 30 days
+- [ ] Settings → Lab Kit → Built-in kit → **Clear old backups…**: lists how many backups there are, the dropdown (older than 30 days / 7 days / all) changes the count, **Move to trash** moves only the dated folders to the trash, anything else in the backup folder stays
+- [ ] The Templater row (Set up) is gone from Kit folders and setup; Check setup's Templater rows (template folder, user scripts folder, Insert snippet hotkey) each have a working Fix

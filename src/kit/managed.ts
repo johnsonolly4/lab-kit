@@ -433,7 +433,7 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
     case "merge": return { label: "Merges cleanly", tone: "info" };
     case "needs-merge": return { label: "Conflict", tone: "warn" };
     case "missing": return { label: "Missing", tone: "warn" };
-    case "keep": return kitHasNewer(item, st) ? { label: "Newer kit version", tone: "info" } : { label: "Kept (your settings)", tone: "muted" };
+    case "keep": return kitHasNewer(item, st) ? { label: "Newer kit version available", tone: "info" } : { label: "Kept (your settings)", tone: "muted" };
     case "detached": return { label: "Detached", tone: "muted" };
     case "off": return { label: "Off", tone: "muted" };
   }
