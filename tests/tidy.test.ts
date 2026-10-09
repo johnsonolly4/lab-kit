@@ -67,6 +67,13 @@ describe("Tidy up notes scan (Phase 7a)", () => {
     ]);
   });
 
+  it("knowledge notes: an empty kind does not block Type: Wiki \u2192 kind: concept (the empty line is dropped)", () => {
+    const r = scan([{ path: "06 Knowledge/Old.md", text: "---\nkind:\nType: Wiki\nsummary: x\n---\n" }, { path: "06 Knowledge/Old2.md", text: "---\nType: Wiki\nkind:\nsummary: x\n---\n" }], ctx);
+    const ch = group(r, "knowledge-concept")?.changes;
+    expect(ch?.find(c => c.path.endsWith("Old.md"))?.after).toBe("kind: concept\nsummary: x\nsources:\nchecked: false");
+    expect(ch?.find(c => c.path.endsWith("Old2.md"))?.after).toBe("kind: concept\nsummary: x\nsources:\nchecked: false");
+  });
+
   it("hubs: an index note without kind gets kind: hub (also when it has no properties); one with kind is left", () => {
     expect(group(s, "hub-kind")?.changes).toEqual([{ path: "07 How-tos/Cooking index.md", before: "tags: [how-to]", after: "tags: [how-to]\nkind: hub" }]);
     const bare = scan([{ path: "07 How-tos/Index.md", text: "# Index\n" }], { ...ctx, migrations: [] });

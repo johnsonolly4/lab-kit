@@ -134,8 +134,11 @@ function runOp(fm: string[], op: MigrationOp): Result {
   const p = find(fm, op.from);
   const vals = values(p);
   if (!p || vals.length !== 1 || lower(vals[0]) !== lower(op.whenValue)) return null;
-  if (find(fm, op.to)) return { reported: `${p.key}: ${vals[0]} but ${op.to} is already set: left as it is` };
-  return { fm: [...fm.slice(0, p.start), line(op.to, op.value), ...fm.slice(p.end)] };
+  const target = find(fm, op.to);
+  if (target && values(target).length) return { reported: `${p.key}: ${vals[0]} but ${op.to} is already set: left as it is` };
+  // an empty target (`kind:`) is not set: its lines are dropped and the renamed line takes the old one's place
+  const drop = (i: number): boolean => !!target && i >= target.start && i < target.end;
+  return { fm: [...fm.slice(0, p.start).filter((_, i) => !drop(i)), line(op.to, op.value), ...fm.slice(p.end).filter((_, i) => !drop(i + p.end))] };
 }
 
 /** Runs one migration on one note's text. A change, a reason it was left alone, or null (nothing to do). */
