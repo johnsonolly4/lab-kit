@@ -13,7 +13,7 @@
 const F = "```";
 
 module.exports = async function labSnippets(tp, snippet) {
-  /** "method:mass_spec" = the Analysis table of that method, without asking which (the Alt+S menu lists the Methods folder's notes like this). */
+  /** "method:mass_spec" = the sample table of that method (the Alt+S menu lists the Methods folder's notes like this). */
   const [key, arg] = String(snippet).split(":");
   /* ---------- helpers ---------- */
   const form = (title, fields, opts) => tp.user.labForm(tp, title, fields, opts);
@@ -152,7 +152,7 @@ ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c =>
     ]);
   };
   /** Ask for one method's table and build it. A field left at the default machine's value follows the machine that was picked. */
-  const runMethod = async (m, withResults = false) => {
+  const runMethod = async (m) => {
     const v = await methodForm(m);
     if (!v) return "";
     const machine = machineOf(m, v.machine), dm = machineOf(m, m.defaultMachine);
@@ -161,8 +161,7 @@ ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c =>
     }
     tag(m.tag);
     const codes = list(v.codes);
-    const t = methodTable(m, codes, { machine, values: v });
-    return withResults && m.results.length ? t.md + "\n" + resultsTable(codes, [{ method: m, tables: [t] }]) : t.md;
+    return methodTable(m, codes, { machine, values: v }).md;
   };
   /** One row per sample, pulling values from the methods' tables by sample code. links = [{ method, tables }]; no tables = columns typed in. */
   const resultsTable = (codes, links) => {
@@ -311,18 +310,10 @@ ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "
     dls: () => runMethod(methods.find(m => m.key === "dls")),
 
     async method() {
-      if (arg) {
-        const m = methods.find(x => x.key === arg);
-        if (m) return runMethod(m);
-        new Notice(`Unknown method "${arg}"`);
-        return "";
-      }
-      const v = await form("Analysis table", [
-        { key: "method", label: "Method", type: "select", options: methods.map(m => ({ value: m.key, label: m.name })), value: methods[0]?.key },
-        { key: "results", label: "Also add a combined results table", type: "toggle", value: false },
-      ]);
-      const m = v && methods.find(x => x.key === v.method);
-      return m ? runMethod(m, !!v.results) : "";
+      const m = arg && methods.find(x => x.key === arg);
+      if (m) return runMethod(m);
+      new Notice(`Unknown method "${arg ?? ""}"`);
+      return "";
     },
 
     async results() {

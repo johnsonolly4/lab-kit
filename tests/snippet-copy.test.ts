@@ -29,12 +29,12 @@ function stubApp(): void {
   };
 }
 
-const KEYS = ["nmr", "gpc", "dls", "results", "method", "solution", "recipe", "raft"];   // the six token-template snippets are not code any more (copying them: Phase 5)
+const KEYS = ["nmr", "gpc", "dls", "results", "solution", "recipe", "raft"];   // the six token-template snippets are not code any more (copying them: Phase 5)
 const user = { labMethods };
 const run = (key: string) => (tp: HeadlessTp) => labSnippets(tp, key) as Promise<string>;
 
 describe("renderCopy", () => {
-  it("gives a note for each of the 8 code snippets (the chemical ones from their example text)", async () => {
+  it("gives a note for each of the 7 code snippets (the chemical ones from their example text)", async () => {
     stubApp();
     for (const key of KEYS) {
       const md = await renderCopy(run(key), user, TODAY);

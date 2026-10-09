@@ -57,13 +57,12 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, the first reagent's amount in mmol, g or M (× volume), solvent "rest" row, total mass, wt% |
 | **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent (and an optional co-solvent as % of its mass), Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |
-| **Sample list** | Samples without times | Typed or generated codes · add the analysis tables afterwards (NMR / GPC / DLS / Analysis table, Combined results) |
+| **Sample list** | Samples without times | Typed or generated codes · add the analysis tables afterwards (NMR / GPC / DLS / your own methods, Combined results) |
 | **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · add the analysis tables afterwards |
 | **NMR samples** | NMR submissions | Sample · solvent · method · conversion · dataset · checklist · tags the note `NMR` |
 | **GPC samples** | GPC | Sample · eluent · Mn · Mw · Đ (calculated) · tags `GPC` |
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
-| **Analysis table** | Any other method | Pick a method (NMR, GPC, DLS or a note in your Methods folder), then its sample table, machine and checklist; the switch **Also add a combined results table** adds a Results table for it |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
 | **Blank calc table** | Anything else | Your own columns |
@@ -223,7 +222,7 @@ flowchart LR
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
 | A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table) has `icon:` and `desc:` in its header |
-| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, Analysis table and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other six are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
+| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other six are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
 | A new snippet | copy a file in the `Snippets` folder, give it a new number and name |
 | Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 

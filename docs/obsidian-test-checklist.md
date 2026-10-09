@@ -97,12 +97,12 @@
 - [ ] Command **New lab entry**: asks for a title, makes `ABC0001 - Title` (ABC = Initials; refused with a notice when Initials is empty) in the Lab notes folder (folder made if missing), `Status: Planned` shows as text
 - [ ] Without Templater / with the Lab notes folder empty: New lab entry shows a notice, nothing is made
 
-## 6c. Analysis methods (needs `npm run dev`, then Review update… for the new scripts and the Analysis table snippet)
+## 6c. Analysis methods (needs `npm run dev`, then Review update… for the new scripts)
 - [ ] Methods folder empty: Alt+S **NMR / GPC / DLS samples** and **Combined results** look and behave as before
 - [ ] Type a new folder name (e.g. `Analysis/Methods`) in **Methods folder** and click out of the box: the folder (and `Analysis`) appears in the file list with a notice; an existing folder is left alone; a name starting with `.` creates nothing
 - [ ] Settings → Lab Kit → Lab notebook: **Methods folder** is wide and suggests folders; picking one saves (also at phone width)
-- [ ] Alt+S **Analysis table**: the switch **Also add a combined results table** is off; on, a Results table follows the method table and shows its result columns by sample code; a method picked straight from the Alt+S menu (no form) adds none
-- [ ] In `test-vault/Methods/`: a method note (Columns, Results, Machines) and two machine notes. Alt+S **Analysis table** lists NMR, GPC, DLS and your method; the form shows a **Machine** dropdown (looks right, default selected) and a field for each column with a default
+- [ ] The **Analysis table** snippet is gone from Alt+S (Manage files… lists its note as no longer in the kit); the methods are picked from the Alt+S menu
+- [ ] In `test-vault/Methods/`: a method note (Columns, Results, Machines) and two machine notes. Alt+S lists your method; its form shows a **Machine** dropdown (looks right, default selected) and a field for each column with a default
 - [ ] Alt+S menu (after Review update… for the new Insert snippet.md): your method is listed at the end as *Name samples* with its icon and the machines in the description; picking it opens its form directly; add a second method note and it shows next time with no refresh
 - [ ] Pick the other machine without touching the fields: they take its values; type a value first: it stays
 - [ ] The formula column calculates; the Machine cell links to the machine note

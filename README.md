@@ -102,7 +102,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 | **RAFT recipe generator** | RAFT / PISA: monomer mass, DP, CTA:I, solids → every mass, solvent (and optional co-solvent), theoretical Mn |
 | **Variant naming matrix** | A grid of conditions, with sample codes `ABC0016-A`, `-B`… |
 | **Sample list** · **Sampling timetable** | Sample codes, with target clock times for kinetics (add the analysis tables below afterwards) |
-| **NMR / GPC / DLS samples** · **Analysis table** | Sample tables with machine, checklist and result columns |
+| **NMR / GPC / DLS samples** · your own methods | Sample tables with machine, checklist and result columns |
 | **Combined results** | One row per sample with the results of every method |
 | **Flow column prep** · **Residence times** | Packing a column, reactor volume, flow rates |
 | **Blank calc table** | Your own columns |
@@ -123,7 +123,7 @@ It only redraws when this note's Chemicals or a linked chemical note changes. Th
 The templates (Lab Book, Alt+S menu, one file per snippet), the Templater scripts and a CSS snippet are bundled inside the plugin. Updating the plugin brings the new kit, but your files only change when you say so:
 - **Review update…** previews every file (new, updated, changed by you, missing) and writes nothing until you press **Apply**.
 - **Update all safe files** adds new files and updates the ones you never edited.
-- **Manage files…** lists every kit file with a status and buttons to update, restore the original, detach, or open it; files that need action come first. Each snippet row (except Analysis table) has **Make my own copy**: it asks for a name and saves a plain, editable note in the Snippets folder.
+- **Manage files…** lists every kit file with a status and buttons to update, restore the original, detach, or open it; files that need action come first. Each snippet row has **Make my own copy**: it asks for a name and saves a plain, editable note in the Snippets folder.
 - A file you edited is never overwritten. If your changes and the kit's touch different lines you can **merge**; if they touch the same lines you **resolve** them change by change.
 - Every replaced file is copied to a backup folder first.
 
