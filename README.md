@@ -191,6 +191,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | Open meeting deck | Opens the deck location of this computer: set in the series' note (`deck_windows` / `deck_mac`) as a folder with all the decks in, or the path to one deck file |
 | New project · New project note | A project hub, or a note inside a project |
 | New concept | A knowledge note: asks title and topic, files it in the Knowledge folder under the topic |
+| New topic hub | The index note of a topic folder under Knowledge (`kind: hub`, named like the folder): pick a topic without one or a new topic; a text area for what the topic is about, then a list of its notes. Tidy up notes does not offer these |
 | Roll over to-dos now | Carries unfinished to-dos over to today |
 
 ## Privacy & permissions

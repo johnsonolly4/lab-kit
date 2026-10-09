@@ -55,7 +55,7 @@ cssclasses:
 | `checked` | `false`; `true` once checked against the sources | template / me |
 | `cssclasses` | `[vt]` | template |
 
-Sections use `##` (`What it is`, `Why it matters`, `Related`), never `###`. A topic hub is the index note of a topic folder, with `kind: hub`. Tidy up notes lists concept notes with `###` headings or no summary / sources.
+Sections use `##` (`What it is`, `Why it matters`, `Related`), never `###`. A topic hub is the index note of a topic folder, with `kind: hub`. Make one with the **New topic hub** command. Tidy up notes lists concept notes with `###` headings or no summary / sources.
 
 ```mermaid
 flowchart LR

@@ -1,6 +1,6 @@
 // Planning commands' rules (src/planning/actions.ts), checked against the old Action templates' behaviour.
 import { describe, it, expect } from "vitest";
-import { deckPath, isArchivable, shoppingAppend, splitItems, uniquePath } from "../src/planning/actions";
+import { deckPath, isArchivable, shoppingAppend, splitItems, topicsWithoutHub, uniquePath } from "../src/planning/actions";
 
 describe("shopping list", () => {
   it("splits on commas and drops empty items", () => {
@@ -52,5 +52,21 @@ describe("deckPath", () => {
   it("is empty when not set or not text", () => {
     expect(deckPath({}, true)).toBe("");
     expect(deckPath({ deck_windows: 3 }, false)).toBe("");
+  });
+});
+
+describe("topicsWithoutHub", () => {
+  const folders = ["06 Knowledge", "06 Knowledge/Polymers", "06 Knowledge/Polymers/Deep", "06 Knowledge/Synthesis", "06 Knowledge/Safety", "06 Knowledge Extra/Other"];
+  it("lists the topic folders directly under the root that have no hub", () => {
+    expect(topicsWithoutHub(folders, [], "06 Knowledge")).toEqual(["06 Knowledge/Polymers", "06 Knowledge/Safety", "06 Knowledge/Synthesis"]);
+  });
+  it("a folder-named note or any kind: hub note counts as a hub; a hub deeper down does not", () => {
+    const notes = [
+      { path: "06 Knowledge/Polymers/Polymers.md", kind: undefined },
+      { path: "06 Knowledge/Synthesis/Index.md", kind: "hub" },
+      { path: "06 Knowledge/Safety/Deep/Deep.md", kind: "hub" },
+      { path: "06 Knowledge/Safety/Rules.md", kind: "concept" },
+    ];
+    expect(topicsWithoutHub(folders, notes, "06 Knowledge")).toEqual(["06 Knowledge/Safety"]);
   });
 });

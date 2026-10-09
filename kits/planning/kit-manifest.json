@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "af76027df6d2a7235fbe478052e80af2e44768942a469ba15fefe0182d080903",
+      "sha256": "d1c57ee9f211a707e5ff46c5e60911904b990e744cf93f50817f714b12b0063f",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -188,7 +188,7 @@
       "role": "knowledge",
       "path": "Knowledge index.md",
       "version": "0.5.2",
-      "sha256": "669383fad0aacf0db44f6b8517951bd4476503669bf6ac21afc7189060215e5e",
+      "sha256": "a7bb302e734603e944e16763c3f6675afbf7efc6e9a420656131627a5f8f2b0f",
       "renamedFrom": [],
       "desc": "Knowledge notes by topic",
       "policy": "keep"
@@ -310,6 +310,17 @@
       "sha256": "8120c20feed417dedcb7572d81f4581b38b897166487d5529f3fe0c0bc0e5829",
       "renamedFrom": [],
       "desc": "New note inside a project"
+    },
+    {
+      "id": "tpl-new-topic-hub-md",
+      "kind": "template",
+      "src": "Extras/Templates/New topic hub.md",
+      "role": "templates",
+      "path": "New topic hub.md",
+      "version": "0.5.2",
+      "sha256": "cba003160bb6e2001dc5c753def213e91cfce7f3dec59815e322771c805727cc",
+      "renamedFrom": [],
+      "desc": "New topic hub: the index note of a topic folder"
     },
     {
       "id": "tpl-project-hub-md",

@@ -172,6 +172,18 @@ describe("planning kit files (Phase 3)", () => {
     expect(ids("knowledge-headings") ?? []).toEqual([]);
   });
 
+  it("the New topic hub template: shipped, takes the folder from the hand-over, kind hub, a text area above the list, no ### headings", () => {
+    const file = planning.manifest.files.find(f => f.dest === "New topic hub.md")!;
+    expect(file).toMatchObject({ kind: "template", role: "templates", src: "Extras/Templates/New topic hub.md" });
+    const [code, note] = planning.contents[file.id].replace(/\r\n/g, "\n").split("-%>\n");
+    expect(code).toContain("window.vtTopicHub");
+    expect(code).toContain("delete window.vtTopicHub");
+    expect(code).toContain("tp.file.move");
+    expect(note.startsWith("---\nkind: hub\ncssclasses:\n  - vt\n---\n\n")).toBe(true);
+    expect(note).toContain('FROM "<% vt.folder %>"');
+    expect(note).not.toMatch(/^###\s/m);
+  });
+
   it("lab and planning kits together: no two files share a place, and the scripts sit in sibling folders", () => {
     const labRoles = { templates: "Extras/Templates/Lab Kit", userScripts: "Extras/scripts/templater/lab-kit", scripts: "Extras/scripts/lab-kit", cssSnippets: ".obsidian/snippets", labBase: "03 Lab Book", chemicalBase: "05 Chemicals" };
     const all = [...dests(lab, labRoles), ...dests(planning, roles)];

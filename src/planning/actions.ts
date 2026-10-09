@@ -51,6 +51,13 @@ export const sortedName = (current: string, typed: string | null): string => cle
 export const subfolders = (folders: string[], root: string): string[] =>
   folders.filter(p => p === root || p.startsWith(root + "/")).sort();
 
+/** The topic folders directly under `root` that have no hub yet: no `<Topic>/<Topic>.md` and no note with `kind: hub` in them. */
+export function topicsWithoutHub(folders: string[], notes: { path: string; kind: unknown }[], root: string): string[] {
+  const direct = (path: string): string => path.slice(0, path.lastIndexOf("/"));
+  return folders.filter(p => p.startsWith(root + "/") && !p.slice(root.length + 1).includes("/")).sort()
+    .filter(p => !notes.some(n => direct(n.path) === p && (n.kind === "hub" || n.path === `${p}/${p.slice(root.length + 1)}.md`)));
+}
+
 /** An inbox note made into a to-do: on the Backlog, open; project / due / meeting added only when missing. */
 export function todoFields(fm: Record<string, unknown>): void {
   fm.kind = "todo"; fm.day = "Backlog"; fm.done = false; fm.rolled = false;

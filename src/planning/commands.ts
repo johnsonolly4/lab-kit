@@ -8,7 +8,7 @@ import { missingFolderNotice, type FolderGuardActions } from "../kit/folder-guar
 import { archiveInboxFolder, archiveTodoFolder, kitIsBackup, kitJoin, planningRoles, todoFolder, type KitData, type PlanningFolders } from "../kit/paths";
 import { nodeModule } from "../node";
 import { hasNode } from "../platform";
-import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, uniquePath } from "./actions";
+import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
 import { inFolder, type NoteRec } from "./lists";
@@ -23,10 +23,12 @@ export const TPL = {
   project: { id: "tpl-project-hub-md", dest: "Project hub.md" },
   projectNote: { id: "tpl-new-project-note-md", dest: "New project note.md" },
   concept: { id: "tpl-new-concept-md", dest: "New concept.md" },
+  topicHub: { id: "tpl-new-topic-hub-md", dest: "New topic hub.md" },
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
 interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string };
+  vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
 
@@ -62,6 +64,7 @@ export class PlanningCommands {
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
     add("new-project-note", "New project note", () => this.newProjectNote());
     add("new-concept", "New concept", () => this.fromTemplate(TPL.concept, this.folders.knowledge));   // the template asks title + topic and files the note
+    add("new-topic-hub", "New topic hub", () => this.newTopicHub());
     add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
     // Desktop only: opening a file in another app needs Electron
     this.plugin.addCommand({
@@ -153,6 +156,33 @@ export class PlanningCommands {
     handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck: cleanDeckPath(deck) };
     try { await this.fromTemplate(TPL.series, root, kitJoin(root, name)); }
     finally { delete handoff().vtSeries; }
+  }
+
+  /**
+   * New topic hub: the index note (`kind: hub`, named like its folder) of a topic folder under Knowledge. Pick a topic that has no hub yet, or a new topic
+   * (its folder is made); Esc stops, nothing is made. The template reads `vtTopicHub`.
+   */
+  async newTopicHub(): Promise<void> {
+    const root = this.folders.knowledge;
+    if (!(await this.ready(root))) return;
+    const notes = this.app.vault.getMarkdownFiles().map(f => ({ path: f.path, kind: this.app.metadataCache.getFileCache(f)?.frontmatter?.kind as unknown }));
+    const open = topicsWithoutHub(this.app.vault.getAllFolders().map(f => f.path), notes, root);
+    const NEW = "+ New topic…";
+    const picked = await pick(this.app, [...open.map(p => p.slice(root.length + 1)), NEW], [...open, ""], "Which topic gets a hub?", true);
+    if (picked === null) return;
+    let folder = picked;
+    if (!folder) {
+      const typed = await ask(this.app, "Topic name (a folder under Knowledge)");
+      const name = typed ? cleanName(typed) : "";
+      if (!name) return;
+      folder = kitJoin(root, name);
+    }
+    const name = folder.slice(root.length + 1);
+    const taken = this.app.vault.getAbstractFileByPath(`${folder}/${name}.md`);
+    if (taken) { new Notice(`${name} already has a hub note in ${folder}.`); return; }
+    handoff().vtTopicHub = { folder, name };
+    try { await this.fromTemplate(TPL.topicHub, root, folder); }
+    finally { delete handoff().vtTopicHub; }
   }
 
   /** New note in a project; `folder` (the project's folder) is used without asking: for project cards. */
