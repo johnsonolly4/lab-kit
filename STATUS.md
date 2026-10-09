@@ -32,7 +32,7 @@ None.
 - [ ] Try the sample-code fix in test-vault: Alt+S → Variant naming matrix in a note named `OLJ0001 - …` shows `OLJ0001-A`; and the Sort inbox side picker (checklist 6i, last line: small box at the right, note readable behind it); the Check setup Script and Homepage read-only rows (checklist 6i, new line); the New concept template and the wording of the Knowledge rules (checklist 6i, last line) — by 2026-10-10
 - [ ] Try release-test fix (a) in test-vault: checklist 6f, the two rename lines (settings tab open while renaming; edited template kept); and Make my own copy, token templates + Chemical class (setting wording and default are mine) and the six shipped templates (checklist 6i, last three lines) — by 2026-10-10
 
-- [ ] Say if Status board colours should wait for a Bases kanban DOM check (BACKLOG "Multi-kit round quick changes"); overlap screenshot received 2026-10-09, in BACKLOG, not fixed
+- [ ] Check the button overlap fix (Settings → Kit folders and setup, Planning folders; BACKLOG "Overlap seen again", built, not seen); say if Status board colours should wait for a Bases kanban DOM check
 
 ## Known issues
 - `npm run lint`: 0 errors, 3 sentence-case warnings (datafolder.ts, snippet-run.ts, whatsnew.ts; same without this session's changes) (BACKLOG "Repo / release")

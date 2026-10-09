@@ -109,7 +109,7 @@
 .lab-kit-notice-row { display: flex; flex-wrap: wrap; gap: 6px; }
 /* Rows with buttons (Update, Review, Set up, ...): the buttons wrap instead of running off a narrow screen; on a phone a control
    that does not fit beside the text moves under it (no :has, store check) */
-.lab-kit-settings .setting-item-control { flex-wrap: wrap; row-gap: 6px; min-width: 0; }
+.lab-kit-settings .setting-item-control { flex-wrap: wrap; row-gap: 6px; }
 .is-phone .lab-kit-settings .setting-item { flex-wrap: wrap; row-gap: 8px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */
