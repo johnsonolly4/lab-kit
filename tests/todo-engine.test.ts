@@ -167,3 +167,11 @@ describe("due-date countdown", () => {
     expect(cd({})).toBeNull();
   });
 });
+
+describe("To-do template countdown property", () => {
+  it("is written as a tick box (false), not an empty text property", async () => {
+    const { readFileSync } = await import("fs");
+    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    expect(tpl).toMatch(/^countdown: false$/m);
+  });
+});

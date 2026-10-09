@@ -52,7 +52,7 @@ done: false
 rolled: false
 project: <% project ? `"[[${project}]]"` : "" %>
 due:
-countdown:
+countdown: false
 meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 cssclasses:
   - vt
