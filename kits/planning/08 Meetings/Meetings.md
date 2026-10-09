@@ -12,5 +12,5 @@ cssclasses:
 > - **Meeting deck** opens the deck of a series.
 
 ```vault-card
-show: next-meetings
+show: meeting-cards
 ```

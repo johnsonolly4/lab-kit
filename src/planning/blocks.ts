@@ -5,8 +5,9 @@ import { folderMissingText } from "../kit/folder-guard";
 import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
-import { nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { ymd } from "./todo";
+import { WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -132,6 +133,30 @@ class BlockView extends MarkdownRenderChild {
         else box.createDiv({ cls: "vt-muted", text: kit.dueCountdown === "off" ? "Deadline countdown is off (Settings → Lab Kit)." : "No deadline set." });
         return;
       }
+      case "meeting-cards": {   // the Meetings hub: one card per series
+        if (!this.need(box, f.meetings)) return;
+        const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
+        const next = nextMeetings(all, today).slice(0, o.limit ?? TILE_ROWS);
+        if (!next.length) { box.createDiv({ cls: "vt-muted", text: "No meeting series yet - press New meeting series." }); return; }
+        const grid = box.createDiv({ cls: "vt-cards" });
+        for (const n of next) {
+          const series = all.find(s => s.path === n.path);
+          const card = grid.createDiv({ cls: "vt-card" });
+          const head = card.createDiv({ cls: "vt-card-head" });
+          this.link(head, n.path, n.name, "vt-card-title");
+          if (ymd(n.date) === ymd(today)) head.createSpan({ cls: "vt-badge vt-today", text: "today" });
+          card.createDiv({ cls: "vt-card-goal", text: `Next: ${WEEKDAYS[n.date.getDay()]} ${dayMonth(n.date)} · ${n.interval}` });
+          const held = series ? this.owner.notesIn(series.folder).filter(x => x.path !== series.path).length : 0;
+          card.createDiv({ cls: "vt-muted", text: `${held} meeting ${held === 1 ? "note" : "notes"}` });
+          const actions = card.createDiv({ cls: "vt-card-actions" });
+          actions.createEl("button", { text: "New meeting note" }).addEventListener("click", () => {
+            const c = this.owner.commands();
+            if (c && series) void c.newMeeting(series); else new Notice("Install the planning kit first, then try again.");
+          });
+          actions.createEl("button", { text: "Open" }).addEventListener("click", () => void this.app.workspace.openLinkText(n.path, this.sourcePath));
+        }
+        return;
+      }
       case "next-meetings": {
         if (!this.need(box, f.meetings)) return;
         const today = new Date();
@@ -139,7 +164,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, meeting-cards or next-meetings.` });
     }
   }
 

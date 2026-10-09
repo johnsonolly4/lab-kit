@@ -110,9 +110,9 @@ export class PlanningCommands {
     return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
   }
 
-  /** New meeting note in a series: dated from the series' interval, "since" the last meeting of the series. The template reads `vtMeeting`. */
-  async newMeeting(): Promise<void> {
-    const series = await this.pickSeries();
+  /** New meeting note in `given` (a series card's button), else in the series asked for:  dated from the series' interval, "since" the last meeting of the series. The template reads `vtMeeting`. */
+  async newMeeting(given?: Series): Promise<void> {
+    const series = given ?? await this.pickSeries();
     if (!series) return;
     const date = nextDate(series, new Date());
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)

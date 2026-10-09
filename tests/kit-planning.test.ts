@@ -295,7 +295,7 @@ describe("Phase 5b: the kit's meeting series", () => {
     expect(existsSync("kits/planning/08 Meetings/Weekly meetings")).toBe(false);
     const hub = text("kits/planning/08 Meetings/Meetings.md");
     expect(hub).not.toContain("kind: meeting-series");
-    expect(hub).toContain("show: next-meetings");
+    expect(hub).toContain("show: meeting-cards");
     expect(hub).toContain("new-meeting-series");
     const home = text("kits/planning/00 Home.md");
     expect(home).not.toContain("extra: Meetings |"); // the Go to bar finds the Meetings hub by its folder

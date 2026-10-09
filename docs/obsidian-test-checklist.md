@@ -212,3 +212,4 @@
 - [ ] Lab book base has the **Experiments** kanban and an **All experiments** list including Closed notes older than 30 days
 - [ ] Settings → Lab Kit → Built-in kit → **Clear old backups…**: lists how many backups there are, the dropdown (older than 30 days / 7 days / all) changes the count, **Move to trash** moves only the dated folders to the trash, anything else in the backup folder stays
 - [ ] The Templater row (Set up) is gone from Kit folders and setup; Check setup's Templater rows (template folder, user scripts folder, Insert snippet hotkey) each have a working Fix
+- [ ] Meetings hub (Replace with new version… first): one card per series with next date, interval, note count; **New meeting note** on a card makes the note for that series without asking which; **Open** opens the series hub; phone width stacks the cards

@@ -214,7 +214,7 @@
       "role": "meetings",
       "path": "Meetings.md",
       "version": "0.5.2",
-      "sha256": "50ddc28b7d09f4826a0b5b71f7c69163baed84be158fe5ae53d83741db5dbe82",
+      "sha256": "70d258d1ce1853c84b14e765db7af71f0d4bfdbd483b1c87d7b581cf97fd10fb",
       "renamedFrom": [],
       "desc": "Meetings hub: next meeting of each series",
       "policy": "keep"
