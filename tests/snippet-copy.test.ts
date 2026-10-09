@@ -3,7 +3,9 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
-import { canCopy, isStubSnippet, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, type HeadlessTp } from "../src/kit/snippet-copy";
+import { canCopy, copyTokenTemplate, isStubSnippet, isTokenTemplate, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, type HeadlessTp } from "../src/kit/snippet-copy";
+import { parseTemplate } from "../src/kit/snippet-template";
+import { miniYaml, shippedTemplate } from "./token-snippets";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
@@ -98,13 +100,50 @@ describe("makeSnippetCopy", () => {
     stubApp();
     const res = await makeSnippetCopy({ key: "nmr", name: "07 NMR samples", copyName: "x", folder: "S", user, run: run("nmr"), today: TODAY, exists: () => false, write: async () => {} });
     assert.strictEqual(res.fixedCodes, true);
-    assert.ok(hasFixedCodes("samples") && !hasFixedCodes("blank"));
+    assert.ok(hasFixedCodes("gpc") && !hasFixedCodes("blank"));
   });
 
   it("writes nothing when the snippet gives no text", async () => {
     let wrote = false;
     await assert.rejects(makeSnippetCopy({ key: "x", name: "X", copyName: "x", folder: "S", user, run: async () => "", exists: () => false, write: async () => { wrote = true; } }), /nothing to copy/);
     assert.strictEqual(wrote, false);
+  });
+});
+
+describe("token template copy", () => {
+  const dir = "kits/lab/Templates/Snippets/";
+  const six = ["04 Variant naming matrix", "05 Sample list", "06 Sampling timetable", "11 Flow column prep", "12 Residence times", "13 Blank calc table"];
+
+  it("is offered for the six token templates and not for stubs or plain notes", () => {
+    for (const f of six) assert.ok(isTokenTemplate(readFileSync(`${dir}${f}.md`, "utf8"), miniYaml), f);
+    assert.ok(!isTokenTemplate(readFileSync(dir + "01 Solution prep.md", "utf8"), miniYaml));
+    assert.ok(!isTokenTemplate("just a plain snippet\n", miniYaml));
+    assert.ok(!isTokenTemplate("---\nfields:\n  - key: a b\n---\nx", () => { throw new Error("bad"); }));
+  });
+
+  it("writes the template unchanged, never over an existing file, and the copy still fills like the original", async () => {
+    const text = readFileSync(dir + "05 Sample list.md", "utf8");
+    const files = new Map<string, string>([["S/05 Sample list (mine).md", "my edits"]]);
+    const res = await copyTokenTemplate({ text, name: "05 Sample list", copyName: "05 Sample list (mine)", folder: "S",
+      exists: p => files.has(p), write: async (p, t) => { files.set(p, t); } });
+    assert.strictEqual(res.path, "S/05 Sample list (mine) 2.md");
+    assert.strictEqual(res.fixedCodes, false);
+    assert.strictEqual(files.get("S/05 Sample list (mine).md"), "my edits");
+    const copy = files.get(res.path)!;
+    assert.strictEqual(copy, text);
+    const a = parseTemplate(copy, miniYaml)!, b = shippedTemplate("samples");
+    assert.deepStrictEqual(a, b);
+  });
+
+  it("writes nothing for an empty template", async () => {
+    let wrote = false;
+    await assert.rejects(copyTokenTemplate({ text: " \n", name: "X", copyName: "x", folder: "S", exists: () => false, write: async () => { wrote = true; } }), /nothing to copy/);
+    assert.strictEqual(wrote, false);
+  });
+
+  it("no longer lists the token snippets among the code snippets with fixed codes", () => {
+    for (const k of ["samples", "timetable", "matrix"]) assert.ok(!hasFixedCodes(k), k);
+    for (const k of ["nmr", "gpc", "dls", "results"]) assert.ok(hasFixedCodes(k), k);
   });
 });
 

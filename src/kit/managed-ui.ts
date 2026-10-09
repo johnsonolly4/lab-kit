@@ -1,6 +1,6 @@
 // Built-in kit: the glue between the plugin and src/kit/managed.ts, plus the review window, the report and the first-install question.
 // Works on mobile: only the vault adapter and crypto.subtle.
-import { Modal, Notice, Setting, type App, type Plugin } from "obsidian";
+import { Modal, Notice, Setting, parseYaml, type App, type Plugin } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, kitSha1, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
   kitBackupPath, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
@@ -9,7 +9,7 @@ import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
 import { makeMyCopy } from "./snippet-copy-ui";
-import { canCopy, isStubSnippet, snippetKey } from "./snippet-copy";
+import { canCopy, isStubSnippet, isTokenTemplate, snippetKey } from "./snippet-copy";
 import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Id of the Alt+S menu template in kit-manifest.json. */
@@ -586,7 +586,7 @@ class KitFilesModal extends Modal {
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
       // A code snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so those rows have no Open button (token templates do)
       const isSnippet = it.file.dest.startsWith("Snippets/");
-      if (isSnippet && canCopy(snippetKey(it.text)) && this.app.vault.getFileByPath(it.dest)) {
+      if (isSnippet && (canCopy(snippetKey(it.text)) || isTokenTemplate(it.text, parseYaml)) && this.app.vault.getFileByPath(it.dest)) {
         row.addButton(b => b.setButtonText("Make my own copy").onClick(() => void makeMyCopy(this.app, it.dest).then(() => this.refresh())));
       }
       const file = isSnippet && isStubSnippet(it.text) ? null : this.app.vault.getFileByPath(it.dest);

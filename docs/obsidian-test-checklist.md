@@ -188,6 +188,7 @@
 - [ ] Open `docs/tutorial.md` in a vault **with Dataview on**: no inline `=` errors
 
 - [ ] Manage files… → a snippet row (not Analysis table): **Make my own copy** asks a name (prefilled `… (mine)`; Esc makes nothing); the copy appears in Snippets and in Alt+S; a second copy with the same name becomes `… 2`; Review update… does not list it; a sample snippet's Notice says the codes are fixed. On a phone too
+- [ ] **Make my own copy on a token template** (Sample list, Sampling timetable, Flow column prep…): Manage files… → the row has the button; the copy is the same text with the header (open it, check Properties show); Alt+S lists it (same title as the original) and asks the same questions; Notice has no "codes are fixed" sentence
 - [ ] Token templates, Phase 4 (after Review update…): Alt+S → each of Variant naming matrix, Sample list, Sampling timetable, Flow column prep, Residence times, Blank calc table opens its form and inserts tables like before (compare with an older note); open one of the six files in the Snippets folder: header and `{{tokens}}` readable; Manage files… shows an **Open** button on those six and none on Solution prep; the Solvent field of Flow column prep suggests solvents; then NMR samples after a Sample list takes its codes
 
 ## 9. Mobile (or phone emulation: `app.emulateMobile(true)` in the dev console)

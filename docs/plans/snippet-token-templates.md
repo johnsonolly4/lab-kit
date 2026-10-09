@@ -44,7 +44,7 @@ The simple kit snippets become plain editable Markdown files with a small header
 - Files: the six stubs in `kits/lab/Templates/Snippets/` (05, 06, 04, 13, 11, 12), `kits/lab/kit-manifest.json` via `npm run kit:manifest`, `labSnippets.js` (remove the six only after the templates are proven), tests, `docs/architecture.md`, `docs/maintenance.md` items, `docs/obsidian-test-checklist.md`, `docs/changelog.md`.
 - Done when: all six produce the same output as before (old tests re-pointed, not deleted); Review update… treats the new files as ordinary managed files; no version field changes (release only).
 
-### Phase 5 — Make my own copy for token templates
+### Phase 5 — Make my own copy for token templates (DONE 2026-10-09, see "Phase 5 result")
 - Depends on: Phase 4
 - Files: `src/kit/snippet-copy.ts`, `src/kit/snippet-copy-ui.ts`, `src/kit/managed-ui.ts` (snippet rows), tests.
 - Done when: for a token template the copy is the template itself (header and tokens kept, so the copy stays editable and still asks its questions); code snippets keep the headless-run copy; the Notice no longer says "fixed codes" for token templates.
@@ -395,3 +395,7 @@ Changes to the spec:
 - `isStubSnippet` (`src/kit/snippet-copy.ts`): Manage files… shows Open on token templates (it hid it on every snippet because they were stubs).
 - Tests that used the toggles now run the method snippets after the list (nmr, gpc, results, dls); the prefix / initials tests moved to `tests/snippet-run.test.ts`.
 - Make my own copy is not offered for the six until Phase 5 (their `snippetKey` is null). `CODE_SNIPPETS` / `hasFixedCodes` still list samples, timetable and matrix: Phase 5 cleans that.
+
+## Phase 5 result (2026-10-09)
+
+Built: `isTokenTemplate` and `copyTokenTemplate` in `src/kit/snippet-copy.ts`; `makeMyCopy` copies the file text for a token template (stubs keep the headless run); `managed-ui.ts` shows the button on token templates; `CODE_SNIPPETS` is now nmr, gpc, dls, results. Tests in `tests/snippet-copy.test.ts` (522 pass). Tests only, not seen in Obsidian. The copy keeps the original `title:` (two Alt+S entries with one title): BACKLOG.
