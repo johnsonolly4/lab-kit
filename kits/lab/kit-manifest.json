@@ -118,7 +118,7 @@
       "role": "labBase",
       "path": "Lab book base.base",
       "version": "0.5.2",
-      "sha256": "5b6568606e4553810cb337f74031383587a4e48171fd25dcf8b47b6e45348976",
+      "sha256": "731beccad5bf3791f98ce3e98710c6ab3a2374d054dfbdf0cc1b043be44d06d3",
       "renamedFrom": [],
       "desc": "Board of your experiments by Status, next to your Lab notes folder",
       "optional": true,

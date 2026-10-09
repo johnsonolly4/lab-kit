@@ -322,4 +322,13 @@ describe("Phase 5b: the kit's meeting series", () => {
       expect(existsSync(file), file).toBe(true);
     }
   });
+
+  it("the Lab book base has the kanban (closed after 30 days hidden there only) and a list of all experiments", () => {
+    const base = readFileSync("kits/lab/03 Lab Book/Lab book base.base", "utf8");
+    expect(base).toMatch(/- type: kanban\n {4}name: Experiments\n {4}filters:/);
+    expect(base).toContain("- type: list\n    name: All experiments");
+    expect(base.split("file.inFolder(").length).toBe(2);              // one folder filter, shared by both views
+    expect(base.split("Status != \"Closed\"").length).toBe(2);       // not in the base-wide filter, or the list would hide old closed ones
+    expect(base.indexOf("Status != \"Closed\"")).toBeGreaterThan(base.indexOf("- type: kanban"));
+  });
 });

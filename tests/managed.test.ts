@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
   type EmbeddedKit, type ManagedAction, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -236,13 +236,31 @@ describe("per-file actions (Manage kit files)", () => {
     const v = memVault(); const { state } = await install(v);
     state.files["tpl-menu"].detached = true;
     v.files["My scripts/config.json"] = "{\"mine\":1}\n";
-    const plan = await planManaged(v, V2, state, roles);
+    const plan = await planManaged(v, V1, state, roles);   // the kit has nothing newer for the kept file
     for (const id of ["tpl-menu", "script-config", "script-snip"]) {
       const before = { ...v.files };
       const out = await restoreManaged(v, by(plan, id), state, opts);
       expect(out.result.outcome).toBe("skipped");
       expect(v.files).toEqual(before);
     }
+  });
+
+  it("a kept file the kit has a newer version of says so, and Replace backs up yours and installs the new one", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";
+    const plan = await planManaged(v, V2, state, roles);
+    const item = by(plan, "script-config");
+    expect(item.action).toBe("keep");
+    expect(kitHasNewer(item, state.files["script-config"])).toBe(true);
+    expect(statusOf(item, state.files["script-config"]).label).toBe("Newer kit version");
+    const none = by(await planManaged(v, V1, state, roles), "script-config");
+    expect(kitHasNewer(none, state.files["script-config"])).toBe(false);
+    expect(statusOf(none, state.files["script-config"]).label).toBe("Kept (your settings)");
+    const out = await restoreManaged(v, item, state, opts);
+    expect(out.result.outcome).toBe("updated");
+    expect(out.result.backup).toBeDefined();
+    expect(v.files["My scripts/config.json"]).toBe("{\"new\":1}\n");
+    expect(v.files[out.result.backup!]).toBe("{\"mine\":1}\n");
   });
 
   it("detach and re-attach", async () => {

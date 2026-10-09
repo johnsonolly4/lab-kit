@@ -3,7 +3,7 @@
 import { Modal, Notice, Setting, parseYaml, type App, type Plugin } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
-  kitBackupPath, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  kitBackupPath, kitHasNewer, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
@@ -408,7 +408,7 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "fast-forward", title: "Updated (the old copy is backed up first)", open: true },
   { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "up-to-date", title: "Already up to date" },
-  { action: "keep", title: "Kept: files you are meant to edit (your settings); the kit never updates them" },
+  { action: "keep", title: "Kept: files you are meant to edit (your settings); the kit never updates them. If the kit has a newer version, Manage kit files offers to replace yours" },
   { action: "detached", title: "Detached (not managed)" },
   { action: "off", title: "Switched off (not installed)" }
 ];
@@ -587,7 +587,7 @@ class KitFilesModal extends Modal {
       const row = new Setting(contentEl).setName(it.dest).setClass("lab-kit-manage-row");
       actionChip(row.nameEl, it.action);
       // A kept note's action chip already says "your settings": a second chip would repeat it
-      if (it.action !== "keep") row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
+      if (it.action !== "keep" || kitHasNewer(it, this.managed.stateOf(id))) row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
       const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
         : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";
       row.setDesc([it.file.desc, note].filter(Boolean).join(" · "));
@@ -606,6 +606,12 @@ class KitFilesModal extends Modal {
         row.addButton(b => b.setButtonText("Restore kit original").onClick(() => {
           new ConfirmModal(this.app, "Restore the kit's copy?", `${it.dest} goes back to the kit's version. Your copy is saved in the backup folder first.`,
             "Restore", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
+        }));
+      }
+      if (kitHasNewer(it, this.managed.stateOf(id))) {
+        row.addButton(b => b.setButtonText("Replace with new version…").setCta().onClick(() => {
+          new ConfirmModal(this.app, "Replace your copy with the new version?", `Your copy of ${it.dest} will be deleted and the kit's new version installed. A backup is saved first.`,
+            "Replace", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
         }));
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));

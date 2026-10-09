@@ -332,3 +332,7 @@ Bugs and requests, most serious first:
 - [ ] The progress writer edits the note's properties 2 s after the last metadata change (`src/planning/progress.ts`); not tested while the note is open in the editor
 - [ ] Shopping list shows `progress` only as a property (no bar); a bar under the title needs a decision
 - [ ] Project deadline is not shown on the project view's board, only hub, overview cards and the Home tile
+- [ ] (user screenshot 2026-10-09, chat) Lab book cards show the property name `progress` and a dash when empty (setting off or no check boxes). Seen working as a card property; the label and dash can't be styled from the plugin: decide whether to hide empty ones with CSS (`styles.css`) or add a bar (needs the Bases card DOM)
+- [ ] (BUILT 2026-10-09, tests only: `kitHasNewer` in `src/kit/managed.ts`, button in `src/kit/managed-ui.ts`) Newer-version prompt for kept files. Not done: the startup "Lab kit is ready" notice fires only on a new kit version, not when only a kept file changed; Review update… lists kept files but only Manage kit files can replace them
+- [ ] Shopping list progress bar and lab-note bar: user asked "why no bar" 2026-10-09; answered (needs a `show: progress` card, layout change); waiting for a yes
+

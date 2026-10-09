@@ -344,11 +344,14 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
 /** Actions "Restore kit original" may overwrite (the old copy is backed up first). Never a detached or kept file. */
 export const RESTORABLE_ACTIONS: ManagedAction[] = ["user-modified", "merge", "needs-merge", "fast-forward", "missing"];
 
-/** Puts the kit's version of ONE file back, backing up your copy first. Refuses detached / kept / up-to-date files. */
+/** A file you are meant to edit (policy keep) whose kit text changed since it was installed: the kit never updates it, but you can choose to replace it. */
+export const kitHasNewer = (item: ManagedItem, st?: ManagedFileState): boolean => item.action === "keep" && !!st && st.installedHash !== item.kitHash;
+
+/** Puts the kit's version of ONE file back, backing up your copy first. Refuses detached / up-to-date files, and kept files unless the kit has a newer version of them. */
 export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
   const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
   const { id } = item.file;
-  if (!RESTORABLE_ACTIONS.includes(item.action)) return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
+  if (!RESTORABLE_ACTIONS.includes(item.action) && !kitHasNewer(item, state?.files[id])) return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
   let backup: string | undefined;
   if (item.action !== "missing") backup = await backupFile(adapter, item, opts);
   else await kitEnsureDir(adapter, kitParent(item.dest));
@@ -430,7 +433,7 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
     case "merge": return { label: "Merges cleanly", tone: "info" };
     case "needs-merge": return { label: "Conflict", tone: "warn" };
     case "missing": return { label: "Missing", tone: "warn" };
-    case "keep": return { label: "Kept (your settings)", tone: "muted" };
+    case "keep": return kitHasNewer(item, st) ? { label: "Newer kit version", tone: "info" } : { label: "Kept (your settings)", tone: "muted" };
     case "detached": return { label: "Detached", tone: "muted" };
     case "off": return { label: "Off", tone: "muted" };
   }
