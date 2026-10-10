@@ -76,8 +76,14 @@ export class KitManaged {
     return planManaged(this.app.vault.adapter, this.bundle, this.slot.managed, this.roles(), this.legacy(), this.baseDir(), this.offIds());
   }
 
+  /** To the trash like the plugin's other removals (a copy was backed up first). */
+  private async trash(path: string): Promise<void> {
+    const f = this.app.vault.getFileByPath(path);
+    if (f) await this.app.fileManager.trashFile(f); else await this.app.vault.adapter.remove(path);
+  }
+
   private applyOptions(extra: Partial<ApplyOptions> = {}): ApplyOptions {
-    return { baseDir: this.baseDir(), backups: this.roles().backups, stamp: new Date().toISOString(), debug: this.host.kit.debug, ...extra };
+    return { baseDir: this.baseDir(), backups: this.roles().backups, stamp: new Date().toISOString(), debug: this.host.kit.debug, remove: p => this.trash(p), ...extra };
   }
 
   async apply(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<ManagedResult[]> {
@@ -655,17 +661,17 @@ class KitReportModal extends Modal {
     this.titleEl.setText("Kit update report");
     contentEl.addClass("lab-kit-modal");
     const n = (o: ManagedResult["outcome"]): number => results.filter(r => r.outcome === o).length;
-    contentEl.createEl("p", { text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
+    contentEl.createEl("p", { text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("moved")} renamed · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
     if (results.some(r => r.outcome === "merged" && this.scripts.has(r.id))) {
       contentEl.createEl("p", { text: "Merged scripts combine your edits with the kit's code. Please test them.", cls: "mod-warning" });
     }
-    const order: ManagedResult["outcome"][] = ["created", "updated", "merged", "adopted", "skipped"];
-    const names = { created: "Created", updated: "Updated", merged: "Merged", adopted: "Already up to date", skipped: "Left alone" };
+    const order: ManagedResult["outcome"][] = ["created", "updated", "merged", "moved", "adopted", "skipped"];
+    const names = { created: "Created", updated: "Updated", merged: "Merged", moved: "Renamed", adopted: "Already up to date", skipped: "Left alone" };
     for (const o of order) {
       const group = results.filter(r => r.outcome === o);
       if (!group.length) continue;
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
-      det.open = o === "created" || o === "updated" || o === "merged" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
+      det.open = o === "created" || o === "updated" || o === "merged" || o === "moved" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
       det.createEl("summary", { text: `${names[o]} (${group.length})` });
       const ul = det.createEl("ul");
       for (const r of group) {

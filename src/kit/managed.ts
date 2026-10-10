@@ -59,11 +59,15 @@ export interface ManagedItem {
   merged?: string;
   /** action "needs-merge": how many places both sides changed differently (absent when no merge was tried). */
   conflicts?: number;
+  /** The kit renamed this file: where your copy is now. Applying the update writes it at `dest` and removes this one (backed up first). */
+  movedFrom?: string;
 }
 /** Files the old folder updater wrote: path -> SHA-1 of what it wrote, and how to compute that hash. */
 export interface LegacyRecord { files: Record<string, string>; hash: (text: string) => Promise<string> }
-export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "merged" | "adopted" | "skipped"; backup?: string }
+export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "merged" | "adopted" | "skipped" | "moved"; backup?: string }
 
+/** Actions on which a file the kit renamed is moved to its new name (the others leave it where it is). */
+const MOVABLE: ManagedAction[] = ["up-to-date", "fast-forward", "merge"];
 /** Actions the plugin may carry out on its own ("Update all safe files"). */
 export const SAFE_ACTIONS: ManagedAction[] = ["create", "fast-forward", "up-to-date"];
 export const emptyManagedState = (): ManagedState => ({ installedKitVersion: "0", files: {} });
@@ -138,15 +142,24 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
         if (await adapter.exists(oldDest)) { dest = oldDest; break; }
       }
     }
+        // The kit renamed this file and your tracked copy still has the old name: the update moves it (only where the update can be applied by itself)
+    let movedFrom: string | undefined;
+    const target = kitJoin(roles[file.role], file.dest);
+    if (st && file.policy !== "keep" && st.path !== target && file.renamedFrom.some(old => kitJoin(roles[file.role], old) === st.path)
+      && await adapter.exists(st.path) && !(await adapter.exists(target))) { movedFrom = st.path; dest = target; }
+    const readAt = movedFrom ?? dest;
     const text = kitText(bundle, file, roles);
     const kitHash = await kitSha256(text);
-    const item = (action: ManagedAction, curHash: string | null, extra: Partial<ManagedItem> = {}): ManagedItem => ({ file, dest, text, kitHash, curHash, action, untracked: !st, ...extra });
+    const item = (action: ManagedAction, curHash: string | null, extra: Partial<ManagedItem> = {}): ManagedItem => {
+      const moves = movedFrom !== undefined && MOVABLE.includes(action);
+      return { file, dest: moves ? dest : readAt, text, kitHash, curHash, action, untracked: !st, ...(moves ? { movedFrom } : {}), ...extra };
+    };
     if (st?.detached) { items.push(item("detached", null)); continue; }
     // Switched off by the user: nothing is installed or updated (only files marked optional can be off)
-    if (file.optional && off.has(file.id)) { items.push(item("off", (await adapter.exists(dest)) ? await kitSha256(await adapter.read(dest)) : null)); continue; }
-    if (!(await adapter.exists(dest))) { items.push(item(st ? "missing" : "create", null)); continue; }
+    if (file.optional && off.has(file.id)) { items.push(item("off", (await adapter.exists(readAt)) ? await kitSha256(await adapter.read(readAt)) : null)); continue; }
+    if (!(await adapter.exists(readAt))) { items.push(item(st ? "missing" : "create", null)); continue; }
 
-    const cur = await adapter.read(dest);
+    const cur = await adapter.read(readAt);
     const curHash = await kitSha256(cur);
     if (curHash === kitHash) { items.push(item("up-to-date", curHash)); continue; }
     if (file.policy === "keep") { items.push(item("keep", curHash)); continue; }
@@ -240,7 +253,10 @@ export async function previewInstall(adapter: Pick<DataAdapter, "exists">, items
   extraFolders: { path: string; desc: string }[] = []): Promise<InstallPreview> {
   const out: InstallPreview = { create: [], update: [], leftAlone: [], folders: [], about: {} };
   const folders = new Set<string>();
-  for (const it of items) out.about[it.dest] = it.file.desc ? `${it.file.desc}.`.replace(/\.\.$/, ".") : ROLE_ABOUT[it.file.role] ?? "Kit file.";
+  for (const it of items) {
+    out.about[it.dest] = it.file.desc ? `${it.file.desc}.`.replace(/\.\.$/, ".") : ROLE_ABOUT[it.file.role] ?? "Kit file.";
+    if (it.movedFrom) out.about[it.dest] += ` Renamed from ${it.movedFrom} (old copy backed up).`;
+  }
   for (const f of extraFolders) {
     if (folders.has(f.path) || await adapter.exists(f.path)) continue;
     folders.add(f.path);
@@ -281,6 +297,8 @@ export interface ApplyOptions {
   select?: (item: ManagedItem) => boolean;
   /** Leave `installedKitVersion` as it was (a single-file action doesn't mean the whole kit is installed). */
   keepVersion?: boolean;
+  /** Deletes a file (the plugin moves it to the trash). Needed to rename a file the kit renamed; without it such a file is skipped. */
+  remove?: (path: string) => Promise<void>;
   debug?: boolean;
 }
 export interface ApplyOutcome { state: ManagedState; results: ManagedResult[] }
@@ -299,11 +317,12 @@ async function rememberFile(adapter: ManagedAdapter, next: ManagedState, it: Man
 /** Where a write with these options backs up the file at `dest`: <backups>/<timestamp>/<its path>. */
 export const kitBackupPath = (opts: Pick<ApplyOptions, "backups" | "stamp">, dest: string): string => kitJoin(opts.backups, folderStamp(opts.stamp), dest);
 
-/** Copies the current file to <backups>/<timestamp>/<its path> and returns that path. */
+/** Copies the current file (at its old name, when the kit renamed it) to <backups>/<timestamp>/<its path> and returns that path. */
 async function backupFile(adapter: ManagedAdapter, it: ManagedItem, opts: ApplyOptions): Promise<string> {
-  const backup = kitBackupPath(opts, it.dest);
+  const from = it.movedFrom ?? it.dest;
+  const backup = kitBackupPath(opts, from);
   await kitEnsureDir(adapter, kitParent(backup));
-  await adapter.write(backup, await adapter.read(it.dest));
+  await adapter.write(backup, await adapter.read(from));
   return backup;
 }
 
@@ -317,6 +336,17 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
     // A kept file with no record (made before the kit tracked it): its file is left alone, the kit's current text becomes its baseline, so only later kit changes show as an update
     if (it.action === "keep" && it.untracked) { await rememberFile(adapter, next, it, opts); results.push({ id, dest: it.dest, action: it.action, outcome: "adopted" }); log("adopt", it.dest); continue; }
     if (!select(it)) { results.push({ id, dest: it.dest, action: it.action, outcome: "skipped" }); log("skip", it.action, it.dest); continue; }
+    if (it.movedFrom !== undefined) {
+      if (!opts.remove) { results.push({ id, dest: it.dest, action: it.action, outcome: "skipped" }); continue; }
+      const backup = await backupFile(adapter, it, opts);
+      await kitEnsureDir(adapter, kitParent(it.dest));
+      await adapter.write(it.dest, it.action === "merge" && it.merged !== undefined ? it.merged : it.text);
+      await opts.remove(it.movedFrom);
+      await rememberFile(adapter, next, it, opts, it.action === "merge");
+      results.push({ id, dest: it.dest, action: it.action, outcome: "moved", backup });
+      log("move", it.movedFrom, "to", it.dest, "backup", backup);
+      continue;
+    }
     if (it.action === "up-to-date") { await rememberFile(adapter, next, it, opts); results.push({ id, dest: it.dest, action: it.action, outcome: "adopted" }); continue; }
     if (it.action === "create" || it.action === "missing") {
       await kitEnsureDir(adapter, kitParent(it.dest));

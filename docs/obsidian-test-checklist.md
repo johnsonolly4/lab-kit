@@ -226,3 +226,4 @@
 - [ ] Calc table, click a cell and type `=A2*B3+A2`: A2 and B3 are outlined and shaded in two colours, the same colours show on the references in the cell (cursor, selection and scrolling a long formula look right), A B C and 1 2 3 labels appear while you type and go on Enter / Esc; a reference into another table shades that table's cell
 - [ ] Same in the table's text (Source mode and Live Preview with the cursor in the block): the cursor in a formula cell shades the cells it points at and colours the references; a plain cell or a line outside a table marks nothing; a long note stays fast
 \n
+- [ ] Manage files: a vault with the old `Weekly meeting.md` (installed by an earlier kit) shows an Update on it; Review update… / Update all renames it to `Meeting.md`, the old copy is in the Backups folder, a second Manage files shows it up to date, and Templater lists Meeting (check a Meta Bind button or note that names the old template)

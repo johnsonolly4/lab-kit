@@ -484,14 +484,62 @@ describe("renames and retired files", () => {
     manifest: { ...k.manifest, files: k.manifest.files.map(f => f.id === "tpl-book" ? { ...f, dest: "Notes/Book.md", renamedFrom: ["Book.md"] } : f) },
   });
 
-  it("keeps updating your file in place when the kit moves it (same id)", async () => {
+  const remove = async (v: ReturnType<typeof memVault>, p: string): Promise<void> => { delete v.files[p]; };
+  const withRemove = (v: ReturnType<typeof memVault>) => ({ ...opts, remove: (p: string) => remove(v, p) });
+
+  it("moves an unedited file to the kit's new name when the update is applied", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
+    const item = by(plan, "tpl-book");
+    expect(item.dest).toBe("Templates/Notes/Book.md");
+    expect(item.movedFrom).toBe("Templates/Book.md");
+    expect(item.action).toBe("fast-forward");
+    expect(v.files["Templates/Book.md"]).toBeDefined();   // planning writes nothing
+    const out = await applyManaged(v, moved(V2), plan, state, withRemove(v));
+    expect(v.files["Templates/Book.md"]).toBeUndefined();
+    expect(v.files["Templates/Notes/Book.md"]).toBe("line 1\nline 2\nline 3 changed by kit\n");
+    expect(out.results.find(r => r.id === "tpl-book")?.outcome).toBe("moved");
+    expect(Object.values(v.files).some(t => t === "line 1\nline 2\nline 3\n")).toBe(true);   // the old copy is in the backups
+    expect(out.state.files["tpl-book"].path).toBe("Templates/Notes/Book.md");
+    const again = by(await planManaged(v, moved(V2), out.state, roles, null, opts.baseDir), "tpl-book");
+    expect(again.action).toBe("up-to-date");
+    expect(again.movedFrom).toBeUndefined();
+  });
+
+  it("moves an edited file too, with your edits merged in", async () => {
     const v = memVault(); const { state } = await install(v);
     v.files["Templates/Book.md"] = "mine 1\nline 2\nline 3\n";
     const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
     const item = by(plan, "tpl-book");
-    expect(item.dest).toBe("Templates/Book.md");
     expect(item.action).toBe("merge");
-    expect(item.merged).toBe("mine 1\nline 2\nline 3 changed by kit\n");
+    expect(item.movedFrom).toBe("Templates/Book.md");
+    await applyManaged(v, moved(V2), plan, state, { ...withRemove(v), select: () => true });
+    expect(v.files["Templates/Book.md"]).toBeUndefined();
+    expect(v.files["Templates/Notes/Book.md"]).toBe("mine 1\nline 2\nline 3 changed by kit\n");
+  });
+
+  it("leaves a file where it is when it cannot be applied by itself, or a file is already at the new name", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "mine 1\nline 2\nline 3 totally mine\n";
+    const clash = by(await planManaged(v, moved(V2), state, roles, null, opts.baseDir), "tpl-book");
+    expect(clash.action).toBe("needs-merge");
+    expect(clash.movedFrom).toBeUndefined();
+    expect(clash.dest).toBe("Templates/Book.md");
+    v.files["Templates/Book.md"] = "line 1\nline 2\nline 3\n";
+    v.files["Templates/Notes/Book.md"] = "already here\n";
+    const taken = by(await planManaged(v, moved(V2), state, roles, null, opts.baseDir), "tpl-book");
+    expect(taken.movedFrom).toBeUndefined();
+    expect(taken.dest).toBe("Templates/Book.md");
+  });
+
+  it("does not move a kept file, and skips the move without a way to delete", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const keepMoved = (k: EmbeddedKit): EmbeddedKit => ({ ...k, manifest: { ...k.manifest, files: moved(k).manifest.files.map(f => f.id === "tpl-book" ? { ...f, policy: "keep" } : f) } });
+    expect(by(await planManaged(v, keepMoved(V2), state, roles, null, opts.baseDir), "tpl-book").movedFrom).toBeUndefined();
+    const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
+    const out = await applyManaged(v, moved(V2), plan, state, opts);
+    expect(out.results.find(r => r.id === "tpl-book")?.outcome).toBe("skipped");
+    expect(v.files["Templates/Book.md"]).toBeDefined();
   });
 
   it("adopts a file found at an old place when nothing is tracked yet", async () => {
