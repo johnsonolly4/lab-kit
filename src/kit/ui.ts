@@ -1,7 +1,9 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
-import { ask } from "../planning/ask";
+import { ask, pick } from "../planning/ask";
+import { chemicalClasses } from "./snippet-env";
+import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
 import type { FolderGuardActions } from "./folder-guard";
 import { MovedFoldersModal } from "./moved-folders-ui";
@@ -110,6 +112,7 @@ class KitSettingTab extends PluginSettingTab {
     });
     const updates: SettingGroupItem[] = [];
     if (managed.updateAvailable()) updates.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
+    if (this.ctl.newerKit.length) updates.push({ name: "Kept files with a newer kit version", desc: `${this.ctl.newerKit.length} ${this.ctl.newerKit.length === 1 ? "file" : "files"} you keep as your own (${this.ctl.newerKit.join(", ")}). Manage files has Compare… and Use kit version… on each.` });
     updates.push({
       name: "Kit version",
       desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(slot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
@@ -360,7 +363,7 @@ export class KitController {
       if (foldersMoved) await this.foldersChanged();
     }));
     // The plugin brought a newer kit: say so once per start, with a button to the review window
-    this.app.workspace.onLayoutReady(() => window.setTimeout(() => this.notifyUpdate(), 4000));
+    this.app.workspace.onLayoutReady(() => window.setTimeout(() => void this.notifyUpdate(), 4000));
   }
 
   /**
@@ -425,8 +428,28 @@ export class KitController {
       await ensureFolder(this.app.vault, target.folder);
       const folder = this.app.vault.getFolderByPath(target.folder);
       if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
-      if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+      const cls = await this.askChemicalClass(target.folder);
+      if (cls === null) return;   // Esc cancels
+      if (!(await templaterCreateNote(this.app, template, folder))) { new Notice("Templater couldn't create the note. Update it to the latest version, then try again."); return; }
+      if (cls) await this.setChemicalClass(target.folder, cls);
     } catch (e) { console.error(e); new Notice("New chemical failed. See the developer console for details."); }
+  }
+
+  /** Pick a Chemical class from the ones the existing chemical notes use, type another, or skip it. The class text ("" = skip), or null when Esc was pressed. */
+  private async askChemicalClass(folder: string): Promise<string | null> {
+    const used = chemicalClasses(this.app.vault.getMarkdownFiles().filter(f => f.path.startsWith(folder + "/"))
+      .map(f => toList(prop(this.app.metadataCache.getFileCache(f)?.frontmatter, "Chemical class"))));
+    const OTHER = "\u0000other", NONE = "";
+    const got = await pick<string>(this.app, [...used, "Other…", "No class (fill in later)"], [...used, OTHER, NONE], "Chemical class (Esc cancels)");
+    if (got === null || got !== OTHER) return got;
+    return (await ask(this.app, "Chemical class")) ?? null;
+  }
+
+  /** Writes the class into the note Templater just made and opened (only if it is in the Chemical folder and has no class yet). */
+  private async setChemicalClass(folder: string, cls: string): Promise<void> {
+    const file = this.app.workspace.getActiveFile();
+    if (!file || file.extension !== "md" || !file.path.startsWith(folder + "/")) return;
+    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { if (!toList(prop(fm, "Chemical class")).length) fm["Chemical class"] = cls; });
   }
 
   /** Opens the Check setup window. */
@@ -443,13 +466,23 @@ export class KitController {
     if (this.kit.seenChangelog !== heading) { this.kit.seenChangelog = heading; await this.save(); }
   }
 
-  /** Startup notice: the plugin brought a newer kit than the one installed. */
-  notifyUpdate(): void {
-    if (!this.kit.notifyKitUpdate || !this.managed.updateAvailable()) return;
+  /** Kit files you keep as your own that the kit has a newer text for, counted at start-up (the settings tab shows it). */
+  newerKit: string[] = [];
+
+  /** Startup notice: the plugin brought a newer kit than the one installed, or kept files have a newer kit version. */
+  async notifyUpdate(): Promise<void> {
+    try {
+      const kits = [this.managed, ...(this.planning?.slot.enabled ? [this.planning] : [])];
+      this.newerKit = (await Promise.all(kits.map(k => k.newerKitFiles()))).flat();
+    } catch (e) { console.error(e); }
+    if (!this.kit.notifyKitUpdate) return;
+    const version = this.managed.updateAvailable();
+    if (!version && !this.newerKit.length) return;
+    const n = this.newerKit.length;
     const frag = createFragment(f => {
-      f.createDiv({ text: `Lab kit v${this.managed.version} is ready.` });
-      const b = f.createEl("button", { text: "Review", cls: "lab-kit-notice-btn" });
-      b.addEventListener("click", () => { notice.hide(); this.managed.review(); });
+      f.createDiv({ text: version ? `Lab kit v${this.managed.version} is ready.` : `${n} kept kit ${n === 1 ? "file has" : "files have"} a newer version than your copy.` });
+      const b = f.createEl("button", { text: version ? "Review" : "Manage files", cls: "lab-kit-notice-btn" });
+      b.addEventListener("click", () => { notice.hide(); if (version) this.managed.review(); else this.managed.manage(); });
     });
     const notice = new Notice(frag, 0);
   }

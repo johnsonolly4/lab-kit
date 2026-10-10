@@ -98,6 +98,8 @@ flowchart LR
 - **Extra meeting now** on a card makes an in-between meeting on a date you choose; the schedule doesn't move.
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files it in the **One-off** hub.
 - Set **project** on any meeting note to show it on that project's hub.
+- **New meeting series** (command palette) asks for a name, how often, the day, the first date and the deck; its last box is an optional template note for that series' meeting notes (Enter = the kit's Meeting template).
+- Hubs have buttons: a project, topic or series hub has a **back link** to the hub above it, a topic hub has **New concept**, a series hub has **Extra meeting now**.
 
 1. Before a meeting, open [[Meetings]], and press **New meeting note** on your series' card.
 2. It fills itself: experiments you touched, to-dos you ticked done, papers you read, and anything you flagged for the meeting.
@@ -106,13 +108,13 @@ flowchart LR
 
 ## Snippets (Alt+S)
 
-`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original.
+`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original. **Settings → Lab Kit → Snippet menu → Snippet icons** sets each snippet's icon.
 
 ## Keeping the vault healthy
 
 - **Check setup…** (Settings → Lab Kit) lists what the kits need and fixes it.
 - **Check hotkeys…** shows the keys [[Hotkeys]] recommends and what is set.
-- **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, and keeps a backup).
+- **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, and keeps a backup). An old project, topic or series hub gets the current buttons and tiles from the rule **Hubs: bring the page up to the current template** (not ticked until you tick it).
 - **Manage files…** shows kit files with a newer version; **Replace with new version…** swaps yours for the kit's (a backup is saved first), and **Clear old backups…** empties old ones.
 
 ## Friday review (15 minutes)

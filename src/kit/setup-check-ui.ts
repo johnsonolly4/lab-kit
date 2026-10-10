@@ -78,7 +78,20 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
 export class SetupCheckModal extends Modal {
   constructor(app: App, private host: SetupHost) { super(app); }
 
-  onOpen(): void { this.render(); }
+  private newerKit: string[] | undefined;
+
+  onOpen(): void {
+    this.render();
+    void this.countNewer().then(() => { if (this.contentEl.isConnected) this.render(); });
+  }
+
+  /** The count needs the files read, so the list shows first and the row appears when it is ready. */
+  private async countNewer(): Promise<void> {
+    try {
+      const kits = [this.host.managed, ...(this.host.planning?.slot.enabled ? [this.host.planning] : [])];
+      this.newerKit = (await Promise.all(kits.map(k => k.newerKitFiles()))).flat();
+    } catch (e) { console.error(e); }
+  }
   onClose(): void { this.contentEl.empty(); }
 
   private render(): void {
@@ -86,7 +99,7 @@ export class SetupCheckModal extends Modal {
     el.empty();
     el.addClass("lab-kit-setup-check");
     this.setTitle("Check setup");
-    const items = checkSetup(readSetupState(this.app, this.host));
+    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit });
     const missing = items.filter(i => !i.ok && !i.optional && !i.warn).length;
     el.createEl("p", { text: missing ? `${missing} to fix. Nothing changes until you press Fix and confirm.` : "Everything the kits need is in place." });
     let group = "";
@@ -99,7 +112,7 @@ export class SetupCheckModal extends Modal {
       text.createDiv({ text: it.label });
       text.createDiv({ cls: "setting-item-description", text: it.detail });
       const fix = it.fix;
-      if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
+      if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note", "manage"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
     }
   }
 
@@ -117,6 +130,7 @@ export class SetupCheckModal extends Modal {
       case "hide-properties": await confirm({ name: "Set Properties in document to Hidden", desc: "Settings → Editor. Properties stay in the note; open them from the note's menu.",
         apply: async () => { if (!hidePropertiesInDocument(this.app)) new Notice("Couldn't change it here. Set it in the editor settings."); } }); break;
       case "settings": this.close(); if (!openPluginSettings(this.app, this.host.pluginId)) new Notice("Couldn't open the settings: open them from the gear icon."); return;
+      case "manage": this.close(); lab.manage(); return;
       case "open-note": this.close(); void this.app.workspace.openLinkText(fix.path, "", false); return;
       case "matching-mode": await confirm({ name: "Set Templater's matching mode to Folder templates", desc: "It is None now, so folder templates never run.", apply: () => setTemplaterFolderMode(this.app) }); break;
       case "startup-remove": await confirm({ name: "Remove the old roll-over from Templater's startup templates", desc: `${fix.template}. Lab Kit's to-do engine does the roll-over now. The file itself stays.`,

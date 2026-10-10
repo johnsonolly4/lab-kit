@@ -3,7 +3,7 @@
 import { Modal, Notice, Setting, parseYaml, type App, type Plugin } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
-  kitBackupPath, kitHasNewer, kitKept, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
@@ -70,6 +70,12 @@ export class KitManaged {
   private quietly<T>(items: ManagedItem[], opts: ApplyOptions, write: (opts: ApplyOptions) => Promise<T>): Promise<T> {
     const paths = items.flatMap(i => [i.dest, kitBackupPath(opts, i.dest)]);   // backup copies are new notes too
     return withoutTemplaterTrigger(this.app, paths, () => write(opts));
+  }
+
+  /** Paths of the files you keep as your own that the kit has a newer text for (the count the start-up notice, Check setup and the settings tab show). */
+  async newerKitFiles(): Promise<string[]> {
+    if (!this.installedVersion) return [];
+    return newerKitItems(await this.plan(), id => this.stateOf(id)).map(i => i.dest);
   }
 
   plan(): Promise<ManagedItem[]> {
@@ -617,11 +623,11 @@ class KitFilesModal extends Modal {
       }
       if (kitHasNewer(it, this.managed.stateOf(id))) {
         row.addButton(b => b.setButtonText("Compare…").onClick(() => void this.managed.resolve(id, () => void this.refresh())));
-        row.addButton(b => b.setButtonText("Update…").setCta().onClick(() => {
-          new ConfirmModal(this.app, "Replace your copy with the new version?", `Your copy of ${it.dest} will be replaced by the kit's new version. A backup is saved first.`,
-            "Update", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
+        row.addButton(b => b.setButtonText("Use kit version…").setCta().onClick(() => {
+          new ConfirmModal(this.app, "Replace your copy with the kit's version?", `Your copy of ${it.dest} will be replaced by the kit's new version. A backup is saved first.`,
+            "Replace", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
         }));
-        if (!kitKept(it, this.managed.stateOf(id))) row.addButton(b => b.setButtonText("Keep").setTooltip("Leave your copy as it is. The update stays listed here if you want it later").onClick(() => void this.run(() => this.managed.resolveOne(id, null))));
+        if (!kitKept(it, this.managed.stateOf(id))) row.addButton(b => b.setButtonText("Keep mine").setTooltip("Leave your copy as it is. The newer kit version stays listed here if you want it later").onClick(() => void this.run(() => this.managed.resolveOne(id, null))));
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));

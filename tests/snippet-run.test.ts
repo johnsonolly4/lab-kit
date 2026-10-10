@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Notice, TFile, TFolder } from "obsidian";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
-import { classFilter, makeEnv, type Chem } from "../src/kit/snippet-env";
+import { chemicalClasses, classFilter, makeEnv, type Chem } from "../src/kit/snippet-env";
 import { parseTemplate, TemplateError } from "../src/kit/snippet-template";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 
@@ -15,6 +15,13 @@ const CHEMS: Chem[] = [
   { name: "AIBN", aliases: [], classes: ["initiator"] },
   { name: "Mystery", aliases: [] },
 ];
+
+describe("chemicalClasses", () => {
+  it("lists each class once, sorted, ignoring capitals and blanks", () => {
+    expect(chemicalClasses([["solvent"], ["Monomer", " "], ["Solvent", "initiator"], []])).toEqual(["initiator", "Monomer", "solvent"]);
+    expect(chemicalClasses([])).toEqual([]);
+  });
+});
 
 describe("classFilter", () => {
   it("no class asked: everything, unchanged order", () => {

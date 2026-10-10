@@ -59,6 +59,13 @@ export function makeEnv(note: string, prefix: string, noteProperty: (noteName: s
 /** A chemical note as the forms list it. `classes` are the values of its Chemical class property. */
 export interface Chem { name: string; aliases: string[]; classes?: string[] }
 
+/** The distinct Chemical classes in use, from each chemical's own list: sorted, a class counted once whatever its capitals (the first spelling is kept). */
+export function chemicalClasses(lists: string[][]): string[] {
+  const seen = new Map<string, string>();
+  for (const c of lists.flat().map(x => x.trim()).filter(Boolean)) if (!seen.has(c.toLowerCase())) seen.set(c.toLowerCase(), c);
+  return [...seen.values()].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+}
+
 /**
  * The chemicals a field suggests when it asks for Chemical classes. Class names are free text and are never checked against a
  * list: a class no chemical has yet just matches nothing. Match = case-insensitive, exact. No classes asked = all chemicals, unchanged.

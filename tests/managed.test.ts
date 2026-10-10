@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, kitKept, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, kitKept, newerKitItems, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
   type EmbeddedKit, type ManagedAction, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -253,7 +253,9 @@ describe("per-file actions (Manage kit files)", () => {
     expect(item.action).toBe("keep");
     expect(kitHasNewer(item, state.files["script-config"])).toBe(true);
     expect(statusOf(item, state.files["script-config"]).label).toBe("Newer kit version available");
+    expect(newerKitItems(plan, id => state.files[id]).map(i => i.file.id)).toEqual(["script-config"]);   // the count the start-up notice and Check setup show
     const none = by(await planManaged(v, V1, state, roles), "script-config");
+    expect(newerKitItems(await planManaged(v, V1, state, roles), id => state.files[id])).toEqual([]);
     expect(kitHasNewer(none, state.files["script-config"])).toBe(false);
     expect(statusOf(none, state.files["script-config"]).label).toBe("Kept (your settings)");
     const out = await restoreManaged(v, item, state, opts);

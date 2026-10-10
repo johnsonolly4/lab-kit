@@ -198,6 +198,7 @@ describe("planning kit files (Phase 3)", () => {
 
   it("homepage: as supplied (minus the focus properties) up to the Go to box; Phase 5a blocks replace the go buttons and the Dataview lists", () => {
     const home = planning.contents[planning.manifest.files.find(f => f.src === "00 Home.md")!.id];
+    // the supplied original still has the focus properties and callout: the kit dropped them on purpose (hub plan Phase 1), so only the head is compared
     const supplied = readFileSync("docs/plans/kit-files/planning/00 Home.md", "utf8").replace(/\r\n/g, "\n").replace(/focus\d(_done)?: .*\n/g, "");
     const head = (t: string) => t.slice(0, t.indexOf("> [!goto]"));
     expect(head(home)).toBe(head(supplied));

@@ -229,6 +229,8 @@ npm run lint
 npm run build
 npm run starter     # new-vault settings + plugin list, from the kits, into dist/starter/
 ```
+`npm run tidy-fixture` writes `test-vault-tidy/`, a small vault of old-style notes (from `tests/fixtures/`) to try **Tidy up notes** on; open it as its own vault, never your real one.
+
 `npm run starter` writes `dist/starter/`: empty contract folders, Obsidian settings (plugin list, CSS snippets, Alt+S, Templater folders) and `install-plugins.sh` / `.ps1`, generated from the kits so they can't drift. Copy it into an empty folder, run the install script with Obsidian open, then **Check setup**. Steps in [GETTING-STARTED](GETTING-STARTED.md#new-vault-from-the-starter).
 
 Open `test-vault/` as a vault in Obsidian to try changes. Never develop in your real vault. The kit files live in `kits/` and are embedded in `main.js` at build.

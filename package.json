@@ -9,7 +9,8 @@
     "test": "vitest run --reporter=dot",
     "lint": "eslint src",
     "kit:manifest": "node scripts/kit-manifest.mjs",
-    "starter": "node scripts/make-starter.mjs"
+    "starter": "node scripts/make-starter.mjs",
+    "tidy-fixture": "node scripts/make-tidy-vault.mjs"
   },
   "author": "johnsonolly4",
   "license": "MIT",

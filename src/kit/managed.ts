@@ -383,6 +383,9 @@ export const kitHasNewer = (item: ManagedItem, st?: ManagedFileState): boolean =
 /** A newer kit version the user has already looked at and chose to keep their own copy over (it is still offered, quietly). */
 export const kitKept = (item: ManagedItem, st?: ManagedFileState): boolean => kitHasNewer(item, st) && st?.keptKit === item.kitHash;
 
+/** The files whose kit text changed since your copy was made and which you keep as your own (kept already or not yet decided). */
+export const newerKitItems = (items: ManagedItem[], stateOf: (id: string) => ManagedFileState | undefined): ManagedItem[] => items.filter(i => kitHasNewer(i, stateOf(i.file.id)));
+
 /** Puts the kit's version of ONE file back, backing up your copy first. Refuses detached / up-to-date files, and kept files unless the kit has a newer version of them. */
 export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
   const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };

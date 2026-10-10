@@ -72,6 +72,8 @@ export interface SetupState {
   folderTemplates: { folder: string; template: string; kit?: "lab" | "planning" }[];
   /** Meeting series hubs (`kind: meeting-series`) in the meetings folder; `error` names the field that is wrong; `deck` = a deck path is set for this computer. */
   meetings?: { name: string; path: string; error?: string; deck: boolean }[];
+  /** Kit files you keep as your own that the kit has a newer text for (paths); undefined until counted. */
+  newerKit?: string[];
 }
 
 export type SetupFix =
@@ -90,7 +92,8 @@ export type SetupFix =
   | { kind: "startup-remove"; template: string }
   | { kind: "meta-bind" }
   | { kind: "meta-bind-reset"; ids: string[] }
-  | { kind: "open-note"; path: string };
+  | { kind: "open-note"; path: string }
+  | { kind: "manage" };
 
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
@@ -140,6 +143,13 @@ export function checkSetup(s: SetupState): SetupItem[] {
     const ok = s.installed[kit];
     out.push({ id: `install:${kit}`, group: "Kit files", label: kit === "lab" ? "Lab kit installed" : "Planning kit installed", ok,
       detail: ok ? "Installed." : "Not installed yet.", fix: ok ? undefined : { kind: "install", kit } });
+  }
+
+  if (s.newerKit) {
+    const n = s.newerKit;
+    out.push({ id: "kit:newer", group: "Kit files", label: "Kept files with a newer kit version", ok: !n.length, optional: true,
+      detail: n.length ? `${n.length} ${n.length === 1 ? "file has" : "files have"} a newer kit version than your copy: ${n.join(", ")}. Manage files has Compare… and Use kit version… on each; nothing changes by itself.` : "None: every file you kept is current with the kit.",
+      fix: n.length ? { kind: "manage" } : undefined });
   }
 
   if (s.plugins.has("templater-obsidian")) {

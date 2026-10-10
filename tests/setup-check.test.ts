@@ -190,6 +190,19 @@ describe("check setup (Phase 6)", () => {
   });
 });
 
+describe("check setup: kept files with a newer kit version", () => {
+  const row = (newerKit?: string[]) => checkSetup(state({ newerKit })).find(i => i.id === "kit:newer");
+  it("no row until the files are counted", () => expect(row(undefined)).toBeUndefined());
+  it("none: green", () => { expect(row([])?.ok).toBe(true); expect(row([])?.fix).toBeUndefined(); });
+  it("some: optional, never counted as to fix, lists the files and offers Manage files", () => {
+    const r = row(["Templates/Home.md", "Shopping list.md"])!;
+    expect(r.ok).toBe(false); expect(r.optional).toBe(true);
+    expect(r.detail).toContain("2 files have a newer kit version");
+    expect(r.detail).toContain("Shopping list.md");
+    expect(r.fix).toEqual({ kind: "manage" });
+  });
+});
+
 describe("check setup: meeting series (Phase 5b)", () => {
   it("each series is a row; a wrong field is named and Open goes to the note; a missing deck is a warning", () => {
     const r = byId(state({ planning: true, meetings: [
