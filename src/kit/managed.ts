@@ -401,14 +401,15 @@ export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem,
 
 /**
  * Settles ONE conflict (`needs-merge`), or compares / keeps a kept file the kit has a newer version of, with the text the merge window resolved to.
- * `text` null, or equal to your current file, keeps your file as it is and just records it as based on the new kit version ("Keep all mine").
+ * `text` null, or equal to your current file, keeps your file as it is ("Keep all mine"): for a conflict it is recorded as based on the new kit version, for a kept file the newer kit version stays on offer.
  * Anything else is written after a backup. Either way the base copy becomes the kit's text, so the next merge starts from this kit version.
  */
 export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem, text: string | null, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
   const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
   const { id } = item.file;
   if (item.action !== "needs-merge" && !kitHasNewer(item, state?.files[id])) return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
-  if (text === null && item.action === "keep") {   // Keep on a kept file: nothing is written, the update stays offered
+  // Keep on a kept file, from the row or "Keep all mine" in the Compare window (the text is then your own file's): nothing is written, the update stays offered
+  if (item.action === "keep" && (text === null || kitNormalise(text) === kitNormalise(await adapter.read(item.dest)))) {
     next.files[id] = { ...(state?.files[id] as ManagedFileState), keptKit: item.kitHash };
     return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "adopted" } };
   }

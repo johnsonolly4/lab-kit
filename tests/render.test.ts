@@ -126,6 +126,25 @@ describe("render", () => {
     }
   });
 
+  it("opens a cell again when the open editor was removed without a blur (stale editor)", async () => {
+    const fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText } }, registerEvent() { /* unused */ } };
+    const renderer = new CalcRenderer(plugin);
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const entry: CalcEntry = { el: new El("div"), ctx, source: "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |" };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    entry.tds!.get("1|0")!.dispatch("click");
+    const first = entry.tds!.get("1|0")!.querySelector("input");
+    assert.ok(first, "editor did not open");
+    Object.defineProperty(first, "isConnected", { value: false });   // the block was rebuilt: the input is gone and never blurred
+    await renderer.render(entry);
+    const b = entry.tds!.get("1|1")!;
+    b.dispatch("mousedown"); b.dispatch("click");
+    assert.ok(b.querySelector("input"), "a click after a stale editor did not open the cell");
+  });
+
   it("Tab saves the typed text, Escape discards it, and neither key reaches Obsidian", async () => {
     let fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
     const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText,

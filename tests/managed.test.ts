@@ -285,6 +285,10 @@ describe("per-file actions (Manage kit files)", () => {
     expect(attentionRank(again, kept.state.files["script-config"])).toBeGreaterThan(attentionRank({ ...again, action: "up-to-date" }) - 0.1);
     const V3 = kit("0.3.0", { "tpl-menu": "menu v2\n", "tpl-book": "line 1\nline 2\nline 3 changed by kit\n", "script-snip": "path = Extras/scripts/x\n", "script-config": "{\"newer\":1}\n" });
     expect(kitKept(by(await planManaged(v, V3, kept.state, roles), "script-config"), kept.state.files["script-config"])).toBe(false);
+    // "Keep all mine" in the Compare window sends your own text: it behaves like Keep (the update stays on offer)
+    const keepAll = await resolveManaged(v, item, "{\"mine\":1}\n", state, opts);
+    expect(keepAll.result.outcome).toBe("adopted");
+    expect(kitKept(by(await planManaged(v, V2, keepAll.state, roles), "script-config"), keepAll.state.files["script-config"])).toBe(true);
     const merged = await resolveManaged(v, item, "{\"mine\":1,\"new\":1}\n", state, opts);
     expect(merged.result.outcome).toBe("merged");
     expect(v.files[merged.result.backup!]).toBe("{\"mine\":1}\n");

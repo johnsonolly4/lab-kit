@@ -112,7 +112,8 @@ class KitSettingTab extends PluginSettingTab {
     });
     const updates: SettingGroupItem[] = [];
     if (managed.updateAvailable()) updates.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
-    if (this.ctl.newerKit.length) updates.push({ name: "Kept files with a newer kit version", desc: `${this.ctl.newerKit.length} ${this.ctl.newerKit.length === 1 ? "file" : "files"} you keep as your own (${this.ctl.newerKit.join(", ")}). Manage files has Compare… and Use kit version… on each.` });
+    const newer = [...this.ctl.newerKit.lab, ...this.ctl.newerKit.planning];
+    if (newer.length) updates.push({ name: "Kept files with a newer kit version", desc: `${newer.length} ${newer.length === 1 ? "file" : "files"} you keep as your own (${newer.join(", ")}). Manage files has Compare… and Use kit version… on each.` });
     updates.push({
       name: "Kit version",
       desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(slot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
@@ -466,24 +467,33 @@ export class KitController {
     if (this.kit.seenChangelog !== heading) { this.kit.seenChangelog = heading; await this.save(); }
   }
 
-  /** Kit files you keep as your own that the kit has a newer text for, counted at start-up (the settings tab shows it). */
-  newerKit: string[] = [];
+  /** Kit files you keep as your own that the kit has a newer text for, counted at start-up per kit (the settings tab shows them). */
+  newerKit: { lab: string[]; planning: string[] } = { lab: [], planning: [] };
 
-  /** Startup notice: the plugin brought a newer kit than the one installed, or kept files have a newer kit version. */
+  /** Startup notice: the plugin brought a newer kit than the one installed, or kept files have a newer kit version. It closes by itself after 15 seconds. */
   async notifyUpdate(): Promise<void> {
     try {
-      const kits = [this.managed, ...(this.planning?.slot.enabled ? [this.planning] : [])];
-      this.newerKit = (await Promise.all(kits.map(k => k.newerKitFiles()))).flat();
+      const planning = this.planning?.slot.enabled ? await this.planning.newerKitFiles() : [];
+      this.newerKit = { lab: await this.managed.newerKitFiles(), planning };
     } catch (e) { console.error(e); }
     if (!this.kit.notifyKitUpdate) return;
     const version = this.managed.updateAvailable();
-    if (!version && !this.newerKit.length) return;
-    const n = this.newerKit.length;
+    const { lab, planning } = this.newerKit;
+    if (!version && !lab.length && !planning.length) return;
     const frag = createFragment(f => {
-      f.createDiv({ text: version ? `Lab kit v${this.managed.version} is ready.` : `${n} kept kit ${n === 1 ? "file has" : "files have"} a newer version than your copy.` });
-      const b = f.createEl("button", { text: version ? "Review" : "Manage files", cls: "lab-kit-notice-btn" });
-      b.addEventListener("click", () => { notice.hide(); if (version) this.managed.review(); else this.managed.manage(); });
+      if (version) {
+        f.createDiv({ text: `Lab kit v${this.managed.version} is ready.` });
+        const b = f.createEl("button", { text: "Review", cls: "lab-kit-notice-btn" });
+        b.addEventListener("click", () => { notice.hide(); this.managed.review(); });
+        return;
+      }
+      for (const [name, files, kit] of [["lab kit", lab, this.managed], ["planning kit", planning, this.planning]] as const) {
+        if (!files.length || !kit) continue;
+        f.createDiv({ text: `${files.length} kept ${name} ${files.length === 1 ? "file has" : "files have"} a newer version than your copy.` });
+        const b = f.createEl("button", { text: `Manage ${name} files`, cls: "lab-kit-notice-btn" });
+        b.addEventListener("click", () => { notice.hide(); kit.manage(); });
+      }
     });
-    const notice = new Notice(frag, 0);
+    const notice = new Notice(frag, 15000);
   }
 }

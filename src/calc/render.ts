@@ -33,7 +33,7 @@ export class CalcRenderer {
   /** Rendered blocks per note path, so edits to the note refresh them. */
   live = new Map<string, Set<CalcEntry>>();
   /** The cell being edited, if any (one at a time). */
-  private editor: { entry: CalcEntry; showRefs?: () => void } | null = null;
+  private editor: { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } | null = null;
   /** Cells marked as referenced by the formula being typed. */
   private marked: HTMLElement[] = [];
   private labelled: HTMLElement | null = null;
@@ -103,11 +103,11 @@ export class CalcRenderer {
       if (!entry.el.isConnected) { if (Date.now() - (entry.born ?? 0) > 5000) set.delete(entry); continue; }   // a new block may not be attached yet
       const info = entry.ctx.getSectionInfo(entry.el);
       if (info) { const blk = blocks.find(b => b.lineStart === info.lineStart); if (blk) entry.source = blk.source; }
-      if (this.editor?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
+      if (this.liveEditor()?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
       await this.render(entry, text);
     }
     if (!set.size) this.live.delete(path);
-    this.editor?.showRefs?.();                      // another table was redrawn: its marks are gone
+    this.liveEditor()?.showRefs?.();                      // another table was redrawn: its marks are gone
   }
 
   async render(entry: CalcEntry, fileText?: string): Promise<void> {
@@ -216,7 +216,7 @@ export class CalcRenderer {
             td.addEventListener("mousedown", (ev) => {
               const t = ev.target as HTMLElement;
               if (t.closest("a") || t.closest("input")) return;
-              if (this.editor) this.setPending(entry, r, c);
+              if (this.liveEditor()) this.setPending(entry, r, c);
             });
             td.addEventListener("click", (ev) => {
               if ((ev.target as HTMLElement).closest("a")) return;
@@ -357,7 +357,7 @@ export class CalcRenderer {
       back.appendText(text.slice(at));
       back.scrollLeft = input.scrollLeft;
     };
-    const mine: { entry: CalcEntry; showRefs?: () => void } = { entry };
+    const mine: { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } = { entry, input };
     mine.showRefs = () => { this.markRefs(entry, r, c, input.value); paint(); };
     this.editor = mine;
     input.focus({ preventScroll: true }); input.select();
@@ -431,9 +431,15 @@ export class CalcRenderer {
   }
 
   /** Opens the cell the user clicked while another one was being saved. */
+  /** The open cell editor, or null. An editor whose input was taken out of the page without a blur (the block was rebuilt) is forgotten here, else it would swallow every later click. */
+  private liveEditor(): { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } | null {
+    if (this.editor?.input && !this.editor.input.isConnected) { this.editor = null; this.clearPending(); }
+    return this.editor;
+  }
+
   private openPending(): void {
     const p = this.pending;
-    if (!p || this.editor) return;
+    if (!p || this.liveEditor()) return;
     const entry = this.pendingTarget(p);
     const td = entry?.tds?.get(`${p.r}|${p.c}`);
     // Block not redrawn yet, or Obsidian may still rebuild it after the save: look again shortly (the expiry timer clears a click that never lands)
