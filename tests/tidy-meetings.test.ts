@@ -46,7 +46,7 @@ describe("Tidy up notes: meetings (Phase 7c-1)", () => {
   it("meeting notes get series from the hub in their folder; one without a hub is reported", () => {
     const c = ctx(), s = scan(files(vault(), c), c);
     const note = s.groups.find(g => g.id === "meetings")?.changes.find(x => x.path.endsWith("2026-09-24 Group meeting.md"));
-    expect(note?.after).toBe("kind: meeting\ndate: 2026-09-24\nseries: \"[[Group meeting]]\"");
+    expect(note?.after).toBe("kind: meeting\ndate: 2026-09-24\nseries: \"[[Group meeting]]\"\ncssclasses:\n  - vt");
     expect(s.reported.find(r => r.id === "left-alone")?.items.map(i => i.path)).toEqual(["08 Meetings/Loose/2026-09-01 Loose.md"]);
   });
 
@@ -54,7 +54,7 @@ describe("Tidy up notes: meetings (Phase 7c-1)", () => {
     const g = group(ctx(), vault(), "meetings");
     const todo = g?.changes.filter(c => c.path.startsWith("00 Planning/To-dos/"));
     expect(todo?.map(c => c.path)).toEqual(["00 Planning/To-dos/Order vials.md"]);
-    expect(todo?.[0].after).toBe("kind: todo\nmeeting: \"[[Group meeting]]\"");
+    expect(todo?.[0].after).toBe("kind: todo\nmeeting: \"[[Group meeting]]\"\ncssclasses:\n  - vt");
   });
 
   it("no series at all: meeting: true is reported, not changed", () => {
@@ -74,8 +74,8 @@ describe("Tidy up notes: folders without a hub (Phase 7c-1)", () => {
   it("proposes a hub only where Go to would find none (kind: hub, folder-named note, .base all count)", () => {
     const g = group(ctx(), vault(), "hub-missing");
     expect(g?.changes).toEqual([
-      { path: "02 Projects/Projects.md", before: "", after: "kind: hub", create: true },
-      { path: "06 Knowledge/Knowledge.md", before: "", after: "kind: hub", create: true },
+      { path: "02 Projects/Projects.md", before: "", after: "kind: hub\ncssclasses:\n  - vt", create: true },
+      { path: "06 Knowledge/Knowledge.md", before: "", after: "kind: hub\ncssclasses:\n  - vt", create: true },
     ]);
   });
 });
@@ -85,7 +85,7 @@ describe("Tidy up notes: empty values count as missing", () => {
     const m = vault();
     m.set("08 Meetings/Group meeting/Group meeting.md", "---\nkind: hub\ninterval:\nday:\nstart: 2026-01-01\n---\n");
     const hub = group(ctx({ interval: "fortnightly", day: "Tue" }), m, "meetings")?.changes.find(c => c.path.endsWith("Group meeting/Group meeting.md"));
-    expect(hub?.after).toBe("kind: meeting-series\ninterval: fortnightly\nday: Tue\nstart: 2026-01-01");
+    expect(hub?.after).toBe("kind: meeting-series\ninterval: fortnightly\nday: Tue\nstart: 2026-01-01\ncssclasses:\n  - vt");
   });
 });
 
@@ -96,7 +96,7 @@ describe("Tidy up notes: to-dos without a kind", () => {
     m.set("00 Planning/To-dos/Bare.md", "Just text\n");
     const g = group(ctx(), m, "todo-properties");
     expect(g?.changes).toEqual([
-      { path: "00 Planning/To-dos/Bare.md", before: "", after: "kind: todo\nday: Backlog\ndone: false\nrolled: false" },
+      { path: "00 Planning/To-dos/Bare.md", before: "", after: "kind: todo\nday: Backlog\ndone: false\nrolled: false\ncssclasses:\n  - vt" },
       { path: "00 Planning/To-dos/Buy gloves.md", before: "cssclasses:\n  - vt\ndone: true", after: "cssclasses:\n  - vt\ndone: true\nkind: todo\nday: Backlog\nrolled: false" },
     ]);
   });
@@ -105,14 +105,14 @@ describe("Tidy up notes: to-dos without a kind", () => {
     m.set("00 Planning/To-dos/Empty kind.md", "---\nkind:\nday: Backlog\nplanned: 2026-10-09\n---\nbody\n");
     const g = group(ctx(), m, "todo-properties");
     expect(g?.changes).toEqual([
-      { path: "00 Planning/To-dos/Empty kind.md", before: "kind:\nday: Backlog\nplanned: 2026-10-09", after: "kind: todo\nday: Backlog\nplanned: 2026-10-09\ndone: false\nrolled: false" },
+      { path: "00 Planning/To-dos/Empty kind.md", before: "kind:\nday: Backlog\nplanned: 2026-10-09", after: "kind: todo\nday: Backlog\nplanned: 2026-10-09\ndone: false\nrolled: false\ncssclasses:\n  - vt" },
     ]);
   });
   it("applies with a backup, and a second scan finds nothing", async () => {
     const m = vault(); m.set("00 Planning/To-dos/Bare.md", "Just text\n");
     const c = ctx(), s = scan(files(m, c), c), x = io(m);
     await applyTidy(x, selectChanges(s, new Set(["todo-properties"])));
-    expect(m.get("00 Planning/To-dos/Bare.md")).toBe("---\nkind: todo\nday: Backlog\ndone: false\nrolled: false\n---\nJust text\n");
+    expect(m.get("00 Planning/To-dos/Bare.md")).toBe("---\nkind: todo\nday: Backlog\ndone: false\nrolled: false\ncssclasses:\n  - vt\n---\nJust text\n");
     expect(x.backups.get("00 Planning/To-dos/Bare.md")).toBe("Just text\n");
     expect(group(c, m, "todo-properties")).toBeUndefined();
   });
@@ -128,7 +128,7 @@ describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
     expect(m).toEqual(old);
     await applyTidy(io(m), selectChanges(s, new Set(["hub-missing"])));
     expect(m.get("08 Meetings/Group meeting/Group meeting.md")).toBe(OLD_HUB);
-    expect(m.get("02 Projects/Projects.md")).toBe("---\nkind: hub\n---\n");
+    expect(m.get("02 Projects/Projects.md")).toBe("---\nkind: hub\ncssclasses:\n  - vt\n---\n");
   });
 
   it("every rewritten note has a backup equal to its old text; new notes need none", async () => {
@@ -138,7 +138,7 @@ describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
     expect(out.created).toEqual(["02 Projects/Projects.md", "06 Knowledge/Knowledge.md"]);
     for (const p of out.changed) expect(x.backups.get(p)).toBe(old.get(p));
     expect(out.changed.length).toBe(5);   // the hub, the to-do, the meeting note with a series link, and the two meeting notes that also get an empty project
-    expect(m.get("00 Planning/To-dos/Order vials.md")).toBe("---\nkind: todo\nmeeting: \"[[Group meeting]]\"\n---\n");
+    expect(m.get("00 Planning/To-dos/Order vials.md")).toBe("---\nkind: todo\nmeeting: \"[[Group meeting]]\"\ncssclasses:\n  - vt\n---\n");
   });
 
   it("an existing file is never replaced by a new hub", async () => {
@@ -169,19 +169,30 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
   });
   it("project hubs get Status: Active and an empty deadline, only the ones they lack", () => {
     const m = vault();
-    m.set("02 Projects/Beta/Beta.md", "---\nkind: project\nStatus: Paused\ndeadline: 2026-12-01\n---\n");
+    m.set("02 Projects/Beta/Beta.md", "---\nkind: project\nStatus: Paused\ndeadline: 2026-12-01\ncssclasses:\n  - vt\n  - project\n---\n");
     m.set("02 Projects/Gamma/Gamma.md", "---\nkind: project\nStatus: Done\n---\n");
     const g = group(c(), m, "project-properties")!;
     expect(g.changes.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Alpha.md", "02 Projects/Gamma/Gamma.md"]);
-    expect(g.changes.find(x => x.path.includes("Alpha"))!.after).toBe("kind: project\nStatus: Active\ndeadline:");
-    expect(g.changes.find(x => x.path.includes("Gamma"))!.after).toBe("kind: project\nStatus: Done\ndeadline:");
+    expect(g.changes.find(x => x.path.includes("Alpha"))!.after).toBe("kind: project\nStatus: Active\ndeadline:\ncssclasses:\n  - vt\n  - project");
+    expect(g.changes.find(x => x.path.includes("Gamma"))!.after).toBe("kind: project\nStatus: Done\ndeadline:\ncssclasses:\n  - vt\n  - project");
+  });
+  it("a complete hub that lacks only the classes gets vt and project; your own classes are kept in order", () => {
+    const m = new Map([
+      ["02 Projects/Beta/Beta.md", "---\nkind: project\nStatus: Paused\ndeadline: 2026-12-01\n---\n"],
+      ["02 Projects/Gamma/Gamma.md", "---\nkind: project\nStatus: Done\ndeadline:\ncssclasses: [wide, vt]\n---\n"],
+      ["02 Projects/Delta/Delta.md", "---\nkind: project\nStatus: Done\ndeadline:\ncssclasses:\n  - vt\n  - project\n---\n"],
+    ]);
+    const g = group(c(), m, "project-properties")!;
+    expect(g.changes.map(x => x.path)).toEqual(["02 Projects/Beta/Beta.md", "02 Projects/Gamma/Gamma.md"]);
+    expect(g.changes[0].after).toBe("kind: project\nStatus: Paused\ndeadline: 2026-12-01\ncssclasses:\n  - vt\n  - project");
+    expect(g.changes[1].after).toBe("kind: project\nStatus: Done\ndeadline:\ncssclasses:\n  - wide\n  - vt\n  - project");
   });
   it("an old hub with no kind (a note named like its folder) gets kind, Status and deadline in one run", () => {
     const m = vault();
     m.set("02 Projects/Old/Old.md", "---\ncssclasses:\n  - vt\n---\nbody\n");
     m.set("02 Projects/Old/Plain note.md", "---\ncssclasses:\n  - vt\n---\n");
     const g = group(c(), m, "project-properties")!;
-    expect(g.changes.find(x => x.path === "02 Projects/Old/Old.md")!.after).toBe("cssclasses:\n  - vt\nkind: project\nStatus: Active\ndeadline:");
+    expect(g.changes.find(x => x.path === "02 Projects/Old/Old.md")!.after).toBe("cssclasses:\n  - vt\n  - project\nkind: project\nStatus: Active\ndeadline:");
     expect(g.changes.some(x => x.path.includes("Plain note"))).toBe(false);
   });
   it("notes in a project folder get a project link to the hub; hubs, to-dos, meetings and notes that have one are left alone", () => {
@@ -189,13 +200,15 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
     m.set("02 Projects/Alpha/Idea.md", "---\ncssclasses:\n  - vt\n---\n");
     m.set("02 Projects/Alpha/Empty.md", "---\nproject:\n---\n");
     m.set("02 Projects/Alpha/Sub/Deep.md", "just text\n");
-    m.set("02 Projects/Alpha/Has.md", "---\nproject:\n  - \"[[Alpha]]\"\n---\n");
+    m.set("02 Projects/Alpha/Has.md", "---\nproject:\n  - \"[[Alpha]]\"\ncssclasses:\n  - vt\n---\n");
+    m.set("02 Projects/Alpha/Linked.md", "---\nproject:\n  - \"[[Alpha]]\"\n---\n");
     m.set("02 Projects/Alpha/Task.md", "---\nkind: todo\n---\n");
     m.set("02 Projects/NoHub/Orphan.md", "---\ncssclasses:\n  - vt\n---\n");
     const g = group(c(), m, "project-notes")!;
-    expect(g.changes.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Sub/Deep.md"]);
+    expect(g.changes.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md"]);
+    expect(g.changes.find(x => x.path.endsWith("Linked.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
     expect(g.changes.find(x => x.path.endsWith("Idea.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"');
-    expect(g.changes.find(x => x.path.endsWith("Empty.md"))!.after).toBe('project:\n  - "[[Alpha]]"');
+    expect(g.changes.find(x => x.path.endsWith("Empty.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
   });
   it("a project folder with notes but no hub gets a new hub, made from the template text when given", async () => {
     const m = vault();
@@ -205,7 +218,7 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
     m.set("02 Projects/Projects overview.md", "---\nkind: hub\n---\n");
     const g = group(c(), m, "project-hub-missing")!;
     expect(g.changes.map(x => x.path)).toEqual(["02 Projects/Lost/Lost.md"]);
-    expect(g.changes[0]).toMatchObject({ create: true, after: "kind: project\nStatus: Active\ndeadline:" });
+    expect(g.changes[0]).toMatchObject({ create: true, after: "kind: project\nStatus: Active\ndeadline:\ncssclasses:\n  - vt\n  - project" });
     expect(g.changes[0].text).toBeUndefined();
     const withText = group({ ...c(), projectHubText: "---\nkind: project\n---\nbody\n" }, m, "project-hub-missing")!;
     expect(withText.changes[0].text).toBe("---\nkind: project\n---\nbody\n");

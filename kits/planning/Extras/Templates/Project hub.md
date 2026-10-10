@@ -26,7 +26,9 @@ cssclasses:
 show: deadline
 ```
 
-`BUTTON[todo, project-note]`
+```vault-card
+show: project-actions
+```
 
 > [!focus] Goal
 > [goal:: ]

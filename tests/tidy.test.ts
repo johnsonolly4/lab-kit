@@ -75,13 +75,13 @@ describe("Tidy up notes scan (Phase 7a)", () => {
   });
 
   it("hubs: an index note without kind gets kind: hub (also when it has no properties); one with kind is left", () => {
-    expect(group(s, "hub-kind")?.changes).toEqual([{ path: "07 How-tos/Cooking index.md", before: "tags: [how-to]", after: "tags: [how-to]\nkind: hub" }]);
+    expect(group(s, "hub-kind")?.changes).toEqual([{ path: "07 How-tos/Cooking index.md", before: "tags: [how-to]", after: "tags: [how-to]\nkind: hub\ncssclasses:\n  - vt" }]);
     const bare = scan([{ path: "07 How-tos/Index.md", text: "# Index\n" }], { ...ctx, migrations: [] });
-    expect(group(bare, "hub-kind")?.changes[0]).toMatchObject({ before: "", after: "kind: hub" });
+    expect(group(bare, "hub-kind")?.changes[0]).toMatchObject({ before: "", after: "kind: hub\ncssclasses:\n  - vt" });
   });
   it("hubs: an index note with an empty kind gets it filled in place, no second kind line", () => {
     const empty = scan([{ path: "07 How-tos/Index.md", text: "---\nkind:\ntags: [a]\n---\n# Index\n" }], { ...ctx, migrations: [] });
-    expect(group(empty, "hub-kind")?.changes[0]).toMatchObject({ before: "kind:\ntags: [a]", after: "kind: hub\ntags: [a]" });
+    expect(group(empty, "hub-kind")?.changes[0]).toMatchObject({ before: "kind:\ntags: [a]", after: "kind: hub\ntags: [a]\ncssclasses:\n  - vt" });
   });
 
   it("only reported: untitled, double extension, canvas in the inbox, outside the layout, unused view.js", () => {

@@ -227,3 +227,4 @@
 - [ ] Same in the table's text (Source mode and Live Preview with the cursor in the block): the cursor in a formula cell shades the cells it points at and colours the references; a plain cell or a line outside a table marks nothing; a long note stays fast
 \n
 - [ ] Manage files: a vault with the old `Weekly meeting.md` (installed by an earlier kit) shows an Update on it; Review update… / Update all renames it to `Meeting.md`, the old copy is in the Backups folder, a second Manage files shows it up to date, and Templater lists Meeting (check a Meta Bind button or note that names the old template)
+- [ ] Project hub (after Review update… for the theme): Show all N in Live Preview works with one click and does not open the tile for editing, the "Edit this block" icon is gone on those tiles, the button sits at the top right; a new project hub shows New to-do and New note in one row; Tidy up notes offers `vt` (and `project` on hubs) for notes and hubs that lack it

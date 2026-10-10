@@ -76,6 +76,20 @@ class BlockView extends MarkdownRenderChild {
   }
 
   /** The folder `path` exists; else a line saying it is missing (moved outside Obsidian?) in `box`. */
+  private commands(): PlanningCommands | null {
+    const c = this.owner.commands();
+    if (!c) new Notice("Install the planning kit first, then try again.");
+    return c;
+  }
+
+  /** Show all / Show the last N at a tile's top right. Live Preview opens a code block for editing on a click inside it: the events stop here. */
+  private toggle(box: HTMLElement, text: string): void {
+    const b = box.createEl("button", { cls: "vt-tile-toggle", text });
+    const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
+    b.addEventListener("mousedown", stop);
+    b.addEventListener("click", e => { stop(e); this.showAll = !this.showAll; this.draw(); });
+  }
+
   private need(box: HTMLElement, path: string): boolean {
     if (this.app.vault.getFolderByPath(path)) return true;
     box.createDiv({ cls: "vt-muted lab-kit-block-missing", text: folderMissingText(path) });
@@ -142,8 +156,16 @@ class BlockView extends MarkdownRenderChild {
         if (!all.length) { box.createDiv({ cls: "vt-muted", text: "No meetings name this project yet. Set project on a meeting note." }); return; }
         this.list(box, this.showAll ? all : all.slice(0, PROJECT_MEETINGS));
         if (all.length > PROJECT_MEETINGS) {
-          box.createEl("button", { text: this.showAll ? "Show the last " + PROJECT_MEETINGS : `Show all ${all.length}` }).addEventListener("click", () => { this.showAll = !this.showAll; this.draw(); });
+          this.toggle(box, this.showAll ? "Show the last " + PROJECT_MEETINGS : `Show all ${all.length}`);
         }
+        return;
+      }
+      case "project-actions": {   // on a project hub: New to-do / New note in one row, like the Projects overview card
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile) return;
+        const actions = box.createDiv({ cls: "vt-card-actions" });
+        actions.createEl("button", { text: "New to-do" }).addEventListener("click", () => void this.commands()?.newTodo(hubFile.basename));
+        actions.createEl("button", { text: "New note" }).addEventListener("click", () => void this.commands()?.newProjectNote(hubFile.parent?.path));
         return;
       }
       case "project-todos":   // on a project hub: its open to-dos, 10 rows with Show all
@@ -156,8 +178,7 @@ class BlockView extends MarkdownRenderChild {
         if (!this.need(box, folder)) return;
         const all = todos ? projectTodos(this.owner.notesIn(folder), hub, new Date()) : projectNotes(this.owner.notesIn(folder), hub);
         if (all.length > PROJECT_TILE_ROWS) {   // at the callout's top right (styles in vault-theme.css)
-          box.createEl("button", { cls: "vt-tile-toggle", text: this.showAll ? `Show the last ${PROJECT_TILE_ROWS}` : `Show all ${all.length}` })
-            .addEventListener("click", () => { this.showAll = !this.showAll; this.draw(); });
+          this.toggle(box, this.showAll ? `Show the last ${PROJECT_TILE_ROWS}` : `Show all ${all.length}`);
         }
         this.list(box, this.showAll ? all : all.slice(0, PROJECT_TILE_ROWS), todos ? "No open to-dos for this project." : "No notes in this project yet.");
         return;
@@ -211,7 +232,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, project-todos, project-notes, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, project-todos, project-notes, project-actions, meeting-cards or next-meetings.` });
     }
   }
 

@@ -127,6 +127,15 @@ const fillProp = (fm: string[], name: string, value: string): string[] => {
   return values(p).length ? fm : [...fm.slice(0, p.start), line(p.key, value), ...fm.slice(p.end)];
 };
 const line = (name: string, value: string): string => value === "" ? `${name}:` : `${name}: ${value}`;
+/** The classes the kit's templates write (`vt` styles the planning theme): added to `cssclasses`, yours kept in order. Unchanged when all are there. */
+const withClasses = (fm: string[], classes: string[]): string[] => {
+  const p = find(fm, "cssclasses");
+  const have = values(p).flatMap(v => v.split(/\s+/)).filter(Boolean);
+  const miss = classes.filter(c => !have.includes(c));
+  if (!miss.length) return fm;
+  const block = ["cssclasses:", ...[...have, ...miss].map(c => `  - ${c}`)];
+  return p ? [...fm.slice(0, p.start), ...block, ...fm.slice(p.end)] : [...fm, ...block];
+};
 
 type Result = { fm: string[] } | { reported: string } | null;
 
@@ -252,7 +261,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   if (mt) {
     const g: TidyGroup = { id: "meetings", title: "Meetings: series hub and links", detail: "The old weekly-meeting hub becomes a meeting series, meeting notes get a series link and to-dos flagged with meeting: true link to the first series.", changes: [], ask: "meetings" };
     const inMeet = notes.filter(n => inFolder(n.path, mt.folder));
-    const propose = (path: string, fm: string[]): void => { g.changes.push({ path, before: split(effective.get(path) ?? "")?.fm.join("\n") ?? "", after: fm.join("\n") }); put(path, fm.join("\n")); };
+    const propose = (path: string, fm0: string[]): void => { const fm = withClasses(fm0, ["vt"]); g.changes.push({ path, before: split(effective.get(path) ?? "")?.fm.join("\n") ?? "", after: fm.join("\n") }); put(path, fm.join("\n")); };
     for (const n of inMeet.filter(x => baseName(x.path) === baseName(parentOf(x.path)) && kindOf(x.path) === "hub" && !values(find(fmOf(x.path), "interval")).length)) {
       let fm = fmOf(n.path);
       const k = find(fm, "kind");
@@ -281,7 +290,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   if (mt) {
     const g: TidyGroup = { id: "meeting-project", title: "Meeting notes: add the project property", detail: "Meeting notes (kind: meeting) without a project property get an empty one; set it to a project hub to show the meeting on that project.", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, mt.folder) && kindOf(x.path) === "meeting" && !find(fmOf(x.path), "project"))) {
-      const fm = fmOf(n.path), after = [...fm, line("project", "")];
+      const fm = fmOf(n.path), after = withClasses([...fm, line("project", "")], ["vt"]);
       g.changes.push({ path: n.path, before: fm.join("\n"), after: after.join("\n") });
       put(n.path, after.join("\n"));
     }
@@ -293,14 +302,14 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   if (ctx.projectsFolder) {
     const pf = ctx.projectsFolder;
     const isHub = (path: string): boolean => kindOf(path) === "project" || (kindOf(path) === "" && parentOf(parentOf(path)) === pf && baseName(path) === baseName(parentOf(path)));
-    const g: TidyGroup = { id: "project-properties", title: "Project hubs: add the template's missing properties", detail: "Project hubs (kind: project, or a note named like its project folder) get kind: project, Status: Active and an empty deadline when they lack them (only the ones they lack).", changes: [] };
+    const g: TidyGroup = { id: "project-properties", title: "Project hubs: add the template's missing properties", detail: "Project hubs (kind: project, or a note named like its project folder) get kind: project, Status: Active, an empty deadline and the vt and project classes when they lack them (only the ones they lack).", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, pf) && isHub(x.path))) {
       const fm = fmOf(n.path);
       const needKind = kindOf(n.path) !== "project";   // a hub found by its name only (empty or no kind)
       const withKind = needKind ? fillProp(fm, "kind", "project") : fm;
       const add = ([["Status", "Active"], ["deadline", ""]] as const).filter(([k]) => !find(fm, k)).map(([k, v]) => line(k, v));
-      if (!needKind && !add.length) continue;
-      const full = [...withKind, ...add];
+      const full = withClasses([...withKind, ...add], ["vt", "project"]);
+      if (full.join("\n") === fm.join("\n")) continue;
       g.changes.push({ path: n.path, before: fm.join("\n"), after: full.join("\n") });
       put(n.path, full.join("\n"));
     }
@@ -308,14 +317,15 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
     // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists.
     const hubs = new Set(notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path));
-    const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub.", changes: [] };
+    const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub; notes without the vt class get it.", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, pf) && !hubs.has(x.path))) {
       const name = n.path.slice(pf.length + 1).split("/")[0];
       if (!name || !hubs.has(`${pf}/${name}/${name}.md`) || ["todo", "meeting", "literature", "hub", "project"].includes(kindOf(n.path))) continue;
       const fm = fmOf(n.path), p = find(fm, "project");
-      if (p && values(p).length) continue;
       const item = ["project:", `  - "[[${name}]]"`];
-      const after = p ? [...fm.slice(0, p.start), ...item, ...fm.slice(p.end)] : [...fm, ...item];
+      const linked = p && values(p).length ? fm : p ? [...fm.slice(0, p.start), ...item, ...fm.slice(p.end)] : [...fm, ...item];
+      const after = withClasses(linked, ["vt"]);
+      if (after.join("\n") === fm.join("\n")) continue;
       g2.changes.push({ path: n.path, before: fm.join("\n"), after: after.join("\n") });
       put(n.path, after.join("\n"));
     }
@@ -327,7 +337,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     for (const name of folders) {
       const folder = `${pf}/${name}`, path = `${folder}/${name}.md`;
       if (files.some(f => f.path === path) || notes.some(x => parentOf(x.path) === folder && kindOf(x.path) === "project")) continue;
-      g3.changes.push({ path, before: "", after: "kind: project\nStatus: Active\ndeadline:", create: true, ...(ctx.projectHubText ? { text: ctx.projectHubText } : {}) });
+      g3.changes.push({ path, before: "", after: "kind: project\nStatus: Active\ndeadline:\ncssclasses:\n  - vt\n  - project", create: true, ...(ctx.projectHubText ? { text: ctx.projectHubText } : {}) });
     }
     if (g3.changes.length) groups.push(g3);
   }
@@ -342,8 +352,9 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       // an empty `kind:` (Obsidian shows "Empty") counts as no kind: fill that line in place
       const base = kind ? [...fm.slice(0, kind.start), line("kind", "todo"), ...fm.slice(kind.end)] : fm;
       const add = ([["kind", "todo"], ["day", "Backlog"], ["done", "false"], ["rolled", "false"]] as const).filter(([k]) => !find(base, k)).map(([k, v]) => line(k, v));
-      g.changes.push({ path: n.path, before: fm.join("\n"), after: [...base, ...add].join("\n") });
-      put(n.path, [...base, ...add].join("\n"));
+      const full = withClasses([...base, ...add], ["vt"]);
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: full.join("\n") });
+      put(n.path, full.join("\n"));
     }
     if (g.changes.length) groups.push(g);
   }
@@ -354,7 +365,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     if (!isHubName(n.path) || !n.path.includes("/") || inFolder(n.path, "Extras")) continue;
     const s = split(effective.get(n.path) ?? "");
     if (s && values(find(s.fm, "kind")).length) continue;
-    hubs.changes.push({ path: n.path, before: s ? s.fm.join("\n") : "", after: fillProp(s?.fm ?? [], "kind", "hub").join("\n") });
+    hubs.changes.push({ path: n.path, before: s ? s.fm.join("\n") : "", after: withClasses(fillProp(s?.fm ?? [], "kind", "hub"), ["vt"]).join("\n") });
   }
   if (hubs.changes.length) groups.push(hubs);
 
@@ -366,7 +377,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     const has = files.some(f => parentOf(f.path) === folder && !hidden(f.path) && (f.path.endsWith(".base") || proposed.has(f.path)
       || (isNote(f.path) && (baseName(f.path) === unnumbered(folder) || kindOf(f.path) === "hub"))));
     const path = `${folder}/${unnumbered(folder)}.md`;
-    if (!has && !files.some(f => f.path === path)) missing.changes.push({ path, before: "", after: "kind: hub", create: true });
+    if (!has && !files.some(f => f.path === path)) missing.changes.push({ path, before: "", after: "kind: hub\ncssclasses:\n  - vt", create: true });
   }
   if (missing.changes.length) groups.push(missing);
 

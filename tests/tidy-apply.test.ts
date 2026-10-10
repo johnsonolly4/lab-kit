@@ -60,7 +60,7 @@ describe("Change notes (Phase 7b)", () => {
     expect(changes.map(c => c.path)).toEqual(["07 How-tos/Cooking index.md"]);
     await applyTidy(m.io, changes);
     for (const [k, t] of before) if (k !== "07 How-tos/Cooking index.md") expect(m.files.get(k)).toBe(t);
-    expect(m.files.get("07 How-tos/Cooking index.md")).toBe("---\ntags: [how-to]\nkind: hub\n---\n# Cooking index\n");
+    expect(m.files.get("07 How-tos/Cooking index.md")).toBe("---\ntags: [how-to]\nkind: hub\ncssclasses:\n  - vt\n---\n# Cooking index\n");
   });
 
   it("(c) every rewritten note has a backup equal to its old text, and only the property block changed", async () => {
