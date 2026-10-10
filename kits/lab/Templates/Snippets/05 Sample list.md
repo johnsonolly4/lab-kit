@@ -18,6 +18,7 @@ name: {{table:samples}}
 title: Samples
 icon: list
 copy: column A
+codes: column A
 | Code | Description | Notes |
 |---|---|---|
 {{#if codes}}

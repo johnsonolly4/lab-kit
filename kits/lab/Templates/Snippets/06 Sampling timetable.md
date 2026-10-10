@@ -35,6 +35,7 @@ name: {{table:sampling}}
 title: Sampling timetable
 icon: timer
 copy: column A
+codes: column A
 | Code | Time ({{unit|"min"}}) | Target time | Taken at | Notes |
 |---|---|---|---|---|
 {{#each letters as L or ""}}

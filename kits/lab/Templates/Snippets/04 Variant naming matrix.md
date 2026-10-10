@@ -19,6 +19,7 @@ name: {{table:variants}}
 title: Variant naming matrix
 icon: grid-3x3
 copy: list
+codes: cells
 |  | {{#if cols}}{{#each cols | " | "}}{{.}}{{/each}}{{else}}Code{{/if}} |
 |{{#if cols}}{{#each cols}}---|{{/each}}{{else}}---|{{/if}}---|
 {{#each rows as r}}

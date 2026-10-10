@@ -135,6 +135,7 @@ $$\tau = \frac{V_{\text{reactor}}}{Q} \qquad Q = \frac{V_{\text{reactor}}}{\tau}
 > | `sig:` | `sig: 4` | significant figures for small numbers |
 > | `grid:` | `grid: true` | start with A1 labels shown |
 > | `copy:` | `copy: list` / `copy: column A` | what **Copy** puts on the clipboard |
+> | `codes:` | `codes: column A` / `codes: cells` | the table holds sample codes: NMR, GPC, DLS, method and Combined results snippets offer them under **Codes from** (all of them by default). Full syntax: `docs/snippet-syntax.md` |
 
 ---
 

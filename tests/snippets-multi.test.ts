@@ -14,6 +14,7 @@ const table = (name: string, codes: string[]) =>
 
 function harness(initial: string) {
   let note = initial;
+  let seen: any[] = [];
   const g = globalThis as any;
   g.Notice = class { constructor(_m: string) { /* silent */ } };
   g.app = {
@@ -30,6 +31,7 @@ function harness(initial: string) {
       user: {
         labMethods,
         labForm: async (_tp: unknown, _t: string, fields: any[]) => {
+          seen = fields;
           const v: Record<string, unknown> = {};
           for (const f of fields) if (f.key) v[f.key] = f.key in overrides ? overrides[f.key] : (f.type === "toggle" ? !!f.value : String(f.value ?? ""));
           return v;
@@ -49,7 +51,7 @@ function harness(initial: string) {
     };
     return { cell, names: blocks.map(b => b.name) };
   };
-  return { run, evaluate, get note() { return note; }, set note(v: string) { note = v; } };
+  return { run, evaluate, get fields() { return seen; }, get note() { return note; }, set note(v: string) { note = v; } };
 }
 
 describe("snippets read numbered tables", () => {
@@ -90,6 +92,58 @@ describe("snippets read numbered tables", () => {
     const ev = h.evaluate();
     assert.strictEqual(ev.cell("results", "B2"), 42);
     assert.strictEqual(ev.cell("results", "B3"), 77);
+  });
+});
+
+/** A calc block that says where its sample codes are (`codes:` option), under a title. */
+const coded = (name: string, title: string, codes: string[], opt = "codes: column A") =>
+  "```calc\nname: " + name + "\ntitle: " + title + "\n" + opt + "\n| Code | Time |\n|---|---|\n" + codes.map(c => `| ${c} | 0 |`).join("\n") + "\n```\n";
+
+describe("Codes from: every table that holds sample codes", () => {
+  const two = () => harness(coded("samples", "Sample list", ["ABC0001-A", "ABC0001-B"]) + coded("sampling", "Sampling timetable", ["ABC0001-A10", "ABC0001-A20"]));
+  const keys = (h: ReturnType<typeof harness>) => h.fields.map((f: any) => f.key);
+
+  it("takes the codes of all tables by default, not just the first", async () => {
+    const h = two();
+    const md = await h.run("nmr");
+    for (const c of ["ABC0001-A", "ABC0001-B", "ABC0001-A10", "ABC0001-A20"]) assert.ok(md.includes(c), `missing ${c}`);
+    const sel = h.fields.find((f: any) => f.key === "codesFrom");
+    assert.deepStrictEqual(sel.options.map((o: any) => o.label), ["All of them", "Sample list", "Sampling timetable"]);
+    assert.strictEqual(sel.value, "all");
+  });
+
+  it("a picked table narrows the codes; text you edited in the box wins over the choice", async () => {
+    const h = two();
+    const md = await h.run("gpc", { codesFrom: "1" });
+    assert.ok(md.includes("ABC0001-A20") && !md.includes("ABC0001-B"), md);
+    const h2 = two();
+    const md2 = await h2.run("gpc", { codesFrom: "0", codes: "X1, X2" });
+    assert.ok(md2.includes("X1") && !md2.includes("ABC0001-A10") && !md2.includes("ABC0001-B"), md2);
+  });
+
+  it("Combined results offers the same choice", async () => {
+    const h = two();
+    const md = await h.run("results", { codesFrom: "0", gpc: false });
+    assert.ok(md.includes("ABC0001-B") && !md.includes("ABC0001-A10"), md);
+  });
+
+  it("no choice with one source; a hand-made table with codes: column B is found; codes: cells skips the header row and first column", async () => {
+    const one = harness(coded("samples", "Sample list", ["ABC0001-A"]));
+    await one.run("nmr");
+    assert.ok(!keys(one).includes("codesFrom"));
+    const mine = harness("```calc\nname: mine\ntitle: My table\ncodes: column B\n| X | Sample |\n|---|---|\n| 1 | Q1 |\n| 2 | Q2 |\n```\n");
+    assert.ok((await mine.run("dls")).includes("Q2"));
+    const cells = harness("```calc\nname: variants\ntitle: Matrix\ncodes: cells\n|  | alc 1 | alc 2 |\n|---|---|---|\n| **a** | ABC0001-A | ABC0001-B |\n```\n");
+    const md = await cells.run("nmr");
+    assert.ok(md.includes("ABC0001-B") && !md.includes("alc 1") && !md.includes("**a**"), md);
+  });
+
+  it("a table the snippets generate carries the option, so a copy of it is a source for the next snippet", async () => {
+    const h = harness(coded("samples", "Sample list", ["ABC0001-A"]));
+    const nmr = await h.run("nmr", { codes: "ABC0001-Z" });
+    assert.ok(nmr.includes("codes: column B"), nmr);   // NMR's sample column is the second one
+    await h.run("gpc");
+    assert.ok(h.fields.find((f: any) => f.key === "codesFrom").options.some((o: any) => o.label === "NMR samples"));
   });
 });
 

@@ -86,7 +86,7 @@ module.exports = async function labSnippets(tp, snippet) {
     taken.add(n);
     return n;
   };
-  /** Every calc table in the note, in order: { name (lower case), rows } where each row is its list of cells (header row first). */
+  /** Every calc table in the note, in order: { name (lower case), title, codes (the `codes:` option: where its sample codes are), rows } where each row is its list of cells (header row first). */
   const calcTables = () => {
     const rx = new RegExp("^[ \\t>]*" + F + "calc[ \\t]*\\n([\\s\\S]*?)\\n[ \\t>]*" + F + "[ \\t]*$", "gim");
     const text = noteText();
@@ -95,7 +95,8 @@ module.exports = async function labSnippets(tp, snippet) {
       const lines = m[1].split("\n").map(l => l.replace(/^[ \t>]*/, ""));
       const name = lines.map(l => l.match(/^name:\s*(.+?)\s*$/i)).find(Boolean)?.[1].toLowerCase() ?? "";
       const rows = lines.filter(l => l.startsWith("|") && !/^[\s|:\-]+$/.test(l)).map(l => l.split("|").slice(1, -1).map(c => c.trim()));
-      out.push({ name, rows });
+      const opt = (k) => lines.map(l => l.match(new RegExp(`^${k}:\\s*(.+?)\\s*$`, "i"))).find(Boolean)?.[1] ?? "";
+      out.push({ name, title: opt("title"), codes: opt("codes").toLowerCase(), rows });
     }
     return out;
   };
@@ -111,6 +112,38 @@ module.exports = async function labSnippets(tp, snippet) {
       if (codes.length) return codes;
     }
     return [];
+  };
+  const colIndex = (L) => [...L.toUpperCase()].reduce((n, ch) => n * 26 + ch.charCodeAt(0) - 64, 0) - 1;
+  /** The sample codes a table holds, by its `codes:` option: "column A" = that column below the header, "cells" = every cell but the header row and the first column. null = no option. */
+  const codesOf = (t) => {
+    const col = /^column\s+([a-z]{1,3})$/.exec(t.codes);
+    if (col) return t.rows.slice(1).map(r => r[colIndex(col[1])]).filter(Boolean);
+    if (t.codes === "cells") return t.rows.slice(1).flatMap(r => r.slice(1)).filter(Boolean);
+    return null;
+  };
+  /** Every table of the note that holds sample codes: a calc block with a `codes:` option (any snippet, any hand-made copy), and older tables named samples / sampling without it.
+   *  [{ label (its title, else its name), codes }]; tables with one label are merged. */
+  const codeSources = () => {
+    const out = [];
+    for (const t of calcTables()) {
+      const codes = codesOf(t) ?? (/^(samples?|sampling)\d*$/i.test(t.name) ? t.rows.slice(1).map(r => r[0]).filter(Boolean) : null);
+      if (!codes?.length) continue;
+      const label = t.title || t.name || "Table";
+      const at = out.find(x => x.label.toLowerCase() === label.toLowerCase());
+      if (at) at.codes = [...new Set([...at.codes, ...codes])]; else out.push({ label, codes: [...new Set(codes)] });
+    }
+    return out;
+  };
+  /** The "Sample codes" box and, when the note has several code tables, a "Codes from" choice ("All of them" by default). resolve(answers) = the codes to use:
+   *  the box if you edited it, else the table you picked. `fallback` = method table names to read when no table has a `codes:` option. */
+  const codeField = (fallback = []) => {
+    let src = codeSources();
+    if (!src.length) { const c = codesFrom(fallback); if (c.length) src = [{ label: "This note", codes: c }]; }
+    const prefill = [...new Set(src.flatMap(x => x.codes))].join(", ");
+    const fields = [{ key: "codes", label: "Sample codes", type: "textarea", hint: src.length > 1 ? "every table in this note that holds sample codes · pick one in Codes from, or edit here" : "from this note's sample table · edit if needed", value: prefill }];
+    if (src.length > 1) fields.push({ key: "codesFrom", label: "Codes from", type: "select", options: [{ value: "all", label: "All of them" }, ...src.map((x, i) => ({ value: String(i), label: x.label }))], value: "all" });
+    const resolve = (v) => v.codesFrom && v.codesFrom !== "all" && v.codes === prefill ? src[+v.codesFrom].codes : list(v.codes);
+    return { fields, resolve };
   };
   /** A method's tables in the note (nmr, nmr2…) with their sample counts and headers, for the results table to read. */
   const techTables = (base) => tablesNamed(base).map(t => ({ id: t.name, n: t.rows.length - 1, header: t.rows[0] ?? [] })).filter(t => t.n > 0);
@@ -137,19 +170,22 @@ module.exports = async function labSnippets(tp, snippet) {
     const rows = M.buildRows(plan, codes, { values, machineCell: machine ? link(machine.name) : "", machineFm: machine?.fm });
     const copy = `column ${letter(plan.sampleIdx)}`;
     return { id, n: rows.length, header: plan.header, md: `## ${m.title}
-${calc({ name: id, title: m.title, icon: m.icon, copy }, plan.header, rows)}
+${calc({ name: id, title: m.title, icon: m.icon, copy, codes: copy }, plan.header, rows)}
 ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c => `- [ ] ${c}\n`).join("")}` };
   };
   /** Columns with a default (from the method or any of its machines) get a field in the form. */
   const fieldColumns = (m) => m.columns.filter(c => !c.auto && c.formula == null && (c.def !== null || m.machines.some(x => M.columnDefault(c, x.fm) !== undefined && M.columnDefault(c, x.fm) !== null)));
-  const methodForm = (m) => {
+  const methodForm = async (m) => {
     const dm = machineOf(m, m.defaultMachine);
-    return form(m.title, [
-      { key: "codes", label: "Sample codes", type: "textarea", hint: "blank = codes from this note's sample list or timetable", value: codesFrom(["samples", "sampling"]).join(", ") },
+    const cf = codeField();
+    const v = await form(m.title, [
+      ...cf.fields,
       ...(m.machines.length ? [{ key: "machine", label: "Machine", type: "select", options: m.machines.map(x => ({ value: x.name, label: x.name })), value: m.defaultMachine }] : []),
       ...fieldColumns(m).map(c => ({ key: c.key, label: c.label ?? c.name, value: M.columnDefault(c, dm?.fm) ?? "" })),
       ...(m.dataset ? [{ key: "dataset", label: "Dataset / folder", hint: "optional · can be filled in later", value: "", placeholder: `e.g. folder name of the ${m.name} data` }] : []),
     ]);
+    if (v) v.codes = cf.resolve(v).join(", ");
+    return v;
   };
   /** Ask for one method's table and build it. A field left at the default machine's value follows the machine that was picked. */
   const runMethod = async (m) => {
@@ -321,12 +357,14 @@ ${calc({ name: R, title: "Reagents", icon: "flask-conical" }, ["Role", "Name", "
       const has = (k) => tech[k].length > 0;
       const hint = (k) => has(k) ? `linked to the ${tech[k].map(t => t.id).join(", ")} table${tech[k].length > 1 ? "s" : ""}` : "typed in";
       const withResults = methods.filter(m => m.results.length);
+      const cf = codeField(methods.map(m => m.key));
       const v = await form("Combined results table", [
-        { key: "codes", label: "Sample codes", type: "textarea", hint: "defaults to this note's sample list or timetable", value: codesFrom(["samples", "sampling", ...methods.map(m => m.key)]).join(", ") },
+        ...cf.fields,
         { type: "heading", label: "Columns" },
         ...withResults.map(m => ({ key: m.key, label: m.resultsLabel, hint: hint(m.key), type: "toggle", value: m.resultsDefault || has(m.key) })),
       ]);
       if (!v) return "";
+      v.codes = cf.resolve(v).join(", ");
       const links = withResults.filter(m => v[m.key]).map(method => ({ method, tables: tech[method.key] }));
       return resultsTable(list(v.codes), links);
     },
