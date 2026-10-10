@@ -52,6 +52,13 @@ const top = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) 
 export interface MeetingAnswers { interval: string; day: string }
 const MEETING_DEFAULTS: MeetingAnswers = { interval: "weekly", day: "Thu" };
 
+/** The three hub templates, or undefined when one is missing (a hub is never rewritten from an empty template). */
+function hubTemplates(host: TidyHost): TidyContext["hubTemplates"] {
+  const get = (id: string): string => host.planning?.bundle.contents?.[id] ?? "";
+  const out = { project: get("tpl-project-hub-md"), topic: get("tpl-new-topic-hub-md"), series: get("tpl-meeting-series-md") };
+  return out.project && out.topic && out.series ? out : undefined;
+}
+
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
 export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App): TidyContext {
   const planningOn = !!host.planning?.slot.enabled;
@@ -65,6 +72,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     migrations,
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
     projectsFolder: planningOn ? pf.projects : undefined,
+    hubTemplates: planningOn ? hubTemplates(host) : undefined,
     projectHubText: planningOn ? (host.planning?.bundle.contents?.["tpl-project-hub-md"] ?? "").replace(/\r\n/g, "\n").split("-%>\n")[1] : undefined,
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
@@ -97,7 +105,7 @@ export class TidyNotesModal extends Modal {
     this.setTitle("Tidy up notes");
     this.contentEl.createEl("p", { text: "Reading your notes…" });
     void this.load().then(() => {
-      this.ticked = new Set(this.result?.groups.map(g => g.id));
+      this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id));
       this.render();
     }, () => { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read the vault. Nothing was changed." }); });
   }
@@ -134,7 +142,7 @@ export class TidyNotesModal extends Modal {
       if (g.ask === "meetings") this.askMeetings(label);
       for (const c of g.changes) {
         if (c.to !== undefined) { el.createDiv({ cls: "lab-kit-tidy-path", text: `${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
-        el.createDiv({ cls: "lab-kit-tidy-path", text: c.create ? `${c.path} (new note)` : c.path });
+        el.createDiv({ cls: "lab-kit-tidy-path", text: c.create ? `${c.path} (new note)` : c.body ? `${c.path} (page)` : c.path });
         const grid = el.createDiv({ cls: "lab-kit-tidy-diff" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "Before" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "After" });
@@ -219,7 +227,7 @@ export class TidyNotesModal extends Modal {
       new Notice(parts.join(", ") + ".");
     } catch (e) { this.message = `Stopped: ${(e as Error).message}. Anything already changed is in the backups folder (${backups}).`; }
     await this.load();   // a second scan: what is left
-    this.ticked = new Set(this.result?.groups.map(g => g.id));
+    this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id));
     this.backedUp = false;
     this.render();
   }

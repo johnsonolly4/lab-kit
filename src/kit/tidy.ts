@@ -3,6 +3,7 @@
 // Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, meetings, leftovers, note bodies) are code.
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
+import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
 
 export type MigrationOp =
   /** A property with this value (e.g. `Type: Wiki`) becomes another property and value (`kind: concept`). Skipped when the new property exists. */
@@ -42,6 +43,8 @@ export interface TidyContext {
   projectsFolder?: string;
   /** The Project hub template's note text (after its Templater header): a missing hub is made from it. Without it a missing hub is only its properties. */
   projectHubText?: string;
+  /** The three hub templates' text (with their Templater header): the hub body rule rewrites a hub's page from them. Missing = the rule is off. */
+  hubTemplates?: { project: string; topic: string; series: string };
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
 }
@@ -70,11 +73,15 @@ export interface TidyChange {
   create?: boolean;
   /** With `create`: the whole text of the new note (else `---` + `after` + `---`). */
   text?: string;
+  /** The page below the properties is replaced: `before` / `after` are that page's text, not the properties. */
+  body?: boolean;
   /** A plugin setting rather than a note: `path` is the label shown, `before` / `after` the lines shown. */
   setting?: TidySetting;
 }
 /** `ask`: the window shows this rule's questions (the meetings rule asks how often and on which day). */
-export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[]; ask?: "meetings" }
+export interface TidyGroup { id: string; title: string; detail: string; changes: TidyChange[]; ask?: "meetings";
+  /** Not ticked until the user ticks it (a rule that replaces text the user may have written). */
+  optIn?: boolean }
 export interface TidyReported { id: string; title: string; detail: string; items: { path: string; note?: string }[] }
 export interface TidyScan { groups: TidyGroup[]; reported: TidyReported[] }
 
@@ -340,6 +347,29 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       g3.changes.push({ path, before: "", after: "kind: project\nStatus: Active\ndeadline:\ncssclasses:\n  - vt\n  - project", create: true, ...(ctx.projectHubText ? { text: ctx.projectHubText } : {}) });
     }
     if (g3.changes.length) groups.push(g3);
+  }
+
+  // Hub pages: the page below a hub's properties becomes the template's (new buttons and tiles), keeping the goal, Related text and a topic's intro
+  if (ctx.hubTemplates) {
+    const g: TidyGroup = { id: "hub-body", title: "Hubs: bring the page up to the current template", detail: "Project, topic and meeting series hubs get the page the kit's template has now (back link, buttons, tiles). A project keeps its goal and what is under Related; a topic keeps its intro text; anything else on the page is replaced. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    const kindFor = (path: string): HubKind | null => {
+      const k = kindOf(path), folder = parentOf(path);
+      if (baseName(path) !== baseName(folder)) return null;
+      if (k === "project" && ctx.projectsFolder && parentOf(folder) === ctx.projectsFolder) return "project";
+      if (k === "hub" && ctx.knowledgeFolder && parentOf(folder) === ctx.knowledgeFolder) return "topic";
+      if (k === "meeting-series" && mt && parentOf(folder) === mt.folder) return "series";
+      return null;
+    };
+    for (const n of notes) {
+      const kind = kindFor(n.path);
+      const s = kind ? split(effective.get(n.path) ?? "") : null;
+      if (!kind || !s) continue;
+      const page = templatePage(ctx.hubTemplates[kind], parentOf(n.path));
+      const next = newHubPage(kind, page, s.body);
+      if (!pageDiffers(s.body, next)) continue;
+      g.changes.push({ path: n.path, before: s.body, after: asBody(next), body: true });
+    }
+    if (g.changes.length) groups.push(g);
   }
 
   // To-dos: a note in the to-dos folder with no `kind` (a quick capture, a hand-made note) gets the properties the board reads. Notes that have a kind are left alone.

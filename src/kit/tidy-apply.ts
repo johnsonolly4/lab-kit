@@ -1,6 +1,7 @@
 // Tidy up notes, Phase 7b: carries out the changes the user ticked and confirmed. Properties are replaced exactly as the window showed them (only when the
 // note still has the "before" block), moves use Obsidian's rename so links update. Every file that is rewritten, or whose links a move rewrites, is
 // backed up first. All file access goes through TidyIO, so the rules are tested without Obsidian.
+import { replaceBody } from "./tidy-hubs";
 import { replaceProperties, type TidyChange, type TidySetting, type TidySettingTarget } from "./tidy";
 
 export interface TidyIO {
@@ -38,7 +39,7 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
   const out: TidyOutcome = { changed: [], moved: [], created: [], settings: [], skipped: [], backups: {} };
   const backUp = async (path: string, text: string): Promise<void> => { if (!(path in out.backups)) out.backups[path] = await io.backup(path, text); };
 
-  for (const c of changes.filter(x => x.to === undefined && !x.create && !x.setting)) {
+  for (const c of changes.filter(x => x.to === undefined && !x.create && !x.setting && !x.body)) {
     try {
       const text = await io.read(c.path);
       if (text === null) { out.skipped.push({ path: c.path, why: "the note is gone" }); continue; }
@@ -47,6 +48,18 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
       await backUp(c.path, text);
       await io.write(c.path, next);
       out.changed.push(c.path);
+    } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
+  }
+
+  for (const c of changes.filter(x => x.body)) {   // a hub's page: only while it is still what the window showed
+    try {
+      const text = await io.read(c.path);
+      if (text === null) { out.skipped.push({ path: c.path, why: "the note is gone" }); continue; }
+      const next = replaceBody(text, c.before, c.after);
+      if (next === null) { out.skipped.push({ path: c.path, why: "the note changed since the scan" }); continue; }
+      await backUp(c.path, text);
+      await io.write(c.path, next);
+      if (!out.changed.includes(c.path)) out.changed.push(c.path);
     } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
   }
 
