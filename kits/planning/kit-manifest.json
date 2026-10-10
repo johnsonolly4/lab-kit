@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "0.5.2",
-      "sha256": "5558525ec9a424619a929f88297f124c4893416e4ff971276a2a84dd8563bb6c",
+      "sha256": "97cb77e5a9f2083e16ec67577ed7847d076d8e499c49fab2d9e0ac40148b80d1",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -102,7 +102,7 @@
       "role": "home",
       "path": "00 Home.md",
       "version": "0.5.2",
-      "sha256": "4d2cbf3dc1052c4d1571806746b645b2f21b7efdba547355d1b86f0697e03ef9",
+      "sha256": "5bfc73383815063a90a2f4750fe9556dd2343a386c82af55e9878add6aac6ddc",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -138,7 +138,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "0.5.2",
-      "sha256": "6a00f04037b97be68132ac5216ca50a39f9e285b8ecc4fa187a651497bba0cd6",
+      "sha256": "0db2f2a0f15ca1a02c71d8dc43d6d210bc8c1298d2cb6fcab282b73e885fa328",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "06ad7087a742945e00a2b55205d1cb19cadc15f4f3ab5078ad9833bbfa139163",
+      "sha256": "d94959e3b778c5ba84f69d751d2c205701c9a9f873cce6948af4cf54a1e68137",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"

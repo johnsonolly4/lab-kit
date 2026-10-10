@@ -285,7 +285,8 @@ class BlockView extends MarkdownRenderChild {
       const card = grid.createDiv({ cls: "vt-card" });
       const head = card.createDiv({ cls: "vt-card-head" });
       this.link(head, c.hub.path, c.hub.text, "vt-card-title");
-      for (const b of c.hub.badges) head.createSpan({ cls: b.cls, text: b.text });
+      const chips = head.createDiv({ cls: "vt-card-chips" });
+      for (const b of c.hub.badges) chips.createSpan({ cls: b.cls, text: b.text });
       card.createDiv({ cls: "vt-card-goal", text: c.goal || "No goal written yet" });
       const ul = card.createEl("ul");
       if (!c.todos.length) ul.createEl("li", { cls: "vt-muted", text: "No open to-dos" });

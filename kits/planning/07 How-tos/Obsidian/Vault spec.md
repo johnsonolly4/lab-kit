@@ -15,7 +15,7 @@ cssclasses:
 > [!tip] Designed for focus
 > - **One place for everything.** Every note has exactly one home folder. Other places link to it.
 > - **Fixed order.** Top-level folders are numbered so they never move around.
-> - **Small focus.** The homepage shows at most 3 focus items, today's to-dos and what's overdue - never the whole backlog.
+> - **Small focus.** The homepage shows today's to-dos and what's overdue - never the whole backlog.
 > - **Buttons over menus.** Common actions are one click on [[00 Home]].
 > - **Data lives in properties.** Boards, lists and the homepage read note properties, so dragging a card or picking a value updates everything.
 > - **Same colour = same meaning**, everywhere (see [[#Visual theme]]).
@@ -217,7 +217,7 @@ flowchart LR
 ```
 
 ### Shopping list ([[Shopping list]], `00 Planning`)
-Lab orders only - one list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not planned. **Add to shopping** (homepage, `Extras/Templates/Actions/Add to shopping list.md`) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
+One list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not planned. **Add to shopping** (homepage, `Extras/Templates/Actions/Add to shopping list.md`) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
 
 ### Inbox (`00 Inbox`)
 Everything captured quickly lands here (`Ctrl+N`, **Quick capture**). The homepage shows the count under *This week* with a **Sort inbox** button; the weekly review has the same button.
@@ -270,7 +270,7 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 
 | When | What |
 |---|---|
-| Every day | Homepage (`Alt+H`), focus 3 things, capture with `Alt+N` (lands in `00 Inbox`), new to-do `Alt+T` |
+| Every day | Homepage (`Alt+H`), capture with `Alt+N` (lands in `00 Inbox`), new to-do `Alt+T` |
 | Wednesday / Thursday | **New meeting note**, copy into the deck, flagged to-dos |
 | Friday | [[Weekly review]] |
 | First Friday of the month | Archive old to-dos (button in the weekly review) |
@@ -341,11 +341,10 @@ Rules: one key per command, no duplicates. Don't use `Ctrl+Alt` (it is AltGr on 
 1. Date heading, with **How it works** at the right-hand end - opens [[How my vault works]]
 2. Action buttons: Today's note, New to-do, New lab entry, Quick capture, Add to shopping, Search
 3. Go to: To-do board, Experiments, Projects, Literature, Chemicals, Knowledge, How-tos, Meetings, Meeting deck, Weekly review, Shopping list
-4. Today's focus - 3 slots side by side, Clear for tomorrow
-5. Four cards, two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count at the bottom) - **Experiments on the go** / **Projects** - **Recently read** (last 5 imports, processed or to process)
+4. Four cards, two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count at the bottom) - **Experiments on the go** / **Projects** - **Recently read** (last 5 imports, processed or to process)
 
 > [!note] The vault look (homepage and every `vt` note)
-> - Flat cards: one neutral border, rounded corners, quiet grey title with a faint icon. The **only** coloured card border is Today's focus (blue).
+> - Flat cards: one neutral border, rounded corners, quiet grey title with a faint icon. The **only** coloured card border is the blue `[!focus]` callout.
 > - Lists are plain rows with dividers - no bullets, no tables.
 > - Colour appears only in **status badges** (`vt-badge` + `vt-<status>` classes in `vault-theme.css`), using the palette above.
 > - Buttons are separate outlined pills, all neutral.

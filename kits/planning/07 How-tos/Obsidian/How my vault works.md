@@ -18,8 +18,7 @@ cssclasses:
 > [!planning] Morning (2 minutes)
 > 1. Open Obsidian. The homepage opens by itself (or press `Alt+H`).
 > 2. Look at **This week**. Red *overdue* badges first, then anything tagged *today*. Amber *carried over* = it rolled over from an earlier day.
-> 3. Type up to **3 things** into *Today's focus*. Three is the limit on purpose.
-> 4. Press **Today's note** (`Alt+D`) if you want somewhere to jot down what happens.
+> 3. Press **Today's note** (`Alt+D`) if you want somewhere to jot down what happens.
 
 > [!tip] During the day
 > | I want to... | Do this |
@@ -29,12 +28,11 @@ cssclasses:
 > | Start an experiment | **New lab entry** (`Ctrl+Shift+L`) - it numbers itself and asks for a title |
 > | Find anything | **Search** (`Alt+F`) |
 > | Make a note for a paper | `Ctrl+P`, then **ZotLit: Create literature note** |
-> | Need to order something for the lab | **Add to shopping** - type items, commas between them |
+> | Need to order something | **Add to shopping** - type items, commas between them |
 > | Clear the inbox | **Sort inbox** (under *This week*) - takes a minute when it's short |
 > | Mark something finished | Click the **circle** on its card on the [[To-do board.base\|To-do board]] - the card turns green. Click again to undo |
 
 > [!summary] End of the day
-> - Tick off your focus items, then press **Clear for tomorrow**.
 > - Your daily note's *Today in the vault* already lists what you worked on - nothing to write up.
 
 ## To-dos

@@ -196,9 +196,9 @@ describe("planning kit files (Phase 3)", () => {
     for (const f of planning.manifest.files) if (f.role === "userScripts") expect(names.has(f.dest.split("/").pop())).toBe(false);
   });
 
-  it("homepage: as supplied up to the Go to box; Phase 5a blocks replace the go buttons and the Dataview lists", () => {
+  it("homepage: as supplied (minus the focus properties) up to the Go to box; Phase 5a blocks replace the go buttons and the Dataview lists", () => {
     const home = planning.contents[planning.manifest.files.find(f => f.src === "00 Home.md")!.id];
-    const supplied = readFileSync("docs/plans/kit-files/planning/00 Home.md", "utf8").replace(/\r\n/g, "\n");
+    const supplied = readFileSync("docs/plans/kit-files/planning/00 Home.md", "utf8").replace(/\r\n/g, "\n").replace(/focus\d(_done)?: .*\n/g, "");
     const head = (t: string) => t.slice(0, t.indexOf("> [!goto]"));
     expect(head(home)).toBe(head(supplied));
     expect(home).toContain("> ```vault-goto");
