@@ -6,7 +6,22 @@ import { dayMonth, linkTarget, pointsTo, type ListLine, type NoteRec } from "./l
 import { parseDay, ymd } from "./todo";
 
 export const INTERVALS = ["weekly", "fortnightly", "monthly"] as const;
-export type Interval = (typeof INTERVALS)[number];
+/** The three presets, `every N weeks` (N 1-52), or `once` (the One-off hub: it has no schedule). */
+export type Interval = string;
+export const ONCE = "once";
+export const everyWeeks = (n: number): string => `every ${n} weeks`;
+/** An interval as the hub writes it, in its canonical form; null when it is none of the allowed ones (case and `every 1 week` are fine). */
+export function parseInterval(typed: string): Interval | null {
+  const t = typed.trim().toLowerCase();
+  if ((INTERVALS as readonly string[]).includes(t) || t === ONCE) return t;
+  const m = /^every (\d{1,2}) weeks?$/.exec(t);
+  return m && +m[1] >= 1 && +m[1] <= 52 ? everyWeeks(+m[1]) : null;
+}
+/** Weeks between meetings for a weekly-style interval; null for monthly and once. */
+export function intervalWeeks(i: Interval): number | null {
+  const t = parseInterval(i);
+  return t === "weekly" ? 1 : t === "fortnightly" ? 2 : t && t.startsWith("every ") ? +t.split(" ")[1] : null;
+}
 /** Day names as the hub's `day` writes them, Sunday first (Date.getDay order). */
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
@@ -21,13 +36,15 @@ const addDays = (d: Date, n: number): Date => new Date(d.getFullYear(), d.getMon
 /** A series hub read from its note: the series, or what is wrong with it (named field). `day` is Mon…Sun (first three letters, any case). */
 export function parseSeries(hub: NoteRec): SeriesRead {
   const bad = (error: string): SeriesRead => ({ name: hub.name, path: hub.path, error });
-  const interval = text(hub.fm.interval).toLowerCase();
-  if (!(INTERVALS as readonly string[]).includes(interval)) return bad(`interval must be weekly, fortnightly or monthly (it is "${interval}")`);
+  const interval = parseInterval(text(hub.fm.interval));
+  if (!interval) return bad(`interval must be weekly, fortnightly, monthly, every N weeks or once (it is "${text(hub.fm.interval)}")`);
+  // A one-off hub has no schedule: day and start are not needed
+  if (interval === ONCE) return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval, day: 1, start: parseDay(text(hub.fm.start).slice(0, 10)) ?? new Date(1970, 0, 5) } };
   const day = WEEKDAYS.findIndex(d => d.toLowerCase() === text(hub.fm.day).slice(0, 3).toLowerCase());
   if (day < 0) return bad(`day must be Mon, Tue, Wed, Thu, Fri, Sat or Sun (it is "${text(hub.fm.day)}")`);
   const start = parseDay(text(hub.fm.start).slice(0, 10));
   if (!start) return bad(`start must be the date of a meeting, YYYY-MM-DD (it is "${text(hub.fm.start)}")`);
-  return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval: interval as Interval, day, start } };
+  return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval, day, start } };
 }
 
 /** The first `day` on or after `d`. */
@@ -49,8 +66,9 @@ export function nextDate(s: Series, from: Date): Date {
   const first = onOrAfter(s.start, s.day);
   const t = new Date(from.getFullYear(), from.getMonth(), from.getDate());
   if (t.getTime() <= first.getTime()) return first;
-  if (s.interval !== "monthly") {
-    const step = s.interval === "weekly" ? 7 : 14;
+  const weeks = intervalWeeks(s.interval);
+  if (weeks !== null) {
+    const step = weeks * 7;
     const gone = Math.round((t.getTime() - first.getTime()) / DAY);   // whole days (rounded: a clock change makes a day 23 or 25 h)
     return addDays(first, Math.ceil(gone / step) * step);
   }
@@ -62,12 +80,12 @@ export function nextDate(s: Series, from: Date): Date {
 }
 
 /** Days back to look when the series has no earlier meeting note yet. */
-const LOOK_BACK = { weekly: 7, fortnightly: 14, monthly: 28 } as const;
+const lookBack = (i: Interval): number => { const w = intervalWeeks(i); return w === null ? 28 : w * 7; };
 
 /** Where "since the last meeting" starts for a meeting on `date`: the latest of `held` (dates of the series' meeting notes) before it, else one interval back. */
 export function sinceLast(s: Series, date: Date, held: Date[]): Date {
   const before = held.filter(d => ymd(d) < ymd(date)).sort((a, b) => b.getTime() - a.getTime())[0];
-  return before ?? addDays(date, -LOOK_BACK[s.interval]);
+  return before ?? addDays(date, -lookBack(s.interval));
 }
 
 /** The first `day` (0 = Sunday) on or after `today`: the date New meeting series offers first. */
@@ -101,7 +119,7 @@ export function flaggedFor(todos: NoteRec[], hub: NoteRec, isFirst: boolean): No
 /** One line of the next-meetings card: series, its next date, how often. */
 export interface NextMeeting { name: string; path: string; date: Date; interval: Interval }
 export function nextMeetings(all: Series[], today: Date): NextMeeting[] {
-  return all.map(s => ({ name: s.name, path: s.path, date: nextDate(s, today), interval: s.interval }))
+  return all.filter(s => s.interval !== ONCE).map(s => ({ name: s.name, path: s.path, date: nextDate(s, today), interval: s.interval }))
     .sort((a, b) => a.date.getTime() - b.date.getTime() || a.name.localeCompare(b.name));
 }
 

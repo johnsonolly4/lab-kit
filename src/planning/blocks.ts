@@ -6,7 +6,7 @@ import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
-import { WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
+import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
@@ -137,7 +137,8 @@ class BlockView extends MarkdownRenderChild {
         if (!this.need(box, f.meetings)) return;
         const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
         const next = nextMeetings(all, today).slice(0, o.limit ?? TILE_ROWS);
-        if (!next.length) { box.createDiv({ cls: "vt-muted", text: "No meeting series yet - press New meeting series." }); return; }
+        const once = all.filter(s => s.interval === ONCE);
+        if (!next.length && !once.length) { box.createDiv({ cls: "vt-muted", text: "No meeting series yet - press New meeting series." }); return; }
         const grid = box.createDiv({ cls: "vt-cards" });
         for (const n of next) {
           const series = all.find(s => s.path === n.path);
@@ -153,7 +154,24 @@ class BlockView extends MarkdownRenderChild {
             const c = this.owner.commands();
             if (c && series) void c.newMeeting(series); else new Notice("Install the planning kit first, then try again.");
           });
+          actions.createEl("button", { text: "Extra meeting now" }).addEventListener("click", () => {
+            const c = this.owner.commands();
+            if (c && series) void c.newMeeting(series, true); else new Notice("Install the planning kit first, then try again.");
+          });
           actions.createEl("button", { text: "Open" }).addEventListener("click", () => void this.app.workspace.openLinkText(n.path, this.sourcePath));
+        }
+        for (const s of once) {   // the One-off hub: no schedule, a button for a new one-off meeting
+          const card = grid.createDiv({ cls: "vt-card" });
+          this.link(card.createDiv({ cls: "vt-card-head" }), s.path, s.name, "vt-card-title");
+          card.createDiv({ cls: "vt-card-goal", text: "Meetings that belong to no series" });
+          const held = this.owner.notesIn(s.folder).filter(x => x.path !== s.path).length;
+          card.createDiv({ cls: "vt-muted", text: `${held} meeting ${held === 1 ? "note" : "notes"}` });
+          const actions = card.createDiv({ cls: "vt-card-actions" });
+          actions.createEl("button", { text: "New one-off meeting" }).addEventListener("click", () => {
+            const c = this.owner.commands();
+            if (c) void c.newOneOff(); else new Notice("Install the planning kit first, then try again.");
+          });
+          actions.createEl("button", { text: "Open" }).addEventListener("click", () => void this.app.workspace.openLinkText(s.path, this.sourcePath));
         }
         return;
       }

@@ -12,8 +12,10 @@ const since = vt ? vt.since : d.clone().subtract(7, "days").format("YYYY-MM-DD")
 // The old "meeting: true" flag counts for the first series (by name) only
 const names = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
 const first = !names.length || names[0] === series;
-let name = `${date} ${series}`, n = 2;
-while (await tp.file.exists(`${folder}/${name}.md`)) { name = `${date} ${series} ${n++}`; }
+// A one-off meeting (New one-off meeting) has a title and may belong to a project
+const label = vt && vt.title ? vt.title : series;
+let name = `${date} ${label}`, n = 2;
+while (await tp.file.exists(`${folder}/${name}.md`)) { name = `${date} ${label} ${n++}`; }
 await tp.file.move(`${folder}/${name}`);
 -%>
 ---
@@ -21,11 +23,12 @@ kind: meeting
 series: "[[<% series %>]]"
 date: <% date %>
 since: <% since %>
+<% vt && vt.project ? `project: "[[${vt.project}]]"\n` : "" -%>
 cssclasses:
   - vt
 ---
 
-# <% series %> - <% d.format("dddd D MMMM") %>
+# <% label %> - <% d.format("dddd D MMMM") %>
 
 `BUTTON[go-deck, go-meetings]`
 

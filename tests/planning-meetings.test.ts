@@ -2,7 +2,7 @@
 // 1 Oct 2026 is a Thursday, 1 Nov 2026 a Sunday, 1 Dec 2026 a Tuesday, 1 Jan 2027 a Friday.
 import { describe, it, expect } from "vitest";
 import type { NoteRec } from "../src/planning/lists";
-import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, firstSeries, flaggedFor, nextDate, nextMeetingLines, nextMeetings, parseSeries, sinceLast, WEEKDAYS, type Series } from "../src/planning/meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, firstSeries, flaggedFor, intervalWeeks, nextDate, nextMeetingLines, nextMeetings, parseInterval, parseSeries, sinceLast, WEEKDAYS, type Series } from "../src/planning/meetings";
 import { readFileSync } from "fs";
 import { ymd } from "../src/planning/todo";
 
@@ -155,5 +155,36 @@ describe("New meeting series: the template's hub note reads back", () => {
       expect(WEEKDAYS[s.day]).toBe(day);
       expect(next(s, d(2026, 10, 1))).toBe(start);
     }
+  });
+});
+
+describe("every N weeks and one-off hubs", () => {
+  const every3 = read("Quarter", { interval: "every 3 weeks", day: "Thu", start: "2026-10-01" });
+  it("reads every N weeks (case, singular and the range), and nothing else", () => {
+    expect(parseInterval("Every 3 weeks")).toBe("every 3 weeks");
+    expect(parseInterval("every 1 week")).toBe("every 1 weeks");
+    expect(parseInterval("every 52 weeks")).toBe("every 52 weeks");
+    for (const bad of ["every 0 weeks", "every 53 weeks", "every weeks", "every 3 days", "daily", ""]) expect(parseInterval(bad), bad).toBeNull();
+    expect(parseInterval("once")).toBe("once");
+    expect([intervalWeeks("weekly"), intervalWeeks("fortnightly"), intervalWeeks("every 6 weeks"), intervalWeeks("monthly"), intervalWeeks("once")]).toEqual([1, 2, 6, null, null]);
+  });
+  it("counts N weeks from the first meeting, today counting", () => {
+    expect(next(every3, d(2026, 9, 1))).toBe("2026-10-01");   // before the first meeting
+    expect(next(every3, d(2026, 10, 1))).toBe("2026-10-01");
+    expect(next(every3, d(2026, 10, 2))).toBe("2026-10-22");
+    expect(next(every3, d(2026, 10, 22))).toBe("2026-10-22");
+    expect(next(every3, d(2026, 10, 23))).toBe("2026-11-12");
+  });
+  it("looks N weeks back when the series has no earlier meeting", () => {
+    expect(ymd(sinceLast(every3, d(2026, 10, 22), []))).toBe("2026-10-01");
+  });
+  it("names the allowed intervals when a hub's is wrong", () => {
+    const r = parseSeries(hub("X", { interval: "daily", day: "Thu", start: "2026-10-01" }));
+    expect("error" in r && r.error).toContain("every N weeks");
+  });
+  it("a once hub needs no day or start and is left out of Next meetings", () => {
+    const once = read("One-off", { interval: "once" });
+    expect(once.interval).toBe("once");
+    expect(nextMeetings([once, weekly], d(2026, 10, 9)).map(n => n.name)).toEqual(["Weekly meetings"]);
   });
 });

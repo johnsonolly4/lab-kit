@@ -37,7 +37,7 @@ function registered(): string[] {
 
 describe("planning commands", () => {
   it("registers the fixed IDs (never renamed: buttons call them)", () => {
-    expect(registered().sort()).toEqual(["add-to-shopping", "archive-todos", "new-concept", "new-meeting", "new-meeting-series", "new-project", "new-project-note", "new-todo", "new-topic-hub",
+    expect(registered().sort()).toEqual(["add-to-shopping", "archive-todos", "new-concept", "new-extra-meeting", "new-meeting", "new-meeting-series", "new-one-off-meeting", "new-project", "new-project-note", "new-todo", "new-topic-hub",
       "open-deck", "quick-capture", "roll-over-todos", "sort-inbox"]);
   });
 
@@ -51,7 +51,7 @@ describe("Meta Bind buttons (kit-files source, shipped in Phase 6)", () => {
   it("every lab-kit: command is registered", () => {
     const ids = new Set([...registered(), "new-lab-entry", "new-chemical"]);   // New lab entry is registered by the lab kit's UI (`src/kit/ui.ts`)
     const used = actions.filter(a => a.command?.startsWith("lab-kit:"));
-    expect(used.length).toBe(11);
+    expect(used.length).toBe(12);
     for (const a of used) expect(ids.has(a.command!.slice("lab-kit:".length)), a.button).toBe(true);
   });
 

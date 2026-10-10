@@ -12,7 +12,7 @@ import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitIte
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
 import { inFolder, type NoteRec } from "./lists";
-import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, INTERVALS, nextDate, parseSeries, sinceLast, WEEKDAYS, type Series } from "./meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, WEEKDAYS, type Series } from "./meetings";
 import { parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
@@ -27,7 +27,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string };
+interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -60,6 +60,8 @@ export class PlanningCommands {
     add("sort-inbox", "Sort inbox", () => this.sortInbox());
     add("archive-todos", "Archive old to-dos", () => this.archiveTodos());
     add("new-meeting", "New meeting", () => this.newMeeting());
+    add("new-extra-meeting", "New extra meeting now", () => this.newMeeting(undefined, true));
+    add("new-one-off-meeting", "New one-off meeting", () => this.newOneOff());
     add("new-meeting-series", "New meeting series", () => this.newSeries());
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
     add("new-project-note", "New project note", () => this.newProjectNote());
@@ -104,21 +106,63 @@ export class PlanningCommands {
   }
 
   /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
-  private async pickSeries(): Promise<Series | null> {
-    const all = this.seriesList();
+  private async pickSeries(regularOnly = false): Promise<Series | null> {
+    const all = this.seriesList().filter(s => !regularOnly || s.interval !== ONCE);
     if (!all.length) { new Notice("No meeting series yet. Make one with the meeting series command first."); return null; }
     return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
   }
 
   /** New meeting note in `given` (a series card's button), else in the series asked for:  dated from the series' interval, "since" the last meeting of the series. The template reads `vtMeeting`. */
-  async newMeeting(given?: Series): Promise<void> {
-    const series = given ?? await this.pickSeries();
+  async newMeeting(given?: Series, extra = false): Promise<void> {
+    const series = given ?? await this.pickSeries(extra);
     if (!series) return;
-    const date = nextDate(series, new Date());
+    if (series.interval === ONCE) { await this.newOneOff(); return; }
+    // An extra meeting is held today, in between: it does not move the schedule (the next regular date is still worked out from the interval)
+    const date = extra ? new Date() : nextDate(series, new Date());
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
     handoff().vtMeeting = { series: series.name, folder: series.folder, date: ymd(date), since: ymd(sinceLast(series, date, held)) };
     try { await this.fromTemplate(TPL.meeting, this.folders.meetings, series.folder); }
+    finally { delete handoff().vtMeeting; }
+  }
+
+  /**
+   * New one-off meeting: a meeting that belongs to no series. It goes in the One-off hub (made the first time), is named from what you type,
+   * dated (today unless you change it) and can belong to a project. The Weekly meeting template reads `vtMeeting`.
+   */
+  async newOneOff(): Promise<void> {
+    const root = this.folders.meetings;
+    if (!(await this.ready(root))) return;
+    const NAME = "One-off";
+    let hub = this.seriesList().find(s => s.interval === ONCE);
+    const title = await ask(this.app, "What is the meeting about? (Enter = One-off)");
+    if (title === null) return;
+    let date = ymd(new Date());
+    for (let typed = await ask(this.app, "Date of the meeting (YYYY-MM-DD)", date); ; typed = await ask(this.app, "Date of the meeting (YYYY-MM-DD)", typed ?? "")) {
+      if (typed === null) return;
+      const d = parseDay(typed.trim());
+      if (!d) { new Notice("Type the date with year, month and day, for example 2026-10-15."); continue; }
+      date = ymd(d);
+      break;
+    }
+    const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").sort((a, b) => a.basename.localeCompare(b.basename));
+    let project = "";
+    if (hubs.length) {
+      const chosen = await pick(this.app, ["(no project)", ...hubs.map(h => h.basename)], ["", ...hubs.map(h => h.basename)], "Which project? (Esc to cancel)");
+      if (chosen === null) return;
+      project = chosen;
+    }
+    if (!hub) {
+      const folder = kitJoin(root, NAME);
+      handoff().vtSeries = { name: NAME, folder, interval: ONCE, day: "Mon", start: date, deckKey: "deck_windows", deck: "" };
+      try { await this.fromTemplate(TPL.series, root, folder, false); }
+      finally { delete handoff().vtSeries; }
+      hub = this.seriesList().find(s => s.interval === ONCE);
+      if (!hub) { new Notice("The hub note for one-off meetings could not be made."); return; }
+    }
+    const since = new Date(parseDay(date)!.getFullYear(), parseDay(date)!.getMonth(), parseDay(date)!.getDate() - 7);
+    handoff().vtMeeting = { series: hub.name, folder: hub.folder, date, since: ymd(since), title: cleanName(title) || "", project };
+    try { await this.fromTemplate(TPL.meeting, this.folders.meetings, hub.folder); }
     finally { delete handoff().vtMeeting; }
   }
 
@@ -139,8 +183,19 @@ export class PlanningCommands {
       name = checked.name;
       break;
     }
-    const interval = await pick(this.app, [...INTERVALS], [...INTERVALS], "How often?");
+    const CUSTOM = "every N weeks…";
+    let interval = await pick<string>(this.app, [...INTERVALS, CUSTOM], [...INTERVALS, CUSTOM], "How often?");
     if (!interval) return;
+    if (interval === CUSTOM) {
+      let n = 0;
+      for (let typed = await ask(this.app, "Every how many weeks? (1-52)", "3"); ; typed = await ask(this.app, "Every how many weeks? (1-52)", typed ?? "")) {
+        if (typed === null) return;
+        n = /^\d{1,2}$/.test(typed.trim()) ? +typed.trim() : 0;
+        if (n >= 1 && n <= 52) break;
+        new Notice("Type a whole number of weeks from 1 to 52.");
+      }
+      interval = everyWeeks(n);
+    }
     const day = await pick(this.app, [...WEEKDAYS], WEEKDAYS.map((_, i) => i), "On which day?");
     if (day === null) return;
     let start = ymd(firstDefaultDate(day, new Date()));

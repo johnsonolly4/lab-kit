@@ -259,6 +259,18 @@
       ]
     },
     {
+      "label": "New one-off meeting",
+      "icon": "calendar-plus",
+      "style": "default",
+      "id": "new-one-off-meeting",
+      "actions": [
+        {
+          "type": "command",
+          "command": "lab-kit:new-one-off-meeting"
+        }
+      ]
+    },
+    {
       "label": "Archive old to-dos",
       "icon": "archive",
       "style": "default",
