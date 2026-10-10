@@ -1,6 +1,6 @@
 // Planning kit commands (fixed IDs, never renamed: kit buttons call them as lab-kit:<id>). Rules: src/planning/actions.ts.
 // Plan: docs/plans/phase-4b-planning-commands.md. Note folders: Settings → Planning folders (Phase 5a); a missing one is never made again silently.
-import { Notice, Platform, TFile, type App, type Plugin } from "obsidian";
+import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { ensureFolder } from "../kit/ensure-folder";
 import type { ManagedState } from "../kit/managed";
 import { hasTemplater, templaterCreateNote } from "../kit/obsidian-private";
@@ -12,13 +12,14 @@ import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitIte
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
 import { inFolder, type NoteRec } from "./lists";
-import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, WEEKDAYS, type Series } from "./meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, WEEKDAYS, type Series } from "./meetings";
 import { parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
   todo: { id: "tpl-to-do-md", dest: "To-do.md" },
   meeting: { id: "tpl-weekly-meeting-md", dest: "Meeting.md" },
+  oneOff: { id: "tpl-one-off-meeting-md", dest: "One-off meeting.md" },
   series: { id: "tpl-meeting-series-md", dest: "Meeting series.md" },
   project: { id: "tpl-project-hub-md", dest: "Project hub.md" },
   projectNote: { id: "tpl-new-project-note-md", dest: "New project note.md" },
@@ -29,7 +30,7 @@ export const TPL = {
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
 interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
-  vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string } }
+  vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
@@ -127,7 +128,7 @@ export class PlanningCommands {
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
     handoff().vtMeeting = { series: series.name, folder: series.folder, date: ymd(date), since: ymd(sinceLast(series, date, held)) };
-    try { await this.fromTemplate(TPL.meeting, this.folders.meetings, series.folder); }
+    try { await this.fromTemplateFile(this.seriesTemplate(series), this.folders.meetings, series.folder); }
     finally { delete handoff().vtMeeting; }
   }
 
@@ -177,7 +178,7 @@ export class PlanningCommands {
     }
     const since = new Date(parseDay(date)!.getFullYear(), parseDay(date)!.getMonth(), parseDay(date)!.getDate() - 7);
     handoff().vtMeeting = { series: hub.name, folder: hub.folder, date, since: ymd(since), title: cleanName(title) || "", project };
-    try { await this.fromTemplate(TPL.meeting, this.folders.meetings, hub.folder); }
+    try { await this.fromTemplateFile(this.seriesTemplate(hub), this.folders.meetings, hub.folder); }
     finally { delete handoff().vtMeeting; }
   }
 
@@ -223,7 +224,9 @@ export class PlanningCommands {
     }
     const deck = await ask(this.app, `Meeting deck on ${Platform.isMacOS ? "this Mac" : "this computer"}: a folder of decks, or the path to one deck file (Enter to leave empty)`);
     if (deck === null) return;
-    handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck: cleanDeckPath(deck) };
+    const template = await ask(this.app, "Meeting note template for this series: the name of a template note (Enter = the kit's Meeting template)");
+    if (template === null) return;
+    handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck: cleanDeckPath(deck), template: templateRef(template) };
     try { await this.fromTemplate(TPL.series, root, kitJoin(root, name)); }
     finally { delete handoff().vtSeries; }
   }
@@ -277,11 +280,26 @@ export class PlanningCommands {
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
   }
 
+  /** The meeting note template of a series: the one named on its hub (`template`), else the kit's One-off meeting for a one-off hub, else the kit's Meeting. A name that finds no note falls back with a notice. */
+  private seriesTemplate(series: Series): TFile | null {
+    if (series.template) {
+      const own = this.app.metadataCache.getFirstLinkpathDest(series.template, series.path) ?? this.app.vault.getFileByPath(normalizePath(series.template + ".md"));
+      if (own) return own;
+      new Notice(`Template "${series.template}" for ${series.name} was not found. Using the kit's template.`);
+    }
+    return this.templateFile(series.interval === ONCE ? TPL.oneOff : TPL.meeting);
+  }
+
   /** Creates a note from a kit template with Templater in `folderPath` (inside the setting folder `root`; the template then files it where it belongs). */
   private async fromTemplate(tpl: { id: string; dest: string }, root: string, folderPath = root, open = true): Promise<void> {
-    if (!hasTemplater(this.app)) { new Notice("Templater is needed for this: install and enable it, then try again."); return; }
     const template = this.templateFile(tpl);
-    if (!template) { new Notice(`Template not found: ${tpl.dest}`); return; }
+    if (!template && hasTemplater(this.app)) { new Notice(`Template not found: ${tpl.dest}`); return; }
+    await this.fromTemplateFile(template, root, folderPath, open);
+  }
+
+  private async fromTemplateFile(template: TFile | null, root: string, folderPath = root, open = true): Promise<void> {
+    if (!hasTemplater(this.app)) { new Notice("Templater is needed for this: install and enable it, then try again."); return; }
+    if (!template) { new Notice("Meeting template not found."); return; }
     if (!(await this.ready(root, folderPath))) return;
     const folder = this.app.vault.getFolderByPath(folderPath);
     if (!folder) { new Notice(`Could not use the folder ${folderPath}.`); return; }

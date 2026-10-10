@@ -2,7 +2,7 @@
 // 1 Oct 2026 is a Thursday, 1 Nov 2026 a Sunday, 1 Dec 2026 a Tuesday, 1 Jan 2027 a Friday.
 import { describe, it, expect } from "vitest";
 import type { NoteRec } from "../src/planning/lists";
-import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, firstSeries, flaggedFor, intervalWeeks, nextDate, nextMeetingLines, nextMeetings, parseInterval, parseSeries, sinceLast, WEEKDAYS, type Series } from "../src/planning/meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, firstSeries, flaggedFor, intervalWeeks, nextDate, nextMeetingLines, nextMeetings, parseInterval, parseSeries, sinceLast, templateRef, WEEKDAYS, type Series } from "../src/planning/meetings";
 import { readFileSync } from "fs";
 import { ymd } from "../src/planning/todo";
 
@@ -186,5 +186,33 @@ describe("every N weeks and one-off hubs", () => {
     const once = read("One-off", { interval: "once" });
     expect(once.interval).toBe("once");
     expect(nextMeetings([once, weekly], d(2026, 10, 9)).map(n => n.name)).toEqual(["Weekly meetings"]);
+  });
+});
+
+describe("a series' own meeting note template", () => {
+  const hub = (fm: Record<string, unknown>): NoteRec => ({ path: "08 Meetings/G/G.md", name: "G", folder: "08 Meetings/G", fm, ctime: 0, mtime: 0 });
+  it("templateRef takes a name, a path or a link", () => {
+    expect(templateRef("[[My meeting]]")).toBe("My meeting");
+    expect(templateRef("[[My meeting|short]]")).toBe("My meeting");
+    expect(templateRef(" Templates/My meeting.md ")).toBe("Templates/My meeting");
+    expect(templateRef(undefined)).toBe("");
+    expect(templateRef("")).toBe("");
+  });
+  it("parseSeries reads template for a regular and a one-off hub; empty when missing", () => {
+    const regular = parseSeries(hub({ interval: "weekly", day: "Thu", start: "2026-10-01", template: "[[My meeting]]" }));
+    expect("series" in regular && regular.series.template).toBe("My meeting");
+    const once = parseSeries(hub({ interval: "once", template: "Small" }));
+    expect("series" in once && once.series.template).toBe("Small");
+    const none = parseSeries(hub({ interval: "weekly", day: "Thu", start: "2026-10-01" }));
+    expect("series" in none && none.series.template).toBe("");
+  });
+  it("the kit's One-off meeting template is the small note: To discuss, Flagged, Notes, no experiment columns", () => {
+    const t = readFileSync("kits/planning/Extras/Templates/One-off meeting.md", "utf8");
+    expect(t).toContain("To discuss");
+    expect(t).toContain("Flagged for this meeting");
+    expect(t).toContain("## Notes");
+    expect(t).not.toContain("[!columns]");
+    expect(t).toContain("kind: meeting");
+    expect(t).toContain("window.vtMeeting");   // same hand-over as Meeting.md
   });
 });

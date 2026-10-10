@@ -25,10 +25,16 @@ export function intervalWeeks(i: Interval): number | null {
 /** Day names as the hub's `day` writes them, Sunday first (Date.getDay order). */
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
-export interface Series { name: string; path: string; folder: string; interval: Interval; day: number; start: Date }
+/** `template`: the series' own meeting note template as written on the hub (a name, path or [[link]]); empty = the kit's. */
+export interface Series { name: string; path: string; folder: string; interval: Interval; day: number; start: Date; template?: string }
 export type SeriesRead = { series: Series } | { name: string; path: string; error: string };
 
 const text = (v: unknown): string => (typeof v === "string" ? v.trim() : v instanceof Date ? ymd(v) : "");
+/** A template reference as typed on a hub: `[[Name]]`, `[[Name|alias]]`, `Name`, `Folder/Name.md` all give `Name` / `Folder/Name`. */
+export function templateRef(v: unknown): string {
+  const t = text(v).replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
+  return t.replace(/\.md$/i, "");
+}
 const DAY = 86400000;
 /** `d` at midnight, local time, `n` days later (calendar days, so a clock change doesn't shift it). */
 const addDays = (d: Date, n: number): Date => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
@@ -39,12 +45,13 @@ export function parseSeries(hub: NoteRec): SeriesRead {
   const interval = parseInterval(text(hub.fm.interval));
   if (!interval) return bad(`interval must be weekly, fortnightly, monthly, every N weeks or once (it is "${text(hub.fm.interval)}")`);
   // A one-off hub has no schedule: day and start are not needed
-  if (interval === ONCE) return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval, day: 1, start: parseDay(text(hub.fm.start).slice(0, 10)) ?? new Date(1970, 0, 5) } };
+  const template = templateRef(hub.fm.template);
+  if (interval === ONCE) return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval, day: 1, start: parseDay(text(hub.fm.start).slice(0, 10)) ?? new Date(1970, 0, 5), template } };
   const day = WEEKDAYS.findIndex(d => d.toLowerCase() === text(hub.fm.day).slice(0, 3).toLowerCase());
   if (day < 0) return bad(`day must be Mon, Tue, Wed, Thu, Fri, Sat or Sun (it is "${text(hub.fm.day)}")`);
   const start = parseDay(text(hub.fm.start).slice(0, 10));
   if (!start) return bad(`start must be the date of a meeting, YYYY-MM-DD (it is "${text(hub.fm.start)}")`);
-  return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval, day, start } };
+  return { series: { name: hub.name, path: hub.path, folder: hub.folder, interval, day, start, template } };
 }
 
 /** The first `day` on or after `d`. */

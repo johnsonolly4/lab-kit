@@ -105,12 +105,12 @@ describe("New meeting series command", () => {
   beforeEach(() => { answers.length = 0; created.length = 0; });
 
   it("asks name, interval, day, first date, deck path and hands them to the Meeting series template", async () => {
-    answers.push("Group: meeting", "fortnightly", 4, "2026-10-15", '"C:\\Decks\\group.pptx"');
+    answers.push("Group: meeting", "fortnightly", 4, "2026-10-15", '"C:\\Decks\\group.pptx"', "[[My meeting]]");
     await makeCommands().newSeries();
     expect(created).toHaveLength(1);
     expect(created[0].template).toBe(tpl.path);
     expect(created[0].folder).toBe("08 Meetings/Group- meeting");
-    expect(created[0].handoff).toMatchObject({ name: "Group- meeting", folder: "08 Meetings/Group- meeting", interval: "fortnightly", day: "Thu", start: "2026-10-15", deck: "C:\\Decks\\group.pptx" });
+    expect(created[0].handoff).toMatchObject({ name: "Group- meeting", folder: "08 Meetings/Group- meeting", interval: "fortnightly", day: "Thu", start: "2026-10-15", deck: "C:\\Decks\\group.pptx", template: "My meeting" });
     expect(window).not.toHaveProperty("vtSeries");   // the hand-over is gone afterwards
   });
 
@@ -121,8 +121,14 @@ describe("New meeting series command", () => {
   });
 
   it("a name already used (series or folder) is asked again; the wrong weekday is asked again", async () => {
-    answers.push("weekly meetings", "Journal club", "monthly", 3, "2026-10-15", "2026-10-14", "");
+    answers.push("weekly meetings", "Journal club", "monthly", 3, "2026-10-15", "2026-10-14", "", "");
     await makeCommands(["08 Meetings/Weekly meetings/Weekly meetings.md"]).newSeries();
-    expect(created[0].handoff).toMatchObject({ name: "Journal club", interval: "monthly", day: "Wed", start: "2026-10-14", deck: "" });
+    expect(created[0].handoff).toMatchObject({ name: "Journal club", interval: "monthly", day: "Wed", start: "2026-10-14", deck: "", template: "" });
+  });
+
+  it("Esc at the template box makes nothing", async () => {
+    answers.push("Group meeting", "weekly", 4, "2026-10-15", "", null);
+    await makeCommands().newSeries();
+    expect(created).toEqual([]);
   });
 });

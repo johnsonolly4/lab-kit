@@ -285,7 +285,7 @@
       "role": "templates",
       "path": "Meeting series.md",
       "version": "0.5.2",
-      "sha256": "f9ad784431392a1e0603e3c430759b232dbbc11f1c782ead184e540a88b64e26",
+      "sha256": "08f8ef78bcf6d384f7e1b472f07d7515c09476f11c189a9a26555d3fd851a355",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },
@@ -334,6 +334,17 @@
       "sha256": "76989465d081b73c03d28b580a893e95bac0e269c2be7577fd5d02cfbf7ab854",
       "renamedFrom": [],
       "desc": "New topic hub: the index note of a topic folder"
+    },
+    {
+      "id": "tpl-one-off-meeting-md",
+      "kind": "template",
+      "src": "Extras/Templates/One-off meeting.md",
+      "role": "templates",
+      "path": "One-off meeting.md",
+      "version": "0.5.2",
+      "sha256": "b0a91a9101305667f3a72d2404b66854fce25b1075b8d3b1c5b8824b2b4a301b",
+      "renamedFrom": [],
+      "desc": "New one-off meeting note (a smaller meeting note: To discuss, Flagged, Notes)"
     },
     {
       "id": "tpl-project-hub-md",
