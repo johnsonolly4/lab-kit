@@ -32,7 +32,6 @@ Manage files renames a tracked file when the kit renames it (Weekly meeting.md t
 - [ ] Say if Status board colours should wait for a Bases kanban DOM check
 - [ ] Try Cmd+P New concept, New chemical and New topic hub (checklist 6i, last row); say if New chemical should ask for a name, and how the visible Summary field should look (BACKLOG New concept row) — by 2026-10-12
 - [ ] Try the four new rows at the end of checklist 6i (Home tiles, Analysis table gone, project deadline, checklist progress: the kanban card property is untested); the Pre-release fixes row; say which vault state gave "Button ID not Found" and the missing hub (BACKLOG)
-
 - [ ] Say whether New chemical should ask for the Chemical class and prefill it (Tidy adds the property empty; BACKLOG audit)
 - [ ] Retest the Weekly meeting.md to Meeting.md rename (checklist 6i, last row): Manage files in a vault with the old file, Update, check the Backups folder — by 2026-10-13
 
