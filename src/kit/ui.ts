@@ -12,6 +12,7 @@ import { KitManaged } from "./managed-ui";
 import { SetupCheckModal } from "./setup-check-ui";
 import { HotkeyCheckModal } from "./hotkey-check-ui";
 import { ClearBackupsModal } from "./backups-ui";
+import { BOARD_STATUSES } from "./board-colours";
 import { TidyNotesModal } from "./tidy-ui";
 import { wideBox } from "./settings-box";
 import { ensureFolder } from "./ensure-folder";
@@ -139,6 +140,16 @@ class KitSettingTab extends PluginSettingTab {
     updates.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
     setup.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
       render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });
+    const bc = kit.boardColours;
+    setup.push({ name: "Colour board columns", desc: "Colours the columns of kanban boards by status (Planned, Started, Processing results, Closed), so the Lab book board has them without the planning kit.",
+      render: b => { b.addToggle(t => t.setValue(bc.enabled).onChange(async v => { bc.enabled = v; await this.ctl.save(); this.ctl.boardColoursChanged?.(); })); } });
+    for (const [name, key, hex] of BOARD_STATUSES) {
+      setup.push({ name: `Board colour: ${name}`, desc: "Pick another colour for this status.",
+        render: b => {
+          b.addColorPicker(c => c.setValue(bc.colours[key] ?? hex).onChange(async v => { bc.colours[key] = v; await this.ctl.save(); this.ctl.boardColoursChanged?.(); }));
+          b.addExtraButton(x => x.setIcon("rotate-ccw").setTooltip("Back to the default").onClick(async () => { delete bc.colours[key]; await this.ctl.save(); this.ctl.boardColoursChanged?.(); this.update(); }));
+        } });
+    }
     setup.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
       render: b => { b.addToggle(t => t.setValue(kit.debug).onChange(async v => { kit.debug = v; await this.ctl.save(); })); } });
     return { updates, setup };
@@ -267,6 +278,7 @@ export class KitController {
 
   /** Set by the plugin when the to-do engine runs: redraws the board's countdown badges. */
   dueCountdownChanged: (() => void) | null = null;
+  boardColoursChanged: (() => void) | null = null;
 
   /** Set by the settings tab: redraws it (after settings changed on disk). */
   redrawSettings: (() => void) | null = null;

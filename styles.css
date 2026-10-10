@@ -197,3 +197,18 @@
 .lab-kit-tidy-weeks { width: 4.5em; }
 .lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Board column colours (src/kit/board-colours.ts): columns of Bases kanban boards by status name; colours are set as --lab-kit-col-* on the body (settings) */
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Planned"] { --lab-kit-col: var(--lab-kit-col-planned, 148, 163, 184); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Started"] { --lab-kit-col: var(--lab-kit-col-started, 59, 130, 246); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Processing results"] { --lab-kit-col: var(--lab-kit-col-processing, 245, 158, 11); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Closed"] { --lab-kit-col: var(--lab-kit-col-closed, 16, 185, 129); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column:is([data-lab-kit-group="Planned"], [data-lab-kit-group="Started"], [data-lab-kit-group="Processing results"], [data-lab-kit-group="Closed"]) {
+  background-image: linear-gradient(rgba(var(--lab-kit-col, 0, 0, 0), 0.14), rgba(var(--lab-kit-col, 0, 0, 0), 0.14));
+  border-top: 3px solid rgb(var(--lab-kit-col, 0, 0, 0));
+}
+
+/* Lab book cards: the progress property (3/7) gets a bar (src/kit/board-colours.ts); an empty one is hidden */
+.bases-kanban-card [data-property="note.progress"] .bases-kanban-card-label { display: none; }
+.bases-kanban-card [data-property="note.progress"].lab-kit-no-progress { display: none; }
+.bases-kanban-card progress.lab-kit-card-bar { display: block; width: 100%; height: 6px; margin-top: 4px; accent-color: var(--interactive-accent); }

@@ -9,6 +9,7 @@ import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
 import { PlanningBlocks } from "./planning/blocks";
 import { ProgressWriter } from "./planning/progress";
+import { BoardColours } from "./kit/board-colours";
 import { SnippetTemplates } from "./kit/snippet-run";
 
 export default class LabKitPlugin extends Plugin {
@@ -39,6 +40,9 @@ export default class LabKitPlugin extends Plugin {
     this.kit.onChanged = () => blocks.refresh();
 
     new ProgressWriter(this, () => this.kit.kit).start();
+    const colours = new BoardColours(this, () => this.kit.kit);
+    colours.start();
+    this.kit.boardColoursChanged = () => colours.apply();
 
     // To-do engine and planning commands: once the planning kit is switched on and installed (at load, or right after its install)
     this.startPlanning();
