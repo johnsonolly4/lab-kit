@@ -69,7 +69,7 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
   for (const c of changes.filter(x => x.create)) {
     try {
       if (io.exists(c.path)) { out.skipped.push({ path: c.path, why: "a file with this name already exists" }); continue; }
-      await io.create(c.path, `---\n${c.after}\n---\n`);
+      await io.create(c.path, c.text ?? `---\n${c.after}\n---\n`);
       out.created.push(c.path);
     } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
   }

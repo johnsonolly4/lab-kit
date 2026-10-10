@@ -40,6 +40,8 @@ export interface TidyContext {
   meetings?: { folder: string; todos: string; today: string; interval: string; day: string };
   /** The Projects folder (project hubs). Missing = the project rule is off. */
   projectsFolder?: string;
+  /** The Project hub template's note text (after its Templater header): a missing hub is made from it. Without it a missing hub is only its properties. */
+  projectHubText?: string;
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
 }
@@ -66,6 +68,8 @@ export interface TidyChange {
   to?: string; note?: string;
   /** A new note at `path` whose properties are `after` (`before` is empty); never replaces a file. */
   create?: boolean;
+  /** With `create`: the whole text of the new note (else `---` + `after` + `---`). */
+  text?: string;
   /** A plugin setting rather than a note: `path` is the label shown, `before` / `after` the lines shown. */
   setting?: TidySetting;
 }
@@ -316,6 +320,16 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       put(n.path, after.join("\n"));
     }
     if (g2.changes.length) groups.push(g2);
+
+    // A project folder with notes but no hub note (it was deleted): make it again from the Project hub template, named like the folder
+    const g3: TidyGroup = { id: "project-hub-missing", title: "Project folders without a hub note", detail: "A folder under Projects that holds notes but has no hub note (kind: project) gets a new hub, named like the folder, made from the Project hub template. Existing notes are not touched; their project links work again.", changes: [] };
+    const folders = [...new Set(files.filter(f => inFolder(f.path, pf) && !hidden(f.path)).map(f => f.path.slice(pf.length + 1)).filter(r => r.includes("/")).map(r => r.split("/")[0]))].sort();
+    for (const name of folders) {
+      const folder = `${pf}/${name}`, path = `${folder}/${name}.md`;
+      if (files.some(f => f.path === path) || notes.some(x => parentOf(x.path) === folder && kindOf(x.path) === "project")) continue;
+      g3.changes.push({ path, before: "", after: "kind: project\nStatus: Active\ndeadline:", create: true, ...(ctx.projectHubText ? { text: ctx.projectHubText } : {}) });
+    }
+    if (g3.changes.length) groups.push(g3);
   }
 
   // To-dos: a note in the to-dos folder with no `kind` (a quick capture, a hand-made note) gets the properties the board reads. Notes that have a kind are left alone.

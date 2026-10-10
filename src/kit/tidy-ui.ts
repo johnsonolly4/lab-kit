@@ -65,6 +65,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     migrations,
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
     projectsFolder: planningOn ? pf.projects : undefined,
+    projectHubText: planningOn ? (host.planning?.bundle.contents?.["tpl-project-hub-md"] ?? "").replace(/\r\n/g, "\n").split("-%>\n")[1] : undefined,
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
   };

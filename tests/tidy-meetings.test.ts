@@ -197,6 +197,24 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
     expect(g.changes.find(x => x.path.endsWith("Idea.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"');
     expect(g.changes.find(x => x.path.endsWith("Empty.md"))!.after).toBe('project:\n  - "[[Alpha]]"');
   });
+  it("a project folder with notes but no hub gets a new hub, made from the template text when given", async () => {
+    const m = vault();
+    m.set("02 Projects/Lost/Idea.md", "---\ncssclasses:\n  - vt\n---\n");
+    m.set("02 Projects/Lost/Sub/Deep.md", "text\n");
+    m.set("02 Projects/Other/Other.md", "---\nkind: project\n---\n");
+    m.set("02 Projects/Projects overview.md", "---\nkind: hub\n---\n");
+    const g = group(c(), m, "project-hub-missing")!;
+    expect(g.changes.map(x => x.path)).toEqual(["02 Projects/Lost/Lost.md"]);
+    expect(g.changes[0]).toMatchObject({ create: true, after: "kind: project\nStatus: Active\ndeadline:" });
+    expect(g.changes[0].text).toBeUndefined();
+    const withText = group({ ...c(), projectHubText: "---\nkind: project\n---\nbody\n" }, m, "project-hub-missing")!;
+    expect(withText.changes[0].text).toBe("---\nkind: project\n---\nbody\n");
+    // applying writes the template text, and nothing else in the folder changes
+    const c2 = { ...c(), projectHubText: "---\nkind: project\n---\nbody\n" }, s = scan(files(m, c2), c2);
+    await applyTidy(io(m), selectChanges(s, new Set(["project-hub-missing"])));
+    expect(m.get("02 Projects/Lost/Lost.md")).toBe("---\nkind: project\n---\nbody\n");
+    expect(m.get("02 Projects/Lost/Idea.md")).toBe("---\ncssclasses:\n  - vt\n---\n");
+  });
   it("the project rule is off without a projects folder", () => {
     expect(group(ctx(), vault(), "project-properties")).toBeUndefined();
   });
