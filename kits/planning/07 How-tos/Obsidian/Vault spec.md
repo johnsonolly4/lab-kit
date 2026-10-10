@@ -236,7 +236,7 @@ Everything captured quickly lands here (`Ctrl+N`, **Quick capture**). The homepa
 Every move offers a rename first and goes through Obsidian, so links update.
 
 ### Meeting note (`08 Meetings/<series>`)
-`YYYY-MM-DD Weekly meeting`, created by **New meeting note** for the coming Thursday. Properties: `kind: meeting`, `date`. It fills itself with the 7 days before `date`: experiments edited, to-dos ticked done (`done_on`), papers imported, and open to-dos flagged `meeting`.
+`YYYY-MM-DD <series name>`, created by **New meeting note** for the series' next date. Properties: `kind: meeting`, `date`. It fills itself with the 7 days before `date`: experiments edited, to-dos ticked done (`done_on`), papers imported, and open to-dos flagged `meeting`.
 
 The deck is **one rolling PowerPoint per term** on Google Drive (newest week's slides first). The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the meeting series' note and opens that location with this computer's default app. The location is either a folder with all the decks in, or the path to one deck file. Update both paths at the start of each term.
 

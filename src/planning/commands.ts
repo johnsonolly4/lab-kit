@@ -18,7 +18,7 @@ import { parseDay, ymd } from "./todo";
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
   todo: { id: "tpl-to-do-md", dest: "To-do.md" },
-  meeting: { id: "tpl-weekly-meeting-md", dest: "Weekly meeting.md" },
+  meeting: { id: "tpl-weekly-meeting-md", dest: "Meeting.md" },
   series: { id: "tpl-meeting-series-md", dest: "Meeting series.md" },
   project: { id: "tpl-project-hub-md", dest: "Project hub.md" },
   projectNote: { id: "tpl-new-project-note-md", dest: "New project note.md" },
@@ -143,7 +143,7 @@ export class PlanningCommands {
 
   /**
    * New one-off meeting: a meeting that belongs to no series. It goes in the One-off hub (made the first time), is named from what you type,
-   * dated (today unless you change it) and can belong to a project. The Weekly meeting template reads `vtMeeting`.
+   * dated (today unless you change it) and can belong to a project. The Meeting template reads `vtMeeting`.
    */
   async newOneOff(): Promise<void> {
     const root = this.folders.meetings;
@@ -167,7 +167,12 @@ export class PlanningCommands {
       handoff().vtSeries = { name: NAME, folder, interval: ONCE, day: "Mon", start: date, deckKey: "deck_windows", deck: "" };
       try { await this.fromTemplate(TPL.series, root, folder, false); }
       finally { delete handoff().vtSeries; }
-      hub = this.seriesList().find(s => s.interval === ONCE);
+      // Obsidian reads the new note's properties a moment after it exists: wait for them (up to 3 s) before saying it failed
+      for (let tries = 0; tries < 20; tries++) {
+        hub = this.seriesList().find(s => s.interval === ONCE);
+        if (hub) break;
+        await new Promise<void>(resolve => window.setTimeout(resolve, 150));
+      }
       if (!hub) { new Notice("The hub note for one-off meetings could not be made."); return; }
     }
     const since = new Date(parseDay(date)!.getFullYear(), parseDay(date)!.getMonth(), parseDay(date)!.getDate() - 7);

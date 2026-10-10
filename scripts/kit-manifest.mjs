@@ -66,7 +66,7 @@ const PLANNING_DESC = {
   "Extras/Templates/Daily note.md": "Daily note (folder template for 01 Daily Notes)",
   "Extras/Templates/Project hub.md": "New project: its folder and hub note",
   "Extras/Templates/New project note.md": "New note inside a project",
-  "Extras/Templates/Weekly meeting.md": "New meeting note",
+  "Extras/Templates/Meeting.md": "New meeting note",
   "Extras/Templates/Meeting series.md": "New meeting series: its hub note",
   "Extras/Templates/New concept.md": "New concept: a knowledge note in a topic folder",
   "Extras/Templates/New topic hub.md": "New topic hub: the index note of a topic folder",

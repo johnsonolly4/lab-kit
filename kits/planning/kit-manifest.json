@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "0.5.2",
-      "sha256": "05131b1efec0f4d0aba9b512e2e61051bc895acf8889c8b6400eae304f2eddf6",
+      "sha256": "06ad7087a742945e00a2b55205d1cb19cadc15f4f3ab5078ad9833bbfa139163",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -290,6 +290,19 @@
       "desc": "New meeting series: its hub note"
     },
     {
+      "id": "tpl-weekly-meeting-md",
+      "kind": "template",
+      "src": "Extras/Templates/Meeting.md",
+      "role": "templates",
+      "path": "Meeting.md",
+      "version": "0.5.2",
+      "sha256": "ec78e7332015789bf791fd95d0d4bb5ae8c7478c251ac332b936de02349c7e21",
+      "renamedFrom": [
+        "Weekly meeting.md"
+      ],
+      "desc": "New meeting note"
+    },
+    {
       "id": "tpl-new-concept-md",
       "kind": "template",
       "src": "Extras/Templates/New concept.md",
@@ -343,17 +356,6 @@
       "sha256": "fe6ce42c6eae09182d9c30d533f9fb8249e03c47c890b3781e5a607f52f64dff",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
-    },
-    {
-      "id": "tpl-weekly-meeting-md",
-      "kind": "template",
-      "src": "Extras/Templates/Weekly meeting.md",
-      "role": "templates",
-      "path": "Weekly meeting.md",
-      "version": "0.5.2",
-      "sha256": "5adf49356a3ce94a2c876de5396b856ec1de8ebb354da8090d1fdbafe9e55e91",
-      "renamedFrom": [],
-      "desc": "New meeting note"
     },
     {
       "id": "tpl-zotlit-zotlit-content-liquid-md",

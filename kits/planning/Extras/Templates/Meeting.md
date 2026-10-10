@@ -34,7 +34,7 @@ cssclasses:
 > - 
 
 > [!columns]
-> > [!lab] Experiments this week
+> > [!lab] Experiments
 > > ```dataview
 > > LIST WITHOUT ID file.link + " <span class='vt-badge vt-" + lower(replace(Status, " ", "-")) + "'>" + lower(Status) + "</span>"
 > > FROM "03 Lab Book/Notes"

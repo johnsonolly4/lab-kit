@@ -307,7 +307,7 @@ describe("Phase 5b: the kit's meeting series", () => {
   });
 
   it("the meeting template reads the hand-over and links its series; the homepage has the next-meetings card", () => {
-    const tpl = text("kits/planning/Extras/Templates/Weekly meeting.md");
+    const tpl = text("kits/planning/Extras/Templates/Meeting.md");
     expect(tpl).toContain("window.vtMeeting");
     expect(tpl).toContain('series: "[[<% series %>]]"');
     expect(tpl).not.toContain("dur(7 days)");   // the window is "since the last meeting of the series"
