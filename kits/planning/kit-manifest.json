@@ -226,7 +226,7 @@
       "role": "planning",
       "path": "Shopping list.md",
       "version": "0.5.2",
-      "sha256": "0a4c467958393a23a73a97de6dd3609a647a6e4a7522e90fdafcbae3e481dfab",
+      "sha256": "9ab76f6baf27793dd40d0ec445d786a5e3c9eb346a90b9efd2e4a8b577606fce",
       "renamedFrom": [],
       "desc": "Lab shopping list",
       "policy": "keep"
@@ -250,7 +250,7 @@
       "role": "planning",
       "path": "Weekly review.md",
       "version": "0.5.2",
-      "sha256": "0daf59028c07abdb56023355aea096fe4180f003554453f8b82e0ec229516187",
+      "sha256": "d8ef8ae7580764452f42fa9e179f8aac5fb145467ed18204106b3f4a8111ed20",
       "renamedFrom": [],
       "desc": "Weekly review note",
       "policy": "keep"
@@ -351,7 +351,7 @@
       "role": "templates",
       "path": "Weekly meeting.md",
       "version": "0.5.2",
-      "sha256": "6a36d771525d17876820e21fb5ecd3d4af2ad6b88fb141951647ed33f52ca694",
+      "sha256": "5adf49356a3ce94a2c876de5396b856ec1de8ebb354da8090d1fdbafe9e55e91",
       "renamedFrom": [],
       "desc": "New meeting note"
     },

@@ -28,8 +28,6 @@ cssclasses:
   - vt
 ---
 
-# <% label %> - <% d.format("dddd D MMMM") %>
-
 `BUTTON[go-deck, go-meetings]`
 
 > [!focus] To discuss

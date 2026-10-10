@@ -10,8 +10,6 @@ r5: false
 r6: false
 ---
 
-# Weekly review
-
 > [!focus] Friday, 15 minutes
 > `INPUT[toggle:r1]` **Empty the inbox** - one note at a time, pick where it goes `BUTTON[sort-inbox]`
 >
