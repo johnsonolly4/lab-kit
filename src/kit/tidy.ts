@@ -284,17 +284,38 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     if (g.changes.length) groups.push(g);
   }
 
-  // Project hubs made before deadlines: the properties the Project hub template has
+  // Project hubs made before deadlines (or before `kind`): the properties the Project hub template has. A note named like its folder, directly in a
+  // project folder, is a hub even without `kind`; it gets `kind: project` too.
   if (ctx.projectsFolder) {
-    const g: TidyGroup = { id: "project-properties", title: "Project hubs: add the template's missing properties", detail: "Project hubs (kind: project) get Status: Active and an empty deadline when they lack them (only the ones they lack).", changes: [] };
-    for (const n of notes.filter(x => inFolder(x.path, ctx.projectsFolder ?? "") && kindOf(x.path) === "project")) {
+    const pf = ctx.projectsFolder;
+    const isHub = (path: string): boolean => kindOf(path) === "project" || (kindOf(path) === "" && parentOf(parentOf(path)) === pf && baseName(path) === baseName(parentOf(path)));
+    const g: TidyGroup = { id: "project-properties", title: "Project hubs: add the template's missing properties", detail: "Project hubs (kind: project, or a note named like its project folder) get kind: project, Status: Active and an empty deadline when they lack them (only the ones they lack).", changes: [] };
+    for (const n of notes.filter(x => inFolder(x.path, pf) && isHub(x.path))) {
       const fm = fmOf(n.path);
+      const needKind = kindOf(n.path) !== "project";   // a hub found by its name only (empty or no kind)
+      const withKind = needKind ? fillProp(fm, "kind", "project") : fm;
       const add = ([["Status", "Active"], ["deadline", ""]] as const).filter(([k]) => !find(fm, k)).map(([k, v]) => line(k, v));
-      if (!add.length) continue;
-      g.changes.push({ path: n.path, before: fm.join("\n"), after: [...fm, ...add].join("\n") });
-      put(n.path, [...fm, ...add].join("\n"));
+      if (!needKind && !add.length) continue;
+      const full = [...withKind, ...add];
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: full.join("\n") });
+      put(n.path, full.join("\n"));
     }
     if (g.changes.length) groups.push(g);
+
+    // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists.
+    const hubs = new Set(notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path));
+    const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub.", changes: [] };
+    for (const n of notes.filter(x => inFolder(x.path, pf) && !hubs.has(x.path))) {
+      const name = n.path.slice(pf.length + 1).split("/")[0];
+      if (!name || !hubs.has(`${pf}/${name}/${name}.md`) || ["todo", "meeting", "literature", "hub", "project"].includes(kindOf(n.path))) continue;
+      const fm = fmOf(n.path), p = find(fm, "project");
+      if (p && values(p).length) continue;
+      const item = ["project:", `  - "[[${name}]]"`];
+      const after = p ? [...fm.slice(0, p.start), ...item, ...fm.slice(p.end)] : [...fm, ...item];
+      g2.changes.push({ path: n.path, before: fm.join("\n"), after: after.join("\n") });
+      put(n.path, after.join("\n"));
+    }
+    if (g2.changes.length) groups.push(g2);
   }
 
   // To-dos: a note in the to-dos folder with no `kind` (a quick capture, a hand-made note) gets the properties the board reads. Notes that have a kind are left alone.

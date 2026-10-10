@@ -17,9 +17,12 @@ let title = await tp.user.vtAsk(tp, "Note title");
 if (!title) { throw new Error("Cancelled - no title"); }
 title = title.replace(/[\\/:*?"<>|#^\[\]]/g, "").trim();
 await tp.file.move(`${folder}/${title}`);
+// project: the folder's hub note (named like the folder), when it exists
+const hubName = folder.split("/").pop();
+const hasHub = hubName && app.vault.getAbstractFileByPath(`${folder}/${hubName}.md`);
 -%>
 ---
-cssclasses:
+<% hasHub ? `project:\n  - "[[${hubName}]]"\n` : "" %>cssclasses:
   - vt
 ---
 

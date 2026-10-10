@@ -146,10 +146,12 @@ describe("planning kit files (Phase 3)", () => {
     expect(again.kept.map(i => i.file.id)).toEqual([hub.id]);
   });
 
-  it("the Project hub template writes kind, Status and the vt / project classes; the New project note template only vt", () => {
+  it("the Project hub template writes kind, Status and the vt / project classes; the New project note template vt and a link to its hub", () => {
     const front = (dest: string): string => readFileSync(join("kits/planning/Extras/Templates", dest), "utf8").replace(/\r\n/g, "\n").split("-%>\n")[1].split("---")[1];
     expect(front("Project hub.md")).toMatch(/kind: project\nStatus: Active\ndeadline:\ncssclasses:\n {2}- vt\n {2}- project\n/);
-    expect(front("New project note.md")).toBe("\ncssclasses:\n  - vt\n");
+    // the note links to the folder's hub (when it exists) as a list, then the vt class
+    expect(front("New project note.md")).toBe('\n<% hasHub ? `project:\\n  - "[[${hubName}]]"\\n` : "" %>cssclasses:\n  - vt\n');
+    expect(readFileSync(join("kits/planning/Extras/Templates", "New project note.md"), "utf8")).toContain("getAbstractFileByPath(`${folder}/${hubName}.md`)");
   });
 
   it("the New concept template: shipped, asks with vtAsk, Esc cancels, filed under Knowledge, no ### headings, and Tidy only asks for its summary and sources", () => {

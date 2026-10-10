@@ -176,6 +176,27 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
     expect(g.changes.find(x => x.path.includes("Alpha"))!.after).toBe("kind: project\nStatus: Active\ndeadline:");
     expect(g.changes.find(x => x.path.includes("Gamma"))!.after).toBe("kind: project\nStatus: Done\ndeadline:");
   });
+  it("an old hub with no kind (a note named like its folder) gets kind, Status and deadline in one run", () => {
+    const m = vault();
+    m.set("02 Projects/Old/Old.md", "---\ncssclasses:\n  - vt\n---\nbody\n");
+    m.set("02 Projects/Old/Plain note.md", "---\ncssclasses:\n  - vt\n---\n");
+    const g = group(c(), m, "project-properties")!;
+    expect(g.changes.find(x => x.path === "02 Projects/Old/Old.md")!.after).toBe("cssclasses:\n  - vt\nkind: project\nStatus: Active\ndeadline:");
+    expect(g.changes.some(x => x.path.includes("Plain note"))).toBe(false);
+  });
+  it("notes in a project folder get a project link to the hub; hubs, to-dos, meetings and notes that have one are left alone", () => {
+    const m = vault();
+    m.set("02 Projects/Alpha/Idea.md", "---\ncssclasses:\n  - vt\n---\n");
+    m.set("02 Projects/Alpha/Empty.md", "---\nproject:\n---\n");
+    m.set("02 Projects/Alpha/Sub/Deep.md", "just text\n");
+    m.set("02 Projects/Alpha/Has.md", "---\nproject:\n  - \"[[Alpha]]\"\n---\n");
+    m.set("02 Projects/Alpha/Task.md", "---\nkind: todo\n---\n");
+    m.set("02 Projects/NoHub/Orphan.md", "---\ncssclasses:\n  - vt\n---\n");
+    const g = group(c(), m, "project-notes")!;
+    expect(g.changes.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Sub/Deep.md"]);
+    expect(g.changes.find(x => x.path.endsWith("Idea.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"');
+    expect(g.changes.find(x => x.path.endsWith("Empty.md"))!.after).toBe('project:\n  - "[[Alpha]]"');
+  });
   it("the project rule is off without a projects folder", () => {
     expect(group(ctx(), vault(), "project-properties")).toBeUndefined();
   });
