@@ -18,6 +18,10 @@ cssclasses:
   - project
 ---
 
+```vault-card
+show: back-to-hub
+```
+
 **Status:** `INPUT[inlineSelect(option(Active), option(Paused), option(Done)):Status]`
 
 **Deadline:** `INPUT[datePicker:deadline]`

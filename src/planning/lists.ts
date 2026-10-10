@@ -104,6 +104,16 @@ export function goalOf(text: string): string {
   return /\[goal::[ \t]*([^\]\n]*)\]/.exec(text)?.[1]?.trim() ?? "";
 }
 
+/** The hub one level up from the hub note at `hubPath`: a note in the parent of its folder, found at the time of the click so a renamed folder cannot break it. Prefers `kind: hub`, else the note named like the folder without its number ("08 Meetings" > Meetings). */
+export function parentHub(notes: NoteRec[], hubPath: string): NoteRec | null {
+  const me = notes.find(n => n.path === hubPath);
+  if (!me) return null;
+  const parent = me.folder.includes("/") ? me.folder.slice(0, me.folder.lastIndexOf("/")) : "";
+  const siblings = notes.filter(n => n.folder === parent && n.path !== hubPath);
+  const named = unnumbered(parent.split("/").pop() ?? "").toLowerCase();
+  return siblings.find(n => n.fm.kind === "hub") ?? siblings.find(n => n.name.toLowerCase() === named) ?? null;
+}
+
 export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; more: number; open: number; papers: number; notes: number; folder: string }
 
 /** The open to-dos of one project hub: overdue first, then Mon → Fri → Backlog → other. */

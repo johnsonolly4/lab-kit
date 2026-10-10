@@ -6,9 +6,13 @@ title = title.replace(/[\\/:*?"<>|#^\[\]]/g, "").trim();
 if (!title) { throw new Error("Cancelled - no title"); }
 const root = "06 Knowledge";
 const NEW_TOPIC = "(new topic...)";
+const presetFolder = window.vtNewConceptFolder;   // a topic hub's New concept button: this topic, no question
+delete window.vtNewConceptFolder;
 const topics = (app.vault.getAbstractFileByPath(root)?.children ?? []).filter(c => c.children).map(c => c.name).sort((a, b) => a.localeCompare(b));
 let topic = NEW_TOPIC;
-if (topics.length) {
+if (presetFolder && presetFolder.startsWith(root + "/")) {
+  topic = presetFolder.slice(root.length + 1);
+} else if (topics.length) {
   topic = await tp.system.suggester([...topics, NEW_TOPIC], [...topics, NEW_TOPIC], false, "Which topic?");
   if (!topic) { throw new Error("Cancelled - no topic picked"); }
 }

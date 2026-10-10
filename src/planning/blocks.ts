@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -168,6 +168,26 @@ class BlockView extends MarkdownRenderChild {
         actions.createEl("button", { text: "New note" }).addEventListener("click", () => void this.commands()?.newProjectNote(hubFile.parent?.path));
         return;
       }
+      case "back-to-hub": {   // on a project, topic or series hub: a link to the hub one folder up, found by folder so a rename cannot break it
+        const up = parentHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
+        if (up) this.link(box, up.path, `\u2190 ${up.name}`, "vt-back");
+        else box.createDiv({ cls: "vt-muted", text: "No hub one folder up." });
+        return;
+      }
+      case "topic-actions": {   // on a topic hub: New concept in this topic's folder, without asking the topic
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile) return;
+        const actions = box.createDiv({ cls: "vt-card-actions" });
+        actions.createEl("button", { text: "New concept" }).addEventListener("click", () => void this.commands()?.newConcept(hubFile.parent?.path));
+        return;
+      }
+      case "series-actions": {   // on a meeting series hub: New meeting note and Extra meeting now for this series
+        const series = this.owner.commands()?.seriesList().find(x => x.path === this.sourcePath);
+        if (!series) { box.createDiv({ cls: "vt-muted", text: "This note is not a meeting series hub." }); return; }
+        const actions = box.createDiv({ cls: "vt-card-actions" });
+        actions.createEl("button", { text: "Extra meeting now" }).addEventListener("click", () => void this.commands()?.newMeeting(series, true));
+        return;
+      }
       case "project-todos":   // on a project hub: its open to-dos, 10 rows with Show all
       case "project-notes": {   // on a project hub: the other notes in its folder, 10 rows with Show all
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
@@ -232,7 +252,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, project-todos, project-notes, project-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

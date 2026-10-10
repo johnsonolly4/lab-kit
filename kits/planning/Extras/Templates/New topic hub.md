@@ -11,6 +11,14 @@ cssclasses:
   - vt
 ---
 
+```vault-card
+show: back-to-hub
+```
+
+```vault-card
+show: topic-actions
+```
+
 What is this topic about? Write it here.
 
 ```dataview

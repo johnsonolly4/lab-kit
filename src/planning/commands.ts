@@ -27,7 +27,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -65,7 +65,7 @@ export class PlanningCommands {
     add("new-meeting-series", "New meeting series", () => this.newSeries());
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
     add("new-project-note", "New project note", () => this.newProjectNote());
-    add("new-concept", "New concept", () => this.fromTemplate(TPL.concept, this.folders.knowledge));   // the template asks title + topic and files the note
+    add("new-concept", "New concept", () => this.newConcept());   // the template asks title + topic and files the note
     add("new-topic-hub", "New topic hub", () => this.newTopicHub());
     add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
     // Desktop only: opening a file in another app needs Electron
@@ -260,6 +260,13 @@ export class PlanningCommands {
     if (folder) handoff().vtNewNoteFolder = folder;
     try { await this.fromTemplate(TPL.projectNote, this.folders.projects, folder ?? this.folders.projects); }
     finally { delete handoff().vtNewNoteFolder; }
+  }
+
+  /** New concept; `folder` (a topic hub's folder) files it there without asking the topic. */
+  async newConcept(folder?: string): Promise<void> {
+    if (folder) handoff().vtNewConceptFolder = folder;
+    try { await this.fromTemplate(TPL.concept, this.folders.knowledge); }
+    finally { delete handoff().vtNewConceptFolder; }
   }
 
   /** Where the planning kit installed this template, else where it would install it. */

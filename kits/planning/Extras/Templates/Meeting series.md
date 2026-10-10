@@ -22,8 +22,15 @@ deck_windows: <% deck("deck_windows") %>
 deck_mac: <% deck("deck_mac") %>
 ---
 
+```vault-card
+show: back-to-hub
+```
 
 `BUTTON[go-deck, new-meeting]`
+
+```vault-card
+show: series-actions
+```
 
 > [!goto]- Deck location (one path per computer)
 > Windows `INPUT[text(placeholder(Windows path)):deck_windows]`
