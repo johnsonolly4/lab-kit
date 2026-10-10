@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "0.5.2",
-      "sha256": "f8829a03380b1f7433a4c1689a29305335900d2fb5ff165c12b7f85d6a01905c",
+      "sha256": "f28c93871189445c9ff7377b5a0ec911b146f7c0643723a9903233fb219dec85",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -329,7 +329,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "0.5.2",
-      "sha256": "c32e26c68ef9b5533ee476aee5193b5335672bb9464e48cde154d223104b47e9",
+      "sha256": "a66b11038804e4f40ef8cc9a11dd5f7188a0d35afcaef9fc17330919ca0d11d8",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },

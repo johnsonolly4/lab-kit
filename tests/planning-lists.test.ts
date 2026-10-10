@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projectMeetings, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
+import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -187,5 +187,38 @@ describe("Project hub: meetings that name the project", () => {
     ], hub);
     expect(rows.map(r => r.text)).toEqual(["2026-10-15 Group", "2026-10-01 Group"]);
     expect(rows[0].badges[0].text).toBe("Group");
+  });
+});
+
+describe("Project hub tiles (To-dos and Notes, show all / collapse at 10)", () => {
+  const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
+  it("To-dos: this project's open to-dos only, overdue first, then Mon → Fri → Backlog", () => {
+    const todos = [
+      note(T + "Backlog one.md", { kind: "todo", day: "Backlog", project: "[[Alpha]]" }),
+      note(T + "Mon one.md", { kind: "todo", day: "Mon", project: ["[[Alpha]]"] }),
+      note(T + "Late one.md", { kind: "todo", day: "Fri", due: "2026-10-01", project: "[[Alpha]]" }),
+      note(T + "Done one.md", { kind: "todo", day: "Done", project: "[[Alpha]]" }),
+      note(T + "Ticked one.md", { kind: "todo", day: "Tue", done: true, project: "[[Alpha]]" }),
+      note(T + "Other project.md", { kind: "todo", day: "Mon", project: "[[Beta]]" }),
+    ];
+    const lines = projectTodos(todos, hub, WED);
+    expect(lines.map(l => l.text)).toEqual(["Late one", "Mon one", "Backlog one"]);
+    expect(lines[0].badges[0].text).toBe("overdue 1 Oct");
+    expect(lines[1].badges[0].text).toBe("· Mon");
+  });
+  it("Notes: everything else in the project's folder (sub-folders too), newest first, with the date", () => {
+    const d = (m: number, day: number): number => new Date(2026, m, day).getTime();
+    const notes = [
+      hub,
+      note("02 Projects/Alpha/Old.md", {}, { mtime: d(8, 1) }),
+      note("02 Projects/Alpha/Sub/New.md", {}, { mtime: d(9, 5) }),
+      note("02 Projects/Beta/Beta note.md", {}, { mtime: d(9, 6) }),
+    ];
+    const lines = projectNotes(notes, hub);
+    expect(lines.map(l => l.text)).toEqual(["New", "Old"]);
+    expect(lines[0].badges[0].text).toBe("· 5 Oct");
+  });
+  it("shows 10 rows before Show all", () => {
+    expect(PROJECT_TILE_ROWS).toBe(10);
   });
 });

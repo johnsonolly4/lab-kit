@@ -273,6 +273,9 @@ body {
 .vt-card li::marker { content: ""; }
 .vt-card li a.internal-link { color: var(--text-normal); text-decoration: none; }
 .vt-card li a.internal-link:hover { text-decoration: underline; }
+/* Project hub To-dos / Notes tiles: Show all / Show the last 10 sits in the tile's top right corner (src/planning/blocks.ts, show: project-todos / project-notes) */
+.callout:has(> .callout-content .vt-tile-toggle) { position: relative; }
+.vt-tile-toggle { position: absolute; top: 6px; right: 8px; font-size: var(--font-ui-smaller); padding: 2px 8px; height: auto; }
 .vt-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
 .vt-card-actions button {
   border-radius: 10px;

@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projectMeetings, PROJECT_MEETINGS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -49,7 +49,7 @@ export class PlanningBlocks {
 
 class BlockView extends MarkdownRenderChild {
   private drawing = 0;
-  private showAll = false;   // the project meetings list: last 8 or all
+  private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
 
   constructor(el: HTMLElement, private owner: PlanningBlocks, private lang: Lang, private source: string, private sourcePath: string) { super(el); }
 
@@ -146,6 +146,22 @@ class BlockView extends MarkdownRenderChild {
         }
         return;
       }
+      case "project-todos":   // on a project hub: its open to-dos, 10 rows with Show all
+      case "project-notes": {   // on a project hub: the other notes in its folder, 10 rows with Show all
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile) return;
+        const hub = this.owner.rec(hubFile);
+        const todos = o.show === "project-todos";
+        const folder = todos ? todoFolder(f) : f.projects;
+        if (!this.need(box, folder)) return;
+        const all = todos ? projectTodos(this.owner.notesIn(folder), hub, new Date()) : projectNotes(this.owner.notesIn(folder), hub);
+        if (all.length > PROJECT_TILE_ROWS) {   // at the callout's top right (styles in vault-theme.css)
+          box.createEl("button", { cls: "vt-tile-toggle", text: this.showAll ? `Show the last ${PROJECT_TILE_ROWS}` : `Show all ${all.length}` })
+            .addEventListener("click", () => { this.showAll = !this.showAll; this.draw(); });
+        }
+        this.list(box, this.showAll ? all : all.slice(0, PROJECT_TILE_ROWS), todos ? "No open to-dos for this project." : "No notes in this project yet.");
+        return;
+      }
       case "meeting-cards": {   // the Meetings hub: one card per series
         if (!this.need(box, f.meetings)) return;
         const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
@@ -195,7 +211,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, project-todos, project-notes, meeting-cards or next-meetings.` });
     }
   }
 

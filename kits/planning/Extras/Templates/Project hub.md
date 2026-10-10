@@ -33,19 +33,13 @@ show: deadline
 
 > [!columns]
 > > [!planning] To-dos
-> > ```dataview
-> > LIST WITHOUT ID file.link + choice(due AND due < date(today), " <span class='vt-badge vt-overdue'>overdue " + dateformat(due, "d MMM") + "</span>", " <span class='vt-muted'>&middot; " + day + "</span>")
-> > FROM "00 Planning/To-dos"
-> > WHERE kind = "todo" AND project AND this.file.link AND project = this.file.link AND !done AND day != "Done"
-> > SORT choice(due AND due < date(today), 0, 1) ASC, choice(day = "Mon", 1, choice(day = "Tue", 2, choice(day = "Wed", 3, choice(day = "Thu", 4, choice(day = "Fri", 5, 6))))) ASC
+> > ```vault-card
+> > show: project-todos
 > > ```
 >
 > > [!projects] Notes
-> > ```dataview
-> > LIST WITHOUT ID file.link + " <span class='vt-muted'>&middot; " + dateformat(file.mtime, "d MMM") + "</span>"
-> > FROM "02 Projects"
-> > WHERE this.file.folder AND startswith(file.folder, this.file.folder) AND file.path != this.file.path
-> > SORT file.mtime DESC
+> > ```vault-card
+> > show: project-notes
 > > ```
 
 > [!question] Meetings

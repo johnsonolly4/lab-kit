@@ -106,17 +106,38 @@ export function goalOf(text: string): string {
 
 export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; more: number; open: number; papers: number; notes: number; folder: string }
 
+/** The open to-dos of one project hub: overdue first, then Mon → Fri → Backlog → other. */
+function openProjectTodos(todos: NoteRec[], hub: NoteRec, today: Date): { t: NoteRec; late: Date | null }[] {
+  const rank = (d: string): number => { const r = dayRank(d); return d === "Backlog" ? 6 : r === 6 ? 8 : r; };
+  return todos.filter(t => isOpenTodo(t) && pointsTo(t.fm.project, hub))
+    .map(t => ({ t, late: overdue(t.fm, today) }))
+    .sort((a, b) => ((a.late ? 0 : 1) * 10 + rank(str(a.t.fm.day))) - ((b.late ? 0 : 1) * 10 + rank(str(b.t.fm.day))) || a.t.path.localeCompare(b.t.path));
+}
+
+/** A project hub's To-dos tile: all its open to-dos, with the overdue date or the planned day. */
+export function projectTodos(todos: NoteRec[], hub: NoteRec, today: Date): ListLine[] {
+  return openProjectTodos(todos, hub, today).map(({ t, late }) => ({ path: t.path, text: t.name,
+    badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }] }));
+}
+
+/** A project hub's Notes tile: every other note in the project's folder (sub-folders too), newest first, with its last-changed date. */
+export function projectNotes(notes: NoteRec[], hub: NoteRec): ListLine[] {
+  return notes.filter(n => n.path !== hub.path && inFolder(n.path, hub.folder))
+    .sort((a, b) => b.mtime - a.mtime || a.name.localeCompare(b.name))
+    .map(n => ({ path: n.path, text: n.name, badges: [{ text: `· ${dayMonth(new Date(n.mtime))}`, cls: "vt-muted" }] }));
+}
+
+/** How many rows a project hub's To-dos and Notes tiles show before "Show all". */
+export const PROJECT_TILE_ROWS = 10;
+
 /**
  * One card per project hub, in the projects order. Up to 3 open to-dos of the project (overdue first, then Mon → Fri → Backlog → other),
  * counts of open to-dos, papers (ZotLit collection `Projects/<name>`, or a link to the hub) and other notes in the project's folder.
  */
 export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[], notes: NoteRec[], goals: Record<string, string>, today: Date, mode: CountdownMode = "off"): ProjectCard[] {
   const order = projects(hubs, Infinity, mode, today).map(l => hubs.find(h => h.path === l.path)!);
-  const rank = (d: string): number => { const r = dayRank(d); return d === "Backlog" ? 6 : r === 6 ? 8 : r; };
   return order.map(h => {
-    const mine = todos.filter(t => isOpenTodo(t) && pointsTo(t.fm.project, h))
-      .map(t => ({ t, late: overdue(t.fm, today) }))
-      .sort((a, b) => ((a.late ? 0 : 1) * 10 + rank(str(a.t.fm.day))) - ((b.late ? 0 : 1) * 10 + rank(str(b.t.fm.day))) || a.t.path.localeCompare(b.t.path));
+    const mine = openProjectTodos(todos, h, today);
     const cols = (p: NoteRec): string[] => (Array.isArray(p.fm.Collections) ? (p.fm.Collections as unknown[]).map(str) : [str(p.fm.Collections)]);
     const nPapers = papers.filter(p => p.fm.kind === "literature" && (cols(p).includes(`Projects/${h.name}`) || (p.links ?? []).includes(h.path))).length;
     return {
