@@ -34,6 +34,7 @@ Manage files renames a tracked file when the kit renames it (Weekly meeting.md t
 - [ ] Try the four new rows at the end of checklist 6i (Home tiles, Analysis table gone, project deadline, checklist progress: the kanban card property is untested); the Pre-release fixes row; say which vault state gave "Button ID not Found" and the missing hub (BACKLOG)
 
 - [ ] Say whether New chemical should ask for the Chemical class and prefill it (Tidy adds the property empty; BACKLOG audit)
+- [ ] Retest the Weekly meeting.md to Meeting.md rename (checklist 6i, last row): Manage files in a vault with the old file, Update, check the Backups folder — by 2026-10-13
 
 ## Known issues
 - `npm run lint`: 0 errors, 3 sentence-case warnings (datafolder.ts, snippet-run.ts, whatsnew.ts). Many features are tests-only, not seen in Obsidian: BACKLOG "Not yet tested by the user"
