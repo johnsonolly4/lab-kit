@@ -33,7 +33,7 @@ _Updated: 2026-10-10 by Sonnet 5.5 (Manage files renames a tracked file the kit 
 - [ ] Copy a kanban column header and card as outerHTML into `test-vault/Kanban DOM.md` (last row of checklist 6i) so Status board colours can be built
 - [ ] Try Cmd+P New concept, New chemical and New topic hub (checklist 6i, last row); say if New chemical should ask for a name, and how the visible Summary field should look (BACKLOG New concept row) — by 2026-10-12
 - [ ] Try the four new rows at the end of checklist 6i (Home tiles, Analysis table gone, project deadline, checklist progress: the kanban card property is untested); the Pre-release fixes row; say which vault state gave "Button ID not Found" and the missing hub (BACKLOG)
-- [ ] Try New chemical's class pick list, the kept-files notice and `npm run tidy-fixture` (checklist 6i, last rows)
+- [ ] Run `test-vault/Feature test round 2.md` (covers everything built since the last test, with example note `OLJ0099 - Round 2 example`), then say "done" — by 2026-10-13
 
 ## Known issues
 - `npm run lint`: 0 errors, 3 sentence-case warnings (datafolder.ts, snippet-run.ts, whatsnew.ts). Many features are tests-only, not seen in Obsidian: BACKLOG "Not yet tested by the user"
