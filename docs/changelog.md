@@ -1,6 +1,10 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Tidy up notes: tick single notes**: every note line has its own box (the rule's box ticks or unticks them all and shows a dash when only some are ticked); Change notes… carries out what is ticked
+- **New chemical asks the chemical name first**, then the class, and makes the note with that name
+- **Snippet icons**: a snippet whose header lists two icons ("cylinder, database") shows one name in the box, not both
+- **How my vault works lists every command** and what it does; the snippet syntax page has examples, and no inline code on it or in the README starts with an equals sign (Dataview read those as queries). Developer: `npm run tidy-fixture` also installs the built plugin in the fixture vault
 - **Hub top bar** (planning kit): a project, topic or meeting series hub has one row at the top (`show: hub-bar`): the back link and that hub's buttons (project: New to-do, New note; topic: New concept; series: Meeting deck, New meeting note, Extra meeting now). On the project hub Status and Deadline share a line. A one-off meeting note starts with a back link to the One-off hub and Meeting deck (`show: meeting-bar`); a note made with New project note starts with a back link to its project hub (`show: back-to-project`), and Tidy up notes adds that line to your existing project notes (a page change, shown in the window). Existing hubs get the new bar from Tidy up notes → **Hubs: bring the page up to the current template**. Not seen in Obsidian
 - **Meeting deck opens the deck of the meeting you are in**: on a series hub or a meeting note it no longer asks which meeting (the deck is still one per series, set on the series hub); the command asks only from other notes
 - **New meeting series offers Monday to Friday**, with **Sat / Sun…** for a weekend meeting

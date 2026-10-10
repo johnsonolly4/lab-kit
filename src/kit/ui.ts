@@ -17,7 +17,7 @@ import { ClearBackupsModal } from "./backups-ui";
 import { BOARD_STATUSES } from "./board-colours";
 import { TidyNotesModal } from "./tidy-ui";
 import { wideBox } from "./settings-box";
-import { headerIcon } from "./icon-list";
+import { firstIcon, headerIcon } from "./icon-list";
 import { IconPickerModal } from "./icon-picker-ui";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
@@ -59,7 +59,7 @@ class KitSettingTab extends PluginSettingTab {
       rows.push({
         name,
         render: b => {
-          const own = this.builtInIcons.get(f.path) ?? "";
+          const own = firstIcon(this.builtInIcons.get(f.path) ?? "", n => !!getIcon(n));
           const preview = b.controlEl.createSpan({ cls: "lab-kit-icon-preview" });
           const show = (typed: string): void => {
             preview.empty();
@@ -429,9 +429,13 @@ export class KitController {
       await ensureFolder(this.app.vault, target.folder);
       const folder = this.app.vault.getFolderByPath(target.folder);
       if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
+      const typed = await ask(this.app, "Chemical name (Esc cancels)");
+      const name = typed?.replace(/[\\/:*?"<>|#^[\]]/g, "-").trim();
+      if (!name) return;   // Esc or empty cancels
+      if (this.app.vault.getAbstractFileByPath(`${target.folder}/${name}.md`)) { new Notice(`${target.folder}/${name}.md already exists.`); return; }
       const cls = await this.askChemicalClass(target.folder);
       if (cls === null) return;   // Esc cancels
-      if (!(await templaterCreateNote(this.app, template, folder))) { new Notice("Templater couldn't create the note. Update it to the latest version, then try again."); return; }
+      if (!(await templaterCreateNote(this.app, template, folder, true, name))) { new Notice("Templater couldn't create the note. Update it to the latest version, then try again."); return; }
       if (cls) await this.setChemicalClass(target.folder, cls);
     } catch (e) { console.error(e); new Notice("New chemical failed. See the developer console for details."); }
   }

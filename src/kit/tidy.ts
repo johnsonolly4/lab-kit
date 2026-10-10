@@ -493,7 +493,11 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 }
 
 /** The changes of the rules the user left ticked: the only ones Change notes… may carry out. */
-export const selectChanges = (s: TidyScan, ticked: ReadonlySet<string>): TidyChange[] => s.groups.filter(g => ticked.has(g.id)).flatMap(g => g.changes);
+export const selectChanges = (s: TidyScan, ticked: ReadonlySet<string>, off: ReadonlySet<string> = new Set()): TidyChange[] =>
+  s.groups.filter(g => ticked.has(g.id)).flatMap(g => g.changes.filter((_, i) => !off.has(changeKey(g.id, i))));
+
+/** One change of a rule, for ticking it on its own ("rule id|position"). */
+export const changeKey = (groupId: string, index: number): string => `${groupId}|${index}`;
 
 /* ---- Before / after rows ---- */
 

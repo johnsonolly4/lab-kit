@@ -152,6 +152,39 @@ flowchart LR
 
 One rule: **Alt + the first letter** of what you want. The full list, and how to set them, is in [[Hotkeys]].
 
+## Commands
+
+Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the homepage and the hubs.
+
+| Command | What it does |
+|---|---|
+| New to-do | Makes a to-do on the Backlog (asks the project and a due date) |
+| Quick capture | Makes an empty note in the inbox and opens it |
+| Add to shopping list | Adds items (commas between them) to the [[Shopping list]] |
+| Sort inbox | Goes through the inbox one note at a time and files each |
+| Archive old to-dos | Moves to-dos finished over 30 days ago to the archive |
+| Roll over to-dos now | Rolls unfinished to-dos over to today and clears last week's finished ones, now |
+| New meeting | New meeting note for a series (asks which when there are several) |
+| New extra meeting now | An in-between meeting on a date you choose |
+| New one-off meeting | A meeting that belongs to no series |
+| New meeting series | Makes a series: name, how often, day, first date, deck, template |
+| Open meeting deck | Opens the deck of the meeting you are in (asks only from other notes) |
+| New project | Makes a project folder and its hub |
+| New project note | Makes a note in a project's folder |
+| New concept | Makes a knowledge note in a topic |
+| New topic hub | Makes the hub note of a topic folder |
+| New lab entry | Makes a lab book entry from the Lab Book Template |
+| New chemical | Makes a chemical note (asks the name, then the class) |
+| Insert empty calc block | A blank calc table at the cursor |
+| Insert lab header block | The hazard / data-folder header at the cursor |
+| Tidy up notes | Finds notes that don't follow the vault's rules and fixes the ones you tick |
+| Find moved folders | Points the settings at folders you moved outside Obsidian |
+| Check setup | Lists what the kits need and fixes it |
+| Check hotkeys | Shows the recommended keys and what is set |
+| Review kit files | Preview of every kit file the plugin would add or update |
+| Manage kit files | Every kit file with its status and buttons (Compare, Use kit version, Keep mine) |
+| Show what's new | The newest changes of Lab Kit |
+
 ## When something looks wrong
 
 - Buttons, boards and lists are explained in detail in the [[Vault spec]] - share it with Claude when asking for changes.

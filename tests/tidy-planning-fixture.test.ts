@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { scan, wantsText, type TidyContext, type TidyFile } from "../src/kit/tidy";
+import { changeKey, scan, selectChanges, wantsText, type TidyContext, type TidyFile } from "../src/kit/tidy";
 
 const ROOT = join(__dirname, "fixtures", "tidy-vault-planning");
 const T = "kits/planning/Extras/Templates/";
@@ -21,6 +21,13 @@ describe("Tidy up notes on the old-style planning fixture", () => {
   const before = hashes();
   const s = scan(files(), ctx);
   const paths = (id: string) => s.groups.find(g => g.id === id)?.changes.map(c => c.path);
+
+  it("single notes of a ticked rule can be left out", () => {
+    const g = s.groups.find(x => x.id === "todo-properties")!;
+    expect(selectChanges(s, new Set(["todo-properties"])).length).toBe(g.changes.length);
+    expect(selectChanges(s, new Set(["todo-properties"]), new Set([changeKey("todo-properties", 0)])).length).toBe(g.changes.length - 1);
+    expect(selectChanges(s, new Set(), new Set()).length).toBe(0);   // an unticked rule gives nothing, whatever is "off"
+  });
 
   it("lists each old note under its rule, and writes nothing", () => {
     expect(paths("project-properties")).toEqual(["02 Projects/Alpha/Alpha.md"]);

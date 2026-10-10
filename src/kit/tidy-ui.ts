@@ -6,7 +6,7 @@ import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { changeKey, diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
@@ -92,6 +92,8 @@ async function readVault(app: App, ctx: TidyContext): Promise<TidyFile[]> {
 export class TidyNotesModal extends Modal {
   private result: TidyScan | null = null;
   private ticked = new Set<string>();
+  /** Single changes unticked inside a ticked rule (see changeKey). */
+  private off = new Set<string>();
   private backedUp = false;
   private message = "";
   private files: TidyFile[] = [];
@@ -105,7 +107,7 @@ export class TidyNotesModal extends Modal {
     this.setTitle("Tidy up notes");
     this.contentEl.createEl("p", { text: "Reading your notes…" });
     void this.load().then(() => {
-      this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id));
+      this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id)); this.off.clear();
       this.render();
     }, () => { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read the vault. Nothing was changed." }); });
   }
@@ -117,7 +119,7 @@ export class TidyNotesModal extends Modal {
     this.rescan();
   }
   /** Scans again with the current answers (no reading: the answers only change what the meetings rule proposes). */
-  private rescan(): void { this.result = scan(this.files, tidyContext(this.host, this.answers, this.app)); }
+  private rescan(): void { this.off.clear(); this.result = scan(this.files, tidyContext(this.host, this.answers, this.app)); }
 
   private render(): void {
     const el = this.contentEl, r = this.result;
@@ -135,14 +137,40 @@ export class TidyNotesModal extends Modal {
       const head = el.createDiv({ cls: "lab-kit-tidy-rule" });
       const box = head.createEl("input", { type: "checkbox" });
       box.checked = this.ticked.has(g.id);
-      box.addEventListener("change", () => { if (box.checked) this.ticked.add(g.id); else this.ticked.delete(g.id); this.refreshChange?.(); });
+      box.indeterminate = this.ticked.has(g.id) && g.changes.some((_, i) => this.off.has(changeKey(g.id, i)));
+      const singles: HTMLInputElement[] = [];
+      box.addEventListener("change", () => {
+        box.indeterminate = false;
+        g.changes.forEach((_, i) => this.off.delete(changeKey(g.id, i)));
+        if (box.checked) this.ticked.add(g.id); else this.ticked.delete(g.id);
+        singles.forEach(b => { b.checked = box.checked; });
+        this.refreshChange?.();
+      });
+      /** One note's box: the rule counts as ticked while any of its notes is. */
+      const single = (el: HTMLElement, index: number): void => {
+        const key = changeKey(g.id, index), one = el.createEl("input", { type: "checkbox" });
+        one.checked = this.ticked.has(g.id) && !this.off.has(key);
+        singles.push(one);
+        one.addEventListener("change", () => {
+          if (one.checked && !this.ticked.has(g.id)) { this.ticked.add(g.id); g.changes.forEach((_, i) => { if (i !== index) this.off.add(changeKey(g.id, i)); }); }
+          else if (one.checked) this.off.delete(key);
+          else this.off.add(key);
+          if (g.changes.every((_, i) => this.off.has(changeKey(g.id, i)))) { this.ticked.delete(g.id); g.changes.forEach((_, i) => this.off.delete(changeKey(g.id, i))); }
+          box.checked = this.ticked.has(g.id);
+          box.indeterminate = box.checked && g.changes.some((_, i) => this.off.has(changeKey(g.id, i)));
+          singles.forEach((b, i) => { b.checked = this.ticked.has(g.id) && !this.off.has(changeKey(g.id, i)); });
+          this.refreshChange?.();
+        });
+      };
       const label = head.createDiv();
       label.createEl("strong", { text: `${g.title} (${g.changes.length})` });
       if (g.detail) label.createDiv({ cls: "setting-item-description", text: g.detail });
       if (g.ask === "meetings") this.askMeetings(label);
-      for (const c of g.changes) {
-        if (c.to !== undefined) { el.createDiv({ cls: "lab-kit-tidy-path", text: `${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
-        el.createDiv({ cls: "lab-kit-tidy-path", text: c.create ? `${c.path} (new note)` : c.body ? `${c.path} (page)` : c.path });
+      for (const [index, c] of g.changes.entries()) {
+        const line = el.createDiv({ cls: "lab-kit-tidy-path" });
+        single(line, index);
+        if (c.to !== undefined) { line.createSpan({ text: ` ${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
+        line.createSpan({ text: ` ${c.create ? `${c.path} (new note)` : c.body ? `${c.path} (page)` : c.path}` });
         const grid = el.createDiv({ cls: "lab-kit-tidy-diff" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "Before" });
         grid.createDiv({ cls: "lab-kit-tidy-head", text: "After" });
@@ -209,11 +237,11 @@ export class TidyNotesModal extends Modal {
   }
 
   /** The changes of the ticked rules. */
-  private selected(): TidyChange[] { return this.result ? selectChanges(this.result, this.ticked) : []; }
+  private selected(): TidyChange[] { return this.result ? selectChanges(this.result, this.ticked, this.off) : []; }
 
   /** Step 2: a second window; nothing is written before Confirm. */
   private confirm(): void {
-    const changes = this.selected(), rules = (this.result?.groups ?? []).filter(g => this.ticked.has(g.id)).length;
+    const changes = this.selected(), rules = (this.result?.groups ?? []).filter(g => this.ticked.has(g.id)).length;   // a rule counts while any of its notes is ticked
     if (!changes.length || !this.backedUp) return;
     new TidyConfirmModal(this.app, changes.length, rules, () => void this.apply(changes)).open();
   }
@@ -227,7 +255,7 @@ export class TidyNotesModal extends Modal {
       new Notice(parts.join(", ") + ".");
     } catch (e) { this.message = `Stopped: ${(e as Error).message}. Anything already changed is in the backups folder (${backups}).`; }
     await this.load();   // a second scan: what is left
-    this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id));
+    this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id)); this.off.clear();
     this.backedUp = false;
     this.render();
   }

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
-import { headerIcon, lucideNames, matchIcons } from "../src/kit/icon-list";
+import { firstIcon, headerIcon, lucideNames, matchIcons } from "../src/kit/icon-list";
 
 describe("headerIcon", () => {
   it("reads a // icon: line and a token template's icon: header", () => {
@@ -30,5 +30,14 @@ describe("icon picker list", () => {
     expect(matchIcons(names, "zzz")).toEqual([]);
     expect(matchIcons(names, "").length).toBe(4);
     expect(matchIcons(names, "", 2).length).toBe(2);
+  });
+});
+
+describe("firstIcon: a header's fallback list shows one name", () => {
+  it("the first name Obsidian knows, else the first name, else empty", () => {
+    expect(firstIcon("grid-3x3, layout-grid", n => n === "layout-grid")).toBe("layout-grid");
+    expect(firstIcon("cylinder, database", () => false)).toBe("cylinder");
+    expect(firstIcon("magnet", () => true)).toBe("magnet");
+    expect(firstIcon("", () => true)).toBe("");
   });
 });

@@ -42,7 +42,7 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{prefix}}` | your initials + the note's number + `-` (`ABC0016-`) |
 | `{{code}}` | `prefix` + the next free sample letter; continues from earlier codes in the note and advances on each use |
 | `{{table:base}}` | a table id that is unique in the note (`base`, `base2`…); the same `base` gives the same id again within one insert. `{{table:$key\|"base"}}` takes the base from a field; `{{table:sampling>_start}}` = the id of `sampling` plus `_start` |
-| `{{linked:column!B10}}` | `=column!B10` when the note has a `column` table with rows, else empty |
+| `{{linked:column!B10}}` | the formula for `column!B10` (an equals sign in front of it) when the note has a `column` table with rows, else empty |
 | `{{next-letter:sampling}}` | the first sample letter not used in the note's `sampling` tables (use as a field's default) |
 | `{{note-number:key.Density}}` | a number from a property of the chemical note named by field `key`, else empty |
 
@@ -98,3 +98,44 @@ One note per analysis method, properties in the header (names ignore case and sp
 A machine note's property with the same name as a column sets that column's default (Eluent, Solvent, Temp, Calibrant…).
 
 Why methods are separate from token templates: a method is a description several snippets read. It gives machines (defaults taken from the chosen instrument's note), the Combined results columns, the tag, checklist and dataset line, and it appears in Alt+S without a file in `Snippets`. A token template only asks questions and fills text.
+
+## 4. Examples
+
+Each row is a template body, the answers given in the form, and what is inserted. The note already has the sample `ABC0016-A` and a table called `samples`; your initials and the note's number make the prefix `ABC0016-`.
+
+| Body | Answers | Inserted |
+|---|---|---|
+| `{{#each codes}}- {{.}}` + newline + `{{/each}}` | `codes` = `A, B` | `- A` and `- B`, one per line |
+| `{{#each codes as c}}{{prefix}}{{c}} {{/each}}` | `codes` = `A, B` | `ABC0016-A ABC0016-B ` |
+| `{{#each codes \| " \| "}}{{.}}{{/each}}` | `codes` = `A, B, C` | `A \| B \| C` |
+| `{{#if note}}Note: {{note}}{{else}}no note{{/if}}` | `note` empty | `no note` |
+| `{{#repeat n\|3}}x{{/repeat}}` | `n` = `2` | `xx` (with no usable number: `xxx`) |
+| `{{code}} {{code}}` | none | `ABC0016-B ABC0016-C` (the next two free letters) |
+| `{{table:samples}}` | none | `samples2` (`samples` is taken) |
+| `{{a\|b\|"fallback"}}` | `a` and `b` empty | `fallback` |
+
+A field that asks for sample codes (header):
+
+```yaml
+fields:
+  - key: codes
+    label: Sample codes
+    type: textarea
+    suggest: codes
+```
+
+With a Sample list (`ABC0016-A`, `ABC0016-B`) and a Sampling timetable (`ABC0016-C0`, `ABC0016-C30`) in the note, the box opens holding all four codes and **Codes from** offers *All of them*, *Sample list* and *Sampling timetable*. Pick *Sampling timetable* without touching the box: `{{#each codes}}…{{/each}}` runs for `ABC0016-C0` and `ABC0016-C30` only.
+
+A table of your own becomes a source with one line:
+
+```calc
+name: mine
+title: My samples
+codes: column A
+| Code | Note |
+|---|---|
+| ABC0016-X | first |
+| ABC0016-Y | second |
+```
+
+It shows in **Codes from** as *My samples*, with the codes `ABC0016-X` and `ABC0016-Y`.

@@ -6,6 +6,12 @@ export function headerIcon(text: string): string {
   return m ? m[1].trim().replace(/^["']|["']$/g, "").trim() : "";
 }
 
+/** A header's icon may be a fallback list ("grid-3x3, layout-grid", for the different Lucide names across Obsidian versions): the first name `known` accepts, else the first name. */
+export function firstIcon(list: string, known: (name: string) => boolean): string {
+  const names = list.split(",").map(n => n.trim()).filter(Boolean);
+  return names.find(known) ?? names[0] ?? "";
+}
+
 /** Lucide ids as Obsidian lists them ("lucide-flask-round") to the name a snippet stores ("flask-round"); other icon sets are left out. */
 export function lucideNames(ids: string[]): string[] {
   return ids.filter(id => id.startsWith("lucide-")).map(id => id.slice("lucide-".length)).sort((a, b) => a.localeCompare(b));
