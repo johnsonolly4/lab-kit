@@ -5,6 +5,7 @@ Format: `date — decision — why — (who / source)`
 
 Backfilled lines cite where the repo records them. Never invent a past decision or its reason.
 
+- 2026-10-10 — Flow column prep puts the Solvent row above the density row, so the reactor volume moves from `column!B10` to `B11`; tables already made keep `B10` — the user wanted the solvent record next to its density; no migration of old notes — (user, feature test 2026-10-10 section 6; Claude)
 - 2026-10-09 — Token templates, Phase 1 spike: the six templates reproduce `labSnippets` output byte for byte in 21 scenarios; Sample list and Sampling timetable lose their "Also add NMR / GPC / DLS / Results" toggles (methods are added afterwards with the Analysis table snippet); answers are trimmed — the toggles call the method engine, which a token cannot do — (user, 2026-10-09; `docs/plans/snippet-token-templates.md`)
 - 2026-10-09 — Snippets as token templates: header block in the file lists the questions, body uses `{{tokens}}`, plugin fills at Alt+S; first build = matrix, samples, timetable, blank, column, rt; computed snippets stay in `labSnippets.js`; Phase 4 split of `labSnippets.js` dropped — (user, `/phase-plan`; `docs/plans/snippet-token-templates.md`)
 - 2026-10-08 — Make my own copy: button on kit snippet rows in Manage files…, saves a plain Markdown copy (snippet run once with empty answers) as a user file; kit original stays managed; the `labSnippets.js` split is a later phase after the button — (user, `/phase-plan`; `docs/plans/make-my-own-copy.md`)
