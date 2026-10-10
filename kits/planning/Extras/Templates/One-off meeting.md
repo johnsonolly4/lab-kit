@@ -28,7 +28,9 @@ cssclasses:
   - vt
 ---
 
-`BUTTON[go-deck, go-meetings]`
+```vault-card
+show: meeting-bar
+```
 
 > [!focus] To discuss
 > - 

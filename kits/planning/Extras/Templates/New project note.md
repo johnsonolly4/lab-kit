@@ -26,3 +26,5 @@ const hasHub = hubName && app.vault.getAbstractFileByPath(`${folder}/${hubName}.
   - vt
 ---
 
+<% hasHub ? "```vault-card\nshow: back-to-project\n```\n" : "" %>
+

@@ -19,19 +19,13 @@ cssclasses:
 ---
 
 ```vault-card
-show: back-to-hub
+show: hub-bar
 ```
 
-**Status:** `INPUT[inlineSelect(option(Active), option(Paused), option(Done)):Status]`
-
-**Deadline:** `INPUT[datePicker:deadline]`
+**Status:** `INPUT[inlineSelect(option(Active), option(Paused), option(Done)):Status]`  **Deadline:** `INPUT[datePicker:deadline]`
 
 ```vault-card
 show: deadline
-```
-
-```vault-card
-show: project-actions
 ```
 
 > [!focus] Goal

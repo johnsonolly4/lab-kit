@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, folderHub, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -188,6 +188,27 @@ class BlockView extends MarkdownRenderChild {
         actions.createEl("button", { text: "Extra meeting now" }).addEventListener("click", () => void this.commands()?.newMeeting(series, true));
         return;
       }
+      case "topic-index": {   // the Knowledge index: every topic with its notes, empty topics included
+        if (!this.need(box, f.knowledge)) return;
+        const topics = topicIndex(this.owner.notesIn(f.knowledge), f.knowledge);
+        if (!topics.length) { box.createDiv({ cls: "vt-muted", text: "No topics yet: press New topic hub." }); return; }
+        const ul = box.createEl("ul");
+        for (const t of topics) {
+          const li = ul.createEl("li");
+          this.link(li, t.hub.path, t.hub.text);
+          if (t.notes.length) this.list(li, t.notes);
+          else li.createSpan({ cls: "vt-muted", text: " (no notes yet)" });
+        }
+        return;
+      }
+      case "hub-bar": this.hubBar(box); return;
+      case "meeting-bar": this.meetingBar(box); return;
+      case "back-to-project": {   // on a note inside a project's folder: a link to that project's hub
+        const up = folderHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
+        if (up) this.link(box, up.path, `\u2190 ${up.name}`, "vt-back");
+        else box.createDiv({ cls: "vt-muted", text: "No project hub found for this note." });
+        return;
+      }
       case "project-todos":   // on a project hub: its open to-dos, 10 rows with Show all
       case "project-notes": {   // on a project hub: the other notes in its folder, 10 rows with Show all
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
@@ -252,8 +273,38 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
+  }
+
+  /** The top row of a hub: the link to the hub one folder up and that kind of hub's buttons, on one line. */
+  private hubBar(box: HTMLElement): void {
+    const file = this.app.vault.getFileByPath(this.sourcePath);
+    if (!file) return;
+    const kind = this.owner.rec(file).fm.kind;
+    const bar = box.createDiv({ cls: "vt-hub-bar" });
+    const up = parentHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
+    if (up) this.link(bar, up.path, `\u2190 ${up.name}`, "vt-back");
+    const button = (text: string, run: (c: PlanningCommands) => void): void => {
+      bar.createEl("button", { text }).addEventListener("click", () => { const c = this.commands(); if (c) run(c); });
+    };
+    if (kind === "project") { button("New to-do", c => void c.newTodo(file.basename)); button("New note", c => void c.newProjectNote(file.parent?.path)); }
+    else if (kind === "hub") button("New concept", c => void c.newConcept(file.parent?.path));
+    else if (kind === "meeting-series") {
+      const series = this.owner.commands()?.seriesList().find(x => x.path === this.sourcePath);
+      if (!series) { box.createDiv({ cls: "vt-muted", text: "This series has a wrong property: Check setup names it." }); return; }
+      button("Meeting deck", c => void c.openDeck(series));
+      if (series.interval === ONCE) button("New one-off meeting", c => void c.newOneOff());
+      else { button("New meeting note", c => void c.newMeeting(series)); button("Extra meeting now", c => void c.newMeeting(series, true)); }
+    } else box.createDiv({ cls: "vt-muted", text: "hub-bar belongs on a project, topic or meeting series hub." });
+  }
+
+  /** The top row of a meeting note: the link to its series hub (the One-off hub for a one-off) and Meeting deck for that series. */
+  private meetingBar(box: HTMLElement): void {
+    const bar = box.createDiv({ cls: "vt-hub-bar" });
+    const up = folderHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
+    if (up) this.link(bar, up.path, `\u2190 ${up.name}`, "vt-back");
+    bar.createEl("button", { text: "Meeting deck" }).addEventListener("click", () => void this.commands()?.openDeck());
   }
 
   private goto(box: HTMLElement): void {

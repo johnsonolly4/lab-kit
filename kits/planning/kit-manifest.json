@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "0.5.2",
-      "sha256": "a0b4903da2141d9e93653a2df39f457b2d7a55805fc5888702fcbb257fe7df65",
+      "sha256": "9c6fd7e406bcefb4a2977b9cfc5d8baa5e0722ffda49422f6177fbf9c9ca4323",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -188,7 +188,7 @@
       "role": "knowledge",
       "path": "Knowledge index.md",
       "version": "0.5.2",
-      "sha256": "0686d9a259c4cfbfac721d851983206cac5970aa9b33058bcc6cdc7abe632c97",
+      "sha256": "670767a5e515172134448411dcb8a4599295c98776dd5e2e01da7834a52e0924",
       "renamedFrom": [],
       "desc": "Knowledge notes by topic",
       "policy": "keep"
@@ -285,7 +285,7 @@
       "role": "templates",
       "path": "Meeting series.md",
       "version": "0.5.2",
-      "sha256": "08f8ef78bcf6d384f7e1b472f07d7515c09476f11c189a9a26555d3fd851a355",
+      "sha256": "83ec2e63a02183c0f4f1bb0a7f3bd3a27602ed71277ccaa9af301f5112dc6b76",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },
@@ -320,7 +320,7 @@
       "role": "templates",
       "path": "New project note.md",
       "version": "0.5.2",
-      "sha256": "e8cb916d6ace89439d8932ed4127a95675842b434b3830e6b705e6c2746acf4d",
+      "sha256": "b42394461522eae474d3eb83ac23698ab57ad6b8f269b163390cd97b98d0f3d0",
       "renamedFrom": [],
       "desc": "New note inside a project"
     },
@@ -331,7 +331,7 @@
       "role": "templates",
       "path": "New topic hub.md",
       "version": "0.5.2",
-      "sha256": "76989465d081b73c03d28b580a893e95bac0e269c2be7577fd5d02cfbf7ab854",
+      "sha256": "9cac42f3f3a87f453df14acb6b767f9d64e9cf13e6357b92035fdab21d98b07c",
       "renamedFrom": [],
       "desc": "New topic hub: the index note of a topic folder"
     },
@@ -342,7 +342,7 @@
       "role": "templates",
       "path": "One-off meeting.md",
       "version": "0.5.2",
-      "sha256": "b0a91a9101305667f3a72d2404b66854fce25b1075b8d3b1c5b8824b2b4a301b",
+      "sha256": "045db89c51312643bf5aa98da0c2f0f90cd307dba1e71c873de0e7e7aa411372",
       "renamedFrom": [],
       "desc": "New one-off meeting note (a smaller meeting note: To discuss, Flagged, Notes)"
     },
@@ -353,7 +353,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "0.5.2",
-      "sha256": "61797faefbb53c2de1a2f7ddee1e8e5717b343ce6ae3a6561de10c7c504805a2",
+      "sha256": "e70d1dccc2cf5cb4dbe84813804f802c286b527fd87330379bcb2440fd765605",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },

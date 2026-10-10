@@ -223,6 +223,9 @@ const BUTTON_COMMANDS: Record<string, string> = {
   "new weekly meeting": "lab-kit:new-meeting", "new to-do": "lab-kit:new-todo",
 };
 
+/** The block a project note starts with: a link to its project's hub (the New project note template writes the same). */
+const BACK_TO_PROJECT = "```vault-card\nshow: back-to-project\n```";
+
 export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   const groups: TidyGroup[] = [];
   const skipped: TidyReported = { id: "left-alone", title: "Left as they are", detail: "A rule matched, but changing the note would mean guessing.", items: [] };
@@ -324,7 +327,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
     // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists.
     const hubs = new Set(notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path));
-    const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub; notes without the vt class get it.", changes: [] };
+    const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub; notes without the vt class get it; a back link to the project hub is added at the top of the page (a page change, shown as such).", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, pf) && !hubs.has(x.path))) {
       const name = n.path.slice(pf.length + 1).split("/")[0];
       if (!name || !hubs.has(`${pf}/${name}/${name}.md`) || ["todo", "meeting", "literature", "hub", "project"].includes(kindOf(n.path))) continue;
@@ -332,9 +335,13 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       const item = ["project:", `  - "[[${name}]]"`];
       const linked = p && values(p).length ? fm : p ? [...fm.slice(0, p.start), ...item, ...fm.slice(p.end)] : [...fm, ...item];
       const after = withClasses(linked, ["vt"]);
-      if (after.join("\n") === fm.join("\n")) continue;
-      g2.changes.push({ path: n.path, before: fm.join("\n"), after: after.join("\n") });
-      put(n.path, after.join("\n"));
+      if (after.join("\n") !== fm.join("\n")) {
+        g2.changes.push({ path: n.path, before: fm.join("\n"), after: after.join("\n") });
+        put(n.path, after.join("\n"));
+      }
+      // a link back to the project's hub at the top of the page, like the New project note template writes
+      const body = split(effective.get(n.path) ?? "")?.body;
+      if (body !== undefined && !body.includes("show: back-to-project")) g2.changes.push({ path: n.path, before: body, after: `\n\n${BACK_TO_PROJECT}\n${body.replace(/^\n+/, "\n")}`, body: true });
     }
     if (g2.changes.length) groups.push(g2);
 

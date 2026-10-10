@@ -12,7 +12,7 @@ import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitIte
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
 import { inFolder, type NoteRec } from "./lists";
-import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, WEEKDAYS, type Series } from "./meetings";
+import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
@@ -104,6 +104,14 @@ export class PlanningCommands {
       if ("series" in read) out.push(read.series);
     }
     return out.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  /** Mon to Fri; "Sat / Sun…" opens the weekend. The day as 0 (Sun) to 6 (Sat), or null on Esc. */
+  private async askDay(): Promise<number | null> {
+    const weekdays = [1, 2, 3, 4, 5], WEEKEND = -1;
+    const first = await pick(this.app, [...weekdays.map(d => WEEKDAYS[d]), "Sat / Sun…"], [...weekdays, WEEKEND], "On which day?");
+    if (first !== WEEKEND) return first;
+    return pick(this.app, [WEEKDAYS[6], WEEKDAYS[0]], [6, 0], "On which day?");
   }
 
   /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
@@ -212,7 +220,7 @@ export class PlanningCommands {
       }
       interval = everyWeeks(n);
     }
-    const day = await pick(this.app, [...WEEKDAYS], WEEKDAYS.map((_, i) => i), "On which day?");
+    const day = await this.askDay();
     if (day === null) return;
     let start = ymd(firstDefaultDate(day, new Date()));
     for (let date = await ask(this.app, "Date of the first meeting (YYYY-MM-DD)", start); ; date = await ask(this.app, "Date of the first meeting (YYYY-MM-DD)", date ?? "")) {
@@ -413,8 +421,11 @@ export class PlanningCommands {
   }
 
   /** Opens the deck set in the meetings hub (`deck_mac` / `deck_windows`) with this computer's default app. */
-  private async openDeck(): Promise<void> {
-    const series = await this.pickSeries();
+  async openDeck(given?: Series): Promise<void> {
+    // The series comes from the note you are in (a series hub, or a meeting note's `series`); only elsewhere is it asked
+    const file = this.app.workspace.getActiveFile();
+    const here = file ? seriesOfNote(this.seriesList(), file.path, this.app.metadataCache.getFileCache(file)?.frontmatter ?? {}) : undefined;
+    const series = given ?? here ?? await this.pickSeries();
     if (!series) return;
     const hub = this.app.vault.getFileByPath(series.path);
     const fm = (hub && this.app.metadataCache.getFileCache(hub)?.frontmatter) || {};

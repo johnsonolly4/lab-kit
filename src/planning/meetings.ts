@@ -136,3 +136,11 @@ export const nextMeetingLines = (rows: NextMeeting[], today: Date): ListLine[] =
   badges: [ymd(r.date) === ymd(today) ? { text: "today", cls: "vt-badge vt-today" } : { text: `· ${WEEKDAYS[r.date.getDay()]} ${dayMonth(r.date)}`, cls: "vt-muted" },
     { text: r.interval, cls: "vt-muted" }],
 }));
+
+/** The series a note belongs to: a series hub is its own series, a meeting note has it in `series` (a link). Used to open the right deck without asking. */
+export function seriesOfNote<T extends { name: string; path: string }>(all: T[], path: string, fm: Record<string, unknown>): T | undefined {
+  const own = all.find(s => s.path === path);
+  if (own) return own;
+  const name = linkTarget(fm.series);
+  return name ? all.find(s => s.name === name.split("/").pop()) : undefined;
+}

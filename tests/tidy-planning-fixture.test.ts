@@ -24,7 +24,7 @@ describe("Tidy up notes on the old-style planning fixture", () => {
 
   it("lists each old note under its rule, and writes nothing", () => {
     expect(paths("project-properties")).toEqual(["02 Projects/Alpha/Alpha.md"]);
-    expect(paths("project-notes")).toEqual(["02 Projects/Alpha/Method notes.md"]);
+    expect(paths("project-notes")).toEqual(["02 Projects/Alpha/Method notes.md", "02 Projects/Alpha/Method notes.md"]);   // the properties, then the back link on the page
     expect(paths("project-hub-missing")).toEqual(["02 Projects/Beta/Beta.md"]);
     expect(paths("todo-properties")).toEqual(["00 Planning/To-dos/Order vials.md"]);
     expect(paths("meetings")).toContain("08 Meetings/Group meeting/Group meeting.md");

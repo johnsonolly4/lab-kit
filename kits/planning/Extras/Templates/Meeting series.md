@@ -24,13 +24,7 @@ template: <% JSON.stringify(vt.template || "") %>
 ---
 
 ```vault-card
-show: back-to-hub
-```
-
-`BUTTON[go-deck, new-meeting]`
-
-```vault-card
-show: series-actions
+show: hub-bar
 ```
 
 > [!goto]- Deck location (one path per computer)

@@ -12,11 +12,7 @@ cssclasses:
 ---
 
 ```vault-card
-show: back-to-hub
-```
-
-```vault-card
-show: topic-actions
+show: hub-bar
 ```
 
 What is this topic about? Write it here.

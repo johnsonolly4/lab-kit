@@ -114,6 +114,17 @@ export function parentHub(notes: NoteRec[], hubPath: string): NoteRec | null {
   return siblings.find(n => n.fm.kind === "hub") ?? siblings.find(n => n.name.toLowerCase() === named) ?? null;
 }
 
+/** The hub of a note's own folder (a project note's project hub): the note named like the folder or a `kind: project | hub | meeting-series` note in it; else the note its `project` property links to. null for the hub itself. */
+export function folderHub(notes: NoteRec[], path: string): NoteRec | null {
+  const me = notes.find(n => n.path === path);
+  if (!me) return null;
+  const named = unnumbered(me.folder.split("/").pop() ?? "").toLowerCase();
+  const hub = notes.find(n => n.folder === me.folder && n.path !== path && (n.name.toLowerCase() === named || ["project", "hub", "meeting-series"].includes(String(n.fm.kind))));
+  if (hub) return hub;
+  const linked = linkTarget(Array.isArray(me.fm.project) ? me.fm.project[0] : me.fm.project);
+  return (linked && notes.find(n => n.name === linked.split("/").pop())) || null;
+}
+
 export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; more: number; open: number; papers: number; notes: number; folder: string }
 
 /** The open to-dos of one project hub: overdue first, then Mon → Fri → Backlog → other. */
@@ -135,6 +146,20 @@ export function projectNotes(notes: NoteRec[], hub: NoteRec): ListLine[] {
   return notes.filter(n => n.path !== hub.path && inFolder(n.path, hub.folder))
     .sort((a, b) => b.mtime - a.mtime || a.name.localeCompare(b.name))
     .map(n => ({ path: n.path, text: n.name, badges: [{ text: `· ${dayMonth(new Date(n.mtime))}`, cls: "vt-muted" }] }));
+}
+
+/** The Knowledge index: every topic (a folder directly under Knowledge) with its hub and the notes in it. A topic with no notes yet is listed too. */
+export interface TopicLine { hub: ListLine; notes: ListLine[] }
+export function topicIndex(notes: NoteRec[], knowledge: string): TopicLine[] {
+  const root = knowledge.replace(/\/+$/, "");
+  const direct = (n: NoteRec): boolean => n.folder.startsWith(root + "/") && !n.folder.slice(root.length + 1).includes("/");
+  const isHub = (n: NoteRec): boolean => n.fm.kind === "hub" || n.name === n.folder.split("/").pop();
+  return notes.filter(n => direct(n) && isHub(n)).sort((a, b) => a.name.localeCompare(b.name))
+    .map(h => ({
+      hub: { path: h.path, text: h.name, badges: [] },
+      notes: notes.filter(n => n.path !== h.path && inFolder(n.path, h.folder) && !(direct(n) && isHub(n)))
+        .sort((a, b) => a.name.localeCompare(b.name)).map(n => ({ path: n.path, text: n.name, badges: [] })),
+    }));
 }
 
 /** How many rows a project hub's To-dos and Notes tiles show before "Show all". */

@@ -44,17 +44,16 @@ describe("hub pages from the templates", () => {
     expect(out.skipped).toEqual([]);
     const project = m.get("02 Projects/Polymers/Polymers.md")!;
     expect(project.startsWith(PROJECT_OLD.slice(0, PROJECT_OLD.indexOf("\n---\n", 4) + 5))).toBe(true);
-    expect(project).toContain("show: back-to-hub");
-    expect(project).toContain("show: project-actions");
+    expect(project).toContain("show: hub-bar");
     expect(project).toContain("[goal:: Make polymers]");
     expect(project).toContain("## Related\n- [[My paper]]\n- my own line");
     const topic = m.get("06 Knowledge/NMR/NMR.md")!;
     expect(topic).toContain("NMR is how we check purity.");
     expect(topic).not.toContain("What is this topic about?");
-    expect(topic).toContain("show: topic-actions");
+    expect(topic).toContain("show: hub-bar");
     expect(topic).toContain('FROM "06 Knowledge/NMR"');
     const series = m.get("08 Meetings/Group/Group.md")!;
-    expect(series).toContain("show: series-actions");
+    expect(series).toContain("show: hub-bar");
     expect(series).toContain('FROM "08 Meetings/Group"');
     expect(series).toContain("interval: weekly");   // properties kept
     expect(backups.sort()).toEqual(["02 Projects/Polymers/Polymers.md", "06 Knowledge/NMR/NMR.md", "08 Meetings/Group/Group.md"]);

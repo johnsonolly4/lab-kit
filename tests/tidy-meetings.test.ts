@@ -205,10 +205,24 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
     m.set("02 Projects/Alpha/Task.md", "---\nkind: todo\n---\n");
     m.set("02 Projects/NoHub/Orphan.md", "---\ncssclasses:\n  - vt\n---\n");
     const g = group(c(), m, "project-notes")!;
-    expect(g.changes.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md"]);
-    expect(g.changes.find(x => x.path.endsWith("Linked.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
-    expect(g.changes.find(x => x.path.endsWith("Idea.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"');
-    expect(g.changes.find(x => x.path.endsWith("Empty.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
+    const props = g.changes.filter(x => !x.body);
+    expect(props.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md"]);
+    // every project note (not the hub, to-dos, orphans) also gets the back link to its project hub at the top of the page
+    const pages = g.changes.filter(x => x.body);
+    expect(pages.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Has.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md"]);
+    expect(pages.find(x => x.path.endsWith("Deep.md"))!.after).toBe("\n\n```vault-card\nshow: back-to-project\n```\n\njust text\n");
+    expect(props.find(x => x.path.endsWith("Linked.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
+    expect(props.find(x => x.path.endsWith("Idea.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"');
+    expect(props.find(x => x.path.endsWith("Empty.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
+  });
+  it("applying the project-notes rule writes the properties and the back link on the page", async () => {
+    const m = vault();
+    m.set("02 Projects/Alpha/Idea.md", "---\ncssclasses:\n  - vt\n---\nMy idea.\n");
+    const g = group(c(), m, "project-notes")!;
+    const out = await applyTidy(io(m), selectChanges({ groups: [g], reported: [] }, new Set(["project-notes"])));
+    expect(out.skipped).toEqual([]);
+    expect(m.get("02 Projects/Alpha/Idea.md")).toBe('---\ncssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"\n---\n\n```vault-card\nshow: back-to-project\n```\n\nMy idea.\n');
+    expect(group(c(), m, "project-notes")).toBeUndefined();   // nothing left to do
   });
   it("a project folder with notes but no hub gets a new hub, made from the template text when given", async () => {
     const m = vault();
