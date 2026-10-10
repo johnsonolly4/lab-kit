@@ -181,3 +181,22 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
   });
 });
 
+describe("Tidy up notes: chemical notes", () => {
+  const mig = { id: "chemical-class", title: "Chemical notes: add the Chemical class property", scope: "chemical" as const, ops: [{ op: "add-property" as const, name: "Chemical class", value: "" }] };
+  const c = (): TidyContext => ({ ...ctx(), chemicalFolder: "05 Chemicals/Chemicals", migrations: [mig] });
+  it("adds only the Chemical class property, to chemical notes that lack it", () => {
+    const m = new Map([
+      ["05 Chemicals/Chemicals/Toluene.md", "---\nType: Chemical database\nDensity: 0.867\n---\n"],
+      ["05 Chemicals/Chemicals/Styrene.md", "---\nChemical class: monomer\n---\n"],
+      ["03 Lab Book/Notes/0001 - A.md", "---\nStatus: Planned\n---\n"],
+    ]);
+    const g = group(c(), m, "chemical-class")!;
+    expect(g.changes.map(x => x.path)).toEqual(["05 Chemicals/Chemicals/Toluene.md"]);
+    expect(g.changes[0].after).toBe("Type: Chemical database\nDensity: 0.867\nChemical class:");
+  });
+  it("is off without a Chemical folder", () => {
+    const m = new Map([["05 Chemicals/Chemicals/Toluene.md", "---\nType: x\n---\n"]]);
+    expect(group({ ...c(), chemicalFolder: "" }, m, "chemical-class")).toBeUndefined();
+  });
+});
+

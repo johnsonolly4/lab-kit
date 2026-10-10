@@ -59,7 +59,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
   const migrations: Migration[] = [host.managed, ...(planningOn && host.planning ? [host.planning] : [])].flatMap(k => k.bundle.manifest.migrations ?? []);
   const contract = [host.kit.labFolder, host.kit.chemicalFolder, ...(planningOn ? (Object.keys(pf) as PlanningRole[]).map(r => pf[r]) : []), "Extras"].map(top).filter(Boolean);
   return {
-    labFolder: host.kit.labFolder, knowledgeFolder: planningOn ? pf.knowledge : "", inboxFolder: planningOn ? pf.inbox : "",
+    labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder, knowledgeFolder: planningOn ? pf.knowledge : "", inboxFolder: planningOn ? pf.inbox : "",
     contractFolders: planningOn ? [...new Set(contract)] : [],
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,

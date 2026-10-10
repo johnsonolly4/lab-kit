@@ -71,8 +71,9 @@ export class BoardColours {
       let bar = prop.querySelector<HTMLProgressElement>("progress.lab-kit-card-bar");
       if (!done) { bar?.remove(); continue; }
       if (!bar) bar = prop.createEl("progress", { cls: "lab-kit-card-bar" });
-      if (bar.max !== done[1]) bar.max = done[1];
-      if (bar.value !== done[0]) bar.value = done[0];
+      // Always write both attributes: a <progress> without a `value` attribute is an "unknown amount" bar that animates instead of filling
+      if (bar.getAttribute("max") !== String(done[1])) bar.setAttribute("max", String(done[1]));
+      if (bar.getAttribute("value") !== String(done[0])) bar.setAttribute("value", String(done[0]));
     }
   }
 

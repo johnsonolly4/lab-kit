@@ -17,7 +17,7 @@ export type MigrationOp =
 export interface Migration {
   id: string; title: string;
   /** Which notes it looks at: the Lab notes folder or the Knowledge folder (the folders in the settings), or the whole vault (moves). */
-  scope: "lab" | "knowledge" | "vault";
+  scope: "lab" | "knowledge" | "chemical" | "vault";
   /** Only notes whose name matches this expression (without `.md`), e.g. numbered lab notes. */
   nameMatch?: string;
   /** Apply the rest only when the first op changed the note. */
@@ -27,6 +27,8 @@ export interface Migration {
 
 export interface TidyContext {
   labFolder: string; knowledgeFolder: string; inboxFolder: string;
+  /** The Chemical folder; missing or empty = the chemical rule is off. */
+  chemicalFolder?: string;
   /** Top-level folders notes belong in. Empty = don't report notes outside the contract. */
   contractFolders: string[];
   /** Notes allowed at the vault root (the homepage). */
@@ -187,7 +189,7 @@ function isHubName(path: string): boolean {
 /** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js.) */
 export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
   if (!isNote(path) || hidden(path)) return false;
-  return readAll || inFolder(path, ctx.labFolder) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
+  return readAll || inFolder(path, ctx.labFolder) || (!!ctx.chemicalFolder && inFolder(path, ctx.chemicalFolder)) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
     || (!!ctx.meetings && (inFolder(path, ctx.meetings.folder) || inFolder(path, ctx.meetings.todos)))
     || (!!ctx.projectsFolder && inFolder(path, ctx.projectsFolder))
     || (ctx.hubFolders ?? []).some(f => parentOf(path) === f);
@@ -222,7 +224,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       if (g.changes.length) groups.push(g);
       continue;
     }
-    const folder = mig.scope === "lab" ? ctx.labFolder : ctx.knowledgeFolder;
+    const folder = mig.scope === "lab" ? ctx.labFolder : mig.scope === "chemical" ? ctx.chemicalFolder ?? "" : ctx.knowledgeFolder;
     const name = mig.nameMatch ? new RegExp(mig.nameMatch) : null;
     for (const n of notes.filter(x => inFolder(x.path, folder) && (!name || name.test(baseName(x.path))))) {
       const r = applyMigration(effective.get(n.path) ?? "", mig);

@@ -236,7 +236,10 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
   border-top: 3px solid rgb(var(--lab-kit-col, 0, 0, 0));
 }
 
-/* Lab book cards: the progress property (3/7) gets a bar (src/kit/board-colours.ts); an empty one is hidden */
+/* Lab book cards: the progress property (3/7) gets a bar that fills from the left as boxes are ticked (src/kit/board-colours.ts); an empty one is hidden */
 .bases-kanban-card [data-property="note.progress"] .bases-kanban-card-label { display: none; }
 .bases-kanban-card [data-property="note.progress"].lab-kit-no-progress { display: none; }
-.bases-kanban-card progress.lab-kit-card-bar { display: block; width: 100%; height: 6px; margin-top: 4px; accent-color: var(--interactive-accent); }
+.bases-kanban-card progress.lab-kit-card-bar { display: block; appearance: none; -webkit-appearance: none; width: 100%; height: 6px; margin-top: 4px; border: 0; border-radius: 3px; background: var(--background-modifier-border); overflow: hidden; }
+.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-bar { background: var(--background-modifier-border); border-radius: 3px; }
+.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-value { background: var(--interactive-accent); border-radius: 3px; transition: width 0.2s; }
+.bases-kanban-card progress.lab-kit-card-bar::-moz-progress-bar { background: var(--interactive-accent); border-radius: 3px; }

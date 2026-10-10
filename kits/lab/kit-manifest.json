@@ -83,6 +83,18 @@
           "value": ""
         }
       ]
+    },
+    {
+      "id": "chemical-class",
+      "title": "Chemical notes: add the Chemical class property",
+      "scope": "chemical",
+      "ops": [
+        {
+          "op": "add-property",
+          "name": "Chemical class",
+          "value": ""
+        }
+      ]
     }
   ],
   "files": [
