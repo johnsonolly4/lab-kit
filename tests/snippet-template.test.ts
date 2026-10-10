@@ -170,6 +170,11 @@ describe("fillTemplate", () => {
     const e = envFor(COLUMN_NOTE + SAMPLING_NOTE, TOLUENE);
     assert.strictEqual(fillTemplate("{{linked:column!B10}}|{{linked:nope!B1}}|{{next-letter:sampling}}|{{note-number:s.Density}}", { s: "toluene" }, e), "=column!B10||C|0.867");
     assert.strictEqual(fillTemplate("{{note-number:s.Density}}", { s: "" }, e), "");
+    // live-prop: a formula that follows the note; empty without a note or without that number
+    assert.strictEqual(fillTemplate("{{live-prop:s.Density@b5}}", { s: "toluene" }, e), '=PROP(B5,"Density")');
+    assert.strictEqual(fillTemplate("{{live-prop:s.Density@B5}}", { s: "" }, e), "");
+    assert.strictEqual(fillTemplate("{{live-prop:s.Boiling@B5}}", { s: "nothing" }, e), "");
+    assert.strictEqual(fillTemplate("{{density|live-prop:s.Density@B5}}", { density: "0.9", s: "toluene" }, e), "0.9");   // a typed value wins
   });
   it("defaultAnswers fills computed tokens in a default", () => {
     const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "l", label: "L", value: "{{next-letter:sampling}}" }] }));

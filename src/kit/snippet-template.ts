@@ -133,7 +133,8 @@ type Alt =
   | { k: "table"; bases: Alt[]; suffix: string }
   | { k: "linked"; table: string; ref: string }
   | { k: "nextLetter"; table: string }
-  | { k: "noteNumber"; field: string; property: string };
+  | { k: "noteNumber"; field: string; property: string }
+  | { k: "liveProp"; field: string; property: string; cell: string };
 
 type Node =
   | { t: "text"; s: string }
@@ -201,6 +202,7 @@ function parseAlt(src: string): Alt {
   if ((m = /^linked:([^!\s]+)!(\S+)$/.exec(s))) return { k: "linked", table: m[1], ref: m[2] };
   if ((m = /^next-letter:(\S+)$/.exec(s))) return { k: "nextLetter", table: m[1] };
   if ((m = /^note-number:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteNumber", field: m[1], property: m[2].trim() };
+  if ((m = /^live-prop:([A-Za-z_][\w-]*)\.([^@"]+)@([A-Za-z]{1,3}\d+)$/.exec(s))) return { k: "liveProp", field: m[1], property: m[2].trim(), cell: m[3].toUpperCase() };
   if (NAME.test(s)) return { k: "ref", name: s };
   throw new TemplateError(`Unknown token {{${s}}}.`);
 }
@@ -240,7 +242,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
   const check = (a: Alt, tag: string) => {
     if (a.k === "ref" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
-    if (a.k === "noteNumber") field(a.field, tag);
+    if (a.k === "noteNumber" || a.k === "liveProp") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
   };
   for (const tok of tokenize(src)) {
@@ -354,6 +356,10 @@ class Filler {
       case "noteNumber": {
         const note = this.answers[a.field] ?? "";
         return note ? this.env.noteProperty(note, a.property) : "";
+      }
+      case "liveProp": {   // a formula that reads the property again whenever the note changes; empty when the note has no such number now
+        const note = this.answers[a.field] ?? "";
+        return note && this.env.noteProperty(note, a.property) ? `=PROP(${a.cell},"${a.property}")` : "";
       }
     }
   }

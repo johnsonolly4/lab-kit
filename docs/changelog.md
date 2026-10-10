@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Flow column prep: the solvent density follows the chemical note**: when you pick a solvent and leave the density box empty, the Solvent density cell holds a formula that reads the Density of that chemical's note (it updates when the note changes); type a density and your number is used. New snippet token `{{live-prop:key.Property@Cell}}` (see `docs/snippet-syntax.md`). Tables you already made keep their plain number. Not seen in Obsidian
 - **Tidy up notes: tick single notes**: every note line has its own box (the rule's box ticks or unticks them all and shows a dash when only some are ticked); Change notes… carries out what is ticked
 - **New chemical asks the chemical name first**, then the class, and makes the note with that name
 - **Snippet icons**: a snippet whose header lists two icons ("cylinder, database") shows one name in the box, not both

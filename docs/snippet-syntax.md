@@ -45,6 +45,7 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{linked:column!B10}}` | the formula for `column!B10` (an equals sign in front of it) when the note has a `column` table with rows, else empty |
 | `{{next-letter:sampling}}` | the first sample letter not used in the note's `sampling` tables (use as a field's default) |
 | `{{note-number:key.Density}}` | a number from a property of the chemical note named by field `key`, else empty |
+| `{{live-prop:key.Density@B5}}` | a live formula for the same property: the cell stays up to date with the chemical note. `B5` is the cell that holds the note's name; empty when the note has no such number |
 
 A field with `suggest: codes` asks for sample codes the way the method snippets do (see "Sample codes" below): its box is filled with the codes of the note's tables and, with more than one table, a **Codes from** choice follows it. Give it `type: textarea`; the answer reaches the template as the codes joined with `, `, so `{{#each codes}}…{{/each}}` works. The key `<key>_from` is reserved for the choice. `class` belongs to `suggest: chemicals` only.
 

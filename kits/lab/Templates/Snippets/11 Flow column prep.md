@@ -15,7 +15,7 @@ fields:
     class: solvent
   - key: density
     label: Solvent density (g/mL)
-    hint: blank = from the solvent's note, or fill in later
+    hint: blank = follows the solvent note's Density (or fill in later)
   - key: dead
     label: End-fitting dead volume (mL)
     hint: blank = fill in later
@@ -35,7 +35,7 @@ icon: cylinder
 | Packed column (beads, plugs, glass wool) (g) |  |
 | Packed + full of solvent (g) |  |
 | Solvent | {{solvent}} |
-| Solvent density (g/mL) | {{density|note-number:solvent.Density}} |
+| Solvent density (g/mL) | {{density|live-prop:solvent.Density@B5}} |
 | End-fitting dead volume (mL) | {{dead}} |
 | Mass of beads (g) | =B3-B2 |
 | Mass of solvent (g) | =B4-B3 |
