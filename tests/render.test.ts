@@ -72,6 +72,12 @@ describe("render", () => {
     input.dispatch("input");
     assert.deepStrictEqual(marked(a), ["0|0", "1|0"]);
     assert.deepStrictEqual(marked(b), ["1|1"]);
+    // each reference gets its own colour (marks carry is-ref-N), the same reference twice shares one
+    const colourOf = (e: CalcEntry, k: string): string[] => [0, 1, 2, 3, 4, 5].map(i => `is-ref-${i}`).filter(c => e.cells!.get(k)!.classList.contains(c));
+    assert.deepStrictEqual([colourOf(a, "1|0"), colourOf(b, "1|1"), colourOf(a, "0|0")], [["is-ref-0"], ["is-ref-1"], ["is-ref-2"]]);
+    // the table shows A1 labels while a formula is typed, and drops them again
+    assert.ok(a.el.querySelector("table").classList.contains("is-labelling"));
+    assert.ok(a.el.querySelectorAll(".lab-kit-tmp-label").length > 0);
     input.value = "=A2";                                  // typing on: the old marks go
     input.dispatch("input");
     assert.deepStrictEqual(marked(a), ["1|0"]);
@@ -85,6 +91,8 @@ describe("render", () => {
     input.dispatch("keydown", { key: "Escape" });         // discard: marks gone
     await new Promise(r => setTimeout(r, 10));
     assert.deepStrictEqual(marked(a), []);
+    assert.strictEqual(a.el.querySelectorAll(".lab-kit-tmp-label").length, 0);
+    assert.ok(!a.el.querySelector("table").classList.contains("is-labelling"));
     assert.deepStrictEqual(marked(b), []);
   });
 

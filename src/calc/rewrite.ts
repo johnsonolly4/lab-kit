@@ -8,7 +8,7 @@ export interface Ref { qualText: string | null; qual: string | null; a: RefEnd; 
 /* ---- Rewriting references inside formula text (row insert/delete, fill-down) ---- */
 const REF_AT = /^(?:('(?:[^']+)'|[A-Za-z_][\w.-]*)!)?(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?![\w(!])(?::(?:('(?:[^']+)'|[A-Za-z_][\w.-]*)!)?(\$?)([A-Za-z]{1,3})(\$?)(\d+)(?![\w(!]))?/;
 /** Calls fn({qual, a:{colAbs,col,rowAbs,row}, b?}) for each ref/range; fn returns new text or null to keep. */
-export function rewriteRefs(formula: string, fn: (ref: Ref) => string | null): string {
+export function rewriteRefs(formula: string, fn: (ref: Ref, at: number, len: number) => string | null): string {
   let out = "", i = 0;
   while (i < formula.length) {
     const ch = formula[i];
@@ -27,7 +27,7 @@ export function rewriteRefs(formula: string, fn: (ref: Ref) => string | null): s
           a: { colAbs: m[2] === "$", col: colToIndex(m[3]), rowAbs: m[4] === "$", row: parseInt(m[5], 10) - 1 },
           b: m[8] ? { colAbs: m[7] === "$", col: colToIndex(m[8]), rowAbs: m[9] === "$", row: parseInt(m[10], 10) - 1 } : null
         };
-        const rep = fn(ref);
+        const rep = fn(ref, i, m[0].length);
         out += rep == null ? m[0] : rep;
         i += m[0].length; continue;
       }

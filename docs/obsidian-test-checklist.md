@@ -220,3 +220,7 @@
 - [ ] Sort inbox: the picker is a bar at the bottom with chips (todo, project…); the note text above is readable and scrolls; Esc / a click on a chip works; phone width unchanged
 - [ ] Check setup: a folder-template row for the Chemical folder with a Fix (Templater needs the folder template mode); a new note by hand in the Chemical folder starts the Chemical database template
 - [ ] Flow column prep: dead volume starts empty and the table ends with a Solvent row
+
+- [ ] Calc table, click a cell and type `=A2*B3+A2`: A2 and B3 are outlined and shaded in two colours, the same colours show on the references in the cell (cursor, selection and scrolling a long formula look right), A B C and 1 2 3 labels appear while you type and go on Enter / Esc; a reference into another table shades that table's cell
+- [ ] Same in the table's text (Source mode and Live Preview with the cursor in the block): the cursor in a formula cell shades the cells it points at and colours the references; a plain cell or a line outside a table marks nothing; a long note stays fast
+\n

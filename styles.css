@@ -39,6 +39,32 @@
 /* Cells the formula being typed points at: a solid ring in the accent colour (the amber ring above is for empty inputs, the dashed outline for hover) */
 .lab-kit td.is-ref, .lab-kit th.is-ref { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
 
+/* One colour per reference of the formula being typed (src/calc/refs.ts colouredRefs): the cell outline, the reference in the input, the cells in the table text (src/calc/text-refs-cm.ts) */
+.lab-kit, .cm-editor { --lab-kit-ref-0: var(--color-blue-rgb); --lab-kit-ref-1: var(--color-orange-rgb); --lab-kit-ref-2: var(--color-green-rgb); --lab-kit-ref-3: var(--color-purple-rgb); --lab-kit-ref-4: var(--color-red-rgb); --lab-kit-ref-5: var(--color-cyan-rgb); }
+.lab-kit td.is-ref-0, .lab-kit th.is-ref-0 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-0)); background-color: rgba(var(--lab-kit-ref-0), 0.14); }
+.lab-kit td.is-ref-1, .lab-kit th.is-ref-1 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-1)); background-color: rgba(var(--lab-kit-ref-1), 0.14); }
+.lab-kit td.is-ref-2, .lab-kit th.is-ref-2 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-2)); background-color: rgba(var(--lab-kit-ref-2), 0.14); }
+.lab-kit td.is-ref-3, .lab-kit th.is-ref-3 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-3)); background-color: rgba(var(--lab-kit-ref-3), 0.14); }
+.lab-kit td.is-ref-4, .lab-kit th.is-ref-4 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-4)); background-color: rgba(var(--lab-kit-ref-4), 0.14); }
+.lab-kit td.is-ref-5, .lab-kit th.is-ref-5 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-5)); background-color: rgba(var(--lab-kit-ref-5), 0.14); }
+.lab-kit-hl-0, .cm-lab-kit-ref-0 { color: rgb(var(--lab-kit-ref-0)); }
+.lab-kit-hl-1, .cm-lab-kit-ref-1 { color: rgb(var(--lab-kit-ref-1)); }
+.lab-kit-hl-2, .cm-lab-kit-ref-2 { color: rgb(var(--lab-kit-ref-2)); }
+.lab-kit-hl-3, .cm-lab-kit-ref-3 { color: rgb(var(--lab-kit-ref-3)); }
+.lab-kit-hl-4, .cm-lab-kit-ref-4 { color: rgb(var(--lab-kit-ref-4)); }
+.lab-kit-hl-5, .cm-lab-kit-ref-5 { color: rgb(var(--lab-kit-ref-5)); }
+.cm-lab-kit-cell-0 { background-color: rgba(var(--lab-kit-ref-0), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-1 { background-color: rgba(var(--lab-kit-ref-1), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-2 { background-color: rgba(var(--lab-kit-ref-2), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-3 { background-color: rgba(var(--lab-kit-ref-3), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-4 { background-color: rgba(var(--lab-kit-ref-4), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-5 { background-color: rgba(var(--lab-kit-ref-5), 0.22); border-radius: 3px; }
+/* The cell input over a copy of its text: the copy shows the colours, the input's own text is hidden while a formula is typed */
+.lab-kit-input-wrap { position: relative; }
+.lab-kit-input-hl { position: absolute; inset: 0; padding: 2px 4px; box-sizing: border-box; font: inherit; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+.lab-kit-input-wrap:not(.is-hl) .lab-kit-input-hl { display: none; }
+.lab-kit-input-wrap.is-hl .lab-kit-input { color: transparent; background: transparent; caret-color: var(--text-normal); }
+
 /* Every body cell can be clicked to edit */
 .lab-kit td.is-editable { cursor: text; }
 /* Empty cells: tall enough to click easily */

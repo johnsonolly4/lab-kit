@@ -6,7 +6,7 @@ import {
   type Env, type ParsedBlock, type Value
 } from "./engine";
 import { autoInsertIndex, editRows, writeCellText } from "./rewrite";
-import { formulaRefs } from "./refs";
+import { REF_COLOURS, colouredRefs } from "./refs";
 import { listChemicals, type Chemical } from "../chem";
 import { ChemicalSuggest } from "../chem/suggest";
 import { prop } from "../frontmatter";
@@ -36,6 +36,7 @@ export class CalcRenderer {
   private editor: { entry: CalcEntry; showRefs?: () => void } | null = null;
   /** Cells marked as referenced by the formula being typed. */
   private marked: HTMLElement[] = [];
+  private labelled: HTMLElement | null = null;
   /**
    * Cell clicked while another was being edited: opened once the save and redraw are done.
    * Obsidian may rebuild the whole block after the save (new element, new entry), so it is
@@ -296,19 +297,39 @@ export class CalcRenderer {
     this.clearRefs();
     if (!text.trim().startsWith("=")) return;
     const others = [...(this.live.get(entry.ctx.sourcePath) ?? [])].filter(e => e.el.isConnected);
-    for (const ref of formulaRefs(text, { r, c })) {
+    // A1, 1, 2, 3 labels show on the table being edited, so a reference can be read off it
+    const table = entry.el.querySelector("table");
+    if (table && !table.hasClass("show-grid")) {
+      table.addClass("is-labelling"); this.labelled = table;
+      const head = table.querySelector("thead"), n = head?.querySelector("tr")?.children.length ?? 0;
+      if (head && n) {
+        const rows = Array.from(table.querySelectorAll("tr"));
+        const gr = head.createEl("tr", { cls: "lab-kit-grid-row lab-kit-tmp-label" });
+        gr.createEl("th", { cls: "lab-kit-corner" });
+        for (let i = 0; i < n; i++) gr.createEl("th", { cls: "lab-kit-col", text: indexToCol(i) });
+        head.insertBefore(gr, head.firstChild);
+        rows.forEach((tr, i) => { const num = tr.createEl(i === 0 ? "th" : "td", { cls: "lab-kit-rownum lab-kit-tmp-label", text: String(i + 1) }); tr.insertBefore(num, tr.firstChild); });
+      }
+    }
+    for (const found of colouredRefs(text, { r, c })) {
+      const ref = found.box;
       const target = ref.qual === null ? entry : others.find(e => e.parsed?.name === ref.qual);
       if (!target?.cells) continue;
       for (let rr = ref.r1; rr <= Math.min(ref.r2, ref.r1 + 200); rr++) for (let cc = ref.c1; cc <= Math.min(ref.c2, ref.c1 + 50); cc++) {
         const td = target.cells.get(`${rr}|${cc}`);
-        if (td && td.isConnected && !td.hasClass("is-editing")) { td.addClass("is-ref"); this.marked.push(td); }
+        if (td && td.isConnected && !td.hasClass("is-editing")) { td.addClass("is-ref"); td.addClass(`is-ref-${found.colour}`); this.marked.push(td); }
       }
     }
   }
 
   private clearRefs(): void {
-    for (const td of this.marked) td.removeClass("is-ref");
+    for (const td of this.marked) { td.removeClass("is-ref"); for (let i = 0; i < REF_COLOURS; i++) td.removeClass(`is-ref-${i}`); }
     this.marked = [];
+    if (this.labelled) {
+      this.labelled.removeClass("is-labelling");
+      for (const el of Array.from(this.labelled.querySelectorAll(".lab-kit-tmp-label"))) el.remove();
+    }
+    this.labelled = null;
   }
 
   /** Click-to-edit for any body cell (values and formulas). */
@@ -317,10 +338,27 @@ export class CalcRenderer {
     td.setCssProps({ "--lab-kit-cell-w": `${td.offsetWidth}px` }); // keeps the column from widening
     td.empty();
     td.addClass("is-editing");
-    const input = td.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
+    // The input sits over a copy of its text, so the references in a formula can be coloured as the cells they point at
+    const wrap = td.createDiv({ cls: "lab-kit-input-wrap" });
+    const back = wrap.createDiv({ cls: "lab-kit-input-hl", attr: { "aria-hidden": "true" } });
+    const input = wrap.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
+    const paint = (): void => {
+      const text = input.value, formula = text.trimStart().startsWith("=");
+      wrap.toggleClass("is-hl", formula);
+      back.empty();
+      if (!formula) return;
+      let at = 0;
+      for (const f of colouredRefs(text, { r, c })) {
+        if (f.start > at) back.appendText(text.slice(at, f.start));
+        back.createSpan({ cls: `lab-kit-hl-${f.colour}`, text: text.slice(f.start, f.end) });
+        at = f.end;
+      }
+      back.appendText(text.slice(at));
+      back.scrollLeft = input.scrollLeft;
+    };
     const mine: { entry: CalcEntry; showRefs?: () => void } = { entry };
-    mine.showRefs = () => this.markRefs(entry, r, c, input.value);
+    mine.showRefs = () => { this.markRefs(entry, r, c, input.value); paint(); };
     this.editor = mine;
     input.focus({ preventScroll: true }); input.select();
     // Typing [[ suggests the notes in the chemical folder, when one is set
@@ -354,6 +392,7 @@ export class CalcRenderer {
     });
     input.addEventListener("click", (e) => e.stopPropagation());
     input.addEventListener("input", () => mine.showRefs?.());
+    input.addEventListener("scroll", () => { back.scrollLeft = input.scrollLeft; });
     mine.showRefs();                                // a formula already in the cell shows what it points at
   }
 

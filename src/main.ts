@@ -10,6 +10,7 @@ import { TodoEngine } from "./planning/engine";
 import { PlanningBlocks } from "./planning/blocks";
 import { ProgressWriter } from "./planning/progress";
 import { BoardColours } from "./kit/board-colours";
+import { calcTextRefs } from "./calc/text-refs-cm";
 import { SnippetTemplates } from "./kit/snippet-run";
 
 export default class LabKitPlugin extends Plugin {
@@ -33,6 +34,7 @@ export default class LabKitPlugin extends Plugin {
     this.kit.setup();
 
     this.calc.register();
+    this.registerEditorExtension(calcTextRefs());
     this.header.register();
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
