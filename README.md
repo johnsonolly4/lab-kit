@@ -175,7 +175,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Find moved folders | For each folder in the settings that no longer exists (moved outside Obsidian), suggests where it went; Apply changes only the settings |
 | Check hotkeys | Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now (also a button in Settings → Lab Kit); sets nothing |
 | Check setup | Lists what the kits need (plugins, Templater and its scripts, the homepage's read-only mode, CSS snippets, folders) with a Fix for each missing item; nothing changes until you confirm |
-| Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; **Change notes…** rewrites only what you tick, after a backup and a second confirmation |
+| Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; **Change notes…** rewrites only what you tick, after a backup and a second confirmation. One rule, **Hubs: bring the page up to the current template**, rewrites the page of project, topic and meeting series hubs from the kit's templates (keeping a project's goal and Related text and a topic's intro) and is never ticked by default |
 
 With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are added. Open meeting deck is desktop only.
 
@@ -187,11 +187,11 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | Sort inbox | Opens each Inbox note in turn and asks where it goes; Esc or Stop ends it |
 | Archive old to-dos | Moves to-dos finished more than 30 days ago into the Archive folder |
 | New meeting series | Asks name, how often, day, date of the first meeting, the deck path and (optional) the name of your own meeting note template; makes the series folder under Meetings and its hub note. Also a button on the Meetings hub |
-| New meeting | A note for a meeting series (asks which when there are several) |
+| New meeting · New one-off meeting · Extra meeting now | A note for a meeting series (asks which when there are several); a one-off meeting uses the smaller kit template **One-off meeting**; **Extra meeting now** (also a button on each series hub) adds a meeting on a date you give without moving the schedule. A series hub's `template` property names your own meeting note template |
 | Open meeting deck | Opens the deck location of this computer: set in the series' note (`deck_windows` / `deck_mac`) as a folder with all the decks in, or the path to one deck file |
 | New project · New project note | A project hub, or a note inside a project |
-| New concept | A knowledge note: asks title and topic, files it in the Knowledge folder under the topic |
-| New topic hub | The index note of a topic folder under Knowledge (`kind: hub`, named like the folder): pick a topic without one or a new topic; a text area for what the topic is about, then a list of its notes. Tidy up notes does not offer these |
+| New concept | A knowledge note: asks title and topic, files it in the Knowledge folder under the topic. The **New concept** button on a topic hub skips the topic question |
+| New topic hub | The index note of a topic folder under Knowledge (`kind: hub`, named like the folder): pick a topic without one or a new topic; a text area for what the topic is about, then a list of its notes. Project, topic and series hubs start with a back link to the hub one folder up, which follows folder renames |
 | Roll over to-dos now | Carries unfinished to-dos over to today |
 
 ## Privacy & permissions
