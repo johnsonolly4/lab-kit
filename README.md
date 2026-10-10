@@ -154,7 +154,7 @@ Settings → Lab Kit is searchable and grouped:
 | **Kit folders and setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, console log |
 | **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder |
 | **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…**, **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card) |
-| **Snippet menu** | A Lucide icon for each snippet |
+| **Snippet menu → Snippet icons** | A page with one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name. Empty keeps the snippet's own icon |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
 

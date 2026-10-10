@@ -1,5 +1,5 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Notice, PluginSettingTab, TFile, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
 import { ask } from "../planning/ask";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
@@ -15,6 +15,8 @@ import { ClearBackupsModal } from "./backups-ui";
 import { BOARD_STATUSES } from "./board-colours";
 import { TidyNotesModal } from "./tidy-ui";
 import { wideBox } from "./settings-box";
+import { headerIcon } from "./icon-list";
+import { IconPickerModal } from "./icon-picker-ui";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
@@ -26,7 +28,7 @@ class KitSettingTab extends PluginSettingTab {
     ctl.redrawSettings = () => this.update();
   }
 
-  /** Built-in icon of each snippet (from its `// icon:` line), read before the rows are drawn so no row changes after it is shown. */
+  /** Built-in icon of each snippet (from its `// icon:` line, or the `icon:` header of a token template), read before the rows are drawn so no row changes after it is shown. */
   private builtInIcons = new Map<string, string>();
 
   private snippetFiles(): TFile[] {
@@ -39,7 +41,7 @@ class KitSettingTab extends PluginSettingTab {
   async refreshSnippets(): Promise<void> {
     for (const f of this.snippetFiles()) {
       const text = await this.app.vault.cachedRead(f);
-      this.builtInIcons.set(f.path, text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim() ?? "");
+      this.builtInIcons.set(f.path, headerIcon(text));
     }
     this.update();
   }
@@ -49,18 +51,34 @@ class KitSettingTab extends PluginSettingTab {
     const files = this.snippetFiles();
     const icons = this.ctl.kit.snippetIcons;
     if (!files.length) return [];
-    const rows: SettingGroupItem[] = [{ name: "Icons", desc: "A Lucide icon name for each snippet, e.g. flask-round (see lucide.dev). Empty keeps the built-in icon. The colour is always your Obsidian accent colour." }];
+    const rows: SettingGroupItem[] = [{ name: "Icons", desc: "Press Choose to pick an icon for each snippet from Obsidian's icons, or type a Lucide icon name, e.g. flask-round (see lucide.dev). Empty keeps the snippet's own icon, shown in grey. The colour is always your Obsidian accent colour." }];
     for (const f of files) {
       const name = f.basename.replace(/^\d+\s*[-.]?\s*/, "");
       rows.push({
         name,
         render: b => {
+          const own = this.builtInIcons.get(f.path) ?? "";
+          const preview = b.controlEl.createSpan({ cls: "lab-kit-icon-preview" });
+          const show = (typed: string): void => {
+            preview.empty();
+            const shown = [typed, own].map(n => n.trim()).find(n => n && getIcon(n));
+            if (shown) setIcon(preview, shown);
+            preview.toggleClass("is-default", !typed.trim());
+          };
+          show(icons[name] ?? "");
           b.addText(t => {
             wideBox(b, t);
-            t.setPlaceholder(this.builtInIcons.get(f.path) ?? "").setValue(icons[name] ?? "").onChange(async v => {
+            t.setPlaceholder(own).setValue(icons[name] ?? "").onChange(async v => {
               if (v.trim()) icons[name] = v.trim(); else delete icons[name];
+              show(v);
               await this.ctl.save();
             });
+            b.addButton(btn => btn.setButtonText("Choose…").onClick(() => new IconPickerModal(this.app, icons[name] ?? own, picked => {
+              icons[name] = picked;
+              t.setValue(picked);
+              show(picked);
+              void this.ctl.save();
+            }).open()));
           });
         }
       });
@@ -243,7 +261,7 @@ class KitSettingTab extends PluginSettingTab {
       { type: "group", heading: "Kit folders and setup", items: builtIn.setup },
       { type: "group", heading: "Lab notebook", items: notebook },
       ...(planningOn ? [{ type: "group" as const, heading: "Planning folders", items: this.planningFolderRows() }] : []),
-      ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: snippets }] : []),
+      ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: [{ type: "page" as const, name: "Snippet icons", items: snippets }] }] : []),
       ...this.header.definitions()
     ];
   }

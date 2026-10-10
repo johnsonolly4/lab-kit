@@ -243,3 +243,13 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-bar { background: var(--background-modifier-border); border-radius: 3px; }
 .bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-value { background: var(--interactive-accent); border-radius: 3px; transition: width 0.2s; }
 .bases-kanban-card progress.lab-kit-card-bar::-moz-progress-bar { background: var(--interactive-accent); border-radius: 3px; }
+
+/* Snippet icons: the preview beside each box and the icon picker (src/kit/icon-picker-ui.ts) */
+.lab-kit-icon-preview { display: inline-flex; align-items: center; color: var(--interactive-accent); margin-right: 6px; }
+.lab-kit-icon-preview.is-default { opacity: 0.5; }
+.lab-kit-icon-search { width: 100%; margin-bottom: 10px; }
+.lab-kit-icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; max-height: 55vh; overflow-y: auto; }
+.lab-kit-icon-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; height: auto; padding: 8px 4px; box-shadow: none; background: var(--background-secondary); }
+.lab-kit-icon-cell:hover { background: var(--background-modifier-hover); }
+.lab-kit-icon-cell.is-current { outline: 2px solid var(--interactive-accent); }
+.lab-kit-icon-name { font-size: var(--font-ui-smaller); color: var(--text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
