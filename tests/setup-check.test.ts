@@ -82,6 +82,9 @@ describe("check setup (Phase 6)", () => {
     expect(notInstalled["folder-template:03 Lab Book/Notes"].fix).toBeUndefined();
     expect(labFolderTemplates("")).toEqual([]);
     expect(labFolderTemplates("03 Lab Book/Notes")).toEqual([{ folder: "03 Lab Book/Notes", file: "Lab Book Template.md" }]);
+    expect(labFolderTemplates("03 Lab Book/Notes", "05 Chemicals/Chemicals")).toEqual([
+      { folder: "03 Lab Book/Notes", file: "Lab Book Template.md" }, { folder: "05 Chemicals/Chemicals", file: "Chemical database template.md" }]);
+    expect(labFolderTemplates("", "05 Chemicals/Chemicals")).toEqual([{ folder: "05 Chemicals/Chemicals", file: "Chemical database template.md" }]);
   });
 
   it("ZotLit counts as present under its kit name", () => {

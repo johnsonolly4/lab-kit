@@ -18,7 +18,7 @@ fields:
     hint: blank = from the solvent's note, or fill in later
   - key: dead
     label: End-fitting dead volume (mL)
-    value: "0.21"
+    hint: blank = fill in later
   - key: packing
     label: Packing material
     hint: blank = fill in later
@@ -41,5 +41,6 @@ icon: cylinder
 | Solvent volume (mL) | =B8/B5 |
 | Reactor volume (mL) | =B9-B6 |
 | Packing material | {{packing}} |
+| Solvent | {{solvent}} |
 ```
 

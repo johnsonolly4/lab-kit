@@ -192,7 +192,7 @@ describe("snippets", () => {
     // Variant matrix
     r = await run("matrix", { rows: "Lipoic acid, Acetic acid", cols: "Benzyl alcohol, Methanol" }); assert.ok(r.md.includes("copy: list") && r.md.includes("ABC0016-D"));
     // Column + RT linked
-    r = await run("column", { density: "1.325", packing: "glass beads" });
+    r = await run("column", { density: "1.325", dead: "0.21", packing: "glass beads" });   // the dead volume is no longer filled by default
     assert.ok(r.md.includes("| Packing material | glass beads |"), r.md);
     note = note.replace("| Empty column (blanking plugs, glass wool) (g) |  |", "| Empty column (blanking plugs, glass wool) (g) | 111.076 |")
                .replace("| Packed column (beads, plugs, glass wool) (g) |  |", "| Packed column (beads, plugs, glass wool) (g) | 111.967 |")

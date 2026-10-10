@@ -299,7 +299,7 @@
       "role": "templates",
       "path": "Snippets/11 Flow column prep.md",
       "version": "0.5.2",
-      "sha256": "1a179b60d5a795017827215e4cee3e040553266244864e28f4c215ab33774843",
+      "sha256": "91c8a6327e49c0986751e7e7bebbe0ed235509ab19dbd887418aca1deb43832c",
       "renamedFrom": [],
       "desc": "Column weighing → bead mass → reactor volume",
       "optional": true

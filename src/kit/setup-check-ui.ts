@@ -28,7 +28,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   // Folders named in a setting; the archive is made when first needed, Literature only with ZotLit
   const settingFolders = [host.kit.labFolder, host.kit.chemicalFolder,
     ...(planningOn ? (Object.keys(pf) as PlanningRole[]).filter(r => r !== "archive" && (r !== "literature" || zotlit)).map(r => pf[r]) : [])].filter(f => f);
-  const labTemplates = labFolderTemplates(host.kit.labFolder);
+  const labTemplates = labFolderTemplates(host.kit.labFolder, host.kit.chemicalFolder);
   const folders = [...settingFolders, ...(planningOn ? folderTemplates.map(f => f.folder) : [])];
   const meetings = !planningOn ? [] : app.vault.getMarkdownFiles().filter(f => inFolder(f.path, pf.meetings)).flatMap(f => {
     const cache = app.metadataCache.getFileCache(f), fm = cache?.frontmatter ?? {};

@@ -9,9 +9,14 @@ export const planningFolderTemplates = (f: PlanningFolders): { folder: string; f
   { folder: todoFolder(f), file: "To-do.md" },
 ];
 
-/** The lab kit's folder template: a note made by hand in the Lab notes folder starts the Lab Book Template. None when the setting is empty. */
-export const labFolderTemplates = (labFolder: string): { folder: string; file: string }[] =>
-  labFolder.trim() ? [{ folder: labFolder.trim(), file: "Lab Book Template.md" }] : [];
+/**
+ * The lab kit's folder templates: a note made by hand in the Lab notes folder starts the Lab Book Template, one in the Chemical folder the
+ * Chemical database template. A folder whose setting is empty has none.
+ */
+export const labFolderTemplates = (labFolder: string, chemicalFolder = ""): { folder: string; file: string }[] => [
+  ...(labFolder.trim() ? [{ folder: labFolder.trim(), file: "Lab Book Template.md" }] : []),
+  ...(chemicalFolder.trim() ? [{ folder: chemicalFolder.trim(), file: "Chemical database template.md" }] : []),
+];
 
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [

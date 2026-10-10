@@ -53,7 +53,7 @@ flowchart LR
 - Finished? Click the **circle** on the card (top right). The card turns **green** and stays on its day for the rest of the week, so you can see what you got through. On Monday it leaves the board by itself.
 - Didn't get to it? Do nothing. Next time Obsidian opens, it moves to **today** and turns **orange** - no lost tasks. Drag it somewhere else if today isn't right, or back to Backlog.
 - Planning next week on a Friday? Drag cards onto Mon-Thu as normal - a day that's already passed this week means *next* week.
-- Only give it a **due** date if there's a real deadline - those show in red when they're late.
+- Only give it a **due** date if there's a real deadline - those show in red when they're late. New to-do asks for one (Enter = none). With Settings → Lab Kit → **Due-date countdown** on, the card shows the days left (`3d`, `Today`, `2d late`); a to-do with `countdown: true` shows it even in the "marked only" setting.
 - Tick **meeting** on a to-do (open the note) if you want to raise it on Thursday.
 - Long names show up to 3 lines on the card - open the card to see the rest.
 - Today's column not blue? The roll-over isn't running - see [[Setting up a computer]].
@@ -63,14 +63,18 @@ flowchart LR
 - **New lab entry** creates `0015 - Title` in the lab book.
 - Move it along the [[Lab book base.base|Experiments]] board as it goes: **Planned -> Started -> Processing results -> Closed**.
 - Link the papers it builds on in **Based on** - they show the experiment under *Used in experiments*.
-- Anything not *Closed* shows on the homepage under *Experiments on the go*.
+- Anything not *Closed* shows on the homepage under *Experiments on the go* (the tile heading opens the board).
+- The columns are coloured by status (Settings → Lab Kit → **Colour board columns**, with a colour for each).
+- The base has a second view, **All experiments**, a list that also shows old closed ones.
+- Switch on **Checklist progress** in Settings → Lab Kit and a card shows a bar for the ticked check boxes in the note (`progress: 3/7`).
 
 ## Projects
 
 - [[Projects overview]] (**Projects** on the homepage) has a **card for each project**: its goal, next to-dos, how many papers and notes, and buttons for **New note**, **New to-do** and **Open**.
 - **New note** on a card (or on a hub) puts the note straight into that project's folder - no filing later.
 - **New project** asks for a name and makes the folder and hub in `02 Projects`. Then make a Zotero collection with the **same name** under `Projects/`, and write the hub's one-line **goal**.
-- Each hub lists the project's to-dos, notes and papers by itself - give a to-do the project, keep notes in the folder, drag papers into the collection.
+- Each hub lists the project's to-dos, notes, papers and meetings by itself - give a to-do the project, keep notes in the folder, drag papers into the collection, set **project** on a meeting note (the hub shows the last 8, **Show all** the rest).
+- Give a hub a **deadline** date and, with Due-date countdown on, it shows `deadline 5d` on the hub, its card and the homepage (gone when the project is Done).
 
 ## Reading papers
 
@@ -92,10 +96,26 @@ flowchart LR
 
 ## Thursday meeting
 
-1. On Wednesday or Thursday morning, open [[Meetings]], open your series and press **New meeting note**.
+- [[Meetings]] has a **card per series** (next date, how often, notes held). A series can be weekly, fortnightly, monthly or **every N weeks**.
+- **Extra meeting now** on a card makes an in-between meeting on a date you choose; the schedule doesn't move.
+- **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files it in the **One-off** hub.
+- Set **project** on any meeting note to show it on that project's hub.
+
+1. On Wednesday or Thursday morning, open [[Meetings]], and press **New meeting note** on your series' card.
 2. It fills itself: experiments you touched, to-dos you ticked done, papers you read, and anything you flagged for the meeting.
 3. Press **Meeting deck**, copy what you need onto this week's slides (newest week at the front).
 4. After the meeting, note the outcomes and turn actions into to-dos.
+
+## Snippets (Alt+S)
+
+`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original.
+
+## Keeping the vault healthy
+
+- **Check setup…** (Settings → Lab Kit) lists what the kits need and fixes it.
+- **Check hotkeys…** shows the keys [[Hotkeys]] recommends and what is set.
+- **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, and keeps a backup).
+- **Manage files…** shows kit files with a newer version; **Replace with new version…** swaps yours for the kit's (a backup is saved first), and **Clear old backups…** empties old ones.
 
 ## Friday review (15 minutes)
 
