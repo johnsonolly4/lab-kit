@@ -227,23 +227,6 @@ body {
   --max-width: 95%;
 }
 .home .inline-title { display: none; }
-.home .callout[data-callout="focus"] .callout-content > p {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 10px 0;
-}
-.home .callout[data-callout="focus"] .mb-input-type-text { flex: 1 1 160px; display: flex; }
-.home .callout[data-callout="focus"] .mb-input-type-text input {
-  width: 100%;
-  border-radius: 10px;
-  padding: 8px 12px;
-  background: transparent;
-  border: 1px solid var(--vt-card-border);
-  color: var(--text-normal);
-}
-.home .callout[data-callout="focus"] .mb-input-type-text input::placeholder { color: var(--vt-hint); opacity: 1; }
 
 /* ---- 10. Project cards (Projects overview, built by DataviewJS) ----
    Same flat look as vt cards: same border, 2 per row at most,

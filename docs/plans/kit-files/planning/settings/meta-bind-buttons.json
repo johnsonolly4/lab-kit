@@ -75,50 +75,6 @@
       ]
     },
     {
-      "label": "Clear for tomorrow",
-      "icon": "rotate-ccw",
-      "style": "plain",
-      "id": "clear-focus",
-      "actions": [
-        {
-          "type": "updateMetadata",
-          "bindTarget": "focus1",
-          "evaluate": false,
-          "value": ""
-        },
-        {
-          "type": "updateMetadata",
-          "bindTarget": "focus2",
-          "evaluate": false,
-          "value": ""
-        },
-        {
-          "type": "updateMetadata",
-          "bindTarget": "focus3",
-          "evaluate": false,
-          "value": ""
-        },
-        {
-          "type": "updateMetadata",
-          "bindTarget": "focus1_done",
-          "evaluate": true,
-          "value": "false"
-        },
-        {
-          "type": "updateMetadata",
-          "bindTarget": "focus2_done",
-          "evaluate": true,
-          "value": "false"
-        },
-        {
-          "type": "updateMetadata",
-          "bindTarget": "focus3_done",
-          "evaluate": true,
-          "value": "false"
-        }
-      ]
-    },
-    {
       "label": "To-do board",
       "icon": "kanban",
       "style": "default",
