@@ -54,10 +54,10 @@ export function experiments(notes: NoteRec[], limit = 8): ListLine[] {
 
 const statusRank = (s: string): number => (s === "Active" ? 0 : s === "Paused" ? 1 : s === "Done" ? 2 : 3);
 
-/** The deadline badge of a project hub: its `deadline` date counted down like a to-do's `due` (same Due-date countdown setting), none once the project is Done. */
+/** The deadline badge of a project hub: its `deadline` date counted down like a to-do's `due`, none once the project is Done. A hub has no `countdown` property, so "marked" counts like "all": only "off" hides it. */
 export function deadlineBadge(fm: Record<string, unknown>, mode: CountdownMode, now: Date): Badge | null {
   if (str(fm.Status) === "Done") return null;
-  const cd = dueCountdown({ due: fm.deadline, countdown: fm.countdown }, mode, now);
+  const cd = dueCountdown({ due: fm.deadline }, mode === "marked" ? "all" : mode, now);
   if (!cd) return null;
   return { text: `deadline ${cd.text}`, cls: `vt-badge ${cd.level === "late" ? "vt-overdue" : cd.level === "soon" ? "vt-today" : "vt-planned"}` };
 }

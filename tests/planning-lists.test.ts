@@ -155,10 +155,9 @@ describe("Project deadline countdown", () => {
     expect(deadlineBadge({ Status: "Active", deadline: "2026-10-08" }, "all", WED)).toEqual({ text: "deadline Tomorrow", cls: "vt-badge vt-today" });
     expect(deadlineBadge({ Status: "Active", deadline: "2026-10-05" }, "all", WED)).toEqual({ text: "deadline 2d late", cls: "vt-badge vt-overdue" });
   });
-  it("shows nothing when off, not marked, finished, or without a valid date", () => {
+  it("shows nothing when off, finished, or without a valid date", () => {
     expect(deadlineBadge({ deadline: "2026-10-12" }, "off", WED)).toBeNull();
-    expect(deadlineBadge({ deadline: "2026-10-12" }, "marked", WED)).toBeNull();
-    expect(deadlineBadge({ deadline: "2026-10-12", countdown: true }, "marked", WED)).not.toBeNull();
+    expect(deadlineBadge({ Status: "Active", deadline: "2026-10-12" }, "marked", WED)).toEqual(deadlineBadge({ Status: "Active", deadline: "2026-10-12" }, "all", WED));
     expect(deadlineBadge({ Status: "Done", deadline: "2026-10-12" }, "all", WED)).toBeNull();
     expect(deadlineBadge({ Status: "Active", deadline: "" }, "all", WED)).toBeNull();
     expect(deadlineBadge({ Status: "Active", deadline: "soon" }, "all", WED)).toBeNull();
