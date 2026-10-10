@@ -3,7 +3,7 @@
 import { Modal, Notice, Setting, parseYaml, type App, type Plugin } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
-  kitBackupPath, kitHasNewer, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  kitBackupPath, kitHasNewer, kitKept, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
@@ -615,7 +615,7 @@ class KitFilesModal extends Modal {
           new ConfirmModal(this.app, "Replace your copy with the new version?", `Your copy of ${it.dest} will be replaced by the kit's new version. A backup is saved first.`,
             "Update", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
         }));
-        row.addButton(b => b.setButtonText("Keep").setTooltip("Leave your copy as it is; the badge returns only when the kit changes this file again").onClick(() => void this.run(() => this.managed.resolveOne(id, null))));
+        if (!kitKept(it, this.managed.stateOf(id))) row.addButton(b => b.setButtonText("Keep").setTooltip("Leave your copy as it is. The update stays listed here if you want it later").onClick(() => void this.run(() => this.managed.resolveOne(id, null))));
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));

@@ -38,6 +38,8 @@ export interface ManagedFileState {
   detached: boolean; userDeleted: boolean; pendingConflict: unknown;
   /** The file holds a merge of your edits and the kit (cleared by any later write). */
   merged?: boolean;
+  /** The kit text (its hash) the user chose to keep their own copy over: the update stays offered, but is no longer new. */
+  keptKit?: string;
 }
 /** What the plugin remembers about built-in kit files (the `managed` key of the kit data). */
 export interface ManagedState { installedKitVersion: string; files: Record<string, ManagedFileState> }
@@ -348,6 +350,8 @@ export const RESTORABLE_ACTIONS: ManagedAction[] = ["user-modified", "merge", "n
 
 /** A file you are meant to edit (policy keep) whose kit text changed since it was installed: the kit never updates it, but you can choose to replace it. */
 export const kitHasNewer = (item: ManagedItem, st?: ManagedFileState): boolean => item.action === "keep" && !!st && st.installedHash !== item.kitHash;
+/** A newer kit version the user has already looked at and chose to keep their own copy over (it is still offered, quietly). */
+export const kitKept = (item: ManagedItem, st?: ManagedFileState): boolean => kitHasNewer(item, st) && st?.keptKit === item.kitHash;
 
 /** Puts the kit's version of ONE file back, backing up your copy first. Refuses detached / up-to-date files, and kept files unless the kit has a newer version of them. */
 export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
@@ -371,6 +375,10 @@ export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem,
   const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
   const { id } = item.file;
   if (item.action !== "needs-merge" && !kitHasNewer(item, state?.files[id])) return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
+  if (text === null && item.action === "keep") {   // Keep on a kept file: nothing is written, the update stays offered
+    next.files[id] = { ...(state?.files[id] as ManagedFileState), keptKit: item.kitHash };
+    return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "adopted" } };
+  }
   let backup: string | undefined;
   let written = false;
   if (text !== null && kitNormalise(text) !== kitNormalise(await adapter.read(item.dest))) {
@@ -435,7 +443,7 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
     case "merge": return { label: "Merges cleanly", tone: "info" };
     case "needs-merge": return { label: "Conflict", tone: "warn" };
     case "missing": return { label: "Missing", tone: "warn" };
-    case "keep": return kitHasNewer(item, st) ? { label: "Newer kit version available", tone: "info" } : { label: "Kept (your settings)", tone: "muted" };
+    case "keep": return kitKept(item, st) ? { label: "Newer kit version available (you kept yours)", tone: "muted" } : kitHasNewer(item, st) ? { label: "Newer kit version available", tone: "info" } : { label: "Kept (your settings)", tone: "muted" };
     case "detached": return { label: "Detached", tone: "muted" };
     case "off": return { label: "Off", tone: "muted" };
   }
@@ -468,7 +476,7 @@ export function attentionRank(item: ManagedItem, st?: ManagedFileState): number 
     case "create": return 4;
     case "user-modified": return st?.merged ? 6 : 5;
     case "up-to-date": return 6;
-    case "keep": return kitHasNewer(item, st) ? 3.5 : 7;   // an update to look at: right after "Update available"
+    case "keep": return kitKept(item, st) ? 6.5 : kitHasNewer(item, st) ? 3.5 : 7;   // a new update: right after "Update available"; one you kept: after the up-to-date files
     case "detached": return 8;
     case "off": return 9;
   }

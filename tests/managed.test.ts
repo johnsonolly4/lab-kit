@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, kitKept, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
   type EmbeddedKit, type ManagedAction, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -263,7 +263,7 @@ describe("per-file actions (Manage kit files)", () => {
     expect(v.files[out.result.backup!]).toBe("{\"mine\":1}\n");
   });
 
-  it("Keep leaves your kept file and clears the badge; Compare's text is written after a backup; the row sorts right after Update available", async () => {
+  it("Keep leaves your kept file and keeps the update on offer (quietly); Compare's text is written after a backup; the row sorts right after Update available", async () => {
     const v = memVault(); const { state } = await install(v);
     v.files["My scripts/config.json"] = "{\"mine\":1}\n";
     const item = by(await planManaged(v, V2, state, roles), "script-config");
@@ -275,7 +275,14 @@ describe("per-file actions (Manage kit files)", () => {
     expect(kept.result.outcome).toBe("adopted");
     expect(kept.result.backup).toBeUndefined();
     expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1}\n");
-    expect(kitHasNewer(by(await planManaged(v, V2, kept.state, roles), "script-config"), kept.state.files["script-config"])).toBe(false);
+    // the update stays offered, quietly (user, 2026-10-10: "the badge should stay"); a later kit change makes it new again
+    const again = by(await planManaged(v, V2, kept.state, roles), "script-config");
+    expect(kitHasNewer(again, kept.state.files["script-config"])).toBe(true);
+    expect(kitKept(again, kept.state.files["script-config"])).toBe(true);
+    expect(statusOf(again, kept.state.files["script-config"]).label).toBe("Newer kit version available (you kept yours)");
+    expect(attentionRank(again, kept.state.files["script-config"])).toBeGreaterThan(attentionRank({ ...again, action: "up-to-date" }) - 0.1);
+    const V3 = kit("0.3.0", { "tpl-menu": "menu v2\n", "tpl-book": "line 1\nline 2\nline 3 changed by kit\n", "script-snip": "path = Extras/scripts/x\n", "script-config": "{\"newer\":1}\n" });
+    expect(kitKept(by(await planManaged(v, V3, kept.state, roles), "script-config"), kept.state.files["script-config"])).toBe(false);
     const merged = await resolveManaged(v, item, "{\"mine\":1,\"new\":1}\n", state, opts);
     expect(merged.result.outcome).toBe("merged");
     expect(v.files[merged.result.backup!]).toBe("{\"mine\":1}\n");
