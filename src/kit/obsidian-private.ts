@@ -1,6 +1,7 @@
 // The only place that touches Obsidian's private APIs (not in the public typings, may change between versions):
 // other plugins' settings (`app.plugins`) and the CSS snippet manager (`app.customCss`).
 import type { App, TFile, TFolder } from "obsidian";
+import { actionsDiffer } from "../planning/buttons";
 
 interface TemplaterPlugin {
   settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[];
@@ -277,6 +278,22 @@ export async function addMetaBindButtons(app: App, buttons: { id: string }[]): P
   mb.settings.buttonTemplates = [...(list as unknown[]), ...add];
   await saveOther(mb);
   return add.length;
+}
+
+/** Puts the kit's actions on the installed buttons of the same id whose actions differ (label, icon and style stay as they are) and saves. Number changed. */
+export async function resetMetaBindActions(app: App, buttons: { id: string; actions?: unknown }[]): Promise<number> {
+  const mb = pluginOf(app, META_BIND);
+  const list = mb?.settings?.buttonTemplates;
+  if (!mb?.settings || !Array.isArray(list)) return 0;
+  let n = 0;
+  for (const kit of buttons) {
+    const b = list.find(x => (x as { id?: string })?.id === kit.id) as { actions?: unknown } | undefined;
+    if (!b || kit.actions === undefined || !actionsDiffer(kit.actions, b.actions)) continue;
+    b.actions = structuredClone(kit.actions);
+    n++;
+  }
+  if (n) await saveOther(mb);
+  return n;
 }
 
 /** Opens Obsidian's settings on a plugin's tab (`app.setting`, private). False when it can't. */

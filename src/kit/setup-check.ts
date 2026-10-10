@@ -2,6 +2,7 @@
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
 import { todoFolder, type PlanningFolders } from "./paths";
+import { actionsDiffer } from "../planning/buttons";
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
 export const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
@@ -42,6 +43,8 @@ export interface SetupState {
   lab: { initials: string; dataRoot: boolean; methodsFolder: string; labFolder: string; chemicalFolder: string };
   /** Meta Bind button templates the planning kit uses; null without Meta Bind. */
   metaBind: { missing: number; total: number; /** Ids of the missing buttons, for the row's text. */ names?: string[] } | null;
+  /** Meta Bind buttons that exist but do something else than the kit's button of that id (see `differingButtons`). */
+  metaBindDiffers?: { id: string; now: string; kit: string }[];
   /** Path of the "Set up ZotLit" checklist note when it is installed. */
   zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
@@ -86,6 +89,7 @@ export type SetupFix =
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
   | { kind: "meta-bind" }
+  | { kind: "meta-bind-reset"; ids: string[] }
   | { kind: "open-note"; path: string };
 
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
@@ -208,6 +212,13 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: missing ? { kind: "meta-bind" } : undefined });
   }
 
+  if (s.planning && s.metaBind && s.metaBindDiffers) {
+    const d = s.metaBindDiffers;
+    out.push({ id: "metabind:differs", group: "Meta Bind", label: "Meta Bind buttons that differ from the kit", ok: !d.length,
+      detail: d.length ? `${d.map(b => `${b.id} ${b.now} (kit: ${b.kit})`).join("; ")}. Fix puts the kit's action on them (the button's label and look stay); then restart Obsidian.` : "Every button does what the kit's does.",
+      fix: d.length ? { kind: "meta-bind-reset", ids: d.map(b => b.id) } : undefined });
+  }
+
   if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
     detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`
       : "Lab Kit can't read ZotLit's settings. Install the planning kit (Review update…) to get its checklist note, Set up ZotLit.",
@@ -244,5 +255,21 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: f.exists ? undefined : moved ? { kind: "find-moved" } : { kind: "folder", path: f.path } });
   }
 
+  return out;
+}
+
+/** What a Meta Bind button does, in words: "opens [[Meetings]]", "runs lab-kit:new-meeting", or "something else". */
+export function describeActions(actions: unknown): string {
+  if (!Array.isArray(actions) || !actions.length) return "does nothing";
+  return actions.map((a: { type?: string; link?: string; command?: string; templateFile?: string }) =>
+    a?.type === "open" && a.link ? `opens ${a.link}` : a?.type === "command" && a.command ? `runs ${a.command}` : a?.templateFile ? `runs the template ${a.templateFile}` : "does something else").join(", then ");
+}
+/** The kit's buttons whose installed button of the same id has other actions (compared as JSON). Missing buttons and your own are not listed. */
+export function differingButtons(kit: { id: string; actions?: unknown }[], installed: { id: string; actions?: unknown }[]): { id: string; now: string; kit: string }[] {
+  const out: { id: string; now: string; kit: string }[] = [];
+  for (const k of kit) {
+    const have = installed.find(b => b.id === k.id);
+    if (have && k.actions !== undefined && actionsDiffer(k.actions, have.actions)) out.push({ id: k.id, now: describeActions(have.actions), kit: describeActions(k.actions) });
+  }
   return out;
 }

@@ -4,7 +4,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "fs";
 import { join } from "path";
 import { applyManaged, kitText, offIds, planFolderReapply, planManaged, previewInstall, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
 import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitLoad, kitSlot, labFolders, planningFolders, planningRoles } from "../src/kit/paths";
-import { addMetaBindButtons, loadedPlugins, metaBindButtonIds, navigatorHomepage, setNavigatorHomepage } from "../src/kit/obsidian-private";
+import { addMetaBindButtons, resetMetaBindActions, loadedPlugins, metaBindButtonIds, navigatorHomepage, setNavigatorHomepage } from "../src/kit/obsidian-private";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
 import { scan, type TidyContext } from "../src/kit/tidy";
 // @ts-expect-error plain .mjs build helper
@@ -279,6 +279,22 @@ describe("Meta Bind buttons (Phase 6d)", () => {
     expect(mb.settings.buttonTemplates[0]).toBe(mine);
     expect(await addMetaBindButtons(a, PLANNING_BUTTONS)).toBe(0);
     expect(new Set(metaBindButtonIds(a)).size).toBe(PLANNING_BUTTONS.length);
+  });
+});
+
+describe("Meta Bind buttons that differ from the kit", () => {
+  it("resets only the actions of a button whose actions differ; label, matching and your own buttons stay", async () => {
+    const wrong = { id: "go-meetings", label: "My label", icon: "star", actions: [{ type: "open", link: "[[Weekly meetings]]", newTab: false }] };
+    const same = { id: "today", label: "Today", actions: [{ type: "command", command: "x" }] };
+    const mine = { id: "mine", label: "Mine", actions: [{ type: "command", command: "z" }] };
+    const mb = { settings: { buttonTemplates: [wrong, same, mine] }, saveSettings: async () => {} };
+    const a = { plugins: { plugins: { "obsidian-meta-bind-plugin": mb } } } as any;
+    const kit = [{ id: "go-meetings", actions: [{ type: "open", link: "[[Meetings]]", newTab: false }] }, { id: "today", actions: [{ type: "command", command: "x" }] }, { id: "missing", actions: [] }];
+    expect(await resetMetaBindActions(a, kit)).toBe(1);
+    expect(wrong).toMatchObject({ label: "My label", icon: "star", actions: [{ type: "open", link: "[[Meetings]]" }] });
+    expect(mine.actions).toEqual([{ type: "command", command: "z" }]);
+    expect(mb.settings.buttonTemplates.length).toBe(3);   // a missing id is not added here
+    expect(await resetMetaBindActions(a, kit)).toBe(0);
   });
 });
 

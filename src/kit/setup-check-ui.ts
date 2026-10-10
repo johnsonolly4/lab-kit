@@ -3,7 +3,7 @@ import { Modal, Notice, Platform, type App } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
 import type { KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
-import { addMetaBindButtons, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
+import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { deckPath } from "../planning/actions";
@@ -11,7 +11,7 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { checkSetup, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { checkSetup, differingButtons, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): void }
@@ -50,6 +50,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder,
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
     scripts, homepageMode,
+    metaBindDiffers: mbIds ? differingButtons(PLANNING_BUTTONS, metaBindButtons(app) ?? []) : undefined,
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length, names: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).map(b => b.id) } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
@@ -122,6 +123,8 @@ export class SetupCheckModal extends Modal {
         apply: () => removeTemplaterStartup(this.app, fix.template) }); break;
       case "meta-bind": await confirm({ name: "Add the planning buttons to Meta Bind", desc: "Only the ones missing (by id). Buttons you already have are never changed.",
         apply: async () => { if (await addMetaBindButtons(this.app, PLANNING_BUTTONS)) new Notice("Buttons added. Restart Obsidian so they load.", 10000); } }); break;
+      case "meta-bind-reset": await confirm({ name: "Put the kit's action on these Meta Bind buttons", desc: `${fix.ids.join(", ")}. Their old action is replaced (label and look stay). Restart Obsidian afterwards.`,
+        apply: async () => { if (await resetMetaBindActions(this.app, PLANNING_BUTTONS.filter(b => fix.ids.includes(b.id)))) new Notice("Buttons changed. Restart Obsidian so they load.", 10000); } }); break;
       case "plugin": window.open(`obsidian://show-plugin?id=${encodeURIComponent(fix.id)}`); return;
       case "install": this.close(); (fix.kit === "planning" ? this.host.planning ?? lab : lab).review(); return;
       case "templater": this.close(); await lab.setupTemplater(); return;

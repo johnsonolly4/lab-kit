@@ -1,6 +1,6 @@
 // Phase 6: the setup check's list (pure: a SetupState in, items out).
 import { describe, it, expect } from "vitest";
-import { checkSetup, labFolderTemplates, type SetupState } from "../src/kit/setup-check";
+import { checkSetup, describeActions, differingButtons, labFolderTemplates, type SetupState } from "../src/kit/setup-check";
 
 const MENU = "Extras/Templates/Lab Kit/Insert snippet.md";
 const CMD = `templater-obsidian:${MENU}`;
@@ -131,6 +131,27 @@ describe("check setup (Phase 6)", () => {
     expect(r["metabind:buttons"].detail).toContain("3 of 26");
     expect(r["metabind:buttons"].detail).toContain("new-meeting-series, go-deck, help");
     expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });
+  });
+
+  it("a Meta Bind button that does something else than the kit's is reported with both actions, and Fix names it", () => {
+    const plugins = new Set(["obsidian-meta-bind-plugin"]);
+    const same = byId(state({ planning: true, metaBindDiffers: [], plugins }));
+    expect(same["metabind:differs"]).toMatchObject({ ok: true });
+    expect(same["metabind:differs"].fix).toBeUndefined();
+    const r = byId(state({ planning: true, metaBindDiffers: [{ id: "go-meetings", now: "opens [[Weekly meetings]]", kit: "opens [[Meetings]]" }], plugins }));
+    expect(r["metabind:differs"]).toMatchObject({ ok: false, fix: { kind: "meta-bind-reset", ids: ["go-meetings"] } });
+    expect(r["metabind:differs"].detail).toContain("go-meetings opens [[Weekly meetings]] (kit: opens [[Meetings]])");
+    expect(byId(state({ planning: true, plugins }))["metabind:differs"]).toBeUndefined();   // not read: no row
+  });
+
+  it("describeActions and differingButtons: only buttons that exist with other actions; missing and your own are not listed", () => {
+    expect(describeActions([{ type: "open", link: "[[Meetings]]" }])).toBe("opens [[Meetings]]");
+    expect(describeActions([{ type: "command", command: "lab-kit:new-meeting" }])).toBe("runs lab-kit:new-meeting");
+    expect(describeActions([{ type: "templaterCreateNote", templateFile: "T/A.md" }])).toBe("runs the template T/A.md");
+    expect(describeActions([])).toBe("does nothing");
+    const kit = [{ id: "go-meetings", actions: [{ type: "open", link: "[[Meetings]]" }] }, { id: "today", actions: [{ type: "command", command: "x" }] }, { id: "help", actions: [{ type: "command", command: "y" }] }];
+    const have = [{ id: "go-meetings", actions: [{ type: "open", link: "[[Weekly meetings]]" }] }, { id: "today", actions: [{ type: "command", command: "x" }] }, { id: "mine", actions: [] }];
+    expect(differingButtons(kit, have)).toEqual([{ id: "go-meetings", now: "opens [[Weekly meetings]]", kit: "opens [[Meetings]]" }]);
   });
 
   it("Methods folder Fix creates the suggested folder; ZotLit is a warning, not a tick", () => {
