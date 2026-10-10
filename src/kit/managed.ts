@@ -312,6 +312,8 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
   const log = (...a: unknown[]): void => { if (opts.debug) console.debug("Lab Kit:", ...a); };
   for (const it of items) {
     const { id } = it.file;
+    // A kept file with no record (made before the kit tracked it): its file is left alone, the kit's current text becomes its baseline, so only later kit changes show as an update
+    if (it.action === "keep" && it.untracked) { await rememberFile(adapter, next, it, opts); results.push({ id, dest: it.dest, action: it.action, outcome: "adopted" }); log("adopt", it.dest); continue; }
     if (!select(it)) { results.push({ id, dest: it.dest, action: it.action, outcome: "skipped" }); log("skip", it.action, it.dest); continue; }
     if (it.action === "up-to-date") { await rememberFile(adapter, next, it, opts); results.push({ id, dest: it.dest, action: it.action, outcome: "adopted" }); continue; }
     if (it.action === "create" || it.action === "missing") {
@@ -361,14 +363,14 @@ export async function restoreManaged(adapter: ManagedAdapter, item: ManagedItem,
 }
 
 /**
- * Settles ONE conflict (`needs-merge`) with the text the merge window resolved to.
+ * Settles ONE conflict (`needs-merge`), or compares / keeps a kept file the kit has a newer version of, with the text the merge window resolved to.
  * `text` null, or equal to your current file, keeps your file as it is and just records it as based on the new kit version ("Keep all mine").
  * Anything else is written after a backup. Either way the base copy becomes the kit's text, so the next merge starts from this kit version.
  */
 export async function resolveManaged(adapter: ManagedAdapter, item: ManagedItem, text: string | null, state: ManagedState | null, opts: ApplyOptions): Promise<{ state: ManagedState; result: ManagedResult }> {
   const next: ManagedState = { installedKitVersion: state?.installedKitVersion ?? "0", files: { ...(state?.files ?? {}) } };
   const { id } = item.file;
-  if (item.action !== "needs-merge") return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
+  if (item.action !== "needs-merge" && !kitHasNewer(item, state?.files[id])) return { state: next, result: { id, dest: item.dest, action: item.action, outcome: "skipped" } };
   let backup: string | undefined;
   let written = false;
   if (text !== null && kitNormalise(text) !== kitNormalise(await adapter.read(item.dest))) {
@@ -466,7 +468,7 @@ export function attentionRank(item: ManagedItem, st?: ManagedFileState): number 
     case "create": return 4;
     case "user-modified": return st?.merged ? 6 : 5;
     case "up-to-date": return 6;
-    case "keep": return 7;
+    case "keep": return kitHasNewer(item, st) ? 3.5 : 7;   // an update to look at: right after "Update available"
     case "detached": return 8;
     case "off": return 9;
   }

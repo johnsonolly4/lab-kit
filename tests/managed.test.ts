@@ -263,6 +263,40 @@ describe("per-file actions (Manage kit files)", () => {
     expect(v.files[out.result.backup!]).toBe("{\"mine\":1}\n");
   });
 
+  it("Keep leaves your kept file and clears the badge; Compare's text is written after a backup; the row sorts right after Update available", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";
+    const item = by(await planManaged(v, V2, state, roles), "script-config");
+    expect(attentionRank(item, state.files["script-config"])).toBe(3.5);
+    expect(attentionRank(item, state.files["script-config"])).toBeGreaterThan(attentionRank({ ...item, action: "fast-forward" }));
+    expect(attentionRank(item, state.files["script-config"])).toBeLessThan(attentionRank({ ...item, action: "create" }));
+    expect(attentionRank(item)).toBe(attentionRank({ ...item, action: "keep" }));   // no record: no update to look at
+    const kept = await resolveManaged(v, item, null, state, opts);
+    expect(kept.result.outcome).toBe("adopted");
+    expect(kept.result.backup).toBeUndefined();
+    expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1}\n");
+    expect(kitHasNewer(by(await planManaged(v, V2, kept.state, roles), "script-config"), kept.state.files["script-config"])).toBe(false);
+    const merged = await resolveManaged(v, item, "{\"mine\":1,\"new\":1}\n", state, opts);
+    expect(merged.result.outcome).toBe("merged");
+    expect(v.files[merged.result.backup!]).toBe("{\"mine\":1}\n");
+    expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1,\"new\":1}\n");
+    // a kept file with nothing newer is not touched by it
+    const same = by(await planManaged(v, V1, state, roles), "script-config");
+    expect((await resolveManaged(v, same, null, state, opts)).result.outcome).toBe("skipped");
+  });
+
+  it("a kept file with no record is adopted on apply (file untouched); a later kit change then shows as newer", async () => {
+    const v = memVault();
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";   // there before the kit tracked it
+    const plan = await planManaged(v, V1, null, roles);
+    expect(by(plan, "script-config")).toMatchObject({ action: "keep", untracked: true });
+    const out = await applyManaged(v, V1, plan, null, opts);
+    expect(out.results.find(r => r.id === "script-config")?.outcome).toBe("adopted");
+    expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1}\n");
+    expect(kitHasNewer(by(await planManaged(v, V1, out.state, roles), "script-config"), out.state.files["script-config"])).toBe(false);
+    expect(kitHasNewer(by(await planManaged(v, V2, out.state, roles), "script-config"), out.state.files["script-config"])).toBe(true);
+  });
+
   it("detach and re-attach", async () => {
     const v = memVault(); const { state } = await install(v);
     expect(setDetached(state, "tpl-menu", true)).toBe(true);

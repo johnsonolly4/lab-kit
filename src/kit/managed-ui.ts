@@ -269,10 +269,11 @@ export class KitManaged {
   async resolve(id: string, onDone: () => void): Promise<void> {
     try {
       const item = (await this.plan()).find(i => i.file.id === id);
-      if (!item || item.action !== "needs-merge") { new Notice("This file isn't in conflict."); onDone(); return; }
+      const kept = !!item && kitHasNewer(item, this.slot.managed?.files[id]);   // a kept file with a newer kit version: Compare
+      if (!item || (item.action !== "needs-merge" && !kept)) { new Notice("This file isn't in conflict."); onDone(); return; }
       const adapter = this.app.vault.adapter;
       const baseFile = kitJoin(this.baseDir(), `${id}.txt`);
-      const base = item.conflicts !== undefined && await adapter.exists(baseFile) ? await adapter.read(baseFile) : null;
+      const base = (item.conflicts !== undefined || kept) && await adapter.exists(baseFile) ? await adapter.read(baseFile) : null;
       const modal = new KitMergeModal(this.app,
         { dest: item.dest, isScript: item.file.kind === "script", base, ours: await adapter.read(item.dest), theirs: item.text },
         {
@@ -609,10 +610,12 @@ class KitFilesModal extends Modal {
         }));
       }
       if (kitHasNewer(it, this.managed.stateOf(id))) {
-        row.addButton(b => b.setButtonText("Replace with new version…").setCta().onClick(() => {
-          new ConfirmModal(this.app, "Replace your copy with the new version?", `Your copy of ${it.dest} will be deleted and the kit's new version installed. A backup is saved first.`,
-            "Replace", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
+        row.addButton(b => b.setButtonText("Compare…").onClick(() => void this.managed.resolve(id, () => void this.refresh())));
+        row.addButton(b => b.setButtonText("Update…").setCta().onClick(() => {
+          new ConfirmModal(this.app, "Replace your copy with the new version?", `Your copy of ${it.dest} will be replaced by the kit's new version. A backup is saved first.`,
+            "Update", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
         }));
+        row.addButton(b => b.setButtonText("Keep").setTooltip("Leave your copy as it is; the badge returns only when the kit changes this file again").onClick(() => void this.run(() => this.managed.resolveOne(id, null))));
       }
       if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
       else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));

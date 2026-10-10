@@ -80,7 +80,9 @@ describe("planning kit files (Phase 3)", () => {
     expect(preview.create).toEqual([]);
     expect([...preview.leftAlone].sort()).toEqual(Object.keys(old).sort());
     await applyManaged(v, planning, items, null, opts);
-    expect(v.files).toEqual(old);
+    for (const [d, text] of Object.entries(old)) expect(v.files[d]).toBe(text);
+    // only the kit's own bookkeeping (base copies of the kept files it now tracks) was added
+    expect(Object.keys(v.files).filter(f => !(f in old)).every(f => f.startsWith(".obsidian/plugins/lab-kit/kit-base/"))).toBe(true);
   });
 
   it("a Templater user scripts folder that is set is kept: vtAsk.js goes into its vault/ subfolder", () => {
