@@ -61,7 +61,7 @@
 .cm-lab-kit-cell-5 { background-color: rgba(var(--lab-kit-ref-5), 0.22); border-radius: 3px; }
 /* The cell input over a copy of its text: the copy shows the colours, the input's own text is hidden while a formula is typed */
 .lab-kit-input-wrap { position: relative; }
-.lab-kit-input-hl { position: absolute; inset: 0; padding: 2px 4px; box-sizing: border-box; font: inherit; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+.lab-kit-input-hl { position: absolute; inset: 0; padding: 2px 4px; border: var(--input-border-width, 1px) solid transparent; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
 .lab-kit-input-wrap:not(.is-hl) .lab-kit-input-hl { display: none; }
 .lab-kit-input-wrap.is-hl .lab-kit-input { color: transparent; background: transparent; caret-color: var(--text-normal); }
 
@@ -74,7 +74,7 @@
   padding: 0; box-sizing: border-box;
   width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
 }
-.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; padding: 2px 4px; }
+.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; padding: 2px 4px; }
 /* Chemical suggestions: the matched alias, after the note name */
 .lab-kit-suggest-alias { margin-left: 0.6em; color: var(--text-muted); font-size: 0.85em; }
 
@@ -184,9 +184,9 @@
 @media (min-width: 701px) {
   .modal-container.lab-kit-pick-side { pointer-events: none; }
   .modal-container.lab-kit-pick-side .modal-bg { display: none; }
-  .modal.lab-kit-pick-side { position: fixed; top: auto; bottom: 12px; left: 50%; right: auto; width: min(760px, 92vw); max-height: none; transform: translateX(-50%); pointer-events: auto; padding: 8px 12px; }
-  .modal.lab-kit-pick-side .prompt-results { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: none; overflow: visible; padding: 6px 0 0; }
-  .modal.lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
+  .modal-container.lab-kit-pick-side .modal.lab-kit-pick-side { position: fixed; top: auto; bottom: 12px; left: 50%; right: auto; width: min(760px, 92vw); max-height: none; transform: translateX(-50%); pointer-events: auto; padding: 8px 12px; }
+  .modal-container.lab-kit-pick-side .modal.lab-kit-pick-side .prompt-results { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: none; overflow: visible; padding: 6px 0 0; }
+  .modal-container.lab-kit-pick-side .modal.lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
 }
 
 /* Check setup window (src/kit/setup-check-ui.ts) */
