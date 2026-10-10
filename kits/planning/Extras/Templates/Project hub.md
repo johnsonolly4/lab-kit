@@ -48,6 +48,11 @@ show: deadline
 > > SORT file.mtime DESC
 > > ```
 
+> [!question] Meetings
+> ```vault-card
+> show: project-meetings
+> ```
+
 > [!summary] Papers
 > ```dataview
 > LIST WITHOUT ID choice(contains(row["Zotero Tags"], "key-paper"), "&#9733; ", "") + link(file.path, Title) + " <span class='vt-muted'>&middot; " + default(join(map(filter(file.lists, (l) => contains(l.outlinks, this.file.link)), (l) => regexreplace(l.text, "^[^:]*:\\s*", "")), "; "), "") + "</span>"

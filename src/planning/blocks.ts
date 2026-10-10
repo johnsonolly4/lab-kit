@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, gotoTargets, goalOf, inFolder, deadlineBadge, dayMonth, projectCards, projectMeetings, PROJECT_MEETINGS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -49,6 +49,7 @@ export class PlanningBlocks {
 
 class BlockView extends MarkdownRenderChild {
   private drawing = 0;
+  private showAll = false;   // the project meetings list: last 8 or all
 
   constructor(el: HTMLElement, private owner: PlanningBlocks, private lang: Lang, private source: string, private sourcePath: string) { super(el); }
 
@@ -133,6 +134,18 @@ class BlockView extends MarkdownRenderChild {
         else box.createDiv({ cls: "vt-muted", text: kit.dueCountdown === "off" ? "Deadline countdown is off (Settings → Lab Kit)." : "No deadline set." });
         return;
       }
+      case "project-meetings": {   // on a project hub: meeting notes that name this project
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile) return;
+        const hub = this.owner.rec(hubFile);
+        const all = projectMeetings(this.owner.notesIn(f.meetings), hub);
+        if (!all.length) { box.createDiv({ cls: "vt-muted", text: "No meetings name this project yet. Set project on a meeting note." }); return; }
+        this.list(box, this.showAll ? all : all.slice(0, PROJECT_MEETINGS));
+        if (all.length > PROJECT_MEETINGS) {
+          box.createEl("button", { text: this.showAll ? "Show the last " + PROJECT_MEETINGS : `Show all ${all.length}` }).addEventListener("click", () => { this.showAll = !this.showAll; this.draw(); });
+        }
+        return;
+      }
       case "meeting-cards": {   // the Meetings hub: one card per series
         if (!this.need(box, f.meetings)) return;
         const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
@@ -182,7 +195,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, project-meetings, meeting-cards or next-meetings.` });
     }
   }
 

@@ -160,6 +160,16 @@ export function gotoTargets(topFolders: string[], files: NoteRec[], hide: string
   return out;
 }
 
+/** Meeting notes (`kind: meeting`) whose `project` (one link or a list) points at `hub`, newest first by `date`: text is the note name, badge the series. */
+export function projectMeetings(notes: NoteRec[], hub: NoteRec): ListLine[] {
+  return notes.filter(n => n.fm.kind === "meeting" && pointsTo(n.fm.project, hub))
+    .sort((a, b) => str(b.fm.date).localeCompare(str(a.fm.date)) || b.name.localeCompare(a.name))
+    .map(n => { const s = linkTarget(n.fm.series); return { path: n.path, text: n.name, badges: s ? [{ text: s, cls: "vt-muted" }] : [] }; });
+}
+
+/** How many project meetings a hub shows before "Show all". */
+export const PROJECT_MEETINGS = 8;
+
 /** Rows a Home tile shows when its block has no `limit:`. */
 export const TILE_ROWS = 8;
 

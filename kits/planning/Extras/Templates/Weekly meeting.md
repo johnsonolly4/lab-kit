@@ -23,7 +23,7 @@ kind: meeting
 series: "[[<% series %>]]"
 date: <% date %>
 since: <% since %>
-<% vt && vt.project ? `project: "[[${vt.project}]]"\n` : "" -%>
+<% vt && vt.project ? `project:\n  - "[[${vt.project}]]"` : "project:" %>
 cssclasses:
   - vt
 ---

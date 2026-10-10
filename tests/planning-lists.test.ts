@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
+import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projectMeetings, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -172,5 +172,21 @@ describe("Project deadline countdown", () => {
   it("Go to labels the planning folder's to-do board as To-do", () => {
     const files = [note("00 Planning/To-do board.base"), note("02 Projects/Projects overview.md", { kind: "hub" })];
     expect(gotoTargets(["00 Planning", "02 Projects"], files).map(l => l.text)).toEqual(["To-do", "Projects"]);
+  });
+});
+
+describe("Project hub: meetings that name the project", () => {
+  const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
+  const m = (name: string, fm: Record<string, unknown>) => note(`08 Meetings/Group/${name}.md`, { kind: "meeting", series: "[[Group]]", ...fm });
+  it("lists meeting notes whose project is the hub (a link or a list), newest first, with the series", () => {
+    const rows = projectMeetings([
+      m("2026-10-01 Group", { date: "2026-10-01", project: "[[Alpha]]" }),
+      m("2026-10-15 Group", { date: "2026-10-15", project: ["[[Beta]]", "[[Alpha]]"] }),
+      m("2026-10-08 Group", { date: "2026-10-08", project: "[[Beta]]" }),
+      m("2026-10-09 Group", { date: "2026-10-09" }),
+      note("08 Meetings/Group/x.md", { kind: "todo", project: "[[Alpha]]" }),
+    ], hub);
+    expect(rows.map(r => r.text)).toEqual(["2026-10-15 Group", "2026-10-01 Group"]);
+    expect(rows[0].badges[0].text).toBe("Group");
   });
 });

@@ -8,7 +8,7 @@ import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
 import { diffRows, reportMarkdown, scan, selectChanges, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
-import { INTERVALS, WEEKDAYS } from "../planning/meetings";
+import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
 
@@ -184,7 +184,17 @@ export class TidyNotesModal extends Modal {
       sel.value = value;
       sel.addEventListener("change", () => { set(sel.value); this.rescan(); this.render(); });
     };
-    pick("Held", INTERVALS, this.answers.interval, v => { this.answers.interval = v; });
+    // weekly / fortnightly / monthly, or every N weeks (a number box appears)
+    const EVERY = "every N weeks";
+    const weeks = intervalWeeks(this.answers.interval);
+    const preset = (INTERVALS as readonly string[]).includes(this.answers.interval);
+    pick("Held", [...INTERVALS, EVERY], preset ? this.answers.interval : EVERY, v => { this.answers.interval = v === EVERY ? everyWeeks(weeks && !preset ? weeks : 3) : v; });
+    if (!preset) {
+      const n = row.createEl("input", { type: "number", cls: "lab-kit-tidy-weeks" });
+      n.min = "1"; n.max = "52"; n.value = String(weeks ?? 3);
+      row.createSpan({ text: "weeks" });
+      n.addEventListener("change", () => { const v = Math.min(52, Math.max(1, Math.round(Number(n.value)) || 3)); this.answers.interval = everyWeeks(v); this.rescan(); this.render(); });
+    }
     pick("on", WEEKDAYS, this.answers.day, v => { this.answers.day = v; });
   }
 

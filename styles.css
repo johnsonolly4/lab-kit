@@ -194,5 +194,6 @@
 .lab-kit-tidy-line.is-removed { background: rgba(var(--color-red-rgb), 0.22); }
 .lab-kit-tidy-line.is-added { background: rgba(var(--color-green-rgb), 0.22); }
 .lab-kit-tidy-line.is-changed { background: rgba(var(--color-orange-rgb), 0.25); }
+.lab-kit-tidy-weeks { width: 4.5em; }
 .lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }

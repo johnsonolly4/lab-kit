@@ -117,13 +117,28 @@ export class PlanningCommands {
     const series = given ?? await this.pickSeries(extra);
     if (!series) return;
     if (series.interval === ONCE) { await this.newOneOff(); return; }
-    // An extra meeting is held today, in between: it does not move the schedule (the next regular date is still worked out from the interval)
-    const date = extra ? new Date() : nextDate(series, new Date());
+    // An extra meeting is held on a date you give (today by default), in between: it does not move the schedule
+    let date = nextDate(series, new Date());
+    if (extra) {
+      const asked = await this.askDate("Date of the extra meeting (YYYY-MM-DD)", ymd(new Date()));
+      if (!asked) return;
+      date = asked;
+    }
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
     handoff().vtMeeting = { series: series.name, folder: series.folder, date: ymd(date), since: ymd(sinceLast(series, date, held)) };
     try { await this.fromTemplate(TPL.meeting, this.folders.meetings, series.folder); }
     finally { delete handoff().vtMeeting; }
+  }
+
+  /** Asks a date until it is a real YYYY-MM-DD day; null when cancelled. */
+  private async askDate(prompt: string, start: string): Promise<Date | null> {
+    for (let typed = await ask(this.app, prompt, start); ; typed = await ask(this.app, prompt, typed ?? "")) {
+      if (typed === null) return null;
+      const d = parseDay(typed.trim());
+      if (d) return d;
+      new Notice("Type the date with year, month and day, for example 2026-10-15.");
+    }
   }
 
   /**
@@ -137,14 +152,9 @@ export class PlanningCommands {
     let hub = this.seriesList().find(s => s.interval === ONCE);
     const title = await ask(this.app, "What is the meeting about? (Enter = One-off)");
     if (title === null) return;
-    let date = ymd(new Date());
-    for (let typed = await ask(this.app, "Date of the meeting (YYYY-MM-DD)", date); ; typed = await ask(this.app, "Date of the meeting (YYYY-MM-DD)", typed ?? "")) {
-      if (typed === null) return;
-      const d = parseDay(typed.trim());
-      if (!d) { new Notice("Type the date with year, month and day, for example 2026-10-15."); continue; }
-      date = ymd(d);
-      break;
-    }
+    const asked = await this.askDate("Date of the meeting (YYYY-MM-DD)", ymd(new Date()));
+    if (!asked) return;
+    const date = ymd(asked);
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").sort((a, b) => a.basename.localeCompare(b.basename));
     let project = "";
     if (hubs.length) {
