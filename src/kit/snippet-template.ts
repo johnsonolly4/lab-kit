@@ -14,8 +14,8 @@ export interface TemplateField {
   type: "text" | "number" | "textarea";
   /** The default answer; may hold computed tokens such as {{next-letter:sampling}}. */
   value: string;
-  /** `suggest: chemicals` = the field suggests the chemical notes while typing. */
-  suggest?: "chemicals";
+  /** `suggest: chemicals` = the field suggests the chemical notes while typing. `suggest: codes` = the box is filled with the sample codes of the note's tables, with a "Codes from" choice when there are several. */
+  suggest?: "chemicals" | "codes";
   /** `class: monomer` or `class: [a, b]`: suggest chemicals of these Chemical classes (any text, never checked against a list). Needs `suggest: chemicals`. */
   classes?: string[];
 }
@@ -44,6 +44,9 @@ export interface TemplateEnv {
   /** A number from a property of the note called `note`, or "" when there is no such note, property or number. */
   noteProperty(note: string, property: string): string;
 }
+
+/** The key of the "Codes from" choice the form adds after a `suggest: codes` field (not a template field, so templates never see it). */
+export const codesFromKey = (key: string): string => `${key}_from`;
 
 const RESERVED = ["prefix", "code"];
 const NAME = /^[A-Za-z_][\w-]*$/;
@@ -91,12 +94,15 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     const type = asText(f.type) ?? "text";
     if (type !== "text" && type !== "number" && type !== "textarea") throw new TemplateError(`Field "${key}" has an unknown type "${type}".`);
     const suggest = asText(f.suggest)?.trim();
-    if (suggest && suggest !== "chemicals") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals").`);
+    if (suggest && suggest !== "chemicals" && suggest !== "codes") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals" or "codes").`);
     const classes = (Array.isArray(f.class) ? f.class : f.class === undefined ? [] : [f.class]).map(c => asText(c)?.trim() ?? "");
     if (classes.some(c => !c)) throw new TemplateError(`Field "${key}": class must be text or a list of texts.`);
-    if (classes.length && !suggest) throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
+    if (classes.length && suggest !== "chemicals") throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
     fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "",
-      ...(suggest ? { suggest: "chemicals" as const } : {}), ...(classes.length ? { classes } : {}) });
+      ...(suggest === "chemicals" || suggest === "codes" ? { suggest } : {}), ...(classes.length ? { classes } : {}) });
+  }
+  for (const f of fields.filter(x => x.suggest === "codes")) {
+    if (fields.some(x => x.key === codesFromKey(f.key))) throw new TemplateError(`The field key "${codesFromKey(f.key)}" is reserved: the "Codes from" choice of "${f.key}" uses it.`);
   }
   const required = asText(raw.required)?.trim() || undefined;
   if (required && !fields.some(f => f.key === required)) throw new TemplateError(`required: "${required}" is not one of the fields.`);

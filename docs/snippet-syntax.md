@@ -46,7 +46,16 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{next-letter:sampling}}` | the first sample letter not used in the note's `sampling` tables (use as a field's default) |
 | `{{note-number:key.Density}}` | a number from a property of the chemical note named by field `key`, else empty |
 
-Planned, not built: a field type that offers the note's sample-code tables ("Codes from") the way the method snippets do.
+A field with `suggest: codes` asks for sample codes the way the method snippets do (see "Sample codes" below): its box is filled with the codes of the note's tables and, with more than one table, a **Codes from** choice follows it. Give it `type: textarea`; the answer reaches the template as the codes joined with `, `, so `{{#each codes}}…{{/each}}` works. The key `<key>_from` is reserved for the choice. `class` belongs to `suggest: chemicals` only.
+
+```yaml
+fields:
+  - key: codes
+    label: Sample codes
+    type: textarea
+    suggest: codes
+    value: ""   # used when the note has no table with codes
+```
 
 ## 2. Calc block options
 
@@ -65,7 +74,7 @@ Lines above the table inside a ```` ```calc ```` block, one `key: value` per lin
 
 ### Sample codes: how the method snippets find them
 
-NMR, GPC, DLS, every Methods-folder method and Combined results ask for **Sample codes** and, when the note has more than one table with a `codes` option, a **Codes from** choice. **All of them** is the default: the box is filled with the codes of every such table (duplicates removed). Pick one table to narrow it. Edit the box and your text is used as it is.
+NMR, GPC, DLS, every Methods-folder method and Combined results (and any token template field with `suggest: codes`) ask for **Sample codes** and, when the note has more than one table with a `codes` option, a **Codes from** choice. **All of them** is the default: the box is filled with the codes of every such table (duplicates removed). Pick one table to narrow it. Edit the box and your text is used as it is.
 
 - Any calc block with a `codes` option counts, whoever made it. Add `codes: column A` to a table of your own and it becomes a source.
 - The kit's Sample list and Sampling timetable (`codes: column A`) and Variant naming matrix (`codes: cells`) carry it, and so do the sample tables the NMR, GPC, DLS and method snippets insert (the column is the method's sample column), so a copy of one of those is a source too.

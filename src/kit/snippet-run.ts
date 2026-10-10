@@ -3,8 +3,8 @@
 import { Notice, TFile, TFolder, parseYaml, type App } from "obsidian";
 import { text } from "../calc/engine";
 import { prop, toList } from "../frontmatter";
-import { classFilter, makeEnv, type Chem } from "./snippet-env";
-import { TemplateError, defaultAnswers, fillTemplate, isCancelled, parseTemplate, type ParsedTemplate } from "./snippet-template";
+import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "./snippet-env";
+import { TemplateError, codesFromKey, defaultAnswers, fillTemplate, isCancelled, parseTemplate, type ParsedTemplate } from "./snippet-template";
 import type { KitData } from "./paths";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
@@ -79,16 +79,25 @@ export class SnippetTemplates {
         return isNaN(x) ? "" : String(x);
       });
       const defaults = defaultAnswers(header, env);
-      const chems = header.fields.some(f => f.suggest) ? this.chemicals() : [];
+      const chems = header.fields.some(f => f.suggest === "chemicals") ? this.chemicals() : [];
+      // suggest: codes: the box holds the note's sample codes and, with several tables, a "Codes from" choice follows it
+      const sources = header.fields.some(f => f.suggest === "codes") ? codeSources(note) : [];
+      const parts = codeFormParts(sources);
       if (!tp.user.labForm) throw new TemplateError("The form script labForm.js was not found. Run Check setup.");
       const title = header.title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "");
-      const got = await tp.user.labForm(tp, title, header.fields.map(f => ({
-        key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: defaults[f.key],
-        ...(f.suggest ? { suggest: classFilter(chems, f.classes, kit.chemClassOnly) } : {}),
-      })));
+      const got = await tp.user.labForm(tp, title, header.fields.flatMap(f => {
+        const isCodes = f.suggest === "codes";
+        const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: isCodes && parts.prefill ? parts.prefill : defaults[f.key],
+          ...(f.suggest === "chemicals" ? { suggest: classFilter(chems, f.classes, kit.chemClassOnly) } : {}) };
+        return isCodes && parts.options.length
+          ? [field, { key: codesFromKey(f.key), label: "Codes from", type: "select", options: parts.options, value: "all" }] : [field];
+      }));
       if (!got) return "";
       const answers: Record<string, string> = {};
-      for (const f of header.fields) answers[f.key] = text(got[f.key]).trim();
+      for (const f of header.fields) {
+        const box = text(got[f.key]).trim();
+        answers[f.key] = f.suggest === "codes" ? resolveCodes(sources, parts.prefill, box, text(got[codesFromKey(f.key)]) || undefined) : box;
+      }
       if (isCancelled(header, answers)) return "";
       return fillTemplate(body, answers, env);
     } catch (e) { return this.fail(file, e); }

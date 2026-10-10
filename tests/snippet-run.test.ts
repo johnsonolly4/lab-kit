@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Notice, TFile, TFolder } from "obsidian";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
-import { chemicalClasses, classFilter, makeEnv, type Chem } from "../src/kit/snippet-env";
+import { chemicalClasses, classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "../src/kit/snippet-env";
 import { parseTemplate, TemplateError } from "../src/kit/snippet-template";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 
@@ -66,6 +66,64 @@ describe("header: suggest and class", () => {
     expect(() => parse([{ key: "a", suggest: "people" }])).toThrow(TemplateError);
     expect(() => parse([{ key: "a", suggest: "chemicals", class: [""] }])).toThrow(TemplateError);
     expect(() => parse([{ key: "a", class: "monomer" }])).toThrow(TemplateError);
+  });
+  it("suggest: codes is accepted; class with it and a clash with its Codes from key are not", () => {
+    expect(parse([{ key: "codes", suggest: "codes" }])!.header.fields[0].suggest).toBe("codes");
+    expect(() => parse([{ key: "codes", suggest: "codes", class: "monomer" }])).toThrow(TemplateError);
+    expect(() => parse([{ key: "codes", suggest: "codes" }, { key: "codes_from" }])).toThrow(TemplateError);
+    expect(() => parse([{ key: "codes" }, { key: "codes_from" }])).not.toThrow();
+  });
+});
+
+const F3 = "```";
+const SAMPLES = `${F3}calc\nname: samples\ntitle: Sample list\ncodes: column A\n| Code | Note |\n|---|---|\n| ABC0016-A | x |\n| ABC0016-B | y |\n${F3}\n`;
+const TIMES = `${F3}calc\nname: sampling\ntitle: Sampling timetable\n| Code | Time |\n|---|---|\n| ABC0016-A0 | 0 |\n| ABC0016-A30 | 30 |\n${F3}\n`;
+const MATRIX = `${F3}calc\nname: variants\ntitle: Variant naming matrix\ncodes: cells\n| | x | y |\n|---|---|---|\n| a | ABC0016-C | ABC0016-D |\n${F3}\n`;
+
+describe("codeSources (suggest: codes)", () => {
+  it("reads codes: column A, codes: cells and older tables named like samples / sampling", () => {
+    expect(codeSources(SAMPLES)).toEqual([{ label: "Sample list", codes: ["ABC0016-A", "ABC0016-B"] }]);
+    expect(codeSources(TIMES)).toEqual([{ label: "Sampling timetable", codes: ["ABC0016-A0", "ABC0016-A30"] }]);
+    expect(codeSources(MATRIX)).toEqual([{ label: "Variant naming matrix", codes: ["ABC0016-C", "ABC0016-D"] }]);
+    expect(codeSources(`${F3}calc\nname: other\n| a |\n|---|\n| ABC0016-Z |\n${F3}\n`)).toEqual([]);
+  });
+  it("merges tables with one title and drops duplicates", () => {
+    const second = SAMPLES.replace("name: samples", "name: samples2").replace("| ABC0016-B | y |", "| ABC0016-E | z |");
+    expect(codeSources(SAMPLES + second)).toEqual([{ label: "Sample list", codes: ["ABC0016-A", "ABC0016-B", "ABC0016-E"] }]);
+  });
+  it("form parts: all codes in the box, a Codes from choice only with several tables", () => {
+    expect(codeFormParts(codeSources(SAMPLES))).toEqual({ prefill: "ABC0016-A, ABC0016-B", options: [] });
+    const parts = codeFormParts(codeSources(SAMPLES + TIMES));
+    expect(parts.prefill).toBe("ABC0016-A, ABC0016-B, ABC0016-A0, ABC0016-A30");
+    expect(parts.options).toEqual([{ value: "all", label: "All of them" }, { value: "0", label: "Sample list" }, { value: "1", label: "Sampling timetable" }]);
+  });
+  it("resolveCodes: the picked table when the box is untouched, else the box", () => {
+    const src = codeSources(SAMPLES + TIMES), { prefill } = codeFormParts(src);
+    expect(resolveCodes(src, prefill, prefill, "all")).toBe(prefill);
+    expect(resolveCodes(src, prefill, prefill, "1")).toBe("ABC0016-A0, ABC0016-A30");
+    expect(resolveCodes(src, prefill, "mine, own", "1")).toBe("mine, own");
+    expect(resolveCodes(src, prefill, "mine", undefined)).toBe("mine");
+  });
+});
+
+describe("run: suggest: codes", () => {
+  const T = header({ fields: [{ key: "codes", label: "Sample codes", type: "textarea", suggest: "codes", value: "" }] }, "{{#each codes}}[{{.}}]{{/each}}");
+  it("prefills the box from the note and adds Codes from when there are several tables", async () => {
+    const { st } = setup({ files: { "S/t.md": T }, note: SAMPLES + TIMES });
+    const calls: FormCall[] = [];
+    const out = await st.run(tpWith({}, calls), file("S/t.md"));
+    expect(calls[0].fields.map(f => f.key)).toEqual(["codes", "codes_from"]);
+    expect(out).toBe("[ABC0016-A][ABC0016-B][ABC0016-A0][ABC0016-A30]");
+    expect(await st.run(tpWith({ codes_from: "1" }), file("S/t.md"))).toBe("[ABC0016-A0][ABC0016-A30]");
+    expect(await st.run(tpWith({ codes: "X, Y", codes_from: "1" }), file("S/t.md"))).toBe("[X][Y]");
+  });
+  it("one table: no Codes from; none: the field's own value", async () => {
+    const one = setup({ files: { "S/t.md": T }, note: SAMPLES });
+    const calls: FormCall[] = [];
+    await one.st.run(tpWith({}, calls), file("S/t.md"));
+    expect(calls[0].fields.map(f => f.key)).toEqual(["codes"]);
+    const none = setup({ files: { "S/t.md": T.replace('"value":""', '"value":"Q1, Q2"') }, note: "" });
+    expect(await none.st.run(tpWith({}), file("S/t.md"))).toBe("[Q1][Q2]");
   });
 });
 

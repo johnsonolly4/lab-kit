@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Token templates can ask for sample codes**: a field with `suggest: codes` (in a snippet note's header) is filled with the sample codes of the tables in the note, with a **Codes from** choice when there are several, the same as NMR / GPC / DLS. Use it in your own copy of a snippet; syntax in `docs/snippet-syntax.md`. No kit snippet uses it yet. Tests only, not seen in Obsidian
 - **Kept files with a newer kit version are shown outside Manage files**: at start-up a notice says how many kit files you keep as your own that the kit has a newer text for (button **Manage files**; the Review notice for a new kit version still comes first); Check setup has an amber row, **Kept files with a newer kit version**, listing them (never counted as something to fix); the settings tab lists them under the kit version. The three buttons on such a row are now **Compare…**, **Use kit version…** and **Keep mine**. Nothing is ever replaced by itself. Tests only, not seen in Obsidian
 - **New chemical asks for the Chemical class**: a pick list of the classes your chemical notes already use, **Other…** to type a new one, or **No class**; Esc cancels. The class is written into the new note's `Chemical class`. Tests only for the list; writing it into the note not seen in Obsidian
 - **How my vault works** mentions New meeting series (and its template box), the hub buttons, the Snippet icons page and the Tidy rule for hub pages.

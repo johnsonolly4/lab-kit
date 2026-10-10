@@ -10,15 +10,16 @@ export const letterIndex = (s: string): number => [...s].reduce((n, ch) => n * 2
 const escapeRx = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** Every calc table in the note, in order: name (lower case) and rows, each row its list of cells (header row first). */
-export function calcTables(note: string): { name: string; rows: string[][] }[] {
+export function calcTables(note: string): { name: string; title: string; codes: string; rows: string[][] }[] {
   const rx = new RegExp("^[ \\t>]*" + F + "calc[ \\t]*\\n([\\s\\S]*?)\\n[ \\t>]*" + F + "[ \\t]*$", "gim");
-  const out: { name: string; rows: string[][] }[] = [];
+  const out: { name: string; title: string; codes: string; rows: string[][] }[] = [];
   let m: RegExpExecArray | null;
   while ((m = rx.exec(note))) {
     const lines = m[1].split("\n").map(l => l.replace(/^[ \t>]*/, ""));
     const name = lines.map(l => /^name:\s*(.+?)\s*$/i.exec(l)).find(Boolean)?.[1].toLowerCase() ?? "";
     const rows = lines.filter(l => l.startsWith("|") && !/^[\s|:-]+$/.test(l)).map(l => l.split("|").slice(1, -1).map(c => c.trim()));
-    out.push({ name, rows });
+    const opt = (k: string): string => lines.map(l => new RegExp(`^${k}:\\s*(.+?)\\s*$`, "i").exec(l)).find(Boolean)?.[1] ?? "";
+    out.push({ name, title: opt("title"), codes: opt("codes").toLowerCase(), rows });
   }
   return out;
 }
@@ -78,4 +79,44 @@ export function classFilter(chems: Chem[], want: string[] | undefined, only: boo
   const hit = (c: Chem) => (c.classes ?? []).some(x => wanted.has(x.trim().toLowerCase()));
   const yes = chems.filter(hit).map(plain);
   return only ? yes : [...yes, ...chems.filter(c => !hit(c)).map(plain)];
+}
+
+/* ---------- sample codes (suggest: codes): mirrors codeSources / codeField in labSnippets.js ---------- */
+
+export interface CodeSource { label: string; codes: string[] }
+
+/**
+ * Every table of the note that holds sample codes: a calc block with a `codes:` option ("column A" = that column below the header,
+ * "cells" = every cell but the header row and the first column), and older tables named samples / sample / sampling without it.
+ * Tables with one label (its title, else its name) are merged; duplicates are removed.
+ */
+export function codeSources(note: string): CodeSource[] {
+  const out: CodeSource[] = [];
+  for (const t of calcTables(note)) {
+    const col = /^column\s+([a-z]{1,3})$/.exec(t.codes);
+    const body = t.rows.slice(1);
+    const codes = col ? body.map(r => r[letterIndex(col[1].toUpperCase())]).filter(Boolean)
+      : t.codes === "cells" ? body.flatMap(r => r.slice(1)).filter(Boolean)
+      : /^(samples?|sampling)\d*$/i.test(t.name) ? body.map(r => r[0]).filter(Boolean) : [];
+    if (!codes.length) continue;
+    const label = t.title || t.name || "Table";
+    const at = out.find(x => x.label.toLowerCase() === label.toLowerCase());
+    if (at) at.codes = [...new Set([...at.codes, ...codes])]; else out.push({ label, codes: [...new Set(codes)] });
+  }
+  return out;
+}
+
+/** What the "Codes from" choice offers when there is more than one source. */
+export const ALL_CODES = "all";
+
+/** The box's prefill (every source's codes, joined with ", ") and, with more than one source, the options of the "Codes from" choice. */
+export function codeFormParts(sources: CodeSource[]): { prefill: string; options: { value: string; label: string }[] } {
+  const prefill = [...new Set(sources.flatMap(x => x.codes))].join(", ");
+  return { prefill, options: sources.length > 1 ? [{ value: ALL_CODES, label: "All of them" }, ...sources.map((x, i) => ({ value: String(i), label: x.label }))] : [] };
+}
+
+/** The codes to use: a table you picked (and left the box unedited), else the box's own text. */
+export function resolveCodes(sources: CodeSource[], prefill: string, box: string, from: string | undefined): string {
+  const src = from && from !== ALL_CODES && box === prefill ? sources[Number(from)] : undefined;
+  return src ? src.codes.join(", ") : box;
 }
