@@ -250,7 +250,7 @@ title: Reactor
 icon: waves
 | Setting | Value |
 |---|---|
-| Reactor volume (mL) | =column!B10 |
+| Reactor volume (mL) | =column!B11 |
 ```
 
 ```calc

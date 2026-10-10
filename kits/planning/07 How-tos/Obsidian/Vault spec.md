@@ -137,7 +137,7 @@ Created with the **New to-do** button / `Alt+T` (template `Extras/Templates/To-d
 | `project` | link to a project hub, e.g. `"[[Flow rig]]"`, or empty | template / me |
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | me |
 | `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | me |
-| `meeting` | tick box - raise this at the next Thursday meeting | me |
+| `meeting` | tick box - raise this at the next meeting | me |
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It fills in `project` by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; otherwise it asks (pick "(no project)" for none; Esc cancels the to-do). New to-dos get `cssclasses: [vt]`.
 

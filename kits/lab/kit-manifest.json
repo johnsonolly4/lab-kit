@@ -311,7 +311,7 @@
       "role": "templates",
       "path": "Snippets/11 Flow column prep.md",
       "version": "0.5.2",
-      "sha256": "91c8a6327e49c0986751e7e7bebbe0ed235509ab19dbd887418aca1deb43832c",
+      "sha256": "44c67f952f8907b81ca40f9d51fec1de810daa3f576a26ffe63b90d7c1a29f17",
       "renamedFrom": [],
       "desc": "Column weighing → bead mass → reactor volume",
       "optional": true
@@ -323,7 +323,7 @@
       "role": "templates",
       "path": "Snippets/12 Residence times.md",
       "version": "0.5.2",
-      "sha256": "fba16afef0645002b62c39b8d2ebc0cdd6f5d7b3db4b90f7c503ccd907bada11",
+      "sha256": "6ee6abf96236f102035214cd0c888d10cb605fb08d2ff3b48048e29f422a71bd",
       "renamedFrom": [],
       "desc": "Flow rate for each residence time from a reactor volume",
       "optional": true

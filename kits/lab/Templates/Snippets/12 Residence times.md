@@ -6,8 +6,8 @@ required: rts
 fields:
   - key: volume
     label: Reactor volume (mL)
-    hint: type the volume, or link it like =column!B10
-    value: "{{linked:column!B10}}"
+    hint: type the volume, or link it like =column!B11
+    value: "{{linked:column!B11}}"
   - key: rts
     label: Target residence times (min)
     hint: comma separated

@@ -11,7 +11,7 @@ cssclasses:
 > - **Capture first, sort later.** Anything that pops into your head goes into the inbox with `Ctrl+N`. You sort it on Friday.
 > - **Every to-do is a card on the board.** You plan by dragging cards onto days. Tick **done** when it's finished; anything unfinished follows you to the next day.
 > - **Experiments and papers move through stages.** The homepage shows the ones that need you.
-> - **Fridays tidy, Thursdays report.** Two short routines keep everything from piling up.
+> - **Fridays tidy, meetings report.** Two short routines keep everything from piling up.
 
 ## Every day
 
@@ -52,7 +52,7 @@ flowchart LR
 - Didn't get to it? Do nothing. Next time Obsidian opens, it moves to **today** and turns **orange** - no lost tasks. Drag it somewhere else if today isn't right, or back to Backlog.
 - Planning next week on a Friday? Drag cards onto Mon-Thu as normal - a day that's already passed this week means *next* week.
 - Only give it a **due** date if there's a real deadline - those show in red when they're late. New to-do asks for one (Enter = none). With Settings → Lab Kit → **Due-date countdown** on, the card shows the days left (`3d`, `Today`, `2d late`); a to-do with `countdown: true` shows it even in the "marked only" setting.
-- Tick **meeting** on a to-do (open the note) if you want to raise it on Thursday.
+- Tick **meeting** on a to-do (open the note) if you want to raise it at the next meeting.
 - Long names show up to 3 lines on the card - open the card to see the rest.
 - Today's column not blue? The roll-over isn't running - see [[Setting up a computer]].
 
@@ -92,14 +92,14 @@ flowchart LR
 > [!warning] Don't write between the `%%zt-managed%%` markers
 > The update button rewrites that part. Write in the *Takeaway* and *For my projects* boxes at the top or under *My notes* at the bottom.
 
-## Thursday meeting
+## Meetings
 
 - [[Meetings]] has a **card per series** (next date, how often, notes held). A series can be weekly, fortnightly, monthly or **every N weeks**.
 - **Extra meeting now** on a card makes an in-between meeting on a date you choose; the schedule doesn't move.
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files it in the **One-off** hub.
 - Set **project** on any meeting note to show it on that project's hub.
 
-1. On Wednesday or Thursday morning, open [[Meetings]], and press **New meeting note** on your series' card.
+1. Before a meeting, open [[Meetings]], and press **New meeting note** on your series' card.
 2. It fills itself: experiments you touched, to-dos you ticked done, papers you read, and anything you flagged for the meeting.
 3. Press **Meeting deck**, copy what you need onto this week's slides (newest week at the front).
 4. After the meeting, note the outcomes and turn actions into to-dos.
@@ -122,7 +122,7 @@ Open [[Weekly review]] (button **Weekly review** on the homepage) and work down 
 2. Close finished experiments.
 3. Plan next week - drag to-dos from Backlog onto days (Mon-Thu mean *next* week when you plan on a Friday).
 4. Process one paper.
-5. Flag anything for Thursday.
+5. Flag anything for the next meeting.
 6. First Friday of the month: **Archive old to-dos** (anything finished over 30 days ago).
 
 Then press **Start a new review**.

@@ -5,7 +5,7 @@ desc: Column weighing → bead mass → reactor volume
 fields:
   - key: id
     label: Table id
-    hint: other tables use e.g. column!B10 for the reactor volume
+    hint: other tables use e.g. column!B11 for the reactor volume
     value: column
   - key: solvent
     label: Solvent
@@ -34,13 +34,13 @@ icon: cylinder
 | Empty column (blanking plugs, glass wool) (g) |  |
 | Packed column (beads, plugs, glass wool) (g) |  |
 | Packed + full of solvent (g) |  |
+| Solvent | {{solvent}} |
 | Solvent density (g/mL) | {{density|note-number:solvent.Density}} |
 | End-fitting dead volume (mL) | {{dead}} |
 | Mass of beads (g) | =B3-B2 |
 | Mass of solvent (g) | =B4-B3 |
-| Solvent volume (mL) | =B8/B5 |
-| Reactor volume (mL) | =B9-B6 |
+| Solvent volume (mL) | =B9/B6 |
+| Reactor volume (mL) | =B10-B7 |
 | Packing material | {{packing}} |
-| Solvent | {{solvent}} |
 ```
 
