@@ -351,3 +351,27 @@ Bugs and requests, most serious first:
   - [ ] Text-mode highlight has no A1 labels (only the rendered table has them)
   - [ ] Lab book `progress` bar: the card property markup `[data-property="note.progress"]` is copied from the to-do board's `note.done`; unverified
 
+## Tidy up notes: audit of the template properties (2026-10-10, user asked that every property of every note is picked up)
+Checked each kit template's header against what `src/kit/tidy.ts` and the manifests' `migrations` add to older notes.
+- [x] Covered: lab notes (Type, Status, Exp. Class, Plan date, Exp. Start, Exp. End, Chemicals, CoSHH, RA, Objective, Outcome); Knowledge concept notes (kind, summary, sources, checked); to-dos with no kind (kind, day, done, rolled); meeting notes' `series`; old meeting hubs (interval, day, start); hub `kind`.
+- [x] BUILT 2026-10-10 (tests only, `tests/tidy-meetings.test.ts`): meeting notes' `project`; project hubs' `Status` and `deadline`.
+- [ ] Not covered, needs the user's decision (each adds empty properties to many notes):
+  - Chemical notes: Type, Names, Chemical class, H_Phrase, Molecular weight, State at RTP, Boiling point, Melting point, Density (`kits/lab/Templates/Chemical database template.md`). A chemical database that predates the template may use other names; adding nine empty properties to each note would clutter it. Needs `scope: "chemical"` in `Migration` (`src/kit/tidy.ts:20`) and `chemicalFolder` in `TidyContext`
+  - To-dos: planned, project, due, countdown, meeting are optional on purpose (only for real deadlines), so not added; `done_on`, `planned` are written by the board
+  - Meeting notes: `date`, `since` (the New meeting command writes them; an old note without them can't be guessed)
+  - Meeting series hubs: `deck_windows`, `deck_mac` (the Meeting deck button needs them; a hub without them says "set the deck path")
+  - Daily notes: Type, kind, Experiments (`Daily note.md`); New topic hub / New project note: `kind`, cssclasses
+  - Lab notes also have `cssclasses` and the plugin's `progress`: not added (progress is written by the plugin when Checklist progress is on)
+  - ZotLit literature notes: ZotLit rewrites their properties, never tidied
+
+## Tutorial rewrite: features it must cover (user, 2026-10-10; STATUS → Next 5 is the plan, no separate plan file yet)
+Everything built since 0.5.2 that the tutorial (`docs/tutorial.md`, README rows) does not describe yet. Write each from a fresh demo vault, with screenshots free of real names and paths:
+- Snippets: the six token-template snippets as plain notes, Make my own copy, Combined results (Analysis table is gone), Chemical class setting, Flow column prep (blank dead volume, Solvent row), snippet groups (if built)
+- Planning: Home tiles (8-row cap, `limit:`, heading links), Go to labelled To-do, Sort inbox bar, Quick capture, New to-do with due date and countdown, Due-date countdown setting, Check hotkeys and the Hotkeys note
+- Projects: deadline and countdown badge, Meetings list on the hub (last 8, Show all)
+- Meetings: Meetings hub as cards, every N weeks, Extra meeting now, One-off hub and New one-off meeting, project on meeting notes, New meeting series, deck button
+- Lab book: All experiments list, board column colours (and the colour settings), progress bar on cards (Checklist progress setting), New lab entry, New chemical
+- Calc tables: coloured references and A1 labels while typing a formula (cell and table text)
+- Kit management: Check setup (Templater rows replace the old Set up button), Manage files with Newer kit version available / Replace with new version…, Clear old backups…, Review update… per-file ticks, Tidy up notes (rules, every N weeks), Find moved folders, Patch folder only
+- Vault: How my vault works (updated), Vault spec properties (`deadline`, `progress`, `project` on meetings)
+

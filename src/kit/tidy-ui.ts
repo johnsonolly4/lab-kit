@@ -64,6 +64,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
+    projectsFolder: planningOn ? pf.projects : undefined,
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
   };

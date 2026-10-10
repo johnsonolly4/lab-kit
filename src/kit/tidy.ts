@@ -36,6 +36,8 @@ export interface TidyContext {
   hubFolders?: string[];
   /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
   meetings?: { folder: string; todos: string; today: string; interval: string; day: string };
+  /** The Projects folder (project hubs). Missing = the project rule is off. */
+  projectsFolder?: string;
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
 }
@@ -187,6 +189,7 @@ export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boo
   if (!isNote(path) || hidden(path)) return false;
   return readAll || inFolder(path, ctx.labFolder) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
     || (!!ctx.meetings && (inFolder(path, ctx.meetings.folder) || inFolder(path, ctx.meetings.todos)))
+    || (!!ctx.projectsFolder && inFolder(path, ctx.projectsFolder))
     || (ctx.hubFolders ?? []).some(f => parentOf(path) === f);
 }
 
@@ -264,6 +267,30 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       if (!first) { skipped.items.push({ path: n.path, note: "meeting: true, but there is no meeting series to link to: left as it is" }); continue; }
       const fm = fmOf(n.path);
       propose(n.path, [...fm.slice(0, p.start), `meeting: "[[${first}]]"`, ...fm.slice(p.end)]);
+    }
+    if (g.changes.length) groups.push(g);
+  }
+
+  // Meeting notes made before projects: the `project` property (a link or a list of links), empty, so a project hub can list them
+  if (mt) {
+    const g: TidyGroup = { id: "meeting-project", title: "Meeting notes: add the project property", detail: "Meeting notes (kind: meeting) without a project property get an empty one; set it to a project hub to show the meeting on that project.", changes: [] };
+    for (const n of notes.filter(x => inFolder(x.path, mt.folder) && kindOf(x.path) === "meeting" && !find(fmOf(x.path), "project"))) {
+      const fm = fmOf(n.path), after = [...fm, line("project", "")];
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: after.join("\n") });
+      put(n.path, after.join("\n"));
+    }
+    if (g.changes.length) groups.push(g);
+  }
+
+  // Project hubs made before deadlines: the properties the Project hub template has
+  if (ctx.projectsFolder) {
+    const g: TidyGroup = { id: "project-properties", title: "Project hubs: add the template's missing properties", detail: "Project hubs (kind: project) get Status: Active and an empty deadline when they lack them (only the ones they lack).", changes: [] };
+    for (const n of notes.filter(x => inFolder(x.path, ctx.projectsFolder ?? "") && kindOf(x.path) === "project")) {
+      const fm = fmOf(n.path);
+      const add = ([["Status", "Active"], ["deadline", ""]] as const).filter(([k]) => !find(fm, k)).map(([k, v]) => line(k, v));
+      if (!add.length) continue;
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: [...fm, ...add].join("\n") });
+      put(n.path, [...fm, ...add].join("\n"));
     }
     if (g.changes.length) groups.push(g);
   }

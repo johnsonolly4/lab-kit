@@ -137,7 +137,7 @@ describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
     expect(out.skipped).toEqual([]);
     expect(out.created).toEqual(["02 Projects/Projects.md", "06 Knowledge/Knowledge.md"]);
     for (const p of out.changed) expect(x.backups.get(p)).toBe(old.get(p));
-    expect(out.changed.length).toBe(3);
+    expect(out.changed.length).toBe(5);   // the hub, the to-do, the meeting note with a series link, and the two meeting notes that also get an empty project
     expect(m.get("00 Planning/To-dos/Order vials.md")).toBe("---\nkind: todo\nmeeting: \"[[Group meeting]]\"\n---\n");
   });
 
@@ -156,3 +156,28 @@ describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
     expect(s.groups.map(g => g.id)).toEqual([]);
   });
 });
+
+describe("Tidy up notes: the properties of meeting notes and project hubs", () => {
+  const c = (): TidyContext => ({ ...ctx(), projectsFolder: "02 Projects" });
+  it("meeting notes without project get an empty one; ones that have it are left alone", () => {
+    const m = vault();
+    m.set("08 Meetings/Group meeting/2026-10-01 Group meeting.md", "---\nkind: meeting\nproject:\n  - \"[[Alpha]]\"\n---\n");
+    const g = group(c(), m, "meeting-project")!;
+    expect(g.changes.map(x => x.path).sort()).toEqual(["08 Meetings/Group meeting/2026-09-24 Group meeting.md", "08 Meetings/Loose/2026-09-01 Loose.md"]);
+    expect(g.changes[0].after).toContain("project:");
+    expect(group(c(), m, "meeting-project")!.changes.some(x => x.path.includes("2026-10-01"))).toBe(false);
+  });
+  it("project hubs get Status: Active and an empty deadline, only the ones they lack", () => {
+    const m = vault();
+    m.set("02 Projects/Beta/Beta.md", "---\nkind: project\nStatus: Paused\ndeadline: 2026-12-01\n---\n");
+    m.set("02 Projects/Gamma/Gamma.md", "---\nkind: project\nStatus: Done\n---\n");
+    const g = group(c(), m, "project-properties")!;
+    expect(g.changes.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Alpha.md", "02 Projects/Gamma/Gamma.md"]);
+    expect(g.changes.find(x => x.path.includes("Alpha"))!.after).toBe("kind: project\nStatus: Active\ndeadline:");
+    expect(g.changes.find(x => x.path.includes("Gamma"))!.after).toBe("kind: project\nStatus: Done\ndeadline:");
+  });
+  it("the project rule is off without a projects folder", () => {
+    expect(group(ctx(), vault(), "project-properties")).toBeUndefined();
+  });
+});
+
