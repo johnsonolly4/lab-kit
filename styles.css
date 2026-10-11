@@ -61,7 +61,9 @@
 .cm-lab-kit-cell-5 { background-color: rgba(var(--lab-kit-ref-5), 0.22); border-radius: 3px; }
 /* The cell input over a copy of its text: the copy shows the colours, the input's own text is hidden while a formula is typed */
 .lab-kit-input-wrap { position: relative; }
-.lab-kit-input-hl { position: absolute; inset: 0; padding: 2px 4px; border: var(--input-border-width, 1px) solid transparent; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+.lab-kit-input-hl { position: absolute; top: 0; bottom: 0; left: var(--lab-kit-hl-l, 9px); right: var(--lab-kit-hl-r, 9px); padding: 2px 0; border: solid transparent; border-width: var(--input-border-width, 1px) 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+/* The copy is clipped to the input's content box (--lab-kit-hl-l / -r, measured in src/calc/render.ts copyBox) and its text shifted by the input's scroll: Obsidian's own input padding beats .lab-kit-input, and a scrolled div stops short of a scrolled input, so the caret drifted */
+.lab-kit-input-hl-text { display: inline-block; transform: translateX(calc(-1 * var(--lab-kit-hl-x, 0px))); }
 .lab-kit-input-wrap:not(.is-hl) .lab-kit-input-hl { display: none; }
 .lab-kit-input-wrap.is-hl .lab-kit-input { color: transparent; background: transparent; caret-color: var(--text-normal); }
 

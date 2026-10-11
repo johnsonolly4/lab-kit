@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
 import { TFile } from "obsidian";
-import { CalcRenderer, type CalcEntry } from "../src/calc/render";
+import { CalcRenderer, copyBox, type CalcEntry } from "../src/calc/render";
 import { parseBlock } from "../src/calc/engine";
 
 const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
@@ -78,6 +78,8 @@ describe("render", () => {
     // the table shows A1 labels while a formula is typed, and drops them again
     assert.ok(a.el.querySelector("table").classList.contains("is-labelling"));
     assert.ok(a.el.querySelectorAll(".lab-kit-tmp-label").length > 0);
+    // the coloured copy of the formula is drawn in the element that follows the input's scroll
+    assert.strictEqual(td.querySelector(".lab-kit-input-hl .lab-kit-input-hl-text").textContent, "=A2*b!B2+A1");
     input.value = "=A2";                                  // typing on: the old marks go
     input.dispatch("input");
     assert.deepStrictEqual(marked(a), ["1|0"]);
@@ -94,6 +96,15 @@ describe("render", () => {
     assert.strictEqual(a.el.querySelectorAll(".lab-kit-tmp-label").length, 0);
     assert.ok(!a.el.querySelector("table").classList.contains("is-labelling"));
     assert.deepStrictEqual(marked(b), []);
+  });
+
+  it("places the coloured copy on the input's content box and shifts it by the input's scroll", () => {
+    const style = { borderLeftWidth: "1px", paddingLeft: "8px", borderRightWidth: "1px", paddingRight: "8px" };
+    assert.deepStrictEqual(copyBox(style, 30), { "--lab-kit-hl-x": "30px", "--lab-kit-hl-l": "9px", "--lab-kit-hl-r": "9px" });
+    assert.deepStrictEqual(copyBox({ ...style, paddingLeft: "2.5px", borderRightWidth: "0px" }, 0), { "--lab-kit-hl-x": "0px", "--lab-kit-hl-l": "3.5px", "--lab-kit-hl-r": "8px" });
+    // nothing to measure (no layout): only the scroll, styles.css has the fallback for the sides
+    assert.deepStrictEqual(copyBox(null, 12), { "--lab-kit-hl-x": "12px" });
+    assert.deepStrictEqual(copyBox({ paddingLeft: "" }, NaN), { "--lab-kit-hl-x": "0px" });
   });
 
   it("moves from one edited cell to the next with a single click", async () => {

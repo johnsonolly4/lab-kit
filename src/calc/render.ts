@@ -29,6 +29,16 @@ export interface CalcEntry {
   cells?: Map<string, HTMLElement>;
 }
 
+/** Where the coloured copy of a formula sits over its input: the input's content box (border + padding in from each side) and how far its text is scrolled. A side that can't be measured is left out (styles.css has the fallback). */
+export function copyBox(style: { borderLeftWidth?: string; paddingLeft?: string; borderRightWidth?: string; paddingRight?: string } | null | undefined, scrollLeft: number): Record<string, string> {
+  const out: Record<string, string> = { "--lab-kit-hl-x": `${Number.isFinite(scrollLeft) ? scrollLeft : 0}px` };
+  const l = parseFloat(style?.borderLeftWidth ?? "") + parseFloat(style?.paddingLeft ?? "");
+  const r = parseFloat(style?.borderRightWidth ?? "") + parseFloat(style?.paddingRight ?? "");
+  if (Number.isFinite(l)) out["--lab-kit-hl-l"] = `${l}px`;
+  if (Number.isFinite(r)) out["--lab-kit-hl-r"] = `${r}px`;
+  return out;
+}
+
 export class CalcRenderer {
   /** Rendered blocks per note path, so edits to the note refresh them. */
   live = new Map<string, Set<CalcEntry>>();
@@ -341,21 +351,26 @@ export class CalcRenderer {
     // The input sits over a copy of its text, so the references in a formula can be coloured as the cells they point at
     const wrap = td.createDiv({ cls: "lab-kit-input-wrap" });
     const back = wrap.createDiv({ cls: "lab-kit-input-hl", attr: { "aria-hidden": "true" } });
+    const copy = back.createSpan({ cls: "lab-kit-input-hl-text" });
     const input = wrap.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
+    // The copy is not scrolled (a div can't scroll as far as an input): it is clipped to the input's content box and its text shifted by the input's scroll.
+    // Now, and again once the browser has scrolled the caret into view
+    const place = (): void => back.setCssProps(copyBox(typeof window.getComputedStyle === "function" ? window.getComputedStyle(input) : null, input.scrollLeft));
+    const sync = (): void => { place(); window.requestAnimationFrame(place); };
     const paint = (): void => {
       const text = input.value, formula = text.trimStart().startsWith("=");
       wrap.toggleClass("is-hl", formula);
-      back.empty();
+      copy.empty();
       if (!formula) return;
       let at = 0;
       for (const f of colouredRefs(text, { r, c })) {
-        if (f.start > at) back.appendText(text.slice(at, f.start));
-        back.createSpan({ cls: `lab-kit-hl-${f.colour}`, text: text.slice(f.start, f.end) });
+        if (f.start > at) copy.appendText(text.slice(at, f.start));
+        copy.createSpan({ cls: `lab-kit-hl-${f.colour}`, text: text.slice(f.start, f.end) });
         at = f.end;
       }
-      back.appendText(text.slice(at));
-      back.scrollLeft = input.scrollLeft;
+      copy.appendText(text.slice(at));
+      sync();
     };
     const mine: { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } = { entry, input };
     mine.showRefs = () => { this.markRefs(entry, r, c, input.value); paint(); };
@@ -392,7 +407,8 @@ export class CalcRenderer {
     });
     input.addEventListener("click", (e) => e.stopPropagation());
     input.addEventListener("input", () => mine.showRefs?.());
-    input.addEventListener("scroll", () => { back.scrollLeft = input.scrollLeft; });
+    for (const ev of ["scroll", "keydown", "keyup", "select", "pointerdown", "pointerup"]) input.addEventListener(ev, sync);
+    input.addEventListener("pointermove", (e) => { if (e.buttons) sync(); });   // dragging a selection past the edge scrolls the text
     mine.showRefs();                                // a formula already in the cell shows what it points at
   }
 

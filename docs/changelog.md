@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Calc cells: the caret stays on the text in a long formula**: once a formula was long enough to scroll inside its cell, the caret drifted away from the coloured text. The coloured copy used a different padding from the box (Obsidian's own input padding wins over Lab Kit's) and could not scroll as far; it now takes its position from the box itself. Not seen in Obsidian
 - **Sort inbox picker is a bar at the bottom**: the bar rules were written for `.modal`, but Obsidian's pickers carry `.prompt` instead (read from Obsidian 1.14.4's own code), so they never applied and the picker stayed a centred list. The rules now follow the class Lab Kit puts on the picker itself. Not seen in Obsidian
 - **Flow column prep: the solvent density follows the chemical note**: when you pick a solvent and leave the density box empty, the Solvent density cell holds a formula that reads the Density of that chemical's note (it updates when the note changes); type a density and your number is used. New snippet token `{{live-prop:key.Property@Cell}}` (see `docs/snippet-syntax.md`). Tables you already made keep their plain number. Not seen in Obsidian
 - **Tidy up notes: tick single notes**: every note line has its own box (the rule's box ticks or unticks them all and shows a dash when only some are ticked); Change notes… carries out what is ticked
