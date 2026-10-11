@@ -33,7 +33,7 @@ Sort inbox bar root cause fixed 2026-10-12 (Obsidian pickers are `.prompt`, not 
 - [ ] Copy a kanban column header and card as outerHTML into `test-vault/Kanban DOM.md` (last row of checklist 6i) so Status board colours can be built
 - [ ] Try Cmd+P New concept, New chemical and New topic hub (checklist 6i, last row); say if New chemical should ask for a name, and how the visible Summary field should look (BACKLOG New concept row) — by 2026-10-12
 - [ ] Try the four new rows at the end of checklist 6i (Home tiles, Analysis table gone, project deadline, checklist progress: the kanban card property is untested); the Pre-release fixes row; say which vault state gave "Button ID not Found" and the missing hub (BACKLOG)
-- [ ] Round 3 note: section 2 (kept files) and the Tidy fixture vault step are not run yet (steps are in the note); answer the BACKLOG question about renaming a project's hub when its folder is renamed
+- [ ] Round 3 note: section 2 (kept files) and the Tidy fixture vault step are not run yet (steps are in the note); answer the BACKLOG question about renaming a project's hub when its folder is renamed; retest Sort inbox after reloading Lab Kit (bar at the bottom, no dim; if still dim, say which vault) — by 2026-10-13
 
 ## Known issues
 - `npm run lint`: 0 errors, 3 sentence-case warnings (datafolder.ts, snippet-run.ts, whatsnew.ts). Many features are tests-only, not seen in Obsidian: BACKLOG "Not yet tested by the user"
