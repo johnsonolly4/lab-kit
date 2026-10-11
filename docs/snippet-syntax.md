@@ -100,20 +100,149 @@ A machine note's property with the same name as a column sets that column's defa
 
 Why methods are separate from token templates: a method is a description several snippets read. It gives machines (defaults taken from the chosen instrument's note), the Combined results columns, the tag, checklist and dataset line, and it appears in Alt+S without a file in `Snippets`. A token template only asks questions and fills text.
 
-## 4. Examples
+## 4. Examples: four snippets that ship with the kit
 
-Each row is a template body, the answers given in the form, and what is inserted. The note already has the sample `ABC0016-A` and a table called `samples`; your initials and the note's number make the prefix `ABC0016-`.
+Each one shows what the form asks, example answers, and what is inserted. The note already has its number, so your initials and that number make the prefix (`ABC0016-` here). The files are in the `Snippets` folder; open one next to this page to see its header and body. Press **Make my own copy** on a snippet to edit a copy of it.
+
+### Sample list (`05 Sample list.md`)
+
+| Question | Type | Default |
+|---|---|---|
+| Sample codes (one per line or comma separated, blank = generate) | text box | empty |
+| …or generate this many | number | 6 |
+
+Answers: **Sample codes** = `X1, X2` and `X3` on the next line. Inserted:
+
+````markdown
+## Samples
+```calc
+name: samples
+title: Samples
+icon: list
+copy: column A
+codes: column A
+| Code | Description | Notes |
+|---|---|---|
+| X1 |  |  |
+| X2 |  |  |
+| X3 |  |  |
+```
+````
+
+Leave the box empty and keep 6, and you get `ABC0016-A` to `ABC0016-F` with the same table.
+
+### Sampling timetable (`06 Sampling timetable.md`)
+
+| Question | Type | Default |
+|---|---|---|
+| Time points (required, comma separated) | text | `0, 30, 60, 120` |
+| Time unit (min or h) | text | `min` |
+| Sample letters (comma separated, blank = one sample) | text | the next free letter |
+| Start time (hh:mm, blank = fill in on the day) | text | empty |
+
+Answers: **Time points** `0, 1, 2`, **Time unit** `h`, **Sample letters** `A, B`, **Start time** `09:30`. Inserted:
+
+````markdown
+## Sampling timetable
+```calc
+name: sampling_start
+title: Start
+icon: timer
+| Setting | Value |
+|---|---|
+| Start time (hh:mm) | 09:30 |
+```
+
+```calc
+name: sampling
+title: Sampling timetable
+icon: timer
+copy: column A
+codes: column A
+| Code | Time (h) | Target time | Taken at | Notes |
+|---|---|---|---|---|
+| ABC0016-A0 | 0 | =CLOCK(sampling_start!$B$2, B2*60) |  |  |
+| ABC0016-A1 | 1 | =CLOCK(sampling_start!$B$2, B3*60) |  |  |
+| ABC0016-A2 | 2 | =CLOCK(sampling_start!$B$2, B4*60) |  |  |
+| ABC0016-B0 | 0 | =CLOCK(sampling_start!$B$2, B5*60) |  |  |
+| ABC0016-B1 | 1 | =CLOCK(sampling_start!$B$2, B6*60) |  |  |
+| ABC0016-B2 | 2 | =CLOCK(sampling_start!$B$2, B7*60) |  |  |
+```
+````
+
+The Target time column is a formula that counts from the start time in the first table.
+
+### Flow column prep (`11 Flow column prep.md`)
+
+| Question | Type | Default |
+|---|---|---|
+| Table id | text | `column` |
+| Solvent (suggests chemical notes of the class *solvent*) | text | empty |
+| Solvent density (g/mL; blank = follows the solvent note's Density) | text | empty |
+| End-fitting dead volume (mL) | text | empty |
+| Packing material | text | empty |
+
+Answers: **Solvent** `toluene`, everything else left empty. The density cell follows the toluene note, so it changes when that note does. Inserted:
+
+````markdown
+## Column prep
+```calc
+name: column
+title: Column weighing
+icon: cylinder
+| State | Value |
+|---|---|
+| Empty column (blanking plugs, glass wool) (g) |  |
+| Packed column (beads, plugs, glass wool) (g) |  |
+| Packed + full of solvent (g) |  |
+| Solvent | toluene |
+| Solvent density (g/mL) | =PROP(B5,"Density") |
+| End-fitting dead volume (mL) |  |
+| Mass of beads (g) | =B3-B2 |
+| Mass of solvent (g) | =B4-B3 |
+| Solvent volume (mL) | =B9/B6 |
+| Reactor volume (mL) | =B10-B7 |
+| Packing material |  |
+```
+````
+
+Type a density (for example `0.9`) and that number is written instead.
+
+### Variant naming matrix (`04 Variant naming matrix.md`)
+
+| Question | Type | Default |
+|---|---|---|
+| Row items (required, comma separated) | text | empty |
+| Column items (comma separated) | text | empty |
+
+Answers: **Row items** `acid 1, acid 2`, **Column items** `alc 1, alc 2, alc 3`. Inserted:
+
+````markdown
+## Variant naming matrix
+```calc
+name: variants
+title: Variant naming matrix
+icon: grid-3x3
+copy: list
+codes: cells
+|  | alc 1 | alc 2 | alc 3 |
+|---|---|---|---|
+| **acid 1** | ABC0016-A | ABC0016-B | ABC0016-C |
+| **acid 2** | ABC0016-D | ABC0016-E | ABC0016-F |
+```
+````
+
+With no column items you get one **Code** column instead.
+
+### More body tokens
 
 | Body | Answers | Inserted |
 |---|---|---|
-| `{{#each codes}}- {{.}}` + newline + `{{/each}}` | `codes` = `A, B` | `- A` and `- B`, one per line |
-| `{{#each codes as c}}{{prefix}}{{c}} {{/each}}` | `codes` = `A, B` | `ABC0016-A ABC0016-B ` |
 | `{{#each codes \| " \| "}}{{.}}{{/each}}` | `codes` = `A, B, C` | `A \| B \| C` |
 | `{{#if note}}Note: {{note}}{{else}}no note{{/if}}` | `note` empty | `no note` |
 | `{{#repeat n\|3}}x{{/repeat}}` | `n` = `2` | `xx` (with no usable number: `xxx`) |
-| `{{code}} {{code}}` | none | `ABC0016-B ABC0016-C` (the next two free letters) |
+| `{{code}} {{code}}` | none | `ABC0016-B ABC0016-C` (the next two free letters, `ABC0016-A` already used) |
 | `{{table:samples}}` | none | `samples2` (`samples` is taken) |
-| `{{a\|b\|"fallback"}}` | `a` and `b` empty | `fallback` |
 
 A field that asks for sample codes (header):
 

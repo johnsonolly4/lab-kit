@@ -296,7 +296,7 @@
       "role": "templates",
       "path": "Meeting.md",
       "version": "0.5.2",
-      "sha256": "ec78e7332015789bf791fd95d0d4bb5ae8c7478c251ac332b936de02349c7e21",
+      "sha256": "beb3af13e2f49fd7991e0bcee0e97d1cf666b91d147b5ec7c1d7df5eb3c9c907",
       "renamedFrom": [
         "Weekly meeting.md"
       ],
@@ -353,7 +353,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "0.5.2",
-      "sha256": "e70d1dccc2cf5cb4dbe84813804f802c286b527fd87330379bcb2440fd765605",
+      "sha256": "590e854246186b375e73beb954af0b5a5165333a828874bbea1e888aad171ec1",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },

@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { blockOptions, experiments, folderHub, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -90,6 +90,19 @@ class BlockView extends MarkdownRenderChild {
     b.addEventListener("click", e => { stop(e); this.showAll = !this.showAll; this.draw(); });
   }
 
+  /** A tile's rows: the first `cap`, with Show all N / Show the last N at the tile's top right when there are more. */
+  private capped(box: HTMLElement, all: ListLine[], cap: number, empty: string): void {
+    if (all.length > cap) this.toggle(box, this.showAll ? `Show the last ${cap}` : `Show all ${all.length}`);
+    this.list(box, this.showAll ? all : all.slice(0, cap), empty);
+  }
+
+  /** On a meeting note: the since / date window of the note itself; a line in `box` when it has none. */
+  private window(box: HTMLElement): { since: string; date: string } | null {
+    const w = meetingWindow(this.app.metadataCache.getCache(this.sourcePath)?.frontmatter ?? {});
+    if (!w) box.createDiv({ cls: "vt-muted", text: "This note has no since and date properties." });
+    return w;
+  }
+
   private need(box: HTMLElement, path: string): boolean {
     if (this.app.vault.getFolderByPath(path)) return true;
     box.createDiv({ cls: "vt-muted lab-kit-block-missing", text: folderMissingText(path) });
@@ -116,7 +129,7 @@ class BlockView extends MarkdownRenderChild {
     const kit = this.owner.kit(), f = kit.planningFolders, o = blockOptions(this.source);
     switch (o.show) {
       case "this-week":
-        if (this.need(box, todoFolder(f))) this.list(box, thisWeek(this.owner.notesIn(todoFolder(f)), new Date()).slice(0, o.limit ?? TILE_ROWS), "Nothing planned this week.");
+        if (this.need(box, todoFolder(f))) this.capped(box, thisWeek(this.owner.notesIn(todoFolder(f)), new Date()), o.limit ?? TILE_ROWS, "Nothing planned this week.");
         return;
       case "inbox": {
         if (!this.need(box, f.inbox)) return;
@@ -131,16 +144,35 @@ class BlockView extends MarkdownRenderChild {
       case "experiments": {
         const lab = kitJoin(kit.labFolder.trim());
         if (!lab) { box.createDiv({ cls: "vt-muted", text: "Set the Lab notes folder in Settings → Lab Kit." }); return; }
-        if (this.need(box, lab)) this.list(box, experiments(this.owner.notesIn(lab), o.limit ?? TILE_ROWS), "No experiments on the go.");
+        if (this.need(box, lab)) this.capped(box, experiments(this.owner.notesIn(lab), Infinity), o.limit ?? TILE_ROWS, "No experiments on the go.");
+        return;
+      }
+      case "meeting-experiments": {   // on a meeting note: lab notes changed since the last meeting
+        const lab = kitJoin(kit.labFolder.trim()), w = this.window(box);
+        if (!w) return;
+        if (!lab) { box.createDiv({ cls: "vt-muted", text: "Set the Lab notes folder in Settings → Lab Kit." }); return; }
+        if (this.need(box, lab)) this.capped(box, meetingExperiments(this.owner.notesIn(lab), w), o.limit ?? PROJECT_TILE_ROWS, "No experiments changed since the last meeting.");
+        return;
+      }
+      case "meeting-done": {   // on a meeting note: to-dos finished since the last meeting
+        const w = this.window(box);
+        if (w && this.need(box, todoFolder(f))) this.capped(box, meetingDone(this.owner.notesIn(todoFolder(f)), w), o.limit ?? PROJECT_TILE_ROWS, "No to-dos finished since the last meeting.");
+        return;
+      }
+      case "meeting-papers": {   // on a meeting note: papers imported since the last meeting
+        const w = this.window(box);
+        if (!w) return;
+        if (!this.app.vault.getFolderByPath(f.literature) && !loadedPlugins(this.app).has("zotlit")) { box.createDiv({ cls: "vt-muted", text: "No literature notes yet." }); return; }
+        if (this.need(box, f.literature)) this.capped(box, meetingPapers(this.owner.notesIn(f.literature), w), o.limit ?? PROJECT_TILE_ROWS, "No papers read since the last meeting.");
         return;
       }
       case "projects":
-        if (this.need(box, f.projects)) this.list(box, projects(this.owner.notesIn(f.projects), o.limit ?? TILE_ROWS, kit.dueCountdown), "No projects yet.");
+        if (this.need(box, f.projects)) this.capped(box, projects(this.owner.notesIn(f.projects), Infinity, kit.dueCountdown), o.limit ?? TILE_ROWS, "No projects yet.");
         return;
       case "recently-read":
         // Literature is only made with ZotLit: without it, an absent folder is normal
         if (!this.app.vault.getFolderByPath(f.literature) && !loadedPlugins(this.app).has("zotlit")) { box.createDiv({ cls: "vt-muted", text: "No literature notes yet." }); return; }
-        if (this.need(box, f.literature)) this.list(box, recentlyRead(this.owner.notesIn(f.literature), o.limit ?? 5), "No literature notes yet.");
+        if (this.need(box, f.literature)) this.capped(box, recentlyRead(this.owner.notesIn(f.literature), Infinity), o.limit ?? 5, "No literature notes yet.");
         return;
       case "deadline": {   // on a project hub: this project's deadline countdown
         const b = deadlineBadge((this.app.metadataCache.getCache(this.sourcePath)?.frontmatter ?? {}), kit.dueCountdown, new Date());
@@ -273,7 +305,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 
@@ -288,7 +320,12 @@ class BlockView extends MarkdownRenderChild {
     const button = (text: string, run: (c: PlanningCommands) => void): void => {
       bar.createEl("button", { text }).addEventListener("click", () => { const c = this.commands(); if (c) run(c); });
     };
-    if (kind === "project") { button("New to-do", c => void c.newTodo(file.basename)); button("New note", c => void c.newProjectNote(file.parent?.path)); }
+    if (kind === "project") {
+      button("New to-do", c => void c.newTodo(file.basename)); button("New note", c => void c.newProjectNote(file.parent?.path));
+      this.statusSelect(bar, file);
+      const badge = deadlineBadge(this.owner.rec(file).fm, this.owner.kit().dueCountdown, new Date());   // none once the project is Done
+      if (badge) bar.createSpan({ cls: badge.cls, text: badge.text });
+    }
     else if (kind === "hub") button("New concept", c => void c.newConcept(file.parent?.path));
     else if (kind === "meeting-series") {
       const series = this.owner.commands()?.seriesList().find(x => x.path === this.sourcePath);
@@ -297,6 +334,19 @@ class BlockView extends MarkdownRenderChild {
       if (series.interval === ONCE) button("New one-off meeting", c => void c.newOneOff());
       else { button("New meeting note", c => void c.newMeeting(series)); button("Extra meeting now", c => void c.newMeeting(series, true)); }
     } else box.createDiv({ cls: "vt-muted", text: "hub-bar belongs on a project, topic or meeting series hub." });
+  }
+
+  /** A drop-down for a project's Status (no label), written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
+  private statusSelect(bar: HTMLElement, file: TFile): void {
+    const status = this.owner.rec(file).fm.Status, now = typeof status === "string" ? status : "";
+    const select = bar.createEl("select", { cls: "vt-status-select dropdown", attr: { "aria-label": "Status" } });
+    for (const s of PROJECT_STATUSES.includes(now) || !now ? PROJECT_STATUSES : [...PROJECT_STATUSES, now]) select.createEl("option", { text: s, value: s });
+    select.value = now || PROJECT_STATUSES[0];
+    for (const ev of ["mousedown", "click"]) select.addEventListener(ev, e => e.stopPropagation());
+    select.addEventListener("change", () => {
+      void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.Status = select.value; })
+        .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the status."); });
+    });
   }
 
   /** The top row of a meeting note: the link to its series hub (the One-off hub for a one-off) and Meeting deck for that series. */

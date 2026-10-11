@@ -43,8 +43,18 @@ describe("hub templates carry the buttons as blocks", () => {
     expect(kit("Extras/Templates/One-off meeting.md")).toContain("show: meeting-bar");
     expect(kit("Extras/Templates/New project note.md")).toContain("show: back-to-project");
   });
-  it("Status and Deadline share a line on the project hub", () => {
-    expect(kit("Extras/Templates/Project hub.md")).toMatch(/\*\*Status:\*\* .*\*\*Deadline:\*\* /);
+  it("the project hub's Status is the drop-down in the top bar, not a Meta Bind line", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    expect(t).not.toContain("INPUT[inlineSelect");
+    expect(t).not.toContain("show: deadline");
+    expect(t).toContain("INPUT[datePicker:deadline]");
+  });
+  it("a meeting note has the meeting bar and native tiles with a window, not Dataview lists", () => {
+    const t = kit("Extras/Templates/Meeting.md");
+    expect(t).toContain("show: meeting-bar");
+    for (const s of ["meeting-experiments", "meeting-done", "meeting-papers"]) expect(t, s).toContain(`show: ${s}`);
+    expect(t).not.toContain("go-meetings");
+    expect(t).not.toContain("this.since");
   });
   it("New concept files in a topic hub's folder without asking the topic", () => {
     const t = kit("Extras/Templates/New concept.md");

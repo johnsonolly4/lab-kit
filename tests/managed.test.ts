@@ -257,7 +257,8 @@ describe("per-file actions (Manage kit files)", () => {
     const none = by(await planManaged(v, V1, state, roles), "script-config");
     expect(newerKitItems(await planManaged(v, V1, state, roles), id => state.files[id])).toEqual([]);
     expect(kitHasNewer(none, state.files["script-config"])).toBe(false);
-    expect(statusOf(none, state.files["script-config"]).label).toBe("Kept (your settings)");
+    expect(statusOf(none, state.files["script-config"]).label).toBe("Up to date with the kit");
+    expect(statusOf(none).label).toBe("Kept (your settings)");   // no record: nothing to compare
     const out = await restoreManaged(v, item, state, opts);
     expect(out.result.outcome).toBe("updated");
     expect(out.result.backup).toBeDefined();

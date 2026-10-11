@@ -444,17 +444,22 @@ export class KitController {
   private async askChemicalClass(folder: string): Promise<string | null> {
     const used = chemicalClasses(this.app.vault.getMarkdownFiles().filter(f => f.path.startsWith(folder + "/"))
       .map(f => toList(prop(this.app.metadataCache.getFileCache(f)?.frontmatter, "Chemical class"))));
-    const OTHER = "\u0000other", NONE = "";
-    const got = await pick<string>(this.app, [...used, "Other…", "No class (fill in later)"], [...used, OTHER, NONE], "Chemical class (Esc cancels)");
-    if (got === null || got !== OTHER) return got;
-    return (await ask(this.app, "Chemical class")) ?? null;
+    // Typing a class that is not in the list and pressing Enter uses it as the new class
+    return pick<string>(this.app, [...used, "No class (fill in later)"], [...used, ""], "Chemical class: pick one or type a new one (Esc cancels)", false, { prefix: "+ New class: ", make: text => text });
+  }
+
+  /** Makes "Chemical class" a list property, so the Properties pane offers the classes already in use. Private API, kept in this one function; an older Obsidian keeps it as text. */
+  private async makeClassAList(): Promise<void> {
+    const types = (this.app as unknown as { metadataTypeManager?: { getAssignedType?: (p: string) => string | null; setType?: (p: string, t: string) => Promise<void> } }).metadataTypeManager;
+    try { if (types?.getAssignedType?.("Chemical class") !== "multitext") await types?.setType?.("Chemical class", "multitext"); } catch (e) { console.error(e); }
   }
 
   /** Writes the class into the note Templater just made and opened (only if it is in the Chemical folder and has no class yet). */
   private async setChemicalClass(folder: string, cls: string): Promise<void> {
     const file = this.app.workspace.getActiveFile();
     if (!file || file.extension !== "md" || !file.path.startsWith(folder + "/")) return;
-    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { if (!toList(prop(fm, "Chemical class")).length) fm["Chemical class"] = cls; });
+    await this.makeClassAList();
+    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { if (!toList(prop(fm, "Chemical class")).length) fm["Chemical class"] = [cls]; });
   }
 
   /** Opens the Check setup window. */

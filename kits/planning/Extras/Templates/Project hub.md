@@ -22,11 +22,7 @@ cssclasses:
 show: hub-bar
 ```
 
-**Status:** `INPUT[inlineSelect(option(Active), option(Paused), option(Done)):Status]`  **Deadline:** `INPUT[datePicker:deadline]`
-
-```vault-card
-show: deadline
-```
+**Deadline:** `INPUT[datePicker:deadline]`
 
 > [!focus] Goal
 > [goal:: ]

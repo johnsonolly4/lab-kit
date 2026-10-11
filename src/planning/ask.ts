@@ -1,6 +1,6 @@
 // Planning kit's text box (looks like Obsidian's pickers, same component, with no list underneath: port of the kit's vtAsk.js)
 // and picker (a fuzzy list, as Templater's tp.system.suggester).
-import { FuzzySuggestModal, SuggestModal, type App, type KeymapEventHandler } from "obsidian";
+import { FuzzySuggestModal, SuggestModal, type App, type FuzzyMatch, type KeymapEventHandler } from "obsidian";
 
 class AskModal extends SuggestModal<never> {
   private settled = false;
@@ -45,12 +45,29 @@ export const ask = (app: App, placeholder: string, value = ""): Promise<string |
 
 interface Choice<T> { label: string; value: T }
 
+/** Lets a picker take text that is not in its list: shown as `prefix` + the text, and `make` turns it into the picked value. */
+export interface Typed<T> { prefix: string; make: (text: string) => T }
+
+/** The extra entry for text typed into a picker: none without `typed`, with an empty box, or when the text is already an entry. */
+export function typedChoice<T>(choices: Choice<T>[], query: string, typed?: Typed<T>): Choice<T> | null {
+  const text = query.trim();
+  if (!typed || !text || choices.some(c => c.label.toLowerCase() === text.toLowerCase())) return null;
+  return { label: `${typed.prefix}${text}`, value: typed.make(text) };
+}
+
 class PickModal<T> extends FuzzySuggestModal<Choice<T>> {
   private settled = false;
 
-  constructor(app: App, private choices: Choice<T>[], placeholder: string, private done: (v: T | null) => void, private side = false) {
+  constructor(app: App, private choices: Choice<T>[], placeholder: string, private done: (v: T | null) => void, private side = false, private typed?: Typed<T>) {
     super(app);
     this.setPlaceholder(placeholder);
+  }
+
+  /** With `typed`: text that is not in the list is offered as a new entry (the only one when nothing matches, so Enter takes it). */
+  getSuggestions(query: string): FuzzyMatch<Choice<T>>[] {
+    const found = super.getSuggestions(query);
+    const extra = typedChoice(this.choices, query, this.typed);
+    return extra ? [...found, { item: extra, match: { score: 0, matches: [] } }] : found;
   }
 
   onOpen(): void {
@@ -66,6 +83,9 @@ class PickModal<T> extends FuzzySuggestModal<Choice<T>> {
   onClose(): void { super.onClose(); window.setTimeout(() => this.finish(null), 0); }
 }
 
-/** Asks to pick one of `labels`; the matching entry of `values`, or null when Esc was pressed. `side`: a small picker at the right edge, so the note behind stays readable. */
-export const pick = <T>(app: App, labels: string[], values: T[], placeholder: string, side = false): Promise<T | null> =>
-  new Promise(resolve => new PickModal(app, labels.map((label, i) => ({ label, value: values[i] })), placeholder, resolve, side).open());
+/**
+ * Asks to pick one of `labels`; the matching entry of `values`, or null when Esc was pressed. `side`: a small picker at the right edge, so the note behind stays readable.
+ * `typed`: text typed into the box that matches no entry can be picked as a new one.
+ */
+export const pick = <T>(app: App, labels: string[], values: T[], placeholder: string, side = false, typed?: Typed<T>): Promise<T | null> =>
+  new Promise(resolve => new PickModal(app, labels.map((label, i) => ({ label, value: values[i] })), placeholder, resolve, side, typed).open());

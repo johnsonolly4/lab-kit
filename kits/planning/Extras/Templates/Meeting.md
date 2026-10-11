@@ -28,32 +28,27 @@ cssclasses:
   - vt
 ---
 
-`BUTTON[go-deck, go-meetings]`
+```vault-card
+show: meeting-bar
+```
 
 > [!focus] To discuss
 > - 
 
 > [!columns]
 > > [!lab] Experiments
-> > ```dataview
-> > LIST WITHOUT ID file.link + " <span class='vt-badge vt-" + lower(replace(Status, " ", "-")) + "'>" + lower(Status) + "</span>"
-> > FROM "03 Lab Book/Notes"
-> > WHERE file.mtime > this.since AND file.mtime < this.date + dur(1 day)
-> > SORT file.name ASC
+> > ```vault-card
+> > show: meeting-experiments
 > > ```
 >
 > > [!planning] Done this week
-> > ```dataview
-> > LIST WITHOUT ID file.link + choice(project, " <span class='vt-muted'>&middot; " + project + "</span>", "")
-> > FROM "00 Planning/To-dos"
-> > WHERE kind = "todo" AND done AND done_on > this.since AND done_on <= this.date
+> > ```vault-card
+> > show: meeting-done
 > > ```
 >
 > > [!projects] Papers read
-> > ```dataview
-> > LIST WITHOUT ID link(file.path, Title) + choice(takeaway, " <span class='vt-muted'>&middot; " + takeaway + "</span>", "")
-> > FROM "04 Literature"
-> > WHERE kind = "literature" AND striptime(default(imported, file.ctime)) > this.since AND striptime(default(imported, file.ctime)) <= this.date
+> > ```vault-card
+> > show: meeting-papers
 > > ```
 >
 > > [!question] Flagged for this meeting

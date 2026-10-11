@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
+import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, meetingDone, meetingExperiments, meetingPapers, meetingWindow, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -220,5 +220,46 @@ describe("Project hub tiles (To-dos and Notes, show all / collapse at 10)", () =
   });
   it("shows 10 rows before Show all", () => {
     expect(PROJECT_TILE_ROWS).toBe(10);
+  });
+});
+
+describe("Meeting note tiles (the window is the note's since and date)", () => {
+  const w = { since: "2026-10-01", date: "2026-10-08" };
+  const at = (d: string): number => new Date(`${d}T12:00:00`).getTime();
+  it("reads the window from the note's properties, none when either is missing or not a date", () => {
+    expect(meetingWindow({ since: "2026-10-01", date: "2026-10-08" })).toEqual(w);
+    expect(meetingWindow({ since: "2026-10-01" })).toBeNull();
+    expect(meetingWindow({ since: "soon", date: "2026-10-08" })).toBeNull();
+  });
+  it("Experiments: lab notes changed after since, up to the end of the meeting day, by name", () => {
+    const lab = "03 Lab Book/Notes/";
+    const got = meetingExperiments([
+      note(lab + "B.md", { Status: "Started" }, { mtime: at("2026-10-08") }),
+      note(lab + "A.md", {}, { mtime: at("2026-10-02") }),
+      note(lab + "Old.md", {}, { mtime: at("2026-09-30") }),
+      note(lab + "Later.md", {}, { mtime: at("2026-10-09") }),
+    ], w);
+    expect(got.map(l => l.text)).toEqual(["A", "B"]);
+    expect(got[1].badges).toEqual([{ text: "started", cls: "vt-badge vt-started" }]);
+  });
+  it("Done this week: finished after since up to the meeting day, with the project", () => {
+    const got = meetingDone([
+      note(T + "On the day.md", { kind: "todo", done: true, done_on: "2026-10-08", project: "[[Alpha]]" }),
+      note(T + "On since.md", { kind: "todo", done: true, done_on: "2026-10-01" }),   // since itself is before the window
+      note(T + "Inside.md", { kind: "todo", done: true, done_on: "2026-10-03" }),
+      note(T + "Open.md", { kind: "todo", day: "Mon" }),
+    ], w);
+    expect(got.map(l => l.text)).toEqual(["Inside", "On the day"]);
+    expect(got[1].badges).toEqual([{ text: "· Alpha", cls: "vt-muted" }]);
+  });
+  it("Papers read: imported after since up to the meeting day (else created), shown by Title", () => {
+    const lit = "04 Literature/";
+    const got = meetingPapers([
+      note(lit + "p1.md", { kind: "literature", Title: "Paper one", imported: "2026-10-05", takeaway: "works" }),
+      note(lit + "p2.md", { kind: "literature", imported: "2026-09-20" }),
+      note(lit + "p3.md", { kind: "literature" }, { ctime: at("2026-10-07") }),
+    ], w);
+    expect(got.map(l => l.text)).toEqual(["p3", "Paper one"]);
+    expect(got[1].badges).toEqual([{ text: "· works", cls: "vt-muted" }]);
   });
 });

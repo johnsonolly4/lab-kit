@@ -249,7 +249,8 @@ export class PlanningCommands {
     const notes = this.app.vault.getMarkdownFiles().map(f => ({ path: f.path, kind: this.app.metadataCache.getFileCache(f)?.frontmatter?.kind as unknown }));
     const open = topicsWithoutHub(this.app.vault.getAllFolders().map(f => f.path), notes, root);
     const NEW = "+ New topic…";
-    const picked = await pick(this.app, [...open.map(p => p.slice(root.length + 1)), NEW], [...open, ""], "Which topic gets a hub?", true);
+    const picked = await pick(this.app, [...open.map(p => p.slice(root.length + 1)), NEW], [...open, ""], "Which topic gets a hub?", true,
+      { prefix: "+ New topic: ", make: text => (cleanName(text) ? kitJoin(root, cleanName(text)) : "") });   // typing a new name + Enter makes it
     if (picked === null) return;
     let folder = picked;
     if (!folder) {
@@ -351,7 +352,8 @@ export class PlanningCommands {
   /** A folder in `root` (or a new one in it); null when Esc was pressed. */
   private async pickFolder(root: string): Promise<string | null> {
     const folders = subfolders(this.app.vault.getAllFolders().map(f => f.path), root);
-    const picked = await pick(this.app, [...folders, "+ New folder in " + root], [...folders, ""], "Which folder?", true);
+    const picked = await pick(this.app, [...folders, "+ New folder in " + root], [...folders, ""], "Which folder?", true,
+      { prefix: "+ New folder: ", make: text => (cleanName(text) ? `${root}/${cleanName(text)}` : "") });
     if (picked !== "") return picked;
     const name = await ask(this.app, "New folder name");
     return name ? `${root}/${cleanName(name)}` : null;

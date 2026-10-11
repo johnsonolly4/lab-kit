@@ -599,8 +599,8 @@ class KitFilesModal extends Modal {
       const status = statusOf(it, this.managed.stateOf(id));
       const row = new Setting(contentEl).setName(it.dest).setClass("lab-kit-manage-row");
       actionChip(row.nameEl, it.action);
-      // A kept note's action chip already says "your settings": a second chip would repeat it
-      if (it.action !== "keep" || kitHasNewer(it, this.managed.stateOf(id))) row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
+      // A kept note with no record has nothing to compare: its action chip ("your settings") says all there is. Every other row says whether it is up to date
+      if (it.action !== "keep" || this.managed.stateOf(id)) row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
       const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
         : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";
       row.setDesc([it.file.desc, note].filter(Boolean).join(" · "));
