@@ -184,9 +184,9 @@
 /* Sort inbox picker (src/planning/ask.ts `pick` with side): a short bar docked at the bottom edge, the choices as chips in rows, no backdrop, so the note above stays readable. At every window width: a narrow Obsidian window also gets the bar (the old rule only applied above 700px, so a narrower window still showed the centred list) */
 .modal-container.lab-kit-pick-side { pointer-events: none; }
 .modal-container.lab-kit-pick-side .modal-bg { display: none; }
-.modal-container.lab-kit-pick-side .modal.lab-kit-pick-side { position: fixed; top: auto; bottom: 12px; left: 50%; right: auto; width: min(760px, 94vw); max-width: 94vw; max-height: none; transform: translateX(-50%); pointer-events: auto; padding: 8px 12px; }
-.modal-container.lab-kit-pick-side .modal.lab-kit-pick-side .prompt-results { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: none; overflow: visible; padding: 6px 0 0; }
-.modal-container.lab-kit-pick-side .modal.lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side { position: fixed; top: auto; bottom: 12px; left: 50%; right: auto; width: min(760px, 94vw); max-width: 94vw; max-height: none; transform: translateX(-50%); pointer-events: auto; padding: 8px 12px; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side .prompt-results { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: none; overflow: visible; padding: 6px 0 0; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
 
 /* Check setup window (src/kit/setup-check-ui.ts) */
 .lab-kit-setup-check h4 { margin: 12px 0 4px; }

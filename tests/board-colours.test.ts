@@ -20,6 +20,11 @@ describe("board colours", () => {
       expect(css, name).toContain(`[data-lab-kit-group="${name}"] { --lab-kit-col: var(--lab-kit-col-${key}, ${rgbTriplet(hex)}); }`);
     }
   });
+  it("styles.css never styles the Sort inbox picker through .modal (Obsidian's pickers drop that class for .prompt)", () => {
+    const css = readFileSync("styles.css", "utf8");
+    expect(css).toContain(".modal-container.lab-kit-pick-side > .lab-kit-pick-side {");
+    expect(css).not.toContain(".modal.lab-kit-pick-side");
+  });
   it("reads 3/7 from a card's progress text", () => {
     expect(progressFraction("3/7")).toEqual([3, 7]);
     expect(progressFraction("progress 10 / 12")).toEqual([10, 12]);
