@@ -31,21 +31,21 @@ A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, 
 
 A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An unknown token, unknown field or unclosed block shows a message naming the snippet and inserts nothing.
 
-| Token | Gives |
-|---|---|
-| `{{key}}` | the answer to field `key` |
-| `{{a\|b\|"text"}}` | the first non-empty of the alternatives; a literal fallback goes in quotes |
-| `{{#each key}}…{{/each}}` | repeat for each item of a comma or line separated answer; inside: `{{.}}` the item. `{{#each key as x}}` names it `{{x}}`; `{{#each key \| " \| "}}` joins the repeats with a separator; `{{#each key as x or ""}}` runs once with `""` when the list is empty |
-| `{{@i}}` `{{@n}}` `{{@seq}}` | index from 0, from 1, and a running count over all repeats of the block; `{{@i+2}}` adds a number (spreadsheet rows) |
-| `{{#repeat key\|3}}…{{/repeat}}` | repeat a number of times; without a usable number the fallback is used (1 when none is given) |
-| `{{#if key}}…{{else}}…{{/if}}` | true when the answer has at least one item; `{{#if key ^= "h"}}` = starts with (ignoring case; false for an empty answer) |
-| `{{prefix}}` | your initials + the note's number + `-` (`ABC0016-`) |
-| `{{code}}` | `prefix` + the next free sample letter; continues from earlier codes in the note and advances on each use |
-| `{{table:base}}` | a table id that is unique in the note (`base`, `base2`…); the same `base` gives the same id again within one insert. `{{table:$key\|"base"}}` takes the base from a field; `{{table:sampling>_start}}` = the id of `sampling` plus `_start` |
-| `{{linked:column!B10}}` | the formula for `column!B10` (an equals sign in front of it) when the note has a `column` table with rows, else empty |
-| `{{next-letter:sampling}}` | the first sample letter not used in the note's `sampling` tables (use as a field's default) |
-| `{{note-number:key.Density}}` | a number from a property of the chemical note named by field `key`, else empty |
-| `{{live-prop:key.Density@B5}}` | a live formula for the same property: the cell stays up to date with the chemical note. `B5` is the cell that holds the note's name; empty when the note has no such number |
+| Token                            | Gives                                                                                                                                                                                                                                                          |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{{key}}`                        | the answer to field `key`                                                                                                                                                                                                                                      |
+| `{{a\|b\|"text"}}`               | the first non-empty of the alternatives; a literal fallback goes in quotes                                                                                                                                                                                     |
+| `{{#each key}}…{{/each}}`        | repeat for each item of a comma or line separated answer; inside: `{{.}}` the item. `{{#each key as x}}` names it `{{x}}`; `{{#each key \| " \| "}}` joins the repeats with a separator; `{{#each key as x or ""}}` runs once with `""` when the list is empty |
+| `{{@i}}` `{{@n}}` `{{@seq}}`     | index from 0, from 1, and a running count over all repeats of the block; `{{@i+2}}` adds a number (spreadsheet rows)                                                                                                                                           |
+| `{{#repeat key\|3}}…{{/repeat}}` | repeat a number of times; without a usable number the fallback is used (1 when none is given)                                                                                                                                                                  |
+| `{{#if key}}…{{else}}…{{/if}}`   | true when the answer has at least one item; `{{#if key ^= "h"}}` = starts with (ignoring case; false for an empty answer)                                                                                                                                      |
+| `{{prefix}}`                     | your initials + the note's number + `-` (`ABC0016-`)                                                                                                                                                                                                           |
+| `{{code}}`                       | `prefix` + the next free sample letter; continues from earlier codes in the note and advances on each use                                                                                                                                                      |
+| `{{table:base}}`                 | a table id that is unique in the note (`base`, `base2`…); the same `base` gives the same id again within one insert. `{{table:$key\|"base"}}` takes the base from a field; `{{table:sampling>_start}}` = the id of `sampling` plus `_start`                    |
+| `{{linked:column!B10}}`          | the formula for `column!B10` (an equals sign in front of it) when the note has a `column` table with rows, else empty                                                                                                                                          |
+| `{{next-letter:sampling}}`       | the first sample letter not used in the note's `sampling` tables (use as a field's default)                                                                                                                                                                    |
+| `{{note-number:key.Density}}`    | a number from a property of the chemical note named by field `key`, else empty                                                                                                                                                                                 |
+| `{{live-prop:key.Density@B5}}`   | a live formula for the same property: the cell stays up to date with the chemical note. `B5` is the cell that holds the note's name; empty when the note has no such number                                                                                    |
 
 A field with `suggest: codes` asks for sample codes the way the method snippets do (see "Sample codes" below): its box is filled with the codes of the note's tables and, with more than one table, a **Codes from** choice follows it. Give it `type: textarea`; the answer reaches the template as the codes joined with `, `, so `{{#each codes}}…{{/each}}` works. The key `<key>_from` is reserved for the choice. `class` belongs to `suggest: chemicals` only.
 
