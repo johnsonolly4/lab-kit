@@ -27,7 +27,7 @@ flowchart LR
 
 ## 1. Starting an experiment
 
-1. Create a new note in **Notes**.
+1. Run **New lab entry** from the command palette (or create a new note in your Lab notes folder).
 2. Type the title in the box that pops up (e.g. `Batch esterification of PABTC`).
 3. You get `0016 - Batch esterification of PABTC` with:
    - 📁 **Open data folder**: opens `<your data folder>/0016 - …` (made when you press the button; set the data folder in Settings → Lab Kit)
@@ -45,7 +45,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts the templates in your Templater templates folder, or in `Templates` at the vault root if Templater has none (Settings → Lab Kit → **Manage files…** shows where each file is). The **Set up** button in Settings → Lab Kit can add the hotkey for you.
+> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts the templates in a `Lab Kit` folder inside your Templater templates folder, or in `Extras/Templates/Lab Kit` if Templater has none (Settings → Lab Kit → **Manage files…** shows where each file is). The **Set up** button in Settings → Lab Kit can add the hotkey for you.
 > 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**.
 > 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault puts the scripts in your Templater scripts folder, or in `scripts` at the vault root if Templater has none; Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
 >
@@ -57,19 +57,18 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, the first reagent's amount in mmol, g or M (× volume), solvent "rest" row, total mass, wt% |
 | **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent (and an optional co-solvent as % of its mass), Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |
-| **Sample list** | Samples without times | Typed or generated codes · can add NMR/GPC/DLS + results |
-| **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · can add NMR/GPC/DLS + results |
+| **Sample list** | Samples without times | Typed or generated codes · add the analysis tables afterwards (NMR / GPC / DLS / your own methods, Combined results) |
+| **Sampling timetable** | Kinetics | Codes per time point, **target clock times** from a start time · add the analysis tables afterwards |
 | **NMR samples** | NMR submissions | Sample · solvent · method · conversion · dataset · checklist · tags the note `NMR` |
 | **GPC samples** | GPC | Sample · eluent · Mn · Mw · Đ (calculated) · tags `GPC` |
 | **DLS samples** | DLS | Sample · solvent · temperature · Dh · PDI · tags `DLS` |
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
-| **Analysis table** | Any other method | Pick a method (NMR, GPC, DLS or a note in your Methods folder), then its sample table, machine and checklist |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
 | **Blank calc table** | Anything else | Your own columns |
 
 > [!example] A typical analysis workflow
-> 1. **Sampling timetable** → times `0, 30, 60, 120`, letters `A, B`, start `10:30`, tick **NMR** and **Combined results**.
+> 1. **Sampling timetable** → times `0, 30, 60, 120`, letters `A, B`, start `10:30`. Then **NMR samples** and **Combined results** (they take the codes from the timetable).
 > 2. On the day, type the real times in **Taken at**.
 > 3. Type conversions into the **NMR** table: the **Results** table fills itself in.
 > 4. **Copy** on the Results table → paste into Excel or Origin.
@@ -136,6 +135,7 @@ $$\tau = \frac{V_{\text{reactor}}}{Q} \qquad Q = \frac{V_{\text{reactor}}}{\tau}
 > | `sig:` | `sig: 4` | significant figures for small numbers |
 > | `grid:` | `grid: true` | start with A1 labels shown |
 > | `copy:` | `copy: list` / `copy: column A` | what **Copy** puts on the clipboard |
+> | `codes:` | `codes: column A` / `codes: cells` | the table holds sample codes: NMR, GPC, DLS, method and Combined results snippets offer them under **Codes from** (all of them by default). Full syntax: `docs/snippet-syntax.md` |
 
 ---
 
@@ -216,13 +216,14 @@ flowchart LR
 | Change | Where |
 |---|---|
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
-| Your chemical notes | Settings → Lab Kit → Chemical folder (empty = no suggestions). Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts |
+| Your chemical notes | Settings → Lab Kit → Chemical folder (new vaults: `05 Chemicals/Chemicals`; empty = no suggestions, and no Chemical database template or base). New chemical notes: the kit's **Chemical database template**; the **Chemical database** base in the folder above lists them. Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts Give a chemical a `Chemical class` (`solvent`, `monomer`, `initiator`, `CTA` or any class of your own): the Solvent, Monomer, CTA and Initiator fields suggest those first; **Only suggest chemicals of the asked class** hides the rest. |
+| Where new experiment notes go | Settings → Lab Kit → Lab notes folder (used by **New lab entry**; the kit's **Lab book base**, a board of experiments by Status, goes in the folder above it) |
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
-| A snippet's menu icon | Settings → Lab Kit → Snippet menu (a Lucide icon name; empty keeps the built-in one) |
-| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`) |
-| What a snippet builds | `labSnippets.js` in your Templater user scripts folder (one section per snippet) |
+| A snippet's menu icon | Settings → Lab Kit → Snippet menu → Snippet icons (press **Choose…** and pick an icon, or type a Lucide name; empty keeps the built-in one) |
+| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table) has `icon:` and `desc:` in its header |
+| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other six are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
 | A new snippet | copy a file in the `Snippets` folder, give it a new number and name |
 | Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 
@@ -284,7 +285,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 |---|---|
 | **Review update…** | a preview of every file: what needs action first (conflict, merges cleanly, missing, update, new), then changed by you. **Tick all / Untick all** handles the files with a box. Nothing is written until you press **Apply** |
 | **Update all safe files** | adds new files and updates the ones you never edited (the first install asks first). It never merges |
-| **Set up** (Templater row) | points Templater's user scripts folder at the kit's scripts (only when it can't find them now), fills in its template folder only when that is empty (one you set is never changed), and adds *Insert snippet* to its Template hotkeys. Press it once after installing the kit, then set **Alt+S** in Obsidian → Hotkeys. Installing or updating the Alt+S menu template adds the hotkey entry by itself |
+| **Check setup…** (Fix on the Templater rows) | sets Templater's user scripts folder only when it has none (one you set is never changed; if the kit's scripts are outside it, it offers to install copies into `<your folder>/lab-kit`), fills in its template folder only when that is empty (one you set is never changed), and adds *Insert snippet* to its Template hotkeys. It lists these changes first and makes only the ones you leave switched on. Press Fix once after installing the kit, then set **Alt+S** in Obsidian → Hotkeys |
 | **Manage files…** | every kit file with a status (files that need action first), and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
 
 - **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
@@ -292,7 +293,7 @@ The kit files (templates, scripts, CSS snippet) are built into the plugin, so th
 - **Conflict:** if you and the kit changed the same lines, the file shows **Conflict** and is left alone. Press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply**. **Keep all mine** and **Take kit version** settle the whole file at once.
 - **Use toggle:** each snippet, and the Excel converter `excel_to_calc.py`, has a switch in **Manage files…**, with a one-line description. Off = not installed and not in the Alt+S menu. Switching off a snippet you already have asks first, copies it to the Backup folder and moves it to your trash. Switching it on installs it again. **Update all safe files** never installs a switched-off snippet.
 - **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
-- **First install:** the question before the first install has two switches, both on: **Turn on the CSS snippet**, and **Set Templater's user scripts folder** (only shown when Templater has no such folder yet; a folder you already set is never changed).
+- **First install:** before anything is written, a list shows the files to create, files left alone because they already exist, the folders to create, and the settings changes, each with a switch (on): **Turn on the CSS snippet**, **Set Templater's user scripts folder** (only when Templater has none; a folder you already set is never changed) and **Add Insert snippet to Templater's Template hotkeys**. Cancel writes nothing.
 
 The plugin itself (calc tables, header, windows) updates through Obsidian: **Settings → Community plugins → Check for updates**. A new plugin version brings the new kit with it, but your templates and scripts only change when you press **Apply** here. When Obsidian starts after such an update, a notice says **Lab kit vX is ready → Review**. Switch it off with **Settings → Lab Kit → Tell me when a kit update is ready**.
 
@@ -314,5 +315,6 @@ After an update, a **What's new** popup opens once. Open it again from **Setting
 | Table looks like plain code | Lab Kit isn't enabled (Settings → Community plugins) |
 | No update notice | It only shows when the plugin brings a newer kit than the one installed, and **Tell me when a kit update is ready** is on (Settings → Lab Kit). **Review update…** works any time |
 | Hazard table empty | Chemicals property empty, or chemical notes missing `H_Phrase` |
+| "Folder … not found. Moved outside Obsidian?", or empty homepage lists | A folder named in the settings was moved or renamed outside Obsidian, so its setting couldn't follow. Run **Find moved folders** (command palette, the notice's button, or Check setup → Find): it suggests where each folder went; Apply changes only the settings. Move folders inside Obsidian to avoid this |
 
 Related: [Changelog](changelog.md)

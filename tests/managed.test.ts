@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank,
-  type EmbeddedKit, type ManagedAdapter, type ManagedItem
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, kitKept, newerKitItems, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
+  type EmbeddedKit, type ManagedAction, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -236,13 +236,79 @@ describe("per-file actions (Manage kit files)", () => {
     const v = memVault(); const { state } = await install(v);
     state.files["tpl-menu"].detached = true;
     v.files["My scripts/config.json"] = "{\"mine\":1}\n";
-    const plan = await planManaged(v, V2, state, roles);
+    const plan = await planManaged(v, V1, state, roles);   // the kit has nothing newer for the kept file
     for (const id of ["tpl-menu", "script-config", "script-snip"]) {
       const before = { ...v.files };
       const out = await restoreManaged(v, by(plan, id), state, opts);
       expect(out.result.outcome).toBe("skipped");
       expect(v.files).toEqual(before);
     }
+  });
+
+  it("a kept file the kit has a newer version of says so, and Replace backs up yours and installs the new one", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";
+    const plan = await planManaged(v, V2, state, roles);
+    const item = by(plan, "script-config");
+    expect(item.action).toBe("keep");
+    expect(kitHasNewer(item, state.files["script-config"])).toBe(true);
+    expect(statusOf(item, state.files["script-config"]).label).toBe("Newer kit version available");
+    expect(newerKitItems(plan, id => state.files[id]).map(i => i.file.id)).toEqual(["script-config"]);   // the count the start-up notice and Check setup show
+    const none = by(await planManaged(v, V1, state, roles), "script-config");
+    expect(newerKitItems(await planManaged(v, V1, state, roles), id => state.files[id])).toEqual([]);
+    expect(kitHasNewer(none, state.files["script-config"])).toBe(false);
+    expect(statusOf(none, state.files["script-config"]).label).toBe("Up to date with the kit");
+    expect(statusOf(none).label).toBe("Kept (your settings)");   // no record: nothing to compare
+    const out = await restoreManaged(v, item, state, opts);
+    expect(out.result.outcome).toBe("updated");
+    expect(out.result.backup).toBeDefined();
+    expect(v.files["My scripts/config.json"]).toBe("{\"new\":1}\n");
+    expect(v.files[out.result.backup!]).toBe("{\"mine\":1}\n");
+  });
+
+  it("Keep leaves your kept file and keeps the update on offer (quietly); Compare's text is written after a backup; the row sorts right after Update available", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";
+    const item = by(await planManaged(v, V2, state, roles), "script-config");
+    expect(attentionRank(item, state.files["script-config"])).toBe(3.5);
+    expect(attentionRank(item, state.files["script-config"])).toBeGreaterThan(attentionRank({ ...item, action: "fast-forward" }));
+    expect(attentionRank(item, state.files["script-config"])).toBeLessThan(attentionRank({ ...item, action: "create" }));
+    expect(attentionRank(item)).toBe(attentionRank({ ...item, action: "keep" }));   // no record: no update to look at
+    const kept = await resolveManaged(v, item, null, state, opts);
+    expect(kept.result.outcome).toBe("adopted");
+    expect(kept.result.backup).toBeUndefined();
+    expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1}\n");
+    // the update stays offered, quietly (user, 2026-10-10: "the badge should stay"); a later kit change makes it new again
+    const again = by(await planManaged(v, V2, kept.state, roles), "script-config");
+    expect(kitHasNewer(again, kept.state.files["script-config"])).toBe(true);
+    expect(kitKept(again, kept.state.files["script-config"])).toBe(true);
+    expect(statusOf(again, kept.state.files["script-config"]).label).toBe("Newer kit version available (you kept yours)");
+    expect(attentionRank(again, kept.state.files["script-config"])).toBeGreaterThan(attentionRank({ ...again, action: "up-to-date" }) - 0.1);
+    const V3 = kit("0.3.0", { "tpl-menu": "menu v2\n", "tpl-book": "line 1\nline 2\nline 3 changed by kit\n", "script-snip": "path = Extras/scripts/x\n", "script-config": "{\"newer\":1}\n" });
+    expect(kitKept(by(await planManaged(v, V3, kept.state, roles), "script-config"), kept.state.files["script-config"])).toBe(false);
+    // "Keep all mine" in the Compare window sends your own text: it behaves like Keep (the update stays on offer)
+    const keepAll = await resolveManaged(v, item, "{\"mine\":1}\n", state, opts);
+    expect(keepAll.result.outcome).toBe("adopted");
+    expect(kitKept(by(await planManaged(v, V2, keepAll.state, roles), "script-config"), keepAll.state.files["script-config"])).toBe(true);
+    const merged = await resolveManaged(v, item, "{\"mine\":1,\"new\":1}\n", state, opts);
+    expect(merged.result.outcome).toBe("merged");
+    expect(v.files[merged.result.backup!]).toBe("{\"mine\":1}\n");
+    expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1,\"new\":1}\n");
+    // a kept file with nothing newer is not touched by it
+    const same = by(await planManaged(v, V1, state, roles), "script-config");
+    expect((await resolveManaged(v, same, null, state, opts)).result.outcome).toBe("skipped");
+  });
+
+  it("a kept file with no record is adopted on apply (file untouched); a later kit change then shows as newer", async () => {
+    const v = memVault();
+    v.files["My scripts/config.json"] = "{\"mine\":1}\n";   // there before the kit tracked it
+    const plan = await planManaged(v, V1, null, roles);
+    expect(by(plan, "script-config")).toMatchObject({ action: "keep", untracked: true });
+    const out = await applyManaged(v, V1, plan, null, opts);
+    expect(out.results.find(r => r.id === "script-config")?.outcome).toBe("adopted");
+    expect(v.files["My scripts/config.json"]).toBe("{\"mine\":1}\n");
+    expect(kitHasNewer(by(await planManaged(v, V1, out.state, roles), "script-config"), out.state.files["script-config"])).toBe(false);
+    expect(kitHasNewer(by(await planManaged(v, V2, out.state, roles), "script-config"), out.state.files["script-config"])).toBe(true);
   });
 
   it("detach and re-attach", async () => {
@@ -397,11 +463,11 @@ describe("files from the old folder updater", () => {
 
 describe("embedded kit (the real one)", () => {
   const real = embeddedKit() as EmbeddedKit & { paths: string[] };
-  const listed = JSON.parse(readFileSync("kit/kit-manifest.json", "utf8")) as { files: { id: string; sha256: string; version: string }[] };
+  const listed = JSON.parse(readFileSync("kits/lab/kit-manifest.json", "utf8")) as { files: { id: string; sha256: string; version: string }[] };
   it("has unique ids, a kind per file and text for each", () => {
     const ids = real.manifest.files.map(f => f.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const f of real.manifest.files) { expect(["template", "snippet", "script"]).toContain(f.kind); expect(real.contents[f.id].length).toBeGreaterThan(0); }
+    for (const f of real.manifest.files) { expect(["template", "snippet", "script", "note"]).toContain(f.kind); expect(real.contents[f.id].length).toBeGreaterThan(0); }
   });
   it("matches kit-manifest.json (run npm run kit:manifest if this fails)", async () => {
     for (const f of real.manifest.files) {
@@ -425,14 +491,62 @@ describe("renames and retired files", () => {
     manifest: { ...k.manifest, files: k.manifest.files.map(f => f.id === "tpl-book" ? { ...f, dest: "Notes/Book.md", renamedFrom: ["Book.md"] } : f) },
   });
 
-  it("keeps updating your file in place when the kit moves it (same id)", async () => {
+  const remove = async (v: ReturnType<typeof memVault>, p: string): Promise<void> => { delete v.files[p]; };
+  const withRemove = (v: ReturnType<typeof memVault>) => ({ ...opts, remove: (p: string) => remove(v, p) });
+
+  it("moves an unedited file to the kit's new name when the update is applied", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
+    const item = by(plan, "tpl-book");
+    expect(item.dest).toBe("Templates/Notes/Book.md");
+    expect(item.movedFrom).toBe("Templates/Book.md");
+    expect(item.action).toBe("fast-forward");
+    expect(v.files["Templates/Book.md"]).toBeDefined();   // planning writes nothing
+    const out = await applyManaged(v, moved(V2), plan, state, withRemove(v));
+    expect(v.files["Templates/Book.md"]).toBeUndefined();
+    expect(v.files["Templates/Notes/Book.md"]).toBe("line 1\nline 2\nline 3 changed by kit\n");
+    expect(out.results.find(r => r.id === "tpl-book")?.outcome).toBe("moved");
+    expect(Object.values(v.files).some(t => t === "line 1\nline 2\nline 3\n")).toBe(true);   // the old copy is in the backups
+    expect(out.state.files["tpl-book"].path).toBe("Templates/Notes/Book.md");
+    const again = by(await planManaged(v, moved(V2), out.state, roles, null, opts.baseDir), "tpl-book");
+    expect(again.action).toBe("up-to-date");
+    expect(again.movedFrom).toBeUndefined();
+  });
+
+  it("moves an edited file too, with your edits merged in", async () => {
     const v = memVault(); const { state } = await install(v);
     v.files["Templates/Book.md"] = "mine 1\nline 2\nline 3\n";
     const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
     const item = by(plan, "tpl-book");
-    expect(item.dest).toBe("Templates/Book.md");
     expect(item.action).toBe("merge");
-    expect(item.merged).toBe("mine 1\nline 2\nline 3 changed by kit\n");
+    expect(item.movedFrom).toBe("Templates/Book.md");
+    await applyManaged(v, moved(V2), plan, state, { ...withRemove(v), select: () => true });
+    expect(v.files["Templates/Book.md"]).toBeUndefined();
+    expect(v.files["Templates/Notes/Book.md"]).toBe("mine 1\nline 2\nline 3 changed by kit\n");
+  });
+
+  it("leaves a file where it is when it cannot be applied by itself, or a file is already at the new name", async () => {
+    const v = memVault(); const { state } = await install(v);
+    v.files["Templates/Book.md"] = "mine 1\nline 2\nline 3 totally mine\n";
+    const clash = by(await planManaged(v, moved(V2), state, roles, null, opts.baseDir), "tpl-book");
+    expect(clash.action).toBe("needs-merge");
+    expect(clash.movedFrom).toBeUndefined();
+    expect(clash.dest).toBe("Templates/Book.md");
+    v.files["Templates/Book.md"] = "line 1\nline 2\nline 3\n";
+    v.files["Templates/Notes/Book.md"] = "already here\n";
+    const taken = by(await planManaged(v, moved(V2), state, roles, null, opts.baseDir), "tpl-book");
+    expect(taken.movedFrom).toBeUndefined();
+    expect(taken.dest).toBe("Templates/Book.md");
+  });
+
+  it("does not move a kept file, and skips the move without a way to delete", async () => {
+    const v = memVault(); const { state } = await install(v);
+    const keepMoved = (k: EmbeddedKit): EmbeddedKit => ({ ...k, manifest: { ...k.manifest, files: moved(k).manifest.files.map(f => f.id === "tpl-book" ? { ...f, policy: "keep" } : f) } });
+    expect(by(await planManaged(v, keepMoved(V2), state, roles, null, opts.baseDir), "tpl-book").movedFrom).toBeUndefined();
+    const plan = await planManaged(v, moved(V2), state, roles, null, opts.baseDir);
+    const out = await applyManaged(v, moved(V2), plan, state, opts);
+    expect(out.results.find(r => r.id === "tpl-book")?.outcome).toBe("skipped");
+    expect(v.files["Templates/Book.md"]).toBeDefined();
   });
 
   it("adopts a file found at an old place when nothing is tracked yet", async () => {
@@ -466,5 +580,22 @@ describe("renames and retired files", () => {
     expect(next.files["tpl-book"]).toBeDefined();
     expect(v.files[`${opts.baseDir}/tpl-menu.txt`]).toBeUndefined();
     expect(v.files["Templates/Menu.md"]).toBe("menu v1\n");
+  });
+});
+
+describe("actionLook (symbol + word + tone for what Apply does)", () => {
+  const all: ManagedAction[] = ["create", "fast-forward", "up-to-date", "user-modified", "merge", "needs-merge", "missing", "keep", "detached", "off"];
+  it("has a distinct symbol-or-word and a tone for every action", () => {
+    const words = all.map(a => actionLook(a).word);
+    expect(new Set(words).size).toBe(all.length);
+    for (const a of all) expect(actionLook(a).symbol.length).toBeGreaterThan(0);
+  });
+  it("colours: add green, change orange, conflict red; yours and settings are left", () => {
+    expect(actionLook("create").tone).toBe("add");
+    expect(actionLook("fast-forward").tone).toBe("change");
+    expect(actionLook("merge").tone).toBe("change");
+    expect(actionLook("needs-merge").tone).toBe("conflict");
+    expect(actionLook("user-modified").tone).toBe("leave");
+    expect(actionLook("keep").tone).toBe("leave");
   });
 });

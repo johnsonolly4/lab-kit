@@ -143,7 +143,7 @@ describe("frontmatter merge (key by key)", () => {
   });
 
   it("merges the real Lab Book Template with a key you added", () => {
-    const real = readFileSync("kit/Templates/Lab Book Template.md", "utf8").replace(/\r\n/g, "\n");
+    const real = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8").replace(/\r\n/g, "\n");
     const mine = real.replace("Objective:\n", "Objective:\nMy key: x\n");
     const kit = real.replace("Outcome:\n", "Outcome: from kit\n");
     expect(mine).not.toBe(real);

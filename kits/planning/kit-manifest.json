@@ -1,0 +1,428 @@
+{
+  "schema": 2,
+  "id": "planning",
+  "kit": "planning-suite-kit",
+  "version": "0.5.2",
+  "date": "2026-10-07",
+  "rewrite": {
+    "00 Inbox": "inbox",
+    "01 Daily Notes": "daily",
+    "00 Planning": "planning",
+    "02 Projects": "projects",
+    "04 Literature": "literature",
+    "06 Knowledge": "knowledge",
+    "07 How-tos": "howtos",
+    "08 Meetings": "meetings",
+    "99 Archive": "archive",
+    "03 Lab Book/Notes": "labNotes"
+  },
+  "migrations": [
+    {
+      "id": "knowledge-concept",
+      "title": "Knowledge notes: Type: Wiki → kind: concept",
+      "scope": "knowledge",
+      "onlyIfMatched": true,
+      "ops": [
+        {
+          "op": "replace-property",
+          "from": "Type",
+          "whenValue": "Wiki",
+          "to": "kind",
+          "value": "concept"
+        },
+        {
+          "op": "add-property",
+          "name": "summary",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "sources",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "checked",
+          "value": "false"
+        }
+      ]
+    },
+    {
+      "id": "move-folders",
+      "title": "Move folders to the kit layout",
+      "scope": "vault",
+      "ops": [
+        {
+          "op": "move",
+          "from": "Extras/Templates/Scripts",
+          "to": "Extras/Templates/Actions"
+        },
+        {
+          "op": "move",
+          "from": "fonts",
+          "to": "Extras/fonts"
+        }
+      ]
+    }
+  ],
+  "enableCss": [
+    "vault-colours.css",
+    "vault-theme.css"
+  ],
+  "templater": {
+    "userScripts": true
+  },
+  "files": [
+    {
+      "id": "snip-vault-colours-css",
+      "kind": "snippet",
+      "src": ".obsidian/snippets/vault-colours.css",
+      "role": "cssSnippets",
+      "path": "vault-colours.css",
+      "version": "0.5.2",
+      "sha256": "99780228798869233005838c7a7e59d0c93b7ffd4afcd5ebe3e48fd2740db84c",
+      "renamedFrom": [],
+      "desc": "Colours of the planning notes, badges and board columns"
+    },
+    {
+      "id": "snip-vault-theme-css",
+      "kind": "snippet",
+      "src": ".obsidian/snippets/vault-theme.css",
+      "role": "cssSnippets",
+      "path": "vault-theme.css",
+      "version": "0.5.2",
+      "sha256": "9c6fd7e406bcefb4a2977b9cfc5d8baa5e0722ffda49422f6177fbf9c9ca4323",
+      "renamedFrom": [],
+      "desc": "Planning theme: homepage layout, callouts, to-do board cards"
+    },
+    {
+      "id": "note-00-home-md",
+      "kind": "note",
+      "src": "00 Home.md",
+      "role": "home",
+      "path": "00 Home.md",
+      "version": "0.5.2",
+      "sha256": "5bfc73383815063a90a2f4750fe9556dd2343a386c82af55e9878add6aac6ddc",
+      "renamedFrom": [],
+      "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
+      "policy": "keep"
+    },
+    {
+      "id": "note-how-tos-index-md",
+      "kind": "note",
+      "src": "07 How-tos/How-tos index.md",
+      "role": "howtos",
+      "path": "How-tos index.md",
+      "version": "0.5.2",
+      "sha256": "8efb2471aa311af9cae56975fe0b778cc7c7ec2ff197ccbb30a6cc0fc2b062c3",
+      "renamedFrom": [],
+      "desc": "How-to notes by topic",
+      "policy": "keep"
+    },
+    {
+      "id": "note-obsidian-hotkeys-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/Hotkeys.md",
+      "role": "howtos",
+      "path": "Obsidian/Hotkeys.md",
+      "version": "0.5.2",
+      "sha256": "ebcea8ddf9fb105cc71a9289651970c1a34108e85bd6137f9e7a4cea17520222",
+      "renamedFrom": [],
+      "desc": "Recommended hotkeys (Alt + first letter); never set for you",
+      "policy": "keep"
+    },
+    {
+      "id": "note-obsidian-how-my-vault-works-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/How my vault works.md",
+      "role": "howtos",
+      "path": "Obsidian/How my vault works.md",
+      "version": "0.5.2",
+      "sha256": "5e53bd57e190d9f130cb8a7258862122e5bb2795ab46fb904c0e117b13c1c487",
+      "renamedFrom": [],
+      "desc": "Guide to the vault layout and daily routine",
+      "policy": "keep"
+    },
+    {
+      "id": "note-obsidian-set-up-zotlit-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/Set up ZotLit.md",
+      "role": "howtos",
+      "path": "Obsidian/Set up ZotLit.md",
+      "version": "0.5.2",
+      "sha256": "d217d960f58bc24ebae36368a8ff0968adfc807a8e78b3fe979d76b9fee181b4",
+      "renamedFrom": [],
+      "desc": "Checklist: ZotLit's note folder and template folder",
+      "optional": true,
+      "policy": "keep",
+      "needs": "plugin:zotlit"
+    },
+    {
+      "id": "note-obsidian-setting-up-a-computer-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/Setting up a computer.md",
+      "role": "howtos",
+      "path": "Obsidian/Setting up a computer.md",
+      "version": "0.5.2",
+      "sha256": "e781aaa75c6d661c55cc7e470782d8d0b7afc7dbc9171718464d2783d729bc9d",
+      "renamedFrom": [],
+      "desc": "Steps to set up Obsidian on a new computer",
+      "policy": "keep"
+    },
+    {
+      "id": "note-obsidian-vault-spec-md",
+      "kind": "note",
+      "src": "07 How-tos/Obsidian/Vault spec.md",
+      "role": "howtos",
+      "path": "Obsidian/Vault spec.md",
+      "version": "0.5.2",
+      "sha256": "6f26f30d1f91b16432353f27412d0b33727bee08aab58db3018b7d5c9180c2ce",
+      "renamedFrom": [],
+      "desc": "Full specification of the vault",
+      "policy": "keep"
+    },
+    {
+      "id": "note-knowledge-index-md",
+      "kind": "note",
+      "src": "06 Knowledge/Knowledge index.md",
+      "role": "knowledge",
+      "path": "Knowledge index.md",
+      "version": "0.5.2",
+      "sha256": "670767a5e515172134448411dcb8a4599295c98776dd5e2e01da7834a52e0924",
+      "renamedFrom": [],
+      "desc": "Knowledge notes by topic",
+      "policy": "keep"
+    },
+    {
+      "id": "note-literature-md",
+      "kind": "note",
+      "src": "04 Literature/Literature.md",
+      "role": "literature",
+      "path": "Literature.md",
+      "version": "0.5.2",
+      "sha256": "0af3d1bb1e5918529147af7272ca0f61ad67650b1958d0f6a192192c2845fed3",
+      "renamedFrom": [],
+      "desc": "Literature hub (ZotLit imports)",
+      "optional": true,
+      "policy": "keep",
+      "needs": "plugin:zotlit"
+    },
+    {
+      "id": "note-meetings-md",
+      "kind": "note",
+      "src": "08 Meetings/Meetings.md",
+      "role": "meetings",
+      "path": "Meetings.md",
+      "version": "0.5.2",
+      "sha256": "a87c43498e18df2e5be10a25f79965641ccf5cd099f8284e86935fe74b71ac37",
+      "renamedFrom": [],
+      "desc": "Meetings hub: next meeting of each series",
+      "policy": "keep"
+    },
+    {
+      "id": "note-shopping-list-md",
+      "kind": "note",
+      "src": "00 Planning/Shopping list.md",
+      "role": "planning",
+      "path": "Shopping list.md",
+      "version": "0.5.2",
+      "sha256": "9ab76f6baf27793dd40d0ec445d786a5e3c9eb346a90b9efd2e4a8b577606fce",
+      "renamedFrom": [],
+      "desc": "Lab shopping list",
+      "policy": "keep"
+    },
+    {
+      "id": "note-to-do-board-base",
+      "kind": "note",
+      "src": "00 Planning/To-do board.base",
+      "role": "planning",
+      "path": "To-do board.base",
+      "version": "0.5.2",
+      "sha256": "2674cba2aa4d6717255153382f4839cd4f32b9bc6ce4125ef5fc678d3c5919ea",
+      "renamedFrom": [],
+      "desc": "To-do board: one column per day",
+      "policy": "keep"
+    },
+    {
+      "id": "note-weekly-review-md",
+      "kind": "note",
+      "src": "00 Planning/Weekly review.md",
+      "role": "planning",
+      "path": "Weekly review.md",
+      "version": "0.5.2",
+      "sha256": "d8ef8ae7580764452f42fa9e179f8aac5fb145467ed18204106b3f4a8111ed20",
+      "renamedFrom": [],
+      "desc": "Weekly review note",
+      "policy": "keep"
+    },
+    {
+      "id": "note-projects-overview-md",
+      "kind": "note",
+      "src": "02 Projects/Projects overview.md",
+      "role": "projects",
+      "path": "Projects overview.md",
+      "version": "0.5.2",
+      "sha256": "1e170c8e8b5473c1081eac9e6c79a083cc4d49275f148701863d52ad48218e38",
+      "renamedFrom": [],
+      "desc": "All projects with their status",
+      "policy": "keep"
+    },
+    {
+      "id": "tpl-daily-note-md",
+      "kind": "template",
+      "src": "Extras/Templates/Daily note.md",
+      "role": "templates",
+      "path": "Daily note.md",
+      "version": "0.5.2",
+      "sha256": "ae1a5157ef89d217621a505098678613a0404bb814cb1db9259fb64ac3ac8722",
+      "renamedFrom": [],
+      "desc": "Daily note (folder template for 01 Daily Notes)"
+    },
+    {
+      "id": "tpl-meeting-series-md",
+      "kind": "template",
+      "src": "Extras/Templates/Meeting series.md",
+      "role": "templates",
+      "path": "Meeting series.md",
+      "version": "0.5.2",
+      "sha256": "83ec2e63a02183c0f4f1bb0a7f3bd3a27602ed71277ccaa9af301f5112dc6b76",
+      "renamedFrom": [],
+      "desc": "New meeting series: its hub note"
+    },
+    {
+      "id": "tpl-weekly-meeting-md",
+      "kind": "template",
+      "src": "Extras/Templates/Meeting.md",
+      "role": "templates",
+      "path": "Meeting.md",
+      "version": "0.5.2",
+      "sha256": "beb3af13e2f49fd7991e0bcee0e97d1cf666b91d147b5ec7c1d7df5eb3c9c907",
+      "renamedFrom": [
+        "Weekly meeting.md"
+      ],
+      "desc": "New meeting note"
+    },
+    {
+      "id": "tpl-new-concept-md",
+      "kind": "template",
+      "src": "Extras/Templates/New concept.md",
+      "role": "templates",
+      "path": "New concept.md",
+      "version": "0.5.2",
+      "sha256": "ac90b5aa2fef571c0c3a3a75bb36b09a2ad45120412fc60517abe95336e17d57",
+      "renamedFrom": [],
+      "desc": "New concept: a knowledge note in a topic folder"
+    },
+    {
+      "id": "tpl-new-project-note-md",
+      "kind": "template",
+      "src": "Extras/Templates/New project note.md",
+      "role": "templates",
+      "path": "New project note.md",
+      "version": "0.5.2",
+      "sha256": "b42394461522eae474d3eb83ac23698ab57ad6b8f269b163390cd97b98d0f3d0",
+      "renamedFrom": [],
+      "desc": "New note inside a project"
+    },
+    {
+      "id": "tpl-new-topic-hub-md",
+      "kind": "template",
+      "src": "Extras/Templates/New topic hub.md",
+      "role": "templates",
+      "path": "New topic hub.md",
+      "version": "0.5.2",
+      "sha256": "9cac42f3f3a87f453df14acb6b767f9d64e9cf13e6357b92035fdab21d98b07c",
+      "renamedFrom": [],
+      "desc": "New topic hub: the index note of a topic folder"
+    },
+    {
+      "id": "tpl-one-off-meeting-md",
+      "kind": "template",
+      "src": "Extras/Templates/One-off meeting.md",
+      "role": "templates",
+      "path": "One-off meeting.md",
+      "version": "0.5.2",
+      "sha256": "045db89c51312643bf5aa98da0c2f0f90cd307dba1e71c873de0e7e7aa411372",
+      "renamedFrom": [],
+      "desc": "New one-off meeting note (a smaller meeting note: To discuss, Flagged, Notes)"
+    },
+    {
+      "id": "tpl-project-hub-md",
+      "kind": "template",
+      "src": "Extras/Templates/Project hub.md",
+      "role": "templates",
+      "path": "Project hub.md",
+      "version": "0.5.2",
+      "sha256": "e2661d7ee384bb14f339fc0684e5393b6f8b915a9dc3c6bbdc39e002a16093de",
+      "renamedFrom": [],
+      "desc": "New project: its folder and hub note"
+    },
+    {
+      "id": "tpl-to-do-md",
+      "kind": "template",
+      "src": "Extras/Templates/To-do.md",
+      "role": "templates",
+      "path": "To-do.md",
+      "version": "0.5.2",
+      "sha256": "fe6ce42c6eae09182d9c30d533f9fb8249e03c47c890b3781e5a607f52f64dff",
+      "renamedFrom": [],
+      "desc": "New to-do note (folder template for 00 Planning/To-dos)"
+    },
+    {
+      "id": "tpl-zotlit-zotlit-content-liquid-md",
+      "kind": "template",
+      "src": "Extras/Templates/ZotLit/zotlit-content.liquid.md",
+      "role": "templates",
+      "path": "ZotLit/zotlit-content.liquid.md",
+      "version": "0.5.2",
+      "sha256": "f5fe11ac6b12e93fd52fe9b48d95a925645ba4384b2119a56e58ed0ba83120ce",
+      "renamedFrom": [],
+      "desc": "ZotLit template: annotations",
+      "optional": true,
+      "needs": "plugin:zotlit"
+    },
+    {
+      "id": "tpl-zotlit-zotlit-lititem-liquid-md",
+      "kind": "template",
+      "src": "Extras/Templates/ZotLit/zotlit-lititem.liquid.md",
+      "role": "templates",
+      "path": "ZotLit/zotlit-lititem.liquid.md",
+      "version": "0.5.2",
+      "sha256": "bd988d77047924a829682b80eab13719272b190b37b50c65d9f87901dba2e850",
+      "renamedFrom": [],
+      "desc": "ZotLit template: one literature item",
+      "optional": true,
+      "needs": "plugin:zotlit"
+    },
+    {
+      "id": "tpl-zotlit-zotlit-note-liquid-md",
+      "kind": "template",
+      "src": "Extras/Templates/ZotLit/zotlit-note.liquid.md",
+      "role": "templates",
+      "path": "ZotLit/zotlit-note.liquid.md",
+      "version": "0.5.2",
+      "sha256": "255483fff5e1d4e5cfd1473ca684cb901caac291e89e1db5d4967291182706d1",
+      "renamedFrom": [],
+      "desc": "ZotLit literature note template",
+      "optional": true,
+      "needs": "plugin:zotlit"
+    },
+    {
+      "id": "script-vtask-js",
+      "kind": "script",
+      "src": "Extras/scripts/templater/vault/vtAsk.js",
+      "role": "userScripts",
+      "path": "vtAsk.js",
+      "version": "0.5.2",
+      "sha256": "dee7f23585c9ec7b19cecea05684afb42848b3a51a5a608e6d665d59413dc51f",
+      "renamedFrom": [],
+      "desc": "The text box every planning template asks with"
+    }
+  ],
+  "removed": [
+    "tpl-actions-add-to-shopping-list-md",
+    "tpl-actions-archive-old-to-dos-md",
+    "tpl-actions-sort-inbox-md",
+    "note-weekly-meetings-weekly-meetings-md"
+  ]
+}

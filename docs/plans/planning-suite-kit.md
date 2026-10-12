@@ -90,11 +90,14 @@ Every role is a setting; these are the defaults on a vault with nothing detected
 - Files: `kits/planning/…`, `kits/planning/kit-manifest.json`, tests
 - Done when: planning kit installs into an empty test-vault and into a vault that already has the old suite files without overwriting any of them
 
+- **Done 2026-10-07 (unattended), deviations**: see `docs/plans/phase-3-planning-files.md`. Held back: New concept template and knowledge rules (no source; user to supply), To-do roll-over (Phase 4), Open Thursday deck (Phase 5), `vault-fonts.css` (licence, now gitignored). Folder names are not rewritten yet (Phase 5 adds the settings). The kit is embedded but not offered in the UI.
+
 ### Phase 4 — Planning engine in the plugin
 - Depends on: Phase 3
 - Move the To-do roll-over startup template into plugin code (no startup template to forget per computer). Keep the 2026-10-07 behaviour: sync-safe change handling (only write a missing or wrong stamp; never answer changes that arrive through Obsidian Sync), roll-over only on devices set to do it (per-device, local storage; computers yes, phones no by default), 90 s start delay, column tagging (`data-vt-group`) on every redraw, tick-circle click, `vt-rolled` cards, today's column.
 - Commands with fixed IDs (never renamed): `new-todo`, `quick-capture`, `add-to-shopping`, `sort-inbox`, `archive-todos`, `new-meeting`, `open-deck`, `new-project`, `new-project-note`, plus a per-project variant for project cards.
 - Test: every command a kit note or button calls exists; every file a button, hotkey or folder template points at is shipped by a kit.
+- Commands (4b): see `docs/plans/phase-4b-planning-commands.md` (split 4b-1 / 4b-2)
 - Files: `src/planning/*.ts` (new), `src/main.ts`, tests (port the 2026-10-07 sync scenarios: synced roll-over / drag / tick left alone; local drag, tick, untick, drag of carried-over card written)
 - Done when: scenario tests pass; roll-over seen in test-vault
 
@@ -115,6 +118,7 @@ Every role is a setting; these are the defaults on a vault with nothing detected
 - Done when: on a fresh test-vault, every red item can be fixed from the list; existing Templater values unchanged
 
 ### Phase 7 — Note correction (check / fix)
+- **Replaced 2026-10-07** by `docs/plans/phase-7-tidy-notes.md` (one command "Tidy up notes", split before/after window, two-step confirm, 7a–7c). The rule table below still applies.
 - Depends on: Phases 3–6
 - Commands `check-notes` (writes a report note, changes nothing) and `fix-notes` (confirmation dialog → backup each file → apply). Callable from the Obsidian CLI: `obsidian command id=lab-kit:check-notes`, then `obsidian command id=lab-kit:fix-notes`.
 - Rules are data in the kit manifest (`migrations`), generic; anything personal is asked in the dialog, never stored in the repo. See "Note correction rules" below.

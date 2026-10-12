@@ -2,6 +2,7 @@ class El {
   constructor(tag){ this.tagName=tag.toUpperCase(); this.children=[]; this.parent=null; this.attrs={}; this.classList=new CL(this); this._text=""; this.listeners={}; this.style={setProperty(){}}; }
   get className(){ return [...this.classList.s].join(" "); } set className(v){ this.classList.s=new Set(String(v).split(/\s+/).filter(Boolean)); }
   appendChild(c){ if(c.parent) c.parent.removeChild(c); c.parent=this; this.children.push(c); return c; }
+  insertBefore(n, ref){ if(n.parent) n.parent.removeChild(n); n.parent=this; const i=ref?this.children.indexOf(ref):-1; this.children.splice(i<0?this.children.length:i,0,n); return n; }
   removeChild(c){ this.children=this.children.filter(x=>x!==c); c.parent=null; }
   remove(){ this.parent && this.parent.removeChild(this); }
   get firstChild(){ return this.children[0]; } get childElementCount(){ return this.children.length; }

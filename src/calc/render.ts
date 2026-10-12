@@ -6,7 +6,7 @@ import {
   type Env, type ParsedBlock, type Value
 } from "./engine";
 import { autoInsertIndex, editRows, writeCellText } from "./rewrite";
-import { formulaRefs } from "./refs";
+import { REF_COLOURS, colouredRefs } from "./refs";
 import { listChemicals, type Chemical } from "../chem";
 import { ChemicalSuggest } from "../chem/suggest";
 import { prop } from "../frontmatter";
@@ -29,13 +29,24 @@ export interface CalcEntry {
   cells?: Map<string, HTMLElement>;
 }
 
+/** Where the coloured copy of a formula sits over its input: the input's content box (border + padding in from each side) and how far its text is scrolled. A side that can't be measured is left out (styles.css has the fallback). */
+export function copyBox(style: { borderLeftWidth?: string; paddingLeft?: string; borderRightWidth?: string; paddingRight?: string } | null | undefined, scrollLeft: number): Record<string, string> {
+  const out: Record<string, string> = { "--lab-kit-hl-x": `${Number.isFinite(scrollLeft) ? scrollLeft : 0}px` };
+  const l = parseFloat(style?.borderLeftWidth ?? "") + parseFloat(style?.paddingLeft ?? "");
+  const r = parseFloat(style?.borderRightWidth ?? "") + parseFloat(style?.paddingRight ?? "");
+  if (Number.isFinite(l)) out["--lab-kit-hl-l"] = `${l}px`;
+  if (Number.isFinite(r)) out["--lab-kit-hl-r"] = `${r}px`;
+  return out;
+}
+
 export class CalcRenderer {
   /** Rendered blocks per note path, so edits to the note refresh them. */
   live = new Map<string, Set<CalcEntry>>();
   /** The cell being edited, if any (one at a time). */
-  private editor: { entry: CalcEntry; showRefs?: () => void } | null = null;
+  private editor: { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } | null = null;
   /** Cells marked as referenced by the formula being typed. */
   private marked: HTMLElement[] = [];
+  private labelled: HTMLElement | null = null;
   /**
    * Cell clicked while another was being edited: opened once the save and redraw are done.
    * Obsidian may rebuild the whole block after the save (new element, new entry), so it is
@@ -102,11 +113,11 @@ export class CalcRenderer {
       if (!entry.el.isConnected) { if (Date.now() - (entry.born ?? 0) > 5000) set.delete(entry); continue; }   // a new block may not be attached yet
       const info = entry.ctx.getSectionInfo(entry.el);
       if (info) { const blk = blocks.find(b => b.lineStart === info.lineStart); if (blk) entry.source = blk.source; }
-      if (this.editor?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
+      if (this.liveEditor()?.entry === entry) continue; // don't wipe a cell being typed in; saving redraws it
       await this.render(entry, text);
     }
     if (!set.size) this.live.delete(path);
-    this.editor?.showRefs?.();                      // another table was redrawn: its marks are gone
+    this.liveEditor()?.showRefs?.();                      // another table was redrawn: its marks are gone
   }
 
   async render(entry: CalcEntry, fileText?: string): Promise<void> {
@@ -215,7 +226,7 @@ export class CalcRenderer {
             td.addEventListener("mousedown", (ev) => {
               const t = ev.target as HTMLElement;
               if (t.closest("a") || t.closest("input")) return;
-              if (this.editor) this.setPending(entry, r, c);
+              if (this.liveEditor()) this.setPending(entry, r, c);
             });
             td.addEventListener("click", (ev) => {
               if ((ev.target as HTMLElement).closest("a")) return;
@@ -296,19 +307,39 @@ export class CalcRenderer {
     this.clearRefs();
     if (!text.trim().startsWith("=")) return;
     const others = [...(this.live.get(entry.ctx.sourcePath) ?? [])].filter(e => e.el.isConnected);
-    for (const ref of formulaRefs(text, { r, c })) {
+    // A1, 1, 2, 3 labels show on the table being edited, so a reference can be read off it
+    const table = entry.el.querySelector("table");
+    if (table && !table.hasClass("show-grid")) {
+      table.addClass("is-labelling"); this.labelled = table;
+      const head = table.querySelector("thead"), n = head?.querySelector("tr")?.children.length ?? 0;
+      if (head && n) {
+        const rows = Array.from(table.querySelectorAll("tr"));
+        const gr = head.createEl("tr", { cls: "lab-kit-grid-row lab-kit-tmp-label" });
+        gr.createEl("th", { cls: "lab-kit-corner" });
+        for (let i = 0; i < n; i++) gr.createEl("th", { cls: "lab-kit-col", text: indexToCol(i) });
+        head.insertBefore(gr, head.firstChild);
+        rows.forEach((tr, i) => { const num = tr.createEl(i === 0 ? "th" : "td", { cls: "lab-kit-rownum lab-kit-tmp-label", text: String(i + 1) }); tr.insertBefore(num, tr.firstChild); });
+      }
+    }
+    for (const found of colouredRefs(text, { r, c })) {
+      const ref = found.box;
       const target = ref.qual === null ? entry : others.find(e => e.parsed?.name === ref.qual);
       if (!target?.cells) continue;
       for (let rr = ref.r1; rr <= Math.min(ref.r2, ref.r1 + 200); rr++) for (let cc = ref.c1; cc <= Math.min(ref.c2, ref.c1 + 50); cc++) {
         const td = target.cells.get(`${rr}|${cc}`);
-        if (td && td.isConnected && !td.hasClass("is-editing")) { td.addClass("is-ref"); this.marked.push(td); }
+        if (td && td.isConnected && !td.hasClass("is-editing")) { td.addClass("is-ref"); td.addClass(`is-ref-${found.colour}`); this.marked.push(td); }
       }
     }
   }
 
   private clearRefs(): void {
-    for (const td of this.marked) td.removeClass("is-ref");
+    for (const td of this.marked) { td.removeClass("is-ref"); for (let i = 0; i < REF_COLOURS; i++) td.removeClass(`is-ref-${i}`); }
     this.marked = [];
+    if (this.labelled) {
+      this.labelled.removeClass("is-labelling");
+      for (const el of Array.from(this.labelled.querySelectorAll(".lab-kit-tmp-label"))) el.remove();
+    }
+    this.labelled = null;
   }
 
   /** Click-to-edit for any body cell (values and formulas). */
@@ -317,10 +348,32 @@ export class CalcRenderer {
     td.setCssProps({ "--lab-kit-cell-w": `${td.offsetWidth}px` }); // keeps the column from widening
     td.empty();
     td.addClass("is-editing");
-    const input = td.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
+    // The input sits over a copy of its text, so the references in a formula can be coloured as the cells they point at
+    const wrap = td.createDiv({ cls: "lab-kit-input-wrap" });
+    const back = wrap.createDiv({ cls: "lab-kit-input-hl", attr: { "aria-hidden": "true" } });
+    const copy = back.createSpan({ cls: "lab-kit-input-hl-text" });
+    const input = wrap.createEl("input", { cls: "lab-kit-input", attr: { type: "text" } });
     input.value = current;
-    const mine: { entry: CalcEntry; showRefs?: () => void } = { entry };
-    mine.showRefs = () => this.markRefs(entry, r, c, input.value);
+    // The copy is not scrolled (a div can't scroll as far as an input): it is clipped to the input's content box and its text shifted by the input's scroll.
+    // Now, and again once the browser has scrolled the caret into view
+    const place = (): void => back.setCssProps(copyBox(typeof window.getComputedStyle === "function" ? window.getComputedStyle(input) : null, input.scrollLeft));
+    const sync = (): void => { place(); window.requestAnimationFrame(place); };
+    const paint = (): void => {
+      const text = input.value, formula = text.trimStart().startsWith("=");
+      wrap.toggleClass("is-hl", formula);
+      copy.empty();
+      if (!formula) return;
+      let at = 0;
+      for (const f of colouredRefs(text, { r, c })) {
+        if (f.start > at) copy.appendText(text.slice(at, f.start));
+        copy.createSpan({ cls: `lab-kit-hl-${f.colour}`, text: text.slice(f.start, f.end) });
+        at = f.end;
+      }
+      copy.appendText(text.slice(at));
+      sync();
+    };
+    const mine: { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } = { entry, input };
+    mine.showRefs = () => { this.markRefs(entry, r, c, input.value); paint(); };
     this.editor = mine;
     input.focus({ preventScroll: true }); input.select();
     // Typing [[ suggests the notes in the chemical folder, when one is set
@@ -354,6 +407,8 @@ export class CalcRenderer {
     });
     input.addEventListener("click", (e) => e.stopPropagation());
     input.addEventListener("input", () => mine.showRefs?.());
+    for (const ev of ["scroll", "keydown", "keyup", "select", "pointerdown", "pointerup"]) input.addEventListener(ev, sync);
+    input.addEventListener("pointermove", (e) => { if (e.buttons) sync(); });   // dragging a selection past the edge scrolls the text
     mine.showRefs();                                // a formula already in the cell shows what it points at
   }
 
@@ -392,9 +447,15 @@ export class CalcRenderer {
   }
 
   /** Opens the cell the user clicked while another one was being saved. */
+  /** The open cell editor, or null. An editor whose input was taken out of the page without a blur (the block was rebuilt) is forgotten here, else it would swallow every later click. */
+  private liveEditor(): { entry: CalcEntry; input?: HTMLInputElement; showRefs?: () => void } | null {
+    if (this.editor?.input && !this.editor.input.isConnected) { this.editor = null; this.clearPending(); }
+    return this.editor;
+  }
+
   private openPending(): void {
     const p = this.pending;
-    if (!p || this.editor) return;
+    if (!p || this.liveEditor()) return;
     const entry = this.pendingTarget(p);
     const td = entry?.tds?.get(`${p.r}|${p.c}`);
     // Block not redrawn yet, or Obsidian may still rebuild it after the save: look again shortly (the expiry timer clears a click that never lands)

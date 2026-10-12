@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
 import { TFile } from "obsidian";
-import { CalcRenderer, type CalcEntry } from "../src/calc/render";
+import { CalcRenderer, copyBox, type CalcEntry } from "../src/calc/render";
 import { parseBlock } from "../src/calc/engine";
 
 const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
@@ -72,6 +72,14 @@ describe("render", () => {
     input.dispatch("input");
     assert.deepStrictEqual(marked(a), ["0|0", "1|0"]);
     assert.deepStrictEqual(marked(b), ["1|1"]);
+    // each reference gets its own colour (marks carry is-ref-N), the same reference twice shares one
+    const colourOf = (e: CalcEntry, k: string): string[] => [0, 1, 2, 3, 4, 5].map(i => `is-ref-${i}`).filter(c => e.cells!.get(k)!.classList.contains(c));
+    assert.deepStrictEqual([colourOf(a, "1|0"), colourOf(b, "1|1"), colourOf(a, "0|0")], [["is-ref-0"], ["is-ref-1"], ["is-ref-2"]]);
+    // the table shows A1 labels while a formula is typed, and drops them again
+    assert.ok(a.el.querySelector("table").classList.contains("is-labelling"));
+    assert.ok(a.el.querySelectorAll(".lab-kit-tmp-label").length > 0);
+    // the coloured copy of the formula is drawn in the element that follows the input's scroll
+    assert.strictEqual(td.querySelector(".lab-kit-input-hl .lab-kit-input-hl-text").textContent, "=A2*b!B2+A1");
     input.value = "=A2";                                  // typing on: the old marks go
     input.dispatch("input");
     assert.deepStrictEqual(marked(a), ["1|0"]);
@@ -85,7 +93,18 @@ describe("render", () => {
     input.dispatch("keydown", { key: "Escape" });         // discard: marks gone
     await new Promise(r => setTimeout(r, 10));
     assert.deepStrictEqual(marked(a), []);
+    assert.strictEqual(a.el.querySelectorAll(".lab-kit-tmp-label").length, 0);
+    assert.ok(!a.el.querySelector("table").classList.contains("is-labelling"));
     assert.deepStrictEqual(marked(b), []);
+  });
+
+  it("places the coloured copy on the input's content box and shifts it by the input's scroll", () => {
+    const style = { borderLeftWidth: "1px", paddingLeft: "8px", borderRightWidth: "1px", paddingRight: "8px" };
+    assert.deepStrictEqual(copyBox(style, 30), { "--lab-kit-hl-x": "30px", "--lab-kit-hl-l": "9px", "--lab-kit-hl-r": "9px" });
+    assert.deepStrictEqual(copyBox({ ...style, paddingLeft: "2.5px", borderRightWidth: "0px" }, 0), { "--lab-kit-hl-x": "0px", "--lab-kit-hl-l": "3.5px", "--lab-kit-hl-r": "8px" });
+    // nothing to measure (no layout): only the scroll, styles.css has the fallback for the sides
+    assert.deepStrictEqual(copyBox(null, 12), { "--lab-kit-hl-x": "12px" });
+    assert.deepStrictEqual(copyBox({ paddingLeft: "" }, NaN), { "--lab-kit-hl-x": "0px" });
   });
 
   it("moves from one edited cell to the next with a single click", async () => {
@@ -116,6 +135,25 @@ describe("render", () => {
       b2.querySelector("input").dispatch("keydown", { key: "Escape" });
       await new Promise(r => setTimeout(r, 10));
     }
+  });
+
+  it("opens a cell again when the open editor was removed without a blur (stale editor)", async () => {
+    const fileText = "```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | 5 |\n```\n";
+    const plugin: any = { app: { vault: { getAbstractFileByPath: () => new TFile({ path: "n.md" }), cachedRead: async () => fileText } }, registerEvent() { /* unused */ } };
+    const renderer = new CalcRenderer(plugin);
+    const ctx: any = { sourcePath: "n.md", getSectionInfo: () => ({ lineStart: 0, lineEnd: 5 }) };
+    const entry: CalcEntry = { el: new El("div"), ctx, source: "name: a\n| X | Y |\n|---|---|\n| 2 | 5 |" };
+    renderer.live.set("n.md", new Set([entry]));
+    await renderer.render(entry);
+
+    entry.tds!.get("1|0")!.dispatch("click");
+    const first = entry.tds!.get("1|0")!.querySelector("input");
+    assert.ok(first, "editor did not open");
+    Object.defineProperty(first, "isConnected", { value: false });   // the block was rebuilt: the input is gone and never blurred
+    await renderer.render(entry);
+    const b = entry.tds!.get("1|1")!;
+    b.dispatch("mousedown"); b.dispatch("click");
+    assert.ok(b.querySelector("input"), "a click after a stale editor did not open the cell");
   });
 
   it("Tab saves the typed text, Escape discards it, and neither key reaches Obsidian", async () => {

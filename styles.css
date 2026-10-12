@@ -39,6 +39,34 @@
 /* Cells the formula being typed points at: a solid ring in the accent colour (the amber ring above is for empty inputs, the dashed outline for hover) */
 .lab-kit td.is-ref, .lab-kit th.is-ref { box-shadow: inset 0 0 0 2px var(--interactive-accent); }
 
+/* One colour per reference of the formula being typed (src/calc/refs.ts colouredRefs): the cell outline, the reference in the input, the cells in the table text (src/calc/text-refs-cm.ts) */
+.lab-kit, .cm-editor { --lab-kit-ref-0: var(--color-blue-rgb); --lab-kit-ref-1: var(--color-orange-rgb); --lab-kit-ref-2: var(--color-green-rgb); --lab-kit-ref-3: var(--color-purple-rgb); --lab-kit-ref-4: var(--color-red-rgb); --lab-kit-ref-5: var(--color-cyan-rgb); }
+.lab-kit td.is-ref-0, .lab-kit th.is-ref-0 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-0)); background-color: rgba(var(--lab-kit-ref-0), 0.14); }
+.lab-kit td.is-ref-1, .lab-kit th.is-ref-1 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-1)); background-color: rgba(var(--lab-kit-ref-1), 0.14); }
+.lab-kit td.is-ref-2, .lab-kit th.is-ref-2 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-2)); background-color: rgba(var(--lab-kit-ref-2), 0.14); }
+.lab-kit td.is-ref-3, .lab-kit th.is-ref-3 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-3)); background-color: rgba(var(--lab-kit-ref-3), 0.14); }
+.lab-kit td.is-ref-4, .lab-kit th.is-ref-4 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-4)); background-color: rgba(var(--lab-kit-ref-4), 0.14); }
+.lab-kit td.is-ref-5, .lab-kit th.is-ref-5 { box-shadow: inset 0 0 0 2px rgb(var(--lab-kit-ref-5)); background-color: rgba(var(--lab-kit-ref-5), 0.14); }
+.lab-kit-hl-0, .cm-lab-kit-ref-0 { color: rgb(var(--lab-kit-ref-0)); }
+.lab-kit-hl-1, .cm-lab-kit-ref-1 { color: rgb(var(--lab-kit-ref-1)); }
+.lab-kit-hl-2, .cm-lab-kit-ref-2 { color: rgb(var(--lab-kit-ref-2)); }
+.lab-kit-hl-3, .cm-lab-kit-ref-3 { color: rgb(var(--lab-kit-ref-3)); }
+.lab-kit-hl-4, .cm-lab-kit-ref-4 { color: rgb(var(--lab-kit-ref-4)); }
+.lab-kit-hl-5, .cm-lab-kit-ref-5 { color: rgb(var(--lab-kit-ref-5)); }
+.cm-lab-kit-cell-0 { background-color: rgba(var(--lab-kit-ref-0), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-1 { background-color: rgba(var(--lab-kit-ref-1), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-2 { background-color: rgba(var(--lab-kit-ref-2), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-3 { background-color: rgba(var(--lab-kit-ref-3), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-4 { background-color: rgba(var(--lab-kit-ref-4), 0.22); border-radius: 3px; }
+.cm-lab-kit-cell-5 { background-color: rgba(var(--lab-kit-ref-5), 0.22); border-radius: 3px; }
+/* The cell input over a copy of its text: the copy shows the colours, the input's own text is hidden while a formula is typed */
+.lab-kit-input-wrap { position: relative; }
+.lab-kit-input-hl { position: absolute; top: 0; bottom: 0; left: var(--lab-kit-hl-l, 9px); right: var(--lab-kit-hl-r, 9px); padding: 2px 0; border: solid transparent; border-width: var(--input-border-width, 1px) 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+/* The copy is clipped to the input's content box (--lab-kit-hl-l / -r, measured in src/calc/render.ts copyBox) and its text shifted by the input's scroll: Obsidian's own input padding beats .lab-kit-input, and a scrolled div stops short of a scrolled input, so the caret drifted */
+.lab-kit-input-hl-text { display: inline-block; transform: translateX(calc(-1 * var(--lab-kit-hl-x, 0px))); }
+.lab-kit-input-wrap:not(.is-hl) .lab-kit-input-hl { display: none; }
+.lab-kit-input-wrap.is-hl .lab-kit-input { color: transparent; background: transparent; caret-color: var(--text-normal); }
+
 /* Every body cell can be clicked to edit */
 .lab-kit td.is-editable { cursor: text; }
 /* Empty cells: tall enough to click easily */
@@ -48,7 +76,8 @@
   padding: 0; box-sizing: border-box;
   width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
 }
-.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; padding: 2px 4px; }
+.lab-kit-input-wrap .lab-kit-input, .lab-kit-input-wrap .lab-kit-input-hl { font: inherit; font-size: inherit; line-height: inherit; letter-spacing: normal; }
+.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; padding: 2px 4px; }
 /* Chemical suggestions: the matched alias, after the note name */
 .lab-kit-suggest-alias { margin-left: 0.6em; color: var(--text-muted); font-size: 0.85em; }
 
@@ -69,10 +98,21 @@
 .lab-kit-group summary { cursor: pointer; font-weight: 600; }
 .lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }
 .lab-kit-group code { font-size: 0.85em; word-break: break-all; }
+/* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
+.setting-item.lab-kit-manage-row { flex-wrap: wrap; row-gap: 6px; }
+.lab-kit-manage-row > .setting-item-info { flex: 1 1 100%; min-width: 0; }
+.lab-kit-manage-row .setting-item-name { overflow-wrap: anywhere; }
+.lab-kit-manage-row > .setting-item-control { flex: 1 1 100%; justify-content: flex-start; flex-wrap: wrap; }
 .lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
 .lab-kit-badge.is-ok { color: var(--text-success); }
 .lab-kit-badge.is-info { color: var(--text-accent); }
 .lab-kit-badge.is-warn { color: var(--text-warning); }
+/* What Apply does with a file (src/kit/managed.ts actionLook): green add, orange change, red conflict, grey leave / same */
+.lab-kit-act { display: inline-block; margin-right: 6px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
+.lab-kit-act-symbol { font-weight: 700; }
+.lab-kit-act.is-add { background: rgba(var(--color-green-rgb), 0.22); color: var(--text-normal); }
+.lab-kit-act.is-change { background: rgba(var(--color-orange-rgb), 0.25); color: var(--text-normal); }
+.lab-kit-act.is-conflict { background: rgba(var(--color-red-rgb), 0.22); color: var(--text-normal); }
 /* Merge window: one card per conflict, Yours / Kit / Original side by side (stacked on narrow screens) */
 .lab-kit-hunk { margin: 8px 0; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
 .lab-kit-hunk.is-undecided { border-color: var(--text-warning); }
@@ -91,6 +131,8 @@
 .is-mobile .lab-kit-hunk-edit { box-sizing: border-box; }
 /* Same look as the inline styles these replace (width / flex / margin) */
 .lab-kit-wide-input { width: 100%; }
+/* Planning folder box whose folder doesn't exist (moved outside Obsidian?) */
+.lab-kit-wide-input.lab-kit-folder-missing { border-color: var(--text-error); }
 /* Settings rows with a text box: the same split on every row (text 40%, box the rest), not sized by how long the description is.
    Obsidian stacks the row below 340px wide, so only wider rows get this. */
 @container (min-width: 341px) {
@@ -98,6 +140,11 @@
   .setting-item-control.lab-kit-wide-control { flex: 1 1 0; min-width: 0; }
 }
 .lab-kit-notice-btn { margin-top: 6px; }
+.lab-kit-notice-row { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Rows with buttons (Update, Review, Set up, ...): the buttons wrap instead of running off a narrow screen; on a phone a control
+   that does not fit beside the text moves under it (no :has, store check) */
+.lab-kit-settings .setting-item-control { flex-wrap: wrap; row-gap: 6px; }
+.is-phone .lab-kit-settings .setting-item { flex-wrap: wrap; row-gap: 8px; }
 
 /* Lab header: data-folder button + hazards (```lab-header) */
 .lab-header-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
@@ -132,3 +179,78 @@
 .lab-hazard-legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 0.85em; margin-top: 6px; align-items: flex-start; }
 .lab-hazard-legend-item.has-details { display: inline-flex; flex-direction: column; }
 .lab-hazard-legend-desc { font-size: 0.85em; }
+
+/* Planning kit text box (src/planning/ask.ts): a picker with no list underneath */
+.lab-kit-ask .prompt-results { display: none; }
+
+/* Sort inbox picker (src/planning/ask.ts `pick` with side): a short bar docked at the bottom edge, the choices as chips in rows, no backdrop, so the note above stays readable. At every window width: a narrow Obsidian window also gets the bar (the old rule only applied above 700px, so a narrower window still showed the centred list) */
+.modal-container.lab-kit-pick-side { pointer-events: none; }
+.modal-container.lab-kit-pick-side .modal-bg { display: none; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side { position: fixed; top: auto; bottom: 12px; left: 50%; right: auto; width: min(760px, 94vw); max-width: 94vw; max-height: none; transform: translateX(-50%); pointer-events: auto; padding: 8px 12px; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side .prompt-results { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: none; overflow: visible; padding: 6px 0 0; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
+
+/* Check setup window (src/kit/setup-check-ui.ts) */
+.lab-kit-setup-check h4 { margin: 12px 0 4px; }
+.lab-kit-setup-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-setup-text { flex: 1 1 auto; min-width: 0; }
+.lab-kit-setup-mark { flex: 0 0 1.2em; font-weight: 600; }
+.lab-kit-setup-row.is-ok .lab-kit-setup-mark { color: var(--text-success); }
+.lab-kit-setup-row.is-missing .lab-kit-setup-mark { color: var(--text-error); }
+.lab-kit-setup-row.is-optional .lab-kit-setup-mark { color: var(--text-muted); }
+
+/* Install confirmation rows (src/kit/managed-ui.ts KitInstallModal): name, what it is for, path */
+.lab-kit-install-row { padding: 4px 0 6px; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-install-name { font-weight: 600; }
+.lab-kit-install-path { font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
+.lab-kit-review-row { padding: 4px 0; }
+.lab-kit-review-row .lab-kit-install-path { display: block; }
+.lab-kit-setup-row.is-warn .lab-kit-setup-mark { color: var(--text-warning); }
+/* Planning homepage blocks (```vault-goto): one button per folder hub, wrapping */
+.lab-kit-goto { display: flex; flex-wrap: wrap; gap: 6px; }
+.lab-kit-goto-button { display: inline-flex; align-items: center; gap: 6px; }
+.lab-kit-goto-icon { display: inline-flex; }
+.lab-kit-goto-icon svg { width: var(--icon-s); height: var(--icon-s); }
+.lab-kit-vault-card ul, .lab-kit-vault-projects ul { margin-block: 0.25em; }
+
+/* Tidy up notes window (src/kit/tidy-ui.ts): before (left) / after (right); red removed, green added, amber changed */
+.lab-kit-tidy-banner { padding: 8px 12px; margin-bottom: 8px; border-left: 3px solid var(--text-warning); background: var(--background-secondary); }
+.lab-kit-tidy-rule { display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; }
+.lab-kit-tidy-path { margin-top: 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
+.lab-kit-tidy-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; margin-top: 2px; font-family: var(--font-monospace); font-size: var(--font-smallest); }
+.lab-kit-tidy-head { font-family: var(--font-interface); font-weight: 600; color: var(--text-muted); padding: 0 4px; }
+.lab-kit-tidy-line { padding: 1px 4px; min-height: 1.4em; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--background-secondary); }
+.lab-kit-tidy-line.is-removed { background: rgba(var(--color-red-rgb), 0.22); }
+.lab-kit-tidy-line.is-added { background: rgba(var(--color-green-rgb), 0.22); }
+.lab-kit-tidy-line.is-changed { background: rgba(var(--color-orange-rgb), 0.25); }
+.lab-kit-tidy-weeks { width: 4.5em; }
+.lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Board column colours (src/kit/board-colours.ts): columns of Bases kanban boards by status name; colours are set as --lab-kit-col-* on the body (settings) */
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Planned"] { --lab-kit-col: var(--lab-kit-col-planned, 148, 163, 184); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Started"] { --lab-kit-col: var(--lab-kit-col-started, 59, 130, 246); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Processing results"] { --lab-kit-col: var(--lab-kit-col-processing, 245, 158, 11); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Closed"] { --lab-kit-col: var(--lab-kit-col-closed, 16, 185, 129); }
+body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column:is([data-lab-kit-group="Planned"], [data-lab-kit-group="Started"], [data-lab-kit-group="Processing results"], [data-lab-kit-group="Closed"]) {
+  background-image: linear-gradient(rgba(var(--lab-kit-col, 0, 0, 0), 0.14), rgba(var(--lab-kit-col, 0, 0, 0), 0.14));
+  border-top: 3px solid rgb(var(--lab-kit-col, 0, 0, 0));
+}
+
+/* Lab book cards: the progress property (3/7) gets a bar that fills from the left as boxes are ticked (src/kit/board-colours.ts); an empty one is hidden */
+.bases-kanban-card [data-property="note.progress"] .bases-kanban-card-label { display: none; }
+.bases-kanban-card [data-property="note.progress"].lab-kit-no-progress { display: none; }
+.bases-kanban-card progress.lab-kit-card-bar { display: block; appearance: none; -webkit-appearance: none; width: 100%; height: 6px; margin-top: 4px; border: 0; border-radius: 3px; background: var(--background-modifier-border); overflow: hidden; }
+.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-bar { background: var(--background-modifier-border); border-radius: 3px; }
+.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-value { background: var(--interactive-accent); border-radius: 3px; transition: width 0.2s; }
+.bases-kanban-card progress.lab-kit-card-bar::-moz-progress-bar { background: var(--interactive-accent); border-radius: 3px; }
+
+/* Snippet icons: the preview beside each box and the icon picker (src/kit/icon-picker-ui.ts) */
+.lab-kit-icon-preview { display: inline-flex; align-items: center; color: var(--interactive-accent); margin-right: 6px; }
+.lab-kit-icon-preview.is-default { opacity: 0.5; }
+.lab-kit-icon-search { width: 100%; margin-bottom: 10px; }
+.lab-kit-icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; max-height: 55vh; overflow-y: auto; }
+.lab-kit-icon-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; height: auto; padding: 8px 4px; box-shadow: none; background: var(--background-secondary); }
+.lab-kit-icon-cell:hover { background: var(--background-modifier-hover); }
+.lab-kit-icon-cell.is-current { outline: 2px solid var(--interactive-accent); }
+.lab-kit-icon-name { font-size: var(--font-ui-smaller); color: var(--text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

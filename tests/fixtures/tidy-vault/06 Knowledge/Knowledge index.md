@@ -1,0 +1,4 @@
+---
+kind: hub
+---
+# Knowledge index

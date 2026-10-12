@@ -6,8 +6,8 @@ import { readFileSync } from "node:fs";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kit/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kit/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
+const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 const { parseMethod, loadMethods, planColumns, buildRows } = labMethods;
 
 type Fm = Record<string, unknown>;
@@ -157,10 +157,9 @@ describe("snippets with a Methods folder", () => {
     return { run, evaluate, forms, get note() { return note; }, set note(v: string) { note = v; } };
   }
 
-  it("Analysis table: Method select, then the method's form with Machine and the default machine's values", async () => {
+  it("a method's form has Machine and the default machine's values", async () => {
     const h = harness();
-    const md = await h.run("method", { method: "mass_spec", codes: "ABC0001-A, ABC0001-B" });
-    assert.deepStrictEqual(h.forms["Analysis table"][0].options.map((o: any) => o.label), ["NMR", "GPC", "DLS", "Mass spec"]);
+    const md = await h.run("method:mass_spec", { codes: "ABC0001-A, ABC0001-B" });
     const fields = h.forms["Mass spec samples"];
     assert.deepStrictEqual(fields.map((f: any) => f.key), ["codes", "machine", "ionisation", "calibrant"]);
     assert.strictEqual(fields[1].type, "select");
@@ -174,22 +173,22 @@ describe("snippets with a Methods folder", () => {
 
   it("picking another machine changes the fields left at the default machine's values, not the ones typed", async () => {
     const h = harness();
-    const md = await h.run("method", { method: "mass_spec", codes: "ABC0001-A", machine: "Machine B", calibrant: "typed" });
+    const md = await h.run("method:mass_spec", { codes: "ABC0001-A", machine: "Machine B", calibrant: "typed" });
     assert.ok(md.includes("| ABC0001-A | [[Machine B]] | APCI | typed |"), md);
   });
 
   it("the formula column follows the Machine column and evaluates", async () => {
     const h = harness();
-    await h.run("method", { method: "mass_spec", codes: "ABC0001-A" });
+    await h.run("method:mass_spec", { codes: "ABC0001-A" });
     h.note = h.note.replace("| [[Machine A]] | ESI | NaI |  |", "| [[Machine A]] | ESI | NaI | 101 |");
     assert.strictEqual(h.evaluate()("mass_spec", "F2"), 10000);
   });
 
-  it("sample list toggles include the folder's methods and tag them", async () => {
+  it("the folder's methods and the combined results table are added with the method entry, after the sample list", async () => {
     const h = harness();
-    await h.run("samples", { count: "2", mass_spec: true, nmr: true, results: true });
-    assert.deepStrictEqual(h.forms["Sample list"].filter((f: any) => f.type === "toggle").map((f: any) => f.label),
-      ["NMR sample list", "GPC sample list", "DLS sample list", "Mass spec sample list", "Combined results table"]);
+    await h.run("method:mass_spec", { codes: "ABC0001-A, ABC0001-B" });
+    await h.run("nmr", { codes: "ABC0001-A, ABC0001-B" });
+    await h.run("results", { codes: "ABC0001-A, ABC0001-B", gpc: false, dls: false });
     assert.ok(h.note.includes("name: mass_spec") && h.note.includes("name: nmr") && h.note.includes("name: results"));
     const header = h.note.match(/name: results[\s\S]*?\n\| (.*) \|/)![1];
     assert.strictEqual(header, "Sample | Conversion (%) | m/z | Mass error (ppm)");
@@ -197,9 +196,9 @@ describe("snippets with a Methods folder", () => {
 
   it("Combined results mixes methods and falls through the tables of one method", async () => {
     const h = harness();
-    await h.run("method", { method: "mass_spec", codes: "ABC0001-A" });          // mass_spec: A
+    await h.run("method:mass_spec", { codes: "ABC0001-A" });          // mass_spec: A
     h.note = h.note.replace("| [[Machine A]] | ESI | NaI |  |", "| [[Machine A]] | ESI | NaI | 101 |");
-    await h.run("method", { method: "mass_spec", codes: "ABC0001-C" });          // mass_spec2: C
+    await h.run("method:mass_spec", { codes: "ABC0001-C" });          // mass_spec2: C
     h.note = h.note.replace(/(\| ABC0001-C \| \[\[Machine A\]\] \| ESI \| NaI \|) {2}\|/, "$1 102 |");
     await h.run("nmr", { codes: "ABC0001-A" });
     h.note = h.note.replace("| 1 | ABC0001-A | CDCl3 | 1H |  |  |", "| 1 | ABC0001-A | CDCl3 | 1H | 42 |  |");
@@ -212,10 +211,10 @@ describe("snippets with a Methods folder", () => {
     assert.strictEqual(cell("results", "D3"), 20000);   // Mass error column, found by header, not by a fixed letter
   });
 
-  it("method:<key> goes straight to that method's form, without the Method select", async () => {
+  it("method:<key> goes straight to that method's form", async () => {
     const h = harness();
     const md = await h.run("method:mass_spec", { codes: "ABC0001-A" });
-    assert.ok(!("Analysis table" in h.forms) && "Mass spec samples" in h.forms);
+    assert.ok("Mass spec samples" in h.forms);
     assert.ok(md.includes("name: mass_spec"), md);
     assert.strictEqual(await h.run("method:nope"), "");
   });
@@ -233,7 +232,7 @@ describe("snippets with a Methods folder", () => {
 
 describe("Alt+S menu (Insert snippet.md)", () => {
   const AsyncFunction = Object.getPrototypeOf(async function () { /* */ }).constructor;
-  const code = readFileSync("kit/Templates/Insert snippet.md", "utf8").replace(/^<%\*/, "").replace(/%>\s*$/, "");
+  const code = readFileSync("kits/lab/Templates/Insert snippet.md", "utf8").replace(/^<%\*/, "").replace(/%>\s*$/, "");
   const menu = new AsyncFunction("tp", "app", "Notice", `let tR = ""; ${code}\n return tR;`);
   const snippetFile = (n: string) => ({ basename: n, parent: { path: "Templates/Snippets" } });
 

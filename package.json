@@ -8,11 +8,15 @@
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "test": "vitest run --reporter=dot",
     "lint": "eslint src",
-    "kit:manifest": "node scripts/kit-manifest.mjs"
+    "kit:manifest": "node scripts/kit-manifest.mjs",
+    "starter": "node scripts/make-starter.mjs",
+    "tidy-fixture": "node scripts/make-tidy-vault.mjs"
   },
   "author": "johnsonolly4",
   "license": "MIT",
   "devDependencies": {
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
     "@eslint/js": "^9.39.5",
     "@eslint/json": "^0.14.0",
     "@types/node": "^20.0.0",

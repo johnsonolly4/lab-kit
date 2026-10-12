@@ -22,6 +22,8 @@ export class Notice {
 }
 export class Menu { addItem(): this { return this; } showAtMouseEvent(): void { /* ignored */ } }
 export class Modal { constructor(public app: any) {} open(): void { /* ignored */ } close(): void { /* ignored */ } }
+export class SuggestModal<T> extends Modal { scope = { register(): void { /* ignored */ } }; setPlaceholder(): void { /* ignored */ } setInstructions(): void { /* ignored */ } _t?: T }
+export class FuzzySuggestModal<T> extends SuggestModal<T> {}
 export class Setting { constructor(_el: unknown) {} }
 export class PluginSettingTab { constructor(public app: any, public plugin: any) {} }
 export class TFile {
@@ -40,8 +42,10 @@ export class AbstractInputSuggest {
   open(): void { /* ignored */ }
   close(): void { /* ignored */ }
 }
-export const Platform = { isDesktop: true, isDesktopApp: true, isMobile: false, isWin: false };
+export const Platform = { isDesktop: true, isDesktopApp: true, isMobile: false, isWin: false, isMacOS: false };
 export const getIcon = (_name: string): SVGElement | null => null;
 export const MarkdownRenderer = {
   render: async (_app: unknown, md: string, el: any): Promise<void> => { el.innerHTML = "<p>" + md + "</p>"; },
 };
+/** Test stand-in: reads JSON (a subset of YAML), so tests write snippet headers as JSON. Obsidian's real parseYaml is not run in tests. */
+export const parseYaml = (s: string): unknown => JSON.parse(s);

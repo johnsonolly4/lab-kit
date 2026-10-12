@@ -1,0 +1,403 @@
+{
+  "schema": 2,
+  "id": "lab",
+  "kit": "lab-notebook-kit",
+  "version": "0.5.2",
+  "date": "2026-10-04",
+  "rewrite": {
+    "Extras/scripts": "scripts",
+    "03 Lab Book/Notes": "labNotes",
+    "05 Chemicals/Chemicals": "chemicalNotes"
+  },
+  "migrations": [
+    {
+      "id": "lab-status-text",
+      "title": "Lab notes: Status list → text",
+      "scope": "lab",
+      "ops": [
+        {
+          "op": "list-to-text",
+          "name": "Status"
+        }
+      ]
+    },
+    {
+      "id": "lab-template-properties",
+      "title": "Lab notes: add the template's missing properties",
+      "scope": "lab",
+      "nameMatch": "^[A-Za-z]*[0-9]{2,}",
+      "ops": [
+        {
+          "op": "add-property",
+          "name": "Type",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Status",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Exp. Class",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Plan date",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Exp. Start",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Exp. End",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Chemicals",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "CoSHH",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "RA",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Objective",
+          "value": ""
+        },
+        {
+          "op": "add-property",
+          "name": "Outcome",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "chemical-class",
+      "title": "Chemical notes: add the Chemical class property",
+      "scope": "chemical",
+      "ops": [
+        {
+          "op": "add-property",
+          "name": "Chemical class",
+          "value": ""
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "id": "note-chemical-database-base",
+      "kind": "note",
+      "src": "05 Chemicals/Chemical database.base",
+      "role": "chemicalBase",
+      "path": "Chemical database.base",
+      "version": "0.5.2",
+      "sha256": "16c3920e6c2e0ad1726d26bd386ff8e52ceb910c64bba07156fb2591c143058e",
+      "renamedFrom": [],
+      "desc": "Table and by-class board of your chemical notes, next to your Chemical folder",
+      "optional": true,
+      "policy": "keep",
+      "needs": "chemicalFolder"
+    },
+    {
+      "id": "snip-scrolling-mermaid-css",
+      "kind": "snippet",
+      "src": ".obsidian/snippets/scrolling-mermaid.css",
+      "role": "cssSnippets",
+      "path": "scrolling-mermaid.css",
+      "version": "0.3.0",
+      "sha256": "7910a5e30cb086150cbcc92fdd68523d788e7a27aeaf5d1dd2fcf1bd8fa5be98",
+      "renamedFrom": [],
+      "desc": "Lets wide Mermaid diagrams scroll sideways inside a note"
+    },
+    {
+      "id": "note-lab-book-base-base",
+      "kind": "note",
+      "src": "03 Lab Book/Lab book base.base",
+      "role": "labBase",
+      "path": "Lab book base.base",
+      "version": "0.5.2",
+      "sha256": "731beccad5bf3791f98ce3e98710c6ab3a2374d054dfbdf0cc1b043be44d06d3",
+      "renamedFrom": [],
+      "desc": "Board of your experiments by Status, next to your Lab notes folder",
+      "optional": true,
+      "policy": "keep",
+      "needs": "labFolder"
+    },
+    {
+      "id": "script-excel-to-calc-py",
+      "kind": "script",
+      "src": "Extras/scripts/excel_to_calc.py",
+      "role": "scripts",
+      "path": "excel_to_calc.py",
+      "version": "0.3.0",
+      "sha256": "701281ed4b8a7af5d5ba09ef692ee36464571a6bb0a127f14e32bf51bbca7b1a",
+      "renamedFrom": [],
+      "desc": "Command-line tool that turns an Excel file into calc tables",
+      "optional": true
+    },
+    {
+      "id": "tpl-chemical-database-template-md",
+      "kind": "template",
+      "src": "Templates/Chemical database template.md",
+      "role": "templates",
+      "path": "Chemical database template.md",
+      "version": "0.5.2",
+      "sha256": "3b8b0ac4b26694f97011c1d74f3588423cc8897e8d6c05df6e97d313bc4dfbf2",
+      "renamedFrom": [],
+      "desc": "New chemical note: names, class, hazards, CAS number, MW and physical data",
+      "optional": true,
+      "needs": "chemicalFolder"
+    },
+    {
+      "id": "tpl-insert-snippet-md",
+      "kind": "template",
+      "src": "Templates/Insert snippet.md",
+      "role": "templates",
+      "path": "Insert snippet.md",
+      "version": "0.5.2",
+      "sha256": "d2eed79d532828df8927a82dadbe78d20ffecc7ba5e717c1f7c2c0495c9b2dd6",
+      "renamedFrom": [],
+      "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
+    },
+    {
+      "id": "tpl-lab-book-template-md",
+      "kind": "template",
+      "src": "Templates/Lab Book Template.md",
+      "role": "templates",
+      "path": "Lab Book Template.md",
+      "version": "0.5.2",
+      "sha256": "8f0e6e5013b0025e07bc393bd78a7e10bb5162fcf75f33a5e82a79a73f8d979d",
+      "renamedFrom": [],
+      "desc": "New experiment note: number, hazards, data folder button and sections"
+    },
+    {
+      "id": "tpl-snippets-01-solution-prep-md",
+      "kind": "template",
+      "src": "Templates/Snippets/01 Solution prep.md",
+      "role": "templates",
+      "path": "Snippets/01 Solution prep.md",
+      "version": "0.4.9",
+      "sha256": "a9c3a24fd4e70bd7bc95b9b8f720b9550bea00d25e69de82d345f5206136e4f0",
+      "renamedFrom": [],
+      "desc": "Solutes and solvents with MW from their notes, targets by concentration or ratio, added in g or mL",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-02-recipe-by-equivalents-md",
+      "kind": "template",
+      "src": "Templates/Snippets/02 Recipe by equivalents.md",
+      "role": "templates",
+      "path": "Snippets/02 Recipe by equivalents.md",
+      "version": "0.3.0",
+      "sha256": "cfc3f5db4de63c6e8ace7d71fb29426cf67e7cc2f574eaebeddff76518f801f4",
+      "renamedFrom": [],
+      "desc": "Eq. relative to any reagent, solvent makes up the rest, wt%",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-03-raft-recipe-generator-md",
+      "kind": "template",
+      "src": "Templates/Snippets/03 RAFT recipe generator.md",
+      "role": "templates",
+      "path": "Snippets/03 RAFT recipe generator.md",
+      "version": "0.3.0",
+      "sha256": "cfd716ae5d5ab2beb2a8dbace2597ca6559fcebcd6ead60926e5106384480e02",
+      "renamedFrom": [],
+      "desc": "Monomer mass, DP, CTA:initiator, solids → every mass and Mn",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-04-variant-naming-matrix-md",
+      "kind": "template",
+      "src": "Templates/Snippets/04 Variant naming matrix.md",
+      "role": "templates",
+      "path": "Snippets/04 Variant naming matrix.md",
+      "version": "0.5.2",
+      "sha256": "566e7b4194594c9b64392dcb94e7a02e75386e0660caa567cf99f8fc7165ce44",
+      "renamedFrom": [],
+      "desc": "Rows × columns → sample codes; Copy gives one column",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-05-sample-list-md",
+      "kind": "template",
+      "src": "Templates/Snippets/05 Sample list.md",
+      "role": "templates",
+      "path": "Snippets/05 Sample list.md",
+      "version": "0.5.2",
+      "sha256": "c0304b6f64b7af5f736b92998dbf11055d254c0a3fb84b0f5eb0dca8d024e3c3",
+      "renamedFrom": [],
+      "desc": "Untimed list of sample codes, typed or generated",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-06-sampling-timetable-md",
+      "kind": "template",
+      "src": "Templates/Snippets/06 Sampling timetable.md",
+      "role": "templates",
+      "path": "Snippets/06 Sampling timetable.md",
+      "version": "0.5.2",
+      "sha256": "55a719fba51be9b86e8bc3260e826d63b15baf51b4556f97dc0a8bbc107705d6",
+      "renamedFrom": [],
+      "desc": "Codes per time point with target clock times",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-07-nmr-samples-md",
+      "kind": "template",
+      "src": "Templates/Snippets/07 NMR samples.md",
+      "role": "templates",
+      "path": "Snippets/07 NMR samples.md",
+      "version": "0.3.0",
+      "sha256": "0ba238370ecd25e5ba3633f297c5ac081e0b8b44f2b49661170a6580226d0002",
+      "renamedFrom": [],
+      "desc": "Sample / solvent / method / conversion, dataset, checklist · tags NMR",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-08-gpc-samples-md",
+      "kind": "template",
+      "src": "Templates/Snippets/08 GPC samples.md",
+      "role": "templates",
+      "path": "Snippets/08 GPC samples.md",
+      "version": "0.3.0",
+      "sha256": "95ae37a5fadc8d58a6e498156de257d7aad106a253ea1856e15f3af001159e7b",
+      "renamedFrom": [],
+      "desc": "Sample / eluent / Mn / Mw / Đ, checklist · tags GPC",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-09-dls-samples-md",
+      "kind": "template",
+      "src": "Templates/Snippets/09 DLS samples.md",
+      "role": "templates",
+      "path": "Snippets/09 DLS samples.md",
+      "version": "0.3.0",
+      "sha256": "65137c02685fc9a8deb34506b939a6adce31ce336424ba26f79a29eda40e92a3",
+      "renamedFrom": [],
+      "desc": "Sample / solvent / temperature / Dh / PDI, checklist · tags DLS",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-10-combined-results-md",
+      "kind": "template",
+      "src": "Templates/Snippets/10 Combined results.md",
+      "role": "templates",
+      "path": "Snippets/10 Combined results.md",
+      "version": "0.3.0",
+      "sha256": "1185d31957e3ce356b1037a22276aa6d74cb58471458b51e21e93ddbc0fd5808",
+      "renamedFrom": [],
+      "desc": "One row per sample with NMR, GPC and DLS values pulled in",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-11-flow-column-prep-md",
+      "kind": "template",
+      "src": "Templates/Snippets/11 Flow column prep.md",
+      "role": "templates",
+      "path": "Snippets/11 Flow column prep.md",
+      "version": "0.5.2",
+      "sha256": "7aedfa79c8e70930323a3b5818883101945efd547f89d0f9b5e138ba4104f76f",
+      "renamedFrom": [],
+      "desc": "Column weighing → bead mass → reactor volume",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-12-residence-times-md",
+      "kind": "template",
+      "src": "Templates/Snippets/12 Residence times.md",
+      "role": "templates",
+      "path": "Snippets/12 Residence times.md",
+      "version": "0.5.2",
+      "sha256": "6ee6abf96236f102035214cd0c888d10cb605fb08d2ff3b48048e29f422a71bd",
+      "renamedFrom": [],
+      "desc": "Flow rate for each residence time from a reactor volume",
+      "optional": true
+    },
+    {
+      "id": "tpl-snippets-13-blank-calc-table-md",
+      "kind": "template",
+      "src": "Templates/Snippets/13 Blank calc table.md",
+      "role": "templates",
+      "path": "Snippets/13 Blank calc table.md",
+      "version": "0.5.2",
+      "sha256": "5cf3b265599c457cfe8cb631bc7373c83a4f0633c27f60ae22402b95a92791ac",
+      "renamedFrom": [],
+      "desc": "Your own columns and rows",
+      "optional": true
+    },
+    {
+      "id": "script-labform-js",
+      "kind": "script",
+      "src": "Extras/scripts/templater/labForm.js",
+      "role": "userScripts",
+      "path": "labForm.js",
+      "version": "0.4.9",
+      "sha256": "3acec997f788c75896b3842ab73b8718647a74b3c55c97fbd6a8fd9c0b77ab2d",
+      "renamedFrom": [],
+      "desc": "The pop-up form every snippet uses"
+    },
+    {
+      "id": "script-labmethods-js",
+      "kind": "script",
+      "src": "Extras/scripts/templater/labMethods.js",
+      "role": "userScripts",
+      "path": "labMethods.js",
+      "version": "0.4.9",
+      "sha256": "a0b311fe65da80bc14d0b254cb4b1876675cfdd447bfd85a4095ccd00881f131",
+      "renamedFrom": [],
+      "desc": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)"
+    },
+    {
+      "id": "script-labpick-js",
+      "kind": "script",
+      "src": "Extras/scripts/templater/labPick.js",
+      "role": "userScripts",
+      "path": "labPick.js",
+      "version": "0.3.0",
+      "sha256": "5cfda721dc56b2073ec409cd4329abc87529219753abb3987567e7718e47ae26",
+      "renamedFrom": [],
+      "desc": "The searchable snippet menu with icons"
+    },
+    {
+      "id": "script-labsnippets-js",
+      "kind": "script",
+      "src": "Extras/scripts/templater/labSnippets.js",
+      "role": "userScripts",
+      "path": "labSnippets.js",
+      "version": "0.5.2",
+      "sha256": "2fed421c65230a1c5cd3be602c100e9478aa4e26b86fc4025069fedc7361a06b",
+      "renamedFrom": [],
+      "desc": "The code behind every snippet"
+    }
+  ],
+  "templater": {
+    "userScripts": true
+  },
+  "enableCss": [
+    "scrolling-mermaid.css"
+  ],
+  "disableCss": [
+    "tabs-mermaid-scroll.css"
+  ],
+  "removed": [
+    "script-hazards-view-js",
+    "script-lab-config-json",
+    "script-lab-header-view-js",
+    "tpl-snippets-14-analysis-table-md"
+  ]
+}
