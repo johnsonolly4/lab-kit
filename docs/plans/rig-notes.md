@@ -3,12 +3,12 @@
 _Agreed: 2026-10-12. Written by `/phase-plan`. Each phase = one session._
 
 ## Goal
-A flow rig is written once as a note with a parts table; Lab Kit draws its diagram from the table, and an Alt+S snippet links a lab note to the rig, sets a `Rig` property and copies the table and diagram into the note as that experiment's record.
+A flow rig is written once as a note with small parts tables; Lab Kit draws its diagram from them, and an Alt+S snippet links a lab note to the rig, sets a `Rig` property, puts the diagram at the cursor and copies the tables to the bottom of the note under `Flow platform setup`, as that experiment's record.
 
 ## Decision taken
-The parts table is the one source: the diagram is drawn from its `Feeds` column, nobody writes Mermaid (user). The lab note gets a fixed copy (table + Mermaid block), not a live embed, so old experiments do not change with the rig note (user). The snippet is a token template; the engine learns to list a folder's notes and to set a property (Claude's choice, the user can overrule).
+The parts tables are the one source: in the rig note the diagram redraws from their `Feeds` columns whenever the note changes, nobody writes Mermaid (user). The lab note gets a fixed copy (Mermaid block at the cursor, tables at the bottom), not a live embed, so old experiments do not change with the rig note (user). The snippet is a token template; the engine learns to list a folder's notes, to set a property and to append a part under a heading (Claude's choice, the user can overrule).
 
-Rejected: hand-written Mermaid in the rig note (two sources); a live embed of the rig's diagram; a plugin command instead of a snippet (not in the Alt+S list, text not editable); the Methods folder for rig notes.
+Rejected: hand-written Mermaid in the rig note (two sources); a live embed of the rig's diagram; a plugin command instead of a snippet (not in the Alt+S list, text not editable); the Methods folder for rig notes; one big parts table (mostly empty cells); the copied tables in a folded callout (replaced by the bottom section).
 
 ## The rig note (agreed content)
 
@@ -58,16 +58,16 @@ Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in 
 ### Phase 2 — The `rig` block draws the diagram in the rig note
 - Depends on: Phase 1
 - Files: `src/rig/render.ts` (new), `src/main.ts` (register), `styles.css` only if needed, `tests/rig-render.test.ts` (new), `docs/architecture.md`, `docs/obsidian-test-checklist.md`
-- What: a ```` ```rig ```` code block reads the parts table of its own note and renders the Phase 1 Mermaid text through Obsidian's Markdown renderer (so it works on mobile, no Node); problems show as a list under it; it redraws when the note changes (same way as the `calc` block, `src/calc/render.ts:69`).
+- What: a ```` ```rig ```` code block reads the parts tables of its own note and renders the Phase 1 Mermaid text through Obsidian's Markdown renderer (so it works on mobile, no Node); problems show as a list under it; it redraws when the note changes (same way as the `calc` block, `src/calc/render.ts:69`).
 - Done when: tests with the Obsidian stub show the block passes the generated text to the renderer and lists problems; a row in checklist 6i; BACKLOG "Not yet tested" entry (needs a look in Obsidian: reading view, live preview, phone).
 
 ### Phase 3 — Rigs folder, Rig template, New rig, Check setup
 - Depends on: Phase 2
-- Files: `src/kit/paths.ts` (`rigsFolder`, default empty), `src/kit/ui.ts` (setting row, command `new-rig`), `src/kit/setup-check.ts` (optional row, like the Methods folder at :127), `kits/lab/Templates/Rig template.md` (new: properties, example parts table, `rig` block), `scripts/kit-manifest.mjs` (DESC, `needs: rigsFolder`), `kits/lab/kit-manifest.json` (generated), tests beside `tests/kit-install.test.ts`, `README.md` (Settings, Folder contract, commands), `docs/tutorial.md`, `docs/changelog.md`, `src/kit/hotkey-check.ts` (no-key list)
+- Files: `src/kit/paths.ts` (`rigsFolder`, default empty), `src/kit/ui.ts` (setting row, command `new-rig`), `src/kit/setup-check.ts` (optional row, like the Methods folder at :127), `kits/lab/Templates/Rig template.md` (new: properties, a `rig` block, the three example tables Pumps / Reactor line / Analysis), `scripts/kit-manifest.mjs` (DESC, `needs: rigsFolder`), `kits/lab/kit-manifest.json` (generated), tests beside `tests/kit-install.test.ts`, `README.md` (Settings, Folder contract, commands), `docs/tutorial.md`, `docs/changelog.md`, `src/kit/hotkey-check.ts` (no-key list)
 - What: precedent is New chemical (`src/kit/ui.ts:342`, `:430-449`; `src/kit/paths.ts:264-271`). New rig asks a name, makes the note in the Rigs folder from the template; stops with a notice when the folder is not set.
 - Done when: tests for the target path, the unset-folder notice, the template being off while the folder is empty, the Check setup row; `npm run kit:manifest` and `npm run starter` clean; checklist row.
 
-### Phase 4 — Token templates: pick a note, read its rig, set a property
+### Phase 4 — Token templates: pick a note, read its rig, set a property, append under a heading
 - Depends on: Phase 1
 - Files: `src/kit/snippet-template.ts` (header checks, :95-100), `src/kit/snippet-run.ts` (suggest list :42-59, note lookup :75-80, result :102), `src/kit/snippet-env.ts`, `tests/` beside the existing snippet-template tests, `docs/snippet-syntax.md`
 - What: (a) `suggest: notes` with `folder: <setting key>` lists the notes of a settings folder; (b) a header list `set:` writes properties on the current note after the insert (`processFrontMatter`), a value may be a link to the picked note; nothing is written when the form is cancelled; (c) tokens `{{rig-tables:key}}` (the picked note's parts tables as text, each with its heading), `{{rig-diagram:key}}` (a Mermaid block from Phase 1) and `{{note-prop:key.Name}}` (a text property). (d) a second output: a marked part of the template is not inserted at the cursor but appended at the end of the note under a named heading, which is added when missing (same heading already there: appended below its content). Unknown folder key or a note without a parts table gives the usual message naming the snippet and inserts nothing.
@@ -75,9 +75,9 @@ Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in 
 
 ### Phase 5 — The Rig snippet and the docs
 - Depends on: Phases 3 and 4
-- Files: `kits/lab/Templates/Snippets/14 Rig.md` (new), `scripts/kit-manifest.mjs` (DESC), `kits/lab/kit-manifest.json` (generated), a snippet test, `docs/tutorial.md` (snippet table + rigs section), `README.md`, `docs/changelog.md`, `docs/obsidian-test-checklist.md`, `BACKLOG.md` (tick lines 528-530 rig parts, add "Not yet tested")
-- What: Alt+S → Rig: pick a rig; the note gets `Rig: [[name]]`, a heading, the tubing and control software lines, the diagram as a fixed Mermaid block at the cursor (the Lab Book Template's Apparatus section is the natural place), and the parts tables as they are that day at the bottom of the note under the heading `Flow platform setup` (user, 2026-10-12: name and place), which the snippet adds when the note has none. The tables are plain, not in a folded callout (Claude's choice after the user moved them to the bottom: plain tables keep Obsidian's table editor for the per-run cells; the user can overrule). The Lab Book Template itself does not get the heading.
-- Done when: a test runs the snippet on a fixture rig note and compares the inserted text and the property; the snippet is off (not listed) while the Rigs folder is empty; checklist row.
+- Files: `kits/lab/Templates/Snippets/14 Rig.md` (new), `scripts/kit-manifest.mjs` (DESC), `kits/lab/kit-manifest.json` (generated), a snippet test, `docs/tutorial.md` (snippet table + rigs section), `README.md`, `docs/changelog.md`, `docs/obsidian-test-checklist.md`, `BACKLOG.md` (tick the rig items in "In-silico design: decide before release" and "NEXT TASK", add "Not yet tested")
+- What: Alt+S → Rig: pick a rig; the note gets `Rig: [[name]]` as a property; at the cursor a link to the rig and the diagram as a fixed Mermaid block (the Lab Book Template's Apparatus section is the natural place); and the tubing line, the control software line and the parts tables as they are that day at the bottom of the note under the heading `Flow platform setup` (user, 2026-10-12: name and place), which the snippet adds when the note has none. The tables are plain, not in a folded callout (Claude's choice after the user moved them to the bottom: plain tables keep Obsidian's table editor for the per-run cells; the user can overrule). The Lab Book Template itself does not get the heading.
+- Done when: a test runs the snippet on a fixture rig note and compares the text at the cursor, the `Flow platform setup` section (added when missing, appended to when there) and the property; the snippet is off (not listed) while the Rigs folder is empty; checklist row.
 
 ## Order
 1 → 2 → 3 is the rig note itself and can ship without the snippet. 4 needs only 1, so it may swap with 2 or 3. 5 needs 3 (the folder setting and a rig note to pick) and 4 (the engine).
@@ -85,4 +85,4 @@ Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in 
 ## Verification
 - Phase 1 fixtures are written from the rig families in BACKLOG "Rig notes checked against published flow rigs" (layouts from titles and abstracts only; part details are made up and say so).
 - The generated Mermaid is checked as text in tests; that Obsidian draws it is a manual check (checklist 6i) on desktop and a phone.
-- The user fills one real rig in `test-vault/` and says what the table is missing before Phase 5 is called done.
+- The user fills one real rig in `test-vault/` and says what the tables are missing before Phase 5 is called done.
