@@ -11,7 +11,7 @@ import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
-import { inFolder, type NoteRec } from "./lists";
+import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { parseDay, ymd } from "./todo";
 
@@ -417,12 +417,22 @@ export class PlanningCommands {
     if (home) await this.app.workspace.getLeaf(false).openFile(home);
   }
 
-  /** Moves to-dos finished more than 30 days ago into the archive (a name already there gets " 2", " 3", …). */
+  /** True when `project` (a link; of a list, the first) names a hub that exists and whose Status is not Done. */
+  private projectIsActive(project: unknown, from: string): boolean {
+    const link = linkTarget(project);
+    const hub = link ? this.app.metadataCache.getFirstLinkpathDest(link, from) : null;
+    return !!hub && this.app.metadataCache.getFileCache(hub)?.frontmatter?.Status !== "Done";
+  }
+
+  /** Moves to-dos finished more than 30 days ago into the archive, except those of a project that is not Done (a name already there gets " 2", " 3", …). */
   private async archiveTodos(): Promise<void> {
     const archive = archiveTodoFolder(this.folders);
     const prefix = todoFolder(this.folders) + "/", now = new Date();
-    const done = this.app.vault.getMarkdownFiles().filter(f =>
-      f.path.startsWith(prefix) && isArchivable(this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}, new Date(f.stat.mtime), now));
+    const done = this.app.vault.getMarkdownFiles().filter(f => {
+      if (!f.path.startsWith(prefix)) return false;
+      const fm = this.app.metadataCache.getFileCache(f)?.frontmatter ?? {};
+      return isArchivable(fm, new Date(f.stat.mtime), now, this.projectIsActive(fm.project, f.path));
+    });
     if (done.length) await ensureFolder(this.app.vault, archive);   // the archive is made when first needed
     for (const f of done) {
       const target = uniquePath(archive, f.basename, f.extension, p => !!this.app.vault.getAbstractFileByPath(p));

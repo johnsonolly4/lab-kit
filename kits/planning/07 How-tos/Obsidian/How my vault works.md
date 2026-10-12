@@ -166,7 +166,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | Quick capture | Makes an empty note in the inbox and opens it |
 | Add to shopping list | Adds items (commas between them) to the [[Shopping list]] |
 | Sort inbox | Goes through the inbox one note at a time and files each |
-| Archive old to-dos | Moves to-dos finished over 30 days ago to the archive |
+| Archive old to-dos | Moves to-dos finished over 30 days ago to the archive, except those of a project that is not Done |
 | Roll over to-dos now | Rolls unfinished to-dos over to today and clears last week's finished ones, now |
 | Open to-do board | Opens the [[To-do board.base\|To-do board]] |
 | New meeting | New meeting note for a series (asks which when there are several) |

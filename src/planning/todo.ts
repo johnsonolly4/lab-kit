@@ -6,7 +6,7 @@
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
 
 /** The properties of a to-do note this engine reads. */
-export interface TodoFm { kind?: unknown; day?: unknown; done?: unknown; done_on?: unknown; planned?: unknown; rolled?: unknown; due?: unknown; countdown?: unknown }
+export interface TodoFm { kind?: unknown; day?: unknown; done?: unknown; done_on?: unknown; planned?: unknown; rolled?: unknown; due?: unknown; countdown?: unknown; project?: unknown }
 /** What the engine last saw of a card: tells a drag or tick from its own writes. */
 export interface TodoSnap { day: string; done: boolean }
 /** Properties to set and to remove in one write. */

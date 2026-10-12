@@ -25,10 +25,11 @@ export const isFinished = (fm: TodoFm): boolean => fm.done === true || fm.day ==
 
 /**
  * A finished to-do whose finish date (`done_on`, else the note's last change) is more than ARCHIVE_AFTER days before `now`.
+ * `projectActive`: the to-do belongs to a project whose Status is not Done; it is never archived then.
  * As the old template (moment().subtract(30, "days")): the cut-off keeps the time of day, so `done_on` exactly 30 days ago counts.
  */
-export function isArchivable(fm: TodoFm, mtime: Date, now: Date): boolean {
-  if (!isFinished(fm)) return false;
+export function isArchivable(fm: TodoFm, mtime: Date, now: Date, projectActive = false): boolean {
+  if (!isFinished(fm) || projectActive) return false;   // a to-do of a project that is not Done stays: the project plan reads it
   const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ARCHIVE_AFTER, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
   const done = parseDay(fm.done_on) ?? mtime;
   return done.getTime() < cutoff.getTime();
