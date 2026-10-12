@@ -126,7 +126,7 @@ class BlockView extends MarkdownRenderChild {
     const watch = new ResizeObserver(() => { if (placing) apply(); });
     watch.observe(scroller);
     for (const child of Array.from(scroller.children)) watch.observe(child);
-    activeWindow.setTimeout(() => { placing = false; watch.disconnect(); }, 800);
+    window.setTimeout(() => { placing = false; watch.disconnect(); }, 800);
   }
 
   /** The lab notes, for a to-do's `experiment` link; none when the lab folder is not set (nothing is then looked up). */

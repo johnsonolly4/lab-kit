@@ -45,6 +45,8 @@ Option B (user, 2026-10-12): everything stays a to-do; a new optional property `
 
 - **Phase 2 result (2026-10-12, tests only, not seen in Obsidian):** as specified, with one change: the badge reuses the existing status colours (`statusClass` in `src/planning/plan.ts`, no `.vt-map-exp` colour rules); cards are 92px tall (`CARD_H`); `blocks.ts` passes the lab notes only when the Lab folder is set. Example in test-vault: lab notes ABC0014-A / ABC0015-A and three to-dos with `experiment`.
 
+- **Phase 2 follow-up (2026-10-12, user screenshot):** the card shows a row with the status and the lab note name (click opens it) instead of a badge in the meta row; cards 108px; scroll fix with a spacer and a re-apply on resize.
+
 ### Later (not planned in detail; needs the user's go-ahead)
 - A Lab Kit button on a lab note that creates a to-do for it with `experiment` filled (user idea, 2026-10-12). Open: which project (lab notes have none: ask, or the lab note's own project link if one is added); the lab kit works without the planning kit, so the button would show only when the planning kit is on.
 
