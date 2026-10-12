@@ -48,8 +48,6 @@ export interface KitData {
   mwProperty: string;
   /** Vault folder of analysis method notes (and, linked from them, machine notes), read by the Alt+S snippets. Empty = only the built-in NMR, GPC and DLS. */
   methodsFolder: string;
-  /** In-silico experiments: the In-silico Lab Book Template is installed and New in-silico entry is offered. Off by default. */
-  inSilico: boolean;
   /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
   planningFolders: PlanningFolders;
 }
@@ -95,7 +93,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
   return null;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", inSilico: false, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -254,15 +252,14 @@ export function inSnippetsFolder(path: string, templatesFolder: string): boolean
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";
-export const INSILICO_TEMPLATE_ID = "tpl-in-silico-lab-book-template-md";
 
 /** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
-export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string; /** Command and template names for the messages (New in-silico entry). */ command?: string; templateName?: string }): { template: string; folder: string } | { error: string } {
-  if (!o.templater) return { error: `${o.command ?? "New lab entry"} needs the Templater plugin. Install and enable it, then try again.` };
+export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
+  if (!o.templater) return { error: "New lab entry needs the Templater plugin. Install and enable it, then try again." };
   if (o.initials !== undefined && !o.initials.trim()) return { error: "Set your initials in Lab Kit settings first: lab notes are named ABC0001 - Title." };
   const folder = kitJoin(o.labFolder.trim());
   if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
-  if (!o.template) return { error: `The ${o.templateName ?? "Lab Book Template"} is not installed. Install it from Manage kit files.` };
+  if (!o.template) return { error: "The Lab Book Template is not installed. Install it from Manage kit files." };
   return { template: o.template, folder };
 }
 

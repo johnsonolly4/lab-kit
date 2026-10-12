@@ -84,14 +84,14 @@ export async function kitSha256(text: string): Promise<string> {
 
 /**
  * Files that count as switched off: the ones you switched off, plus optional files whose `needs` is not met:
- * a kit setting (e.g. `chemicalFolder`) that is empty or a switch (e.g. `inSilico`) that is off, or `plugin:<id>` for a plugin that is not
- * installed (`plugins`). A `defaultOff` file is off until its id is in `on`.
+ * a kit setting (e.g. `chemicalFolder`) that is empty, or `plugin:<id>` for a plugin that is not installed (`plugins`).
+ * A `defaultOff` file is off until its id is in `on`.
  */
 export function offIds(bundle: EmbeddedKit, off: Record<string, true>, settings: object, plugins: ReadonlySet<string> = new Set(), on: Record<string, true> = {}): Set<string> {
   const out = new Set(Object.keys(off));
   const value = (key: string): unknown => (settings as Record<string, unknown>)[key];
   const met = (needs: string): boolean => needs.startsWith("plugin:") ? plugins.has(needs.slice("plugin:".length))
-    : value(needs) === true || (typeof value(needs) === "string" && (value(needs) as string).trim() !== "");
+    : typeof value(needs) === "string" && (value(needs) as string).trim() !== "";
   for (const f of bundle.manifest.files) if (f.optional && ((f.needs && !met(f.needs)) || (f.defaultOff && !on[f.id]))) out.add(f.id);
   return out;
 }

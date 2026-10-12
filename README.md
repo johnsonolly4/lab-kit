@@ -162,7 +162,7 @@ Settings → Lab Kit is searchable and grouped:
 |---|---|
 | **Built-in kit** | Update available, Kept files with a newer kit version, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Old backups (**Clear old backups…**), Backup folder |
 | **Kit folders and setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, **Colour board columns** (kanban columns coloured by status: Planned, Started, Processing results, Closed) with a colour for each status, console log |
-| **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder, **In-silico experiments** (off by default: installs the In-silico Lab Book Template and offers New in-silico entry) |
+| **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder |
 | **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…**, **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default) |
 | **Snippet menu → Snippet icons** | A page with one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name. Empty keeps the snippet's own icon |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
@@ -178,7 +178,6 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Insert empty calc block | Adds a small example calc table at the cursor |
 | Insert lab header block | Adds the hazard / data-folder header at the cursor |
 | New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
-| New in-silico entry | Only with **In-silico experiments** on: a numbered lab note for computational work, with Environment, Inputs, Method and Runs sections and `Exp. Class: in-silico` (needs Templater) |
 | New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder (needs Templater) |
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
