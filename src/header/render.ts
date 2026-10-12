@@ -66,12 +66,11 @@ export class HeaderRenderer {
           void this.app.workspace.openLinkText(board, ctx.sourcePath, e.ctrlKey || e.metaKey);
         });
       }
-      if (!block.dataFolder) { /* only the back link */ }
-      else if (hasNode()) {
+      if (block.dataFolder && hasNode()) {
         const noteName = ctx.sourcePath.split("/").pop()!.replace(/\.md$/, "");
         const btn = bar.createEl("button", { text: "📁 Open data folder" });
         btn.addEventListener("click", () => openDataFolder(noteName, this.store.settings));
-      } else {
+      } else if (block.dataFolder) {
         bar.createSpan({ cls: "lab-header-muted", text: "📁 Data folder: desktop only" });
       }
     }
