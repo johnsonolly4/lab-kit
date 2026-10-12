@@ -3,7 +3,10 @@ kind: guide
 cssclasses:
   - vt
 ---
-# Hotkeys
+
+```vault-card
+show: back-to-hub
+```
 
 > [!tip] One rule: `Alt` + the first letter of what you want
 > **H** home, **D** day, **F** find, **Z** Zotero paper, **N** note, **T** to-do, **L** lab entry, **U** update, **C** citation, **S** snippet, **M** meeting, **P** project note, **K** knowledge note, **B** board.

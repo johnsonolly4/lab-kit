@@ -22,6 +22,16 @@ describe("parentHub: the hub one folder up, found by folder", () => {
     expect(parentHub(notes, "02 Projects/Polymers/Polymers.md")?.path).toBe("02 Projects/Projects overview.md");
     expect(parentHub(notes, "06 Knowledge/NMR/NMR.md")?.path).toBe("06 Knowledge/Knowledge index.md");
   });
+  it("the kit's guide notes start with a back link, which goes to the How-tos index, and no heading that repeats their name", () => {
+    const guides = ["Hotkeys", "Set up ZotLit", "Setting up a computer", "How my vault works", "Vault spec"];
+    const all = [...notes, note("07 How-tos/How-tos index.md", { kind: "hub" }), ...guides.map(g => note(`07 How-tos/Obsidian/${g}.md`, { kind: "guide" }))];
+    for (const g of guides) {
+      expect(parentHub(all, `07 How-tos/Obsidian/${g}.md`)?.path, g).toBe("07 How-tos/How-tos index.md");
+      const text = kit(`07 How-tos/Obsidian/${g}.md`);
+      expect(text, g).toMatch(/^---\n[\s\S]*?\n---\n\n```vault-card\nshow: back-to-hub\n```\n/);
+      expect(text, g).not.toContain(`\n# ${g}\n`);
+    }
+  });
   it("a series hub goes to the note named like the Meetings folder when no note says kind: hub", () => {
     expect(parentHub(notes, "08 Meetings/Group/Group.md")?.path).toBe("08 Meetings/Meetings.md");
   });

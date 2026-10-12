@@ -89,13 +89,15 @@ const PLANNING_DESC = {
   "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
   "08 Meetings/Meetings.md": "Meetings hub: next meeting of each series",
 };
+const GUIDES = "07 How-tos/Obsidian/";
 const ZOTLIT = ["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
 CONFIG.planning = {
   roleByPrefix: PLANNING_ROLE_BY_PREFIX, desc: PLANNING_DESC,
   // Only the ZotLit files can be off (and are, without the ZotLit plugin)
   optionalPrefix: null, optionalFiles: new Set(ZOTLIT),
-  // Notes become the user's own: installed once, never updated. Templates, Actions, scripts and CSS are updated.
-  keepFiles: new Set(Object.keys(PLANNING_DESC).filter((rel) => !rel.startsWith("Extras/") && !rel.startsWith(".obsidian/"))),
+  // Notes become the user's own: installed once, never updated. Templates, Actions, scripts and CSS are updated, and so are the
+  // guide notes in 07 How-tos/Obsidian (user, 2026-10-12): they describe the kit, so an unedited one follows it like a template.
+  keepFiles: new Set(Object.keys(PLANNING_DESC).filter((rel) => !rel.startsWith("Extras/") && !rel.startsWith(".obsidian/") && !rel.startsWith(GUIDES))),
   needs: Object.fromEntries(ZOTLIT.map((rel) => [rel, "plugin:zotlit"])),
 };
 const SKIP = new Set(["kit-manifest.json"]);
