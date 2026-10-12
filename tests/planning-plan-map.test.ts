@@ -1,6 +1,6 @@
 // The card map layout (src/planning/plan-map.ts): steps, places, arrows, unlinked, start step, chains.
 import { describe, it, expect } from "vitest";
-import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry } from "../src/planning/plan-map";
+import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, setDone } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -97,5 +97,18 @@ describe("mapGeometry", () => {
     const none = mapGeometry(map([td("Lone")]));
     expect(none).toMatchObject({ width: 0, height: 0, scrollLeft: 0 });
     expect(none.curves).toEqual([]);
+  });
+});
+
+describe("setDone", () => {
+  it("ticks; unticks; a to-do on the Done column goes back to Backlog", () => {
+    const a: Record<string, unknown> = { day: "Mon", done: false };
+    setDone(a, true);
+    expect(a).toEqual({ day: "Mon", done: true });
+    setDone(a, false);
+    expect(a).toEqual({ day: "Mon", done: false });
+    const b: Record<string, unknown> = { day: "Done", done: true };
+    setDone(b, false);
+    expect(b).toEqual({ day: "Backlog", done: false });
   });
 });

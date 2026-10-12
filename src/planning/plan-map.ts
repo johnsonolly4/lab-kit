@@ -101,3 +101,9 @@ export function mapGeometry(map: PlanMap): MapGeometry {
     pos, curves, scrollLeft: Math.max(0, map.startStep * (CARD_W + GAP_X)),
   };
 }
+
+/** Ticks or unticks a to-do's properties. A to-do on the Done column goes back to Backlog when unticked (else the roll-over would tick it again); the to-do engine stamps or clears `done_on`. */
+export function setDone(fm: Record<string, unknown>, done: boolean): void {
+  fm.done = done;
+  if (!done && fm.day === "Done") fm.day = "Backlog";
+}

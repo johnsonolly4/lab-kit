@@ -451,7 +451,11 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px; overflow: hidden; cursor: pointer;
   background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 10px; }
 .vt-map-card:hover { border-color: var(--interactive-accent); }
-.vt-map-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-tick { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: pointer; }
+.vt-map-tick:hover { color: var(--interactive-accent); }
+.vt-map-done .vt-map-tick { color: var(--interactive-accent); }
+.vt-map-tick svg { width: 20px; height: 20px; }
+.vt-map-title { padding-right: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-meta { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-done { opacity: 0.65; }

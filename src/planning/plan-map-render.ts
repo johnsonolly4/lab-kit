@@ -1,8 +1,8 @@
 // Draws a project's card map (planning kit, `show: project-map`): cards in the vault theme, arrows behind them, the to-dos with no links in a list beside it.
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
-import { Keymap, Menu, Notice, type App, type PaneType } from "obsidian";
+import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import type { Plan, PlanRow } from "./plan";
-import { CARD_H, CARD_W, chainOf, mapGeometry, type PlanMap } from "./plan-map";
+import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, type PlanMap } from "./plan-map";
 
 export interface MapOptions {
   app: App;
@@ -13,11 +13,11 @@ export interface MapOptions {
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
 const open = (o: MapOptions, path: string, newTab: PaneType | boolean): void => { void o.app.workspace.openLinkText(path, o.sourcePath, newTab); };
 
-/** Sets `done: true` on a to-do; the to-do engine stamps `done_on` when it sees the change. */
-async function markDone(o: MapOptions, path: string): Promise<void> {
+/** Ticks or unticks a to-do; the to-do engine stamps or clears `done_on` when it sees the change. */
+async function markDone(o: MapOptions, path: string, done: boolean): Promise<void> {
   const file = o.app.vault.getFileByPath(path);
   if (!file) { new Notice("That to-do is not there any more."); return; }
-  await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.done = true; });
+  await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { setDone(fm, done); });
 }
 
 function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
@@ -25,7 +25,7 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
   const m = new Menu();
   m.addItem(i => i.setTitle("Open").setIcon("file").onClick(() => open(o, row.path, false)));
   m.addItem(i => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => open(o, row.path, true)));
-  if (!row.done) m.addItem(i => i.setTitle("Mark done").setIcon("check").onClick(() => { void markDone(o, row.path); }));
+  m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => { void markDone(o, row.path, !row.done); }));
   m.showAtMouseEvent(e);
 }
 
@@ -45,6 +45,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       const r = c.row, p = g.pos.get(c.path)!;
       const el = canvas.createDiv({ cls: ["vt-map-card", r.done ? "vt-map-done" : "", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
       el.setCssProps({ "--vt-map-x": `${p.x}px`, "--vt-map-y": `${p.y}px` });
+      const tick = el.createEl("button", { cls: "vt-map-tick", attr: { "aria-label": r.done ? "Mark not done" : "Mark done" } });   // a circle: ticks and unticks, so a wrong tick can be undone
+      setIcon(tick, r.done ? "check-circle-2" : "circle");
+      const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
+      tick.addEventListener("mousedown", stop);
+      tick.addEventListener("click", e => { stop(e); void markDone(o, r.path, !r.done); });
       el.createDiv({ cls: "vt-map-title", text: r.name });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
