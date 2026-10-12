@@ -1,6 +1,6 @@
 ---
 Tubing: PFA 0.75 mm
-Control software: made-up 1.0
+Control: made-up 1.0
 Analysis:
   - NMR
 ---

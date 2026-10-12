@@ -343,7 +343,7 @@ describe("lab kit completion (Phase 2)", () => {
     expect(on).toMatchObject({ action: "create", dest: "Extras/Templates/Lab Kit/Rig template.md" });
     const text = real.contents["tpl-rig-template-md"];
     expect(text).toMatch(/^```rig\n```$/m);
-    for (const prop of ["Tubing:", "Control software:", "Analysis:"]) expect(text).toContain(`\n${prop}`);
+    for (const prop of ["Tubing:", "Control:", "Analysis:"]) expect(text).toContain(`\n${prop}`);
     const rig = readRig(text);
     expect(rig.problems).toEqual([]);
     expect(rig.tables.map(t => t.heading)).toEqual(["Pumps", "Reactor line", "Analysis"]);

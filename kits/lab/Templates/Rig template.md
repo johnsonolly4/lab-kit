@@ -1,6 +1,6 @@
 ---
 Tubing:
-Control software:
+Control:
 Analysis:
   - 
 ---

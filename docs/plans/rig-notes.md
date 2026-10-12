@@ -12,7 +12,7 @@ Rejected: hand-written Mermaid in the rig note (two sources); a live embed of th
 
 ## The rig note (agreed content)
 
-Properties: `Tubing` (rig-wide material and inner diameter), `Control software` (name and version), `Analysis` (list, typed by hand, for filtering).
+Properties: `Tubing` (rig-wide material and inner diameter), `Control` (manual, or the software and its version; renamed from `Control software`, user 2026-10-12), `Analysis` (list, typed by hand, for filtering).
 
 Parts tables, one row per part. `Part` is one of Pump, Mixer, Reactor, Heater, Regulator, Valve, Analysis, Outlet, Tubing.
 
@@ -79,7 +79,7 @@ Confirmed by the user at the start of Phase 1 (2026-10-12, survey): the pump's t
 ### Phase 5 — The Rig snippet and the docs
 - Depends on: Phases 3 and 4
 - Files: `kits/lab/Templates/Snippets/14 Rig.md` (new), `scripts/kit-manifest.mjs` (DESC), `kits/lab/kit-manifest.json` (generated), a snippet test, `docs/tutorial.md` (snippet table + rigs section), `README.md`, `docs/changelog.md`, `docs/obsidian-test-checklist.md`, `BACKLOG.md` (tick the rig items in "In-silico design: decide before release" and "NEXT TASK", add "Not yet tested")
-- What: Alt+S → Rig: pick a rig; the note gets `Rig: [[name]]` as a property; at the cursor a link to the rig and the diagram as a fixed Mermaid block (the Lab Book Template's Apparatus section is the natural place); and the tubing line, the control software line and the parts tables as they are that day at the bottom of the note under the heading `Flow platform setup` (user, 2026-10-12: name and place), which the snippet adds when the note has none. The tables are plain, not in a folded callout (Claude's choice after the user moved them to the bottom: plain tables keep Obsidian's table editor for the per-run cells; the user can overrule). The Lab Book Template itself does not get the heading.
+- What: Alt+S → Rig: pick a rig; the note gets `Rig: [[name]]` as a property; at the cursor a link to the rig and the diagram as a fixed Mermaid block (the Lab Book Template's Apparatus section is the natural place); and the tubing line, the control line and the parts tables as they are that day at the bottom of the note under the heading `Flow platform setup` (user, 2026-10-12: name and place), which the snippet adds when the note has none. The tables are plain, not in a folded callout (Claude's choice after the user moved them to the bottom: plain tables keep Obsidian's table editor for the per-run cells; the user can overrule). The Lab Book Template itself does not get the heading.
 - Done when: a test runs the snippet on a fixture rig note and compares the text at the cursor, the `Flow platform setup` section (added when missing, appended to when there) and the property; the snippet is off (not listed) while the Rigs folder is empty; checklist row.
 
 ## Order

@@ -191,9 +191,9 @@
       "role": "templates",
       "path": "Rig template.md",
       "version": "1.0.1",
-      "sha256": "7000483dc55ef91ea569ce8e21c740f8d67c83aaf6b35c996f4b8b439e879258",
+      "sha256": "7449cea8ac221811b08889f965f72753dc85fd53b74967f25075ffb6e5305d83",
       "renamedFrom": [],
-      "desc": "New rig note: tubing, control software, the diagram and the parts tables (pumps, reactor line, analysis)",
+      "desc": "New rig note: tubing, control, the diagram and the parts tables (pumps, reactor line, analysis)",
       "optional": true,
       "needs": "rigsFolder"
     },

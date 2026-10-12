@@ -29,7 +29,7 @@ const LAB_DESC = {
   "Templates/Insert snippet.md": "The Alt+S menu: lists the snippets and inserts the one you pick",
   "Templates/Lab Book Template.md": "New experiment note: number, hazards, data folder button and sections",
   "Templates/Chemical database template.md": "New chemical note: names, class, hazards, CAS number, MW and physical data",
-  "Templates/Rig template.md": "New rig note: tubing, control software, the diagram and the parts tables (pumps, reactor line, analysis)",
+  "Templates/Rig template.md": "New rig note: tubing, control, the diagram and the parts tables (pumps, reactor line, analysis)",
   "03 Lab Book/Lab book base.base": "Board of your experiments by Status, next to your Lab notes folder",
   "05 Chemicals/Chemical database.base": "Table and by-class board of your chemical notes, next to your Chemical folder",
 };
