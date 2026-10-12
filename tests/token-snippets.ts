@@ -14,6 +14,7 @@ export const TOKEN_FILES: Record<string, string> = {
   column: "11 Flow column prep.md",
   rt: "12 Residence times.md",
   blank: "13 Blank calc table.md",
+  optimisation: "14 Optimisation campaign.md",
 };
 export const isTokenSnippet = (key: string): boolean => key in TOKEN_FILES;
 

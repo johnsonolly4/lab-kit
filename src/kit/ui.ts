@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, INSILICO_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
@@ -257,6 +257,8 @@ class KitSettingTab extends PluginSettingTab {
           });
         } }
     ];
+    notebook.push({ name: "In-silico experiments", desc: "For computational work. On: the kit installs the In-silico Lab Book Template (press Review update afterwards) and the command New in-silico entry makes a numbered lab note with Environment, Inputs, Method and Runs sections. Off: neither is offered.",
+      render: b => { b.addToggle(t => t.setValue(kit.inSilico).onChange(async v => { kit.inSilico = v; await this.ctl.save(); })); } });
     const snippets = this.snippetRows();
     const builtIn = this.builtInGroups();
     const planningOn = !!kit.kits[PLANNING_KIT]?.enabled;
@@ -272,6 +274,11 @@ class KitSettingTab extends PluginSettingTab {
 }
 
 /** Owns the kit's saved state (the `kit` key of data.json) and registers its settings tab, commands and events. */
+/** A kind of lab entry: the kit template it is made from (file id and name) and its command's name, for the messages. */
+interface LabEntryKind { id: string; template: string; command: string }
+const LAB_ENTRY: LabEntryKind = { id: LAB_TEMPLATE_ID, template: "Lab Book Template", command: "New lab entry" };
+const IN_SILICO: LabEntryKind = { id: INSILICO_TEMPLATE_ID, template: "In-silico Lab Book Template", command: "New in-silico entry" };
+
 export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
   readonly managed: KitManaged;
@@ -331,6 +338,12 @@ export class KitController {
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
+    // Offered only while Settings → Lab notebook → In-silico experiments is on
+    plugin.addCommand({ id: "new-in-silico-entry", name: "New in-silico entry", checkCallback: (checking) => {
+      if (!this.kit.inSilico) return false;
+      if (!checking) void this.newLabEntry(IN_SILICO);
+      return true;
+    } });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
@@ -399,11 +412,11 @@ export class KitController {
   }
 
   /** New lab entry: a note from the Lab Book Template in the Lab notes folder (created if missing), made and opened by Templater. */
-  async newLabEntry(): Promise<void> {
-    const tracked = this.managed.stateOf(LAB_TEMPLATE_ID)?.path;
-    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Lab Book Template.md")]
+  async newLabEntry(kind: LabEntryKind = LAB_ENTRY): Promise<void> {
+    const tracked = this.managed.stateOf(kind.id)?.path;
+    const template = [tracked, kitJoin(this.managed.templatesFolder(), `${kind.template}.md`)]
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
-    const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder, initials: this.kit.initials });
+    const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder, initials: this.kit.initials, command: kind.command, templateName: kind.template });
     if ("error" in target) { new Notice(target.error); return; }
     const title = await ask(this.app, "Experiment title (Esc to cancel, Enter on empty = Untitled)");
     if (title === null) return;
@@ -414,7 +427,7 @@ export class KitController {
       if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
       w.labKitPresetTitle = title;   // the template reads and clears it (as the to-do template does for projects)
       if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
-    } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
+    } catch (e) { console.error(e); new Notice(`${kind.command} failed. See the developer console for details.`); }
     finally { delete w.labKitPresetTitle; }
   }
 

@@ -163,6 +163,19 @@
       "needs": "chemicalFolder"
     },
     {
+      "id": "tpl-in-silico-lab-book-template-md",
+      "kind": "template",
+      "src": "Templates/In-silico Lab Book Template.md",
+      "role": "templates",
+      "path": "In-silico Lab Book Template.md",
+      "version": "1.0.0",
+      "sha256": "162c08305984d4358f11f223a3d9d5070b8c57b9a8b2773e3569fbd854fe5973",
+      "renamedFrom": [],
+      "desc": "New in-silico experiment note: environment, inputs, method and runs, so a result can be rerun",
+      "optional": true,
+      "needs": "inSilico"
+    },
+    {
       "id": "tpl-insert-snippet-md",
       "kind": "template",
       "src": "Templates/Insert snippet.md",
@@ -339,6 +352,19 @@
       "renamedFrom": [],
       "desc": "Your own columns and rows",
       "optional": true
+    },
+    {
+      "id": "tpl-snippets-14-optimisation-campaign-md",
+      "kind": "template",
+      "src": "Templates/Snippets/14 Optimisation campaign.md",
+      "role": "templates",
+      "path": "Snippets/14 Optimisation campaign.md",
+      "version": "1.0.0",
+      "sha256": "ae6372698579834d5167b12fb0cc114c49289ce860795b41db215928a4c37b4c",
+      "renamedFrom": [],
+      "desc": "Record of an algorithm-led optimisation, with settings, variables and iterations",
+      "optional": true,
+      "defaultOff": true
     },
     {
       "id": "script-labform-js",

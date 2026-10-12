@@ -375,7 +375,18 @@ describe("lab kit completion (Phase 2)", () => {
 
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
-    expect(offIds(real, {}, KIT_DEFAULTS).size).toBe(0);
+    // Off until asked for: the in-silico template waits for its switch, the optimisation snippet for its Use toggle
+    expect([...offIds(real, {}, KIT_DEFAULTS)].sort()).toEqual(["tpl-in-silico-lab-book-template-md", "tpl-snippets-14-optimisation-campaign-md"]);
+  });
+
+  it("the in-silico switch and a Use toggle switched on bring the files that start off", () => {
+    const opt = "tpl-snippets-14-optimisation-campaign-md", ins = "tpl-in-silico-lab-book-template-md";
+    expect(offIds(real, {}, { ...KIT_DEFAULTS, inSilico: true }).has(ins)).toBe(false);
+    expect(offIds(real, {}, { ...KIT_DEFAULTS, inSilico: true }).has(opt)).toBe(true);
+    expect(offIds(real, {}, KIT_DEFAULTS, new Set(), { [opt]: true }).has(opt)).toBe(false);
+    expect(offIds(real, { [opt]: true }, KIT_DEFAULTS, new Set(), { [opt]: true }).has(opt)).toBe(true);   // switched off again wins
+    expect(newLabEntryTarget({ templater: true, template: null, labFolder: "03 Lab Book/Notes", command: "New in-silico entry", templateName: "In-silico Lab Book Template" }))
+      .toEqual({ error: "The In-silico Lab Book Template is not installed. Install it from Manage kit files." });
   });
 
   it("New lab entry: says what is missing, else gives the template and folder", () => {

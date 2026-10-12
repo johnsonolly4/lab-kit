@@ -21,6 +21,8 @@ export interface EmbeddedFile {
   optional?: boolean;
   /** Kit setting (a key of the kit data, e.g. chemicalFolder) that must be set for this file to be installed: while it is empty the file counts as switched off. */
   needs?: string;
+  /** An optional file that is off until its Use toggle is switched on (the kit slot's `on`). */
+  defaultOff?: boolean;
 }
 /** One kit as built into main.js (see scripts/embed-kit.mjs): kits/<id>/kit-manifest.json and its files. */
 export interface EmbeddedKit {
@@ -82,14 +84,15 @@ export async function kitSha256(text: string): Promise<string> {
 
 /**
  * Files that count as switched off: the ones you switched off, plus optional files whose `needs` is not met:
- * a kit setting (e.g. `chemicalFolder`) that is empty, or `plugin:<id>` for a plugin that is not installed (`plugins`).
+ * a kit setting (e.g. `chemicalFolder`) that is empty or a switch (e.g. `inSilico`) that is off, or `plugin:<id>` for a plugin that is not
+ * installed (`plugins`). A `defaultOff` file is off until its id is in `on`.
  */
-export function offIds(bundle: EmbeddedKit, off: Record<string, true>, settings: object, plugins: ReadonlySet<string> = new Set()): Set<string> {
+export function offIds(bundle: EmbeddedKit, off: Record<string, true>, settings: object, plugins: ReadonlySet<string> = new Set(), on: Record<string, true> = {}): Set<string> {
   const out = new Set(Object.keys(off));
   const value = (key: string): unknown => (settings as Record<string, unknown>)[key];
   const met = (needs: string): boolean => needs.startsWith("plugin:") ? plugins.has(needs.slice("plugin:".length))
-    : typeof value(needs) === "string" && (value(needs) as string).trim() !== "";
-  for (const f of bundle.manifest.files) if (f.optional && f.needs && !met(f.needs)) out.add(f.id);
+    : value(needs) === true || (typeof value(needs) === "string" && (value(needs) as string).trim() !== "");
+  for (const f of bundle.manifest.files) if (f.optional && ((f.needs && !met(f.needs)) || (f.defaultOff && !on[f.id]))) out.add(f.id);
   return out;
 }
 

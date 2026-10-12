@@ -178,6 +178,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | New topic hub | Makes the hub note of a topic folder |
 | New lab entry | Makes a lab book entry from the Lab Book Template |
 | New chemical | Makes a chemical note (asks the name, then the class) |
+| New in-silico entry | Makes a lab book entry for computational work (only with Settings → Lab Kit → In-silico experiments on) |
 | Insert empty calc block | A blank calc table at the cursor |
 | Insert lab header block | The hazard / data-folder header at the cursor |
 | Tidy up notes | Finds notes that don't follow the vault's rules and fixes the ones you tick |
