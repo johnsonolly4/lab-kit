@@ -109,6 +109,23 @@ export function statusClass(status: string): string {
   return ["planned", "started", "processing-results", "closed"].includes(slug) ? `vt-${slug}` : "vt-planned";
 }
 
+/** The hub's Experiments tile: the lab notes its to-dos name, each once, open ones first (Started, Processing results, Planned, others, Closed), then by name; with the status and the to-dos that name it. A link that finds no lab note is left out (it shows as a line under the plan). */
+export function projectExperiments(plan: Plan): ListLine[] {
+  const rank = (s: string): number => { const i = ["started", "processing results", "planned"].indexOf(s.trim().toLowerCase()); return s.trim().toLowerCase() === "closed" ? 4 : i < 0 ? 3 : i; };
+  const byPath = new Map<string, { name: string; status: string; todos: string[] }>();
+  for (const r of plan.rows) {
+    const e = r.experiment;
+    if (!e?.path) continue;
+    const got = byPath.get(e.path) ?? { name: e.name, status: e.status, todos: [] };
+    got.todos.push(r.name);
+    byPath.set(e.path, got);
+  }
+  return [...byPath].sort(([, a], [, b]) => rank(a.status) - rank(b.status) || a.name.localeCompare(b.name))
+    .map(([path, e]): ListLine => ({ path, text: e.name, badges: [
+      ...(e.status ? [{ text: e.status, cls: `vt-badge ${statusClass(e.status)}` }] : []),
+      { text: e.todos.length === 1 ? `· ${e.todos[0]}` : `· ${e.todos.length} to-dos`, cls: "vt-muted" }] }));
+}
+
 /** The Plan tile's lines: open ready rows (plan order), then blocked rows ("after X"), then finished rows (with "→ result"). `finished` counts the last group. */
 export function planLines(plan: Plan): { lines: ListLine[]; finished: number } {
   const line = (r: PlanRow, badges: Badge[]): ListLine => ({ path: r.path, text: r.name,

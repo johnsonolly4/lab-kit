@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { hasPlan, planLines, readPlan } from "./plan";
+import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { layoutPlan } from "./plan-map";
 import { drawPlanMap } from "./plan-map-render";
 import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
@@ -229,6 +229,14 @@ class BlockView extends MarkdownRenderChild {
         }
         return;
       }
+      case "project-experiments": {   // on a project hub: the lab notes its to-dos name in `experiment`, with their Status
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile || !this.need(box, todoFolder(f))) return;
+        const labNotes = this.labNotes();
+        if (!labNotes) { box.createDiv({ cls: "vt-muted", text: "Set the Lab folder in Settings → Lab Kit to list experiments." }); return; }
+        this.capped(box, projectExperiments(readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), labNotes)), PROJECT_TILE_ROWS, "No experiments yet: set experiment on a to-do of this project.");
+        return;
+      }
       case "project-actions": {   // on a project hub: New to-do / New note in one row, like the Projects overview card
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile) return;
@@ -368,7 +376,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

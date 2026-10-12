@@ -122,6 +122,12 @@ describe("Project hub template: the Plan tile", () => {
     expect(plan).toBeGreaterThan(bar);
     expect(goal).toBeGreaterThan(plan);
   });
+  it("has the Experiments tile after the columns and before Meetings", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    const tile = t.indexOf("> [!lab] Experiments\n> ```vault-card\n> show: project-experiments\n> ```");
+    expect(tile).toBeGreaterThan(t.indexOf("show: project-notes"));
+    expect(tile).toBeLessThan(t.indexOf("> [!question] Meetings"));
+  });
   it("has the card map under the Plan tile; the setting defaults to the map only", () => {
     const t = kit("Extras/Templates/Project hub.md");
     expect(t.indexOf("```vault-card\nshow: project-map\n```")).toBeGreaterThan(t.indexOf("show: project-plan"));

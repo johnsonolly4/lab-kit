@@ -47,6 +47,8 @@ Option B (user, 2026-10-12): everything stays a to-do; a new optional property `
 
 - **Phase 2 follow-up (2026-10-12, user screenshot):** the card shows a row with the status and the lab note name (click opens it) instead of a badge in the meta row; cards 108px; scroll fix with a spacer and a re-apply on resize.
 
+- **Experiments tile (2026-10-12, user chose option A, tests only, not seen in Obsidian):** `projectExperiments` in `src/planning/plan.ts`, `show: project-experiments` in `src/planning/blocks.ts`, an `[!lab] Experiments` callout in the Project hub template. Nothing is written to lab notes; writing `project` on them (B) and listing them in the Notes tile (C) were not chosen.
+
 ### Later (not planned in detail; needs the user's go-ahead)
 - A Lab Kit button on a lab note that creates a to-do for it with `experiment` filled (user idea, 2026-10-12). Open: which project (lab notes have none: ask, or the lab note's own project link if one is added); the lab kit works without the planning kit, so the button would show only when the planning kit is on.
 

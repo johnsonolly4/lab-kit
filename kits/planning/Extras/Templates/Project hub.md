@@ -44,6 +44,11 @@ show: project-map
 > > show: project-notes
 > > ```
 
+> [!lab] Experiments
+> ```vault-card
+> show: project-experiments
+> ```
+
 > [!question] Meetings
 > ```vault-card
 > show: project-meetings

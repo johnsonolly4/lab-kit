@@ -1,6 +1,6 @@
 // The project plan engine (src/planning/plan.ts): order, blocked, problems.
 import { describe, it, expect } from "vitest";
-import { hasPlan, planLines, readPlan, statusClass } from "../src/planning/plan";
+import { hasPlan, planLines, projectExperiments, readPlan, statusClass } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
 const T = "00 Planning/To-dos/";
@@ -149,5 +149,29 @@ describe("statusClass", () => {
     const labs = [note("03 Lab Book/Notes/X1.md", { Status: "Closed" })];
     const { lines } = planLines(readPlan([td("A", { experiment: "[[X1]]" })], hub, labs));
     expect(lines[0].badges[0]).toEqual({ text: "Closed", cls: "vt-badge vt-closed" });
+  });
+});
+
+describe("projectExperiments", () => {
+  const lab = (name: string, status: string): NoteRec => note("03 Lab Book/Notes/" + name + ".md", { Status: status });
+  const labs = [lab("E1", "Planned"), lab("E2", "Closed"), lab("E3", "Started"), lab("E4", "Weird")];
+  const tile = (todos: NoteRec[], l?: NoteRec[]) => projectExperiments(readPlan(todos, hub, l));
+  it("one line per experiment, open ones first, Closed last; status and the to-do that names it", () => {
+    const lines = tile([td("A", { experiment: "[[E1]]" }), td("B", { experiment: "[[E2]]" }), td("C", { experiment: "[[E3]]" }), td("D", { experiment: "[[E4]]" })], labs);
+    expect(lines.map(l => l.text)).toEqual(["E3", "E1", "E4", "E2"]);
+    expect(lines[0]).toEqual({ path: "03 Lab Book/Notes/E3.md", text: "E3", badges: [{ text: "Started", cls: "vt-badge vt-started" }, { text: "\u00b7 C", cls: "vt-muted" }] });
+  });
+  it("two to-dos naming one experiment give one line with a count", () => {
+    const lines = tile([td("A", { experiment: "[[E1]]" }), td("B", { experiment: "[[E1]]" })], labs);
+    expect(lines).toHaveLength(1);
+    expect(lines[0].badges.map(b => b.text)).toEqual(["Planned", "\u00b7 2 to-dos"]);
+  });
+  it("a broken link, no experiment, or no lab notes give no line", () => {
+    expect(tile([td("A", { experiment: "[[Ghost]]" })], labs)).toEqual([]);
+    expect(tile([td("A")], labs)).toEqual([]);
+    expect(tile([td("A", { experiment: "[[E1]]" })])).toEqual([]);
+  });
+  it("an empty Status shows only the to-do", () => {
+    expect(tile([td("A", { experiment: "[[E5]]" })], [lab("E5", "")])[0].badges).toEqual([{ text: "\u00b7 A", cls: "vt-muted" }]);
   });
 });
