@@ -41,7 +41,7 @@ const CONFIG = {
     // policy "keep": installed once, never updated (notes that become the user's own)
     keepFiles: new Set(["03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // "needs": the setting (kit data key) that must be set for the file to be installed; empty = treated as switched off
-    needs: { "Templates/Chemical database template.md": "chemicalFolder", "Templates/Rig template.md": "rigsFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
+    needs: { "Templates/Chemical database template.md": "chemicalFolder", "Templates/Rig template.md": "rigsFolder", "Templates/Snippets/14 Rig.md": "rigsFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
   },
 };
 // Planning kit: the planning suite (homepage, to-do board, planning notes, templates, Actions, vtAsk.js, theme). Source:

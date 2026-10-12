@@ -354,6 +354,19 @@
       "optional": true
     },
     {
+      "id": "tpl-snippets-14-rig-md",
+      "kind": "template",
+      "src": "Templates/Snippets/14 Rig.md",
+      "role": "templates",
+      "path": "Snippets/14 Rig.md",
+      "version": "1.0.1",
+      "sha256": "694071380ccd2a1863f29bf51a8c7a556ad232bd34179f42631a04efffd6e7e3",
+      "renamedFrom": [],
+      "desc": "Link the flow rig, draw its diagram, and copy its setup to the bottom of the note",
+      "optional": true,
+      "needs": "rigsFolder"
+    },
+    {
       "id": "script-labform-js",
       "kind": "script",
       "src": "Extras/scripts/templater/labForm.js",

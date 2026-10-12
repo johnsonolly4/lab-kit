@@ -66,6 +66,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
+| **Rig** | A flow experiment | Pick a rig note (needs the Rigs folder): a link and a fixed copy of its diagram at the cursor, a `Rig` property on the note, and the tubing, control and parts tables as they are today at the bottom under `Flow platform setup` (added when the note has none; filled in per run there) |
 | **Blank calc table** | Anything else | Your own columns |
 
 > [!example] A typical analysis workflow

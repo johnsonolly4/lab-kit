@@ -393,7 +393,7 @@ describe("lab kit completion (Phase 2)", () => {
 
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
-    expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual(["tpl-rig-template-md"]);   // the Rigs folder is empty by default
+    expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);   // the Rigs folder is empty by default
   });
 
   it("New lab entry: says what is missing, else gives the template and folder", () => {

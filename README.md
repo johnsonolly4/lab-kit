@@ -112,6 +112,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 | **NMR / GPC / DLS samples** · your own methods | Sample tables with machine, checklist and result columns. The sample codes come from every table in the note that holds codes; with more than one, **Codes from** picks which |
 | **Combined results** | One row per sample with the results of every method |
 | **Flow column prep** · **Residence times** | Packing a column, reactor volume, flow rates. Pick a solvent and leave the density empty, and the density is read from that chemical's note |
+| **Rig** | Needs a Rigs folder. Links the rig note, puts a fixed copy of its diagram at the cursor, sets the `Rig` property and copies the parts tables under `Flow platform setup` at the bottom of the note |
 | **Blank calc table** | Your own columns |
 
 Choose which snippets you want in **Manage files…** (each has a **Use** toggle). Icons for the Alt+S menu are a setting. Six snippets (Variant naming matrix, Sample list, Sampling timetable, Flow column prep, Residence times, Blank calc table) are plain notes with a header of questions and `{{tokens}}` in the text, so you can read and edit them: syntax in [docs/snippet-syntax.md](docs/snippet-syntax.md).

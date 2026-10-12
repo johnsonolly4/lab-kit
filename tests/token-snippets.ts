@@ -22,11 +22,17 @@ export function miniYaml(src: string): unknown {
   const out: Record<string, unknown> = {};
   let list: Record<string, string>[] = [];
   let cur: Record<string, string> = {};
+  let top = "";
   const val = (s: string) => { const t = s.trim(); const q = /^"(.*)"$/.exec(t); return q ? q[1] : t; };
   for (const line of src.split("\n")) {
     let m: RegExpExecArray | null;
     if (!line.trim()) continue;
-    if ((m = /^(\w+):\s*(.*)$/.exec(line))) { if (m[2] === "") { list = []; out[m[1]] = list; } else out[m[1]] = val(m[2]); }
+    if ((m = /^(\w+):\s*(.*)$/.exec(line))) { if (m[2] === "") { list = []; out[m[1]] = list; top = m[1]; } else out[m[1]] = val(m[2]); }
+    else if (!list.length && !/^\s+-/.test(line) && (m = /^\s+([\w ]+):\s*(.*)$/.exec(line))) {
+      // an indented `Name: value` straight under a key with no list: a plain map (`set:`)
+      if (Array.isArray(out[top])) out[top] = {};
+      (out[top] as Record<string, string>)[m[1]] = val(m[2]);
+    }
     else if ((m = /^\s+-\s+(\w+):\s*(.*)$/.exec(line))) { cur = {}; list.push(cur); cur[m[1]] = val(m[2]); }
     else if ((m = /^\s+(\w+):\s*(.*)$/.exec(line))) cur[m[1]] = val(m[2]);
     else throw new Error("mini yaml: " + line);
