@@ -25,8 +25,23 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
   - Advanced Canvas (edges from a property, no auto layout), Tasks Map (cards + arrows, but needs Dataview and Tasks, `tags: [task]` and its own `blockedBy` / `dependsOn` keys).
   - Swapping the planning core for Tasks or TaskNotes: no. Tasks is checkbox lines, with no board and no dependency picture. TaskNotes has the same one-note-per-task model on Bases, but a swap costs a second plugin for every user and a migration, and it has no dependency picture either. Trying TaskNotes alongside (calendar, agenda) is a BACKLOG item.
 
+## Additions 2026-10-12 (Opus, with the user, survey; nothing built)
+- **`after` stays** as it is (a link or a list of links, written in the later to-do only). A link is never written into both notes: two copies can disagree.
+- **Subtasks:** a new property `sub` on the child to-do, naming its parent (`sub: [[Parent to-do]]`). The parent's subtasks are worked out, never written. Phase 4e.
+- **No inferred dates.** The plan only reports when two dates the user typed disagree: an open to-do whose `due` is earlier than the `due` of a to-do it comes after (Phase 4a).
+- **Card map extras:** to-dos with no links stay off the map, in a list beside it (4a, 4b); hovering a card marks everything before and after it (4a, 4b); a right-click menu on a map card: Open, Open in new tab, Mark done (4b; this replaces "tick done on a card: later, only if asked").
+- **Linking (4c):** the new arrow shows at once and is removed with a notice if the write fails; the notice after a link or an unlink has Undo.
+- **List to sequence:** a command that writes `after` down a list of to-dos. Phase 4d.
+- **Print layout of the map:** not planned; after 4b is seen, together with the rig PDF question (BACKLOG "NEXT TASK").
+- **Rules for all plan output:**
+  1. Report what cannot be worked out; invent nothing. Every to-do is still listed when a link is missing or loops (as `readPlan` does with `problems`).
+  2. Every view reads the same notes. The Plan tile, the card map and the lists all come from the to-dos' properties through `readPlan`; no view keeps data of its own.
+- To BACKLOG ("Project plan from to-dos"): pass links on when a to-do is deleted, longest open chain, milestones, other link types, `show: project-map` in any note, print layout, keyboard movement on the map. To BACKLOG ("To-dos: ideas"): one-phrase capture, own statuses and priorities, repeating to-dos.
+- Dropped: a group box per project (the map is one project); column limits and swimlanes (the board is Obsidian's Bases kanban, not ours); passing links on when a to-do is finished (a finished to-do already unblocks what comes after it and keeps its `result` in the plan); saved filter presets (Bases views and `vault-card` blocks already do this).
+
 ## Out of scope
 - Saved card positions, free rearranging of cards, a Mermaid `plan` block, a Canvas file.
+- Inferred or suggested dates, durations, a true critical path.
 - Priority colours on the board (revisit after Phase 1 is seen).
 - `result` for to-dos without a project (open: default no).
 
@@ -82,8 +97,12 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Depends on: Phase 2. Model: Sonnet.
 - New `src/planning/plan-map.ts`: from `readPlan`'s rows give each to-do a step (0 for no parents, else 1 + the largest step of its parents; a to-do in a cycle keeps the plan engine's order and is flagged, never dropped), a place inside its step (near its parents, then `order`, then path), the list of arrows (from, to), and the start step: the step of the first ready open to-do (the last step when everything is finished).
 - No DOM, no Obsidian imports: positions are step and row numbers, the drawing phase turns them into pixels.
-- Tests (new `tests/planning-plan-map.test.ts`): chain, two-parent join, two separate chains, cycle, all finished, start step with finished steps before it.
-- Done when: tests and lint pass. Nothing to see in Obsidian.
+- Added 2026-10-12:
+  - **Unlinked to-dos:** a to-do with no parents and no children is not placed on the map; the layout returns these as a separate list (plan order). A project where nothing is linked gives an empty map and the full list.
+  - **Chain lookup:** `chainOf(path)` gives every to-do before it and after it (through any number of links), for the hover highlight in 4b. A to-do in a cycle gives the cycle's members once, no endless loop.
+  - **Date warning** (in `readPlan`, `src/planning/plan.ts`, so the Plan tile shows it too): a problem line when an open to-do's `due` is earlier than the `due` of an open to-do it comes after. Only dates written in the notes are compared; a missing or unreadable `due`, equal dates and finished parents give no line. `hasPlan` needs no change (a warning needs an `after`).
+- Tests (new `tests/planning-plan-map.test.ts`): chain, two-parent join, two separate chains, cycle, all finished, start step with finished steps before it; unlinked to-dos off the map; `chainOf` on a chain, a join and a cycle. In `tests/planning-plan.test.ts`: the date warning (earlier, equal, no date, finished parent).
+- Done when: tests and lint pass. The date warning can be seen in the Plan tile; nothing else to see in Obsidian.
 
 ### Phase 4b — Draw the card map in the hub
 - Depends on: 4a. Model: Sonnet, after one question to the user (where it sits: under the Plan tile is the default).
@@ -91,6 +110,11 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Scroll: on first draw the box is scrolled so the start step is at the left edge (finished steps off to the left). A redraw keeps the scroll position the user left.
 - Click a card opens the to-do (`app.workspace.openLinkText`; Ctrl / Cmd-click = new tab). Nothing is drawn when the project has no plan.
 - `Project hub.md` gets the block; CSS in `vault-theme.css`; `hub-body` Tidy rule as in 3a.
+- Added 2026-10-12:
+  - **Unlinked list:** the to-dos 4a keeps off the map are drawn as a plain list beside the map (under it when the note is narrow), each opening its to-do; no list when there are none.
+  - **Hover highlight:** hovering a card gives it and its `chainOf` cards and arrows a class; the rest are dimmed in CSS. Hover does not exist on a phone: desktop only unless the user asks for a tap gesture (click is taken by "open").
+  - **Right-click menu** on a map card (Obsidian `Menu`): Open, Open in new tab, Mark done (writes `done: true` with `app.fileManager.processFrontMatter`; not shown on a finished card). Not verified: that the to-do engine then stamps `done_on` as it does for a tick on the board (`src/planning/todo.ts:58-62`), and a long press on a phone.
+  - If the session runs long, the right-click menu moves to the start of 4c; say so in the phase result.
 - Unknown until seen: arrows crossing on a big plan, a wide plan, Live Preview vs Reading view, a phone.
 - Done when: tests for anything pure (pixel maths, scroll target); the user sees one real project drawn.
 
@@ -99,8 +123,27 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Drag from a card's handle to another card: the second to-do gets the first in `after` (`app.fileManager.processFrontMatter`, appending a link; an existing single value becomes a list). Click an arrow, then confirm, removes that link. A link that would make a loop is refused with a notice (the check is pure code, tested). No card moves: positions are not saved.
 - Spike first (none verified): pointer events inside a rendered block in Live Preview (the editor may take the drag), touch dragging on a phone inside a scrolling note, and that the block's own redraw after the write does not fight the drag. If the phone cannot do it, linking is desktop only and says so.
 - Tests: the patch to `after` (add to empty, add to one, add to a list, remove, loop refused, already linked).
+- Added 2026-10-12:
+  - **Draw first:** the new arrow is drawn as soon as the card is dropped, before the write; if the write fails the arrow is removed and a notice says so. Same for removing an arrow. Part of the spike (the redraw after the write must not fight this).
+  - **Undo:** the notice after a link or an unlink has an Undo that writes the opposite patch. It undoes that one change only; there is no undo shared with the editor or the board.
+- Tests: also the opposite patch (link then undo, unlink then undo give the first value back, a single value stays a single value).
 - Done when: tests; the user links and unlinks two to-dos in Obsidian and the Plan tile follows.
-- Later, only if asked: tick done on a card, saved positions.
+- Later, only if asked: saved positions.
+
+### Phase 4d — List to sequence
+- Depends on: 4c (its `after` patch). Model: Sonnet, after one question to the user.
+- A command that links to-dos in order by writing `after`: the second comes after the first, the third after the second. Ask at the start which list it reads: the to-do links selected in a note (default), or a project's open to-dos in Plan tile order.
+- Only to-dos of one project; an existing `after` is kept and added to; a link that would make a loop is refused (4c's check); a preview of what will be written, then one confirm.
+- Tests: the list of patches for three to-dos, one already linked, a loop, a link that is not a to-do, two projects.
+- Done when: tests and lint pass; the user runs it on one list in Obsidian.
+
+### Phase 4e — Subtasks (`sub`)
+- Depends on: 4b seen by the user (so the questions can be answered from a real map). Model: Opus for the questions, then Sonnet.
+- A subtask is a to-do with `sub: [[Parent to-do]]` (one link, on the child). `readPlan` reads it; the parent's subtasks are worked out. Typed by hand at first.
+- Ask at the start (not decided): do subtasks show as their own cards on the map or as a count on the parent's card; do they show on the board; is the parent finished or only marked when all its subtasks are done (default: marked, never ticked automatically); does New to-do ask it; can a subtask have its own `after`.
+- Problems reported, nothing invented: `sub` naming a note that is not a to-do of the project, itself, or a loop.
+- Tests: fixture with a parent and two subtasks, a missing parent, a loop.
+- Done when: tests and lint pass; the user gives one to-do two subtasks and sees them in the hub.
 
 ### Phase 4 (superseded: `plan` block, Mermaid)
 - Replaced 2026-10-12 by Phases 4a-4c (card map). Kept for the record.
@@ -122,7 +165,7 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Done when: the user sees it next to a countdown and a priority on one card.
 
 ## Order (checked 2026-10-12)
-3a → 3b → 4a → 4b → 4c → 5 → 6. 3a, 3b, 4a and 5 need only Phase 2 (done); 4b needs 4a; 4c needs 4b seen by the user; 6 is independent and still starts with its own spike. Each is one session.
+3a → 3b → 4a → 4b → 4c → 4d → 4e → 5 → 6 (4d and 4e added 2026-10-12). 3a, 3b, 4a and 5 need only Phase 2 (done); 4b needs 4a; 4c needs 4b seen by the user; 4d needs 4c's patch; 4e needs 4b seen; 6 is independent and still starts with its own spike. Each is one session.
 
 ## Verification
 Tests per phase; each phase is tests-only until the user tries it in Obsidian (say so in STATUS). Known engine answers are untouched, none of this changes `calc`.
