@@ -36,13 +36,15 @@ if (series.length > 1) {
 // Due date: optional (Enter on empty = none); a countdown badge is offered only when a date is set. Esc cancels.
 // `due` is a date property in this vault (set once here, Obsidian keeps it in .obsidian/types.json).
 try { if (app.metadataTypeManager?.getAssignedType?.("due") !== "date") { await app.metadataTypeManager?.setType?.("due", "date"); } } catch (e) { /* older Obsidian: due stays text */ }
-let due = "", prompt = "Due date? (YYYY-MM-DD, Enter = none, Esc to cancel)";
+const parseDue = tp.user.vtAsk.parseDue;   // words like "fri" or "next mon"; an older vtAsk.js has none (then only YYYY-MM-DD)
+let due = "", prompt = "Due date? (YYYY-MM-DD, or today, tomorrow, fri, next mon; Enter = none, Esc to cancel)";
 while (true) {
   const d = await tp.user.vtAsk(tp, prompt);
   if (d === null) { throw new Error("Cancelled - no due date"); }
   if (d === "") { break; }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + "T00:00:00"))) { due = d; break; }
-  prompt = `"${d}" is not a date. Use YYYY-MM-DD (Enter = none, Esc to cancel)`;
+  const words = parseDue ? parseDue(d, new Date()) : (/^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + "T00:00:00")) ? d : null);
+  if (words) { due = words; break; }
+  prompt = `"${d}" is not a date. Use YYYY-MM-DD, or today, tomorrow, fri, next mon (Enter = none, Esc to cancel)`;
 }
 let countdown = false;
 if (due) {
