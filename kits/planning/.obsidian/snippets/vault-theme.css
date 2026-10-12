@@ -443,8 +443,8 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt a.vt-back:hover { color: var(--text-normal); text-decoration: underline; }
 
 /* Project hub card map (src/planning/plan-map-render.ts, show: project-map) */
-.vt-map { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; }
-.vt-map-scroll { flex: 1 1 320px; min-width: 0; overflow-x: auto; }
+.vt-map { display: flex; flex-direction: column; gap: 12px; }
+.vt-map-scroll { min-width: 0; overflow-x: auto; }
 .vt-map-canvas { position: relative; width: var(--vt-map-w); height: var(--vt-map-h); }
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 .vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
@@ -460,7 +460,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-cyclic { border-color: var(--text-error); }
 .vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.25; }
 .vt-map-arrow.vt-map-hl { stroke: var(--interactive-accent); stroke-width: 2.5; }
-.vt-map-unlinked { flex: 0 1 200px; }
+.vt-map-unlinked { border-top: 1px solid var(--vt-divider); padding-top: 8px; }
 .vt-map-unlinked-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 4px; }
 .vt-map-unlinked ul { list-style: none; padding: 0; margin: 0; }
 .vt-map-unlinked li { padding: 3px 0; margin: 0; }
