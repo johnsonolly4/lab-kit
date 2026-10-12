@@ -95,3 +95,4 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-12 — Rig template (user, reply): no `Analysis` property. The Analysis table is the one source; a property typed by hand would drift from it. If a rig list filtered by analysis is wanted later, the property is filled from the table.
 
 - 2026-10-12 (user, chat): the Rigs folder defaults to `03 Lab Book/Rigs` (greyed placeholder, like the Templates folder), so rig features are on from the start; batch setups are rig notes too (Reactor + Heater + Stirrer rows, no Feeds chain), no separate template; the Rig snippet takes its section heading from the rig note's `Setup heading` property (default `Flow platform setup`).
+- 2026-10-12: Rig facts shown under the diagram come from a hand-written `## Summary` table in the rig note (user choice over marking whole tables or columns); parts tables stay at the bottom.
