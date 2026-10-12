@@ -19,7 +19,7 @@ export interface PlanRow {
   order: number | null;
   /** `priority` 1, 2 or 3 (1 = highest); none otherwise. */
   priority: number | null;
-  /** Open, and at least one of its `after` to-dos is not done. */
+  /** Open, and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
   blocked: boolean;
   /** The lab note named by `experiment` (its `Status` as written, "" when empty; path "" when no such lab note), or null. */
   experiment: { name: string; path: string; status: string } | null;
@@ -75,6 +75,19 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     problems.push(`These to-dos wait on each other in a circle: ${left.map(t => `"${t.name}"`).join(", ")}.`);
     placed.push(...left);
   }
+  const finished = (n: NoteRec): boolean => isFinished({ done: n.fm.done, day: n.fm.day });
+  /** Some to-do before `t`, through any number of links, is not finished. */
+  const openBefore = (t: NoteRec): boolean => {
+    const seen = new Set<NoteRec>(), todo = [...parents.get(t.path)!];
+    while (todo.length) {
+      const n = todo.pop()!;
+      if (seen.has(n)) continue;
+      seen.add(n);
+      if (!finished(n)) return true;
+      todo.push(...parents.get(n.path)!);
+    }
+    return false;
+  };
   const rows = placed.map((t): PlanRow => {
     const ps = parents.get(t.path)!;
     const done = isFinished({ done: t.fm.done, day: t.fm.day });
@@ -86,7 +99,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       if (!lab) problems.push(`"${t.name}" names experiment "${target}", which is not a lab note.`);
     }
     return { path: t.path, name: t.name, done, experiment, after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
-      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && ps.some(p => !isFinished({ done: p.fm.done, day: p.fm.day })) };
+      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
   });
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
   const byPath = new Map(rows.map(r => [r.path, r]));

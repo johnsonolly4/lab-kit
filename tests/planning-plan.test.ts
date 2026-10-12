@@ -175,3 +175,20 @@ describe("projectExperiments", () => {
     expect(tile([td("A", { experiment: "[[E5]]" })], [lab("E5", "")])[0].badges).toEqual([{ text: "\u00b7 A", cls: "vt-muted" }]);
   });
 });
+
+describe("blocked through the whole chain", () => {
+  const blocked = (todos: NoteRec[]) => Object.fromEntries(readPlan(todos, hub).rows.map(r => [r.name, r.blocked]));
+  it("a to-do ticked out of order does not unblock what comes after it", () => {
+    expect(blocked([td("A"), td("B", { after: "[[A]]", done: true }), td("C", { after: "[[B]]" })])).toEqual({ A: false, B: false, C: true });
+  });
+  it("once everything before is finished it is ready", () => {
+    expect(blocked([td("A", { done: true }), td("B", { after: "[[A]]", done: true }), td("C", { after: "[[B]]" })])).toEqual({ A: false, B: false, C: false });
+  });
+  it("a long chain through finished middle to-dos, and a join with one open branch", () => {
+    expect(blocked([td("A"), td("B", { after: "[[A]]", day: "Done" }), td("C", { after: "[[B]]", done: true }), td("D", { after: "[[C]]" })]).D).toBe(true);
+    expect(blocked([td("P", { done: true }), td("Q"), td("J", { after: ["[[P]]", "[[Q]]"] })]).J).toBe(true);
+  });
+  it("a cycle ends", () => {
+    expect(blocked([td("A", { after: "[[B]]" }), td("B", { after: "[[A]]" })])).toEqual({ A: true, B: true });
+  });
+});

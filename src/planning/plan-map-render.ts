@@ -80,15 +80,32 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
     dot.setPointerCapture(down.pointerId);
     const ac = new AbortController();
     const at = (x: number, y: number): { x: number; y: number } => { const w = wrap.getBoundingClientRect(); return { x: x - w.left, y: y - w.top }; };
-    const d = dot.getBoundingClientRect(), start = at(d.left + d.width / 2, d.top + d.height / 2);
     const svg = wrap.createSvg("svg", { cls: "vt-map-overlay" });
-    const line = svg.createSvg("line", { cls: "vt-map-drag", attr: { x1: String(start.x), y1: String(start.y), x2: String(start.x), y2: String(start.y) } });
+    const line = svg.createSvg("line", { cls: "vt-map-drag" });
+    let pointer = { x: down.clientX, y: down.clientY };
     let over: HTMLElement | null = null;
     const targetAt = (e: PointerEvent): HTMLElement | null => {
       const t = dot.ownerDocument.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-plan-path]") ?? null;
       return t && t.dataset.planPath !== from ? t : null;
     };
+    const scroller = wrap.querySelector<HTMLElement>(".vt-map-scroll");
+    const place = (): void => {   // the line runs from the dot (it moves when the map scrolls) to the pointer
+      const d = dot.getBoundingClientRect(), s = at(d.left + d.width / 2, d.top + d.height / 2), p = at(pointer.x, pointer.y);
+      line.setAttr("x1", String(s.x)); line.setAttr("y1", String(s.y)); line.setAttr("x2", String(p.x)); line.setAttr("y2", String(p.y));
+      const t = dot.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>("[data-plan-path]") ?? null;
+      const target = t && t.dataset.planPath !== from ? t : null;
+      if (target !== over) { over?.removeClass("vt-map-drop"); over = target; over?.addClass("vt-map-drop"); }
+    };
+    place();
+    const EDGE = 48, STEP = 14;   // the map scrolls sideways by itself while the pointer is near its left or right edge
+    const scrolling = window.setInterval(() => {
+      if (!scroller) return;
+      const b = scroller.getBoundingClientRect();
+      if (pointer.x < b.left + EDGE) scroller.scrollLeft -= STEP; else if (pointer.x > b.right - EDGE) scroller.scrollLeft += STEP; else return;
+      place();
+    }, 30);
     const finish = (e: PointerEvent | null): void => {
+      window.clearInterval(scrolling);
       ac.abort();
       over?.removeClass("vt-map-drop");
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
@@ -103,12 +120,7 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       line.setAttr("x2", String(end.x)); line.setAttr("y2", String(end.y)); line.addClass("vt-map-pending");
       link(o, from, to).catch(() => { svg.remove(); new Notice("Could not link those to-dos."); });
     };
-    dot.addEventListener("pointermove", e => {
-      const p = at(e.clientX, e.clientY);
-      line.setAttr("x2", String(p.x)); line.setAttr("y2", String(p.y));
-      const t = targetAt(e);
-      if (t !== over) { over?.removeClass("vt-map-drop"); over = t; over?.addClass("vt-map-drop"); }
-    }, { signal: ac.signal });
+    dot.addEventListener("pointermove", e => { pointer = { x: e.clientX, y: e.clientY }; place(); }, { signal: ac.signal });
     dot.addEventListener("pointerup", e => finish(e), { signal: ac.signal });
     dot.addEventListener("pointercancel", () => finish(null), { signal: ac.signal });
     dot.ownerDocument.addEventListener("keydown", e => { if (e.key === "Escape") finish(null); }, { signal: ac.signal });

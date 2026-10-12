@@ -136,6 +136,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 
 - **Phase 4c result (2026-10-12, tests for the pure parts only, NOT seen in Obsidian; the spike is the user's try):** `src/planning/plan-link.ts` (`addAfter`, `removeAfter`, `canLink`), the dot, the drag line, arrow click menu and Undo notices in `src/planning/plan-map-render.ts`, `.vt-map-handle` etc. in `vault-theme.css`. Decided with the user: dot on hover at the right edge, click an arrow then Remove link (no confirm box). Rows in Not linked are drag sources and targets too, so an unlinked to-do can join the map. The temporary line stays as the drawn arrow until the map redraws after the write; a failed write removes it. Undo undoes that one change only; item order in `after` may change.
 
+- **Phase 4c user try (2026-10-12/13, in Obsidian):** Remove link works; Live Preview and Reading view both work; phone not tried. Found and fixed 2026-10-13 (tests / CSS only, not seen): the drag dot sat inside the card (now on the edge, `overflow: visible`); the map could not be scrolled mid-drag (it now scrolls itself near the left / right edge, `dragLink`); a card was not blocked when the to-do directly before it was ticked out of order (blocked is now transitive, `readPlan`, user decision: ticking out of order stays allowed, blocked rules still apply).
+
 ### Phase 4d — List to sequence
 - Depends on: 4c (its `after` patch). Model: Sonnet, after one question to the user.
 - A command that links to-dos in order by writing `after`: the second comes after the first, the third after the second. Ask at the start which list it reads: the to-do links selected in a note (default), or a project's open to-dos in Plan tile order.

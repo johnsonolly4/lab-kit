@@ -450,7 +450,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-spacer { flex: 0 0 calc(100% - 200px); }
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 .vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
-.vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px; overflow: hidden; cursor: pointer;
+.vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px; cursor: pointer;
   background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 10px; }
 .vt-map-card:hover { border-color: var(--interactive-accent); }
 .vt-map-tick { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: pointer; }
@@ -480,7 +480,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 
 /* Plan map: linking by dragging a card's dot (src/planning/plan-map-render.ts) */
 .vt-map { position: relative; }
-.vt-map-handle { position: absolute; right: 6px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
+.vt-map-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
 .vt-map-card:hover .vt-map-handle, .vt-map-unlinked-row:hover .vt-map-handle { opacity: 1; }
 .vt-map-unlinked-row { position: relative; padding-left: 22px; }
 .vt-map-unlinked-row .vt-map-handle { left: 0; right: auto; }
