@@ -16,6 +16,8 @@ fields:
 [[{{rig}}]]
 
 {{rig-diagram:rig}}
+
+{{rig-summary:rig}}
 {{#append "# Flow platform setup" from rig.Setup heading}}
 Rig: [[{{rig}}]]
 {{note-line:rig.Tubing}}

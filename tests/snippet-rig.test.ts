@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Notice, TFile, TFolder } from "obsidian";
 import { readFileSync } from "node:fs";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
-import { readRig } from "../src/rig/parts";
+import { readRig, readSummary } from "../src/rig/parts";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 import { miniYaml } from "./token-snippets";
 
@@ -20,8 +20,8 @@ const TEMPLATE = asJsonHeader(SHIPPED);
 
 const file = (path: string): TFile => new TFile({ path, basename: path.replace(/\.md$/, "").split("/").pop()! });
 
-function setup(opts: { note: string; kit?: Partial<KitData> }) {
-  const rigs: Record<string, string> = { "Rigs/Rig A.md": RIG, "Rigs/Batch.md": readFileSync("tests/fixtures/rigs/batch-vessel.md", "utf8") };
+function setup(opts: { note: string; kit?: Partial<KitData>; rig?: string }) {
+  const rigs: Record<string, string> = { "Rigs/Rig A.md": opts.rig ?? RIG, "Rigs/Batch.md": readFileSync("tests/fixtures/rigs/batch-vessel.md", "utf8") };
   const folder = new TFolder({ path: "Rigs", children: Object.keys(rigs).map(file) });
   const files: Record<string, string> = { "S/t.md": TEMPLATE, ...rigs };
   const doc = { text: opts.note };
@@ -92,5 +92,30 @@ describe("the shipped Rig snippet", () => {
   it("is kept off by the manifest while the Rigs folder is empty", () => {
     const m = JSON.parse(readFileSync("kits/lab/kit-manifest.json", "utf8")) as { files: { src: string; needs?: string; optional?: boolean }[] };
     expect(m.files.find(f => f.src === "Templates/Snippets/14 Rig.md")).toMatchObject({ needs: "rigsFolder", optional: true });
+  });
+});
+
+describe("Rig snippet: Summary table", () => {
+  const SUMMARY = "| Item | Value |\n|---|---|\n| Reactor volume | 2 mL |";
+  const withSummary = RIG.replace("\n## ", `\n## Summary\n${SUMMARY}\n\n## `);
+  it("readSummary gives the table under a Summary heading, and nothing else is a Summary", () => {
+    expect(withSummary).not.toBe(RIG);
+    expect(readSummary(withSummary)).toBe(SUMMARY);
+    expect(readSummary(RIG)).toBe("");
+    expect(readSummary("## Summary\n```\n| a |\n|---|\n```\n")).toBe("");
+    expect(readRig(withSummary).mermaid).toBe(readRig(RIG).mermaid);
+    expect(readRig(withSummary).tables).toHaveLength(readRig(RIG).tables.length);
+  });
+  it("the snippet puts it under the diagram and not again among the bottom tables", async () => {
+    const { st, doc } = setup({ note: NOTE, rig: withSummary });
+    const out = await st.run(tp({ rig: "Rig A" }), file("S/t.md"));
+    expect(out).toContain(`${DIAGRAM}\n\n${SUMMARY}\n`);
+    expect(doc.text).not.toContain(SUMMARY);   // the bottom section (written into the note) has the parts tables only
+  });
+  it("a rig without a Summary table inserts nothing extra", async () => {
+    const { st, doc } = setup({ note: NOTE });
+    const out = await st.run(tp({ rig: "Rig A" }), file("S/t.md"));
+    expect(out).not.toContain("| Item |");
+    expect(out).toBe(`\n[[Rig A]]\n\n${DIAGRAM}\n`);
   });
 });

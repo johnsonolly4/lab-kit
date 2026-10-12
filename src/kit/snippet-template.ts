@@ -56,6 +56,8 @@ export interface TemplateEnv {
   rigTables(note: string, hashes: string): string;
   /** The diagram of the rig note called `note` as a Mermaid code block. Throws a TemplateError when it has no parts table. */
   rigDiagram(note: string): string;
+  /** The Summary table of the rig note called `note`, or "" when it has none. */
+  rigSummary(note: string): string;
 }
 
 /** The key of the "Codes from" choice the form adds after a `suggest: codes` field (not a template field, so templates never see it). */
@@ -163,7 +165,8 @@ type Alt =
   | { k: "noteProp"; field: string; property: string }
   | { k: "noteLine"; field: string; property: string }
   | { k: "rigTables"; field: string; hashes: string }
-  | { k: "rigDiagram"; field: string };
+  | { k: "rigDiagram"; field: string }
+  | { k: "rigSummary"; field: string };
 
 type Node =
   | { t: "text"; s: string }
@@ -237,6 +240,7 @@ function parseAlt(src: string): Alt {
   if ((m = /^note-line:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteLine", field: m[1], property: m[2].trim() };
   if ((m = /^rig-tables:([A-Za-z_][\w-]*)(?:\s+(#{1,6}))?$/.exec(s))) return { k: "rigTables", field: m[1], hashes: m[2] ?? "##" };
   if ((m = /^rig-diagram:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigDiagram", field: m[1] };
+  if ((m = /^rig-summary:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigSummary", field: m[1] };
   if (NAME.test(s)) return { k: "ref", name: s };
   throw new TemplateError(`Unknown token {{${s}}}.`);
 }
@@ -276,7 +280,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
   const check = (a: Alt, tag: string) => {
     if (a.k === "ref" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
-    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram") field(a.field, tag);
+    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSummary") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
   };
   for (const tok of tokenize(src)) {
@@ -344,11 +348,13 @@ class Filler {
 
   render(nodes: Node[]): string {
     let out = "";
-    let dropBreak = false;   // an empty {{note-line}} on a line of its own leaves no blank line
+    let dropBreak = false;   // an empty {{note-line}} or {{rig-summary}} on a line of its own leaves no blank line
     for (const n of nodes) {
       if (n.t === "text") { out += dropBreak ? n.s.replace(/^\r?\n/, "") : n.s; dropBreak = false; continue; }
       dropBreak = false;
-      if (n.t === "expr") { const v = this.expr(n.alts); out += v; dropBreak = !v && n.alts.length === 1 && n.alts[0].k === "noteLine"; }
+      if (n.t === "expr") { const v = this.expr(n.alts); out += v; dropBreak = !v && n.alts.length === 1 && (n.alts[0].k === "noteLine" || n.alts[0].k === "rigSummary");
+        if (dropBreak && n.alts[0].k === "rigSummary") out = out.replace(/\r?\n$/, "");   // its blank line above goes too
+      }
       else if (n.t === "append") this.appends.push({ heading: this.appendHeading(n), level: n.level, text: this.render(n.body) });
       else if (n.t === "if") {
         const v = this.answers[n.key] ?? "";
@@ -415,6 +421,7 @@ class Filler {
       case "noteProp": { const note = this.answers[a.field] ?? ""; return note ? this.env.noteText(note, a.property) : ""; }
       case "rigTables": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigTables(note, a.hashes) : ""; }
       case "rigDiagram": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigDiagram(note) : ""; }
+      case "rigSummary": { const note = this.answers[a.field] ?? ""; const v = note ? this.env.rigSummary(note) : ""; return v; }
     }
   }
 

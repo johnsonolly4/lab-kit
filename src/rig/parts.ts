@@ -75,6 +75,30 @@ function toMermaid(parts: RigPart[], links: RigLink[]): string {
   return out.join("\n");
 }
 
+/** The first table under a heading called Summary, as written ("" when there is none). It has no ID / Feeds columns, so it is not a parts table. */
+export function readSummary(text: string): string {
+  const lines = text.split(/\r?\n/);
+  let heading = "", fence = "", i = 0;
+  if (lines[0]?.trim() === "---") {
+    const end = lines.findIndex((l, n) => n > 0 && l.trim() === "---");
+    if (end > 0) i = end + 1;
+  }
+  for (; i < lines.length; i++) {
+    const line = lines[i].trim();
+    const f = /^(`{3,}|~{3,})/.exec(line);
+    if (fence) { if (f && line === f[1] && f[1][0] === fence[0] && f[1].length >= fence.length) fence = ""; continue; }
+    if (f) { fence = f[1]; continue; }
+    const h = /^#{1,6}\s+(.*?)\s*#*$/.exec(line);
+    if (h) { heading = plain(h[1]).toLowerCase(); continue; }
+    if (heading !== "summary" || !line.startsWith("|") || !isSeparator(lines[i + 1] ?? "")) continue;
+    const start = i;
+    i += 2;
+    while (i < lines.length && lines[i].trim().startsWith("|")) i++;
+    return lines.slice(start, i).map(l => l.trim()).join("\n");
+  }
+  return "";
+}
+
 /** Read every parts table in a note's text. */
 export function readRig(text: string): Rig {
   const tables = findTables(text);

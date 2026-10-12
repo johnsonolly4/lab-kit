@@ -1,7 +1,7 @@
 // The note and vault side of snippet token templates: the engine's TemplateEnv built from the note text, and the chemical-class filter.
 // Pure (no Obsidian imports): the note lookups are passed in. Mirrors the helpers inside labSnippets.js.
 import { TemplateError, type TemplateEnv } from "./snippet-template";
-import { readRig } from "../rig/parts";
+import { readRig, readSummary } from "../rig/parts";
 
 const F = "```";
 
@@ -70,6 +70,7 @@ export function makeEnv(note: string, prefix: string, noteProperty: (noteName: s
       const { mermaid } = rigOf(name);
       return mermaid ? F + "mermaid\n" + mermaid + "\n" + F : "";
     },
+    rigSummary: name => readSummary(notes.text(name) ?? ""),
   };
 }
 

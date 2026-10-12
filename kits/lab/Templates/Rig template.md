@@ -6,6 +6,13 @@ Setup heading:
 ```rig
 ```
 
+## Summary
+| Item | Value |
+|---|---|
+| Pump 1 contents | |
+| Flow rate range | |
+| Reactor volume | |
+
 ## Pumps
 | ID | Model | Carries | Tubing in | Tubing out | Pressure limit | Feeds |
 |---|---|---|---|---|---|---|
