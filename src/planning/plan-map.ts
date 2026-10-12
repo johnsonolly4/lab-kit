@@ -71,7 +71,7 @@ export function chainOf(plan: Plan, path: string): Set<string> {
   return out;
 }
 
-export const CARD_W = 190, CARD_H = 92, GAP_X = 56, GAP_Y = 14, PAD = 12;
+export const CARD_W = 190, CARD_H = 108, GAP_X = 56, GAP_Y = 14, PAD = 12;
 
 export interface MapGeometry {
   width: number; height: number;

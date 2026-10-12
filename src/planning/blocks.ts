@@ -52,6 +52,7 @@ export class PlanningBlocks {
 
 class BlockView extends MarkdownRenderChild {
   private drawing = 0;
+  private mapScroll: number | null = null;   // where the user scrolled the plan map, null = not by hand
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
 
@@ -81,11 +82,10 @@ class BlockView extends MarkdownRenderChild {
       this.card(box);
     }
     if (run !== this.drawing) return;
-    const kept = this.containerEl.querySelector<HTMLElement>(".vt-map-scroll")?.scrollLeft;   // a redraw keeps the map where the user scrolled it
     this.containerEl.empty();
     this.containerEl.appendChild(box);
     const scroller = box.querySelector<HTMLElement>(".vt-map-scroll");
-    if (scroller) scroller.scrollLeft = kept ?? Number(scroller.dataset.startScroll ?? 0);
+    if (scroller) this.placeMap(scroller);
   }
 
   /** The folder `path` exists; else a line saying it is missing (moved outside Obsidian?) in `box`. */
@@ -114,6 +114,19 @@ class BlockView extends MarkdownRenderChild {
     const w = meetingWindow(this.app.metadataCache.getCache(this.sourcePath)?.frontmatter ?? {});
     if (!w) box.createDiv({ cls: "vt-muted", text: "This note has no since and date properties." });
     return w;
+  }
+
+  /** Puts the map where the user left it, else at the start step. Obsidian lays the note out a little after the block is added, so the position is set again on each resize for a moment; only a scroll after that counts as the user's. */
+  private placeMap(scroller: HTMLElement): void {
+    const target = this.mapScroll ?? Number(scroller.dataset.startScroll ?? 0);
+    let placing = true;
+    scroller.addEventListener("scroll", () => { if (!placing) this.mapScroll = scroller.scrollLeft; });
+    const apply = (): void => { scroller.scrollLeft = target; };
+    apply();
+    const watch = new ResizeObserver(() => { if (placing) apply(); });
+    watch.observe(scroller);
+    for (const child of Array.from(scroller.children)) watch.observe(child);
+    activeWindow.setTimeout(() => { placing = false; watch.disconnect(); }, 800);
   }
 
   /** The lab notes, for a to-do's `experiment` link; none when the lab folder is not set (nothing is then looked up). */

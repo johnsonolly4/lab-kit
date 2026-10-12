@@ -36,8 +36,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     const g = mapGeometry(map);
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
-    if (g.scrollLeft > 0) canvas.addClass("vt-map-ahead");   // room to scroll the start step to the left edge even when everything fits
-    canvas.setCssProps({ "--vt-map-scroll": `${g.scrollLeft}px`, "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
+    if (g.scrollLeft > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the left edge even when everything fits
+    canvas.setCssProps({ "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
     const svg = canvas.createSvg("svg", { cls: "vt-map-arrows", attr: { width: String(g.width), height: String(g.height) } });
     const arrows = new Map<SVGPathElement, { from: string; to: string }>();
     for (const c of g.curves) arrows.set(svg.createSvg("path", { cls: "vt-map-arrow", attr: { d: c.d } }), c);
@@ -63,9 +63,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (r.due) meta.createSpan({ cls: "vt-muted", text: r.due });
       if (r.blocked) meta.createSpan({ cls: "vt-muted", text: "blocked" });
       const exp = r.experiment;
-      if (exp?.status) {   // the experiment's status; a click opens the lab note
-        const badge = meta.createSpan({ cls: `vt-badge ${statusClass(exp.status)} vt-map-exp`, text: exp.status, attr: { title: exp.name } });
-        badge.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, exp.path, Keymap.isModEvent(e)); });
+      if (exp) {   // the experiment: its status and name; a click on the row opens the lab note (no note found: the name alone)
+        const row = el.createDiv({ cls: exp.path ? "vt-map-exp" : "vt-map-exp vt-map-exp-missing", attr: { title: exp.name } });
+        if (exp.status) row.createSpan({ cls: `vt-badge ${statusClass(exp.status)}`, text: exp.status });
+        row.createSpan({ cls: "vt-map-exp-name", text: exp.name });
+        if (exp.path) row.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, exp.path, Keymap.isModEvent(e)); });
       }
       if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}` });
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });

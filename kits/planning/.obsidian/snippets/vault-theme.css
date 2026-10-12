@@ -444,9 +444,10 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 
 /* Project hub card map (src/planning/plan-map-render.ts, show: project-map) */
 .vt-map { display: flex; flex-direction: column; gap: 12px; }
-.vt-map-scroll { min-width: 0; overflow-x: auto; }
-.vt-map-canvas { position: relative; width: var(--vt-map-w); height: var(--vt-map-h); }
-.vt-map-ahead { margin-right: max(0px, calc(100% - var(--vt-map-w) + var(--vt-map-scroll))); }
+.vt-map-scroll { display: flex; min-width: 0; overflow-x: auto; }
+.vt-map-canvas { position: relative; flex: none; width: var(--vt-map-w); height: var(--vt-map-h); }
+/* Empty room after the map, so the next open step can be scrolled to the left edge even when all steps fit */
+.vt-map-spacer { flex: 0 0 calc(100% - 200px); }
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 .vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
 .vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px; overflow: hidden; cursor: pointer;
@@ -458,7 +459,10 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-tick svg { width: 20px; height: 20px; }
 .vt-map-title { padding-right: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: var(--font-ui-smaller); }
-.vt-map-exp { cursor: pointer; }
+.vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: pointer; }
+.vt-map-exp:hover .vt-map-exp-name { text-decoration: underline; }
+.vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-exp-missing { cursor: default; color: var(--text-faint); }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-done { opacity: 0.65; }
 .vt-map-done .vt-map-title { text-decoration: line-through; }
