@@ -1,6 +1,6 @@
 // The project plan engine (src/planning/plan.ts): order, blocked, problems.
 import { describe, it, expect } from "vitest";
-import { hasPlan, planLines, readPlan } from "../src/planning/plan";
+import { hasPlan, planLines, readPlan, statusClass } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
 const T = "00 Planning/To-dos/";
@@ -135,5 +135,19 @@ describe("experiment", () => {
     const p = rowOf([td("A", { experiment: "[[X1]]" }), td("B", { after: "[[A]]", experiment: "[[X2]]" }), td("C", { done: true, experiment: "[[X1]]" })], labs);
     const { lines } = planLines(p);
     expect(lines.map(l => [l.text, l.badges.map(b => b.text)])).toEqual([["A", ["Started"]], ["B", ["after A", "Closed"]], ["C", ["Started"]]]);
+  });
+});
+
+describe("statusClass", () => {
+  it("the four lab statuses have their own class; anything else is neutral", () => {
+    expect(["Planned", "Started", "Processing results", "Closed"].map(statusClass)).toEqual(["vt-planned", "vt-started", "vt-processing-results", "vt-closed"]);
+    expect(statusClass(" started ")).toBe("vt-started");
+    expect(statusClass("On hold")).toBe("vt-planned");
+    expect(statusClass("")).toBe("vt-planned");
+  });
+  it("the Plan tile badge carries the class", () => {
+    const labs = [note("03 Lab Book/Notes/X1.md", { Status: "Closed" })];
+    const { lines } = planLines(readPlan([td("A", { experiment: "[[X1]]" })], hub, labs));
+    expect(lines[0].badges[0]).toEqual({ text: "Closed", cls: "vt-badge vt-closed" });
   });
 });

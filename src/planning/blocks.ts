@@ -116,6 +116,12 @@ class BlockView extends MarkdownRenderChild {
     return w;
   }
 
+  /** The lab notes, for a to-do's `experiment` link; none when the lab folder is not set (nothing is then looked up). */
+  private labNotes(): NoteRec[] | undefined {
+    const lab = this.owner.kit().labFolder.trim();
+    return lab ? this.owner.notesIn(kitJoin(lab)) : undefined;
+  }
+
   /** The note this block is in also has a `project-map` block (an old hub that was never tidied does not: it keeps its list). */
   private hubHasMap(): boolean {
     return /^show:\s*project-map\s*$/m.test(this.noteText);
@@ -277,7 +283,7 @@ class BlockView extends MarkdownRenderChild {
       case "project-plan": {   // on a project hub: next steps, then blocked ones, finished ones behind Show all; nothing when the project has no plan
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
-        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile));
+        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
         if (!hasPlan(plan)) return;
         if (kit.planView === "map" && this.hubHasMap()) return;   // the map replaces the list (Settings → Lab Kit → Project plan view)
         const { lines, finished } = planLines(plan);
@@ -292,7 +298,7 @@ class BlockView extends MarkdownRenderChild {
       case "project-map": {   // on a project hub: the plan as cards joined by arrows; nothing when the project has no plan
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
-        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile));
+        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
         if (!hasPlan(plan)) return;
         box.addClass("vt-plan");
         box.createDiv({ cls: "vt-plan-title", text: "Plan" });

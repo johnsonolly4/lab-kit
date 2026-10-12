@@ -103,10 +103,16 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
 /** The project has a plan: some to-do comes after another or has an `order`, or a link is wrong (so the message shows). */
 export const hasPlan = (plan: Plan): boolean => plan.rows.some(r => r.after.length > 0 || r.order !== null) || plan.problems.length > 0;
 
+/** The badge class of a lab note status: `vt-` plus the status in lower case with hyphens (Planned, Started, Processing results, Closed have colours in the theme); anything else is neutral. */
+export function statusClass(status: string): string {
+  const slug = status.trim().toLowerCase().replace(/\s+/g, "-");
+  return ["planned", "started", "processing-results", "closed"].includes(slug) ? `vt-${slug}` : "vt-planned";
+}
+
 /** The Plan tile's lines: open ready rows (plan order), then blocked rows ("after X"), then finished rows (with "→ result"). `finished` counts the last group. */
 export function planLines(plan: Plan): { lines: ListLine[]; finished: number } {
   const line = (r: PlanRow, badges: Badge[]): ListLine => ({ path: r.path, text: r.name,
-    badges: r.experiment?.status ? [...badges, { text: r.experiment.status, cls: "vt-badge vt-planned" }] : badges });
+    badges: r.experiment?.status ? [...badges, { text: r.experiment.status, cls: `vt-badge ${statusClass(r.experiment.status)}` }] : badges });
   const ready = plan.rows.filter(r => !r.done && !r.blocked).map(r => line(r, []));
   const blocked = plan.rows.filter(r => r.blocked).map(r => line(r, [{ text: `after ${r.after.join(", ")}`, cls: "vt-muted" }]));
   const done = plan.rows.filter(r => r.done).map(r => line(r, r.result ? [{ text: `→ ${r.result}`, cls: "vt-muted" }] : []));

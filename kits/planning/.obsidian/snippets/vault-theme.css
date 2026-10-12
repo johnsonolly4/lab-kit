@@ -457,7 +457,8 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-done .vt-map-tick { color: var(--interactive-accent); }
 .vt-map-tick svg { width: 20px; height: 20px; }
 .vt-map-title { padding-right: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-map-meta { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); }
+.vt-map-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: var(--font-ui-smaller); }
+.vt-map-exp { cursor: pointer; }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-done { opacity: 0.65; }
 .vt-map-done .vt-map-title { text-decoration: line-through; }

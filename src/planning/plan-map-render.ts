@@ -1,7 +1,7 @@
 // Draws a project's card map (planning kit, `show: project-map`): cards in the vault theme, arrows behind them, the to-dos with no links in a list beside it.
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
-import type { Plan, PlanRow } from "./plan";
+import { statusClass, type Plan, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, type PlanMap } from "./plan-map";
 
 export interface MapOptions {
@@ -62,6 +62,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
       if (r.due) meta.createSpan({ cls: "vt-muted", text: r.due });
       if (r.blocked) meta.createSpan({ cls: "vt-muted", text: "blocked" });
+      const exp = r.experiment;
+      if (exp?.status) {   // the experiment's status; a click opens the lab note
+        const badge = meta.createSpan({ cls: `vt-badge ${statusClass(exp.status)} vt-map-exp`, text: exp.status, attr: { title: exp.name } });
+        badge.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, exp.path, Keymap.isModEvent(e)); });
+      }
       if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}` });
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));

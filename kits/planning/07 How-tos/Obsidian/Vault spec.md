@@ -147,6 +147,7 @@ Created with the **New to-do** button or command (`Alt+T`; template `Extras/Temp
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
 | `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
 | `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none (New to-do asks it; the board's Sort control on `priority` also orders cards 1, 2, 3) | me |
+| `experiment` | optional, by hand: one link to the lab note this to-do runs (`"[[ABC0014-A]]"`); the project plan shows that note's `Status` as a badge on the to-do's card. Display only; needs the Lab folder set | me |
 | `after`, `result`, `order` | for a to-do in a project, by hand for now: `after` = link(s) to the to-dos that come first, `result` = one line, `order` = a number; read by the project plan (coming), not asked at New to-do | me |
 | `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; `false` = not flagged | template / me |
 
