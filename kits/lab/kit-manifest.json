@@ -2,7 +2,7 @@
   "schema": 2,
   "id": "lab",
   "kit": "lab-notebook-kit",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "date": "2026-10-04",
   "rewrite": {
     "Extras/scripts": "scripts",
@@ -179,7 +179,7 @@
       "src": "Templates/Lab Book Template.md",
       "role": "templates",
       "path": "Lab Book Template.md",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "sha256": "dfeea800a7672cf3997f574a94d10d890e6ef3e563766ae9a7e60c42413a4845",
       "renamedFrom": [],
       "desc": "New experiment note: number, hazards, data folder button and sections"
