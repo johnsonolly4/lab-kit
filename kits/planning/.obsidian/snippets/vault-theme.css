@@ -477,3 +477,16 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-unlinked li { padding: 3px 0; margin: 0; }
 .vt-map-unlinked li::marker { content: ""; }
 .vt-map-unlinked li a.internal-link { color: var(--text-normal); text-decoration: none; }
+
+/* Plan map: linking by dragging a card's dot (src/planning/plan-map-render.ts) */
+.vt-map { position: relative; }
+.vt-map-handle { position: absolute; right: 6px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
+.vt-map-card:hover .vt-map-handle, .vt-map-unlinked-row:hover .vt-map-handle { opacity: 1; }
+.vt-map-unlinked-row { position: relative; padding-left: 22px; }
+.vt-map-unlinked-row .vt-map-handle { left: 0; right: auto; }
+.vt-map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
+.vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }
+.vt-map-drag.vt-map-pending { stroke-dasharray: none; }
+.vt-map-card.vt-map-drop, .vt-map-unlinked-row.vt-map-drop { outline: 2px solid var(--interactive-accent); }
+.vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.vt-map-hidden { display: none; }
