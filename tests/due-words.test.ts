@@ -53,7 +53,10 @@ describe("To-do template", () => {
     expect(tpl).toContain("today, tomorrow, fri, next mon");
     expect(tpl).toMatch(/parseDue \? parseDue\(d, new Date\(\)\) : /);
   });
-  it("has an empty priority key (1, 2, 3; 1 = highest, empty = none) after countdown", () => {
-    expect(tpl).toMatch(/^countdown: <% countdown %>\npriority:\n/m);
+  it("asks the priority with a text hint (Esc cancels), sets a number property, writes it after countdown", () => {
+    expect(tpl).toContain('["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3]');
+    expect(tpl).toContain('setType?.("priority", "number")');
+    expect(tpl).toContain("Cancelled - no priority choice");
+    expect(tpl).toMatch(/^countdown: <% countdown %>\npriority: <% priority %>\n/m);
   });
 });

@@ -144,7 +144,7 @@ Created with the **New to-do** button or command (`Alt+T`; template `Extras/Temp
 | `project` | link to a project hub, e.g. `"[[Flow rig]]"`, or empty | template / me |
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
 | `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
-| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none (type it by hand for now; New to-do does not ask) | me |
+| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none (New to-do asks it; the board's Sort control on `priority` also orders cards 1, 2, 3) | me |
 | `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; `false` = not flagged | template / me |
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); which meeting to raise it at (only when there are several series); a due date (Enter = none) and, with a date, whether to show a countdown. Esc at any box cancels the to-do. New to-dos get `cssclasses: [vt]`.

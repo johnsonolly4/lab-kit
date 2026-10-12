@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "360ebcf1399be2199fa32ffe699715accdc19fb3c0be05cf8c0419a7338d1f18",
+      "sha256": "211f6d5626bc3b436b3a267ad6f691d4460710405ba3ffafc46bf3fd9a2723cf",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -359,7 +359,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "1.0.1",
-      "sha256": "5c2b484522a941419f91255e9594920fe78bd0d2480d03f195c0ba3668e3edf1",
+      "sha256": "6834d569d8f9c0899a731a6cc047955299cdd5d68ec6fe69107310b7fd1848c1",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },

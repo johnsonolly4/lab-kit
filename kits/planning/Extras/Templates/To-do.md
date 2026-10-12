@@ -52,6 +52,11 @@ if (due) {
   if (c === null || c === undefined) { throw new Error("Cancelled - no countdown choice"); }
   countdown = c;
 }
+// Priority: optional, a number property (1 = highest). Esc cancels.
+try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") { await app.metadataTypeManager?.setType?.("priority", "number"); } } catch (e) { /* older Obsidian: priority stays text */ }
+const pr = await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
+if (pr === null || pr === undefined) { throw new Error("Cancelled - no priority choice"); }
+const priority = pr;
 // Keep the day of the board column it was made in (the board writes it before this runs);
 // anything else (the New to-do command, project cards) starts in Backlog.
 const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -72,7 +77,7 @@ rolled: false
 project: <% project ? `"[[${project}]]"` : "" %>
 due: <% due %>
 countdown: <% countdown %>
-priority:
+priority: <% priority %>
 meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 cssclasses:
   - vt
