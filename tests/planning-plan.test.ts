@@ -103,3 +103,37 @@ describe("hasPlan / planLines (the Plan tile)", () => {
     expect(planLines(readPlan([td("A", { done: true, order: 1 })], hub)).lines[0].badges).toEqual([]);
   });
 });
+
+describe("experiment", () => {
+  const lab = (name: string, fm: Record<string, unknown> = {}): NoteRec => note("03 Lab Book/Notes/" + name + ".md", { Status: "Started", ...fm });
+  const rowOf = (todos: NoteRec[], labs?: NoteRec[]) => readPlan(todos, hub, labs);
+  it("reads the lab note's Status; by name or by path; the Status as written", () => {
+    const labs = [lab("ABC0014-A"), lab("ABC0015-A", { Status: " Processing results " })];
+    expect(rowOf([td("A", { experiment: "[[ABC0014-A]]" })], labs).rows[0].experiment).toEqual({ name: "ABC0014-A", path: "03 Lab Book/Notes/ABC0014-A.md", status: "Started" });
+    expect(rowOf([td("A", { experiment: "[[03 Lab Book/Notes/ABC0015-A|run]]" })], labs).rows[0].experiment?.status).toBe("Processing results");
+  });
+  it("an empty Status gives an empty status; a to-do without experiment gives none", () => {
+    const labs = [lab("X1", { Status: "" })];
+    expect(rowOf([td("A", { experiment: "[[X1]]" })], labs).rows[0].experiment).toMatchObject({ name: "X1", status: "" });
+    expect(rowOf([td("A")], labs).rows[0].experiment).toBeNull();
+  });
+  it("a link to something that is not a lab note: no status and a message", () => {
+    const p = rowOf([td("A", { experiment: "[[Ghost]]" })], [lab("X1")]);
+    expect(p.rows[0].experiment).toEqual({ name: "Ghost", path: "", status: "" });
+    expect(p.problems).toEqual(['"A" names experiment "Ghost", which is not a lab note.']);
+  });
+  it("no lab notes given (lab folder not set): nothing looked up, no message", () => {
+    const p = rowOf([td("A", { experiment: "[[X1]]" })]);
+    expect(p.rows[0].experiment).toBeNull();
+    expect(p.problems).toEqual([]);
+  });
+  it("an experiment alone is not a plan", () => {
+    expect(hasPlan(rowOf([td("A", { experiment: "[[X1]]" })], [lab("X1")]))).toBe(false);
+  });
+  it("the Plan tile line gets the status as a badge (ready, blocked and finished rows)", () => {
+    const labs = [lab("X1"), lab("X2", { Status: "Closed" })];
+    const p = rowOf([td("A", { experiment: "[[X1]]" }), td("B", { after: "[[A]]", experiment: "[[X2]]" }), td("C", { done: true, experiment: "[[X1]]" })], labs);
+    const { lines } = planLines(p);
+    expect(lines.map(l => [l.text, l.badges.map(b => b.text)])).toEqual([["A", ["Started"]], ["B", ["after A", "Closed"]], ["C", ["Started"]]]);
+  });
+});

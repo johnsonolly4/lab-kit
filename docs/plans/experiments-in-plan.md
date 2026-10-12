@@ -33,6 +33,8 @@ Option B (user, 2026-10-12): everything stays a to-do; a new optional property `
 - Files: `src/planning/plan.ts`, `tests/planning-plan.test.ts`.
 - Done when: tests for: status read; link by path and by name; empty status; unresolved link gives the problem line and no badge; no lab notes given gives no lookup; `planLines` badge; existing plan tests unchanged. `npm test`, `npm run lint`.
 
+- **Phase 1 result (2026-10-12, tests only):** as specified in `src/planning/plan.ts`; the Plan tile does not show it yet because `blocks.ts` does not pass the lab notes (Phase 2).
+
 ### Phase 2 — Draw it (map card, Plan tile) and document
 - Depends on: Phase 1. Model: Sonnet.
 - `src/planning/blocks.ts`: pass `this.owner.notesIn(lab)` (only when the lab folder exists and is set) to `readPlan` in `project-plan` and `project-map`.

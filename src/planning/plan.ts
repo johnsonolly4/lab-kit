@@ -21,6 +21,8 @@ export interface PlanRow {
   priority: number | null;
   /** Open, and at least one of its `after` to-dos is not done. */
   blocked: boolean;
+  /** The lab note named by `experiment` (its `Status` as written, "" when empty; path "" when no such lab note), or null. */
+  experiment: { name: string; path: string; status: string } | null;
 }
 export interface Plan { rows: PlanRow[]; problems: string[] }
 
@@ -35,13 +37,14 @@ function priorityOf(v: unknown): number | null {
   const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
   return n === 1 || n === 2 || n === 3 ? n : null;
 }
-/** The items of `after`: one link or a list; empty items dropped. */
 /** The `due` of a to-do as YYYY-MM-DD (the date part of a date-time), "" when unreadable. */
 const dueOf = (v: unknown): string => { const d = text(v).slice(0, 10); return parseDay(d) ? d : ""; };
+/** The items of `after`: one link or a list; empty items dropped. */
 const afterItems = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).map(i => linkTarget(text(i))).filter(Boolean);
 
-/** The plan of `hub`: every to-do of the project (finished ones too). Parents come before their children; ties go by `order` (empty last), then by path. */
-export function readPlan(todos: NoteRec[], hub: NoteRec): Plan {
+/** The plan of `hub`: every to-do of the project (finished ones too). Parents come before their children; ties go by `order` (empty last), then by path.
+ *  `labNotes`: the lab notes, for the `experiment` link; left out (lab folder not set), nothing is looked up and no message is written. */
+export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): Plan {
   const mine = todos.filter(t => t.fm.kind === "todo" && pointsTo(t.fm.project, hub))
     .sort((a, b) => a.path.localeCompare(b.path));
   const problems: string[] = [];
@@ -75,7 +78,14 @@ export function readPlan(todos: NoteRec[], hub: NoteRec): Plan {
   const rows = placed.map((t): PlanRow => {
     const ps = parents.get(t.path)!;
     const done = isFinished({ done: t.fm.done, day: t.fm.day });
-    return { path: t.path, name: t.name, done, after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
+    let experiment: PlanRow["experiment"] = null;
+    const target = labNotes ? afterItems(t.fm.experiment)[0] : undefined;
+    if (target) {
+      const lab = labNotes!.find(n => n.path.replace(/\.md$/, "") === target || n.name === target.slice(target.lastIndexOf("/") + 1));
+      experiment = lab ? { name: lab.name, path: lab.path, status: text(lab.fm.Status) } : { name: target, path: "", status: "" };
+      if (!lab) problems.push(`"${t.name}" names experiment "${target}", which is not a lab note.`);
+    }
+    return { path: t.path, name: t.name, done, experiment, after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
       order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && ps.some(p => !isFinished({ done: p.fm.done, day: p.fm.day })) };
   });
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
@@ -95,7 +105,8 @@ export const hasPlan = (plan: Plan): boolean => plan.rows.some(r => r.after.leng
 
 /** The Plan tile's lines: open ready rows (plan order), then blocked rows ("after X"), then finished rows (with "→ result"). `finished` counts the last group. */
 export function planLines(plan: Plan): { lines: ListLine[]; finished: number } {
-  const line = (r: PlanRow, badges: Badge[]): ListLine => ({ path: r.path, text: r.name, badges });
+  const line = (r: PlanRow, badges: Badge[]): ListLine => ({ path: r.path, text: r.name,
+    badges: r.experiment?.status ? [...badges, { text: r.experiment.status, cls: "vt-badge vt-planned" }] : badges });
   const ready = plan.rows.filter(r => !r.done && !r.blocked).map(r => line(r, []));
   const blocked = plan.rows.filter(r => r.blocked).map(r => line(r, [{ text: `after ${r.after.join(", ")}`, cls: "vt-muted" }]));
   const done = plan.rows.filter(r => r.done).map(r => line(r, r.result ? [{ text: `→ ${r.result}`, cls: "vt-muted" }] : []));
