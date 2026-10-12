@@ -63,6 +63,24 @@ describe("readPlan", () => {
   });
 });
 
+describe("date warning", () => {
+  const warn = (todos: NoteRec[]) => readPlan(todos, hub).problems;
+  it("an open to-do due before the open to-do it comes after", () => {
+    expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]", due: "2026-10-01" })]))
+      .toEqual(['"B" is due 2026-10-01, before "A" (2026-10-05), which it comes after.']);
+  });
+  it("equal dates, a later date, a missing or unreadable date give no line", () => {
+    expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]", due: "2026-10-05" })])).toEqual([]);
+    expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]", due: "2026-10-09" })])).toEqual([]);
+    expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]" })])).toEqual([]);
+    expect(warn([td("A", { due: "soon" }), td("B", { after: "[[A]]", due: "2026-10-01" })])).toEqual([]);
+  });
+  it("a finished parent or child gives no line", () => {
+    expect(warn([td("A", { due: "2026-10-05", done: true }), td("B", { after: "[[A]]", due: "2026-10-01" })])).toEqual([]);
+    expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]", due: "2026-10-01", done: true })])).toEqual([]);
+  });
+});
+
 describe("hasPlan / planLines (the Plan tile)", () => {
   it("no plan: to-dos with no after and no order, and no problems", () => {
     expect(hasPlan(readPlan([td("A"), td("B")], hub))).toBe(false);

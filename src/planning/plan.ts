@@ -1,6 +1,7 @@
 // The plan of one project (planning kit): its to-dos with `after` (links to the to-dos that come first), `result` (one line) and `order` (a number).
 // Pure (no Obsidian runtime). Gives the rows in plan order, which are blocked, and what is wrong (missing links, cycles).
 import { isFinished } from "./actions";
+import { parseDay } from "./todo";
 import { linkTarget, pointsTo, type Badge, type ListLine, type NoteRec } from "./lists";
 
 export interface PlanRow {
@@ -9,6 +10,10 @@ export interface PlanRow {
   done: boolean;
   /** Names of the to-dos in `after` that were found. */
   after: string[];
+  /** Paths of those to-dos (same order as `after`). */
+  afterPaths: string[];
+  /** The `due` date as YYYY-MM-DD, "" when none or unreadable. */
+  due: string;
   /** The one-line `result`, "" when none. */
   result: string;
   order: number | null;
@@ -24,6 +29,8 @@ function orderOf(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 /** The items of `after`: one link or a list; empty items dropped. */
+/** The `due` of a to-do as YYYY-MM-DD (the date part of a date-time), "" when unreadable. */
+const dueOf = (v: unknown): string => { const d = text(v).slice(0, 10); return parseDay(d) ? d : ""; };
 const afterItems = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).map(i => linkTarget(text(i))).filter(Boolean);
 
 /** The plan of `hub`: every to-do of the project (finished ones too). Parents come before their children; ties go by `order` (empty last), then by path. */
@@ -61,9 +68,18 @@ export function readPlan(todos: NoteRec[], hub: NoteRec): Plan {
   const rows = placed.map((t): PlanRow => {
     const ps = parents.get(t.path)!;
     const done = isFinished({ done: t.fm.done, day: t.fm.day });
-    return { path: t.path, name: t.name, done, after: ps.map(p => p.name), result: text(t.fm.result),
+    return { path: t.path, name: t.name, done, after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
       order: orderOf(t.fm.order), blocked: !done && ps.some(p => !isFinished({ done: p.fm.done, day: p.fm.day })) };
   });
+  // Only dates the user typed: an open to-do due before an open to-do it comes after.
+  const byPath = new Map(rows.map(r => [r.path, r]));
+  for (const r of rows) {
+    if (r.done || !r.due) continue;
+    for (const pp of r.afterPaths) {
+      const p = byPath.get(pp)!;
+      if (!p.done && p.due && r.due < p.due) problems.push(`"${r.name}" is due ${r.due}, before "${p.name}" (${p.due}), which it comes after.`);
+    }
+  }
   return { rows, problems };
 }
 

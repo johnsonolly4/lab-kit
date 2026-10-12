@@ -104,6 +104,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Tests (new `tests/planning-plan-map.test.ts`): chain, two-parent join, two separate chains, cycle, all finished, start step with finished steps before it; unlinked to-dos off the map; `chainOf` on a chain, a join and a cycle. In `tests/planning-plan.test.ts`: the date warning (earlier, equal, no date, finished parent).
 - Done when: tests and lint pass. The date warning can be seen in the Plan tile; nothing else to see in Obsidian.
 
+- **Phase 4a result (2026-10-12, tests only, not seen in Obsidian):** `src/planning/plan-map.ts` (`layoutPlan`, `chainOf`); `PlanRow` gained `afterPaths` and `due`; the date warning is a line in `readPlan` problems, so the Plan tile prints it. Places: mean place of the parents, then plan order. A cycle's members are in `cyclic`; to-dos behind a cycle are not flagged. `startStep` counts only linked to-dos.
+
 ### Phase 4b — Draw the card map in the hub
 - Depends on: 4a. Model: Sonnet, after one question to the user (where it sits: under the Plan tile is the default).
 - A `show: project-map` card in `src/planning/blocks.ts` (it already redraws on metadata changes, `:27-29`), with the drawing in a new `src/planning/plan-map-render.ts`: cards as HTML in the vault theme (title, due, priority, `result`, done and blocked looks), arrows as SVG curves behind them, the box scrolls sideways.
