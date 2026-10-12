@@ -53,4 +53,7 @@ describe("To-do template", () => {
     expect(tpl).toContain("today, tomorrow, fri, next mon");
     expect(tpl).toMatch(/parseDue \? parseDue\(d, new Date\(\)\) : /);
   });
+  it("has an empty priority key (High / Medium / Low, empty = none) after countdown", () => {
+    expect(tpl).toMatch(/^countdown: <% countdown %>\npriority:\n/m);
+  });
 });

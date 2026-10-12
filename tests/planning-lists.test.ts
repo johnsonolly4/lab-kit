@@ -206,6 +206,22 @@ describe("Project hub tiles (To-dos and Notes, show all / collapse at 10)", () =
     expect(lines[0].badges[0].text).toBe("overdue 1 Oct");
     expect(lines[1].badges[0].text).toBe("· Mon");
   });
+  it("To-dos: overdue, then day, then priority (High → Medium → Low → none), then name", () => {
+    const p = (name: string, fm: Record<string, unknown>) => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
+    const todos = [
+      p("Fri high", { day: "Fri", priority: "High" }),
+      p("Mon none b", { day: "Mon" }),
+      p("Mon low", { day: "Mon", priority: "Low" }),
+      p("Mon medium", { day: "Mon", priority: "medium" }),
+      p("Mon high", { day: "Mon", priority: "High" }),
+      p("Mon none a", { day: "Mon", priority: "" }),
+      p("Late low", { day: "Fri", due: "2026-10-01", priority: "Low" }),
+      p("Backlog high", { day: "Backlog", priority: "High" }),
+    ];
+    expect(projectTodos(todos, hub, WED).map(l => l.text)).toEqual(
+      ["Late low", "Mon high", "Mon medium", "Mon low", "Mon none a", "Mon none b", "Fri high", "Backlog high"]);
+    expect(projectTodos([p("x", { day: "Mon", priority: "Urgent" }), p("a", { day: "Mon", priority: "Low" })], hub, WED).map(l => l.text)).toEqual(["a", "x"]);
+  });
   it("Notes: everything else in the project's folder (sub-folders too), newest first, with the date", () => {
     const d = (m: number, day: number): number => new Date(2026, m, day).getTime();
     const notes = [
