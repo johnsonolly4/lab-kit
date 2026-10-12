@@ -69,6 +69,7 @@ export class PlanningCommands {
     add("new-concept", "New concept", () => this.newConcept());   // the template asks title + topic and files the note
     add("new-topic-hub", "New topic hub", () => this.newTopicHub());
     add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
+    add("open-todo-board", "Open to-do board", () => this.openBoard());
     // Desktop only: opening a file in another app needs Electron
     this.plugin.addCommand({
       id: "open-deck", name: "Open meeting deck",
@@ -321,6 +322,14 @@ export class PlanningCommands {
     if (!(await this.ready(inbox))) return;
     const path = uniquePath(inbox, "Capture", "md", p => !!this.app.vault.getAbstractFileByPath(p));
     const file = await this.app.vault.create(path, "");
+    await this.app.workspace.getLeaf(false).openFile(file);
+  }
+
+  /** Opens the kit's to-do board (the .base in the Planning folder). */
+  private async openBoard(): Promise<void> {
+    const path = kitJoin(this.folders.planning, "To-do board.base");
+    const file = this.app.vault.getFileByPath(path);
+    if (!file) { new Notice("To-do board not found: " + path); return; }
     await this.app.workspace.getLeaf(false).openFile(file);
   }
 

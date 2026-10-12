@@ -201,6 +201,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | New concept | A knowledge note: asks title and topic, files it in the Knowledge folder under the topic. The **New concept** button on a topic hub skips the topic question |
 | New topic hub | The index note of a topic folder under Knowledge (`kind: hub`, named like the folder): pick a topic without one, or type the name of a new topic; a text area for what the topic is about, then a list of its notes. Project, topic and series hubs start with a back link to the hub one folder up, which follows folder renames |
 | Roll over to-dos now | Carries unfinished to-dos over to today |
+| Open to-do board | Opens the to-do board in the Planning folder |
 
 ## Privacy & permissions
 - **No network use.** Lab Kit never connects to the internet, has no account, no ads, no telemetry and no paid features. The "full changelog" button only opens a link in your browser when you press it.

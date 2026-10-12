@@ -6,7 +6,7 @@ cssclasses:
 # Hotkeys
 
 > [!tip] One rule: `Alt` + the first letter of what you want
-> **H** home, **D** day, **F** find, **Z** Zotero paper, **N** note, **T** to-do, **L** lab entry, **U** update, **C** citation, **S** snippet.
+> **H** home, **D** day, **F** find, **Z** Zotero paper, **N** note, **T** to-do, **L** lab entry, **U** update, **C** citation, **S** snippet, **M** meeting, **P** project note, **K** knowledge note, **B** board.
 
 These are suggestions. Lab Kit never sets a hotkey for you, so nothing changes until you do it yourself (see the end of this note).
 
@@ -22,9 +22,13 @@ These are suggestions. Lab Kit never sets a hotkey for you, so nothing changes u
 | `Alt+U` | Update this paper's highlights | ZotLit: Update literature note |
 | `Alt+C` | Insert a citation | ZotLit: insert citation |
 | `Alt+S` | Insert a lab snippet | Templater: Insert snippet.md (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
+| `Alt+M` | New meeting note | Lab Kit: New meeting |
+| `Alt+P` | New note in a project | Lab Kit: New project note |
+| `Alt+K` | New knowledge note | Lab Kit: New concept |
+| `Alt+B` | To-do board | Lab Kit: Open to-do board |
 | `Ctrl+E` | Switch between reading and editing | Obsidian's own key, nothing to set |
 
-No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New meeting, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New project note, New concept, New topic hub, Roll over to-dos now, Archive old to-dos, New chemical.
+No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Roll over to-dos now, Archive old to-dos, New chemical.
 
 ## Editing
 

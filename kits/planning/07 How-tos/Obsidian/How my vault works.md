@@ -166,6 +166,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | Sort inbox | Goes through the inbox one note at a time and files each |
 | Archive old to-dos | Moves to-dos finished over 30 days ago to the archive |
 | Roll over to-dos now | Rolls unfinished to-dos over to today and clears last week's finished ones, now |
+| Open to-do board | Opens the [[To-do board.base\|To-do board]] |
 | New meeting | New meeting note for a series (asks which when there are several) |
 | New extra meeting now | An in-between meeting on a date you choose |
 | New one-off meeting | A meeting that belongs to no series |
