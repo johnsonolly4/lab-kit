@@ -255,3 +255,6 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-icon-cell:hover { background: var(--background-modifier-hover); }
 .lab-kit-icon-cell.is-current { outline: 2px solid var(--interactive-accent); }
 .lab-kit-icon-name { font-size: var(--font-ui-smaller); color: var(--text-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Rig block: a diagram wider than the note scrolls sideways instead of being cut off at the right */
+.lab-kit-rig-diagram, .lab-kit-rig-diagram .mermaid { overflow-x: auto; }
