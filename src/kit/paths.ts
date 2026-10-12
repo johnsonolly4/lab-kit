@@ -241,6 +241,12 @@ export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder">): 
   ].filter(f => f.path);
 }
 
+/** True for a note directly in the Snippets folder of the templates folder: the files the Alt+S menu and the Snippet icons page list. */
+export function inSnippetsFolder(path: string, templatesFolder: string): boolean {
+  const folder = kitJoin(templatesFolder, "Snippets");
+  return path.endsWith(".md") && kitParent(path) === folder;
+}
+
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";

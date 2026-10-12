@@ -1,5 +1,5 @@
 // Meta Bind button templates the planning notes use (Check setup adds the missing ones to Meta Bind's settings).
-import file from "../../docs/plans/kit-files/planning/settings/meta-bind-buttons.json";
+import file from "./meta-bind-buttons.json";
 
 /** True when an installed button's actions do something else than the kit's. Only what the kit's actions set is compared, so a field Meta Bind adds on its own is not a difference. */
 export function actionsDiffer(kit: unknown, have: unknown): boolean {

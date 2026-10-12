@@ -5,7 +5,7 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, newChemicalTarget, newLabEntryTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, newChemicalTarget, newLabEntryTarget } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -420,5 +420,16 @@ describe("New lab entry needs initials (Phase 6e)", () => {
     expect(num("ABC", "Analysis 2")).toBe(0);
     expect(num("AB2", "AB20005 - x")).toBe(5);
     expect(num("A.B", "AxB0003")).toBe(0);
+  });
+});
+
+describe("Snippet icons page follows the Snippets folder", () => {
+  it("only notes directly in the templates folder's Snippets folder count", () => {
+    const t = "Extras/Templates/Lab Kit";
+    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/05 Sample list.md", t)).toBe(true);
+    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/Old/05 Sample list.md", t)).toBe(false);
+    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Insert snippet.md", t)).toBe(false);
+    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/notes.txt", t)).toBe(false);
+    expect(inSnippetsFolder("Snippets/05 Sample list.md", "")).toBe(true);
   });
 });

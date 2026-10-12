@@ -5,7 +5,7 @@ import { hasNode } from "../platform";
 import { openDataFolder } from "../kit/datafolder";
 import { LEVELS } from "./ghs";
 import { collectHazards, hazardSignature, hazardSources, levelCounts, type HazardData, type HazardRow, type Phrase } from "./hazards";
-import { hazardView, parseBlock, splitClasses, type BlockOptions, type HazardView, type HeaderStore } from "./settings";
+import { hazardView, labBookBase, parseBlock, splitClasses, type BlockOptions, type HazardView, type HeaderStore } from "./settings";
 
 /** One rendered ```lab-header block. */
 export interface HeaderEntry {
@@ -23,6 +23,8 @@ export interface HeaderEntry {
   open: boolean;
 }
 
+/** The back link's text, after the arrow (as on the hubs: an arrow and the place it goes to). */
+const BACK_LABEL = "Lab book";
 const H_CODES = /H\d{3}[A-Za-z]*(?:\s*\+\s*H\d{3}[A-Za-z]*)*/;
 
 export class HeaderRenderer {
@@ -53,13 +55,22 @@ export class HeaderRenderer {
   build(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext): HeaderEntry {
     const { block, over } = parseBlock(source);
     el.addClass("lab-header");
-    if (block.dataFolder) {
+    // Back to the lab book board (the .base in the folder above this note's folder), like the hubs' back link
+    const board = block.back ? labBookBase(ctx.sourcePath, this.app.vault.getFiles().filter(f => f.extension === "base").map(f => f.path)) : null;
+    if (block.dataFolder || board) {
       const bar = el.createDiv({ cls: "lab-header-bar" });
-      if (hasNode()) {
+      if (board) {
+        const a = bar.createEl("a", { cls: "internal-link lab-header-back", text: `\u2190 ${BACK_LABEL}`, attr: { href: board, "data-href": board } });
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          void this.app.workspace.openLinkText(board, ctx.sourcePath, e.ctrlKey || e.metaKey);
+        });
+      }
+      if (block.dataFolder && hasNode()) {
         const noteName = ctx.sourcePath.split("/").pop()!.replace(/\.md$/, "");
         const btn = bar.createEl("button", { text: "📁 Open data folder" });
         btn.addEventListener("click", () => openDataFolder(noteName, this.store.settings));
-      } else {
+      } else if (block.dataFolder) {
         bar.createSpan({ cls: "lab-header-muted", text: "📁 Data folder: desktop only" });
       }
     }

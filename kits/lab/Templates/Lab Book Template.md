@@ -1,6 +1,6 @@
 <%*
 // =========================================================
-// Lab Book Template (Templater) · Lab notebook kit v0.2
+// Lab Book Template (Templater) · Lab Kit
 // 1. Works out the next note number in this folder
 // 2. Asks for a title and renames the note "ABC0014 - Title" (ABC = Initials in Lab Kit settings)
 // Add more content while writing with the snippet menu (Alt+S).
@@ -47,6 +47,7 @@ RA:
 Objective:
 Outcome:
 cssclasses:
+  - vt
   - academia
   - academia-rounded
   - scrolling_mermaid

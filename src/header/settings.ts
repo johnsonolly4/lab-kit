@@ -1,5 +1,6 @@
 // Settings for the ```lab-header block, saved under the `header` key of data.json (the kit keeps `kit`).
-// Every hazard option can also be set for one note, as `key: value` lines inside the block.
+// Every hazard option can also be set for one note, as `key: value` lines inside the block.
+
 import { wideBox } from "../kit/settings-box";
 import type { Plugin, SettingDefinition, SettingDefinitionItem } from "obsidian";
 
@@ -62,18 +63,30 @@ export const splitClasses = (s: string): string[] => s.split(",").map(x => x.tri
 const HAZARD_KEYS = Object.keys(HEADER_DEFAULTS).filter(k => !k.startsWith("dataRoot")) as (keyof HazardView)[];
 
 /** Options only a block can set: leave out the data-folder button or the hazards. */
-export interface BlockOptions { dataFolder: boolean; hazards: boolean }
+export interface BlockOptions { dataFolder: boolean; hazards: boolean; back: boolean }
+
+/**
+ * The lab book board a lab note links back to: a .base in the folder above the note's folder (where the kit puts
+ * Lab book base.base), that name first, else the first one by name. Null when there is none.
+ */
+export function labBookBase(notePath: string, basePaths: string[]): string | null {
+  const parts = notePath.split("/");
+  if (parts.length < 2) return null;   // a note at the vault root has no folder above its folder
+  const above = parts.slice(0, -2).join("/");
+  const here = basePaths.filter(p => p.endsWith(".base") && (p.includes("/") ? p.slice(0, p.lastIndexOf("/")) : "") === above).sort((a, b) => a.localeCompare(b));
+  return here.find(p => p.split("/").pop() === "Lab book base.base") ?? here[0] ?? null;
+}
 
 /** Reads `key: value` lines from a ```lab-header block. Unknown keys and bad values are ignored. */
 export function parseBlock(source: string): { block: BlockOptions; over: Partial<HazardView> } {
-  const block: BlockOptions = { dataFolder: true, hazards: true };
+  const block: BlockOptions = { dataFolder: true, hazards: true, back: true };
   const over: Record<string, unknown> = {};
   for (const line of source.split("\n")) {
     const m = line.match(/^\s*([A-Za-z]+)\s*:\s*(.*?)\s*$/);
     if (!m) continue;
     const [, key, raw] = m;
     const bool = raw.toLowerCase() === "true" ? true : raw.toLowerCase() === "false" ? false : undefined;
-    if (key === "dataFolder" || key === "hazards") { if (bool !== undefined) block[key] = bool; continue; }
+    if (key === "dataFolder" || key === "hazards" || key === "back") { if (bool !== undefined) block[key] = bool; continue; }
     if (!(HAZARD_KEYS as string[]).includes(key)) continue;
     const def = HEADER_DEFAULTS[key as keyof HazardView];
     if (typeof def === "boolean") { if (bool !== undefined) over[key] = bool; }

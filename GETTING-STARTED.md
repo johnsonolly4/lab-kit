@@ -50,7 +50,7 @@ Then open the `lab-kit` folder in Claude Code.
 1. Run `npm run dev` (or ask Claude to). It builds the plugin into `test-vault/.obsidian/plugins/lab-kit/` and rebuilds on every change.
 2. In Obsidian: **Open another vault → Open folder as vault → `test-vault`**.
 3. Enable community plugins there. Install **Templater** in the test vault too, then turn on **Lab Kit**.
-4. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts into the test vault.
+4. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts into the test vault. For the planning kit: switch on **Planning kit (preview)**, then **Review update…** on its own row, then **Check setup…**.
 
 > [!tip] Optional
 > The **Hot-Reload** plugin (https://github.com/pjeby/hot-reload) reloads the plugin automatically after each build.
@@ -66,8 +66,8 @@ For a fresh vault (not the test vault): the starter holds the contract folders, 
 4. With Obsidian running, in a terminal inside that folder: `./install-plugins.sh` (Mac, Linux; if it says permission denied, `sh install-plugins.sh`) or `.\install-plugins.ps1` (Windows).
 5. Run the command **Check setup** and press Fix on what is left.
 
-> [!warning] Not seen in Obsidian yet
-> The starter is tested to pass Check setup in the test suite only. Whether the install script works with your Obsidian version is not verified (BACKLOG "Phase 8a").
+> [!warning] Tried once, with gaps
+> The starter passes Check setup in the test suite. In one try in a clean vault (2026-10-08) the install script installed the **public** Lab Kit release, not your local build, Restricted mode started on, and the Templater and Meta Bind settings were not set: turn Restricted mode off and use Check setup → Fix for those. Not tried again since 1.0.0 (BACKLOG "Starter").
 
 ## Day to day
 | You want to… | Say / do |

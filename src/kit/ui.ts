@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
@@ -126,7 +126,7 @@ class KitSettingTab extends PluginSettingTab {
     const planning = this.ctl.planning;
     if (planning) {
       const pSlot = planning.slot, pInst = planning.installedVersion;
-      updates.push({ name: "Planning kit (preview)", desc: "Homepage, to-do board, planning notes and templates, with their own commands. Preview: some homepage buttons don't work yet. Switching it off removes nothing.",
+      updates.push({ name: "Planning kit (preview)", desc: "Homepage, to-do board, planning notes and templates, with their own commands. Switching it off removes nothing.",
         render: b => {
           b.addToggle(t => t.setValue(pSlot.enabled).onChange(async v => {
             pSlot.enabled = v;
@@ -323,7 +323,16 @@ export class KitController {
     const tab = new KitSettingTab(this.app, plugin, this, this.header);
     plugin.addSettingTab(tab);
     // The snippet rows need the vault index, which is not ready yet when the tab is registered
-    this.app.workspace.onLayoutReady(() => void tab.refreshSnippets());
+    // and they follow the Snippets folder afterwards: a first install, a Use toggle, Make my own copy or a snippet of your own
+    // adds or removes files after the tab was built (the rows used to appear only after a restart).
+    this.app.workspace.onLayoutReady(() => {
+      void tab.refreshSnippets();
+      const refresh = debounce(() => void tab.refreshSnippets(), 500, true);
+      const touched = (path: string): void => { if (inSnippetsFolder(path, this.managed.templatesFolder())) refresh(); };
+      plugin.registerEvent(this.app.vault.on("create", f => touched(f.path)));
+      plugin.registerEvent(this.app.vault.on("delete", f => touched(f.path)));
+      plugin.registerEvent(this.app.vault.on("rename", (f, old) => { touched(f.path); touched(old); }));
+    });
     plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
     plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });

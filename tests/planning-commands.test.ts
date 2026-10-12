@@ -23,7 +23,7 @@ vi.mock("../src/kit/obsidian-private", () => ({
 
 const planning = embeddedKit("kits/planning") as EmbeddedKit;
 const lab = embeddedKit("kits/lab") as EmbeddedKit;
-const buttons = JSON.parse(readFileSync("docs/plans/kit-files/planning/settings/meta-bind-buttons.json", "utf8")) as
+const buttons = JSON.parse(readFileSync("src/planning/meta-bind-buttons.json", "utf8")) as
   { buttonTemplates: { id: string; actions: { type: string; command?: string; templateFile?: string; link?: string }[] }[] };
 const actions = buttons.buttonTemplates.flatMap(b => b.actions.map(a => ({ button: b.id, ...a })));
 
@@ -38,7 +38,7 @@ function registered(): string[] {
 describe("planning commands", () => {
   it("registers the fixed IDs (never renamed: buttons call them)", () => {
     expect(registered().sort()).toEqual(["add-to-shopping", "archive-todos", "new-concept", "new-extra-meeting", "new-meeting", "new-meeting-series", "new-one-off-meeting", "new-project", "new-project-note", "new-todo", "new-topic-hub",
-      "open-deck", "quick-capture", "roll-over-todos", "sort-inbox"]);
+      "open-deck", "open-todo-board", "quick-capture", "roll-over-todos", "sort-inbox"]);
   });
 
   it("runs templates the planning kit ships", () => {

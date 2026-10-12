@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.0",
-      "sha256": "ebcea8ddf9fb105cc71a9289651970c1a34108e85bd6137f9e7a4cea17520222",
+      "sha256": "49464ce17eee27688c75ea9f375cc4bba518dc6ccecd0fd2cfad82b32c7c463b",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you",
       "policy": "keep"
@@ -138,7 +138,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.0",
-      "sha256": "5e53bd57e190d9f130cb8a7258862122e5bb2795ab46fb904c0e117b13c1c487",
+      "sha256": "beee3b0689c0696035515826edd90f2cf9befb79ee8bfbcc5a87b75301b48241",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -164,7 +164,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "1.0.0",
-      "sha256": "e781aaa75c6d661c55cc7e470782d8d0b7afc7dbc9171718464d2783d729bc9d",
+      "sha256": "8b99080087be7330b9dd3c286afd12be954244e6f5319411e71afdf130a14d05",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.0",
-      "sha256": "6f26f30d1f91b16432353f27412d0b33727bee08aab58db3018b7d5c9180c2ce",
+      "sha256": "d5a73c8b8a3bc10e02f1f5b3d4443fa1169d59b1add8c6c3ef693687c476741d",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -214,7 +214,7 @@
       "role": "meetings",
       "path": "Meetings.md",
       "version": "1.0.0",
-      "sha256": "a87c43498e18df2e5be10a25f79965641ccf5cd099f8284e86935fe74b71ac37",
+      "sha256": "bcecc4ab05bb215a47f93319f1e24cd3b1ed20e7604fff9f2c9acfe00a9b9cfc",
       "renamedFrom": [],
       "desc": "Meetings hub: next meeting of each series",
       "policy": "keep"
@@ -285,7 +285,7 @@
       "role": "templates",
       "path": "Meeting series.md",
       "version": "1.0.0",
-      "sha256": "83ec2e63a02183c0f4f1bb0a7f3bd3a27602ed71277ccaa9af301f5112dc6b76",
+      "sha256": "2faa696008cbf00e4c3879d96b3efca60470c7b1f0ae9306d2b740127d8d4923",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },
@@ -296,7 +296,7 @@
       "role": "templates",
       "path": "Meeting.md",
       "version": "1.0.0",
-      "sha256": "beb3af13e2f49fd7991e0bcee0e97d1cf666b91d147b5ec7c1d7df5eb3c9c907",
+      "sha256": "3eca499a86f7edc8462b16b0de21d6912f8099e3d5c620b27556bc05e75b2055",
       "renamedFrom": [
         "Weekly meeting.md"
       ],
@@ -342,7 +342,7 @@
       "role": "templates",
       "path": "One-off meeting.md",
       "version": "1.0.0",
-      "sha256": "045db89c51312643bf5aa98da0c2f0f90cd307dba1e71c873de0e7e7aa411372",
+      "sha256": "e9109533cd3f47d367bc428a6e28aa7f89271147a756225fc898fc0920bb8686",
       "renamedFrom": [],
       "desc": "New one-off meeting note (a smaller meeting note: To discuss, Flagged, Notes)"
     },
@@ -364,7 +364,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "1.0.0",
-      "sha256": "fe6ce42c6eae09182d9c30d533f9fb8249e03c47c890b3781e5a607f52f64dff",
+      "sha256": "35f94f4e395f7282048c361b9e559dfe502daaa1449c7c730f01ba525921a737",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },

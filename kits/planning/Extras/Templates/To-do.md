@@ -51,7 +51,7 @@ if (due) {
   countdown = c;
 }
 // Keep the day of the board column it was made in (the board writes it before this runs);
-// anything else (Ctrl+Shift+T, project cards) starts in Backlog.
+// anything else (the New to-do command, project cards) starts in Backlog.
 const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
 const raw = await app.vault.read(tp.config.target_file);
 const found = (raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1];
