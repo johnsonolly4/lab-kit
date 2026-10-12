@@ -3,7 +3,7 @@
 _Agreed: 2026-10-12 (survey answers; project-tile placement chosen from the user's board screenshot). Written by `/phase-plan`. Each phase = one session._
 
 ## Goal
-To-dos get a Priority, a project tile on the board card, and (for to-dos in a project) `after` / `result` / `order`, so the project hub shows an overall plan: a Plan tile and a `plan` diagram block.
+To-dos get a Priority, a project tile on the board card, and (for to-dos in a project) `after` / `result` / `order`, so the project hub shows an overall plan: a Plan tile and a card map (cards joined by arrows; re-planned 2026-10-12, was a Mermaid `plan` block).
 
 ## Decision taken
 - **Priority:** number 1, 2, 3 (1 = highest), empty = none (user, 2026-10-12, after the Bases sort test; text sorted alphabetically). New to-do asks it with one pick, "(none)" first.
@@ -13,8 +13,21 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - **Blocked:** shown only in the Plan tile and the `plan` block (a row whose `after` to-dos are not all done). The board and `day` are never changed automatically. Supersedes the BACKLOG idea of blocked = Backlog.
 - Rejected: Priority before due date; number priority; a third card badge for blocked; auto-moving cards.
 
+## Re-plan 2026-10-12 (Opus, with the user in chat; replaces Phases 3 and 4 below)
+- **Plan tile (Phase 3a):** next steps first: open to-dos that are ready (nothing before them left open), then blocked ones marked "after X"; finished rows with their `result` behind Show all. At the top of the hub, under the hub bar; nothing is drawn when the project has no plan.
+- **Capture (Phase 3b):** a to-do made for a project asks **Comes after?**: one pick of that project's open to-dos, "(nothing)" first, skipped when the project has none. One choice only (Templater's suggester is single-pick; no multi-pick box exists in `src/` or `kits/`); a second parent is typed by hand. `order` is not asked; `result` waits for Phase 5. This reverses "NOT asked at capture" above for `after` only.
+- **Diagram (Phase 4): our own card map, not Mermaid and not Canvas.** Cards in the board's look (title, due, priority, result, done / blocked) joined by arrows, steps left to right, drawn inside the hub. Click opens the to-do. A link is made by dragging from one card to another (writes `after`), removed by clicking the arrow; loops are refused. No new library.
+- **Card positions are not saved** (user: "works for me, as proof of concept"): the layout is always automatic by step; dragging only makes links. Saved positions are out of scope until the map has been used.
+- **Scroll (user):** the map scrolls sideways and opens at the next to-do; finished steps are off to the left, steps still to do on the right. The user wrote "unfinished to the left"; read as "finished to the left" (said back in chat, not yet confirmed).
+- **Looked at and dropped** (plugin pages only, 2026-10-12; none installed or seen in Obsidian):
+  - Canvas: plain Obsidian shows only the shapes of an embedded canvas, not card text (Obsidian help); nothing found shows a note's properties on a file card, so to-do cards would be near-empty; needs our own layout and a rewrite on every change.
+  - Base Graph: reads links from a chosen property and embeds as a Bases view, but the user looked at it and it draws a dot graph, not cards with details.
+  - Advanced Canvas (edges from a property, no auto layout), Tasks Map (cards + arrows, but needs Dataview and Tasks, `tags: [task]` and its own `blockedBy` / `dependsOn` keys).
+  - Swapping the planning core for Tasks or TaskNotes: no. Tasks is checkbox lines, with no board and no dependency picture. TaskNotes has the same one-note-per-task model on Bases, but a swap costs a second plugin for every user and a migration, and it has no dependency picture either. Trying TaskNotes alongside (calendar, agenda) is a BACKLOG item.
+
 ## Out of scope
-- Drag-to-reorder, editing the plan inside the diagram, Priority colours on the board (revisit after Phase 1 is seen).
+- Saved card positions, free rearranging of cards, a Mermaid `plan` block, a Canvas file.
+- Priority colours on the board (revisit after Phase 1 is seen).
 - `result` for to-dos without a project (open: default no).
 
 ## Phases
@@ -34,15 +47,59 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 
 - **Phase 2 result (2026-10-12, tests only, not seen in Obsidian):** `readPlan(todos, hub)` in `src/planning/plan.ts` gives `{ rows, problems }` (row: path, name, done, after names, result, order, blocked). Parents before children; ties by `order` (empty last) then path (NOT by the project-list day / priority order: simpler, say if wanted). Missing / self links and cycles are plain-sentence problems; every row is still listed. User decision with it: project to-dos are not archived while their hub is not Done (`isArchivable(..., projectActive)`, `projectIsActive` in `src/planning/commands.ts`; for a to-do with several projects only the first is checked). The To-do template got no `after` / `result` / `order` keys (typed by hand).
 
-### Phase 3 — Plan tile on the project hub
-- **PAUSED 2026-10-12 (user): to be re-planned on Opus; nothing built.** Decided with the user: the tile goes at the top, under the hub bar, and shows only when the project has a plan. A draft Sonnet plan exists (not approved): `planLines` / `hasPlan` in `plan.ts` reusing `ListLine` and the `list()` renderer, `case "project-plan"` in `src/planning/blocks.ts` next to `project-todos`, a `show: project-plan` block in `Project hub.md`, small CSS (the Show all toggle CSS at `vault-theme.css:261` expects a callout parent), the "Unknown card" valid-names text (`blocks.ts:308`) to extend, existing hubs via the opt-in Tidy rule `hub-body`. Open for Opus: Canvas instead of Mermaid for Phase 4 (user question 2026-10-12; options: keep the Mermaid block, a generated read-only Canvas, an editable Canvas that writes `after`), and whether the hub's New to-do asks `after` (user unsure; BACKLOG).
+### Phase 3a — Plan tile on the project hub
+- Depends on: Phase 2. Model: Sonnet (fully specified).
+- `src/planning/plan.ts`: `hasPlan(plan)` (true when any of the project's to-dos has `after` or `order` set) and `planLines(plan)` giving `ListLine[]` (`src/planning/lists.ts:10`) in tile order: ready open rows in plan order, then blocked rows with a muted "after X" badge, then finished rows with "→ result". Also the count of finished rows, so the block can hide them until Show all.
+- `src/planning/blocks.ts`: `case "project-plan"` next to `project-todos` (`:244`). Draws nothing at all when `hasPlan` is false (today every card leaves at least a muted line, `:119`, so this is new behaviour: an empty box with no heading). Otherwise its own heading "Plan", the lines through `list()` (`:118`), the Show all toggle (`toggle()`, `:86`) for finished rows and anything over `PROJECT_TILE_ROWS`, and `plan.problems` as muted lines under the list. Add `project-plan` to the "Unknown card" text (`:308`).
+- `kits/planning/Extras/Templates/Project hub.md`: a `vault-card` block with `show: project-plan` after the hub bar (`:21-23`), above Goal (`:25`). Bare, not in a callout (a callout title would show on a project without a plan).
+- `kits/planning/.obsidian/snippets/vault-theme.css:261`: the toggle is placed by a `.callout` parent; add the same placing for the bare Plan tile.
+- Existing hubs: the opt-in Tidy rule `hub-body` (`src/kit/tidy.ts:359-378`) rewrites a hub from the template, so it should offer the new block with no new rule. Check with a test in `tests/tidy-hubs.test.ts`; if it does not, say so and stop (do not write a new rule unasked).
+- Tests: `tests/planning-plan.test.ts` (`hasPlan`; line order ready → blocked → finished; badges; a project with no `after` / `order` gives no plan), `tests/planning-hub-blocks.test.ts` (template carries `show: project-plan` between the bar and Goal). The block's DOM has no test (none of `blocks.ts` has).
+- Docs: changelog, checklist 6i row, Vault spec / How my vault works (the hub's parts), `npm run kit:manifest`.
+- Done when: tests and lint pass; tests only until the user opens a hub with and without a plan.
+
+### Phase 3b — New to-do asks "Comes after?"
+- Depends on: none (best after 3a, so the answer shows in the tile). Model: Sonnet.
+- `kits/planning/Extras/Templates/To-do.md`: after the project is known (`:11-27`) and only when it is set, list that project's open to-dos from the metadata cache (the way the hub list is built, `:22-27`) and ask with `tp.system.suggester`, "(nothing)" first; skip the prompt when there are none. Esc = nothing. Write `after:` with one link in the properties only when one was picked; no `after` key otherwise, and never for a to-do without a project.
+- Applies however the project was set (hub button via `window.vtPresetProject`, the active hub, or the project pick): confirm with the user at the start of the phase, the survey answer was about the hub button.
+- Tests: template text tests next to the priority ones (`tests/due-words.test.ts`, `tests/kit-install.test.ts`); `readPlan` already reads the written form (`tests/planning-plan.test.ts:61`, link with path).
+- Docs: changelog, checklist 6i row, Hotkeys / tutorial only if they describe the New to-do prompts; `npm run kit:manifest`.
+- Done when: tests and lint pass; tests only until the user makes one to-do from a hub.
+
+### Phase 3 (superseded draft, kept for the record)
+- **PAUSED 2026-10-12 (user): to be re-planned on Opus; nothing built.** Re-planned the same day: see "Re-plan 2026-10-12" and Phases 3a / 3b. Decided with the user: the tile goes at the top, under the hub bar, and shows only when the project has a plan. A draft Sonnet plan exists (not approved): `planLines` / `hasPlan` in `plan.ts` reusing `ListLine` and the `list()` renderer, `case "project-plan"` in `src/planning/blocks.ts` next to `project-todos`, a `show: project-plan` block in `Project hub.md`, small CSS (the Show all toggle CSS at `vault-theme.css:261` expects a callout parent), the "Unknown card" valid-names text (`blocks.ts:308`) to extend, existing hubs via the opt-in Tidy rule `hub-body`. Open for Opus: Canvas instead of Mermaid for Phase 4 (user question 2026-10-12; options: keep the Mermaid block, a generated read-only Canvas, an editable Canvas that writes `after`), and whether the hub's New to-do asks `after` (user unsure; BACKLOG).
 - User addition 2026-10-12 (chat): the Plan tile (the workflow: next to-do steps) goes at the TOP of the Project hub template, shown only when the project has to-dos with a plan (`after` / `order` set); otherwise nothing appears. My reading: "workflow" = this Plan tile, "next steps" = its unblocked open rows first. Confirm in Phase 3.
 - Depends on: Phase 2
 - Plan check 2026-10-12: the other hub tiles sit inside callouts in the template (`Project hub.md:28-42`), and a callout's title would still show when the block is empty. So the Plan tile is a bare `vault-card` block that draws its own heading and leaves nothing behind when there is no plan, like `show: hub-bar` (`Project hub.md:21-23`). Placement to confirm with the user: under the hub bar and above Goal, or above both.
 - Files: `src/planning/blocks.ts:244-255` (new `show: project-plan`), `kits/planning/Extras/Templates/Project hub.md:31-41`, Tidy rule for hub bodies (hub body is rewritten from the template with a preview, 2026-10-10 decision), tests, docs.
 - Done when: tests for the rows (status, result, "← after X", blocked mark); hub template test; kit manifest.
 
-### Phase 4 — `plan` block (Mermaid)
+### Phase 4a — Card map layout (pure code)
+- Depends on: Phase 2. Model: Sonnet.
+- New `src/planning/plan-map.ts`: from `readPlan`'s rows give each to-do a step (0 for no parents, else 1 + the largest step of its parents; a to-do in a cycle keeps the plan engine's order and is flagged, never dropped), a place inside its step (near its parents, then `order`, then path), the list of arrows (from, to), and the start step: the step of the first ready open to-do (the last step when everything is finished).
+- No DOM, no Obsidian imports: positions are step and row numbers, the drawing phase turns them into pixels.
+- Tests (new `tests/planning-plan-map.test.ts`): chain, two-parent join, two separate chains, cycle, all finished, start step with finished steps before it.
+- Done when: tests and lint pass. Nothing to see in Obsidian.
+
+### Phase 4b — Draw the card map in the hub
+- Depends on: 4a. Model: Sonnet, after one question to the user (where it sits: under the Plan tile is the default).
+- A `show: project-map` card in `src/planning/blocks.ts` (it already redraws on metadata changes, `:27-29`), with the drawing in a new `src/planning/plan-map-render.ts`: cards as HTML in the vault theme (title, due, priority, `result`, done and blocked looks), arrows as SVG curves behind them, the box scrolls sideways.
+- Scroll: on first draw the box is scrolled so the start step is at the left edge (finished steps off to the left). A redraw keeps the scroll position the user left.
+- Click a card opens the to-do (`app.workspace.openLinkText`; Ctrl / Cmd-click = new tab). Nothing is drawn when the project has no plan.
+- `Project hub.md` gets the block; CSS in `vault-theme.css`; `hub-body` Tidy rule as in 3a.
+- Unknown until seen: arrows crossing on a big plan, a wide plan, Live Preview vs Reading view, a phone.
+- Done when: tests for anything pure (pixel maths, scroll target); the user sees one real project drawn.
+
+### Phase 4c — Link by dragging
+- Depends on: 4b seen by the user. Model: Opus for the spike, then Sonnet.
+- Drag from a card's handle to another card: the second to-do gets the first in `after` (`app.fileManager.processFrontMatter`, appending a link; an existing single value becomes a list). Click an arrow, then confirm, removes that link. A link that would make a loop is refused with a notice (the check is pure code, tested). No card moves: positions are not saved.
+- Spike first (none verified): pointer events inside a rendered block in Live Preview (the editor may take the drag), touch dragging on a phone inside a scrolling note, and that the block's own redraw after the write does not fight the drag. If the phone cannot do it, linking is desktop only and says so.
+- Tests: the patch to `after` (add to empty, add to one, add to a list, remove, loop refused, already linked).
+- Done when: tests; the user links and unlinks two to-dos in Obsidian and the Plan tile follows.
+- Later, only if asked: tick done on a card, saved positions.
+
+### Phase 4 (superseded: `plan` block, Mermaid)
+- Replaced 2026-10-12 by Phases 4a-4c (card map). Kept for the record.
 - User addition 2026-10-12 (chat): clicking a to-do in the diagram opens its note. Approach (not tried): after the block renders, add a click handler to each node in the SVG that calls `app.workspace.openLinkText(path, "")` (ctrl/cmd-click = new tab); node ids map to note paths in `plan.ts`. Do not rely on Mermaid's own `click` (Obsidian's strict security level may block it: unverified). Pointer cursor on nodes. The same could be added to the `rig` block (`src/rig/render.ts:57`) for parts that are notes: ask the user, rig parts are table rows, not notes.
 - Depends on: Phase 2
 - Files: new `src/planning/plan-render.ts` modelled on `src/rig/render.ts:14-57`, registered in `src/main.ts`; done nodes coloured, `result` on each node; redraw on edit; tests like `tests/rig-render.test.ts`.
@@ -59,6 +116,9 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Files: `To-do board.base` (`project` in `order`, simplest) or `vault-theme.css` + `engine.ts:173-193` data attribute; tests; the 3-line title overlap and phone width checked.
 - Plan check 2026-10-12: the `order` route is not known to be the simplest. Obsidian works the card height out from what the card shows (title + done = 88px) and the theme re-places the title and tick inside that fixed height with `!important` rules (`vault-theme.css:357-363`). A third property in `order` will change the height and may break that layout. Spike in Obsidian first: add `project` to `order` in test-vault, look at the card height and the title / tick / countdown. If it breaks, use the data attribute + `::before` route (no height change, like the countdown).
 - Done when: the user sees it next to a countdown and a priority on one card.
+
+## Order (checked 2026-10-12)
+3a → 3b → 4a → 4b → 4c → 5 → 6. 3a, 3b, 4a and 5 need only Phase 2 (done); 4b needs 4a; 4c needs 4b seen by the user; 6 is independent and still starts with its own spike. Each is one session.
 
 ## Verification
 Tests per phase; each phase is tests-only until the user tries it in Obsidian (say so in STATUS). Known engine answers are untouched, none of this changes `calc`.
