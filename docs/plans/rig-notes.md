@@ -16,16 +16,16 @@ Properties: `Tubing` (rig-wide material and inner diameter), `Control software` 
 
 Parts tables, one row per part. `Part` is one of Pump, Mixer, Reactor, Heater, Regulator, Valve, Analysis, Outlet, Tubing.
 
-**Several small tables, not one big one** (user, 2026-10-12): every table in the note with an `ID` and a `Feeds` column is a parts table; each may have its own other columns; the diagram is drawn from all of them together. A table without a `Part` column takes the kind from the heading above it (Pumps = Pump); under any other heading (Reactor line) it needs the column. The kit's Rig template ships three: Pumps (ID, Model, Carries, Tubing in / out, Pressure limit, Feeds), Reactor line (ID, Part, Type, Material, Size, Setting, Feeds), Analysis (ID, Instrument, Method, Feeds). The single table below shows the same content in one piece.
+**Several small tables, not one big one** (user, 2026-10-12): every table in the note with an `ID` and a `Feeds` column is a parts table; each may have its own other columns; the diagram is drawn from all of them together. A table without a `Part` column takes the kind from the heading above it (Pumps = Pump); under any other heading (Reactor line) it needs the column. The kit's Rig template ships three: Pumps (ID, Model, Carries, Tubing in, Tubing out, Pressure limit, Feeds), Reactor line (ID, Part, Type, Material, Size, Setting, Feeds), Analysis (ID, Instrument, Method, Feeds). The single table below shows the same content in one piece.
 
-| ID | Part | Type / model | Carries | Tubing in / out | Material | Size | Setting | Feeds |
-|---|---|---|---|---|---|---|---|---|
-| P1 | Pump | make, model | monomer | PFA 1.6 mm / PFA 0.75 mm | | | pressure limit | M1 |
-| M1 | Mixer | T-piece | | | PEEK | | | R1 |
-| R1 | Reactor | coil | | | PFA | 2.0 mL | | BPR |
-| H1 | Heater | heating cartridge | | | | | | R1 |
-| BPR | Regulator | cartridge | | | | | 5 bar | NMR |
-| NMR | Analysis | benchtop NMR | | | | | method name | |
+| ID | Part | Type / model | Carries | Tubing in | Tubing out | Material | Size | Setting | Feeds |
+|---|---|---|---|---|---|---|---|---|---|
+| P1 | Pump | make, model | monomer | PFA 1.6 mm | PFA 0.75 mm | | | pressure limit | M1 |
+| M1 | Mixer | T-piece | | | | PEEK | | | R1 |
+| R1 | Reactor | coil | | | | PFA | 2.0 mL | | BPR |
+| H1 | Heater | heating cartridge | | | | | | | R1 |
+| BPR | Regulator | cartridge | | | | | | 5 bar | NMR |
+| NMR | Analysis | benchtop NMR | | | | | | method name | |
 
 What each column holds (user, 2026-10-12):
 - **Pump**: model; `Carries` (pre-set in the rig note or filled in the experiment); tubing material in / out and size; pressure limit in `Setting` (only some pumps, set in the experiment).
@@ -37,7 +37,7 @@ What each column holds (user, 2026-10-12):
 - **Outlet** (collection or waste) is a part kind, so a sampling valve can feed both an analysis module and the outlet (user, 2026-10-12, after the mockup).
 - An online analysis module is one row; its own eluent pump or dilution step is not drawn.
 
-Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in its own `Tubing in / out` column (empty = the rig-wide value), and `Material` is the wetted material of the part itself.
+Confirmed by the user at the start of Phase 1 (2026-10-12, survey): the pump's tubing goes in two columns, `Tubing in` and `Tubing out` (empty = the rig-wide value), and a table without a `Part` column takes its kind from the heading above it. Still Claude's reading: `Material` is the wetted material of the part itself.
 
 ## Out of scope
 - The optimisation record, Code and environment, Run log, sample codes for computed runs (their own BACKLOG items).
@@ -49,7 +49,8 @@ Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in 
 
 ## Phases
 
-### Phase 1 — Parts table to diagram (engine, no Obsidian)
+### Phase 1 — Parts table to diagram (engine, no Obsidian) — DONE 2026-10-12
+- Result: `readRig(text)` in `src/rig/parts.ts` gives `tables` (heading, header, raw lines: what Phase 4's `{{rig-tables}}` needs), `parts`, `links`, `problems`, `mermaid`. Claude's choices, not in the plan: every part is a plain box (`ID`, then the first filled of Type / model, Type, Model, Instrument, else the kind), flow left to right; IDs match without regard to case; a duplicate or ID-less row is left out of the drawing; tables inside a callout or a code block are not read. Tests only.
 - Files: `src/rig/parts.ts` (new), `tests/rig-parts.test.ts` (new), `tests/fixtures/rigs/` (new)
 - What: read every parts table in a note's text (any table with `ID` and `Feeds` columns; columns found by header name, any order, extra columns kept; kind from the `Part` column, else from the heading above the table); give parts, connections and Mermaid flowchart text. Problems are returned as messages, never thrown: unknown `Feeds` ID, duplicate ID (also across tables), missing ID, a kind that cannot be worked out, no table. `Feeds` takes several IDs separated by commas (branches). A Heater is drawn attached to its reactor (dashed line), not in the flow.
 - Done when: fixtures pass for single tubular reactor; two pumps into a mixer; telescoped tubular + two-tank cascade; in-line analysis after the regulator; a sampling valve feeding an analysis module and an Outlet; the same rig as one table and as three tables giving the same diagram; each problem message. IDs and text with Mermaid special characters (quotes, brackets, `|`) come out escaped.
