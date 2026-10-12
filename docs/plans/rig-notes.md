@@ -56,7 +56,8 @@ Confirmed by the user at the start of Phase 1 (2026-10-12, survey): the pump's t
 - Done when: fixtures pass for single tubular reactor; two pumps into a mixer; telescoped tubular + two-tank cascade; in-line analysis after the regulator; a sampling valve feeding an analysis module and an Outlet; the same rig as one table and as three tables giving the same diagram; each problem message. IDs and text with Mermaid special characters (quotes, brackets, `|`) come out escaped.
 - New dependencies: none
 
-### Phase 2 — The `rig` block draws the diagram in the rig note
+### Phase 2 — The `rig` block draws the diagram in the rig note — DONE 2026-10-12
+- Result: `RigRenderer` in `src/rig/render.ts`, registered in `src/main.ts`. Redraws 250 ms after the note is saved, and only when the diagram text or the problems changed. `styles.css` not touched: the problem list uses the existing `lab-kit-warn`. Tests only (Obsidian stub); test note `test-vault/Rig test.md`.
 - Depends on: Phase 1
 - Files: `src/rig/render.ts` (new), `src/main.ts` (register), `styles.css` only if needed, `tests/rig-render.test.ts` (new), `docs/architecture.md`, `docs/obsidian-test-checklist.md`
 - What: a ```` ```rig ```` code block reads the parts tables of its own note and renders the Phase 1 Mermaid text through Obsidian's Markdown renderer (so it works on mobile, no Node); problems show as a list under it; it redraws when the note changes (same way as the `calc` block, `src/calc/render.ts:69`).
