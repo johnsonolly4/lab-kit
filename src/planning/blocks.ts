@@ -7,6 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
+import { hasPlan, planLines, readPlan } from "./plan";
 import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
@@ -256,6 +257,20 @@ class BlockView extends MarkdownRenderChild {
         this.list(box, this.showAll ? all : all.slice(0, PROJECT_TILE_ROWS), todos ? "No open to-dos for this project." : "No notes in this project yet.");
         return;
       }
+      case "project-plan": {   // on a project hub: next steps, then blocked ones, finished ones behind Show all; nothing when the project has no plan
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
+        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile));
+        if (!hasPlan(plan)) return;
+        const { lines, finished } = planLines(plan);
+        const open = lines.slice(0, lines.length - finished), shown = this.showAll ? lines : open.slice(0, PROJECT_TILE_ROWS);
+        box.addClass("vt-plan");
+        if (finished || open.length > PROJECT_TILE_ROWS) this.toggle(box, this.showAll ? "Hide finished" : `Show all ${lines.length}`);
+        box.createDiv({ cls: "vt-plan-title", text: "Plan" });
+        this.list(box, shown, "Nothing left to do in this plan.");
+        for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
+        return;
+      }
       case "meeting-cards": {   // the Meetings hub: one card per series
         if (!this.need(box, f.meetings)) return;
         const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
@@ -305,7 +320,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-plan, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

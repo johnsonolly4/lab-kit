@@ -259,6 +259,14 @@ body {
 .vt-card li a.internal-link:hover { text-decoration: underline; }
 /* Project hub To-dos / Notes tiles: Show all / Show the last 10 sits in the tile's top right corner (src/planning/blocks.ts, show: project-todos / project-notes) */
 .callout:has(> .callout-content .vt-tile-toggle) { position: relative; }
+/* Project hub Plan tile: a bare card (no callout) that holds the same Show all button */
+.vt-plan { position: relative; background: var(--vt-card-bg); border: 1px solid var(--vt-card-border); border-radius: var(--vt-card-radius); padding: 14px 18px; margin: 12px 0; }
+.vt-plan-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 6px; }
+.vt-plan ul { list-style: none; padding: 0; margin: 0; }
+.vt-plan li { padding: 5px 0; margin: 0; border-bottom: 1px solid var(--vt-divider); }
+.vt-plan li:last-child { border-bottom: none; }
+.vt-plan li::marker { content: ""; }
+.vt-plan li a.internal-link { color: var(--text-normal); text-decoration: none; }
 .vt-tile-toggle { position: absolute; top: 6px; right: 8px; font-size: var(--font-ui-smaller); padding: 2px 8px; height: auto; }
 /* In Live Preview Obsidian's "Edit this block" icon sits in the same corner: hidden on blocks that hold the button */
 .cm-embed-block:has(.vt-tile-toggle) .edit-block-button, .cm-embed-block:has(.vt-tile-toggle) + .edit-block-button { display: none; }

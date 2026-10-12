@@ -112,3 +112,13 @@ describe("topicIndex: the Knowledge index lists every topic, empty ones too", ()
     expect(t.find(x => x.hub.text === "New topic")!.notes).toEqual([]);
   });
 });
+
+describe("Project hub template: the Plan tile", () => {
+  it("sits bare between the hub bar and the Goal", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    const bar = t.indexOf("show: hub-bar"), plan = t.indexOf("```vault-card\nshow: project-plan\n```"), goal = t.indexOf("> [!focus] Goal");
+    expect(bar).toBeGreaterThan(0);
+    expect(plan).toBeGreaterThan(bar);
+    expect(goal).toBeGreaterThan(plan);
+  });
+});

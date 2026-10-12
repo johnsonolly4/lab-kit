@@ -110,6 +110,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | Section | What it shows |
 |---|---|
 | Top row (`show: hub-bar`) | no `# heading` (Obsidian's inline title is the title); back link to [[Projects overview]]; **New to-do**; **New note**; the Status drop-down; the Deadline date; the countdown |
+| *Plan* (`show: project-plan`) | only when a to-do of the project has `after` or `order`: ready to-dos, then blocked ones (`after X`), finished ones with their `result` behind **Show all**; set `after` (link to the to-do before it), `order` (number) and `result` (one line) by hand |
 | *Goal* | `[goal:: ...]` - also shown on the project's card |
 | *To-dos* (`show: project-todos`) | open to-dos whose `project` is this hub, overdue first, then by day; 10 rows, **Show all** |
 | *Notes* (`show: project-notes`) | every note in the project folder (and subfolders), newest first; 10 rows, **Show all** |

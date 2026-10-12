@@ -90,8 +90,8 @@
       "src": ".obsidian/snippets/vault-theme.css",
       "role": "cssSnippets",
       "path": "vault-theme.css",
-      "version": "1.0.0",
-      "sha256": "9c6fd7e406bcefb4a2977b9cfc5d8baa5e0722ffda49422f6177fbf9c9ca4323",
+      "version": "1.0.1",
+      "sha256": "30ba3593357a19a5e11c7297b5de3d2ee73086f65d130594228c8b05bf71f309",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "fb5139741f88a4a524e4d72e2e895c5fe4668a9b23825f2d79736ee43dc2ff68",
+      "sha256": "dbca88be213088a1681fd2c6aaed0eb5cd6cae857d118766ff7e17620b2e75ec",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -347,8 +347,8 @@
       "src": "Extras/Templates/Project hub.md",
       "role": "templates",
       "path": "Project hub.md",
-      "version": "1.0.0",
-      "sha256": "e2661d7ee384bb14f339fc0684e5393b6f8b915a9dc3c6bbdc39e002a16093de",
+      "version": "1.0.1",
+      "sha256": "34f27b464cdcf05463dab5d8e1de3dde161dcb9b31af9495546d978cd6eedb4a",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },

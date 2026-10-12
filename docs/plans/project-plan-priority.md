@@ -58,6 +58,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Docs: changelog, checklist 6i row, Vault spec / How my vault works (the hub's parts), `npm run kit:manifest`.
 - Done when: tests and lint pass; tests only until the user opens a hub with and without a plan.
 
+- **Phase 3a result (2026-10-12, tests only, not seen in Obsidian):** as specified. `hasPlan` also counts `plan.problems` (a to-do whose only `after` is a missing link gives `after: []`, so without it the message would never show). The tile is a bare `vault-card` given the class `vt-plan` (CSS in `vault-theme.css` copies the `.vt-card` look; the Show all button reuses `.vt-tile-toggle`). Show all ("Hide finished" when open) reveals finished rows and rows over `PROJECT_TILE_ROWS`. The `hub-body` Tidy rule picks the block up with no change (test in `tests/tidy-hubs.test.ts`). Known gaps are in BACKLOG "Project plan from to-dos".
+
 ### Phase 3b — New to-do asks "Comes after?"
 - Depends on: none (best after 3a, so the answer shows in the tile). Model: Sonnet.
 - `kits/planning/Extras/Templates/To-do.md`: after the project is known (`:11-27`) and only when it is set, list that project's open to-dos from the metadata cache (the way the hub list is built, `:22-27`) and ask with `tp.system.suggester`, "(nothing)" first; skip the prompt when there are none. Esc = nothing. Write `after:` with one link in the properties only when one was picked; no `after` key otherwise, and never for a to-do without a project.

@@ -1,6 +1,6 @@
 // The project plan engine (src/planning/plan.ts): order, blocked, problems.
 import { describe, it, expect } from "vitest";
-import { readPlan } from "../src/planning/plan";
+import { hasPlan, planLines, readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
 const T = "00 Planning/To-dos/";
@@ -60,5 +60,28 @@ describe("readPlan", () => {
 
   it("a link with a path resolves", () => {
     expect(names([td("B", { after: "[[00 Planning/To-dos/A]]" }), td("A")])).toEqual(["A", "B"]);
+  });
+});
+
+describe("hasPlan / planLines (the Plan tile)", () => {
+  it("no plan: to-dos with no after and no order, and no problems", () => {
+    expect(hasPlan(readPlan([td("A"), td("B")], hub))).toBe(false);
+    expect(hasPlan(readPlan([], hub))).toBe(false);
+  });
+  it("a plan: after, order, or a wrong link (so its message shows)", () => {
+    expect(hasPlan(readPlan([td("A"), td("B", { after: "[[A]]" })], hub))).toBe(true);
+    expect(hasPlan(readPlan([td("A", { order: 1 })], hub))).toBe(true);
+    expect(hasPlan(readPlan([td("A", { after: "[[Ghost]]" })], hub))).toBe(true);
+  });
+  it("lines: ready, then blocked with after X, then finished with the result; the finished count", () => {
+    const p = readPlan([td("Done1", { done: true, result: "Mn 20 kDa" }), td("Next", { after: "[[Done1]]" }), td("Later", { after: ["[[Next]]", "[[Done1]]"] }), td("Free")], hub);
+    const { lines, finished } = planLines(p);
+    expect(lines.map(l => l.text)).toEqual(["Free", "Next", "Later", "Done1"]);
+    expect(lines.map(l => l.badges.map(b => b.text))).toEqual([[], [], ["after Next, Done1"], ["\u2192 Mn 20 kDa"]]);
+    expect(finished).toBe(1);
+    expect(lines[1].path).toBe(T + "Next.md");
+  });
+  it("a finished row without a result has no badge", () => {
+    expect(planLines(readPlan([td("A", { done: true, order: 1 })], hub)).lines[0].badges).toEqual([]);
   });
 });

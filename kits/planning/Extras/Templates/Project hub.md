@@ -22,6 +22,10 @@ cssclasses:
 show: hub-bar
 ```
 
+```vault-card
+show: project-plan
+```
+
 > [!focus] Goal
 > [goal:: ]
 

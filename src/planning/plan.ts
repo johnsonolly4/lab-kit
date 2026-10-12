@@ -1,7 +1,7 @@
 // The plan of one project (planning kit): its to-dos with `after` (links to the to-dos that come first), `result` (one line) and `order` (a number).
 // Pure (no Obsidian runtime). Gives the rows in plan order, which are blocked, and what is wrong (missing links, cycles).
 import { isFinished } from "./actions";
-import { linkTarget, pointsTo, type NoteRec } from "./lists";
+import { linkTarget, pointsTo, type Badge, type ListLine, type NoteRec } from "./lists";
 
 export interface PlanRow {
   path: string; name: string;
@@ -65,4 +65,16 @@ export function readPlan(todos: NoteRec[], hub: NoteRec): Plan {
       order: orderOf(t.fm.order), blocked: !done && ps.some(p => !isFinished({ done: p.fm.done, day: p.fm.day })) };
   });
   return { rows, problems };
+}
+
+/** The project has a plan: some to-do comes after another or has an `order`, or a link is wrong (so the message shows). */
+export const hasPlan = (plan: Plan): boolean => plan.rows.some(r => r.after.length > 0 || r.order !== null) || plan.problems.length > 0;
+
+/** The Plan tile's lines: open ready rows (plan order), then blocked rows ("after X"), then finished rows (with "→ result"). `finished` counts the last group. */
+export function planLines(plan: Plan): { lines: ListLine[]; finished: number } {
+  const line = (r: PlanRow, badges: Badge[]): ListLine => ({ path: r.path, text: r.name, badges });
+  const ready = plan.rows.filter(r => !r.done && !r.blocked).map(r => line(r, []));
+  const blocked = plan.rows.filter(r => r.blocked).map(r => line(r, [{ text: `after ${r.after.join(", ")}`, cls: "vt-muted" }]));
+  const done = plan.rows.filter(r => r.done).map(r => line(r, r.result ? [{ text: `→ ${r.result}`, cls: "vt-muted" }] : []));
+  return { lines: [...ready, ...blocked, ...done], finished: done.length };
 }
