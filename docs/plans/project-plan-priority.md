@@ -32,6 +32,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Files: new `src/planning/plan.ts` (read `after` / `result` / `order`; order rows; mark blocked; ignore missing links and cycles with a message), `src/planning/lists.ts` (reuse `projectTodos`, `:169`), To-do template gets empty `after`, `result`, `order` keys only if the user agrees (else the keys are added by hand; ask in the phase), docs.
 - Done when: tests with a fixture project: chain, two-parent join, cycle, missing link, done parent unblocks.
 
+- **Phase 2 result (2026-10-12, tests only, not seen in Obsidian):** `readPlan(todos, hub)` in `src/planning/plan.ts` gives `{ rows, problems }` (row: path, name, done, after names, result, order, blocked). Parents before children; ties by `order` (empty last) then path (NOT by the project-list day / priority order: simpler, say if wanted). Missing / self links and cycles are plain-sentence problems; every row is still listed. User decision with it: project to-dos are not archived while their hub is not Done (`isArchivable(..., projectActive)`, `projectIsActive` in `src/planning/commands.ts`; for a to-do with several projects only the first is checked). The To-do template got no `after` / `result` / `order` keys (typed by hand).
+
 ### Phase 3 — Plan tile on the project hub
 - User addition 2026-10-12 (chat): the Plan tile (the workflow: next to-do steps) goes at the TOP of the Project hub template, shown only when the project has to-dos with a plan (`after` / `order` set); otherwise nothing appears. My reading: "workflow" = this Plan tile, "next steps" = its unblocked open rows first. Confirm in Phase 3.
 - Depends on: Phase 2
