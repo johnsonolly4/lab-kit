@@ -76,6 +76,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Files: `src/planning/blocks.ts:244-255` (new `show: project-plan`), `kits/planning/Extras/Templates/Project hub.md:31-41`, Tidy rule for hub bodies (hub body is rewritten from the template with a preview, 2026-10-10 decision), tests, docs.
 - Done when: tests for the rows (status, result, "← after X", blocked mark); hub template test; kit manifest.
 
+- **Phase 3b result (2026-10-12, tests only, not seen in Obsidian):** as specified, in `To-do.md` only; asked however the project was set (hub button, active hub, or the project pick; not yet confirmed with the user for the non-hub-button ways). Prompt text is "Comes after? (optional: pick (nothing) to skip)" because `tests/esc-cancel.test.ts` forbids "Esc = " in box text; Esc behaves as nothing, unlike the other pickers.
+
 ### Phase 4a — Card map layout (pure code)
 - Depends on: Phase 2. Model: Sonnet.
 - New `src/planning/plan-map.ts`: from `readPlan`'s rows give each to-do a step (0 for no parents, else 1 + the largest step of its parents; a to-do in a cycle keeps the plan engine's order and is flagged, never dropped), a place inside its step (near its parents, then `order`, then path), the list of arrows (from, to), and the start step: the step of the first ready open to-do (the last step when everything is finished).

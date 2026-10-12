@@ -59,4 +59,20 @@ describe("To-do template", () => {
     expect(tpl).toContain("Cancelled - no priority choice");
     expect(tpl).toMatch(/^countdown: <% countdown %>\npriority: <% priority %>\n/m);
   });
+  it("asks Comes after? only for a project with open to-dos (Esc = nothing) and writes after only when picked", () => {
+    expect(tpl).toContain('["(nothing)", ...open], ["", ...open]');
+    expect(tpl).toContain("Comes after? (optional: pick (nothing) to skip)");
+    expect(tpl).toContain("if (project) {");
+    expect(tpl).toContain("if (open.length) {");
+    expect(tpl).toContain("after = before || \"\";");
+    expect(tpl).toMatch(/^priority: <% priority %>\n<% after \? `after: "\[\[\$\{after\}\]\]"\\n` : "" -%>\n/m);
+  });
+  it("reads a project link written as [[Name]], [[Folder/Name|alias]] or [[Name#h]]", () => {
+    const src = tpl.match(/const linkName = (.+);\n/)![1];
+    const linkName = new Function(`return (${src});`)() as (v: unknown) => string | undefined;
+    expect(linkName("[[Alpha]]")).toBe("Alpha");
+    expect(linkName("[[02 Projects/Alpha/Alpha|the project]]")).toBe("Alpha");
+    expect(linkName("[[Alpha#Goal]]")).toBe("Alpha");
+    expect(linkName("")).toBeUndefined();
+  });
 });

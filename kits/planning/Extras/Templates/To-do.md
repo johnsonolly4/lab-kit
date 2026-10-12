@@ -25,6 +25,20 @@ if (!project) {
   if (picked === null || picked === undefined) { throw new Error("Cancelled - no project picked"); }
   project = picked;
 }
+// Comes after?: only for a project that has open to-dos; one pick ("(nothing)" first). Esc picks nothing and does not cancel the to-do.
+let after = "";
+if (project) {
+  const linkName = v => (String(v || "").match(/\[\[([^\]|#]+)/) || [])[1]?.split("/").pop().trim();
+  const open = app.vault.getMarkdownFiles().filter(f => {
+    if (!f.path.startsWith(`${folder}/`) || f.path === tp.config.target_file.path) return false;
+    const fm = app.metadataCache.getFileCache(f)?.frontmatter;
+    return fm?.kind === "todo" && fm.done !== true && fm.day !== "Done" && linkName(fm.project) === project;
+  }).map(f => f.basename).sort((a, b) => a.localeCompare(b));
+  if (open.length) {
+    const before = await tp.system.suggester(["(nothing)", ...open], ["", ...open], false, "Comes after? (optional: pick (nothing) to skip)");
+    after = before || "";
+  }
+}
 // Meeting: asked only when there are several meeting series ("(none)" = not flagged; Esc cancels); with one series nothing is asked: set meeting in Properties
 const series = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
 let meeting = "";
@@ -78,6 +92,7 @@ project: <% project ? `"[[${project}]]"` : "" %>
 due: <% due %>
 countdown: <% countdown %>
 priority: <% priority %>
+<% after ? `after: "[[${after}]]"\n` : "" -%>
 meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 cssclasses:
   - vt
