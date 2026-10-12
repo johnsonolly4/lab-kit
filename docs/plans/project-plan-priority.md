@@ -36,6 +36,7 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Done when: tests for the rows (status, result, "← after X", blocked mark); hub template test; kit manifest.
 
 ### Phase 4 — `plan` block (Mermaid)
+- User addition 2026-10-12 (chat): clicking a to-do in the diagram opens its note. Approach (not tried): after the block renders, add a click handler to each node in the SVG that calls `app.workspace.openLinkText(path, "")` (ctrl/cmd-click = new tab); node ids map to note paths in `plan.ts`. Do not rely on Mermaid's own `click` (Obsidian's strict security level may block it: unverified). Pointer cursor on nodes. The same could be added to the `rig` block (`src/rig/render.ts:57`) for parts that are notes: ask the user, rig parts are table rows, not notes.
 - Depends on: Phase 2
 - Files: new `src/planning/plan-render.ts` modelled on `src/rig/render.ts:14-57`, registered in `src/main.ts`; done nodes coloured, `result` on each node; redraw on edit; tests like `tests/rig-render.test.ts`.
 - Done when: tests; the user sees one project drawn (including a wide one, a phone).
