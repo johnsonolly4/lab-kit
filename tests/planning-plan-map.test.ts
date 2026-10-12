@@ -1,6 +1,6 @@
 // The card map layout (src/planning/plan-map.ts): steps, places, arrows, unlinked, start step, chains.
 import { describe, it, expect } from "vitest";
-import { chainOf, layoutPlan } from "../src/planning/plan-map";
+import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -71,5 +71,31 @@ describe("chainOf", () => {
   it("a cycle: its members once, itself included, no endless loop", () => {
     const p = plan([td("A", { after: "[[B]]" }), td("B", { after: "[[A]]" })]);
     expect(nm(chainOf(p, T + "A.md"))).toEqual(["A", "B"]);
+  });
+});
+
+describe("mapGeometry", () => {
+  it("steps go right, places go down; the canvas fits them", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[A]]" })]);
+    const g = mapGeometry(m);
+    expect(g.pos.get(T + "A.md")).toEqual({ x: PAD, y: PAD });
+    expect(g.pos.get(T + "B.md")).toEqual({ x: PAD + CARD_W + GAP_X, y: PAD });
+    expect(g.pos.get(T + "C.md")).toEqual({ x: PAD + CARD_W + GAP_X, y: PAD + CARD_H + GAP_Y });
+    expect(g.width).toBe(2 * PAD + 2 * CARD_W + GAP_X);
+    expect(g.height).toBe(2 * PAD + 2 * CARD_H + GAP_Y);
+  });
+  it("one curve per arrow, from the first card's right edge to the second's left edge", () => {
+    const g = mapGeometry(map([td("A"), td("B", { after: "[[A]]" })]));
+    expect(g.curves).toHaveLength(1);
+    expect(g.curves[0]).toMatchObject({ from: T + "A.md", to: T + "B.md" });
+    expect(g.curves[0].d.startsWith(`M${PAD + CARD_W} ${PAD + CARD_H / 2} C`)).toBe(true);
+    expect(g.curves[0].d.endsWith(` ${PAD + CARD_W + GAP_X} ${PAD + CARD_H / 2}`)).toBe(true);
+  });
+  it("scrolls so the start step is at the left edge; nothing for an empty map", () => {
+    const chain = map([td("A", { done: true }), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" })]);
+    expect(mapGeometry(chain).scrollLeft).toBe(1 * (CARD_W + GAP_X));
+    const none = mapGeometry(map([td("Lone")]));
+    expect(none).toMatchObject({ width: 0, height: 0, scrollLeft: 0 });
+    expect(none.curves).toEqual([]);
   });
 });

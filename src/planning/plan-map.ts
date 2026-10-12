@@ -70,3 +70,34 @@ export function chainOf(plan: Plan, path: string): Set<string> {
   walk(up, out); walk(down, out);
   return out;
 }
+
+export const CARD_W = 190, CARD_H = 78, GAP_X = 56, GAP_Y = 14, PAD = 12;
+
+export interface MapGeometry {
+  width: number; height: number;
+  /** Top-left corner of each card, by path. */
+  pos: Map<string, { x: number; y: number }>;
+  /** One curve per arrow, from the right edge of the first card to the left edge of the second. */
+  curves: { from: string; to: string; d: string }[];
+  /** Scroll position that puts the start step at the left edge. */
+  scrollLeft: number;
+}
+
+/** Pixels for a layout: steps go left to right, places top to bottom. */
+export function mapGeometry(map: PlanMap): MapGeometry {
+  const pos = new Map<string, { x: number; y: number }>();
+  for (const c of map.cards) pos.set(c.path, { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) });
+  const steps = map.cards.length ? Math.max(...map.cards.map(c => c.step)) + 1 : 0;
+  const places = map.cards.length ? Math.max(...map.cards.map(c => c.place)) + 1 : 0;
+  const curves = map.arrows.flatMap(a => {
+    const f = pos.get(a.from), t = pos.get(a.to);
+    if (!f || !t) return [];
+    const x1 = f.x + CARD_W, y1 = f.y + CARD_H / 2, x2 = t.x, y2 = t.y + CARD_H / 2, k = Math.max(GAP_X / 2, Math.abs(x2 - x1) / 2);
+    return [{ from: a.from, to: a.to, d: `M${x1} ${y1} C${x1 + k} ${y1} ${x2 - k} ${y2} ${x2} ${y2}` }];
+  });
+  return {
+    width: steps ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 0,
+    height: places ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y : 0,
+    pos, curves, scrollLeft: Math.max(0, map.startStep * (CARD_W + GAP_X)),
+  };
+}

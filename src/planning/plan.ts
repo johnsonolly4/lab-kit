@@ -17,6 +17,8 @@ export interface PlanRow {
   /** The one-line `result`, "" when none. */
   result: string;
   order: number | null;
+  /** `priority` 1, 2 or 3 (1 = highest); none otherwise. */
+  priority: number | null;
   /** Open, and at least one of its `after` to-dos is not done. */
   blocked: boolean;
 }
@@ -27,6 +29,11 @@ const text = (v: unknown): string => (typeof v === "string" ? v : typeof v === "
 function orderOf(v: unknown): number | null {
   const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
   return Number.isFinite(n) ? n : null;
+}
+/** `priority` as 1, 2 or 3 (a number or text); anything else is none. */
+function priorityOf(v: unknown): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
+  return n === 1 || n === 2 || n === 3 ? n : null;
 }
 /** The items of `after`: one link or a list; empty items dropped. */
 /** The `due` of a to-do as YYYY-MM-DD (the date part of a date-time), "" when unreadable. */
@@ -69,7 +76,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec): Plan {
     const ps = parents.get(t.path)!;
     const done = isFinished({ done: t.fm.done, day: t.fm.day });
     return { path: t.path, name: t.name, done, after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
-      order: orderOf(t.fm.order), blocked: !done && ps.some(p => !isFinished({ done: p.fm.done, day: p.fm.day })) };
+      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && ps.some(p => !isFinished({ done: p.fm.done, day: p.fm.day })) };
   });
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
   const byPath = new Map(rows.map(r => [r.path, r]));

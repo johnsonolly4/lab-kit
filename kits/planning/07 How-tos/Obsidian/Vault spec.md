@@ -110,6 +110,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | Section | What it shows |
 |---|---|
 | Top row (`show: hub-bar`) | no `# heading` (Obsidian's inline title is the title); back link to [[Projects overview]]; **New to-do**; **New note**; the Status drop-down; the Deadline date; the countdown |
+| *Plan map* (`show: project-map`) | same condition as the Plan tile: to-dos with a link as cards, left to right, joined by arrows; click opens, right-click: Open, Open in new tab, Mark done; hover marks everything before and after; to-dos with no links sit in a **Not linked** list beside it. It replaces the Plan list unless Settings → Lab Kit → Project plan view says both |
 | *Plan* (`show: project-plan`) | only when a to-do of the project has `after` or `order`: ready to-dos, then blocked ones (`after X`), finished ones with their `result` behind **Show all**; set `after` (link to the to-do before it), `order` (number) and `result` (one line) by hand |
 | *Goal* | `[goal:: ...]` - also shown on the project's card |
 | *To-dos* (`show: project-todos`) | open to-dos whose `project` is this hub, overdue first, then by day; 10 rows, **Show all** |

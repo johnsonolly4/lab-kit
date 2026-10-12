@@ -120,6 +120,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Unknown until seen: arrows crossing on a big plan, a wide plan, Live Preview vs Reading view, a phone.
 - Done when: tests for anything pure (pixel maths, scroll target); the user sees one real project drawn.
 
+- **Phase 4b result (2026-10-12, tests only, not seen in Obsidian):** `show: project-map` (`src/planning/plan-map-render.ts`, `mapGeometry` in `plan-map.ts`), template + theme CSS, `PlanRow.priority`. User decision: the map replaces the Plan list by default; setting `planView` (`map` | `both`) keeps both. The list hides only when the hub note itself holds the map block (so an old hub keeps its list). Mark done writes `done: true`; the engine's metadata handler then stamps `done_on` (read in `changePatch`, `src/planning/todo.ts:58`; not run). Redraws keep the scroll position; first draw scrolls the start step to the left.
+
 ### Phase 4c — Link by dragging
 - Depends on: 4b seen by the user. Model: Opus for the spike, then Sonnet.
 - Drag from a card's handle to another card: the second to-do gets the first in `after` (`app.fileManager.processFrontMatter`, appending a link; an existing single value becomes a list). Click an arrow, then confirm, removes that link. A link that would make a loop is refused with a notice (the check is pure code, tested). No card moves: positions are not saved.

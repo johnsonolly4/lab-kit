@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { folderHub, parentHub, topicIndex, type NoteRec } from "../src/planning/lists";
+import { KIT_DEFAULTS } from "../src/kit/paths";
 import { seriesOfNote } from "../src/planning/meetings";
 
 const note = (path: string, fm: Record<string, unknown> = {}): NoteRec => {
@@ -120,5 +121,11 @@ describe("Project hub template: the Plan tile", () => {
     expect(bar).toBeGreaterThan(0);
     expect(plan).toBeGreaterThan(bar);
     expect(goal).toBeGreaterThan(plan);
+  });
+  it("has the card map under the Plan tile; the setting defaults to the map only", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    expect(t.indexOf("```vault-card\nshow: project-map\n```")).toBeGreaterThan(t.indexOf("show: project-plan"));
+    expect(t.indexOf("show: project-map")).toBeLessThan(t.indexOf("> [!focus] Goal"));
+    expect(KIT_DEFAULTS.planView).toBe("map");
   });
 });

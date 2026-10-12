@@ -202,9 +202,14 @@ class KitSettingTab extends PluginSettingTab {
             this.ctl.dueCountdownChanged?.();
           }));
       } };
+    const planView: SettingGroupItem = { name: "Project plan view", desc: "What a project hub shows for its plan: the card map only, or the card map with the plan list above it. A hub without the card map keeps the list.",
+      render: b => {
+        b.addDropdown(d => d.addOption("map", "Card map only").addOption("both", "Card map and plan list")
+          .setValue(this.ctl.kit.planView).onChange(async v => { this.ctl.kit.planView = v === "both" ? "both" : "map"; await this.ctl.save(); }));
+      } };
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
-    return [intro, countdown, progress, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    return [intro, countdown, planView, progress, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);

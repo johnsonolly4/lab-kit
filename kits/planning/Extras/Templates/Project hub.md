@@ -26,6 +26,10 @@ show: hub-bar
 show: project-plan
 ```
 
+```vault-card
+show: project-map
+```
+
 > [!focus] Goal
 > [goal:: ]
 

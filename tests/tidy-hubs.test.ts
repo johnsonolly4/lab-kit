@@ -46,6 +46,7 @@ describe("hub pages from the templates", () => {
     expect(project.startsWith(PROJECT_OLD.slice(0, PROJECT_OLD.indexOf("\n---\n", 4) + 5))).toBe(true);
     expect(project).toContain("show: hub-bar");
     expect(project).toContain("show: project-plan");
+    expect(project).toContain("show: project-map");
     expect(project).toContain("[goal:: Make polymers]");
     expect(project).toContain("## Related\n- [[My paper]]\n- my own line");
     const topic = m.get("06 Knowledge/NMR/NMR.md")!;
