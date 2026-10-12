@@ -175,6 +175,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | New meeting series | Makes a series: name, how often, day, first date, deck, template |
 | Open meeting deck | Opens the deck of the meeting you are in (asks only from other notes) |
 | New project | Makes a project folder and its hub |
+| Link to-dos in order | Select a list of `[[to-do]]` links in a note: each to-do then comes after the one before it (asks first, with Undo afterwards) |
 | New project note | Makes a note in a project's folder |
 | New concept | Makes a knowledge note in a topic |
 | New topic hub | Makes the hub note of a topic folder |

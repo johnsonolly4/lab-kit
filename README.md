@@ -198,6 +198,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 | Quick capture | An empty note in the Inbox, opened |
 | Add to shopping list | Adds comma-separated items to `Shopping list.md` in the Planning folder |
 | Sort inbox | Opens each Inbox note in turn and asks where it goes (to-do, a project, Knowledge, How-tos, Meetings, archive, delete, skip); in a folder list you can type a new folder name. Esc or Stop ends it |
+| Link to-dos in order | Select a list of `[[to-do]]` links in a note; each to-do then comes after the one before it (a preview first, Undo afterwards) |
 | Archive old to-dos | Moves to-dos finished more than 30 days ago into the Archive folder |
 | New meeting series | Asks name, how often, day, date of the first meeting, the deck path and (optional) the name of your own meeting note template; makes the series folder under Meetings and its hub note. Also a button on the Meetings hub |
 | New meeting · New one-off meeting · New extra meeting now | A note for a meeting series (asks which when there are several); a one-off meeting uses the smaller kit template **One-off meeting**; **New extra meeting now** (the **Extra meeting now** button on each series hub) adds a meeting on a date you give without moving the schedule. A series hub's `template` property names your own meeting note template |

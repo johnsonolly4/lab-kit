@@ -115,6 +115,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | *Goal* | `[goal:: ...]` - also shown on the project's card |
 | *To-dos* (`show: project-todos`) | open to-dos whose `project` is this hub, overdue first, then by day; 10 rows, **Show all** |
 | *Notes* (`show: project-notes`) | every note in the project folder (and subfolders), newest first; 10 rows, **Show all** |
+| *Link to-dos in order* (command) | select a list of `[[to-do]]` links in a note and run it: each to-do gets `after` naming the one before it (preview, then confirm; Undo afterwards); pairs already linked or that would make a loop are left out |
 | *Experiments* (`show: project-experiments`) | the lab notes that this project's to-dos name in `experiment`, each once, with its `Status` and the to-do that names it; open ones first, Closed last; nothing is written to the lab notes (a lab note has no `project`); needs the Lab folder set |
 | *Meetings* (`show: project-meetings`) | meeting notes whose `project` names this hub, newest first; the last 8, **Show all** |
 | *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, key papers first (&#9733;), with my reason from its *For my projects* line (Dataview) |

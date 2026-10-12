@@ -3,6 +3,7 @@
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, type PlanMap } from "./plan-map";
+import { changeAfter, linkText, namesOf, undoNotice } from "./after-write";
 import { addAfter, canLink, removeAfter } from "./plan-link";
 
 export interface MapOptions {
@@ -31,42 +32,18 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
   m.showAtMouseEvent(e);
 }
 
-/** A notice with an Undo button. */
-function undoNotice(text: string, undo: () => Promise<void>): void {
-  const n = new Notice("", 8000);
-  n.messageEl.createSpan({ text: `${text} ` });
-  n.messageEl.createEl("button", { text: "Undo" }).addEventListener("click", () => { n.hide(); undo().catch(() => { new Notice("Could not undo that."); }); });
-}
-
-/** Changes `after` on the to-do `to`. `value` gets the old value and returns the new one (undefined removes the property). */
-async function changeAfter(o: MapOptions, to: string, change: (value: unknown) => unknown): Promise<void> {
-  const file = o.app.vault.getFileByPath(to);
-  if (!file) throw new Error("to-do not found");
-  await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
-    const v = change(fm.after);
-    if (v === undefined) delete fm.after; else fm.after = v;
-  });
-}
-
-/** The names that `after` items use for the to-do at `path`: its path without `.md` and its name. */
-const namesOf = (path: string): string[] => { const p = path.replace(/\.md$/, ""); return [p, p.slice(p.lastIndexOf("/") + 1)]; };
-
 /** Writes the link "`to` comes after `from`" (the arrow is drawn first by the caller) and offers Undo. */
 async function link(o: MapOptions, from: string, to: string): Promise<void> {
-  const fromFile = o.app.vault.getFileByPath(from);
-  if (!fromFile) throw new Error("to-do not found");
-  const text = `[[${o.app.metadataCache.fileToLinktext(fromFile, to)}]]`;
-  await changeAfter(o, to, v => addAfter(v, text));
-  undoNotice("Linked.", () => changeAfter(o, to, v => removeAfter(v, namesOf(from))));
+  const text = linkText(o.app, from, to);
+  await changeAfter(o.app, to, v => addAfter(v, text));
+  undoNotice("Linked.", () => changeAfter(o.app, to, v => removeAfter(v, namesOf(from))));
 }
 
 /** Removes the link "`to` comes after `from`" and offers Undo. */
 async function unlink(o: MapOptions, from: string, to: string): Promise<void> {
-  const fromFile = o.app.vault.getFileByPath(from);
-  if (!fromFile) throw new Error("to-do not found");
-  const text = `[[${o.app.metadataCache.fileToLinktext(fromFile, to)}]]`;
-  await changeAfter(o, to, v => removeAfter(v, namesOf(from)));
-  undoNotice("Link removed.", () => changeAfter(o, to, v => addAfter(v, text)));
+  const text = linkText(o.app, from, to);
+  await changeAfter(o.app, to, v => removeAfter(v, namesOf(from)));
+  undoNotice("Link removed.", () => changeAfter(o.app, to, v => addAfter(v, text)));
 }
 
 /** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`. A line follows the pointer; Esc cancels. */

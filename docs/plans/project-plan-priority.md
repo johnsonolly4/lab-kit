@@ -145,6 +145,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Tests: the list of patches for three to-dos, one already linked, a loop, a link that is not a to-do, two projects.
 - Done when: tests and lint pass; the user runs it on one list in Obsidian.
 
+- **Phase 4d result (2026-10-13, pure parts tested, the command NOT seen in Obsidian):** `src/planning/sequence.ts` (`linksIn`, `sequencePatches`, `linkInOrder`), `sequence-ui.ts` (preview modal), shared writers in `src/planning/after-write.ts` (moved out of `plan-map-render.ts`). User decisions: the list is the selected links in a note; palette command only. Not built: Plan tile order as a source, a hub button, markdown-style links.
+
 ### Phase 4e — Subtasks (`sub`)
 - Depends on: 4b seen by the user (so the questions can be answered from a real map). Model: Opus for the questions, then Sonnet.
 - A subtask is a to-do with `sub: [[Parent to-do]]` (one link, on the child). `readPlan` reads it; the parent's subtasks are worked out. Typed by hand at first.

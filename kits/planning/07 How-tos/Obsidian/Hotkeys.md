@@ -31,7 +31,7 @@ These are suggestions. Lab Kit never sets a hotkey for you, so nothing changes u
 | `Alt+B` | To-do board | Lab Kit: Open to-do board |
 | `Ctrl+E` | Switch between reading and editing | Obsidian's own key, nothing to set |
 
-No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Roll over to-dos now, Archive old to-dos, New chemical, New rig.
+No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Roll over to-dos now, Archive old to-dos, Link to-dos in order, New chemical, New rig.
 
 ## Editing
 
