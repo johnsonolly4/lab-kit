@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **The guide notes update with the kit** (planning kit): Vault spec, How my vault works, Hotkeys, Setting up a computer and Set up ZotLit were installed once and then left alone, so a rewritten guide never reached you unless you pressed Use kit version… on each. They now behave like the templates: a guide you have not edited is updated by **Update all safe files** / **Review update…** (your old copy goes to the backup folder); one you edited is never overwritten, it is offered as a merge in Review update…, or shown as a conflict to resolve. The homepage, the boards and the hub notes (Projects overview, Meetings, Knowledge index, How-tos index, Literature, Weekly review, Shopping list) stay yours and are still never updated. Tests only, not seen in Obsidian
+
 ## v1.0.1 (2026-10-12)
 - Fixes the Snippet icons page missing after a fresh install; docs brought up to date; back to Lab book link, Open to-do board and four more recommended keys. Nothing in this version has been seen in Obsidian by its author yet: report what breaks on GitHub
 - **Review update… for both kits after updating**: several kit notes and templates changed. Files you edited are never overwritten; notes you keep as your own (Vault spec, How my vault works, Hotkeys, Setting up a computer, Meetings) show Compare… / Use kit version… / Keep mine in Manage kit files

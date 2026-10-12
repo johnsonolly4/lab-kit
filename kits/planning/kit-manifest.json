@@ -128,8 +128,7 @@
       "version": "1.0.1",
       "sha256": "49464ce17eee27688c75ea9f375cc4bba518dc6ccecd0fd2cfad82b32c7c463b",
       "renamedFrom": [],
-      "desc": "Recommended hotkeys (Alt + first letter); never set for you",
-      "policy": "keep"
+      "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
     {
       "id": "note-obsidian-how-my-vault-works-md",
@@ -140,8 +139,7 @@
       "version": "1.0.1",
       "sha256": "beee3b0689c0696035515826edd90f2cf9befb79ee8bfbcc5a87b75301b48241",
       "renamedFrom": [],
-      "desc": "Guide to the vault layout and daily routine",
-      "policy": "keep"
+      "desc": "Guide to the vault layout and daily routine"
     },
     {
       "id": "note-obsidian-set-up-zotlit-md",
@@ -154,7 +152,6 @@
       "renamedFrom": [],
       "desc": "Checklist: ZotLit's note folder and template folder",
       "optional": true,
-      "policy": "keep",
       "needs": "plugin:zotlit"
     },
     {
@@ -166,8 +163,7 @@
       "version": "1.0.1",
       "sha256": "8b99080087be7330b9dd3c286afd12be954244e6f5319411e71afdf130a14d05",
       "renamedFrom": [],
-      "desc": "Steps to set up Obsidian on a new computer",
-      "policy": "keep"
+      "desc": "Steps to set up Obsidian on a new computer"
     },
     {
       "id": "note-obsidian-vault-spec-md",
@@ -178,8 +174,7 @@
       "version": "1.0.1",
       "sha256": "d5a73c8b8a3bc10e02f1f5b3d4443fa1169d59b1add8c6c3ef693687c476741d",
       "renamedFrom": [],
-      "desc": "Full specification of the vault",
-      "policy": "keep"
+      "desc": "Full specification of the vault"
     },
     {
       "id": "note-knowledge-index-md",

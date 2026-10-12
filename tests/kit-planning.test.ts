@@ -39,7 +39,8 @@ describe("planning kit files (Phase 3)", () => {
     for (const f of planning.manifest.files) {
       expect(roles[f.role], f.src).toBeDefined();
       expect(f.desc?.length ?? 0, f.src).toBeGreaterThan(5);
-      expect(f.policy === "keep", f.src).toBe(!f.src.startsWith("Extras/") && !f.src.startsWith(".obsidian/"));
+      // Notes are kept (yours once installed); templates, scripts, CSS and the guide notes in 07 How-tos/Obsidian follow the kit
+      expect(f.policy === "keep", f.src).toBe(!f.src.startsWith("Extras/") && !f.src.startsWith(".obsidian/") && !f.src.startsWith("07 How-tos/Obsidian/"));
     }
     expect(planning.manifest.files.find(f => f.src === "00 Home.md")).toMatchObject({ role: "home", dest: "00 Home.md", kind: "note" });
   });
@@ -121,6 +122,31 @@ describe("planning kit files (Phase 3)", () => {
     // the To-do board reads the moved to-dos folder
     const board = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
     expect(kitText(planning, board, r)).toContain('file.inFolder("Z planning/To-dos")');
+  });
+
+  it("guide notes follow the kit: an unedited one is updated, an edited one is merged or left, a kept note is never touched", async () => {
+    const v = memVault();
+    const out = await applyManaged(v, planning, await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT)), null, opts);
+    const file = (dest: string) => planning.manifest.files.find(f => f.dest === dest)!;
+    const spec = file("Obsidian/Vault spec.md"), guide = file("Obsidian/How my vault works.md"), home = file("00 Home.md");
+    // the next kit version changes all three
+    const newer: EmbeddedKit = { ...planning, contents: { ...planning.contents,
+      [spec.id]: planning.contents[spec.id] + "\nA new rule.\n", [guide.id]: planning.contents[guide.id] + "\nA new tip.\n", [home.id]: planning.contents[home.id] + "\nA new tile.\n" } };
+    const guidePath = kitJoin(roles[guide.role], guide.dest);
+    v.files[guidePath] = v.files[guidePath].replace("# How my vault works", "# How my vault works (mine)");   // the user edited this one
+    const plan = await planManaged(v, newer, out.state, roles, null, opts.baseDir, offIds(newer, {}, {}, ZOTLIT));
+    const action = (id: string) => plan.find(i => i.file.id === id)!;
+    expect(action(spec.id).action).toBe("fast-forward");
+    expect(action(guide.id).action).toBe("merge");
+    expect(action(guide.id).merged).toContain("(mine)");
+    expect(action(guide.id).merged).toContain("A new tip.");
+    expect(action(home.id).action).toBe("keep");
+    // Update all safe files (the default selection) writes only the unedited guide
+    const res = await applyManaged(v, newer, plan, out.state, opts);
+    expect(v.files[kitJoin(roles[spec.role], spec.dest)]).toContain("A new rule.");
+    expect(v.files[guidePath]).not.toContain("A new tip.");
+    expect(v.files[kitJoin(roles[home.role], home.dest)]).not.toContain("A new tile.");
+    expect(res.results.find(r => r.id === spec.id)?.backup).toBeDefined();
   });
 
   it("a folder setting changed after install: unedited kit files get the new folder (backed up), edited ones are kept and reported", async () => {
