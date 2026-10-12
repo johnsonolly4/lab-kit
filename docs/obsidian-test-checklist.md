@@ -5,7 +5,7 @@
 > About 45 min. Order matters: later steps use files from earlier ones.
 
 ## 0. Setup (5 min)
-- [ ] Obsidian is 1.13 or newer (Settings → About)
+- [ ] Obsidian is 1.14 or newer (Settings → About)
 - [ ] Terminal: `npm run dev`, open `test-vault/`, Lab Kit is on
 - [ ] Templater is on with a **Templates** folder and a **User script functions** folder set (e.g. `Templates` and `Extras/scripts/templater`)
 - [ ] The old hand copies in `test-vault/Templates/` and `test-vault/Extras/` are stale. Delete both folders first so step 2 starts clean

@@ -4,6 +4,9 @@ Live calculation tables, lab snippet forms and a hazard header for a chemistry l
 
 Lab Kit turns a plain note into an experiment page: a hazard table built from your chemical notes, tables that calculate like a spreadsheet, and pop-up forms that write the tables you use every day (solutions, recipes, RAFT, sampling timetables, NMR / GPC / DLS sample tables). It started as a PhD lab notebook; the vocabulary is a chemistry lab's, but nothing stops you using it for anything that needs small calculations in a note.
 
+> [!note] Beta
+> Version 1.0.0 is a beta: the planning kit and the multi-kit system are new and not yet tested by many people. Report problems on GitHub.
+
 ## Contents
 - [Features](#features)
 - [Install](#install)
@@ -33,7 +36,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it, so a plugin update brings the new kit. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 
 ## Install
-Needs Obsidian 1.13 or newer. For the snippet forms, also install [Templater](https://github.com/SilentVoid13/Templater).
+Needs Obsidian 1.14 or newer. For the snippet forms, also install [Templater](https://github.com/SilentVoid13/Templater).
 
 1. Settings → Community plugins → Browse → search **Lab Kit** → Install → Enable.
 2. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts. The first install can also turn on the CSS snippet and, if Templater has no user scripts folder yet, set one.

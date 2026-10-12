@@ -279,7 +279,7 @@ Ionisation: APCI
 
 ## 7. Updating the kit
 
-The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.13 or newer. **Settings → Lab Kit → Built-in kit** (the update buttons; Set up and the folders are in the next group, **Kit folders and setup**):
+The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.14 or newer. **Settings → Lab Kit → Built-in kit** (the update buttons; Set up and the folders are in the next group, **Kit folders and setup**):
 
 | Button | Does |
 |---|---|

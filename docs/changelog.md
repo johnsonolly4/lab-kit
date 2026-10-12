@@ -1,6 +1,9 @@
 # Lab notebook kit: changelog
 
-## Unreleased
+## v1.0.0 (2026-10-12)
+- **Beta**: Lab Kit 1.0.0 is the first release with the planning kit and several kits side by side. It is still in beta: many of the features below are tested in code but not yet used in Obsidian by others, so expect rough edges and report them on GitHub
+- **Needs Obsidian 1.14 or newer**: the boards use Obsidian's built-in kanban layout, added in 1.14.0
+- **Review update… for both kits after updating**: the kit files changed a lot. Files you edited are never overwritten: use Compare… / Keep mine / Use kit version… per file in Manage kit files
 - **Manage kit files: every row says if it is up to date**: a file you keep as your own now shows "Up to date with the kit" or "Newer kit version available" next to its "Leave (your settings)" chip (a kept file with no record of its kit version shows only the chip). Tests only, not seen in Obsidian
 - **Pickers take a new name**: in New topic hub, the folder picker (Sort inbox) and New chemical's class list, type a name that is not in the list and press Enter to use it as the new topic, folder or class. Tests only for the list logic, not seen in Obsidian
 - **Chemical class is a list property**: New chemical writes it as a list and sets the property type (`multitext`) so the Properties pane offers the classes already in use. Uses Obsidian's private property-type manager; an older Obsidian keeps it as text. Not seen in Obsidian
