@@ -6,18 +6,18 @@ import { readFileSync } from "node:fs";
 import { LEVELS, levelIndex, phraseLevel, severity } from "../src/header/ghs";
 import { collectHazards, hazardSignature, hazardSources } from "../src/header/hazards";
 import { HeaderRenderer } from "../src/header/render";
-import { HEADER_DEFAULTS, hazardView, parseBlock, type HeaderStore } from "../src/header/settings";
+import { HEADER_DEFAULTS, hazardView, labBookBase, parseBlock, type HeaderStore } from "../src/header/settings";
 
 const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
 const fixture: Record<string, Record<string, unknown>> = JSON.parse(readFileSync(new URL("./fixtures/hazard-chemicals.json", import.meta.url), "utf8"));
 
 /** Fake vault + metadata cache backed by the fixture; `data` can be edited to simulate the user changing a note. */
-function fakeApp(data = structuredClone(fixture)) {
+function fakeApp(data = structuredClone(fixture), extra: string[] = []) {
   const files = () => Object.keys(data).map(path => new TFile({ path, basename: path.split("/").pop()!.replace(/\.md$/, "") }));
   const handlers: Record<string, ((...a: any[]) => void)[]> = {};
   const on = (evt: string, fn: (...a: any[]) => void) => { (handlers[evt] ||= []).push(fn); return {}; };
   const app: any = {
-    vault: { getAbstractFileByPath: (p: string) => files().find(f => f.path === p) ?? null, on },
+    vault: { getAbstractFileByPath: (p: string) => files().find(f => f.path === p) ?? null, getFiles: () => extra.map(path => ({ path, extension: path.split(".").pop() })), on },
     metadataCache: {
       getFileCache: (f: { path: string }) => ({ frontmatter: data[f.path] }),
       getFirstLinkpathDest: (name: string) => files().find(f => f.basename.toLowerCase() === name.toLowerCase()) ?? null,
@@ -219,5 +219,21 @@ describe("HeaderRenderer", () => {
     assert.deepStrictEqual(b.over, { startOpen: false, hideForClasses: "a, b" });
     assert.strictEqual(hazardView(HEADER_DEFAULTS, b.over).startOpen, false);
     assert.strictEqual(hazardView(HEADER_DEFAULTS).startOpen, true);
+  });
+});
+
+describe("back to the lab book", () => {
+  it("finds the board in the folder above the note's folder, the kit's name first", () => {
+    const bases = ["03 Lab Book/Other.base", "03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base", "03 Lab Book/Notes/In notes.base"];
+    assert.strictEqual(labBookBase("03 Lab Book/Notes/ABC0014 - Test.md", bases), "03 Lab Book/Lab book base.base");
+    assert.strictEqual(labBookBase("03 Lab Book/Notes/ABC0014 - Test.md", ["03 Lab Book/Other.base"]), "03 Lab Book/Other.base");
+    assert.strictEqual(labBookBase("Notes/ABC0014 - Test.md", ["Lab book base.base"]), "Lab book base.base");   // Lab notes folder at the vault root
+    assert.strictEqual(labBookBase("03 Lab Book/Notes/ABC0014 - Test.md", ["05 Chemicals/Chemical database.base"]), null);
+    assert.strictEqual(labBookBase("ABC0014 - Test.md", ["Lab book base.base"]), null);
+  });
+
+  it("back: false in the block switches the link off", () => {
+    assert.strictEqual(parseBlock("").block.back, true);
+    assert.strictEqual(parseBlock("back: false").block.back, false);
   });
 });

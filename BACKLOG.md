@@ -507,3 +507,10 @@ Open:
 - [ ] **Meta Bind button JSON lives under `docs/plans/`** (`src/planning/buttons.ts:2` imports `docs/plans/kit-files/planning/settings/meta-bind-buttons.json`): source data in a plans folder is easy to delete by mistake; move it next to the kit
 - [x] (DONE 2026-10-12, user: Hotkeys note only; the editing keys moved to an Editing table there, Vault spec links to it) **Vault spec hotkey table** (`Vault spec.md`, "Hotkeys") lists keys the Hotkeys note does not (`Alt+Shift+F`, `Alt+Shift+R` …): left as they are; decide whether one of the two should go (one home per fact)
 - [x] (DONE 2026-10-12) **Tutorial line removed**: `docs/tutorial.md` section 3.2 said "clicking another cell while one is open currently needs a second click"; `tests/render.test.ts` ("moves from one edited cell to the next with a single click") says otherwise, so the sentence is gone. Not seen in Obsidian
+
+## Lab note template and in-silico records (user, 2026-10-12, chat)
+- [ ] **Back to lab book link** (BUILT 2026-10-12, tests only: `labBookBase` in `src/header/settings.ts`, the bar in `src/header/render.ts` `build`, `tests/header.test.ts`). Not seen in Obsidian: the link's look next to the data-folder button, the click, a note opened before the board exists (the link appears when the note is reopened)
+- [ ] **Template housekeeping** (BUILT 2026-10-12): stale "v0.2" comment fixed, `vt` added to `cssclasses` in `kits/lab/Templates/Lab Book Template.md`. Not seen: how `vt` and the `academia` classes look together in a lab-only vault (no planning theme)
+- [ ] **Template ideas not chosen** (user picked Housekeeping only): ask Exp. Class when the note is made; `Based on` and `project` properties; Conclusion and Deviations sections
+- [ ] **In-silico / algorithm-run records**: design proposed in chat (must be switchable off in settings; also usable in a normal lab note, e.g. a flow experiment driven by Bayesian optimisation); waits for the user's choice, then a plan
+

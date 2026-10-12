@@ -5,6 +5,7 @@
 - **Planning kit setting**: the sentence "some homepage buttons don't work yet" is gone (they work); the kit is still marked preview
 - **Hotkeys note and Check hotkeys list more commands** with no suggested key: New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New concept, New topic hub, New chemical. The Hotkeys note has a new **Editing** table (fold, move line, source mode, canvas read-only) and the rules for choosing keys; Vault spec now links to it instead of keeping its own table. The Meeting series template names **every N weeks**. Not seen in Obsidian
 - **New command: Open to-do board** (planning kit). **Four more recommended keys** in the Hotkeys note and Check hotkeys: Alt+M New meeting, Alt+P New project note, Alt+K New concept, Alt+B Open to-do board. They are suggestions; Lab Kit sets none. Tests only, not seen in Obsidian
+- **Lab notes link back to the lab book**: the lab header starts with **← Lab book**, which opens the Lab book board (the `.base` in the folder above the note's folder; none there, no link). Every note with a lab header gets it, old ones too; `back: false` inside the block hides it for one note. The Lab Book Template adds the `vt` class to new notes. Tests only, not seen in Obsidian
 
 ## v1.0.0 (2026-10-12)
 - **Beta**: Lab Kit 1.0.0 is the first release with the planning kit and several kits side by side. It is still in beta: many of the features below are tested in code but not yet used in Obsidian by others, so expect rough edges and report them on GitHub

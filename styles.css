@@ -149,6 +149,7 @@
 /* Lab header: data-folder button + hazards (```lab-header) */
 .lab-header-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 .lab-header-muted { color: var(--text-muted); }
+.lab-header-back { text-decoration: none; }
 .lab-hazards > summary { cursor: pointer; }
 
 /* Severity colours (same as the Dataview version). Chips and shaded name cells read data-level. */

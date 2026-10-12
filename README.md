@@ -121,6 +121,7 @@ One note per method in your **Methods folder**, with a `Columns` property, gives
 ## Experiment header
 A ```` ```lab-header ```` block shows, for the note it is in:
 - a **hazard table** with every chemical in **Chemicals**, worst first, each H-code coloured by severity, as one row per chemical with chips (default) or as the two-column table;
+- a **← Lab book** link to the Lab book board in the folder above the note's folder (when there is one; `back: false` in the block hides it);
 - an **Open data folder** button that creates `<data folder root>/<note name>` and opens it (desktop only; set the root in Settings → Lab Kit → Lab header).
 
 It only redraws when this note's Chemicals or a linked chemical note changes. The command **Insert lab header block** adds one; the Lab Book template already has it. Every option is in Settings → Lab Kit → Hazards and can be overridden for one note with lines inside the block (`layout: table`, `collapsed: false`, …): see [tutorial section 4](docs/tutorial.md#4-hazards).

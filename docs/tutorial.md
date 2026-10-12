@@ -30,6 +30,7 @@ flowchart LR
 1. Run **New lab entry** from the command palette (or create a new note in your Lab notes folder).
 2. Type the title in the box that pops up (e.g. `Batch esterification of PABTC`).
 3. You get `0016 - Batch esterification of PABTC` with:
+   - **← Lab book**: back to the Lab book board
    - 📁 **Open data folder**: opens `<your data folder>/0016 - …` (made when you press the button; set the data folder in Settings → Lab Kit)
    - ⚠️ **Hazards**: fills in once you add chemicals to the **Chemicals** property
    - **Objectives · Apparatus · Procedure · Results / Analysis · Notes for next time**
@@ -166,7 +167,7 @@ showLegend: false
 | `showCategoryLabels` | "Cat 2" after each code | `false` |
 | `shadeChemicalCell` · `centreChemicalCell` | shade / centre the name | `true` · `true` |
 | `showMissing` | list chemicals with no note or no `H_Phrase` | `true` |
-| `dataFolder` · `hazards` | `false` leaves out the button / the hazards | `true` |
+| `dataFolder` · `hazards` · `back` | `false` leaves out the button / the hazards / the Lab book link | `true` |
 
 ---
 
