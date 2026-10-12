@@ -30,6 +30,7 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Done when: tests with a fixture project: chain, two-parent join, cycle, missing link, done parent unblocks.
 
 ### Phase 3 — Plan tile on the project hub
+- User addition 2026-10-12 (chat): the Plan tile (the workflow: next to-do steps) goes at the TOP of the Project hub template, shown only when the project has to-dos with a plan (`after` / `order` set); otherwise nothing appears. My reading: "workflow" = this Plan tile, "next steps" = its unblocked open rows first. Confirm in Phase 3.
 - Depends on: Phase 2
 - Files: `src/planning/blocks.ts:244-255` (new `show: project-plan`), `kits/planning/Extras/Templates/Project hub.md:31-41`, Tidy rule for hub bodies (hub body is rewritten from the template with a preview, 2026-10-10 decision), tests, docs.
 - Done when: tests for the rows (status, result, "← after X", blocked mark); hub template test; kit manifest.
