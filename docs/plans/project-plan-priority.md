@@ -6,7 +6,8 @@ _Agreed: 2026-10-12 (survey answers; project-tile placement chosen from the user
 To-dos get a Priority, a project tile on the board card, and (for to-dos in a project) `after` / `result` / `order`, so the project hub shows an overall plan: a Plan tile and a `plan` diagram block.
 
 ## Decision taken
-- **Priority:** text pick list High / Medium / Low, empty = none. Ranks after the due date (due date first, priority breaks ties). New to-do asks it with one pick, "(none)" first.
+- **Priority:** text pick list High / Medium / Low, empty = none. New to-do asks it with one pick, "(none)" first.
+- **Priority in the project lists (user, 2026-10-12, plan check):** overdue → day → priority → name. Today's order is kept (`src/planning/lists.ts:160-166`: overdue, then Mon → Fri → Backlog, then path); priority only breaks ties within a day, empty last. The due date itself is not a sort key (only "overdue" is), so the earlier wording "due date first, priority breaks ties" is replaced by this.
 - **Project tile on cards:** plain text under the title, truncated; must not clash with the countdown (`::after` on the card, `vault-theme.css:341`). Screenshot seen 2026-10-12: put it on its own line under the title, left, clear of the bottom-right badge; with a 2-line title it must not run under the badge (truncate to one line).
 - **Plan properties:** optional `after` (links, several), `result` (one line), `order` (number). NOT asked at capture. Order is changed by editing, no drag.
 - **Blocked:** shown only in the Plan tile and the `plan` block (a row whose `after` to-dos are not all done). The board and `day` are never changed automatically. Supersedes the BACKLOG idea of blocked = Backlog.
@@ -19,9 +20,10 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 ## Phases
 
 ### Phase 1 — Priority property
-- Files: `kits/planning/Extras/Templates/To-do.md` (pick after countdown), `src/planning/lists.ts:160-166` (tie-break: due, then priority), `src/kit/tidy.ts:382-391` (add `priority` to the todo-properties rule only if the user wants old to-dos filled: default empty, so likely no rule), `To-do board.base` (sort / show), docs (Vault spec, How my vault works), tests in `tests/planning-lists.test.ts`, `tests/due-words.test.ts`.
+- Files: `kits/planning/Extras/Templates/To-do.md` (pick after countdown), `src/planning/lists.ts:160-166` (tie-break: overdue, day, then priority, then path), `src/kit/tidy.ts:382-391` (add `priority` to the todo-properties rule only if the user wants old to-dos filled: default empty, so likely no rule), `To-do board.base` (sort / show), docs (Vault spec, How my vault works), tests in `tests/planning-lists.test.ts`, `tests/due-words.test.ts`.
 - Spike first: whether Bases can sort High/Medium/Low in order inside a group (text sorts alphabetically). If not, the board order stays by Bases default and only project lists use priority; say so in the plan result.
-- Done when: tests for the sort (due, then priority, empty last); template text test; `npm run kit:manifest`; not seen in Obsidian unless the user tries it.
+- Plan check 2026-10-12: `To-do board.base` has no `sort:` at all today (only `groupBy` and `order`: file.name, done), so the spike is two steps: (1) does a `sort:` inside a kanban group work and keep the user's own card order / drag behaviour, (2) can it rank High / Medium / Low (a formula, or alphabetical only). Showing priority on the card is NOT part of this phase: anything added to `order` changes the card (see Phase 6).
+- Done when: tests for the sort (overdue, day, then priority, empty last); template text test; `npm run kit:manifest`; not seen in Obsidian unless the user tries it.
 - New dependencies: none
 
 ### Phase 2 — Plan engine (pure code)
@@ -32,6 +34,7 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 ### Phase 3 — Plan tile on the project hub
 - User addition 2026-10-12 (chat): the Plan tile (the workflow: next to-do steps) goes at the TOP of the Project hub template, shown only when the project has to-dos with a plan (`after` / `order` set); otherwise nothing appears. My reading: "workflow" = this Plan tile, "next steps" = its unblocked open rows first. Confirm in Phase 3.
 - Depends on: Phase 2
+- Plan check 2026-10-12: the other hub tiles sit inside callouts in the template (`Project hub.md:28-42`), and a callout's title would still show when the block is empty. So the Plan tile is a bare `vault-card` block that draws its own heading and leaves nothing behind when there is no plan, like `show: hub-bar` (`Project hub.md:21-23`). Placement to confirm with the user: under the hub bar and above Goal, or above both.
 - Files: `src/planning/blocks.ts:244-255` (new `show: project-plan`), `kits/planning/Extras/Templates/Project hub.md:31-41`, Tidy rule for hub bodies (hub body is rewritten from the template with a preview, 2026-10-10 decision), tests, docs.
 - Done when: tests for the rows (status, result, "← after X", blocked mark); hub template test; kit manifest.
 
@@ -45,10 +48,12 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Depends on: Phase 2
 - Files: `src/planning/engine.ts:103-110` / `todo.ts:58-62` (done branch), a prompt for `result` and "what does this lead to?" (pick, new, none) only for to-dos with a `project`; Esc skips, never blocks ticking done.
 - Done when: tests for the patch; the user ticks a to-do in Obsidian (unknown: a prompt from a metadata change handler has not been done before, spike first).
+- Plan check 2026-10-12: `onChanged` (`engine.ts:103`) runs for every metadata change of a to-do, not only a tick made by the user on this device. The spike must also answer (none verified): does a `done` change arriving by sync from another device fire it; what happens when several to-dos are ticked quickly or changed in bulk (roll-over, Tidy up notes, Clear old to-dos); does it fire on a phone. The prompt must open only for a tick made here by the user, at most one at a time; if that cannot be told apart, fall back to a command / button ("Add result") and no automatic prompt.
 
 ### Phase 6 — Project tile on board cards
 - Depends on: the user's screenshot (received 2026-10-12: card = title left, round tick top right, countdown badge bottom right; a 2-line title already runs down beside the badge; free space is a line under the title on the left); best after Phase 1 so both card additions are seen together
 - Files: `To-do board.base` (`project` in `order`, simplest) or `vault-theme.css` + `engine.ts:173-193` data attribute; tests; the 3-line title overlap and phone width checked.
+- Plan check 2026-10-12: the `order` route is not known to be the simplest. Obsidian works the card height out from what the card shows (title + done = 88px) and the theme re-places the title and tick inside that fixed height with `!important` rules (`vault-theme.css:357-363`). A third property in `order` will change the height and may break that layout. Spike in Obsidian first: add `project` to `order` in test-vault, look at the card height and the title / tick / countdown. If it breaks, use the data attribute + `::before` route (no height change, like the countdown).
 - Done when: the user sees it next to a countdown and a priority on one card.
 
 ## Verification
