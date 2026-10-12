@@ -43,11 +43,11 @@ describe("hub templates carry the buttons as blocks", () => {
     expect(kit("Extras/Templates/One-off meeting.md")).toContain("show: meeting-bar");
     expect(kit("Extras/Templates/New project note.md")).toContain("show: back-to-project");
   });
-  it("the project hub's Status is the drop-down in the top bar, not a Meta Bind line", () => {
+  it("the project hub's Status and Deadline are in the top bar, not Meta Bind lines", () => {
     const t = kit("Extras/Templates/Project hub.md");
     expect(t).not.toContain("INPUT[inlineSelect");
     expect(t).not.toContain("show: deadline");
-    expect(t).toContain("INPUT[datePicker:deadline]");
+    expect(t).not.toContain("INPUT[datePicker");   // the deadline date is a box in the bar too
   });
   it("a meeting note has the meeting bar and native tiles with a window, not Dataview lists", () => {
     const t = kit("Extras/Templates/Meeting.md");

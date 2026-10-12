@@ -323,6 +323,7 @@ class BlockView extends MarkdownRenderChild {
     if (kind === "project") {
       button("New to-do", c => void c.newTodo(file.basename)); button("New note", c => void c.newProjectNote(file.parent?.path));
       this.statusSelect(bar, file);
+      this.deadlineInput(bar, file);
       const badge = deadlineBadge(this.owner.rec(file).fm, this.owner.kit().dueCountdown, new Date());   // none once the project is Done
       if (badge) bar.createSpan({ cls: badge.cls, text: badge.text });
     }
@@ -346,6 +347,18 @@ class BlockView extends MarkdownRenderChild {
     select.addEventListener("change", () => {
       void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.Status = select.value; })
         .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the status."); });
+    });
+  }
+
+  /** The project's `deadline` date, a date box in the bar (emptying it clears the date). */
+  private deadlineInput(bar: HTMLElement, file: TFile): void {
+    const deadline = this.owner.rec(file).fm.deadline;
+    const input = bar.createEl("input", { cls: "vt-deadline-input", type: "date", attr: { "aria-label": "Deadline" } });
+    input.value = typeof deadline === "string" ? deadline.slice(0, 10) : "";
+    for (const ev of ["mousedown", "click"]) input.addEventListener(ev, e => e.stopPropagation());
+    input.addEventListener("change", () => {
+      void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.deadline = input.value; })
+        .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the deadline."); });
     });
   }
 

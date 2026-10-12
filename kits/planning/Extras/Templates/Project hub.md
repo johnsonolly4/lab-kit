@@ -22,8 +22,6 @@ cssclasses:
 show: hub-bar
 ```
 
-**Deadline:** `INPUT[datePicker:deadline]`
-
 > [!focus] Goal
 > [goal:: ]
 
