@@ -3,7 +3,10 @@ kind: guide
 cssclasses:
   - vt
 ---
-# Set up ZotLit
+
+```vault-card
+show: back-to-hub
+```
 
 > [!info] Why a checklist
 > Lab Kit can't change ZotLit's settings for you. Set these once in **Settings → ZotLit**, then tick them off. The exact setting names may differ a little between ZotLit versions.

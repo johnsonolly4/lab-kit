@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Guide notes: no doubled title, and a link back to the How-tos index** (planning kit): Vault spec, How my vault works, Hotkeys, Setting up a computer and Set up ZotLit started with a heading that repeated the note's name under Obsidian's own title. The heading is gone and each note starts with a back link to the hub one folder up (the How-tos index). Tests only, not seen in Obsidian
 - **The guide notes update with the kit** (planning kit): Vault spec, How my vault works, Hotkeys, Setting up a computer and Set up ZotLit were installed once and then left alone, so a rewritten guide never reached you unless you pressed Use kit version… on each. They now behave like the templates: a guide you have not edited is updated by **Update all safe files** / **Review update…** (your old copy goes to the backup folder); one you edited is never overwritten, it is offered as a merge in Review update…, or shown as a conflict to resolve. The homepage, the boards and the hub notes (Projects overview, Meetings, Knowledge index, How-tos index, Literature, Weekly review, Shopping list) stay yours and are still never updated. Tests only, not seen in Obsidian
 
 ## v1.0.1 (2026-10-12)

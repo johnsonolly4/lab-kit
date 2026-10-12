@@ -5,7 +5,9 @@ cssclasses:
   - vt
 ---
 
-# Vault spec
+```vault-card
+show: back-to-hub
+```
 
 > [!focus] Read this first
 > The everyday user guide is [[How my vault works]] (the **How it works** button on the homepage). This note is the technical source of truth for how this vault is organised and how it looks. Any future change (by me or by Claude) should follow it, and update it if a rule changes. Share this note at the start of a session about the vault.

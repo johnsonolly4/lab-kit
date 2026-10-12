@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.1",
-      "sha256": "49464ce17eee27688c75ea9f375cc4bba518dc6ccecd0fd2cfad82b32c7c463b",
+      "sha256": "da4a34b8333b2f78d39c9c2ef5ea3feebdcf35a9254a0e9c3fa8f41866221634",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "beee3b0689c0696035515826edd90f2cf9befb79ee8bfbcc5a87b75301b48241",
+      "sha256": "a6c0c6ac68fbe697b8dec4cc7b2d47fdd420ff7515c3d6574daf490d6806d7e0",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -147,8 +147,8 @@
       "src": "07 How-tos/Obsidian/Set up ZotLit.md",
       "role": "howtos",
       "path": "Obsidian/Set up ZotLit.md",
-      "version": "1.0.0",
-      "sha256": "d217d960f58bc24ebae36368a8ff0968adfc807a8e78b3fe979d76b9fee181b4",
+      "version": "1.0.1",
+      "sha256": "a57e1bb3f8adce02fe57bb3bf0650a0688e3b8a28e96071b81c1db10e83e6c2f",
       "renamedFrom": [],
       "desc": "Checklist: ZotLit's note folder and template folder",
       "optional": true,
@@ -161,7 +161,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "1.0.1",
-      "sha256": "8b99080087be7330b9dd3c286afd12be954244e6f5319411e71afdf130a14d05",
+      "sha256": "571fbd65fac429bf3a7c7cc91556fe56eacd2b0c5f76a23495b494324dbfcac2",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer"
     },
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "d5a73c8b8a3bc10e02f1f5b3d4443fa1169d59b1add8c6c3ef693687c476741d",
+      "sha256": "266d4fdc71e46f093dbf3cab2e10f1fc468caebe28031bc9b684efe00b218126",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },

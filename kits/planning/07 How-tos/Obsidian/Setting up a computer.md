@@ -3,7 +3,9 @@ cssclasses:
   - vt
 ---
 
-# Setting up a computer
+```vault-card
+show: back-to-hub
+```
 
 > [!focus] When to use this
 > - Setting up the vault on a **new** computer (Windows or Mac).

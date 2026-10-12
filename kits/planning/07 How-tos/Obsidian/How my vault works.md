@@ -4,7 +4,9 @@ cssclasses:
   - vt
 ---
 
-# How my vault works
+```vault-card
+show: back-to-hub
+```
 
 > [!focus] The whole idea in one minute
 > - **Start every day on [[00 Home]].** It shows what matters today and nothing else.

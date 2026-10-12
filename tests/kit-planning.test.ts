@@ -133,7 +133,7 @@ describe("planning kit files (Phase 3)", () => {
     const newer: EmbeddedKit = { ...planning, contents: { ...planning.contents,
       [spec.id]: planning.contents[spec.id] + "\nA new rule.\n", [guide.id]: planning.contents[guide.id] + "\nA new tip.\n", [home.id]: planning.contents[home.id] + "\nA new tile.\n" } };
     const guidePath = kitJoin(roles[guide.role], guide.dest);
-    v.files[guidePath] = v.files[guidePath].replace("# How my vault works", "# How my vault works (mine)");   // the user edited this one
+    v.files[guidePath] = v.files[guidePath].replace("## Every day", "## Every day (mine)");   // the user edited this one
     const plan = await planManaged(v, newer, out.state, roles, null, opts.baseDir, offIds(newer, {}, {}, ZOTLIT));
     const action = (id: string) => plan.find(i => i.file.id === id)!;
     expect(action(spec.id).action).toBe("fast-forward");
