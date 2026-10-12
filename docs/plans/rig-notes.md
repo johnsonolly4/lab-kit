@@ -14,7 +14,9 @@ Rejected: hand-written Mermaid in the rig note (two sources); a live embed of th
 
 Properties: `Tubing` (rig-wide material and inner diameter), `Control software` (name and version), `Analysis` (list, typed by hand, for filtering).
 
-Parts table, one row per part. `Part` is one of Pump, Mixer, Reactor, Heater, Regulator, Valve, Analysis, Tubing.
+Parts tables, one row per part. `Part` is one of Pump, Mixer, Reactor, Heater, Regulator, Valve, Analysis, Outlet, Tubing.
+
+**Several small tables, not one big one** (user, 2026-10-12): every table in the note with an `ID` and a `Feeds` column is a parts table; each may have its own other columns; the diagram is drawn from all of them together. A table without a `Part` column takes the kind from the heading above it (Pumps = Pump); under any other heading (Reactor line) it needs the column. The kit's Rig template ships three: Pumps (ID, Model, Carries, Tubing in / out, Pressure limit, Feeds), Reactor line (ID, Part, Type, Material, Size, Setting, Feeds), Analysis (ID, Instrument, Method, Feeds). The single table below shows the same content in one piece.
 
 | ID | Part | Type / model | Carries | Tubing in / out | Material | Size | Setting | Feeds |
 |---|---|---|---|---|---|---|---|---|
@@ -31,7 +33,9 @@ What each column holds (user, 2026-10-12):
 - **Heater**: a part row (cartridge, hot plate, Peltier), drawn attached to the reactor it feeds. No temperature here: it varies per sample.
 - **Not in the table**: pump flow rates and temperatures (they vary within an experiment; the reagent ratios at sampling times are what matters), valve positions.
 - **Tubing**: the rig-wide property is the rule; a section that differs may get a `Tubing` row, drawn like any other connection (no special look).
-- More than one reactor is more than one Reactor row (stages), each with its own `Size`.
+- More than one reactor is more than one Reactor row (stages), each with its own `Size`; a second stage may be its own table.
+- **Outlet** (collection or waste) is a part kind, so a sampling valve can feed both an analysis module and the outlet (user, 2026-10-12, after the mockup).
+- An online analysis module is one row; its own eluent pump or dilution step is not drawn.
 
 Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in its own `Tubing in / out` column (empty = the rig-wide value), and `Material` is the wetted material of the part itself.
 
@@ -47,8 +51,8 @@ Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in 
 
 ### Phase 1 — Parts table to diagram (engine, no Obsidian)
 - Files: `src/rig/parts.ts` (new), `tests/rig-parts.test.ts` (new), `tests/fixtures/rigs/` (new)
-- What: read the first parts table in a note's text (columns found by header name, any order, extra columns kept); give parts, connections and Mermaid flowchart text. Problems are returned as messages, never thrown: unknown `Feeds` ID, duplicate ID, missing ID, no table. `Feeds` takes several IDs separated by commas (branches). A Heater is drawn attached to its reactor (dashed line), not in the flow.
-- Done when: fixtures pass for single tubular reactor; two pumps into a mixer; telescoped tubular + two-tank cascade; in-line analysis after the regulator; a split to two analysis modules; each problem message. IDs and text with Mermaid special characters (quotes, brackets, `|`) come out escaped.
+- What: read every parts table in a note's text (any table with `ID` and `Feeds` columns; columns found by header name, any order, extra columns kept; kind from the `Part` column, else from the heading above the table); give parts, connections and Mermaid flowchart text. Problems are returned as messages, never thrown: unknown `Feeds` ID, duplicate ID (also across tables), missing ID, a kind that cannot be worked out, no table. `Feeds` takes several IDs separated by commas (branches). A Heater is drawn attached to its reactor (dashed line), not in the flow.
+- Done when: fixtures pass for single tubular reactor; two pumps into a mixer; telescoped tubular + two-tank cascade; in-line analysis after the regulator; a sampling valve feeding an analysis module and an Outlet; the same rig as one table and as three tables giving the same diagram; each problem message. IDs and text with Mermaid special characters (quotes, brackets, `|`) come out escaped.
 - New dependencies: none
 
 ### Phase 2 — The `rig` block draws the diagram in the rig note
@@ -66,13 +70,13 @@ Claude's reading, to confirm at the start of Phase 1: the pump's tubing goes in 
 ### Phase 4 — Token templates: pick a note, read its rig, set a property
 - Depends on: Phase 1
 - Files: `src/kit/snippet-template.ts` (header checks, :95-100), `src/kit/snippet-run.ts` (suggest list :42-59, note lookup :75-80, result :102), `src/kit/snippet-env.ts`, `tests/` beside the existing snippet-template tests, `docs/snippet-syntax.md`
-- What: (a) `suggest: notes` with `folder: <setting key>` lists the notes of a settings folder; (b) a header list `set:` writes properties on the current note after the insert (`processFrontMatter`), a value may be a link to the picked note; nothing is written when the form is cancelled; (c) tokens `{{rig-table:key}}` (the picked note's parts table as text), `{{rig-diagram:key}}` (a Mermaid block from Phase 1) and `{{note-prop:key.Name}}` (a text property). Unknown folder key or a note without a parts table gives the usual message naming the snippet and inserts nothing.
+- What: (a) `suggest: notes` with `folder: <setting key>` lists the notes of a settings folder; (b) a header list `set:` writes properties on the current note after the insert (`processFrontMatter`), a value may be a link to the picked note; nothing is written when the form is cancelled; (c) tokens `{{rig-tables:key}}` (the picked note's parts tables as text, each with its heading), `{{rig-diagram:key}}` (a Mermaid block from Phase 1) and `{{note-prop:key.Name}}` (a text property). Unknown folder key or a note without a parts table gives the usual message naming the snippet and inserts nothing.
 - Done when: engine tests for each of (a) to (c) and their errors; the 28 parity scenarios still pass unchanged; the spec documents the three additions.
 
 ### Phase 5 — The Rig snippet and the docs
 - Depends on: Phases 3 and 4
 - Files: `kits/lab/Templates/Snippets/14 Rig.md` (new), `scripts/kit-manifest.mjs` (DESC), `kits/lab/kit-manifest.json` (generated), a snippet test, `docs/tutorial.md` (snippet table + rigs section), `README.md`, `docs/changelog.md`, `docs/obsidian-test-checklist.md`, `BACKLOG.md` (tick lines 528-530 rig parts, add "Not yet tested")
-- What: Alt+S → Rig: pick a rig; the note gets `Rig: [[name]]`, a heading, the tubing and control software lines, the parts table as it is that day and the diagram as a fixed Mermaid block. Make my own copy works as for the other token templates.
+- What: Alt+S → Rig: pick a rig; the note gets `Rig: [[name]]`, a heading, the tubing and control software lines, the diagram as a fixed Mermaid block, left open, and the parts tables as they are that day inside a callout that is folded by default (`> [!info]- Rig parts`), so the note shows the diagram without the clutter (user, 2026-10-12). To check in Obsidian before this phase is done: how editing a table inside a callout feels in live preview (the per-run cells are filled there); if it is poor, propose a small open table for the per-run values with the full tables folded. Make my own copy works as for the other token templates.
 - Done when: a test runs the snippet on a fixture rig note and compares the inserted text and the property; the snippet is off (not listed) while the Rigs folder is empty; checklist row.
 
 ## Order
