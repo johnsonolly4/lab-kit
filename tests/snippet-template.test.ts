@@ -105,6 +105,12 @@ describe("parseTemplate", () => {
     assert.strictEqual(p?.header.title, "T");
     assert.deepStrictEqual(p?.header.fields[0], { key: "a", label: "A", hint: undefined, placeholder: undefined, type: "text", value: "" });
   });
+  it("reads a mandatory field, only when true", () => {
+    const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "a", label: "A", mandatory: true }, { key: "b", label: "B", mandatory: false }, { key: "c", label: "C" }] }));
+    assert.strictEqual(p?.header.fields[0].mandatory, true);
+    assert.ok(!("mandatory" in p!.header.fields[1]));
+    assert.ok(!("mandatory" in p!.header.fields[2]));
+  });
   it("turns YAML numbers into text", () => {
     const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "n", label: "N", type: "number", value: 6 }] }));
     assert.strictEqual(p?.header.fields[0].value, "6");
@@ -118,6 +124,7 @@ describe("parseTemplate", () => {
     assert.throws(() => parse({ fields: [{ key: "code" }] }), /reserved/);
     assert.throws(() => parse({ fields: [{ key: "a", type: "color" }] }), /unknown type/);
     assert.throws(() => parse({ fields: [{ key: "a" }], required: "b" }), /not one of the fields/);
+    assert.throws(() => parse({ fields: [{ key: "a", mandatory: "yes" }] }), /mandatory must be true or false/);
   });
 });
 

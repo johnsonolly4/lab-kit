@@ -161,7 +161,7 @@ function setup(opts: { files: Record<string, string>; note?: string; kit?: Parti
   return { st: new SnippetTemplates(app as never, () => kit), app };
 }
 
-type FormCall = { title: string; fields: { key: string; value: string; suggest?: { name: string }[] }[] };
+type FormCall = { title: string; fields: { key: string; value: string; required?: boolean; suggest?: { name: string }[] }[] };
 const tpWith = (answers: Record<string, unknown> | null, calls: FormCall[] = []): SnippetTp => ({
   config: { target_file: { basename: "ABC0016 - test" } },
   user: { labForm: async (_tp, title, fields) => { calls.push({ title, fields: fields as FormCall["fields"] }); return answers ? { ...Object.fromEntries(fields.map(f => [f.key, f.value])), ...answers } : null; } },
@@ -187,6 +187,15 @@ describe("SnippetTemplates", () => {
     const out = await st.run(tpWith({ codes: "A, B" }, calls), file("S/a.md"));
     expect(out).toBe("ABC0016-A\nABC0016-B\n");
     expect(calls[0].title).toBe("Samples");
+  });
+
+  it("run: a mandatory field is passed to the form as required, other fields are not", async () => {
+    const t = header({ title: "T", fields: [{ key: "a", label: "A", mandatory: true }, { key: "b", label: "B" }] }, "{{a}}{{b}}");
+    const { st } = setup({ files: { "S/m.md": t } });
+    const calls: FormCall[] = [];
+    await st.run(tpWith({ a: "x" }, calls), file("S/m.md"));
+    expect(calls[0].fields[0].required).toBe(true);
+    expect("required" in calls[0].fields[1]).toBe(false);
   });
 
   it("run: cancel and an empty required list insert nothing", async () => {

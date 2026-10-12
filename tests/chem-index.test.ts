@@ -98,3 +98,16 @@ describe("form items", () => {
     assert.deepStrictEqual(labForm.replaceItem("DCM, tol, THF", 8, "Toluene"), { value: "DCM, Toluene, THF", cursor: 12 });
   });
 });
+
+describe("labForm missingRequired", () => {
+  const fields = [{ key: "a", required: true }, { key: "b" }, { key: "c", required: true, type: "toggle" }, { key: "d", required: true, type: "number" }];
+  it("lists the mandatory text fields that are empty or only spaces", () => {
+    assert.deepStrictEqual(labForm.missingRequired(fields, { a: "  ", b: "", c: false, d: "" }), ["a", "d"]);
+  });
+  it("is empty when they are filled; a toggle never counts", () => {
+    assert.deepStrictEqual(labForm.missingRequired(fields, { a: "x", b: "", c: false, d: "0" }), []);
+  });
+  it("is empty when no field is mandatory", () => {
+    assert.deepStrictEqual(labForm.missingRequired([{ key: "a" }], { a: "" }), []);
+  });
+});

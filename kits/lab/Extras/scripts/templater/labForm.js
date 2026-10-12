@@ -12,6 +12,7 @@
 
    Field types: "text" (default) | "number" | "textarea" | "toggle" | "select"
    A select field has  options: [{ value, label }]  and a value (default: the first).
+   A field with  required: true  is marked * and the form stays open while it is empty.
    A text field may have  suggest: [{ name, aliases }]  : typing suggests those
    names (note name or alias) for the item after the last comma.
    Keys: Enter = insert (Ctrl+Enter inside a textarea), Esc = cancel
@@ -50,6 +51,14 @@ function replaceItem(value, cursor, name) {
   return { value: value.slice(0, start) + name + value.slice(cursor), cursor: start + name.length };
 }
 
+/** Keys of the mandatory fields (`required: true`) that hold no text. Toggles, selects and headings always have an answer. */
+function missingRequired(fields, values) {
+  return fields
+    .filter(f => f.required && f.type !== "toggle" && f.type !== "select" && f.type !== "heading")
+    .filter(f => String(values[f.key] ?? "").trim() === "")
+    .map(f => f.key);
+}
+
 function labForm(tp, title, fields, opts = {}) {
   const { Modal, Setting, AbstractInputSuggest } = tp.obsidian;
 
@@ -62,10 +71,11 @@ function labForm(tp, title, fields, opts = {}) {
         this.values = {};
         const inputs = [];
         const popups = [];
+        const rows = {};   // mandatory text rows, to show "Needs an answer" under them
 
         for (const f of fields) {
           if (f.type === "heading") { new Setting(contentEl).setName(f.label).setHeading(); continue; }
-          const row = new Setting(contentEl).setName(f.label);
+          const row = new Setting(contentEl).setName(f.required ? `${f.label} *` : f.label);
           if (f.hint) row.setDesc(f.hint);
           if (f.type === "toggle") {
             this.values[f.key] = !!f.value;
@@ -81,6 +91,7 @@ function labForm(tp, title, fields, opts = {}) {
             continue;
           }
           this.values[f.key] = String(f.value ?? "");
+          if (f.required) rows[f.key] = { row, input: null };
           const setup = (c) => {
             c.setPlaceholder(f.placeholder ?? "")
              .setValue(String(f.value ?? ""))
@@ -90,6 +101,7 @@ function labForm(tp, title, fields, opts = {}) {
             if (f.type === "textarea") c.inputEl.rows = f.rows ?? 4;
             if (f.suggest?.length && AbstractInputSuggest) popups.push(attachSuggest(AbstractInputSuggest, c, f.suggest, (v) => { this.values[f.key] = v; }));
             inputs.push(c.inputEl);
+            if (rows[f.key]) rows[f.key].input = c.inputEl;
           };
           f.type === "textarea" ? row.addTextArea(setup) : row.addText(setup);
           row.controlEl.style.flex = "1 1 55%";
@@ -107,7 +119,18 @@ function labForm(tp, title, fields, opts = {}) {
         });
         setTimeout(() => { inputs[0]?.focus(); inputs[0]?.select?.(); }, 30);
       }
-      submit() { this.done = true; resolve({ ...this.values }); this.close(); }
+      submit() {
+        const missing = missingRequired(fields, this.values);
+        for (const f of fields) {
+          const r = rows[f.key];
+          if (!r) continue;
+          const bad = missing.includes(f.key);
+          r.row.setDesc(bad ? "Needs an answer" : (f.hint ?? ""));
+          r.row.settingEl.toggleClass("mod-warning", bad);
+        }
+        if (missing.length) { rows[missing[0]].input?.focus(); return; }
+        this.done = true; resolve({ ...this.values }); this.close();
+      }
       onClose() { this.contentEl.empty(); if (!this.done) resolve(null); }
     }
     new FormModal(app).open();
@@ -142,4 +165,4 @@ function attachSuggest(Base, component, entries, store) {
 }
 
 module.exports = labForm;
-Object.assign(module.exports, { matchNames, currentItem, replaceItem });
+Object.assign(module.exports, { matchNames, currentItem, replaceItem, missingRequired });
