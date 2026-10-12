@@ -375,14 +375,7 @@ describe("lab kit completion (Phase 2)", () => {
 
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
-    // Off until asked for: the optimisation snippet waits for its Use toggle
-    expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual(["tpl-snippets-14-optimisation-campaign-md"]);
-  });
-
-  it("a file that starts off comes with its Use toggle, and goes again when it is switched off", () => {
-    const opt = "tpl-snippets-14-optimisation-campaign-md";
-    expect(offIds(real, {}, KIT_DEFAULTS, new Set(), { [opt]: true }).has(opt)).toBe(false);
-    expect(offIds(real, { [opt]: true }, KIT_DEFAULTS, new Set(), { [opt]: true }).has(opt)).toBe(true);
+    expect(offIds(real, {}, KIT_DEFAULTS).size).toBe(0);
   });
 
   it("New lab entry: says what is missing, else gives the template and folder", () => {

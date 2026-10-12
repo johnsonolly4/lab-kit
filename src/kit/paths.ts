@@ -17,8 +17,6 @@ export interface KitSlot {
   paths: Roles;
   /** Optional kit files the user switched off (ids): not installed, not updated. */
   off: Record<string, true>;
-  /** Optional kit files that start switched off (`defaultOff` in the manifest) and the user switched on (ids). */
-  on?: Record<string, true>;
 }
 /** What the old folder updater (removed) recorded. Kept so files it wrote are not mistaken for your edits. */
 export interface KitRecord { version: string; roles: Roles; files: Record<string, string>; installedAt: string }
@@ -115,7 +113,7 @@ export function kitLoad(saved: unknown): KitData {
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
   kit.snippetIcons = { ...kit.snippetIcons };
   kit.boardColours = { enabled: kit.boardColours?.enabled !== false, colours: { ...(kit.boardColours?.colours ?? {}) } };
-  kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off }, ...(slot.on ? { on: { ...slot.on } } : {}) }]));
+  kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
   // Saved before Phase 5a: a planning note folder set as a per-kit override (Review window) becomes the setting
   const overrides = old.planningFolders === undefined ? (kit.kits[PLANNING_KIT]?.paths ?? {}) : {};
   kit.planningFolders = planningFoldersLoad({ ...overrides, ...(old.planningFolders as object | undefined) });

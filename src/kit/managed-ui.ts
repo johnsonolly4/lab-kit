@@ -53,7 +53,7 @@ export class KitManaged {
 
   isOff(id: string): boolean { return this.offIds().has(id); }
   /** Switched off by you, or waiting for a folder setting (`needs`) that is empty. */
-  private offIds(): Set<string> { return offIds(this.bundle, this.slot.off, this.host.kit, loadedPlugins(this.app), this.slot.on); }
+  private offIds(): Set<string> { return offIds(this.bundle, this.slot.off, this.host.kit, loadedPlugins(this.app)); }
 
   private baseDir(): string { return kitJoin(this.app.vault.configDir, "plugins", this.plugin.manifest.id, "kit-base"); }
 
@@ -216,14 +216,13 @@ export class KitManaged {
     const kit = this.slot;
     if (on) {
       // A file that goes next to a folder from the Lab notebook settings waits until that folder is set
-      const file = this.bundle.manifest.files.find(f => f.id === id), needs = file?.needs;
-      if (needs && offIds(this.bundle, {}, this.host.kit, undefined, { [id]: true }).has(id)) {
+      const needs = this.bundle.manifest.files.find(f => f.id === id)?.needs;
+      if (needs && offIds(this.bundle, {}, this.host.kit).has(id)) {
         new Notice(`Set the ${NEEDS_NAME[needs] ?? needs} in Lab Kit settings first.`);
         done();
         return;
       }
       delete kit.off[id];
-      if (file?.defaultOff) (kit.on ??= {})[id] = true;   // a file that starts off stays on once you switch it on
       await this.host.save();
       try { await this.updateOne(id); } catch (e) { this.failed(e); }
       done();
@@ -240,7 +239,6 @@ export class KitManaged {
       const out = await disableManaged(adapter, item, kit.managed, this.applyOptions(), remove);
       kit.managed = out.state;
       kit.off[id] = true;
-      if (kit.on) delete kit.on[id];
       await this.settleVersion();
       await this.host.save();
       if (out.backup) new Notice(`Switched off ${item.dest}. A copy is in ${out.backup}`, 8000);

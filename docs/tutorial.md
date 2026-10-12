@@ -66,7 +66,6 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
-| **Optimisation campaign** | An algorithm-led optimisation (for example Bayesian optimisation of a flow reaction) | Setup table (algorithm, library and version, acquisition function, seed, initial design, code and commit, observations file) · Objectives · Variables with bounds · Iterations, one row per point with a sample code and a column per variable and objective. Off until you switch on its **Use** toggle in Manage files |
 | **Blank calc table** | Anything else | Your own columns |
 
 > [!example] A typical analysis workflow

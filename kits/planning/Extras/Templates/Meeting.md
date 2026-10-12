@@ -1,14 +1,18 @@
 <%*
 // Meeting template - creates "YYYY-MM-DD <Series>" in the series' folder. The New meeting command works out the series, the date
 // (from the series' interval, day and start) and "since the last meeting" and hands them over as window.vtMeeting; run by hand
-// (no hand-over) it makes a Weekly meetings note for the next Thursday.
+// (no hand-over) it stops and says which command to use.
 const vt = window.vtMeeting;
 delete window.vtMeeting;
-const folder = vt ? vt.folder : "08 Meetings/Weekly meetings";
-const series = vt ? vt.series : "Weekly meetings";
-const d = vt ? moment(vt.date) : (moment().isoWeekday() <= 4 ? moment().isoWeekday(4) : moment().add(1, "weeks").isoWeekday(4));
+if (!vt) {
+  new Notice("Use the New meeting command: it tells this template which meeting and date.", 8000);
+  throw new Error("Meeting template run without the New meeting command");
+}
+const folder = vt.folder;
+const series = vt.series;
+const d = moment(vt.date);
 const date = d.format("YYYY-MM-DD");
-const since = vt ? vt.since : d.clone().subtract(7, "days").format("YYYY-MM-DD");
+const since = vt.since;
 // The old "meeting: true" flag counts for the first series (by name) only
 const names = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
 const first = !names.length || names[0] === series;

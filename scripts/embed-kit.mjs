@@ -29,7 +29,6 @@ export function embeddedKit(root = join(KITS, "lab")) {
       sha256: sha256(raw), renamedFrom: f.renamedFrom ?? [], ...(f.policy ? { policy: f.policy } : {}),
       ...(f.desc ? { desc: f.desc } : {}), ...(f.optional ? { optional: true } : {}),
       ...(f.needs ? { needs: f.needs } : {}),
-      ...(f.defaultOff ? { defaultOff: true } : {}),
     };
   });
   return {

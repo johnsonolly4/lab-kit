@@ -41,8 +41,6 @@ const CONFIG = {
     keepFiles: new Set(["03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // "needs": the setting (kit data key) that must be set for the file to be installed; empty = treated as switched off
     needs: { "Templates/Chemical database template.md": "chemicalFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
-    // "defaultOff": an optional file that stays off until its Use toggle is switched on (few people need it)
-    defaultOff: new Set(["Templates/Snippets/14 Optimisation campaign.md"]),
   },
 };
 // Planning kit: the planning suite (homepage, to-do board, planning notes, templates, Actions, vtAsk.js, theme). Source:
@@ -167,7 +165,6 @@ function regenerate(KIT) {
     const policy = cfg.keepFiles?.has(rel) ? "keep" : prev?.policy;   // a policy set by hand in the manifest is kept too
     if (policy) entry.policy = policy;
     if (cfg.needs?.[rel]) entry.needs = cfg.needs[rel];
-    if (cfg.defaultOff?.has(rel)) entry.defaultOff = true;
       return entry;
     })
     .sort((a, b) => (a.role + a.path).localeCompare(b.role + b.path));

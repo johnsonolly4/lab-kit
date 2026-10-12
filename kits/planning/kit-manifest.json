@@ -164,7 +164,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "1.0.0",
-      "sha256": "367e20a6472f2bd80534bda91a8eff04219ce02380c287442a8c6138c4437897",
+      "sha256": "8b99080087be7330b9dd3c286afd12be954244e6f5319411e71afdf130a14d05",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer",
       "policy": "keep"
@@ -285,7 +285,7 @@
       "role": "templates",
       "path": "Meeting series.md",
       "version": "1.0.0",
-      "sha256": "aa5edbf5465a380ceafc45332b756600324892a7bf9592bfff75248b3d226049",
+      "sha256": "2faa696008cbf00e4c3879d96b3efca60470c7b1f0ae9306d2b740127d8d4923",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },
@@ -296,7 +296,7 @@
       "role": "templates",
       "path": "Meeting.md",
       "version": "1.0.0",
-      "sha256": "2606e6b9e9c25445f446a8a15c0eb603d4019438a88e8052697d1de69b3c234f",
+      "sha256": "3eca499a86f7edc8462b16b0de21d6912f8099e3d5c620b27556bc05e75b2055",
       "renamedFrom": [
         "Weekly meeting.md"
       ],
@@ -342,7 +342,7 @@
       "role": "templates",
       "path": "One-off meeting.md",
       "version": "1.0.0",
-      "sha256": "045db89c51312643bf5aa98da0c2f0f90cd307dba1e71c873de0e7e7aa411372",
+      "sha256": "e9109533cd3f47d367bc428a6e28aa7f89271147a756225fc898fc0920bb8686",
       "renamedFrom": [],
       "desc": "New one-off meeting note (a smaller meeting note: To discuss, Flagged, Notes)"
     },
@@ -364,7 +364,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "1.0.0",
-      "sha256": "fe6ce42c6eae09182d9c30d533f9fb8249e03c47c890b3781e5a607f52f64dff",
+      "sha256": "35f94f4e395f7282048c361b9e559dfe502daaa1449c7c730f01ba525921a737",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },

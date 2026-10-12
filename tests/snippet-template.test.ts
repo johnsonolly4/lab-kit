@@ -1,5 +1,5 @@
 // Snippet token templates (engine): each of the six shipped templates, filled with the form's answers, equals what labSnippets.js wrote before they moved out of it.
-import { describe, it, expect } from "vitest";
+import { describe, it } from "vitest";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import {
@@ -194,28 +194,5 @@ describe("fillTemplate", () => {
     fails("{{@i}}", { a: "1" });
     fails("text {{ never closed");
     fails("{{#if a ^= h}}x{{/if}}", { a: "1" });
-  });
-});
-
-describe("Optimisation campaign snippet", () => {
-  const run = (answers: Record<string, unknown>) => runToken("optimisation", { note: "", prefix: "ABC0016-", answers });
-  it("one iteration column per variable and objective, sample codes in column B", () => {
-    const out = run({ vars: "Temperature (°C)\nFlow rate (mL/min)", objs: "Yield (%), E-factor", algo: "BO lib 1.2", seed: "42", count: "2" });
-    expect(out).toContain("| Iteration | Sample | Source | Temperature (°C) | Flow rate (mL/min) | Yield (%) | E-factor | Notes |");
-    expect(out).toContain("|---|---|---|---|---|---|---|---|");
-    expect(out).toContain("| 1 | ABC0016-A | initial |  |  |  |  |  |");
-    expect(out).toContain("| 2 | ABC0016-B | initial |  |  |  |  |  |");
-    expect(out).toContain("| Algorithm, library and version | BO lib 1.2 |");
-    expect(out).toContain("| Random seed | 42 |");
-    expect(out).toContain("| Temperature (°C) | continuous |  |  |  |");
-    expect(out).toContain("| E-factor |  |  |");
-    expect(out).toContain("codes: column B");
-    expect(out).not.toContain("{{");
-  });
-  it("needs at least one variable; one objective by default", () => {
-    expect(run({ vars: "" })).toBe("");
-    const out = run({ vars: "Temperature (°C)" });
-    expect(out).toContain("| Iteration | Sample | Source | Temperature (°C) | Objective | Notes |");
-    expect(out.split("\n").filter(l => /^\| \d+ \| ABC0016-/.test(l))).toHaveLength(8);
   });
 });

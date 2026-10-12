@@ -45,7 +45,7 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 | `Alt+` + letter (see [[Hotkeys]]) | `Option+` + letter |
 | `Alt+Shift+...` | `Option+Shift+...` |
 
-## 4. Every term
+## 4. When the deck moves
 
 - Update **both** deck paths, `deck_windows` and `deck_mac`, in your meeting series note.
 
