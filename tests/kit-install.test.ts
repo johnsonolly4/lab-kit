@@ -343,7 +343,8 @@ describe("lab kit completion (Phase 2)", () => {
     expect(on).toMatchObject({ action: "create", dest: "Extras/Templates/Lab Kit/Rig template.md" });
     const text = real.contents["tpl-rig-template-md"];
     expect(text).toMatch(/^```rig\n```$/m);
-    for (const prop of ["Tubing:", "Control:", "Analysis:"]) expect(text).toContain(`\n${prop}`);
+    for (const prop of ["Tubing:", "Control:"]) expect(text).toContain(`\n${prop}`);
+    expect(text).not.toContain("\nAnalysis:");   // dropped (user, 2026-10-12): the Analysis table is the one source
     const rig = readRig(text);
     expect(rig.problems).toEqual([]);
     expect(rig.tables.map(t => t.heading)).toEqual(["Pumps", "Reactor line", "Analysis"]);

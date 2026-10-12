@@ -1,8 +1,6 @@
 ---
 Tubing:
 Control:
-Analysis:
-  - 
 ---
 ```rig
 ```

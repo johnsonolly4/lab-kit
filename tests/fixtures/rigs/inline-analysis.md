@@ -1,8 +1,6 @@
 ---
 Tubing: PFA 0.75 mm
 Control: made-up 1.0
-Analysis:
-  - NMR
 ---
 Test rig: in-line analysis after the regulator, as three tables. The layout is a published rig family; every part detail is made up.
 

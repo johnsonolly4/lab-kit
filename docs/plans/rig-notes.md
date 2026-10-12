@@ -12,7 +12,7 @@ Rejected: hand-written Mermaid in the rig note (two sources); a live embed of th
 
 ## The rig note (agreed content)
 
-Properties: `Tubing` (rig-wide material and inner diameter), `Control` (manual, or the software and its version; renamed from `Control software`, user 2026-10-12), `Analysis` (list, typed by hand, for filtering).
+Properties: `Tubing` (rig-wide material and inner diameter), `Control` (manual, or the software and its version; renamed from `Control software`, user 2026-10-12). No `Analysis` property (dropped, user 2026-10-12: the Analysis table is the one source; it can come back filled from the table).
 
 Parts tables, one row per part. `Part` is one of Pump, Mixer, Reactor, Heater, Regulator, Valve, Analysis, Outlet, Tubing.
 
@@ -43,7 +43,7 @@ Confirmed by the user at the start of Phase 1 (2026-10-12, survey): the pump's t
 - The optimisation record, Code and environment, Run log, sample codes for computed runs (their own BACKLOG items).
 - A rig view or filter in `Lab book base.base` (the property makes it possible; not asked for).
 - Reading a reactor's `Size` from Residence times / Flow column prep.
-- Filling the `Analysis` property from the table.
+- An `Analysis` property on the rig note (dropped by the user 2026-10-12; if it comes back it is filled from the table).
 - A `Rig` line in the Lab Book Template: the snippet sets the property, notes without a rig have none.
 - Subgraphs per stage, dead-volume sums from tubing rows.
 
