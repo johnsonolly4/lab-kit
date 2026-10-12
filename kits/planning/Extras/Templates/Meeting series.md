@@ -39,7 +39,7 @@ show: hub-bar
 > [!note]- How meeting prep works
 > - During the week, set **meeting** on any to-do you want to raise (New to-do asks which meeting when you have several series) - it shows up under *Flagged for this meeting*.
 > - The meeting note is made from the kit's **Meeting** template (a one-off meeting from **One-off meeting**). To use your own, write the name of a template note in `template` at the top of this note; start it as a copy of the kit's Meeting template.
-> - How often this meeting is held comes from `interval` (weekly, fortnightly or monthly), `day` and `start` at the top of this note.
+> - How often this meeting is held comes from `interval` (weekly, fortnightly, monthly or every N weeks), `day` and `start` at the top of this note.
 > - Before the meeting press **New meeting note**. It fills itself with the experiments, finished to-dos and papers read since the last one.
 > - Copy what you need into the deck, then add the outcomes under *Notes from the meeting* and turn actions into to-dos.
 

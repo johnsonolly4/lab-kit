@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.0",
-      "sha256": "ebcea8ddf9fb105cc71a9289651970c1a34108e85bd6137f9e7a4cea17520222",
+      "sha256": "835ecbab9c38cbe6eb1c11ad31720146f06f91296bd8a88153c1cce9d2c53b60",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.0",
-      "sha256": "33142858a533c0eabb87d3ea8e583a48bd0485ac2a02f823ada6c681bbd5eae6",
+      "sha256": "d5a73c8b8a3bc10e02f1f5b3d4443fa1169d59b1add8c6c3ef693687c476741d",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -285,7 +285,7 @@
       "role": "templates",
       "path": "Meeting series.md",
       "version": "1.0.0",
-      "sha256": "83ec2e63a02183c0f4f1bb0a7f3bd3a27602ed71277ccaa9af301f5112dc6b76",
+      "sha256": "aa5edbf5465a380ceafc45332b756600324892a7bf9592bfff75248b3d226049",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },

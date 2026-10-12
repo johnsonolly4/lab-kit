@@ -15,8 +15,10 @@ export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: stri
   { key: { modifiers: ["Alt"], key: "U" }, does: "Update this paper's highlights", command: "ZotLit: Update literature note", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "C" }, does: "Insert a citation", command: "ZotLit: insert citation", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "S" }, does: "Insert a lab snippet", command: "Templater: Insert snippet.md", kit: "lab" },
-  ...["Add to shopping list", "Sort inbox", "New meeting", "New project", "New project note", "Roll over to-dos now", "Archive old to-dos"]
+  ...["Add to shopping list", "Sort inbox", "New meeting", "New extra meeting now", "New one-off meeting", "New meeting series", "Open meeting deck", "New project", "New project note",
+    "New concept", "New topic hub", "Roll over to-dos now", "Archive old to-dos"]
     .map(n => ({ does: n, command: `Lab Kit: ${n}`, kit: "planning" as const })),
+  { does: "New chemical", command: "Lab Kit: New chemical", kit: "lab" },
 ];
 
 export interface HotkeyState {

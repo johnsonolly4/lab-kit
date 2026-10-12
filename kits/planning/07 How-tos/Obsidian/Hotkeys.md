@@ -24,7 +24,21 @@ These are suggestions. Lab Kit never sets a hotkey for you, so nothing changes u
 | `Alt+S` | Insert a lab snippet | Templater: Insert snippet.md (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
 | `Ctrl+E` | Switch between reading and editing | Obsidian's own key, nothing to set |
 
-No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New meeting, New project, New project note, Roll over to-dos now, Archive old to-dos.
+No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New meeting, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New project note, New concept, New topic hub, Roll over to-dos now, Archive old to-dos, New chemical.
+
+## Editing
+
+Obsidian's own commands (and one of Advanced Canvas). Check hotkeys does not look at these.
+
+| Does | Keys | Plugin |
+|---|---|---|
+| Fold all | `Alt+Shift+F` | core |
+| Unfold all | `Alt+Shift+U` | core |
+| Move line up / down | `Alt+Shift+↑` / `Alt+Shift+↓` | core |
+| Toggle source mode | `Alt+Shift+S` | core |
+| Toggle canvas read-only | `Alt+Shift+R` | Advanced Canvas |
+
+Rules: one key per command, no duplicates. Don't use `Ctrl+Alt` (it is AltGr on UK keyboards and types accented letters). Obsidian marks a clashing hotkey in red in Settings → Hotkeys.
 
 In Zotero: `1` yellow, `2` red, `3` green.
 

@@ -126,7 +126,7 @@ class KitSettingTab extends PluginSettingTab {
     const planning = this.ctl.planning;
     if (planning) {
       const pSlot = planning.slot, pInst = planning.installedVersion;
-      updates.push({ name: "Planning kit (preview)", desc: "Homepage, to-do board, planning notes and templates, with their own commands. Preview: some homepage buttons don't work yet. Switching it off removes nothing.",
+      updates.push({ name: "Planning kit (preview)", desc: "Homepage, to-do board, planning notes and templates, with their own commands. Switching it off removes nothing.",
         render: b => {
           b.addToggle(t => t.setValue(pSlot.enabled).onChange(async v => {
             pSlot.enabled = v;

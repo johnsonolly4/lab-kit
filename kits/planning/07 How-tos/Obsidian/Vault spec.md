@@ -310,25 +310,7 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 > [!tip] One rule: `Alt` + the first letter of what you want
 > The recommended keys are in [[Hotkeys]]. They are suggestions: Lab Kit never sets them for you (Obsidian → Settings → Hotkeys). **Check hotkeys…** (Settings > Lab Kit) shows which are set.
 
-| Keys | Command | Plugin |
-|---|---|---|
-| `Alt+H` | Open homepage | Notebook Navigator |
-| `Alt+D` | Open today's daily note | Daily notes (core) |
-| `Alt+F` | Search | Omnisearch |
-| `Alt+Z` | Open a literature note | ZotLit |
-| `Alt+N` | Quick capture (new note in `00 Inbox`) | Lab Kit |
-| `Alt+T` | New to-do | Lab Kit |
-| `Alt+L` | New lab entry | Lab Kit |
-| `Alt+U` | Update this literature note | ZotLit |
-| `Alt+C` | Insert citation | ZotLit |
-| `Alt+S` | Insert snippet | Templater (Lab Kit `Insert snippet.md`) |
-| `Alt+Shift+F` / `Alt+Shift+U` | Fold all / unfold all | core |
-| `Alt+Shift+↑` / `↓` | Move line up / down | core |
-| `Alt+Shift+S` | Toggle source mode | core |
-| `Alt+Shift+R` | Toggle canvas read-only | Advanced Canvas |
-| `Ctrl+E` | Reading / editing | core (default) |
-
-Rules: one key per command, no duplicates. Don't use `Ctrl+Alt` (it is AltGr on UK keyboards and types accented letters). Obsidian marks a clashing hotkey in red in Settings > Hotkeys. In Zotero: `1` `2` `3` pick the highlight colour (see [[#Literature note (`04 Literature/ZotLit Imports`)|Literature note]]).
+Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkeys]], and only there. In Zotero: `1` `2` `3` pick the highlight colour (see [[#Literature note (`04 Literature/ZotLit Imports`)|Literature note]]).
 
 ## Visual theme
 
