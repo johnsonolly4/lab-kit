@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.1",
-      "sha256": "da4a34b8333b2f78d39c9c2ef5ea3feebdcf35a9254a0e9c3fa8f41866221634",
+      "sha256": "12bfa2944dd1559559a136e2ac4c5c795ab0f34e73412399c0277e8d418e478c",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "a6c0c6ac68fbe697b8dec4cc7b2d47fdd420ff7515c3d6574daf490d6806d7e0",
+      "sha256": "4141e700e0bd595ca0c956f8687a11e4e42e0f1ad124bab40ad79833abce49f5",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },

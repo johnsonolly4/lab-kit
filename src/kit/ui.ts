@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
@@ -255,6 +255,18 @@ class KitSettingTab extends PluginSettingTab {
               if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
             });
           });
+        } },
+      { name: "Rigs folder", desc: "The folder of your rig notes (one note per flow rig, with its parts tables and diagram). New rig creates notes here from the Rig template. Empty: no Rig template and no New rig. A folder that does not exist yet is created.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.rigsFolder).onChange(async v => { kit.rigsFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+            // once the box is left (not on every key): a folder that does not exist yet is created
+            t.inputEl.addEventListener("change", () => {
+              const path = kit.rigsFolder;
+              if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
+            });
+          });
         } }
     ];
     const snippets = this.snippetRows();
@@ -340,6 +352,7 @@ export class KitController {
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
+    plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
@@ -357,7 +370,7 @@ export class KitController {
         const to = followFolderRename(pf[role], oldPath, file.path);
         if (to) { pf[role] = to; changed = foldersMoved = true; }
       }
-      for (const key of ["labFolder", "chemicalFolder", "methodsFolder"] as const) {
+      for (const key of ["labFolder", "chemicalFolder", "methodsFolder", "rigsFolder"] as const) {
         const to = this.kit[key] ? followFolderRename(this.kit[key], oldPath, file.path) : null;
         if (to) { this.kit[key] = to; changed = foldersMoved = true; }
       }
@@ -447,6 +460,26 @@ export class KitController {
       if (!(await templaterCreateNote(this.app, template, folder, true, name))) { new Notice("Templater couldn't create the note. Update it to the latest version, then try again."); return; }
       if (cls) await this.setChemicalClass(target.folder, cls);
     } catch (e) { console.error(e); new Notice("New chemical failed. See the developer console for details."); }
+  }
+
+  /** New rig: a note in the Rigs folder (created if missing) with the text of the Rig template, then opened. No Templater: the text is copied as it is. */
+  async newRig(): Promise<void> {
+    const tracked = this.managed.stateOf(RIG_TEMPLATE_ID)?.path;
+    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Rig template.md")]
+      .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
+    const target = newRigTarget({ template: template?.path ?? null, rigsFolder: this.kit.rigsFolder });
+    if ("error" in target) { new Notice(target.error); return; }
+    try {
+      await ensureFolder(this.app.vault, target.folder);
+      if (!template) return;
+      const typed = await ask(this.app, "Rig name (Esc cancels)");
+      const name = typed?.replace(/[\\/:*?"<>|#^[\]]/g, "-").trim();
+      if (!name) return;   // Esc or empty cancels
+      const path = `${target.folder}/${name}.md`;
+      if (this.app.vault.getAbstractFileByPath(path)) { new Notice(`${path} already exists.`); return; }
+      const file = await this.app.vault.create(path, await this.app.vault.read(template));
+      await this.app.workspace.getLeaf(false).openFile(file);
+    } catch (e) { console.error(e); new Notice("New rig failed. See the developer console for details."); }
   }
 
   /** Pick a Chemical class from the ones the existing chemical notes use, type another, or skip it. The class text ("" = skip), or null when Esc was pressed. */

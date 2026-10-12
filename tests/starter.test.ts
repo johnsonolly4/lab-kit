@@ -56,7 +56,7 @@ describe("new-vault starter (Phase 8)", () => {
     const css = [...(lab.manifest.enableCss ?? []), ...(planning.manifest.enableCss ?? [])].map(n => n.replace(/\.css$/, ""));
     const state: SetupState = {
       // Personal values the starter can't know: the user fills these in (Lab Kit settings)
-      lab: { initials: "ABC", dataRoot: true, methodsFolder: "", labFolder: KIT_DEFAULTS.labFolder, chemicalFolder: KIT_DEFAULTS.chemicalFolder },
+      lab: { initials: "ABC", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: KIT_DEFAULTS.labFolder, chemicalFolder: KIT_DEFAULTS.chemicalFolder },
       metaBind: null, zotlitGuide: null,   // Meta Bind buttons are added by the plugin's Fix, not by a settings file
       propertiesView: read(".obsidian/app.json").propertiesInDocument,
       plugins: new Set(read(".obsidian/community-plugins.json") as string[]),

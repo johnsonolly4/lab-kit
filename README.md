@@ -32,6 +32,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - **Chemical database**: point Lab Kit at your folder of chemical notes; typing `[[` in a calc cell and the reagent/solvent fields of the forms suggest them, by note name or by the names in a note's `Names` property. **New chemical** makes a chemical note with a name and a class.
 - **Snippet forms** (Alt+S, needs Templater): solution prep (targets by concentration or ratio, added in g or mL), recipe by equivalents, RAFT recipe, sample lists, sampling timetables, NMR / GPC / DLS sample tables, combined results, flow column prep, residence times.
 - **Your own analysis methods**: one note per method (and per machine) in a Methods folder defines the sample table; each shows up in the Alt+S menu and feeds the combined results.
+- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the flow diagram from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder.
 - **Experiment header**: hazard table built from the note's Chemicals property, and a button that opens the experiment's data folder.
 - **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it, so a plugin update brings the new kit. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 - **Planning kit** (preview, off until you switch it on): a homepage, a to-do board whose unfinished cards roll over to today, project hubs, meeting series with notes that fill themselves, knowledge notes, an inbox you sort one note at a time, and **Tidy up notes** for a vault that already has notes. See [tutorial section 8](docs/tutorial.md#8-planning-kit).
@@ -146,6 +147,7 @@ The kits expect these folders. Each is a setting; empty means the default below,
 | `03 Lab Book/Notes` | lab kit: experiment notes | Lab notes folder |
 | `05 Chemicals/Chemicals` | lab kit: chemical notes | Chemical folder |
 | Methods folder (empty until set) | lab kit: analysis methods | Methods folder |
+| Rigs folder (empty until set; Check setup's Fix suggests `03 Lab Book/Rigs`) | lab kit: rig notes | Rigs folder |
 | `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
 | `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
@@ -161,7 +163,7 @@ Settings → Lab Kit is searchable and grouped:
 |---|---|
 | **Built-in kit** | Update available, Kept files with a newer kit version, Kit version (Manage files, Review update, Update all safe files), Planning kit (preview) switch and its files, What's new, update notice, Old backups (**Clear old backups…**), Backup folder |
 | **Kit folders and setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, **Colour board columns** (kanban columns coloured by status: Planned, Started, Processing results, Closed) with a colour for each status, console log |
-| **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder |
+| **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder, Rigs folder |
 | **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…**, **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default) |
 | **Snippet menu → Snippet icons** | A page with one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name. Empty keeps the snippet's own icon |
 | **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
@@ -178,6 +180,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | Insert lab header block | Adds the hazard / data-folder header at the cursor |
 | New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
 | New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder (needs Templater) |
+| New rig | Asks the rig's name; makes the note from the Rig template in your Rigs folder and opens it |
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |

@@ -185,6 +185,19 @@
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },
     {
+      "id": "tpl-rig-template-md",
+      "kind": "template",
+      "src": "Templates/Rig template.md",
+      "role": "templates",
+      "path": "Rig template.md",
+      "version": "1.0.1",
+      "sha256": "7000483dc55ef91ea569ce8e21c740f8d67c83aaf6b35c996f4b8b439e879258",
+      "renamedFrom": [],
+      "desc": "New rig note: tubing, control software, the diagram and the parts tables (pumps, reactor line, analysis)",
+      "optional": true,
+      "needs": "rigsFolder"
+    },
+    {
       "id": "tpl-snippets-01-solution-prep-md",
       "kind": "template",
       "src": "Templates/Snippets/01 Solution prep.md",

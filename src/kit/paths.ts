@@ -46,6 +46,8 @@ export interface KitData {
   mwProperty: string;
   /** Vault folder of analysis method notes (and, linked from them, machine notes), read by the Alt+S snippets. Empty = only the built-in NMR, GPC and DLS. */
   methodsFolder: string;
+  /** Vault folder of rig notes (New rig; the kit's Rig template is installed once it is set). Empty = not set. */
+  rigsFolder: string;
   /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
   planningFolders: PlanningFolders;
 }
@@ -91,7 +93,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
   return null;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -250,6 +252,7 @@ export function inSnippetsFolder(path: string, templatesFolder: string): boolean
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";
+export const RIG_TEMPLATE_ID = "tpl-rig-template-md";
 
 /** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
 export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
@@ -267,5 +270,13 @@ export function newChemicalTarget(o: { templater: boolean; template: string | nu
   const folder = kitJoin(o.chemicalFolder.trim());
   if (!folder) return { error: "Set the Chemical folder in Lab Kit settings first." };
   if (!o.template) return { error: "The Chemical database template is not installed. Install it from Manage kit files." };
+  return { template: o.template, folder };
+}
+
+/** What New rig needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). No Templater: the template's text is copied as it is. */
+export function newRigTarget(o: { template: string | null; rigsFolder: string }): { template: string; folder: string } | { error: string } {
+  const folder = kitJoin(o.rigsFolder.trim());
+  if (!folder) return { error: "Set the Rigs folder in Lab Kit settings first." };
+  if (!o.template) return { error: "The Rig template is not installed. Install it from Manage kit files." };
   return { template: o.template, folder };
 }

@@ -63,7 +63,8 @@ Confirmed by the user at the start of Phase 1 (2026-10-12, survey): the pump's t
 - What: a ```` ```rig ```` code block reads the parts tables of its own note and renders the Phase 1 Mermaid text through Obsidian's Markdown renderer (so it works on mobile, no Node); problems show as a list under it; it redraws when the note changes (same way as the `calc` block, `src/calc/render.ts:69`).
 - Done when: tests with the Obsidian stub show the block passes the generated text to the renderer and lists problems; a row in checklist 6i; BACKLOG "Not yet tested" entry (needs a look in Obsidian: reading view, live preview, phone).
 
-### Phase 3 — Rigs folder, Rig template, New rig, Check setup
+### Phase 3 — Rigs folder, Rig template, New rig, Check setup — DONE 2026-10-12
+- Result: `rigsFolder` (empty default), `newRigTarget`, `RIG_TEMPLATE_ID` in `src/kit/paths.ts`; setting row and `newRig` in `src/kit/ui.ts`; Check setup row with a Fix that creates `03 Lab Book/Rigs` (user); New rig copies the template's text, no Templater (user). The template has no `Type` property and no back link (not in the plan). Tests only.
 - Depends on: Phase 2
 - Files: `src/kit/paths.ts` (`rigsFolder`, default empty), `src/kit/ui.ts` (setting row, command `new-rig`), `src/kit/setup-check.ts` (optional row, like the Methods folder at :127), `kits/lab/Templates/Rig template.md` (new: properties, a `rig` block, the three example tables Pumps / Reactor line / Analysis), `scripts/kit-manifest.mjs` (DESC, `needs: rigsFolder`), `kits/lab/kit-manifest.json` (generated), tests beside `tests/kit-install.test.ts`, `README.md` (Settings, Folder contract, commands), `docs/tutorial.md`, `docs/changelog.md`, `src/kit/hotkey-check.ts` (no-key list)
 - What: precedent is New chemical (`src/kit/ui.ts:342`, `:430-449`; `src/kit/paths.ts:264-271`). New rig asks a name, makes the note in the Rigs folder from the template; stops with a notice when the folder is not set.

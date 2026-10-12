@@ -5,7 +5,7 @@ import { checkSetup, describeActions, differingButtons, labFolderTemplates, type
 const MENU = "Extras/Templates/Lab Kit/Insert snippet.md";
 const CMD = `templater-obsidian:${MENU}`;
 const state = (o: Partial<SetupState> = {}): SetupState => ({
-  lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" },
+  lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", rigsFolder: "Rigs", labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" },
   metaBind: { missing: 0, total: 26 },
   zotlitGuide: null,
   propertiesView: "hidden",
@@ -104,7 +104,7 @@ describe("check setup (Phase 6)", () => {
   });
 
   it("Lab Kit settings: empty initials, data root, folders are red and open settings; methods folder is optional", () => {
-    const r = byId(state({ lab: { initials: "", dataRoot: false, methodsFolder: "", labFolder: "", chemicalFolder: "" } }));
+    const r = byId(state({ lab: { initials: "", dataRoot: false, methodsFolder: "", rigsFolder: "", labFolder: "", chemicalFolder: "" } }));
     for (const id of ["initials", "data-root", "lab-folder", "chemical-folder"]) expect(r[`lab:${id}`]).toMatchObject({ ok: false, fix: { kind: "settings" } });
     expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true });
   });
@@ -155,9 +155,12 @@ describe("check setup (Phase 6)", () => {
   });
 
   it("Methods folder Fix creates the suggested folder; ZotLit is a warning, not a tick", () => {
-    const r = byId(state({ planning: true, lab: { initials: "A", dataRoot: true, methodsFolder: "", labFolder: "L", chemicalFolder: "C" },
+    const r = byId(state({ planning: true, lab: { initials: "A", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: "L", chemicalFolder: "C" },
       plugins: new Set(["templater-obsidian", "dataview", "zotlit"]), zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md" }));
     expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "methods-folder", path: "Extras/methods" } });
+    expect(r["lab:rigs-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "rigs-folder", path: "03 Lab Book/Rigs" } });
+    expect(r["lab:rigs-folder"].detail).toContain("Fix creates 03 Lab Book/Rigs and uses it.");
+    expect(byId(state())["lab:rigs-folder"]).toMatchObject({ ok: true, detail: "Set." });
     expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true });
     expect(r["zotlit:settings"].detail).toContain("07 How-tos/Obsidian/Set up ZotLit.md");
   });

@@ -23,6 +23,7 @@ export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: stri
     "New topic hub", "Roll over to-dos now", "Archive old to-dos"]
     .map(n => ({ does: n, command: `Lab Kit: ${n}`, kit: "planning" as const })),
   { does: "New chemical", command: "Lab Kit: New chemical", kit: "lab" },
+  { does: "New rig", command: "Lab Kit: New rig", kit: "lab" },
 ];
 
 export interface HotkeyState {

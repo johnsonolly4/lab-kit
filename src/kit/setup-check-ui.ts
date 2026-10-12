@@ -47,7 +47,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   const guideId = "note-obsidian-set-up-zotlit-md";
   const guide = planning?.stateOf(guideId)?.path ?? null;
   return {
-    lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder,
+    lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder, rigsFolder: host.kit.rigsFolder,
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
     scripts, homepageMode,
     metaBindDiffers: mbIds ? differingButtons(PLANNING_BUTTONS, metaBindButtons(app) ?? []) : undefined,
@@ -125,6 +125,8 @@ export class SetupCheckModal extends Modal {
     switch (fix.kind) {
       case "methods-folder": await confirm({ name: `Create ${fix.path} and use it as the Methods folder`, desc: "Put one note per analysis method there; the Alt+S analysis snippets then offer them.",
         apply: async () => { await ensureFolder(this.app.vault, fix.path); this.host.kit.methodsFolder = fix.path; await this.host.save(); } }); break;
+      case "rigs-folder": await confirm({ name: `Create ${fix.path} and use it as the Rigs folder`, desc: "New rig then makes one note per flow rig there, from the Rig template.",
+        apply: async () => { await ensureFolder(this.app.vault, fix.path); this.host.kit.rigsFolder = fix.path; await this.host.save(); } }); break;
       case "navigator-home": await confirm({ name: "Set Notebook Navigator's homepage", desc: `To ${fix.path}. It opens when Obsidian starts.`,
         apply: () => setNavigatorHomepage(this.app, fix.path) }); break;
       case "hide-properties": await confirm({ name: "Set Properties in document to Hidden", desc: "Settings → Editor. Properties stay in the note; open them from the note's menu.",
