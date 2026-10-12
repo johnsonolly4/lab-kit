@@ -3,7 +3,7 @@
 import { isSeparator, splitRow } from "../calc/engine";
 
 /** The part kinds, as written in a `Part` column or (plural allowed) as the heading above a table. */
-export const PART_KINDS = ["Pump", "Mixer", "Reactor", "Heater", "Regulator", "Valve", "Analysis", "Outlet", "Tubing"] as const;
+export const PART_KINDS = ["Pump", "Mixer", "Reactor", "Heater", "Stirrer", "Regulator", "Valve", "Analysis", "Outlet", "Tubing"] as const;
 export type PartKind = (typeof PART_KINDS)[number];
 
 /** A parts table as found in the note: any table with an `ID` and a `Feeds` column. */
@@ -110,7 +110,7 @@ export function readRig(text: string): Rig {
     for (const f of p.feeds) {
       const to = byId.get(f.toLowerCase());
       if (!to) { problems.push(`${p.id} feeds "${f}", which is not the ID of a part.`); continue; }
-      links.push({ from: p.id, to: to.id, attached: p.kind === "Heater" });
+      links.push({ from: p.id, to: to.id, attached: p.kind === "Heater" || p.kind === "Stirrer" });
     }
   }
   return { tables, parts, links, problems, mermaid: toMermaid(parts, links) };

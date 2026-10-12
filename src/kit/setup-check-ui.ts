@@ -47,7 +47,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   const guideId = "note-obsidian-set-up-zotlit-md";
   const guide = planning?.stateOf(guideId)?.path ?? null;
   return {
-    lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder, rigsFolder: host.kit.rigsFolder,
+    lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder, rigsFolder: host.kit.rigsFolder, rigsFolderMissing: !!host.kit.rigsFolder && !app.vault.getFolderByPath(host.kit.rigsFolder),
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
     scripts, homepageMode,
     metaBindDiffers: mbIds ? differingButtons(PLANNING_BUTTONS, metaBindButtons(app) ?? []) : undefined,

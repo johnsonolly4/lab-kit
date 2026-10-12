@@ -12,13 +12,14 @@ fields:
     suggest: notes
     folder: rigsFolder
 ---
+
 [[{{rig}}]]
 
 {{rig-diagram:rig}}
-{{#append "# Flow platform setup"}}
+{{#append "# Flow platform setup" from rig.Setup heading}}
 Rig: [[{{rig}}]]
-Tubing: {{note-prop:rig.Tubing}}
-Control: {{note-prop:rig.Control}}
+{{note-line:rig.Tubing}}
+{{note-line:rig.Control}}
 
 {{rig-tables:rig}}
 {{/append}}

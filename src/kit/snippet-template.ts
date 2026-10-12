@@ -161,6 +161,7 @@ type Alt =
   | { k: "noteNumber"; field: string; property: string }
   | { k: "liveProp"; field: string; property: string; cell: string }
   | { k: "noteProp"; field: string; property: string }
+  | { k: "noteLine"; field: string; property: string }
   | { k: "rigTables"; field: string; hashes: string }
   | { k: "rigDiagram"; field: string };
 
@@ -170,7 +171,7 @@ type Node =
   | { t: "each"; key: string; as?: string; or?: string; sep?: string; body: Node[] }
   | { t: "repeat"; key: string; fallback: number; body: Node[] }
   | { t: "if"; key: string; starts?: string; yes: Node[]; no: Node[] }
-  | { t: "append"; heading: string; level: number; body: Node[] };
+  | { t: "append"; heading: string; level: number; from?: { field: string; property: string }; body: Node[] };
 
 type Tok = { text: string } | { tag: string };
 
@@ -233,6 +234,7 @@ function parseAlt(src: string): Alt {
   if ((m = /^note-number:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteNumber", field: m[1], property: m[2].trim() };
   if ((m = /^live-prop:([A-Za-z_][\w-]*)\.([^@"]+)@([A-Za-z]{1,3}\d+)$/.exec(s))) return { k: "liveProp", field: m[1], property: m[2].trim(), cell: m[3].toUpperCase() };
   if ((m = /^note-prop:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteProp", field: m[1], property: m[2].trim() };
+  if ((m = /^note-line:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteLine", field: m[1], property: m[2].trim() };
   if ((m = /^rig-tables:([A-Za-z_][\w-]*)(?:\s+(#{1,6}))?$/.exec(s))) return { k: "rigTables", field: m[1], hashes: m[2] ?? "##" };
   if ((m = /^rig-diagram:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigDiagram", field: m[1] };
   if (NAME.test(s)) return { k: "ref", name: s };
@@ -274,7 +276,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
   const check = (a: Alt, tag: string) => {
     if (a.k === "ref" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
-    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "rigTables" || a.k === "rigDiagram") field(a.field, tag);
+    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
   };
   for (const tok of tokenize(src)) {
@@ -293,9 +295,10 @@ function parseBody(src: string, known: Set<string>): Node[] {
       field(m[1], tag);
       const node = { t: "if" as const, key: m[1], starts: m[2], yes: [] as Node[], no: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false });
-    } else if ((m = /^#append\s+"\s*(#{1,6})?\s*([^"#][^"]*?)\s*"$/.exec(tag))) {
+    } else if ((m = /^#append\s+"\s*(#{1,6})?\s*([^"#][^"]*?)\s*"(?:\s+from\s+([A-Za-z_][\w-]*)\.(.+?))?$/.exec(tag))) {
       if (open.length) throw new TemplateError("{{#append}} cannot be inside another block.");
-      const node = { t: "append" as const, heading: m[2], level: m[1]?.length ?? 2, body: [] as Node[] };
+      if (m[3]) field(m[3], tag);
+      const node = { t: "append" as const, heading: m[2], level: m[1]?.length ?? 2, from: m[3] ? { field: m[3], property: m[4].trim() } : undefined, body: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false });
     } else if (tag === "else") {
       const o = open[open.length - 1];
@@ -333,12 +336,20 @@ class Filler {
 
   constructor(private answers: Record<string, string>, private env: TemplateEnv) {}
 
+  /** The heading of an {{#append}} part: the picked note's property when the tag says `from key.Property` and it is filled in, else the written heading. */
+  private appendHeading(n: Extract<Node, { t: "append" }>): string {
+    const note = n.from ? this.answers[n.from.field] ?? "" : "";
+    return (note && n.from && this.env.noteText(note, n.from.property).trim()) || n.heading;
+  }
+
   render(nodes: Node[]): string {
     let out = "";
+    let dropBreak = false;   // an empty {{note-line}} on a line of its own leaves no blank line
     for (const n of nodes) {
-      if (n.t === "text") out += n.s;
-      else if (n.t === "expr") out += this.expr(n.alts);
-      else if (n.t === "append") this.appends.push({ heading: n.heading, level: n.level, text: this.render(n.body) });
+      if (n.t === "text") { out += dropBreak ? n.s.replace(/^\r?\n/, "") : n.s; dropBreak = false; continue; }
+      dropBreak = false;
+      if (n.t === "expr") { const v = this.expr(n.alts); out += v; dropBreak = !v && n.alts.length === 1 && n.alts[0].k === "noteLine"; }
+      else if (n.t === "append") this.appends.push({ heading: this.appendHeading(n), level: n.level, text: this.render(n.body) });
       else if (n.t === "if") {
         const v = this.answers[n.key] ?? "";
         const yes = n.starts !== undefined ? v !== "" && v.toLowerCase().startsWith(n.starts.toLowerCase()) : listOf(v).length > 0;
@@ -400,6 +411,7 @@ class Filler {
         const note = this.answers[a.field] ?? "";
         return note && this.env.noteProperty(note, a.property) ? `=PROP(${a.cell},"${a.property}")` : "";
       }
+      case "noteLine": { const note = this.answers[a.field] ?? "", v = note ? this.env.noteText(note, a.property) : ""; return v ? `${a.property}: ${v}` : ""; }
       case "noteProp": { const note = this.answers[a.field] ?? ""; return note ? this.env.noteText(note, a.property) : ""; }
       case "rigTables": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigTables(note, a.hashes) : ""; }
       case "rigDiagram": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigDiagram(note) : ""; }

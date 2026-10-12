@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
@@ -256,11 +256,11 @@ class KitSettingTab extends PluginSettingTab {
             });
           });
         } },
-      { name: "Rigs folder", desc: "The folder of your rig notes (one note per flow rig, with its parts tables and diagram). New rig creates notes here from the Rig template. Empty: no Rig template and no New rig. A folder that does not exist yet is created.",
+      { name: "Rigs folder", desc: `The folder of your rig notes (one note per flow rig, with its parts tables and diagram). New rig creates notes here from the Rig template. Empty: ${RIGS_DEFAULT}. A folder that does not exist yet is created.`,
         render: b => {
           b.addText(t => {
             wideBox(b, t, this.app);
-            t.setValue(kit.rigsFolder).onChange(async v => { kit.rigsFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+            t.setPlaceholder(RIGS_DEFAULT).setValue(kit.rigsFolder === RIGS_DEFAULT ? "" : kit.rigsFolder).onChange(async v => { kit.rigsFolder = v.trim() ? normalizePath(v.trim()) : RIGS_DEFAULT; await this.ctl.save(); });
             // once the box is left (not on every key): a folder that does not exist yet is created
             t.inputEl.addEventListener("change", () => {
               const path = kit.rigsFolder;

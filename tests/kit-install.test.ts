@@ -334,12 +334,14 @@ describe("lab kit completion (Phase 2)", () => {
     expect(byId(items, "tpl-chemical-database-template-md").dest).toBe("Extras/Templates/Lab Kit/Chemical database template.md");
   });
 
-  it("Rig template: off while the Rigs folder is empty (the default), installed once it is set; it has a rig block and parts tables without problems", async () => {
+  it("Rig template: installed with the default Rigs folder (03 Lab Book/Rigs; a cleared box gives it back), off only when the setting is blank; it has a rig block and parts tables without problems", async () => {
     const data = kitLoad(undefined);
-    expect(data.rigsFolder).toBe("");
+    expect(data.rigsFolder).toBe("03 Lab Book/Rigs");
+    expect(kitLoad({ rigsFolder: "" }).rigsFolder).toBe("03 Lab Book/Rigs");
+    expect(kitLoad({ rigsFolder: "Mine/Rigs" }).rigsFolder).toBe("Mine/Rigs");
     const plan = (d: typeof data) => planManaged(memVault(), real, null, { ...kitFolderRoles(d), ...base }, null, null, offIds(real, {}, d));
-    expect(byId(await plan(data), "tpl-rig-template-md").action).toBe("off");
-    const on = byId(await plan({ ...data, rigsFolder: "03 Lab Book/Rigs" }), "tpl-rig-template-md");
+    expect(byId(await plan({ ...data, rigsFolder: "" }), "tpl-rig-template-md").action).toBe("off");
+    const on = byId(await plan(data), "tpl-rig-template-md");
     expect(on).toMatchObject({ action: "create", dest: "Extras/Templates/Lab Kit/Rig template.md" });
     const text = real.contents["tpl-rig-template-md"];
     expect(text).toMatch(/^```rig\n```$/m);
@@ -393,7 +395,8 @@ describe("lab kit completion (Phase 2)", () => {
 
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
-    expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);   // the Rigs folder is empty by default
+    expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual([]);   // every folder setting has a default now, including the Rigs folder
+    expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })]).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
   });
 
   it("New lab entry: says what is missing, else gives the template and folder", () => {

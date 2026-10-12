@@ -24,6 +24,14 @@ describe("fixture rigs", () => {
       "  BPR --> OUT",
     ].join("\n"));
   });
+  it("batch vessel: a lone reactor with a heater and a stirrer on dashed lines, nothing flows, no problems", () => {
+    const r = rig("batch-vessel");
+    expect(r.problems).toEqual([]);
+    expect(arrows("batch-vessel")).toEqual(["H1 -.- V1", "S1 -.- V1"]);
+    expect(r.parts.map(p => `${p.id}:${p.kind}`)).toEqual(["V1:Reactor", "H1:Heater", "S1:Stirrer"]);
+    expect(r.mermaid).toContain('V1["V1<br>round-bottom flask"]');
+    expect(readRig(table("| ID | Part | Feeds |", "| V1 | Reactor | |")).problems).toEqual([]);   // a single part, nothing feeds it
+  });
   it("kind comes from the Part column, else from the heading above the table", () => {
     const r = rig("single-tubular");
     expect(r.parts.map(p => `${p.id}:${p.kind}`)).toEqual(["P1:Pump", "R1:Reactor", "H1:Heater", "BPR:Regulator", "OUT:Outlet"]);
@@ -113,7 +121,7 @@ describe("problems are messages, never thrown", () => {
     const r = readRig(["## Reactor line", table("| ID | Feeds |", "| R1 | |"), "", table("| ID | Part | Feeds |", "| M1 | Mixr | |")].join("\n"));
     expect(r.problems).toEqual([
       'R1 has no part kind: add a Part column to the table under "Reactor line", or put the table under a heading that names one kind (Pumps, Analysis).',
-      'M1: "Mixr" is not a part kind (Pump, Mixer, Reactor, Heater, Regulator, Valve, Analysis, Outlet, Tubing).',
+      'M1: "Mixr" is not a part kind (Pump, Mixer, Reactor, Heater, Stirrer, Regulator, Valve, Analysis, Outlet, Tubing).',
     ]);
     expect(r.mermaid).toBe('flowchart LR\n  R1["R1"]\n  M1["M1"]');
   });

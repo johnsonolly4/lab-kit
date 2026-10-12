@@ -50,6 +50,19 @@ describe("engine: rig tokens, note-prop and #append", () => {
   it("note-prop is a property of the picked note as text, empty when it has none", () => {
     expect(fill("[{{note-prop:rig.Tubing}}][{{note-prop:rig.Control}}]").text).toBe("[PFA 0.75 mm][]");
   });
+  it("note-line is `Name: value`, and nothing (no blank line either) when the note has no such property", () => {
+    expect(fill("a\n{{note-line:rig.Tubing}}\n{{note-line:rig.Control}}\nb").text).toBe("a\nTubing: PFA 0.75 mm\nb");
+    expect(fill("a\n{{note-line:rig.Control}}\n{{note-line:rig.Tubing}}\n\nb").text).toBe("a\nTubing: PFA 0.75 mm\n\nb");
+    expect(fill("[{{note-line:rig.Tubing}}]", "").text).toBe("[]");
+  });
+  it("#append ... from key.Property: that property of the picked note is the heading when filled in, else the written one", () => {
+    const heading = (rig: string, tag = '{{#append "# Flow platform setup" from rig.Heading}}') => fill(`${tag}x{{/append}}`, rig).appends[0];
+    const withHeading = { text: () => RIG, prop: (_n: string, p: string) => (p === "Heading" ? "Batch setup" : "") };
+    expect(fillParts('{{#append "# Flow platform setup" from rig.Heading}}x{{/append}}', { rig: "Rig A" }, makeEnv("", "ABC0016-", () => "", withHeading)).appends[0]).toEqual({ heading: "Batch setup", level: 1, text: "x" });
+    expect(heading("Rig A")).toMatchObject({ heading: "Flow platform setup", level: 1 });
+    expect(heading("", '{{#append "Setup" from rig.Heading}}')).toMatchObject({ heading: "Setup", level: 2 });
+    expect(() => heading("Rig A", '{{#append "# H" from nope.Heading}}')).toThrow(/not a field/);
+  });
   it("an empty answer gives nothing; a note without a parts table is an error", () => {
     expect(fill("[{{rig-tables:rig}}{{rig-diagram:rig}}{{note-prop:rig.Tubing}}]", "").text).toBe("[]");
     expect(() => fill("{{rig-diagram:rig}}", "Empty")).toThrow(/"Empty" has no parts table/);

@@ -93,7 +93,10 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
   return null;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+/** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
+export const RIGS_DEFAULT = "03 Lab Book/Rigs";
+
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -113,6 +116,7 @@ export function kitLoad(saved: unknown): KitData {
   const single = { managed: old.managed, paths: old.paths, off: old.off };
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
+  if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
   kit.snippetIcons = { ...kit.snippetIcons };
   kit.boardColours = { enabled: kit.boardColours?.enabled !== false, colours: { ...(kit.boardColours?.colours ?? {}) } };
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));

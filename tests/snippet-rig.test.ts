@@ -21,7 +21,7 @@ const TEMPLATE = asJsonHeader(SHIPPED);
 const file = (path: string): TFile => new TFile({ path, basename: path.replace(/\.md$/, "").split("/").pop()! });
 
 function setup(opts: { note: string; kit?: Partial<KitData> }) {
-  const rigs: Record<string, string> = { "Rigs/Rig A.md": RIG };
+  const rigs: Record<string, string> = { "Rigs/Rig A.md": RIG, "Rigs/Batch.md": readFileSync("tests/fixtures/rigs/batch-vessel.md", "utf8") };
   const folder = new TFolder({ path: "Rigs", children: Object.keys(rigs).map(file) });
   const files: Record<string, string> = { "S/t.md": TEMPLATE, ...rigs };
   const doc = { text: opts.note };
@@ -33,7 +33,7 @@ function setup(opts: { note: string; kit?: Partial<KitData> }) {
   const app = {
     vault: { cachedRead: async (f: TFile) => files[f.path], getFolderByPath: (p: string) => (p === "Rigs" ? folder : null) },
     workspace: { activeEditor: { editor }, getActiveFile: () => file("ABC0016 - test.md") },
-    metadataCache: { getFileCache: (f: TFile) => ({ frontmatter: f.basename === "Rig A" ? { Tubing: "PFA 0.75 mm", Control: "made-up 1.0" } : undefined }), getFirstLinkpathDest: () => null },
+    metadataCache: { getFileCache: (f: TFile) => ({ frontmatter: f.basename === "Rig A" ? { Tubing: "PFA 0.75 mm", Control: "made-up 1.0" } : f.basename === "Batch" ? { "Setup heading": "Batch setup" } : undefined }), getFirstLinkpathDest: () => null },
   };
   const kit = { ...KIT_DEFAULTS, initials: "ABC", rigsFolder: "Rigs", ...opts.kit } as KitData;
   return { st: new SnippetTemplates(app as never, () => kit), doc };
@@ -53,9 +53,16 @@ describe("the shipped Rig snippet", () => {
   it("puts the link and the diagram at the cursor, sets Rig, and adds Flow platform setup at the end", async () => {
     const { st, doc } = setup({ note: NOTE });
     const out = await st.run(tp({ rig: "Rig A" }), file("S/t.md"));
-    expect(out).toBe(`[[Rig A]]\n\n${DIAGRAM}\n`);
+    expect(out).toBe(`\n[[Rig A]]\n\n${DIAGRAM}\n`);   // starts with an empty line (user): the diagram renders when the note is opened
     expect(doc.text.startsWith('---\nStatus: Planned\nRig: "[[Rig A]]"\n---\n# Apparatus\n\n# Results\n\n# Flow platform setup\nRig: [[Rig A]]\nTubing: PFA 0.75 mm\nControl: made-up 1.0\n\n## Pumps\n| ID |')).toBe(true);
     expect(Notice.messages).toEqual([]);
+  });
+  it("a batch rig: its own section heading, no Tubing or Control lines, no blank gap, and the vessel tables", async () => {
+    const { st, doc } = setup({ note: NOTE });
+    await st.run(tp({ rig: "Batch" }), file("S/t.md"));
+    expect(doc.text).toContain("# Results\n\n# Batch setup\nRig: [[Batch]]\n\n## Vessel\n| ID | Part |");
+    expect(doc.text).not.toContain("Flow platform setup");
+    expect(doc.text).not.toContain("Tubing:");
   });
   it("the tables it copies draw the same diagram as the rig note", async () => {
     const { st, doc } = setup({ note: NOTE });

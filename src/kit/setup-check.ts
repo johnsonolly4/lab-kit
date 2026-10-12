@@ -1,7 +1,7 @@
 // Setup check (Phase 6): what the kits need from other plugins, Templater, CSS snippets, folders and hotkeys, as a list of ok / missing items.
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
-import { todoFolder, type PlanningFolders } from "./paths";
+import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
@@ -40,7 +40,7 @@ export const OLD_ROLLOVER = "Actions/To-do roll-over.md";
 
 export interface SetupState {
   /** Lab Kit's own settings the kits read. */
-  lab: { initials: string; dataRoot: boolean; methodsFolder: string; rigsFolder: string; labFolder: string; chemicalFolder: string };
+  lab: { initials: string; dataRoot: boolean; methodsFolder: string; rigsFolder: string; rigsFolderMissing?: boolean; labFolder: string; chemicalFolder: string };
   /** Meta Bind button templates the planning kit uses; null without Meta Bind. */
   metaBind: { missing: number; total: number; /** Ids of the missing buttons, for the row's text. */ names?: string[] } | null;
   /** Meta Bind buttons that exist but do something else than the kit's button of that id (see `differingButtons`). */
@@ -101,8 +101,6 @@ export interface SetupItem { id: string; group: string; label: string; ok: boole
 
 /** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
 export const METHODS_DEFAULT = "Extras/methods";
-/** Where the Rigs folder Fix puts it (user, 2026-10-12); the setting's own default stays empty. */
-export const RIGS_DEFAULT = "03 Lab Book/Rigs";
 
 /** "Alt+S", "Mod+Shift+T": how a hotkey is written in the list. */
 export const hotkeyText = (k: KitHotkey): string => [...k.modifiers, k.key].join("+");
@@ -128,9 +126,9 @@ export function checkSetup(s: SetupState): SetupItem[] {
     ["lab-folder", "Lab notes folder", !!l.labFolder.trim(), "Where New lab entry puts experiment notes.", false],
     ["chemical-folder", "Chemical folder", !!l.chemicalFolder.trim(), "Your chemical notes, suggested in calc cells and forms.", false],
     ["methods-folder", "Methods folder", !!l.methodsFolder.trim(), "Optional: your own analysis methods next to NMR, GPC and DLS.", true],
-    ["rigs-folder", "Rigs folder", !!l.rigsFolder.trim(), "Optional: one note per flow rig, made by New rig from the Rig template.", true],
+    ["rigs-folder", "Rigs folder", !!l.rigsFolder.trim() && !l.rigsFolderMissing, "Optional: one note per flow rig, made by New rig from the Rig template.", true],
   ];
-  const made: Record<string, SetupFix & { path: string }> = { "methods-folder": { kind: "methods-folder", path: METHODS_DEFAULT }, "rigs-folder": { kind: "rigs-folder", path: RIGS_DEFAULT } };
+  const made: Record<string, SetupFix & { path: string }> = { "methods-folder": { kind: "methods-folder", path: METHODS_DEFAULT }, "rigs-folder": { kind: "rigs-folder", path: l.rigsFolder.trim() || RIGS_DEFAULT } };
   for (const [id, label, ok, what, optional] of labRows) {
     const fix: SetupFix | undefined = ok ? undefined : made[id] ?? settings;
     out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : made[id] ? `Not set. ${what} Fix creates ${made[id].path} and uses it.` : `Not set. ${what}`, fix });

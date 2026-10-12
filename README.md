@@ -32,7 +32,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - **Chemical database**: point Lab Kit at your folder of chemical notes; typing `[[` in a calc cell and the reagent/solvent fields of the forms suggest them, by note name or by the names in a note's `Names` property. **New chemical** makes a chemical note with a name and a class.
 - **Snippet forms** (Alt+S, needs Templater): solution prep (targets by concentration or ratio, added in g or mL), recipe by equivalents, RAFT recipe, sample lists, sampling timetables, NMR / GPC / DLS sample tables, combined results, flow column prep, residence times.
 - **Your own analysis methods**: one note per method (and per machine) in a Methods folder defines the sample table; each shows up in the Alt+S menu and feeds the combined results.
-- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the flow diagram from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder.
+- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the flow diagram from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder. A batch setup (a stirred vessel, no pumps) is a Reactor row with a Heater and a Stirrer row feeding it.
 - **Experiment header**: hazard table built from the note's Chemicals property, and a button that opens the experiment's data folder.
 - **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it, so a plugin update brings the new kit. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 - **Planning kit** (preview, off until you switch it on): a homepage, a to-do board whose unfinished cards roll over to today, project hubs, meeting series with notes that fill themselves, knowledge notes, an inbox you sort one note at a time, and **Tidy up notes** for a vault that already has notes. See [tutorial section 8](docs/tutorial.md#8-planning-kit).
@@ -112,7 +112,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 | **NMR / GPC / DLS samples** · your own methods | Sample tables with machine, checklist and result columns. The sample codes come from every table in the note that holds codes; with more than one, **Codes from** picks which |
 | **Combined results** | One row per sample with the results of every method |
 | **Flow column prep** · **Residence times** | Packing a column, reactor volume, flow rates. Pick a solvent and leave the density empty, and the density is read from that chemical's note |
-| **Rig** | Needs a Rigs folder. Links the rig note, puts a fixed copy of its diagram at the cursor, sets the `Rig` property and copies the parts tables under `Flow platform setup` at the bottom of the note |
+| **Rig** | Links the rig note, puts a fixed copy of its diagram at the cursor, sets the `Rig` property and copies the parts tables under `Flow platform setup` at the bottom of the note (a `Setup heading` property on the rig note changes the heading, e.g. for a batch rig) |
 | **Blank calc table** | Your own columns |
 
 Choose which snippets you want in **Manage files…** (each has a **Use** toggle). Icons for the Alt+S menu are a setting. Six snippets (Variant naming matrix, Sample list, Sampling timetable, Flow column prep, Residence times, Blank calc table) are plain notes with a header of questions and `{{tokens}}` in the text, so you can read and edit them: syntax in [docs/snippet-syntax.md](docs/snippet-syntax.md).
@@ -148,7 +148,7 @@ The kits expect these folders. Each is a setting; empty means the default below,
 | `03 Lab Book/Notes` | lab kit: experiment notes | Lab notes folder |
 | `05 Chemicals/Chemicals` | lab kit: chemical notes | Chemical folder |
 | Methods folder (empty until set) | lab kit: analysis methods | Methods folder |
-| Rigs folder (empty until set; Check setup's Fix suggests `03 Lab Book/Rigs`) | lab kit: rig notes | Rigs folder |
+| Rigs folder (`03 Lab Book/Rigs` unless you set another; Check setup's Fix creates it) | lab kit: rig notes | Rigs folder |
 | `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
 | `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
