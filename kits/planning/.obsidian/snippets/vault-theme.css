@@ -446,6 +446,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map { display: flex; flex-direction: column; gap: 12px; }
 .vt-map-scroll { min-width: 0; overflow-x: auto; }
 .vt-map-canvas { position: relative; width: var(--vt-map-w); height: var(--vt-map-h); }
+.vt-map-ahead { margin-right: max(0px, calc(100% - var(--vt-map-w) + var(--vt-map-scroll))); }
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 .vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
 .vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px; overflow: hidden; cursor: pointer;
@@ -460,7 +461,8 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-done { opacity: 0.65; }
 .vt-map-done .vt-map-title { text-decoration: line-through; }
-.vt-map-blocked { border-style: dashed; }
+.vt-map-ready { border: 2px solid var(--interactive-accent); }
+.vt-map-blocked { border: 2px dashed var(--text-muted); }
 .vt-map-cyclic { border-color: var(--text-error); }
 .vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.25; }
 .vt-map-arrow.vt-map-hl { stroke: var(--interactive-accent); stroke-width: 2.5; }

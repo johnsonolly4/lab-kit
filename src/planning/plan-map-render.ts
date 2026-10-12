@@ -36,20 +36,27 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     const g = mapGeometry(map);
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
-    canvas.setCssProps({ "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
+    if (g.scrollLeft > 0) canvas.addClass("vt-map-ahead");   // room to scroll the start step to the left edge even when everything fits
+    canvas.setCssProps({ "--vt-map-scroll": `${g.scrollLeft}px`, "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
     const svg = canvas.createSvg("svg", { cls: "vt-map-arrows", attr: { width: String(g.width), height: String(g.height) } });
     const arrows = new Map<SVGPathElement, { from: string; to: string }>();
     for (const c of g.curves) arrows.set(svg.createSvg("path", { cls: "vt-map-arrow", attr: { d: c.d } }), c);
     const cards = new Map<string, HTMLElement>();
     for (const c of map.cards) {
       const r = c.row, p = g.pos.get(c.path)!;
-      const el = canvas.createDiv({ cls: ["vt-map-card", r.done ? "vt-map-done" : "", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
+      const el = canvas.createDiv({ cls: ["vt-map-card", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
       el.setCssProps({ "--vt-map-x": `${p.x}px`, "--vt-map-y": `${p.y}px` });
       const tick = el.createEl("button", { cls: "vt-map-tick", attr: { "aria-label": r.done ? "Mark not done" : "Mark done" } });   // a circle: ticks and unticks, so a wrong tick can be undone
-      setIcon(tick, r.done ? "check-circle-2" : "circle");
+      let done = r.done;   // what the card shows now: it changes at the click, before the note's properties are saved and the map redraws
+      const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); el.toggleClass("vt-map-done", done); el.toggleClass("vt-map-ready", !done && !r.blocked); };
+      look();
       const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
       tick.addEventListener("mousedown", stop);
-      tick.addEventListener("click", e => { stop(e); void markDone(o, r.path, !r.done); });
+      tick.addEventListener("click", e => {
+        stop(e);
+        done = !done; look();
+        markDone(o, r.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); });
+      });
       el.createDiv({ cls: "vt-map-title", text: r.name });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
