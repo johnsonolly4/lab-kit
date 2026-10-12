@@ -155,6 +155,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Tests: fixture with a parent and two subtasks, a missing parent, a loop.
 - Done when: tests and lint pass; the user gives one to-do two subtasks and sees them in the hub.
 
+- **Phase 4e result (2026-10-13, tests only, not seen in Obsidian):** decided with the user: the parent card shows a count that expands to the subtasks; the parent is only marked "all done", never ticked; a subtask is an ordinary to-do (board, own `after`); typed by hand; one level only. `PlanRow.parent` / `subs` and the problem lines in `src/planning/plan.ts`; subtasks left off the map in `layoutPlan`; the toggle and list in `src/planning/plan-map-render.ts`; open lists kept in the block (`expanded` in `blocks.ts`).
+
 ### Phase 4 (superseded: `plan` block, Mermaid)
 - Replaced 2026-10-12 by Phases 4a-4c (card map). Kept for the record.
 - User addition 2026-10-12 (chat): clicking a to-do in the diagram opens its note. Approach (not tried): after the block renders, add a click handler to each node in the SVG that calls `app.workspace.openLinkText(path, "")` (ctrl/cmd-click = new tab); node ids map to note paths in `plan.ts`. Do not rely on Mermaid's own `click` (Obsidian's strict security level may block it: unverified). Pointer cursor on nodes. The same could be added to the `rig` block (`src/rig/render.ts:57`) for parts that are notes: ask the user, rig parts are table rows, not notes.

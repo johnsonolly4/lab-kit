@@ -16,11 +16,19 @@ export interface PlanMap {
   cyclic: Set<string>;
 }
 
+/** The subtask count of a to-do: "2/3", and whether all are done (no subtasks: empty and false). */
+export function subsLabel(row: { subs: { done: boolean }[] }): { text: string; allDone: boolean } {
+  const n = row.subs.length, done = row.subs.filter(s => s.done).length;
+  return { text: n ? `${done}/${n}` : "", allDone: n > 0 && done === n };
+}
+
 /** Steps left to right (0 = no parents, else 1 + the largest parent step); inside a step, near the parents, then plan order. */
 export function layoutPlan(plan: Plan): PlanMap {
-  const hasChild = new Set(plan.rows.flatMap(r => r.afterPaths));
-  const linked = plan.rows.filter(r => r.afterPaths.length > 0 || hasChild.has(r.path));
-  const unlinked = plan.rows.filter(r => !linked.includes(r));
+  const onMap = new Set(plan.rows.filter(r => !r.parent).map(r => r.path));
+  const top = plan.rows.filter(r => !r.parent).map(r => ({ ...r, afterPaths: r.afterPaths.filter(p => onMap.has(p)) }));   // a subtask lives inside its parent's card, not on the map
+  const hasChild = new Set(top.flatMap(r => r.afterPaths));
+  const linked = top.filter(r => r.afterPaths.length > 0 || hasChild.has(r.path));
+  const unlinked = top.filter(r => !linked.includes(r));
   const arrows = linked.flatMap(r => r.afterPaths.map(from => ({ from, to: r.path })));
 
   // Rows are in plan order: parents first, except inside a cycle (a parent not yet placed).
@@ -84,7 +92,7 @@ export interface MapGeometry {
 }
 
 /** Pixels for a layout: steps go left to right, places top to bottom. */
-export function mapGeometry(map: PlanMap): MapGeometry {
+export function mapGeometry(map: PlanMap, extraHeight = 0): MapGeometry {
   const pos = new Map<string, { x: number; y: number }>();
   for (const c of map.cards) pos.set(c.path, { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) });
   const steps = map.cards.length ? Math.max(...map.cards.map(c => c.step)) + 1 : 0;
@@ -97,7 +105,7 @@ export function mapGeometry(map: PlanMap): MapGeometry {
   });
   return {
     width: steps ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 0,
-    height: places ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y : 0,
+    height: places ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y + extraHeight : 0,
     pos, curves, scrollLeft: Math.max(0, map.startStep * (CARD_W + GAP_X)),
   };
 }

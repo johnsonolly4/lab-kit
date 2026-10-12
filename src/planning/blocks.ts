@@ -52,6 +52,7 @@ export class PlanningBlocks {
 
 class BlockView extends MarkdownRenderChild {
   private drawing = 0;
+  private expanded = new Set<string>();   // plan map parents whose subtask list is open
   private mapScroll: number | null = null;   // where the user scrolled the plan map, null = not by hand
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
@@ -323,7 +324,7 @@ class BlockView extends MarkdownRenderChild {
         if (!hasPlan(plan)) return;
         box.addClass("vt-plan");
         box.createDiv({ cls: "vt-plan-title", text: "Plan" });
-        drawPlanMap(box, plan, layoutPlan(plan), { app: this.app, sourcePath: this.sourcePath });
+        drawPlanMap(box, plan, layoutPlan(plan), { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, redraw: () => this.draw() });
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }

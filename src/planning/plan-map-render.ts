@@ -2,7 +2,7 @@
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
-import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, type PlanMap } from "./plan-map";
+import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type PlanMap } from "./plan-map";
 import { changeAfter, linkText, namesOf, undoNotice } from "./after-write";
 import { addAfter, canLink, removeAfter } from "./plan-link";
 
@@ -10,9 +10,15 @@ export interface MapOptions {
   app: App;
   /** The note the map is drawn in (to resolve links). */
   sourcePath: string;
+  /** Parents whose subtask list is open, kept by the block across redraws. */
+  expanded: Set<string>;
+  /** Draws the map again (after a list was opened or closed). */
+  redraw: () => void;
 }
 
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
+/** Height of one subtask line, for the room under the map. */
+const SUB_LINE_H = 26;
 const stopEvent = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
 const open = (o: MapOptions, path: string, newTab: PaneType | boolean): void => { void o.app.workspace.openLinkText(path, o.sourcePath, newTab); };
 
@@ -104,11 +110,40 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
   });
 }
 
+/** A parent's "▸ 2/3" toggle; a click opens or closes its list of subtasks. */
+function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
+  const { text, allDone } = subsLabel(row);
+  if (!text) return;
+  const open = o.expanded.has(row.path);
+  const b = parent.createEl("button", { cls: allDone ? "vt-map-subs-toggle vt-map-subsdone" : "vt-map-subs-toggle", text: `${open ? "\u25be" : "\u25b8"} ${allDone ? "\u2713 " : ""}${text}`, attr: { "aria-label": "Subtasks", title: allDone ? "All subtasks done" : "Subtasks" } });
+  b.addEventListener("mousedown", stopEvent);
+  b.addEventListener("click", e => { stopEvent(e); if (open) o.expanded.delete(row.path); else o.expanded.add(row.path); o.redraw(); });
+}
+
+/** The open list of a parent's subtasks: each with a tick circle (ticks and unticks) and its name (click opens). */
+function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string): void {
+  const list = parent.createDiv({ cls });
+  for (const ev of ["click", "mousedown", "contextmenu"]) list.addEventListener(ev, e => e.stopPropagation());   // not the parent card's open / menu
+  for (const s of row.subs) {
+    const line = list.createDiv({ cls: s.done ? "vt-map-sub vt-map-sub-done" : "vt-map-sub" });
+    let done = s.done;
+    const tick = line.createEl("button", { cls: "vt-map-tick vt-map-sub-tick", attr: { "aria-label": "Mark done" } });
+    const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); line.toggleClass("vt-map-sub-done", done); };
+    look();
+    tick.addEventListener("mousedown", stopEvent);
+    tick.addEventListener("click", e => { stopEvent(e); done = !done; look(); markDone(o, s.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); }); });
+    const a = line.createEl("a", { text: s.name, cls: "internal-link", attr: { href: s.path, "data-href": s.path } });
+    a.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, s.path, Keymap.isModEvent(e)); });
+    a.addEventListener("mousedown", e => e.stopPropagation());
+  }
+}
+
 /** The map and the unlinked list inside `box`. The scroll box carries `data-start-scroll`: where to scroll once it is in the page. */
 export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOptions): void {
   const wrap = box.createDiv({ cls: "vt-map" });
   if (map.cards.length) {
-    const g = mapGeometry(map);
+    const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
+    const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0);
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
     if (g.scrollLeft > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the left edge even when everything fits
@@ -161,6 +196,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
         if (exp.path) row.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, exp.path, Keymap.isModEvent(e)); });
       }
       if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}` });
+      subsToggle(el, r, o);
+      if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs");
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));
       el.addEventListener("mouseenter", () => {   // the card and everything before and after it; the rest is dimmed (desktop only: a phone has no hover)
@@ -187,6 +224,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       const a = li.createEl("a", { text: r.name, cls: "internal-link", attr: { href: r.path, "data-href": r.path } });
       a.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       a.addEventListener("contextmenu", e => menu(o, e, r));
+      subsToggle(li, r, o);
+      if (o.expanded.has(r.path) && r.subs.length) subsList(li, r, o, "vt-map-subs vt-map-subs-inline");
     }
   }
 }

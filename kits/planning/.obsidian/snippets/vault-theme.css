@@ -490,3 +490,14 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-card.vt-map-drop, .vt-map-unlinked-row.vt-map-drop { outline: 2px solid var(--interactive-accent); }
 .vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
 .vt-map-hidden { display: none; }
+
+/* Plan map: subtasks (src/planning/plan-map-render.ts) */
+.vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 10px; color: var(--text-muted); cursor: pointer; }
+.vt-map-subs-toggle:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-subs-toggle.vt-map-subsdone { color: var(--interactive-accent); border-color: var(--interactive-accent); }
+.vt-map-subs { position: absolute; left: 0; top: 100%; margin-top: 4px; width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 8px; z-index: 6; cursor: default; }
+.vt-map-subs-inline { position: static; width: auto; margin: 4px 0 0; }
+.vt-map-sub { display: flex; gap: 6px; align-items: center; height: 26px; font-size: var(--font-ui-smaller); }
+.vt-map-sub .vt-map-sub-tick { position: static; width: 20px; height: 20px; flex: none; }
+.vt-map-sub a.internal-link { color: var(--text-normal); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-sub-done a.internal-link { color: var(--text-muted); text-decoration: line-through; }

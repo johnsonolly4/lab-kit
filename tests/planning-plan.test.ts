@@ -192,3 +192,35 @@ describe("blocked through the whole chain", () => {
     expect(blocked([td("A", { after: "[[B]]" }), td("B", { after: "[[A]]" })])).toEqual({ A: true, B: true });
   });
 });
+
+describe("subtasks (sub)", () => {
+  it("a parent lists its subtasks in plan order; the child names its parent", () => {
+    const p = readPlan([td("P"), td("S1", { sub: "[[P]]", done: true }), td("S2", { sub: "[[P]]" }), td("Other")], hub);
+    const row = (n: string) => p.rows.find(r => r.name === n)!;
+    expect(row("P").subs).toEqual([{ path: T + "S1.md", name: "S1", done: true }, { path: T + "S2.md", name: "S2", done: false }]);
+    expect(row("S1").parent).toBe(T + "P.md");
+    expect(row("P").parent).toBeNull();
+    expect(row("Other").subs).toEqual([]);
+    expect(p.problems).toEqual([]);
+  });
+  it("a project with only subtasks has a plan", () => {
+    expect(hasPlan(readPlan([td("P"), td("S", { sub: "[[P]]" })], hub))).toBe(true);
+    expect(hasPlan(readPlan([td("P"), td("S")], hub))).toBe(false);
+  });
+  it("a missing parent, itself, a loop and a subtask of a subtask are problems and are ignored", () => {
+    const p = readPlan([td("A", { sub: "[[Ghost]]" }), td("B", { sub: "[[B]]" }), td("C", { sub: "[[D]]" }), td("D", { sub: "[[C]]" }),
+      td("P"), td("S", { sub: "[[P]]" }), td("X", { sub: "[[S]]" })], hub);
+    expect(p.problems).toEqual([
+      '"A" is a subtask of "Ghost", which is not a to-do of this project.',
+      '"B" is a subtask of itself.',
+      '"C" and "D" are subtasks of each other.',
+      '"X" is a subtask of "S", which is itself a subtask: subtasks go one level only.']);
+    const row = (n: string) => p.rows.find(r => r.name === n)!;
+    expect([row("A").parent, row("B").parent, row("C").parent, row("D").parent, row("X").parent]).toEqual([null, null, null, null, null]);
+    expect(row("P").subs.map(s => s.name)).toEqual(["S"]);
+  });
+  it("a subtask's own after still blocks what comes after it", () => {
+    const p = readPlan([td("P"), td("S", { sub: "[[P]]" }), td("N", { after: "[[S]]" })], hub);
+    expect(p.rows.find(r => r.name === "N")!.blocked).toBe(true);
+  });
+});

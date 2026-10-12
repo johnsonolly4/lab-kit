@@ -1,6 +1,6 @@
 // The card map layout (src/planning/plan-map.ts): steps, places, arrows, unlinked, start step, chains.
 import { describe, it, expect } from "vitest";
-import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, setDone } from "../src/planning/plan-map";
+import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, setDone, subsLabel } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -110,5 +110,28 @@ describe("setDone", () => {
     const b: Record<string, unknown> = { day: "Done", done: true };
     setDone(b, false);
     expect(b).toEqual({ day: "Backlog", done: false });
+  });
+});
+
+describe("subtasks on the map", () => {
+  it("subtasks are not cards, arrows or Not linked rows", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("S", { sub: "[[B]]" }), td("Lone"), td("LoneSub", { sub: "[[Lone]]" })]);
+    expect(m.cards.map(c => c.row.name)).toEqual(["A", "B"]);
+    expect(m.arrows).toHaveLength(1);
+    expect(m.unlinked.map(r => r.name)).toEqual(["Lone"]);
+  });
+  it("an after that points at a subtask is dropped from the map and does not flag a cycle", () => {
+    const m = map([td("P"), td("S", { sub: "[[P]]" }), td("N", { after: "[[S]]" }), td("M", { after: "[[P]]" })]);
+    expect(m.cyclic.size).toBe(0);
+    expect(m.cards.map(c => c.row.name)).toEqual(["P", "M"]);
+  });
+  it("subsLabel counts and says when all are done", () => {
+    expect(subsLabel({ subs: [{ done: true }, { done: false }, { done: false }] })).toEqual({ text: "1/3", allDone: false });
+    expect(subsLabel({ subs: [{ done: true }, { done: true }] })).toEqual({ text: "2/2", allDone: true });
+    expect(subsLabel({ subs: [] })).toEqual({ text: "", allDone: false });
+  });
+  it("room under the map for an open list", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]" })]);
+    expect(mapGeometry(m, 50).height - mapGeometry(m).height).toBe(50);
   });
 });
