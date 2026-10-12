@@ -45,9 +45,9 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Templater → **Template hotkeys** → add `Insert snippet.md`. In a new vault the kit puts the templates in a `Lab Kit` folder inside your Templater templates folder, or in `Extras/Templates/Lab Kit` if Templater has none (Settings → Lab Kit → **Manage files…** shows where each file is). The **Set up** button in Settings → Lab Kit can add the hotkey for you.
-> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**.
-> 3. Templater → **User script functions** folder = the folder that holds `labSnippets.js` (a new vault puts the scripts in your Templater scripts folder, or in `scripts` at the vault root if Templater has none; Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
+> 1. Settings → Lab Kit → Kit folders and setup → **Check setup…** → press **Fix** on the Templater rows. That adds `Insert snippet.md` to Templater's **Template hotkeys** and sets its **User script functions** folder when it has none (a folder you set yourself is never changed). Doing it by hand works too: Settings → Lab Kit → **Manage files…** shows where each kit file is.
+> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**. Lab Kit never sets a hotkey itself; **Check hotkeys…** shows which of the recommended keys are set.
+> 3. If the forms ask one question at a time, Templater's **User script functions** folder is not the folder that holds `labSnippets.js` (Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
 
@@ -74,7 +74,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 > 4. **Copy** on the Results table → paste into Excel or Origin.
 
 > [!tip] Several sample tables
-> The NMR / GPC / DLS / Results snippets take sample codes from `samples`, `samples2`, `samples3`… and combine them. The Results table links every `nmr`, `nmr2`… table.
+> The NMR / GPC / DLS / method / Combined results snippets fill their Sample codes box with the codes of every table in the note that holds sample codes. With more than one such table a **Codes from** choice appears: "All of them" (the default) or one table by its title; text you type in the box is used as it is. A table says it holds codes with the block option `codes:` (section 3.3); the Sample list, Sampling timetable and Variant naming matrix have it already. The Results table links every `nmr`, `nmr2`… table.
 
 ---
 
@@ -92,7 +92,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 ### 3.2 Editing
 | To… | Do this |
 |---|---|
-| change a value **or a formula** | **click the cell**, type, **Enter** or **Tab** to save, **Esc** to throw away what you typed (clicking another cell while one is open currently needs a second click) |
+| change a value **or a formula** | **click the cell**, type, **Enter** or **Tab** to save, **Esc** to throw away what you typed |
 | add a row | **+ Row** (adds above *Total* / *(rest)* rows, copies the formulas down) |
 | insert or delete a specific row | **right-click** the row |
 | see cell addresses | **A1** |
@@ -100,7 +100,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | change options or lots of text | hover → Obsidian's `</>` button (top right), or arrow into the block |
 
 > [!tip] See what a formula points at
-> While you type a formula, the cells it refers to (this table, other tables in the note, header cells too) get a ring. The rings go when you press Enter, Tab or Esc, or click away. It works for `B2`, `$B$2`, `B2:C5` and `sol1!B2`; a half-typed formula marks what it already has.
+> While you type a formula, each reference gets its own colour: the cell it points at (this table or another table in the note) is outlined and shaded in that colour, and the reference in the box is coloured to match. The column letters and row numbers show on the table while you edit. It all goes when you press Enter, Tab or Esc, or click away. It works for `B2`, `$B$2`, `B2:C5` and `sol1!B2`. The same colours show in the table's text (Source mode, or Live Preview with the cursor in the block), without the letters and numbers.
 
 > [!note] Rows and references
 > Like Excel: when you add a row, `SUM(B2:B4)` becomes `SUM(B2:B5)`, and other tables pointing into this one (`sol1!B5`, `XLOOKUP(…, nmr!B$2:B$4, …)`) are updated too. Deleting a row that something points at gives `#REF!`.
@@ -113,7 +113,7 @@ Formulas start with an equals sign (=) and use **Excel syntax**. Row 1 is the he
 
 - Same table: `C2*D2/1000`
 - Another table in the note: give it a `name:` and use `sol1!D2` or `SUM(sol1!D2:D4)`
-- Molar mass from a chemical note: `MW(A2)` (reads an `MW`, `Mw` or `Molar mass` property; the cell can hold `[[DCM]]` or `DCM`)
+- Molar mass from a chemical note: `MW(A2)` (reads the property named in **Molecular weight property**, else `MW`, `Mr`, `Molecular weight`, `Molar mass` or `M_w`; the cell can hold `[[DCM]]` or `DCM`)
 - Any property: `PROP("PABTC", "Density")`
 - Typing `[[` in a cell suggests your chemical notes once **Chemical folder** is set (section 6)
 - Lookups: `XLOOKUP(A2, nmr!B$2:B$9, nmr!E$2:E$9, "")`
@@ -216,7 +216,7 @@ flowchart LR
 | Change | Where |
 |---|---|
 | Your initials in sample codes | Settings → Lab Kit → Initials (empty until you set it; snippets use `XX` and say so) |
-| Your chemical notes | Settings → Lab Kit → Chemical folder (new vaults: `05 Chemicals/Chemicals`; empty = no suggestions, and no Chemical database template or base). New chemical notes: the kit's **Chemical database template**; the **Chemical database** base in the folder above lists them. Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts Give a chemical a `Chemical class` (`solvent`, `monomer`, `initiator`, `CTA` or any class of your own): the Solvent, Monomer, CTA and Initiator fields suggest those first; **Only suggest chemicals of the asked class** hides the rest. |
+| Your chemical notes | Settings → Lab Kit → Chemical folder (new vaults: `05 Chemicals/Chemicals`; empty = no suggestions, and no Chemical database template or base). New chemical notes: the command **New chemical** (asks the name, then the class: pick one your notes already use, type a new one, or no class) or a note made by hand in the folder, both from the kit's **Chemical database template**; the **Chemical database** base in the folder above lists them. Typing `[[` in a calc cell, and the reagent / solvent fields of the Alt+S forms, then suggest the notes in it by file name or by their **Names** property (a list or one value). Picking a name found through **Names** inserts `[[Note\|name]]`. In a form, **Enter** picks the highlighted suggestion; Enter again inserts. Give a chemical a `Chemical class` (a list: `solvent`, `monomer`, `initiator`, `CTA` or any class of your own): the Solvent, Monomer, CTA and Initiator fields suggest those first; **Only suggest chemicals of the asked class** hides the rest. |
 | Where new experiment notes go | Settings → Lab Kit → Lab notes folder (used by **New lab entry**; the kit's **Lab book base**, a board of experiments by Status, goes in the folder above it) |
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
@@ -224,7 +224,7 @@ flowchart LR
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu → Snippet icons (press **Choose…** and pick an icon, or type a Lucide name; empty keeps the built-in one) |
 | A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table) has `icon:` and `desc:` in its header |
 | What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other six are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
-| A new snippet | copy a file in the `Snippets` folder, give it a new number and name |
+| A new snippet | Settings → Lab Kit → **Manage files…** → **Make my own copy** on a snippet row (asks a name, never overwrites, and updates never touch the copy), or copy a file in the `Snippets` folder by hand and give it a new number and name. Token syntax: [snippet-syntax.md](snippet-syntax.md) |
 | Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 
 > [!tip] Icons
@@ -279,19 +279,22 @@ Ionisation: APCI
 
 ## 7. Updating the kit
 
-The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.14 or newer. **Settings → Lab Kit → Built-in kit** (the update buttons; Set up and the folders are in the next group, **Kit folders and setup**):
+The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.14 or newer. **Settings → Lab Kit → Built-in kit** (the update buttons; Check setup and the folders are in the next group, **Kit folders and setup**). The lab kit and the planning kit (section 8) each have their own row of these buttons:
 
 | Button | Does |
 |---|---|
-| **Review update…** | a preview of every file: what needs action first (conflict, merges cleanly, missing, update, new), then changed by you. **Tick all / Untick all** handles the files with a box. Nothing is written until you press **Apply** |
+| **Review update…** | a preview of every file: what needs action first (conflict, merges cleanly, missing, update, new), then changed by you. Every file that would change has a tick box (**Tick all / Untick all**), so you can leave single files out. Nothing is written until you press **Apply** |
 | **Update all safe files** | adds new files and updates the ones you never edited (the first install asks first). It never merges |
 | **Check setup…** (Fix on the Templater rows) | sets Templater's user scripts folder only when it has none (one you set is never changed; if the kit's scripts are outside it, it offers to install copies into `<your folder>/lab-kit`), fills in its template folder only when that is empty (one you set is never changed), and adds *Insert snippet* to its Template hotkeys. It lists these changes first and makes only the ones you leave switched on. Press Fix once after installing the kit, then set **Alt+S** in Obsidian → Hotkeys |
-| **Manage files…** | every kit file with a status (files that need action first), and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. It also has a switch for the kit's CSS snippet |
+| **Manage files…** | every kit file with a status (files that need action first), and buttons to update, restore the kit's original, detach / re-attach or open it one file at a time. Each snippet row has **Make my own copy**. It also has a switch for the kit's CSS snippet |
+| **Clear old backups…** | lists the dated backup folders and moves the ones older than 30 days, older than 7 days, or all of them, to the trash |
 
 - **Backups:** every file an update replaces is copied to the Backup folder first. The Templates, Scripts and Backup folders are settings (empty = detected).
 - **A file you changed** is never overwritten. If your edits and the kit's touch different lines, it is listed under "merges cleanly" and you can tick it to merge. In the Lab Book template the properties are merged one by one, so a property you added stays.
 - **Conflict:** if you and the kit changed the same lines, the file shows **Conflict** and is left alone. Press **Resolve…**, choose for each change whether to keep yours, take the kit's, keep both or edit it, check the preview and press **Apply**. **Keep all mine** and **Take kit version** settle the whole file at once.
 - **Use toggle:** each snippet, and the Excel converter `excel_to_calc.py`, has a switch in **Manage files…**, with a one-line description. Off = not installed and not in the Alt+S menu. Switching off a snippet you already have asks first, copies it to the Backup folder and moves it to your trash. Switching it on installs it again. **Update all safe files** never installs a switched-off snippet.
+- **Kept files:** a file you are meant to edit (the Lab book base, the planning kit's homepage and hub notes) is marked as kept: the kit never updates it. When the kit has a newer text for one, a notice at start-up says how many, the settings tab lists them, and the row in **Manage files…** shows "Newer kit version available" with **Compare…** (the merge window), **Use kit version…** (asks first, backs yours up) and **Keep mine** (leaves yours; the newer version stays on offer).
+- **Renamed files:** when the kit renames a file (Weekly meeting.md became Meeting.md), Review update… moves your copy to the new name; a file you kept, or one with unresolved edits, stays where it is.
 - **Retired:** if a later kit stops shipping a file you installed, it is listed as **Retired**. It stays in your vault; **Forget** stops listing it.
 - **First install:** before anything is written, a list shows the files to create, files left alone because they already exist, the folders to create, and the settings changes, each with a switch (on): **Turn on the CSS snippet**, **Set Templater's user scripts folder** (only when Templater has none; a folder you already set is never changed) and **Add Insert snippet to Templater's Template hotkeys**. Cancel writes nothing.
 
@@ -304,17 +307,70 @@ After an update, a **What's new** popup opens once. Open it again from **Setting
 
 ---
 
-## 8. Troubleshooting
+## 8. Planning kit
+
+> [!note] Preview
+> The planning kit is a preview and is off until you switch it on. It is new in 1.0.0: most of it is tested in code and not yet used by many people in Obsidian. Report what breaks on GitHub.
+
+The planning kit turns the vault around the lab book into a planner: a homepage, a to-do board, projects, meetings, knowledge notes and an inbox. The day-to-day routine (what to press in the morning, the Friday review) is in the note it installs, **How my vault works** (the **How it works** button on the homepage); this section says what there is and how to set it up.
+
+### 8.1 Switching it on
+1. Settings → Lab Kit → Built-in kit → **Planning kit (preview)** → on. Switching it off later removes nothing.
+2. **Planning kit files** → **Review update…** → **Apply**. A list shows every file, folder and setting first. The planning commands start once the files are installed.
+3. **Check setup…** lists what is missing, each with a **Fix**: the plugins (needed: Meta Bind, Force note view mode, Omnisearch, Notebook Navigator; optional: ZotLit, Outliner, Editing Toolbar, CSS Editor, Advanced Canvas; Lab Kit never installs a plugin), the Meta Bind buttons, Templater's folder templates (daily notes and to-dos), the homepage in Notebook Navigator, and the CSS snippets. Restart Obsidian after the Meta Bind Fix: it loads its buttons at start-up.
+4. The folders are settings (Settings → Lab Kit → **Planning folders**; empty = the default, `00 Inbox` … `99 Archive`). Rename a folder inside Obsidian and its setting follows; the kit files you have not edited get the new name written in.
+
+### 8.2 Homepage
+`00 Home` has a row of action buttons (Today's note, New to-do, New lab entry, Quick capture, Add to shopping, Search), a **Go to** bar with one button per top-level folder that has a hub note or a board, and five tiles: **This week** (with the inbox count), **Experiments on the go**, **Projects**, **Recently read** and **Next meetings**. A tile shows at most 8 rows (Recently read 5) and a **Show all** toggle when it has more; a tile's heading opens its board or hub. The tiles are drawn by Lab Kit (`vault-card` and `vault-goto` blocks), follow the folder settings and redraw when notes change.
+
+### 8.3 To-dos
+- **New to-do** asks the text, the project (or none), which meeting to raise it at (only when you have several series), and a due date (Enter = none; with a date, whether to show a countdown). Esc at any box makes nothing. It is filed in the Planning folder's `To-dos` and starts in **Backlog**.
+- The **To-do board** has the columns Backlog, Mon … Fri. Drag a card onto a day; click its circle to tick it done.
+- **Roll-over** is done by the plugin, about 90 seconds after Obsidian opens and again when the date changes: an unfinished card whose day has passed moves to today and is marked carried over; a done card stays on its day until the next week, then leaves the board. **Roll over to-dos now** runs it at once.
+- **Due-date countdown** (Planning folders): a badge with the days left (`3d`, `Today`, `2d late`) on cards with a `due` date, for every such to-do or only those with `countdown: true`.
+- **Archive old to-dos** moves to-dos finished more than 30 days ago into the Archive folder.
+
+### 8.4 Projects
+- **New project** asks a name and makes the project's folder and hub note under Projects. The hub's top row has a back link, **New to-do**, **New note**, a **Status** drop-down (Active, Paused, Done), a **Deadline** date and, with the countdown on, the days left.
+- The hub lists the project's to-dos and notes (10 rows, **Show all**), the meeting notes that name it (last 8) and its papers.
+- **New project note** files a note in a project's folder with a link to the hub and a back link at the top.
+- **Projects overview** shows one card per project: goal, next to-dos, counts, and New note / New to-do / Open.
+
+### 8.5 Meetings
+- A meeting you hold regularly is a **series**: a folder under Meetings with a hub note. **New meeting series** asks the name, how often (weekly, fortnightly, monthly, every N weeks), the day, the date of the first meeting, where the deck is on this computer and, last, an optional template note for its meeting notes.
+- **New meeting** makes the note for the series' next date and fills it with what happened since the last meeting: experiments changed, to-dos finished, papers read, and the to-dos flagged for that series.
+- **New extra meeting now** adds a meeting on a date you give; the schedule does not move. **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and goes in a **One-off** hub.
+- **Open meeting deck** (desktop only) opens the deck location in the series' hub (`deck_windows` / `deck_mac`: a folder of decks or the path to one deck file). On a series hub or a meeting note it opens that series' deck; elsewhere it asks which.
+- The **Meetings** hub shows a card per series: next date, how often, how many notes, and its buttons.
+
+### 8.6 Knowledge, inbox and the rest
+- **New concept** asks a title and a topic and files a knowledge note (`kind: concept`, with `summary`, `sources`, `checked`) in that topic's folder under Knowledge. **New topic hub** makes the index note of a topic folder; its **New concept** button skips the topic question. The Knowledge index lists every topic.
+- **Quick capture** makes an empty note in the Inbox. **Sort inbox** opens each inbox note in turn, in a bar at the bottom of the window, and asks where it goes: to-do, a project, Knowledge, How-tos, Meetings, archive, delete, skip or stop. In a folder list, type a name that is not there to make a new folder.
+- **Weekly review** is a six-step checklist with a button for each step; **Shopping list** takes items from **Add to shopping list** (commas between them) and **Clear ticked** removes the ticked ones.
+- **Checklist progress** (Planning folders, off by default) writes `progress: 3/7` into lab notes and the Shopping list as you tick boxes, and the Lab book board draws it as a bar.
+- Literature notes come from the ZotLit plugin; the kit has three templates for it and a checklist note, **Set up ZotLit**.
+
+### 8.7 A vault that already has notes
+**Tidy up notes** (command palette) scans the vault and shows, rule by rule, the notes that don't match the kit's layout, before on the left and after on the right. Every rule and every note has a tick box. **Change notes…** needs the backup box ticked and a second confirmation, backs up each note first, and skips a note you edited since the scan. Some findings are only listed, never changed. The rule **Hubs: bring the page up to the current template** rewrites the page of project, topic and series hubs (a project keeps its goal and Related text, a topic its intro) and is never ticked for you.
+
+**Find moved folders** points the folder settings at folders that were moved outside Obsidian.
+
+---
+
+## 9. Troubleshooting
 
 | Problem | Fix |
 |---|---|
 | Snippets ask one question at a time, or say "need Templater → User script functions" | Settings → Templater → **User script functions** folder = the folder that holds `labSnippets.js` |
 | `#NOTE?` in an MW cell | No note with that name. Check spelling, or type the MW over the formula |
-| `#PROP?` in an MW cell | The chemical note has no `MW` / `Mw` property |
+| `#PROP?` in an MW cell | The chemical note has no molecular weight property (set **Molecular weight property** in Settings → Lab Kit, or add `MW`) |
 | `#REF!` | The formula points at a deleted row or a table name that doesn't exist |
 | Table looks like plain code | Lab Kit isn't enabled (Settings → Community plugins) |
 | No update notice | It only shows when the plugin brings a newer kit than the one installed, and **Tell me when a kit update is ready** is on (Settings → Lab Kit). **Review update…** works any time |
 | Hazard table empty | Chemicals property empty, or chemical notes missing `H_Phrase` |
 | "Folder … not found. Moved outside Obsidian?", or empty homepage lists | A folder named in the settings was moved or renamed outside Obsidian, so its setting couldn't follow. Run **Find moved folders** (command palette, the notice's button, or Check setup → Find): it suggests where each folder went; Apply changes only the settings. Move folders inside Obsidian to avoid this |
+| A homepage or hub button does nothing, or shows "Button ID not found" | **Check setup…** → Fix on the Meta Bind buttons row, then restart Obsidian |
+| Today's column on the To-do board is not marked, cards don't roll over | The planning kit must be on **and** its files installed (Settings → Lab Kit → Built-in kit); then **Roll over to-dos now** |
+| A kit board shows nothing after a folder rename | The board's file still filters on the old folder: the notice's **Patch folder only** button changes just the folder |
 
-Related: [Changelog](changelog.md)
+Related: [Changelog](changelog.md) · [Snippet syntax](snippet-syntax.md)

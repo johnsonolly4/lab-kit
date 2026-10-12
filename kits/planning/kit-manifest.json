@@ -138,7 +138,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.0",
-      "sha256": "5e53bd57e190d9f130cb8a7258862122e5bb2795ab46fb904c0e117b13c1c487",
+      "sha256": "a1642bc0078c88aff6dd91ba59075f2c29bf88a92f985098694d5fcf25ec5eb3",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine",
       "policy": "keep"
@@ -164,7 +164,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "1.0.0",
-      "sha256": "e781aaa75c6d661c55cc7e470782d8d0b7afc7dbc9171718464d2783d729bc9d",
+      "sha256": "367e20a6472f2bd80534bda91a8eff04219ce02380c287442a8c6138c4437897",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer",
       "policy": "keep"
@@ -176,7 +176,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.0",
-      "sha256": "6f26f30d1f91b16432353f27412d0b33727bee08aab58db3018b7d5c9180c2ce",
+      "sha256": "33142858a533c0eabb87d3ea8e583a48bd0485ac2a02f823ada6c681bbd5eae6",
       "renamedFrom": [],
       "desc": "Full specification of the vault",
       "policy": "keep"
@@ -214,7 +214,7 @@
       "role": "meetings",
       "path": "Meetings.md",
       "version": "1.0.0",
-      "sha256": "a87c43498e18df2e5be10a25f79965641ccf5cd099f8284e86935fe74b71ac37",
+      "sha256": "bcecc4ab05bb215a47f93319f1e24cd3b1ed20e7604fff9f2c9acfe00a9b9cfc",
       "renamedFrom": [],
       "desc": "Meetings hub: next meeting of each series",
       "policy": "keep"
@@ -296,7 +296,7 @@
       "role": "templates",
       "path": "Meeting.md",
       "version": "1.0.0",
-      "sha256": "beb3af13e2f49fd7991e0bcee0e97d1cf666b91d147b5ec7c1d7df5eb3c9c907",
+      "sha256": "2606e6b9e9c25445f446a8a15c0eb603d4019438a88e8052697d1de69b3c234f",
       "renamedFrom": [
         "Weekly meeting.md"
       ],

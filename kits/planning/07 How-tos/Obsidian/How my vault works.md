@@ -8,7 +8,7 @@ cssclasses:
 
 > [!focus] The whole idea in one minute
 > - **Start every day on [[00 Home]].** It shows what matters today and nothing else.
-> - **Capture first, sort later.** Anything that pops into your head goes into the inbox with `Ctrl+N`. You sort it on Friday.
+> - **Capture first, sort later.** Anything that pops into your head goes into the inbox with **Quick capture** (`Alt+N`). You sort it on Friday.
 > - **Every to-do is a card on the board.** You plan by dragging cards onto days. Tick **done** when it's finished; anything unfinished follows you to the next day.
 > - **Experiments and papers move through stages.** The homepage shows the ones that need you.
 > - **Fridays tidy, meetings report.** Two short routines keep everything from piling up.
@@ -23,9 +23,9 @@ cssclasses:
 > [!tip] During the day
 > | I want to... | Do this |
 > |---|---|
-> | Note down a thought quickly | `Ctrl+N` or **Quick capture** - it goes to the inbox |
-> | Remember to do something | **New to-do** (`Ctrl+Shift+T`) - type it, press Enter, pick a project (or "(no project)"). Esc cancels. Started from a project? It picks the project for you. Or press **New** at the top of a day on the board - it lands on that day |
-> | Start an experiment | **New lab entry** (`Ctrl+Shift+L`) - it numbers itself and asks for a title |
+> | Note down a thought quickly | **Quick capture** (`Alt+N`) - it goes to the inbox |
+> | Remember to do something | **New to-do** (`Alt+T`) - type it, press Enter, pick a project (or "(no project)"), then a due date (Enter = none). Esc cancels. Started from a project? It picks the project for you. Or press **New** in a day's column on the board - it lands on that day |
+> | Start an experiment | **New lab entry** (`Alt+L`) - it numbers itself and asks for a title |
 > | Find anything | **Search** (`Alt+F`) |
 > | Make a note for a paper | `Ctrl+P`, then **ZotLit: Create literature note** |
 > | Need to order something | **Add to shopping** - type items, commas between them |
@@ -47,14 +47,14 @@ flowchart LR
   G -->|next Monday| X[Off the board]
 ```
 
-- Every to-do starts in **Backlog**. Drag it onto a day when you plan to do it. Today's column is **blue**. To add one straight onto a day, press **New** at the bottom of that day.
+- Every to-do starts in **Backlog**. Drag it onto a day when you plan to do it. Today's column is **blue**. To add one straight onto a day, press **New** in that day's column.
 - Finished? Click the **circle** on the card (top right). The card turns **green** and stays on its day for the rest of the week, so you can see what you got through. On Monday it leaves the board by itself.
 - Didn't get to it? Do nothing. Next time Obsidian opens, it moves to **today** and turns **orange** - no lost tasks. Drag it somewhere else if today isn't right, or back to Backlog.
 - Planning next week on a Friday? Drag cards onto Mon-Thu as normal - a day that's already passed this week means *next* week.
 - Only give it a **due** date if there's a real deadline - those show in red when they're late. New to-do asks for one (Enter = none). With Settings → Lab Kit → **Due-date countdown** on, the card shows the days left (`3d`, `Today`, `2d late`); a to-do with `countdown: true` shows it even in the "marked only" setting.
 - Tick **meeting** on a to-do (open the note) if you want to raise it at the next meeting.
 - Long names show up to 3 lines on the card - open the card to see the rest.
-- Today's column not blue? The roll-over isn't running - see [[Setting up a computer]].
+- Today's column not blue? The roll-over isn't running: the planning kit must be on and its files installed (Settings → Lab Kit → Built-in kit). **Roll over to-dos now** in the command palette runs it at once.
 
 ## Experiments
 
@@ -71,8 +71,10 @@ flowchart LR
 - [[Projects overview]] (**Projects** on the homepage) has a **card for each project**: its goal, next to-dos, how many papers and notes, and buttons for **New note**, **New to-do** and **Open**.
 - **New note** on a card (or on a hub) puts the note straight into that project's folder - no filing later.
 - **New project** asks for a name and makes the folder and hub in `02 Projects`. Then make a Zotero collection with the **same name** under `Projects/`, and write the hub's one-line **goal**.
-- Each hub lists the project's to-dos, notes, papers and meetings by itself - give a to-do the project, keep notes in the folder, drag papers into the collection, set **project** on a meeting note (the hub shows the last 8, **Show all** the rest).
+- Each hub lists the project's to-dos, notes, papers and meetings by itself - give a to-do the project, keep notes in the folder, drag papers into the collection, set **project** on a meeting note. To-dos and notes show 10 rows, meetings the last 8; **Show all** shows the rest.
+- The row at the top of a hub has a link back to [[Projects overview]], **New to-do**, **New note**, the **Status** drop-down (Active, Paused, Done) and the **Deadline** date.
 - Give a hub a **deadline** date and, with Due-date countdown on, it shows `deadline 5d` on the hub, its card and the homepage (gone when the project is Done).
+- A note made with **New note** links to its project and starts with a link back to the hub.
 
 ## Reading papers
 
@@ -99,11 +101,11 @@ flowchart LR
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files it in the **One-off** hub.
 - Set **project** on any meeting note to show it on that project's hub.
 - **New meeting series** (command palette) asks for a name, how often, the day, the first date and the deck; its last box is an optional template note for that series' meeting notes (Enter = the kit's Meeting template).
-- Hubs have buttons: a project, topic or series hub has a **back link** to the hub above it, a topic hub has **New concept**, a series hub has **Extra meeting now**.
+- Hubs have one row of buttons at the top: a project, topic or series hub has a **back link** to the hub above it, a topic hub has **New concept**, a series hub has **Meeting deck**, **New meeting note** and **Extra meeting now**. A meeting note starts with a link back to its series and **Meeting deck**.
 
 1. Before a meeting, open [[Meetings]], and press **New meeting note** on your series' card.
 2. It fills itself: experiments you touched, to-dos you ticked done, papers you read, and anything you flagged for the meeting.
-3. Press **Meeting deck**, copy what you need onto this week's slides (newest week at the front).
+3. Press **Meeting deck** (it opens the deck of the meeting you are in) and copy what you need onto your slides.
 4. After the meeting, note the outcomes and turn actions into to-dos.
 
 ## Snippets (Alt+S)
@@ -115,12 +117,12 @@ flowchart LR
 - **Check setup…** (Settings → Lab Kit) lists what the kits need and fixes it.
 - **Check hotkeys…** shows the keys [[Hotkeys]] recommends and what is set.
 - **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, and keeps a backup). An old project, topic or series hub gets the current buttons and tiles from the rule **Hubs: bring the page up to the current template** (not ticked until you tick it).
-- **Manage files…** shows kit files with a newer version; **Replace with new version…** swaps yours for the kit's (a backup is saved first), and **Clear old backups…** empties old ones.
+- **Manage files…** shows kit files with a newer version. On a file you keep as your own: **Compare…** shows both, **Use kit version…** swaps yours for the kit's (a backup is saved first), **Keep mine** leaves yours. **Clear old backups…** (Settings → Lab Kit) empties old ones.
 
 ## Friday review (15 minutes)
 
 Open [[Weekly review]] (button **Weekly review** on the homepage) and work down the list:
-1. Empty the inbox - press **Sort inbox**. Each note opens, you pick where it goes (to-do, project, knowledge, how-to, archive or delete). Esc stops at any point.
+1. Empty the inbox - press **Sort inbox**. Each note opens, you pick where it goes (to-do, project, knowledge, how-to, meetings, archive or delete). In a folder list, type a new name to make a new folder. Esc stops at any point.
 2. Close finished experiments.
 3. Plan next week - drag to-dos from Backlog onto days (Mon-Thu mean *next* week when you plan on a Friday).
 4. Process one paper.

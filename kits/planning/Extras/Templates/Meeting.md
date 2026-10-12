@@ -62,4 +62,4 @@ show: meeting-bar
 - 
 
 > [!tip] Actions
-> Turn each action into a to-do with **New to-do** (`Ctrl+Shift+T`) so it lands on the board.
+> Turn each action into a to-do with **New to-do** (`Alt+T`) so it lands on the board.

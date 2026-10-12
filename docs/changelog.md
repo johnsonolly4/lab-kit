@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Docs and kit notes brought up to 1.0.0**: the README and tutorial describe the kept-file buttons, Clear old backups, New chemical, Codes from, coloured formula references and the new settings; the tutorial has a new section 8, **Planning kit**. In the planning kit, **Vault spec** is rewritten where it was out of date (meeting series, hub top rows, tiles drawn by Lab Kit, roll-over in the plugin, commands instead of action templates; the PowerShell script rules, the font row and the per-term deck sentence are gone), **How my vault works** and the Meeting template's tip use the Hotkeys note's keys (Alt+N, Alt+T, Alt+L), **Setting up a computer** no longer asks for Dataview JavaScript queries or a Templater startup template, and the Meetings note says Extra meeting now asks the date. The notes are kept files: use Compare… / Use kit version… in Manage files to get them (the Meeting template comes with Review update…). Not seen in Obsidian
+
 ## v1.0.0 (2026-10-12)
 - **Beta**: Lab Kit 1.0.0 is the first release with the planning kit and several kits side by side. It is still in beta: many of the features below are tested in code but not yet used in Obsidian by others, so expect rough edges and report them on GitHub
 - **Needs Obsidian 1.14 or newer**: the boards use Obsidian's built-in kanban layout, added in 1.14.0
