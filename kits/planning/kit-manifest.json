@@ -90,8 +90,8 @@
       "src": ".obsidian/snippets/vault-theme.css",
       "role": "cssSnippets",
       "path": "vault-theme.css",
-      "version": "1.0.0",
-      "sha256": "9c6fd7e406bcefb4a2977b9cfc5d8baa5e0722ffda49422f6177fbf9c9ca4323",
+      "version": "1.0.1",
+      "sha256": "14aca2509a8da0dba91f5c18275725bf82276132d4a37128f9f6e32ea40251ec",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.1",
-      "sha256": "da4a34b8333b2f78d39c9c2ef5ea3feebdcf35a9254a0e9c3fa8f41866221634",
+      "sha256": "c8a32f9fabb30d926fedd1912009adc381f4bacabd47280d0bf26786f993fd1c",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "a6c0c6ac68fbe697b8dec4cc7b2d47fdd420ff7515c3d6574daf490d6806d7e0",
+      "sha256": "a95b6fe74b7f5c4d5bd80cce06a4fea6c542b99e0cf2157ae214d8c21558f957",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -148,7 +148,7 @@
       "role": "howtos",
       "path": "Obsidian/Set up ZotLit.md",
       "version": "1.0.1",
-      "sha256": "a57e1bb3f8adce02fe57bb3bf0650a0688e3b8a28e96071b81c1db10e83e6c2f",
+      "sha256": "90b3becea57925a42346efc2bd280c131921228b0eb058680575240b66f8cc9e",
       "renamedFrom": [],
       "desc": "Checklist: ZotLit's note folder and template folder",
       "optional": true,
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "266d4fdc71e46f093dbf3cab2e10f1fc468caebe28031bc9b684efe00b218126",
+      "sha256": "2a44f56276a7951d65871a8a7781cbca77b1d52e181106e59ccf9af9ffd2f967",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -232,8 +232,8 @@
       "src": "00 Planning/To-do board.base",
       "role": "planning",
       "path": "To-do board.base",
-      "version": "1.0.0",
-      "sha256": "2674cba2aa4d6717255153382f4839cd4f32b9bc6ce4125ef5fc678d3c5919ea",
+      "version": "1.0.1",
+      "sha256": "21e2dba58c68c1839c04cde7fb50414aca7e8587b08299097db68ecfa3c19b11",
       "renamedFrom": [],
       "desc": "To-do board: one column per day",
       "policy": "keep"
@@ -347,8 +347,8 @@
       "src": "Extras/Templates/Project hub.md",
       "role": "templates",
       "path": "Project hub.md",
-      "version": "1.0.0",
-      "sha256": "e2661d7ee384bb14f339fc0684e5393b6f8b915a9dc3c6bbdc39e002a16093de",
+      "version": "1.0.1",
+      "sha256": "dfc5d15daa0cb14c6236553327f22a0f1f7fb9b1c5958788e748d5b177ee5de7",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },
@@ -359,7 +359,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "1.0.1",
-      "sha256": "35f94f4e395f7282048c361b9e559dfe502daaa1449c7c730f01ba525921a737",
+      "sha256": "29169925291d5bfaf3610041661bfa563523f2dda684de92f43c65a37300ebce",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },
@@ -408,8 +408,8 @@
       "src": "Extras/scripts/templater/vault/vtAsk.js",
       "role": "userScripts",
       "path": "vtAsk.js",
-      "version": "1.0.0",
-      "sha256": "dee7f23585c9ec7b19cecea05684afb42848b3a51a5a608e6d665d59413dc51f",
+      "version": "1.0.1",
+      "sha256": "fcde42bca775ad4899a1eca7cc65c89ea552da4bc5f2832ca76a098cea555d55",
       "renamedFrom": [],
       "desc": "The text box every planning template asks with"
     }

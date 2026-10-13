@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { folderHub, parentHub, topicIndex, type NoteRec } from "../src/planning/lists";
+import { KIT_DEFAULTS } from "../src/kit/paths";
 import { seriesOfNote } from "../src/planning/meetings";
 
 const note = (path: string, fm: Record<string, unknown> = {}): NoteRec => {
@@ -110,5 +111,28 @@ describe("topicIndex: the Knowledge index lists every topic, empty ones too", ()
     expect(t.map(x => x.hub.text)).toEqual(["New topic", "NMR"]);
     expect(t.find(x => x.hub.text === "NMR")!.notes.map(n => n.text)).toEqual(["Pulse", "Shimming"]);
     expect(t.find(x => x.hub.text === "New topic")!.notes).toEqual([]);
+  });
+});
+
+describe("Project hub template: the Plan tile", () => {
+  it("sits bare between the hub bar and the Goal", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    const bar = t.indexOf("show: hub-bar"), plan = t.indexOf("```vault-card\nshow: project-plan\n```"), goal = t.indexOf("> [!focus] Goal");
+    expect(bar).toBeGreaterThan(0);
+    expect(plan).toBeGreaterThan(bar);
+    expect(goal).toBeGreaterThan(plan);
+  });
+  it("has the Experiments tile after the columns and before Meetings", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    const tile = t.indexOf("> [!lab] Experiments\n> ```vault-card\n> show: project-experiments\n> ```");
+    expect(tile).toBeGreaterThan(t.indexOf("show: project-notes"));
+    expect(tile).toBeLessThan(t.indexOf("> [!question] Meetings"));
+  });
+  it("has the card map under the Plan tile; the setting defaults to the map only", () => {
+    const t = kit("Extras/Templates/Project hub.md");
+    expect(t.indexOf("```vault-card\nshow: project-map\n```")).toBeGreaterThan(t.indexOf("show: project-plan"));
+    expect(t.indexOf("show: project-map")).toBeLessThan(t.indexOf("> [!focus] Goal"));
+    expect(KIT_DEFAULTS.planView).toBe("map");
+    expect(KIT_DEFAULTS.planDirection).toBe("across");
   });
 });

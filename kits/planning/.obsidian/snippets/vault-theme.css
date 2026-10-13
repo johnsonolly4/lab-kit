@@ -259,6 +259,14 @@ body {
 .vt-card li a.internal-link:hover { text-decoration: underline; }
 /* Project hub To-dos / Notes tiles: Show all / Show the last 10 sits in the tile's top right corner (src/planning/blocks.ts, show: project-todos / project-notes) */
 .callout:has(> .callout-content .vt-tile-toggle) { position: relative; }
+/* Project hub Plan tile: a bare card (no callout) that holds the same Show all button */
+.vt-plan { position: relative; background: var(--vt-card-bg); border: 1px solid var(--vt-card-border); border-radius: var(--vt-card-radius); padding: 14px 18px; margin: 12px 0; }
+.vt-plan-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 6px; }
+.vt-plan ul { list-style: none; padding: 0; margin: 0; }
+.vt-plan li { padding: 5px 0; margin: 0; border-bottom: 1px solid var(--vt-divider); }
+.vt-plan li:last-child { border-bottom: none; }
+.vt-plan li::marker { content: ""; }
+.vt-plan li a.internal-link { color: var(--text-normal); text-decoration: none; }
 .vt-tile-toggle { position: absolute; top: 6px; right: 8px; font-size: var(--font-ui-smaller); padding: 2px 8px; height: auto; }
 /* In Live Preview Obsidian's "Edit this block" icon sits in the same corner: hidden on blocks that hold the button */
 .cm-embed-block:has(.vt-tile-toggle) .edit-block-button, .cm-embed-block:has(.vt-tile-toggle) + .edit-block-button { display: none; }
@@ -354,6 +362,29 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="soon"]::after { color: rgb(var(--vt-waiting-text)); background: rgba(var(--vt-waiting), var(--vt-tint)); }
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="late"]::after { color: rgb(var(--vt-overdue-text)); background: rgba(var(--vt-overdue), var(--vt-tint)); }
 
+/* Priority and project tag at the bottom left ("\2191 Polymers"): the plugin sets data-vt-tag and data-vt-prio (1, 2, 3 or empty) on the card from the
+   note, so the priority property does not have to be shown (that makes every card taller). Opposite the countdown above; no height change. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-tag]::before {
+  content: attr(data-vt-tag);
+  position: absolute;
+  inset-inline-start: 8px;
+  bottom: 6px;
+  max-width: calc(100% - 96px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: var(--font-ui-smaller);
+  line-height: 1.5;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  pointer-events: none;
+}
+/* Priority: ↑ high (the vault's accent colour), – medium (as above), ↓ low (faint). Red and amber are left to the countdown. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="1"]::before { color: var(--text-accent); background: color-mix(in srgb, var(--interactive-accent) 22%, transparent); font-weight: 600; }
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="3"]::before { color: var(--text-faint); }
+
 /* Card layout. Obsidian places each card part with inline styles
    (title: top 8px, height 24px; done: top 40px, height 40px; card 88px tall,
    and the slot height is fixed from those). The !important rules re-place
@@ -381,6 +412,10 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   height: auto;
   max-height: none;
 }
+/* A card with a tag or a countdown has a bottom row: its title keeps to one line above it, ending with "…" when it is longer (3 lines when there is no bottom row).
+   Two lines were tried: the second was cut off without an ellipsis (user, 2026-10-13). */
+.bases-view[data-view-name="Board"] .bases-kanban-card:is([data-vt-tag], [data-vt-due]) .bases-kanban-card-property.mod-title { height: calc(100% - 40px) !important; }
+.bases-view[data-view-name="Board"] .bases-kanban-card:is([data-vt-tag], [data-vt-due]) .mod-title .bases-kanban-card-line { -webkit-line-clamp: 1; }
 .bases-view[data-view-name="Board"] .bases-kanban-card [data-property="note.done"] {
   top: 8px !important;
   height: 24px !important;
@@ -433,3 +468,72 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 /* Back-to-hub link at the top of project, topic and series hubs */
 .vt a.vt-back { color: var(--text-muted); font-size: 0.92em; text-decoration: none; }
 .vt a.vt-back:hover { color: var(--text-normal); text-decoration: underline; }
+
+/* Project hub card map (src/planning/plan-map-render.ts, show: project-map) */
+.vt-map { display: flex; flex-direction: column; gap: 12px; }
+.vt-map-scroll { display: flex; min-width: 0; overflow-x: auto; }
+.vt-map-canvas { position: relative; flex: none; width: var(--vt-map-w); height: var(--vt-map-h); }
+/* Empty room after the map, so the next open step can be scrolled to the left edge even when all steps fit */
+.vt-map-spacer { flex: 0 0 calc(100% - 200px); }
+.vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
+.vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
+.vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px; cursor: pointer;
+  background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 10px; }
+.vt-map-card:hover { border-color: var(--interactive-accent); }
+.vt-map-tick { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: pointer; }
+.vt-map-tick:hover { color: var(--interactive-accent); }
+.vt-map-done .vt-map-tick { color: var(--interactive-accent); }
+.vt-map-tick svg { width: 20px; height: 20px; }
+.vt-map-title { padding-right: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: var(--font-ui-smaller); }
+.vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: pointer; }
+.vt-map-exp:hover .vt-map-exp-name { text-decoration: underline; }
+.vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-exp-missing { cursor: default; color: var(--text-faint); }
+.vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-done { opacity: 0.65; }
+.vt-map-done .vt-map-title { text-decoration: line-through; }
+.vt-map-ready { border: 2px solid var(--interactive-accent); }
+.vt-map-blocked { border: 2px dashed var(--text-muted); }
+.vt-map-cyclic { border-color: var(--text-error); }
+.vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.25; }
+.vt-map-arrow.vt-map-hl { stroke: var(--interactive-accent); stroke-width: 2.5; }
+.vt-map-unlinked { border-top: 1px solid var(--vt-divider); padding-top: 8px; }
+.vt-map-unlinked-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 4px; }
+.vt-map-unlinked ul { list-style: none; padding: 0; margin: 0; }
+.vt-map-unlinked li { padding: 3px 0; margin: 0; }
+.vt-map-unlinked li::marker { content: ""; }
+.vt-map-unlinked li a.internal-link { color: var(--text-normal); text-decoration: none; }
+
+/* Plan map: linking by dragging a card's dot (src/planning/plan-map-render.ts) */
+.vt-map { position: relative; }
+.vt-map-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
+.vt-map-card:hover .vt-map-handle, .vt-map-unlinked-row:hover .vt-map-handle { opacity: 1; }
+.vt-map-unlinked-row { position: relative; padding-left: 22px; }
+.vt-map-unlinked-row .vt-map-handle { left: 0; right: auto; }
+.vt-map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
+.vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }
+.vt-map-drag.vt-map-pending { stroke-dasharray: none; }
+.vt-map-card.vt-map-drop, .vt-map-unlinked-row.vt-map-drop { outline: 2px solid var(--interactive-accent); }
+.vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.vt-map-hidden { display: none; }
+
+/* Plan map: subtasks (src/planning/plan-map-render.ts) */
+.vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 10px; color: var(--text-muted); cursor: pointer; }
+.vt-map-subs-toggle:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-subs-toggle.vt-map-subsdone { color: var(--interactive-accent); border-color: var(--interactive-accent); }
+.vt-map-subs { position: absolute; left: 0; top: 100%; margin-top: 4px; width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 8px; z-index: 6; cursor: default; }
+.vt-map-subs-inline { position: static; width: auto; margin: 4px 0 0; }
+.vt-map-sub { display: flex; gap: 6px; align-items: center; height: 26px; font-size: var(--font-ui-smaller); }
+.vt-map-sub .vt-map-sub-tick { position: static; width: 20px; height: 20px; flex: none; }
+.vt-map-sub a.internal-link { color: var(--text-normal); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-sub-done a.internal-link { color: var(--text-muted); text-decoration: line-through; }
+.vt-map-has-subs .vt-map-result { padding-right: 70px; }   /* the result stops before the subtask toggle at the bottom right */
+
+/* Plan map: top-to-bottom direction and the button that flips it (src/planning/plan-map-render.ts, blocks.ts) */
+.vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-dir:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
+.vt-map-down .vt-map-canvas { flex: none; }
+.vt-map-down .vt-map-spacer { flex: 0 0 calc(560px - 140px); width: 100%; }
+.vt-map-down .vt-map-handle { top: auto; bottom: -8px; right: calc(50% - 7px); margin-top: 0; }

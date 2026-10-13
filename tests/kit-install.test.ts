@@ -5,7 +5,8 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, newChemicalTarget, newLabEntryTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, newChemicalTarget, newLabEntryTarget, newRigTarget } from "../src/kit/paths";
+import { readRig } from "../src/rig/parts";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
@@ -333,6 +334,25 @@ describe("lab kit completion (Phase 2)", () => {
     expect(byId(items, "tpl-chemical-database-template-md").dest).toBe("Extras/Templates/Lab Kit/Chemical database template.md");
   });
 
+  it("Rig template: installed with the default Rigs folder (03 Lab Book/Rigs; a cleared box gives it back), off only when the setting is blank; it has a rig block and parts tables without problems", async () => {
+    const data = kitLoad(undefined);
+    expect(data.rigsFolder).toBe("03 Lab Book/Rigs");
+    expect(kitLoad({ rigsFolder: "" }).rigsFolder).toBe("03 Lab Book/Rigs");
+    expect(kitLoad({ rigsFolder: "Mine/Rigs" }).rigsFolder).toBe("Mine/Rigs");
+    const plan = (d: typeof data) => planManaged(memVault(), real, null, { ...kitFolderRoles(d), ...base }, null, null, offIds(real, {}, d));
+    expect(byId(await plan({ ...data, rigsFolder: "" }), "tpl-rig-template-md").action).toBe("off");
+    const on = byId(await plan(data), "tpl-rig-template-md");
+    expect(on).toMatchObject({ action: "create", dest: "Extras/Templates/Lab Kit/Rig template.md" });
+    const text = real.contents["tpl-rig-template-md"];
+    expect(text).toMatch(/^```rig\n```$/m);
+    for (const prop of ["Tubing:", "Control:"]) expect(text).toContain(`\n${prop}`);
+    expect(text).not.toContain("\nAnalysis:");   // dropped (user, 2026-10-12): the Analysis table is the one source
+    const rig = readRig(text);
+    expect(rig.problems).toEqual([]);
+    expect(rig.tables.map(t => t.heading)).toEqual(["Pumps", "Reactor line", "Analysis"]);
+    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds"]);
+  });
+
   it("the bases' filters follow the folder settings", async () => {
     const roles = { ...kitFolderRoles({ labFolder: "Lab/Entries", chemicalFolder: "Chem" }), ...base };
     const items = await planManaged(memVault(), real, null, roles);
@@ -375,7 +395,8 @@ describe("lab kit completion (Phase 2)", () => {
 
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
-    expect(offIds(real, {}, KIT_DEFAULTS).size).toBe(0);
+    expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual([]);   // every folder setting has a default now, including the Rigs folder
+    expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })]).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
   });
 
   it("New lab entry: says what is missing, else gives the template and folder", () => {
@@ -394,6 +415,15 @@ describe("New chemical", () => {
     expect(newChemicalTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
     expect(newChemicalTarget({ ...ok, chemicalFolder: "" })).toHaveProperty("error", expect.stringContaining("Chemical folder"));
     expect(newChemicalTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Chemical database template"));
+  });
+});
+
+describe("New rig", () => {
+  it("says what is missing, else gives the template and folder; it does not need Templater", () => {
+    const ok = { template: "Extras/Templates/Lab Kit/Rig template.md", rigsFolder: " 03 Lab Book/Rigs/ " };
+    expect(newRigTarget(ok)).toEqual({ template: ok.template, folder: "03 Lab Book/Rigs" });
+    expect(newRigTarget({ ...ok, rigsFolder: "" })).toEqual({ error: "Set the Rigs folder in Lab Kit settings first." });
+    expect(newRigTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Rig template"));
   });
 });
 

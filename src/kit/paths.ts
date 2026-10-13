@@ -36,6 +36,10 @@ export interface KitData {
   chemClassOnly: boolean;
   /** Board countdown to a to-do's due date: off, only to-dos with `countdown: true`, or every to-do with a due date. */
   dueCountdown: "off" | "marked" | "all";
+  /** A project hub's plan: the card map only (the Plan list tile stays hidden), or the map and the list. */
+  planView: "map" | "both";
+  /** The plan map's direction: steps left to right (across) or top to bottom (down). A toggle on the map flips it for the open note. */
+  planDirection: "across" | "down";
   /** Write `progress: 3/7` (ticked / all check boxes) into lab notes and the Shopping list, for the kanban cards. Off by default. */
   checklistProgress: boolean;
   /** Colour the columns of Bases kanban boards by status name (on), and the colour of each status (hex; missing = the default). */
@@ -46,6 +50,8 @@ export interface KitData {
   mwProperty: string;
   /** Vault folder of analysis method notes (and, linked from them, machine notes), read by the Alt+S snippets. Empty = only the built-in NMR, GPC and DLS. */
   methodsFolder: string;
+  /** Vault folder of rig notes (New rig; the kit's Rig template is installed once it is set). Empty = not set. */
+  rigsFolder: string;
   /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
   planningFolders: PlanningFolders;
 }
@@ -91,7 +97,10 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
   return null;
 }
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+/** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
+export const RIGS_DEFAULT = "03 Lab Book/Rigs";
+
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "off", planView: "map", planDirection: "across", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -111,6 +120,7 @@ export function kitLoad(saved: unknown): KitData {
   const single = { managed: old.managed, paths: old.paths, off: old.off };
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
+  if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
   kit.snippetIcons = { ...kit.snippetIcons };
   kit.boardColours = { enabled: kit.boardColours?.enabled !== false, colours: { ...(kit.boardColours?.colours ?? {}) } };
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
@@ -250,6 +260,7 @@ export function inSnippetsFolder(path: string, templatesFolder: string): boolean
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
 export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";
+export const RIG_TEMPLATE_ID = "tpl-rig-template-md";
 
 /** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
 export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
@@ -267,5 +278,13 @@ export function newChemicalTarget(o: { templater: boolean; template: string | nu
   const folder = kitJoin(o.chemicalFolder.trim());
   if (!folder) return { error: "Set the Chemical folder in Lab Kit settings first." };
   if (!o.template) return { error: "The Chemical database template is not installed. Install it from Manage kit files." };
+  return { template: o.template, folder };
+}
+
+/** What New rig needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). No Templater: the template's text is copied as it is. */
+export function newRigTarget(o: { template: string | null; rigsFolder: string }): { template: string; folder: string } | { error: string } {
+  const folder = kitJoin(o.rigsFolder.trim());
+  if (!folder) return { error: "Set the Rigs folder in Lab Kit settings first." };
+  if (!o.template) return { error: "The Rig template is not installed. Install it from Manage kit files." };
   return { template: o.template, folder };
 }

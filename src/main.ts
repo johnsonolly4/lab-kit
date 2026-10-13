@@ -7,11 +7,13 @@ import { KitController } from "./kit/ui";
 import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
+import { bridgeOnDelete } from "./planning/after-bridge";
 import { PlanningBlocks } from "./planning/blocks";
 import { ProgressWriter } from "./planning/progress";
 import { BoardColours } from "./kit/board-colours";
 import { calcTextRefs } from "./calc/text-refs-cm";
 import { SnippetTemplates } from "./kit/snippet-run";
+import { RigRenderer } from "./rig/render";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
@@ -36,6 +38,7 @@ export default class LabKitPlugin extends Plugin {
     this.calc.register();
     this.registerEditorExtension(calcTextRefs());
     this.header.register();
+    new RigRenderer(this).register();
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();
@@ -81,6 +84,7 @@ export default class LabKitPlugin extends Plugin {
     const engine = new TodoEngine(this, () => todoFolder(this.kit.kit.planningFolders), () => this.kit.kit.dueCountdown);
     this.kit.dueCountdownChanged = () => engine.retag();
     engine.start();
+    bridgeOnDelete(this, () => todoFolder(this.kit.kit.planningFolders));
     this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine, () => this.kit.kit, this.kit.folderGuard);
     this.planning.register();
   }

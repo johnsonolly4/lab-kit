@@ -185,6 +185,19 @@
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },
     {
+      "id": "tpl-rig-template-md",
+      "kind": "template",
+      "src": "Templates/Rig template.md",
+      "role": "templates",
+      "path": "Rig template.md",
+      "version": "1.0.1",
+      "sha256": "f349bd7510ee41a522f66bead50da823f8b39aa4f28d91d05eba8597724608e2",
+      "renamedFrom": [],
+      "desc": "New rig note: tubing, control, the diagram and the parts tables (pumps, reactor line, analysis)",
+      "optional": true,
+      "needs": "rigsFolder"
+    },
+    {
       "id": "tpl-snippets-01-solution-prep-md",
       "kind": "template",
       "src": "Templates/Snippets/01 Solution prep.md",
@@ -339,6 +352,19 @@
       "renamedFrom": [],
       "desc": "Your own columns and rows",
       "optional": true
+    },
+    {
+      "id": "tpl-snippets-14-rig-md",
+      "kind": "template",
+      "src": "Templates/Snippets/14 Rig.md",
+      "role": "templates",
+      "path": "Snippets/14 Rig.md",
+      "version": "1.0.1",
+      "sha256": "bf2c5da74779321e009fa57255cc99a3680dffd58a1ecf4399069d83218d4bd4",
+      "renamedFrom": [],
+      "desc": "Link the flow rig, draw its diagram, and copy its setup to the bottom of the note",
+      "optional": true,
+      "needs": "rigsFolder"
     },
     {
       "id": "script-labform-js",

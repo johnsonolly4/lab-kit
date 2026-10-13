@@ -7,6 +7,9 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
+import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
+import { layoutPlan, type Direction } from "./plan-map";
+import { drawPlanMap } from "./plan-map-render";
 import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
@@ -49,6 +52,10 @@ export class PlanningBlocks {
 
 class BlockView extends MarkdownRenderChild {
   private drawing = 0;
+  private expanded = new Set<string>();   // plan map parents whose subtask list is open
+  private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
+  private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
+  private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
 
   constructor(el: HTMLElement, private owner: PlanningBlocks, private lang: Lang, private source: string, private sourcePath: string) { super(el); }
@@ -69,10 +76,18 @@ class BlockView extends MarkdownRenderChild {
     if (!kit.kits[PLANNING_KIT]?.enabled) box.createDiv({ cls: "vt-muted", text: "The planning kit is off: switch it on in Settings → Lab Kit." });
     else if (this.lang === "vault-goto") this.goto(box);
     else if (this.lang === "vault-projects") await this.projects(box);
-    else this.card(box);
+    else {
+      if (blockOptions(this.source).show === "project-plan") {
+        const file = this.app.vault.getFileByPath(this.sourcePath);
+        this.noteText = file ? await this.app.vault.cachedRead(file) : "";
+      }
+      this.card(box);
+    }
     if (run !== this.drawing) return;
     this.containerEl.empty();
     this.containerEl.appendChild(box);
+    const scroller = box.querySelector<HTMLElement>(".vt-map-scroll");
+    if (scroller) this.placeMap(scroller);
   }
 
   /** The folder `path` exists; else a line saying it is missing (moved outside Obsidian?) in `box`. */
@@ -101,6 +116,30 @@ class BlockView extends MarkdownRenderChild {
     const w = meetingWindow(this.app.metadataCache.getCache(this.sourcePath)?.frontmatter ?? {});
     if (!w) box.createDiv({ cls: "vt-muted", text: "This note has no since and date properties." });
     return w;
+  }
+
+  /** Puts the map where the user left it, else at the start step. Obsidian lays the note out a little after the block is added, so the position is set again on each resize for a moment; only a scroll after that counts as the user's. */
+  private placeMap(scroller: HTMLElement): void {
+    const target = this.mapScroll ?? { left: Number(scroller.dataset.startScroll ?? 0), top: Number(scroller.dataset.startScrollTop ?? 0) };
+    let placing = true;
+    scroller.addEventListener("scroll", () => { if (!placing) this.mapScroll = { left: scroller.scrollLeft, top: scroller.scrollTop }; });
+    const apply = (): void => { scroller.scrollLeft = target.left; scroller.scrollTop = target.top; };
+    apply();
+    const watch = new ResizeObserver(() => { if (placing) apply(); });
+    watch.observe(scroller);
+    for (const child of Array.from(scroller.children)) watch.observe(child);
+    window.setTimeout(() => { placing = false; watch.disconnect(); }, 800);
+  }
+
+  /** The lab notes, for a to-do's `experiment` link; none when the lab folder is not set (nothing is then looked up). */
+  private labNotes(): NoteRec[] | undefined {
+    const lab = this.owner.kit().labFolder.trim();
+    return lab ? this.owner.notesIn(kitJoin(lab)) : undefined;
+  }
+
+  /** The note this block is in also has a `project-map` block (an old hub that was never tidied does not: it keeps its list). */
+  private hubHasMap(): boolean {
+    return /^show:\s*project-map\s*$/m.test(this.noteText);
   }
 
   private need(box: HTMLElement, path: string): boolean {
@@ -192,6 +231,14 @@ class BlockView extends MarkdownRenderChild {
         }
         return;
       }
+      case "project-experiments": {   // on a project hub: the lab notes its to-dos name in `experiment`, with their Status
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile || !this.need(box, todoFolder(f))) return;
+        const labNotes = this.labNotes();
+        if (!labNotes) { box.createDiv({ cls: "vt-muted", text: "Set the Lab folder in Settings → Lab Kit to list experiments." }); return; }
+        this.capped(box, projectExperiments(readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), labNotes)), PROJECT_TILE_ROWS, "No experiments yet: set experiment on a to-do of this project.");
+        return;
+      }
       case "project-actions": {   // on a project hub: New to-do / New note in one row, like the Projects overview card
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile) return;
@@ -256,6 +303,37 @@ class BlockView extends MarkdownRenderChild {
         this.list(box, this.showAll ? all : all.slice(0, PROJECT_TILE_ROWS), todos ? "No open to-dos for this project." : "No notes in this project yet.");
         return;
       }
+      case "project-plan": {   // on a project hub: next steps, then blocked ones, finished ones behind Show all; nothing when the project has no plan
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
+        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
+        if (!hasPlan(plan)) return;
+        if (kit.planView === "map" && this.hubHasMap()) return;   // the map replaces the list (Settings → Lab Kit → Project plan view)
+        const { lines, finished } = planLines(plan);
+        const open = lines.slice(0, lines.length - finished), shown = this.showAll ? lines : open.slice(0, PROJECT_TILE_ROWS);
+        box.addClass("vt-plan");
+        if (finished || open.length > PROJECT_TILE_ROWS) this.toggle(box, this.showAll ? "Hide finished" : `Show all ${lines.length}`);
+        box.createDiv({ cls: "vt-plan-title", text: "Plan" });
+        this.list(box, shown, "Nothing left to do in this plan.");
+        for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
+        return;
+      }
+      case "project-map": {   // on a project hub: the plan as cards joined by arrows; nothing when the project has no plan
+        const hubFile = this.app.vault.getFileByPath(this.sourcePath);
+        if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
+        const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
+        if (!hasPlan(plan)) return;
+        box.addClass("vt-plan");
+        const direction = this.direction ?? kit.planDirection;
+        const title = box.createDiv({ cls: "vt-plan-title", text: "Plan" });
+        const flip = title.createEl("button", { cls: "vt-map-dir", text: direction === "down" ? "\u21c5" : "\u21c4", attr: { "aria-label": "Flip the map direction", title: direction === "down" ? "Top to bottom: click for left to right" : "Left to right: click for top to bottom" } });
+        const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
+        flip.addEventListener("mousedown", stop);
+        flip.addEventListener("click", e => { stop(e); this.direction = direction === "down" ? "across" : "down"; this.mapScroll = null; this.draw(); });
+        drawPlanMap(box, plan, layoutPlan(plan), { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, redraw: () => this.draw() });
+        for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
+        return;
+      }
       case "meeting-cards": {   // the Meetings hub: one card per series
         if (!this.need(box, f.meetings)) return;
         const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
@@ -305,7 +383,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

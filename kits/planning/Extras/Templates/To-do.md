@@ -25,6 +25,20 @@ if (!project) {
   if (picked === null || picked === undefined) { throw new Error("Cancelled - no project picked"); }
   project = picked;
 }
+// Comes after?: only for a project that has open to-dos; one pick ("(nothing)" first). Esc picks nothing and does not cancel the to-do.
+let after = "";
+if (project) {
+  const linkName = v => (String(v || "").match(/\[\[([^\]|#]+)/) || [])[1]?.split("/").pop().trim();
+  const open = app.vault.getMarkdownFiles().filter(f => {
+    if (!f.path.startsWith(`${folder}/`) || f.path === tp.config.target_file.path) return false;
+    const fm = app.metadataCache.getFileCache(f)?.frontmatter;
+    return fm?.kind === "todo" && fm.done !== true && fm.day !== "Done" && linkName(fm.project) === project;
+  }).map(f => f.basename).sort((a, b) => a.localeCompare(b));
+  if (open.length) {
+    const before = await tp.system.suggester(["(nothing)", ...open], ["", ...open], false, "Comes after? (optional: pick (nothing) to skip)");
+    after = before || "";
+  }
+}
 // Meeting: asked only when there are several meeting series ("(none)" = not flagged; Esc cancels); with one series nothing is asked: set meeting in Properties
 const series = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
 let meeting = "";
@@ -36,13 +50,15 @@ if (series.length > 1) {
 // Due date: optional (Enter on empty = none); a countdown badge is offered only when a date is set. Esc cancels.
 // `due` is a date property in this vault (set once here, Obsidian keeps it in .obsidian/types.json).
 try { if (app.metadataTypeManager?.getAssignedType?.("due") !== "date") { await app.metadataTypeManager?.setType?.("due", "date"); } } catch (e) { /* older Obsidian: due stays text */ }
-let due = "", prompt = "Due date? (YYYY-MM-DD, Enter = none, Esc to cancel)";
+const parseDue = tp.user.vtAsk.parseDue;   // words like "fri" or "next mon"; an older vtAsk.js has none (then only YYYY-MM-DD)
+let due = "", prompt = "Due date? (YYYY-MM-DD, or today, tomorrow, fri, next mon; Enter = none, Esc to cancel)";
 while (true) {
   const d = await tp.user.vtAsk(tp, prompt);
   if (d === null) { throw new Error("Cancelled - no due date"); }
   if (d === "") { break; }
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + "T00:00:00"))) { due = d; break; }
-  prompt = `"${d}" is not a date. Use YYYY-MM-DD (Enter = none, Esc to cancel)`;
+  const words = parseDue ? parseDue(d, new Date()) : (/^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + "T00:00:00")) ? d : null);
+  if (words) { due = words; break; }
+  prompt = `"${d}" is not a date. Use YYYY-MM-DD, or today, tomorrow, fri, next mon (Enter = none, Esc to cancel)`;
 }
 let countdown = false;
 if (due) {
@@ -50,6 +66,11 @@ if (due) {
   if (c === null || c === undefined) { throw new Error("Cancelled - no countdown choice"); }
   countdown = c;
 }
+// Priority: optional, a number property (1 = highest). Esc cancels.
+try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") { await app.metadataTypeManager?.setType?.("priority", "number"); } } catch (e) { /* older Obsidian: priority stays text */ }
+const pr = await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
+if (pr === null || pr === undefined) { throw new Error("Cancelled - no priority choice"); }
+const priority = pr;
 // Keep the day of the board column it was made in (the board writes it before this runs);
 // anything else (the New to-do command, project cards) starts in Backlog.
 const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
@@ -70,6 +91,8 @@ rolled: false
 project: <% project ? `"[[${project}]]"` : "" %>
 due: <% due %>
 countdown: <% countdown %>
+priority: <% priority %>
+<% after ? `after: "[[${after}]]"\n` : "" -%>
 meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 cssclasses:
   - vt

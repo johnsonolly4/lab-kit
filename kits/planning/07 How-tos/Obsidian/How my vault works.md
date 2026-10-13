@@ -166,7 +166,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | Quick capture | Makes an empty note in the inbox and opens it |
 | Add to shopping list | Adds items (commas between them) to the [[Shopping list]] |
 | Sort inbox | Goes through the inbox one note at a time and files each |
-| Archive old to-dos | Moves to-dos finished over 30 days ago to the archive |
+| Archive old to-dos | Moves to-dos finished over 30 days ago to the archive, except those of a project that is not Done |
 | Roll over to-dos now | Rolls unfinished to-dos over to today and clears last week's finished ones, now |
 | Open to-do board | Opens the [[To-do board.base\|To-do board]] |
 | New meeting | New meeting note for a series (asks which when there are several) |
@@ -175,11 +175,14 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | New meeting series | Makes a series: name, how often, day, first date, deck, template |
 | Open meeting deck | Opens the deck of the meeting you are in (asks only from other notes) |
 | New project | Makes a project folder and its hub |
+| Add result | Sets the one-line result of the to-do you have open; the project plan shows it as `→ result` on the card |
+| Link to-dos in order | Select a list of `[[to-do]]` links in a note: each to-do then comes after the one before it (asks first, with Undo afterwards) |
 | New project note | Makes a note in a project's folder |
 | New concept | Makes a knowledge note in a topic |
 | New topic hub | Makes the hub note of a topic folder |
 | New lab entry | Makes a lab book entry from the Lab Book Template |
 | New chemical | Makes a chemical note (asks the name, then the class) |
+| New rig | Makes a rig note from the Rig template in your Rigs folder (asks the name) |
 | Insert empty calc block | A blank calc table at the cursor |
 | Insert lab header block | The hazard / data-folder header at the cursor |
 | Tidy up notes | Finds notes that don't follow the vault's rules and fixes the ones you tick |

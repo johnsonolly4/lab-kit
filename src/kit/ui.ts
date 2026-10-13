@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
@@ -202,9 +202,19 @@ class KitSettingTab extends PluginSettingTab {
             this.ctl.dueCountdownChanged?.();
           }));
       } };
+    const planView: SettingGroupItem = { name: "Project plan view", desc: "What a project hub shows for its plan: the card map only, or the card map with the plan list above it. A hub without the card map keeps the list.",
+      render: b => {
+        b.addDropdown(d => d.addOption("map", "Card map only").addOption("both", "Card map and plan list")
+          .setValue(this.ctl.kit.planView).onChange(async v => { this.ctl.kit.planView = v === "both" ? "both" : "map"; await this.ctl.save(); }));
+      } };
+    const planDirection: SettingGroupItem = { name: "Project plan map direction", desc: "Which way the plan map in a project hub runs: steps from left to right, or from top to bottom (no sideways scrolling). The button next to the map's title flips it for the open note.",
+      render: b => {
+        b.addDropdown(d => d.addOption("across", "Left to right").addOption("down", "Top to bottom")
+          .setValue(this.ctl.kit.planDirection).onChange(async v => { this.ctl.kit.planDirection = v === "down" ? "down" : "across"; await this.ctl.save(); }));
+      } };
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
-    return [intro, countdown, progress, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    return [intro, countdown, planView, planDirection, progress, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
@@ -252,6 +262,18 @@ class KitSettingTab extends PluginSettingTab {
             // once the box is left (not on every key): a folder that does not exist yet is created
             t.inputEl.addEventListener("change", () => {
               const path = kit.methodsFolder;
+              if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
+            });
+          });
+        } },
+      { name: "Rigs folder", desc: `The folder of your rig notes (one note per flow rig, with its parts tables and diagram). New rig creates notes here from the Rig template. Empty: ${RIGS_DEFAULT}. A folder that does not exist yet is created.`,
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setPlaceholder(RIGS_DEFAULT).setValue(kit.rigsFolder === RIGS_DEFAULT ? "" : kit.rigsFolder).onChange(async v => { kit.rigsFolder = v.trim() ? normalizePath(v.trim()) : RIGS_DEFAULT; await this.ctl.save(); });
+            // once the box is left (not on every key): a folder that does not exist yet is created
+            t.inputEl.addEventListener("change", () => {
+              const path = kit.rigsFolder;
               if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
             });
           });
@@ -340,6 +362,7 @@ export class KitController {
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
+    plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
@@ -357,7 +380,7 @@ export class KitController {
         const to = followFolderRename(pf[role], oldPath, file.path);
         if (to) { pf[role] = to; changed = foldersMoved = true; }
       }
-      for (const key of ["labFolder", "chemicalFolder", "methodsFolder"] as const) {
+      for (const key of ["labFolder", "chemicalFolder", "methodsFolder", "rigsFolder"] as const) {
         const to = this.kit[key] ? followFolderRename(this.kit[key], oldPath, file.path) : null;
         if (to) { this.kit[key] = to; changed = foldersMoved = true; }
       }
@@ -447,6 +470,26 @@ export class KitController {
       if (!(await templaterCreateNote(this.app, template, folder, true, name))) { new Notice("Templater couldn't create the note. Update it to the latest version, then try again."); return; }
       if (cls) await this.setChemicalClass(target.folder, cls);
     } catch (e) { console.error(e); new Notice("New chemical failed. See the developer console for details."); }
+  }
+
+  /** New rig: a note in the Rigs folder (created if missing) with the text of the Rig template, then opened. No Templater: the text is copied as it is. */
+  async newRig(): Promise<void> {
+    const tracked = this.managed.stateOf(RIG_TEMPLATE_ID)?.path;
+    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Rig template.md")]
+      .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
+    const target = newRigTarget({ template: template?.path ?? null, rigsFolder: this.kit.rigsFolder });
+    if ("error" in target) { new Notice(target.error); return; }
+    try {
+      await ensureFolder(this.app.vault, target.folder);
+      if (!template) return;
+      const typed = await ask(this.app, "Rig name (Esc cancels)");
+      const name = typed?.replace(/[\\/:*?"<>|#^[\]]/g, "-").trim();
+      if (!name) return;   // Esc or empty cancels
+      const path = `${target.folder}/${name}.md`;
+      if (this.app.vault.getAbstractFileByPath(path)) { new Notice(`${path} already exists.`); return; }
+      const file = await this.app.vault.create(path, await this.app.vault.read(template));
+      await this.app.workspace.getLeaf(false).openFile(file);
+    } catch (e) { console.error(e); new Notice("New rig failed. See the developer console for details."); }
   }
 
   /** Pick a Chemical class from the ones the existing chemical notes use, type another, or skip it. The class text ("" = skip), or null when Esc was pressed. */

@@ -66,6 +66,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 | **Combined results** | Pulling it together | One row per sample with conversion, Mn, Mw, Đ, Dh, PDI, and the results of your own methods (section 6.1) |
 | **Flow column prep** | Packing a column | Weighings (and the packing material) → bead mass → reactor volume. Optional solvent: its note's Density fills the density row (a density you type wins) |
 | **Residence times** | Flow rates | Flow for each residence time (+ optional check of flow rates) |
+| **Rig** | A flow experiment | Pick a rig note: a link and a fixed copy of its diagram at the cursor with the rig note's `Summary` table (if it has one) right under it, a `Rig` property on the note, and the tubing, control and parts tables as they are today at the bottom under `Flow platform setup` (added when the note has none; filled in per run there) |
 | **Blank calc table** | Anything else | Your own columns |
 
 > [!example] A typical analysis workflow
@@ -221,6 +222,7 @@ flowchart LR
 | Where new experiment notes go | Settings → Lab Kit → Lab notes folder (used by **New lab entry**; the kit's **Lab book base**, a board of experiments by Status, goes in the folder above it) |
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
+| Your flow rigs | Settings → Lab Kit → Rigs folder (empty: `03 Lab Book/Rigs`, shown greyed; a folder that does not exist yet is created when you leave the box or run New rig). Then Review update… installs the **Rig template**, and the command **New rig** asks a name and makes the rig note: fill in the parts tables (`ID`, `Feeds`) and the `rig` block at the top draws the diagram |
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
 | A snippet's menu icon | Settings → Lab Kit → Snippet menu → Snippet icons (press **Choose…** and pick an icon, or type a Lucide name; empty keeps the built-in one) |
 | A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table) has `icon:` and `desc:` in its header |

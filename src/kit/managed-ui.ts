@@ -16,7 +16,7 @@ import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitI
 const MENU_ID = "tpl-insert-snippet-md";
 
 /** Names of the settings a kit file can need (`needs` in kit-manifest.json), as the settings tab shows them. */
-const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder" };
+const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder", rigsFolder: "Rigs folder" };
 
 export interface ManagedHost { kit: KitData; save(): Promise<void>; /** Called after a kit's files were written (e.g. to start the planning commands without a reload). */ installed?(): void }
 

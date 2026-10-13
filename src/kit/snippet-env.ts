@@ -1,6 +1,7 @@
 // The note and vault side of snippet token templates: the engine's TemplateEnv built from the note text, and the chemical-class filter.
 // Pure (no Obsidian imports): the note lookups are passed in. Mirrors the helpers inside labSnippets.js.
-import type { TemplateEnv } from "./snippet-template";
+import { TemplateError, type TemplateEnv } from "./snippet-template";
+import { readRig, readSummary } from "../rig/parts";
 
 const F = "```";
 
@@ -24,12 +25,21 @@ export function calcTables(note: string): { name: string; title: string; codes: 
   return out;
 }
 
+/** The notes picked in `suggest: notes` fields: their text (null = no such note) and a property as text. */
+export interface NoteLookup { text(name: string): string | null; prop(name: string, property: string): string }
+const NO_NOTES: NoteLookup = { text: () => null, prop: () => "" };
+
 /**
  * The engine's environment for one insert. `note` is the text of the note being edited, `prefix` its sample-code prefix (ABC0016-),
  * `noteProperty` reads a number from a property of another note. Table ids already handed out stay taken for this insert.
  */
-export function makeEnv(note: string, prefix: string, noteProperty: (noteName: string, property: string) => string): TemplateEnv {
+export function makeEnv(note: string, prefix: string, noteProperty: (noteName: string, property: string) => string, notes: NoteLookup = NO_NOTES): TemplateEnv {
   const taken = new Set<string>();
+  const rigOf = (name: string) => {
+    const rig = readRig(notes.text(name) ?? "");
+    if (!rig.tables.length) throw new TemplateError(`"${name}" has no parts table (a table with an ID and a Feeds column).`);
+    return rig;
+  };
   return {
     prefix,
     uniqueTable(base) {
@@ -54,6 +64,13 @@ export function makeEnv(note: string, prefix: string, noteProperty: (noteName: s
       return next;
     },
     noteProperty,
+    noteText: (name, property) => notes.prop(name, property),
+    rigTables: (name, hashes) => rigOf(name).tables.map(t => (t.heading ? `${hashes} ${t.heading}\n` : "") + t.lines.map(l => l.trim()).join("\n")).join("\n\n"),
+    rigDiagram(name) {
+      const { mermaid } = rigOf(name);
+      return mermaid ? F + "mermaid\n" + mermaid + "\n" + F : "";
+    },
+    rigSummary: name => readSummary(notes.text(name) ?? ""),
   };
 }
 

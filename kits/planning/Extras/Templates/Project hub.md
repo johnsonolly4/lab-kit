@@ -22,6 +22,14 @@ cssclasses:
 show: hub-bar
 ```
 
+```vault-card
+show: project-plan
+```
+
+```vault-card
+show: project-map
+```
+
 > [!focus] Goal
 > [goal:: ]
 
@@ -35,6 +43,11 @@ show: hub-bar
 > > ```vault-card
 > > show: project-notes
 > > ```
+
+> [!lab] Experiments
+> ```vault-card
+> show: project-experiments
+> ```
 
 > [!question] Meetings
 > ```vault-card

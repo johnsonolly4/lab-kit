@@ -14,8 +14,10 @@ export interface TemplateField {
   type: "text" | "number" | "textarea";
   /** The default answer; may hold computed tokens such as {{next-letter:sampling}}. */
   value: string;
-  /** `suggest: chemicals` = the field suggests the chemical notes while typing. `suggest: codes` = the box is filled with the sample codes of the note's tables, with a "Codes from" choice when there are several. */
-  suggest?: "chemicals" | "codes";
+  /** `suggest: chemicals` = the field suggests the chemical notes while typing. `suggest: codes` = the box is filled with the sample codes of the note's tables, with a "Codes from" choice when there are several. `suggest: notes` = the field lists the notes of a settings folder (`folder`). */
+  suggest?: "chemicals" | "codes" | "notes";
+  /** With `suggest: notes`: the Lab Kit folder setting whose notes the field lists, e.g. `folder: rigsFolder`. */
+  folder?: string;
   /** `class: monomer` or `class: [a, b]`: suggest chemicals of these Chemical classes (any text, never checked against a list). Needs `suggest: chemicals`. */
   classes?: string[];
 }
@@ -26,8 +28,13 @@ export interface TemplateHeader {
   desc?: string;
   /** Key of a field that must hold at least one list item, else nothing is inserted. */
   required?: string;
+  /** `set:` properties written on the note after the insert: name and value (the value may hold tokens; an empty one is not written). */
+  set?: { name: string; value: string }[];
   fields: TemplateField[];
 }
+
+/** A part of the body that goes under a heading at the end of the note, not at the cursor. `level` = the heading's level when it has to be added. */
+export interface TemplateAppend { heading: string; level: number; text: string }
 
 export interface ParsedTemplate { header: TemplateHeader; body: string }
 
@@ -43,6 +50,14 @@ export interface TemplateEnv {
   tableRows(name: string): number;
   /** A number from a property of the note called `note`, or "" when there is no such note, property or number. */
   noteProperty(note: string, property: string): string;
+  /** A property of the note called `note` as text (a list joined with ", "), or "". */
+  noteText(note: string, property: string): string;
+  /** The parts tables of the rig note called `note` as Markdown, each under its heading (`hashes`, e.g. "##"). Throws a TemplateError when it has none. */
+  rigTables(note: string, hashes: string): string;
+  /** The diagram of the rig note called `note` as a Mermaid code block. Throws a TemplateError when it has no parts table. */
+  rigDiagram(note: string): string;
+  /** The Summary table of the rig note called `note`, or "" when it has none. */
+  rigSummary(note: string): string;
 }
 
 /** The key of the "Codes from" choice the form adds after a `suggest: codes` field (not a template field, so templates never see it). */
@@ -94,19 +109,31 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     const type = asText(f.type) ?? "text";
     if (type !== "text" && type !== "number" && type !== "textarea") throw new TemplateError(`Field "${key}" has an unknown type "${type}".`);
     const suggest = asText(f.suggest)?.trim();
-    if (suggest && suggest !== "chemicals" && suggest !== "codes") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals" or "codes").`);
+    if (suggest && suggest !== "chemicals" && suggest !== "codes" && suggest !== "notes") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals", "codes" or "notes").`);
+    const folder = asText(f.folder)?.trim();
+    if (suggest === "notes" && !folder) throw new TemplateError(`Field "${key}": suggest: notes needs folder: with the name of a Lab Kit folder setting, for example rigsFolder.`);
+    if (folder && suggest !== "notes") throw new TemplateError(`Field "${key}": folder needs suggest: notes.`);
     const classes = (Array.isArray(f.class) ? f.class : f.class === undefined ? [] : [f.class]).map(c => asText(c)?.trim() ?? "");
     if (classes.some(c => !c)) throw new TemplateError(`Field "${key}": class must be text or a list of texts.`);
     if (classes.length && suggest !== "chemicals") throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
     fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "",
-      ...(suggest === "chemicals" || suggest === "codes" ? { suggest } : {}), ...(classes.length ? { classes } : {}) });
+      ...(suggest === "chemicals" || suggest === "codes" || suggest === "notes" ? { suggest } : {}), ...(classes.length ? { classes } : {}), ...(folder ? { folder } : {}) });
   }
   for (const f of fields.filter(x => x.suggest === "codes")) {
     if (fields.some(x => x.key === codesFromKey(f.key))) throw new TemplateError(`The field key "${codesFromKey(f.key)}" is reserved: the "Codes from" choice of "${f.key}" uses it.`);
   }
   const required = asText(raw.required)?.trim() || undefined;
   if (required && !fields.some(f => f.key === required)) throw new TemplateError(`required: "${required}" is not one of the fields.`);
-  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), required, fields };
+  let set: { name: string; value: string }[] | undefined;
+  if (raw.set !== undefined) {
+    if (!isRecord(raw.set)) throw new TemplateError("The header's set must be a list of property: value lines.");
+    set = Object.entries(raw.set).map(([name, v]) => {
+      const value = asText(v);
+      if (!/^[A-Za-z][\w .-]*$/.test(name) || value === undefined) throw new TemplateError(`set: "${name}" must be a property name with a text value.`);
+      return { name, value };
+    });
+  }
+  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), required, ...(set ? { set } : {}), fields };
 }
 
 /** True when the required field has no list item: nothing is inserted. */
@@ -134,18 +161,24 @@ type Alt =
   | { k: "linked"; table: string; ref: string }
   | { k: "nextLetter"; table: string }
   | { k: "noteNumber"; field: string; property: string }
-  | { k: "liveProp"; field: string; property: string; cell: string };
+  | { k: "liveProp"; field: string; property: string; cell: string }
+  | { k: "noteProp"; field: string; property: string }
+  | { k: "noteLine"; field: string; property: string }
+  | { k: "rigTables"; field: string; hashes: string }
+  | { k: "rigDiagram"; field: string }
+  | { k: "rigSummary"; field: string };
 
 type Node =
   | { t: "text"; s: string }
   | { t: "expr"; alts: Alt[] }
   | { t: "each"; key: string; as?: string; or?: string; sep?: string; body: Node[] }
   | { t: "repeat"; key: string; fallback: number; body: Node[] }
-  | { t: "if"; key: string; starts?: string; yes: Node[]; no: Node[] };
+  | { t: "if"; key: string; starts?: string; yes: Node[]; no: Node[] }
+  | { t: "append"; heading: string; level: number; from?: { field: string; property: string }; body: Node[] };
 
 type Tok = { text: string } | { tag: string };
 
-const BLOCK = /^(?:#each\s|#repeat\s|#if\s|\/each$|\/repeat$|\/if$|else$)/;
+const BLOCK = /^(?:#each\s|#repeat\s|#if\s|#append\s|\/each$|\/repeat$|\/if$|\/append$|else$)/;
 
 /** Text and `{{tags}}`. A block tag alone on its line takes the whole line (and its line break) with it; `\{{` is a literal `{{`. */
 function tokenize(src: string): Tok[] {
@@ -203,6 +236,11 @@ function parseAlt(src: string): Alt {
   if ((m = /^next-letter:(\S+)$/.exec(s))) return { k: "nextLetter", table: m[1] };
   if ((m = /^note-number:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteNumber", field: m[1], property: m[2].trim() };
   if ((m = /^live-prop:([A-Za-z_][\w-]*)\.([^@"]+)@([A-Za-z]{1,3}\d+)$/.exec(s))) return { k: "liveProp", field: m[1], property: m[2].trim(), cell: m[3].toUpperCase() };
+  if ((m = /^note-prop:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteProp", field: m[1], property: m[2].trim() };
+  if ((m = /^note-line:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteLine", field: m[1], property: m[2].trim() };
+  if ((m = /^rig-tables:([A-Za-z_][\w-]*)(?:\s+(#{1,6}))?$/.exec(s))) return { k: "rigTables", field: m[1], hashes: m[2] ?? "##" };
+  if ((m = /^rig-diagram:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigDiagram", field: m[1] };
+  if ((m = /^rig-summary:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigSummary", field: m[1] };
   if (NAME.test(s)) return { k: "ref", name: s };
   throw new TemplateError(`Unknown token {{${s}}}.`);
 }
@@ -228,7 +266,7 @@ function parseExpr(src: string): Alt[] {
 
 function parseBody(src: string, known: Set<string>): Node[] {
   const root: Node[] = [];
-  type Open = { node: Node & { t: "each" | "repeat" | "if" }; tag: string; inElse: boolean };
+  type Open = { node: Node & { t: "each" | "repeat" | "if" | "append" }; tag: string; inElse: boolean };
   const open: Open[] = [];
   const vars: string[] = [];
   const list = (): Node[] => {
@@ -242,7 +280,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
   const check = (a: Alt, tag: string) => {
     if (a.k === "ref" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
-    if (a.k === "noteNumber" || a.k === "liveProp") field(a.field, tag);
+    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSummary") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
   };
   for (const tok of tokenize(src)) {
@@ -261,16 +299,21 @@ function parseBody(src: string, known: Set<string>): Node[] {
       field(m[1], tag);
       const node = { t: "if" as const, key: m[1], starts: m[2], yes: [] as Node[], no: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false });
+    } else if ((m = /^#append\s+"\s*(#{1,6})?\s*([^"#][^"]*?)\s*"(?:\s+from\s+([A-Za-z_][\w-]*)\.(.+?))?$/.exec(tag))) {
+      if (open.length) throw new TemplateError("{{#append}} cannot be inside another block.");
+      if (m[3]) field(m[3], tag);
+      const node = { t: "append" as const, heading: m[2], level: m[1]?.length ?? 2, from: m[3] ? { field: m[3], property: m[4].trim() } : undefined, body: [] as Node[] };
+      list().push(node); open.push({ node, tag, inElse: false });
     } else if (tag === "else") {
       const o = open[open.length - 1];
       if (!o || o.node.t !== "if" || o.inElse) throw new TemplateError("{{else}} without a matching {{#if}}.");
       o.inElse = true;
-    } else if (tag === "/each" || tag === "/repeat" || tag === "/if") {
+    } else if (tag === "/each" || tag === "/repeat" || tag === "/if" || tag === "/append") {
       const o = open[open.length - 1];
       const want = tag === "/if" ? "if" : tag.slice(1);
       if (!o || o.node.t !== want) throw new TemplateError(`{{${tag}}} without a matching {{#${want}}}.`);
       open.pop();
-      if (want !== "if") vars.pop();
+      if (want === "each" || want === "repeat") vars.pop();
     } else if (tag.startsWith("#")) {
       throw new TemplateError(`Unknown block {{${tag}}}.`);
     } else {
@@ -292,14 +335,27 @@ class Filler {
   private seq = new Map<Node, number>();
   private codeNext: number | null = null;
   private ids = new Map<string, string>();
+  /** The {{#append}} parts, in order; their text is left out of what render returns. */
+  readonly appends: TemplateAppend[] = [];
 
   constructor(private answers: Record<string, string>, private env: TemplateEnv) {}
 
+  /** The heading of an {{#append}} part: the picked note's property when the tag says `from key.Property` and it is filled in, else the written heading. */
+  private appendHeading(n: Extract<Node, { t: "append" }>): string {
+    const note = n.from ? this.answers[n.from.field] ?? "" : "";
+    return (note && n.from && this.env.noteText(note, n.from.property).trim()) || n.heading;
+  }
+
   render(nodes: Node[]): string {
     let out = "";
+    let dropBreak = false;   // an empty {{note-line}} or {{rig-summary}} on a line of its own leaves no blank line
     for (const n of nodes) {
-      if (n.t === "text") out += n.s;
-      else if (n.t === "expr") out += this.expr(n.alts);
+      if (n.t === "text") { out += dropBreak ? n.s.replace(/^\r?\n/, "") : n.s; dropBreak = false; continue; }
+      dropBreak = false;
+      if (n.t === "expr") { const v = this.expr(n.alts); out += v; dropBreak = !v && n.alts.length === 1 && (n.alts[0].k === "noteLine" || n.alts[0].k === "rigSummary");
+        if (dropBreak && n.alts[0].k === "rigSummary") out = out.replace(/\r?\n$/, "");   // its blank line above goes too
+      }
+      else if (n.t === "append") this.appends.push({ heading: this.appendHeading(n), level: n.level, text: this.render(n.body) });
       else if (n.t === "if") {
         const v = this.answers[n.key] ?? "";
         const yes = n.starts !== undefined ? v !== "" && v.toLowerCase().startsWith(n.starts.toLowerCase()) : listOf(v).length > 0;
@@ -361,6 +417,11 @@ class Filler {
         const note = this.answers[a.field] ?? "";
         return note && this.env.noteProperty(note, a.property) ? `=PROP(${a.cell},"${a.property}")` : "";
       }
+      case "noteLine": { const note = this.answers[a.field] ?? "", v = note ? this.env.noteText(note, a.property) : ""; return v ? `${a.property}: ${v}` : ""; }
+      case "noteProp": { const note = this.answers[a.field] ?? ""; return note ? this.env.noteText(note, a.property) : ""; }
+      case "rigTables": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigTables(note, a.hashes) : ""; }
+      case "rigDiagram": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigDiagram(note) : ""; }
+      case "rigSummary": { const note = this.answers[a.field] ?? ""; const v = note ? this.env.rigSummary(note) : ""; return v; }
     }
   }
 
@@ -376,9 +437,19 @@ class Filler {
   }
 }
 
-/** The body with the answers filled in. Throws a TemplateError (unknown token, unknown field, unclosed block) before any text is returned. */
-export function fillTemplate(body: string, answers: Record<string, string>, env: TemplateEnv): string {
+/**
+ * The body with the answers filled in: `text` goes at the cursor, each `{{#append "Heading"}}` part under its heading at the end of the note.
+ * Throws a TemplateError (unknown token, unknown field, unclosed block) before anything is returned.
+ */
+export function fillParts(body: string, answers: Record<string, string>, env: TemplateEnv): { text: string; appends: TemplateAppend[] } {
   const clean: Record<string, string> = {};
   for (const [k, v] of Object.entries(answers)) clean[k] = String(v ?? "").trim();
-  return new Filler(clean, env).render(parseBody(body, new Set(Object.keys(clean))));
+  const filler = new Filler(clean, env);
+  const text = filler.render(parseBody(body, new Set(Object.keys(clean))));
+  return { text, appends: filler.appends };
+}
+
+/** The text that goes at the cursor (see fillParts; `{{#append}}` parts are left out). */
+export function fillTemplate(body: string, answers: Record<string, string>, env: TemplateEnv): string {
+  return fillParts(body, answers, env).text;
 }

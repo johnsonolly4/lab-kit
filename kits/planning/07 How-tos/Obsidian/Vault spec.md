@@ -110,9 +110,13 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | Section | What it shows |
 |---|---|
 | Top row (`show: hub-bar`) | no `# heading` (Obsidian's inline title is the title); back link to [[Projects overview]]; **New to-do**; **New note**; the Status drop-down; the Deadline date; the countdown |
+| *Plan map* (`show: project-map`) | same condition as the Plan tile: to-dos with a link as cards, left to right, joined by arrows; click opens, right-click: Open, Open in new tab, Mark done; hover marks everything before and after; long arrows are routed around the cards between (not behind them); the ⇄ / ⇅ button by the title flips the map between left to right and top to bottom (default: Settings → Project plan map direction); hover a card and drag the dot that appears onto another card (or a **Not linked** row) to make that to-do come after it, click an arrow then **Remove link** to remove one (both write `after`, both have Undo); to-dos with no links sit in a **Not linked** list beside it. It replaces the Plan list unless Settings → Lab Kit → Project plan view says both |
+| *Plan* (`show: project-plan`) | only when a to-do of the project has `after` or `order`: ready to-dos, then blocked ones (`after X`; blocked = anything earlier in the chain is still open), finished ones with their `result` behind **Show all**; set `after` (link to the to-do before it), `order` (number) and `result` (one line) by hand |
 | *Goal* | `[goal:: ...]` - also shown on the project's card |
 | *To-dos* (`show: project-todos`) | open to-dos whose `project` is this hub, overdue first, then by day; 10 rows, **Show all** |
 | *Notes* (`show: project-notes`) | every note in the project folder (and subfolders), newest first; 10 rows, **Show all** |
+| *Link to-dos in order* (command) | select a list of `[[to-do]]` links in a note and run it: each to-do gets `after` naming the one before it (preview, then confirm; Undo afterwards); pairs already linked or that would make a loop are left out |
+| *Experiments* (`show: project-experiments`) | the lab notes that this project's to-dos name in `experiment`, each once, with its `Status` and the to-do that names it; open ones first, Closed last; nothing is written to the lab notes (a lab note has no `project`); needs the Lab folder set |
 | *Meetings* (`show: project-meetings`) | meeting notes whose `project` names this hub, newest first; the last 8, **Show all** |
 | *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, key papers first (&#9733;), with my reason from its *For my projects* line (Dataview) |
 | *Done to-dos* | collapsed (Dataview) |
@@ -143,7 +147,12 @@ Created with the **New to-do** button or command (`Alt+T`; template `Extras/Temp
 | `done_on` | date `done` was ticked | Lab Kit |
 | `project` | link to a project hub, e.g. `"[[Flow rig]]"`, or empty | template / me |
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
+| `priority` / `project` on the board | the board card shows a small tag at the bottom left, `↑ Polymers` (an arrow for priority 1, 2 or 3: ↑, –, ↓, and the project's name); read from the note, so the property row need not be shown on the card | plugin |
 | `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
+| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none (New to-do asks it; the board's Sort control on `priority` also orders cards 1, 2, 3) | me |
+| `sub` | optional, by hand: one link to the to-do this one is a subtask of (`"[[Parent to-do]]"`); the parent's card on the plan map shows a count (`1/2`) that opens the list; the parent is never ticked for you; one level only; the subtask stays an ordinary to-do (board, `after`) | me |
+| `experiment` | optional, by hand: one link to the lab note this to-do runs (`"[[ABC0014-A]]"`); the project plan shows that note's `Status` as a badge on the to-do's card. Display only; needs the Lab folder set | me |
+| `after`, `result`, `order` | for a to-do in a project, by hand for now: `after` = link(s) to the to-dos that come first, `result` = one line (also set by the Add result command), `order` = a number; read by the project plan (coming), not asked at New to-do | me |
 | `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; `false` = not flagged | template / me |
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); which meeting to raise it at (only when there are several series); a due date (Enter = none) and, with a date, whether to show a countdown. Esc at any box cancels the to-do. New to-dos get `cssclasses: [vt]`.
@@ -188,7 +197,7 @@ Created by **ZotLit** (command *ZotLit: Create literature note*) from three Liqu
 | Property | Expression | Merge |
 |---|---|---|
 | `kind` | `"literature"` | Keep existing |
-| `Type` | `"Literature Note" \| split: ","` | Keep existing |
+| `Type` | `"Literature Note"` | Keep existing |
 | `Title` | `zt.title` | Replace |
 | `aliases` | `zt.title \| split: "§§"` | Append arrays |
 | `Year` | `zt.date.year` | Replace |
@@ -197,10 +206,11 @@ Created by **ZotLit** (command *ZotLit: Create literature note*) from three Liqu
 | `Collections` | `zt.collections \| collection_paths` | Replace |
 | `citekey` | `zt.citationKey` | Replace |
 | `URL` | `zt.url` | Keep existing |
+| `DOI` | `zt.DOI` | Keep existing |
 | `imported` | `"now" \| date: "%Y-%m-%d"` | Keep existing |
 | `cssclasses` | `"vt,literature,wide" \| split: ","` | Keep existing |
 
-`zotero-key` is added by ZotLit itself and marks the note as a literature note. `imported` is the date the note was first created (queries fall back to `file.ctime`).
+`DOI` is for your own use (the kit reads no DOI); its expression is the one Zotero's field name suggests and has not been checked in ZotLit: if it stays empty, look the field name up in ZotLit's template data explorer. `zotero-key` is added by ZotLit itself and marks the note as a literature note. `imported` is the date the note was first created (queries fall back to `file.ctime`).
 
 | Field | Where | Meaning |
 |---|---|---|

@@ -23,9 +23,10 @@ A note in the `Snippets` folder whose first lines are a header between `---` lin
 | `title` | form title and the name in the Alt+S menu |
 | `icon`, `desc` | menu icon (a Lucide name) and the one-line description |
 | `required` | key of a field that must hold at least one list item, else nothing is inserted |
+| `set` | properties written on the note you are in when the snippet is inserted, one `Name: value` line each; the value may hold tokens (`Rig: "[[{{rig}}]]"`). An existing property is replaced; an empty value is not written |
 | `fields` | the questions (below); an empty list is allowed |
 
-A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint`, `placeholder`, `type` (`text` default, `number`, `textarea`), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered).
+A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint`, `placeholder`, `type` (`text` default, `number`, `textarea`), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered). A field with `suggest: notes` and `folder: <setting>` lists the notes of one of your Lab Kit folders (`rigsFolder`, `methodsFolder`, `chemicalFolder`, `labFolder`); the answer must be one of those notes, and the snippet stops with a message while the folder setting is empty or has no notes.
 
 ### Tokens (`{{…}}` in the body and in a field's `value`)
 
@@ -46,6 +47,12 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{next-letter:sampling}}`       | the first sample letter not used in the note's `sampling` tables (use as a field's default)                                                                                                                                                                    |
 | `{{note-number:key.Density}}`    | a number from a property of the chemical note named by field `key`, else empty                                                                                                                                                                                 |
 | `{{live-prop:key.Density@B5}}`   | a live formula for the same property: the cell stays up to date with the chemical note. `B5` is the cell that holds the note's name; empty when the note has no such number                                                                                    |
+| `{{note-prop:key.Tubing}}`       | a property of the note picked in field `key` (a `suggest: notes` field) as text; a list is joined with `, `; empty when the note has no such property |
+| `{{rig-diagram:key}}`            | the flow diagram of the rig note picked in field `key`, as a fixed Mermaid block (it does not change when the rig note changes later) |
+| `{{rig-summary:key}}`            | the table under a `Summary` heading in that rig note, as written; nothing (and no blank line) when it has none |
+| `{{rig-tables:key}}`             | the parts tables of that rig note as they are now, each under its heading (`## Pumps`); `{{rig-tables:key ###}}` sets the heading level. A note without a parts table shows a message and inserts nothing |
+| `{{note-line:key.Tubing}}`        | `Tubing: value` for that property of the picked note, or nothing (and no empty line) when it has none |
+| `{{#append "# Heading"}}…{{/append}}` | this part does not go at the cursor: it is added at the end of the note under that heading. A heading with the same text that is already in the note (any level) gets the part below its content; otherwise the heading is added, at the level of the `#` signs (two when none are written). Not inside another block . `{{#append "# Heading" from key.Property}}` takes the heading text from that property of the picked note when it is filled in (the written heading is the default) |
 
 A field with `suggest: codes` asks for sample codes the way the method snippets do (see "Sample codes" below): its box is filled with the codes of the note's tables and, with more than one table, a **Codes from** choice follows it. Give it `type: textarea`; the answer reaches the template as the codes joined with `, `, so `{{#each codes}}…{{/each}}` works. The key `<key>_from` is reserved for the choice. `class` belongs to `suggest: chemicals` only.
 

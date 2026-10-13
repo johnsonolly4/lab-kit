@@ -157,12 +157,16 @@ export function folderHub(notes: NoteRec[], path: string): NoteRec | null {
 
 export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; more: number; open: number; papers: number; notes: number; folder: string }
 
-/** The open to-dos of one project hub: overdue first, then Mon → Fri → Backlog → other. */
+/** Priority 1 (highest), 2 or 3, as a number or text; empty or anything else last. */
+const priorityRank = (p: unknown): number => { const n = Number(typeof p === "string" ? p.trim() || NaN : p); return n === 1 || n === 2 || n === 3 ? n : 4; };
+
+/** The open to-dos of one project hub: overdue first, then Mon → Fri → Backlog → other; within a day priority 1 → 2 → 3 → none, then by name. */
 function openProjectTodos(todos: NoteRec[], hub: NoteRec, today: Date): { t: NoteRec; late: Date | null }[] {
   const rank = (d: string): number => { const r = dayRank(d); return d === "Backlog" ? 6 : r === 6 ? 8 : r; };
   return todos.filter(t => isOpenTodo(t) && pointsTo(t.fm.project, hub))
     .map(t => ({ t, late: overdue(t.fm, today) }))
-    .sort((a, b) => ((a.late ? 0 : 1) * 10 + rank(str(a.t.fm.day))) - ((b.late ? 0 : 1) * 10 + rank(str(b.t.fm.day))) || a.t.path.localeCompare(b.t.path));
+    .sort((a, b) => ((a.late ? 0 : 1) * 10 + rank(str(a.t.fm.day))) - ((b.late ? 0 : 1) * 10 + rank(str(b.t.fm.day)))
+      || priorityRank(a.t.fm.priority) - priorityRank(b.t.fm.priority) || a.t.path.localeCompare(b.t.path));
 }
 
 /** A project hub's To-dos tile: all its open to-dos, with the overdue date or the planned day. */

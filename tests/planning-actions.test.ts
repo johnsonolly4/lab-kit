@@ -36,6 +36,10 @@ describe("archive", () => {
     expect(isArchivable({ done: true, done_on: "soon" }, now, now)).toBe(false);
     expect(isArchivable({ done: true }, new Date(2026, 8, 7, 15, 0), now)).toBe(false);  // 30 days minus one hour
   });
+  it("keeps a finished to-do of a project that is not Done", () => {
+    expect(isArchivable({ done: true, project: "[[Alpha]]" }, old, now, true)).toBe(false);
+    expect(isArchivable({ done: true, project: "[[Alpha]]" }, old, now, false)).toBe(true);   // project Done or not found
+  });
   it("counts day: Done as finished, leaves open to-dos", () => {
     expect(isArchivable({ day: "Done", done: false }, old, now)).toBe(true);
     expect(isArchivable({ day: "Mon", done: false }, old, now)).toBe(false);
