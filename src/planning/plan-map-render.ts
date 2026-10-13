@@ -1,7 +1,7 @@
 // Draws a project's card map (planning kit, `show: project-map`): cards in the vault theme, arrows behind them, the to-dos with no links in a list beside it.
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
-import { statusClass, type Plan, type PlanFix, type PlanRow } from "./plan";
+import { statusClass, type Plan, type PlanFix, type PlanIssue, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, openSubs, subsLabel, type Direction, type PlanMap } from "./plan-map";
 import { linkText, namesOf, recordChange, recordTick, runHistory, undoNotice } from "./after-write";
 import type { HistoryStep, PlanHistory } from "./plan-history";
@@ -278,11 +278,54 @@ function tickButton(el: HTMLElement, r: PlanRow, o: MapOptions, card: boolean): 
   });
 }
 
-/** A ⚠ on a card or tile whose note has problems; the hover text says what (`texts`). */
-function warnMark(el: HTMLElement, texts: string[] | undefined): void {
-  if (!texts?.length) return;
+/** One problem as a line: the plain sentence, a button for each fix, and one to open the note (or each note). */
+function issueLine(parent: HTMLElement, plan: Plan, o: MapOptions, is: PlanIssue): HTMLElement {
+  const line = parent.createDiv({ cls: "vt-map-issue" });
+  line.createSpan({ cls: "vt-muted", text: is.text });
+  const bar = line.createSpan({ cls: "vt-map-issue-btns" });
+  const button = (text: string, run: (e: MouseEvent, b: HTMLButtonElement) => void): void => {
+    const b = bar.createEl("button", { cls: "vt-map-dir vt-map-fix", text });
+    b.addEventListener("mousedown", stopEvent);
+    b.addEventListener("click", e => { stopEvent(e); run(e, b); });
+  };
+  for (const f of is.fixes) button(f.label, (_e, b) => { b.disabled = true; fixIssue(o, f).catch(() => { b.disabled = false; new Notice("Could not fix that."); }); });
+  for (const p of is.paths.slice(0, 3)) button(is.paths.length > 1 ? `Open ${plan.rows.find(x => x.path === p)?.name ?? "note"}` : "Open note", e => { open(o, p, Keymap.isModEvent(e)); });
+  return line;
+}
+
+/** The problems under the map. Hovering one marks the card or tile it is about. */
+export function drawProblems(box: HTMLElement, plan: Plan, o: MapOptions): void {
+  const mark = (is: PlanIssue, on: boolean): void => { box.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (is.paths.includes(el.dataset.planPath ?? "")) el.toggleClass("vt-map-flag", on); }); };
+  for (const is of plan.issues) {
+    const line = issueLine(box, plan, o, is);
+    line.addEventListener("mouseenter", () => mark(is, true));
+    line.addEventListener("mouseleave", () => mark(is, false));
+  }
+}
+
+/** A box with a card's or tile's problems and their fix buttons, under its ⚠; it closes on a click outside, on Esc, and when the map redraws. */
+function issuePopup(wrap: HTMLElement, anchor: HTMLElement, plan: Plan, o: MapOptions, issues: PlanIssue[]): void {
+  wrap.querySelector(".vt-map-pop")?.remove();
+  const pop = wrap.createDiv({ cls: "vt-map-pop" });
+  for (const is of issues) issueLine(pop, plan, o, is);
+  const w = wrap.getBoundingClientRect(), a = anchor.getBoundingClientRect();
+  pop.setCssProps({ "--vt-pop-x": `${Math.max(0, Math.min(a.left - w.left, w.width - 470))}px`, "--vt-pop-y": `${a.bottom - w.top + 4}px` });
+  const ac = new AbortController();
+  const close = (): void => { pop.remove(); ac.abort(); };
+  const doc = anchor.ownerDocument;
+  doc.addEventListener("mousedown", e => { if (!pop.contains(e.target as Node)) close(); }, { signal: ac.signal, capture: true });
+  doc.addEventListener("keydown", e => { if (e.key === "Escape") close(); }, { signal: ac.signal });
+}
+
+/** A ⚠ on a card or tile whose note has problems: hover for what, click for the fixes. */
+function warnMark(wrap: HTMLElement, el: HTMLElement, plan: Plan, o: MapOptions, issues: PlanIssue[] | undefined): void {
+  if (!issues?.length) return;
   el.addClass("vt-map-warn");
-  setIcon(el.createDiv({ cls: "vt-map-warnmark", attr: { "aria-label": texts.join("\n"), title: texts.join("\n") } }), "alert-triangle");
+  const text = issues.map(i => i.text).join("\n");
+  const mark = el.createDiv({ cls: "vt-map-warnmark", attr: { "aria-label": text, title: text } });
+  setIcon(mark, "alert-triangle");
+  mark.addEventListener("mousedown", stopEvent);
+  mark.addEventListener("click", e => { stopEvent(e); issuePopup(wrap, mark, plan, o, issues); });
 }
 
 /** Clears the property a fix names (for `after`: only the one dead link); one step in Undo / Redo, and a notice with Undo. */
@@ -291,27 +334,11 @@ async function fixIssue(o: MapOptions, f: PlanFix): Promise<void> {
   undoNotice(`${f.label}: done.`, () => runHistory(o.app, o.history, "undo", step));
 }
 
-/** The problems under the map: one plain sentence each, with a button for each fix and one to open the note. */
-export function drawProblems(box: HTMLElement, plan: Plan, o: MapOptions): void {
-  for (const is of plan.issues) {
-    const line = box.createDiv({ cls: "vt-map-issue" });
-    line.createSpan({ cls: "vt-muted", text: is.text });
-    const bar = line.createSpan({ cls: "vt-map-issue-btns" });
-    const button = (text: string, run: (e: MouseEvent, b: HTMLButtonElement) => void): void => {
-      const b = bar.createEl("button", { cls: "vt-map-dir vt-map-fix", text });
-      b.addEventListener("mousedown", stopEvent);
-      b.addEventListener("click", e => { stopEvent(e); run(e, b); });
-    };
-    for (const f of is.fixes) button(f.label, (_e, b) => { b.disabled = true; fixIssue(o, f).catch(() => { b.disabled = false; new Notice("Could not fix that."); }); });
-    for (const p of is.paths.slice(0, 3)) button(is.paths.length > 1 ? `Open ${plan.rows.find(x => x.path === p)?.name ?? "note"}` : "Open note", e => { open(o, p, Keymap.isModEvent(e)); });
-  }
-}
-
 /** The map and the unlinked tiles inside `box`. The scroll box carries `data-start-scroll`: where to scroll once it is in the page. */
 export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOptions): void {
   const wrap = box.createDiv({ cls: "vt-map" });
-  const flagged = new Map<string, string[]>();   // the sentences of each to-do that has a problem: the hover text of its ⚠
-  for (const is of plan.issues) for (const p of is.paths) flagged.set(p, [...(flagged.get(p) ?? []), is.text]);
+  const flagged = new Map<string, PlanIssue[]>();   // the problems of each to-do that has any: its ⚠
+  for (const is of plan.issues) for (const p of is.paths) flagged.set(p, [...(flagged.get(p) ?? []), is]);
   if (map.cards.length) {
     const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
     const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);
@@ -348,7 +375,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
       tickButton(el, r, o, true);
-      warnMark(el, flagged.get(c.path));
+      warnMark(wrap, el, plan, o, flagged.get(c.path));
       el.createDiv({ cls: "vt-map-title", text: r.name });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
@@ -395,7 +422,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       dragNest(wrap, plan, o, tile.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), r.path, tile);
       dragLink(wrap, plan, o, tile.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), r.path);
       tile.createDiv({ cls: "vt-map-tile-title", text: r.name });
-      warnMark(tile, flagged.get(r.path));
+      warnMark(wrap, tile, plan, o, flagged.get(r.path));
       subsToggle(tile, r, o);
       tickButton(tile, r, o, false);
       if (o.expanded.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });

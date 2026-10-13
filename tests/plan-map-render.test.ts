@@ -76,6 +76,18 @@ describe("drawPlanMap", () => {
     expect(lines.map((l: { textContent: string }) => l.textContent)).toEqual([
       '"A": its after names "Ghost", but no such to-do is in this project.Remove this linkOpen note',
       '"L": its sub names "Ghost", but no such to-do is in this project, so it shows as a plain to-do.Clear subOpen note']);
+    const card = box.querySelectorAll(".vt-map-card")[0], marked = box.querySelectorAll(".vt-map-warn");   // hover a problem line: its card or tile is marked
+    lines[0].dispatch("mouseenter");
+    expect(marked.filter((m: { hasClass(c: string): boolean }) => m.hasClass("vt-map-flag")).length).toBe(1);
+    lines[0].dispatch("mouseleave");
+    expect(box.querySelectorAll(".vt-map-flag")).toHaveLength(0);
+    expect(card).toBeDefined();
+    const mark = box.querySelectorAll(".vt-map-warnmark")[0];   // click the ⚠: a box with the sentence and the buttons
+    mark.dispatch("click");
+    expect(box.querySelectorAll(".vt-map-pop .vt-map-issue")).toHaveLength(1);
+    expect(box.querySelector(".vt-map-pop").textContent).toContain("Remove this link");
+    mark.dispatch("click");
+    expect(box.querySelectorAll(".vt-map-pop")).toHaveLength(1);   // one box at a time
     lines[0].querySelectorAll("button")[0].dispatch("click");
     await new Promise(r => setTimeout(r, 10));
     expect(fms[T + "A.md"].after).toBe("[[B]]");

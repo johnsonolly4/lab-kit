@@ -570,6 +570,9 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-warnmark svg { width: 15px; height: 15px; }
 .vt-map-card .vt-map-warnmark { position: absolute; left: 20px; bottom: 7px; }
 .vt-map + .vt-map-issue { margin-top: 10px; }
+.vt-map-flag { outline: 2px solid var(--color-orange); outline-offset: 2px; }   /* the card or tile a hovered problem line is about */
+.vt-map-warnmark { cursor: pointer; }
+.vt-map-pop { position: absolute; left: var(--vt-pop-x); top: var(--vt-pop-y); z-index: 9; max-width: 460px; box-sizing: border-box; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 8px; box-shadow: var(--shadow-s); cursor: default; }
 .vt-map-issue { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 3px 0; }
 .vt-map-issue-btns { display: inline-flex; flex-wrap: wrap; }
 .vt-map-fix { margin-left: 8px; }

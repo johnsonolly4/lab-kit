@@ -14,14 +14,17 @@ class El {
   dispatch(t,extra={}){ (this.listeners[t]||[]).forEach(f=>f({ preventDefault(){}, stopPropagation(){}, target:this, ...extra })); }
   setCssProps(){} get offsetWidth(){ return 80; }
   get isConnected(){ return true; }
-  matches(simple){ const [tag,...cls]=simple.split("."); return (!tag || this.tagName===tag.toUpperCase()) && cls.every(c=>this.classList.contains(c)); }
+  matches(simple){ const at=/^\[data-([a-z-]+)\]$/.exec(simple); if(at){ const k=at[1].replace(/-(\w)/g,(_,c)=>c.toUpperCase()); return !!(this._ds && this._ds[k]!==undefined); }
+    const [tag,...cls]=simple.split("."); return (!tag || this.tagName===tag.toUpperCase()) && cls.every(c=>this.classList.contains(c)); }
   all(){ return this.children.flatMap(c=>[c,...c.all()]); }
   querySelectorAll(sel){ const parts=sel.trim().split(/\s+/); let set=[this];
     for(const p of parts){ set=[...new Set(set.flatMap(e=>e.all().filter(x=>x.matches(p))))]; } return set; }
   querySelector(sel){ return this.querySelectorAll(sel)[0] ?? null; }
   closest(sel){ let e=this; while(e){ if(e.matches(sel)) return e; e=e.parent; } return null; }
   focus(){} select(){} setSelectionRange(a,b){ this.selectionStart=a; this.selectionEnd=b; }
-  get ownerDocument(){ return { activeElement: null }; }
+  get ownerDocument(){ return { activeElement: null, addEventListener(){} }; }
+  getBoundingClientRect(){ return { left:0, top:0, right:0, bottom:0, width:0, height:0 }; }
+  contains(n){ let e=n; while(e){ if(e===this) return true; e=e.parent; } return false; }
   // Obsidian helpers
   empty(){ this.children=[]; this._text=""; }
   createEl(tag,o={}){ const e=new El(tag); if(o.cls) e.className=o.cls; if(o.text!=null) e._text=String(o.text); if(o.attr) for(const k in o.attr) e.setAttribute(k,o.attr[k]); this.appendChild(e); return e; }
