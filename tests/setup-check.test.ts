@@ -43,7 +43,8 @@ describe("check setup (Phase 6)", () => {
       templater: { templatesFolder: "", userScriptsFolder: "", menuHotkey: true, folderTemplates: [] },
       css: [{ name: "scrolling-mermaid", enabled: false }], folders: [{ path: "03 Lab Book/Notes", exists: false }],
     }));
-    expect(r["plugin:dataview"]).toMatchObject({ ok: false, fix: { kind: "plugin", id: "dataview" } });
+    expect(r["plugin:dataview"]).toBeUndefined();   // no lab kit file uses Dataview: it is a planning kit plugin
+    expect(byId(state({ planning: true, plugins: new Set(["templater-obsidian"]) }))["plugin:dataview"]).toMatchObject({ ok: false, fix: { kind: "plugin", id: "dataview" } });
     expect(r["install:lab"]).toMatchObject({ ok: false, fix: { kind: "install", kit: "lab" } });
     expect(r["templater:templates-folder"].ok).toBe(false);
     expect(r["templater:templates-folder"].fix).toBeUndefined();          // Set up needs the kit installed first
@@ -255,9 +256,15 @@ describe("check setup: ZotLit settings read from its data.json", () => {
     expect(r["zotlit:folders"]).toMatchObject({ ok: true });
     expect(r["zotlit:settings"]).toBeUndefined();
   });
-  it("a missing field is a warning with a Fix that names it; yours that differ are named and have no Fix of their own", () => {
+  it("a missing field counts as something to fix, with a Fix that names it; yours that differ are named and have no Fix of their own", () => {
     const r = on(zot({ missing: [field], differing: [{ key: "Year", now: "zt.x (replace)", kit: "zt.date.year (replace)" }] }));
-    expect(r["zotlit:fields"]).toMatchObject({ ok: false, warn: true, fix: { kind: "zotlit-fields" } });
+    expect(r["zotlit:fields"]).toMatchObject({ ok: false, fix: { kind: "zotlit-fields" } });
+    expect(r["zotlit:fields"].warn).toBeUndefined();   // counted, not a "!"
+    const only = on(zot({ missing: [field] }));
+    expect(only["zotlit:fields"].detail).toBe("DOI is missing. Fix adds the missing ones, then turns ZotLit off and on so it reads them.");
+    // the folders row says where its Fix is
+    expect(on(zot({ missing: [field], literature: "empty" }))["zotlit:folders"].detail).toContain("The Fix on the fields row sets the empty ones.");
+    expect(on(zot({ literature: "empty" }))["zotlit:folders"].detail).toContain(" Fix sets the empty ones.");
     expect(r["zotlit:fields"].detail).toContain("DOI is missing");
     expect(r["zotlit:fields"].detail).toContain("Year differs (yours: zt.x (replace); kit: zt.date.year (replace))");
   });
@@ -279,5 +286,75 @@ describe("check setup: ZotLit settings read from its data.json", () => {
     const r = on(null);
     expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true, fix: { kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" } });
     expect(r["zotlit:fields"]).toBeUndefined();
+  });
+});
+
+describe("check setup: kit files, core plugins, Daily notes, Dataview and property types (2026-10-13)", () => {
+  const plan = { planning: true, installed: { lab: true, planning: true }, plugins: new Set(["templater-obsidian", "dataview"]) };
+
+  it("none of the new rows is drawn until its part of the state is read", () => {
+    const ids = checkSetup(state(plan)).map(i => i.id);
+    expect(ids.some(i => i.startsWith("kit-files:") || i.startsWith("core:") || i.startsWith("type:") || i === "dataview:inline")).toBe(false);
+  });
+
+  it("kit files: missing files and conflicts count, updates alone are optional, Fix opens Review; a kit that is not installed has no row", () => {
+    const r = byId(state({ ...plan, installed: { lab: true, planning: false }, kitFiles: [
+      { kit: "lab", update: ["Rig template.md"], missing: ["labForm.js", "14 Rig.md"], conflict: [] },
+      { kit: "planning", update: ["vault-theme.css"], missing: [], conflict: [] }] }));
+    expect(r["kit-files:lab"]).toMatchObject({ ok: false, optional: false, fix: { kind: "install", kit: "lab" } });
+    expect(r["kit-files:lab"].detail).toBe("2 missing (labForm.js, 14 Rig.md); 1 update waiting (Rig template.md). Fix opens Review update…, which shows each file before anything is written.");
+    expect(r["kit-files:planning"]).toBeUndefined();
+    const waiting = byId(state({ ...plan, kitFiles: [{ kit: "planning", update: ["vault-theme.css", "Project hub.md"], missing: [], conflict: [] }, { kit: "lab", update: [], missing: [], conflict: [] }] }));
+    expect(waiting["kit-files:planning"]).toMatchObject({ ok: false, optional: true });
+    expect(waiting["kit-files:planning"].detail).toContain("2 updates waiting (vault-theme.css, Project hub.md)");
+    expect(waiting["kit-files:lab"]).toMatchObject({ ok: true, detail: "Every file is there and current." });
+    expect(byId(state({ ...plan, kitFiles: [{ kit: "lab", update: [], missing: [], conflict: ["Lab Book Template.md"] }] }))["kit-files:lab"].detail).toContain("1 conflict (Lab Book Template.md)");
+  });
+
+  it("core plugins: Bases for the lab kit, Daily notes only with the planning kit; off is red, unreadable is a warning", () => {
+    const lab = byId(state({ corePlugins: { bases: true, "daily-notes": false } }));
+    expect(lab["core:bases"].ok).toBe(true);
+    expect(lab["core:daily-notes"]).toBeUndefined();
+    const off = byId(state({ ...plan, corePlugins: { bases: false, "daily-notes": true } }));
+    expect(off["core:bases"]).toMatchObject({ ok: false });
+    expect(off["core:bases"].warn).toBeUndefined();
+    expect(off["core:bases"].detail).toContain("Settings → Core plugins");
+    expect(off["core:daily-notes"].ok).toBe(true);
+    expect(byId(state({ ...plan, corePlugins: null }))["core:bases"]).toMatchObject({ ok: false, warn: true });
+  });
+
+  it("Daily notes settings: folder and format are compared, never fixed; a warning either way", () => {
+    const row = (dailyNotes: SetupState["dailyNotes"]) => byId(state({ ...plan, dailyNotes }))["core:daily-notes-settings"];
+    expect(row({ folder: "01 Daily Notes", format: "YYYY/YYYY-MM-DD", want: "01 Daily Notes" })).toMatchObject({ ok: true });
+    const wrong = row({ folder: "", format: "", want: "01 Daily Notes" });
+    expect(wrong).toMatchObject({ ok: false, warn: true });
+    expect(wrong.fix).toBeUndefined();
+    expect(wrong.detail).toContain("the folder is the vault's top level (the kit's Daily notes folder is 01 Daily Notes)");
+    expect(wrong.detail).toContain("the date format is YYYY-MM-DD (the kit uses YYYY/YYYY-MM-DD)");
+    expect(row(null)).toMatchObject({ ok: false, warn: true });
+    expect(byId(state({ dailyNotes: null }))["core:daily-notes-settings"]).toBeUndefined();   // planning kit off
+  });
+
+  it("Dataview inline queries: only with Dataview loaded and the planning kit on", () => {
+    expect(byId(state({ ...plan, dataviewInline: true }))["dataview:inline"].ok).toBe(true);
+    expect(byId(state({ ...plan, dataviewInline: false }))["dataview:inline"]).toMatchObject({ ok: false, warn: true });
+    expect(byId(state({ ...plan, dataviewInline: null }))["dataview:inline"].detail).toContain("Can't read");
+    expect(byId(state({ ...plan, plugins: new Set(["templater-obsidian"]), dataviewInline: false }))["dataview:inline"]).toBeUndefined();
+  });
+
+  it("property types: a wrong type gets a Fix, a property never used has no row, unreadable is a warning", () => {
+    const r = byId(state({ ...plan, propertyTypes: { due: "text", deadline: "date", priority: null } }));
+    expect(r["type:due"]).toMatchObject({ ok: false, fix: { kind: "property-type", name: "due", type: "date" } });
+    expect(r["type:due"].detail).toContain("It is text now.");
+    expect(r["type:deadline"]).toMatchObject({ ok: true });
+    expect(r["type:priority"]).toBeUndefined();
+    expect(byId(state({ ...plan, propertyTypes: null }))["type:priority"]).toMatchObject({ ok: false, warn: true });
+    expect(byId(state({ propertyTypes: { due: "text" } }))["type:due"]).toBeUndefined();   // planning kit off
+  });
+
+  it("Rigs folder: set but not there says Folder missing, not Not set", () => {
+    const r = byId(state({ lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", rigsFolder: "03 Lab Book/Rigs", rigsFolderMissing: true, labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" } }));
+    expect(r["lab:rigs-folder"].detail).toMatch(/^Folder missing: 03 Lab Book\/Rigs\./);
+    expect(r["lab:rigs-folder"].fix).toEqual({ kind: "rigs-folder", path: "03 Lab Book/Rigs" });
   });
 });
