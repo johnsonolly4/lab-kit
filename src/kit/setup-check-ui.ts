@@ -59,7 +59,6 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     corePlugins: corePluginsOn(app, CORE_PLUGINS.map(c => c.id)),
     dailyNotes: planningOn ? (d => d ? { ...d, want: pf.daily } : null)(dailyNotesOptions(app)) : undefined,
     dataviewInline: planningOn ? dataviewInlineQueries(app) : undefined,
-    propertyTypes: planningOn ? propertyTypes(app, PROPERTY_TYPES.map(p => p.name)) : undefined,
     navigator: { homepage: navigatorHomepage(app), home: planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md" },
     plugins: loadedPlugins(app),
     planning: planningOn,
@@ -86,6 +85,7 @@ export class SetupCheckModal extends Modal {
 
   private newerKit: string[] | undefined;
   private kitFiles: SetupState["kitFiles"];
+  private types: SetupState["propertyTypes"];
   private zotlit: ZotlitScan | null = null;
 
   onOpen(): void {
@@ -95,7 +95,8 @@ export class SetupCheckModal extends Modal {
 
   /** Reads again what needs files read (kept files, kit files, ZotLit's settings), then redraws. */
   private async refresh(): Promise<void> {
-    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit()]);
+    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(),
+      (async () => { this.types = this.host.planning?.slot.enabled ? await propertyTypes(this.app, PROPERTY_TYPES.map(p => p.name)) : undefined; })()]);
     if (this.contentEl.isConnected) this.render();
   }
 
@@ -143,7 +144,7 @@ export class SetupCheckModal extends Modal {
     el.empty();
     el.addClass("lab-kit-setup-check");
     this.setTitle("Check setup");
-    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, zotlitData: this.zotlit });
+    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit });
     const missing = items.filter(i => !i.ok && !i.optional && !i.warn).length;
     const top = el.createDiv({ cls: "lab-kit-setup-top" });
     top.createEl("p", { text: missing ? `${missing} to fix. Nothing changes until you press Fix and confirm.` : "Everything the kits need is in place." });
@@ -203,7 +204,8 @@ export class SetupCheckModal extends Modal {
       case "css": await confirm({ name: "Turn on the CSS snippet", desc: fix.names.join(", "), apply: () => setCssSnippets(this.app, fix.names, []) }); break;
       case "find-moved": this.after(this.host.findMoved()); return;
       case "property-type": await confirm({ name: `Make ${fix.name} a ${fix.type} property`, desc: "Obsidian's property type (Settings → Properties). Values already typed in notes are not changed.",
-        apply: async () => { if (!(await setPropertyType(this.app, fix.name, fix.type))) new Notice("Couldn't set it here. Set the type in a note's properties (click the property's icon)."); } }); break;
+        apply: async () => { if (!(await setPropertyType(this.app, fix.name, fix.type))) new Notice("Couldn't set it here. Set the type in a note's properties (click the property's icon)."); } });
+        await this.refresh(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
         apply: () => addTemplaterFolderTemplate(this.app, fix.folder, fix.template) }); break;

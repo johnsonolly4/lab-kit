@@ -29,7 +29,7 @@ interface PrivateApp {
   /** Obsidian's own (core) plugins, by id; `instance.options` is that plugin's saved settings. */
   internalPlugins?: { plugins?: Record<string, { enabled?: boolean; instance?: { options?: Record<string, unknown> } }> };
   /** Property types (Settings → Properties, saved in types.json). */
-  metadataTypeManager?: { getAssignedType?: (name: string) => string | null | undefined; setType?: (name: string, type: string) => Promise<void> | void };
+  metadataTypeManager?: { setType?: (name: string, type: string) => Promise<void> | void };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
@@ -373,11 +373,20 @@ export function dataviewInlineQueries(app: App): boolean | null {
   const v = (priv(app).plugins?.plugins?.dataview as { settings?: { enableInlineDataview?: unknown } } | undefined)?.settings?.enableInlineDataview;
   return typeof v === "boolean" ? v : null;
 }
-/** The type Obsidian has assigned to each property (`app.metadataTypeManager`, private): null for a property with none. null when the manager can't be read. */
-export function propertyTypes(app: App, names: string[]): Record<string, string | null> | null {
-  const m = priv(app).metadataTypeManager;
-  if (!m?.getAssignedType) return null;
-  try { return Object.fromEntries(names.map(n => [n, m.getAssignedType?.(n) ?? null])); } catch (e) { console.error(e); return null; }
+/**
+ * The type Obsidian has assigned to each property: null for a property with none. Read from the vault's `types.json` (what Settings → Properties
+ * saves: `{ "types": { "due": "date" } }`), because the manager's read call differs between Obsidian versions (`getAssignedType` was not there
+ * in 1.14, seen by the user 2026-10-13). A vault with no such file has no types assigned. null when the file is there but can't be read.
+ */
+export async function propertyTypes(app: App, names: string[]): Promise<Record<string, string | null> | null> {
+  const path = `${app.vault.configDir}/types.json`;
+  try {
+    if (!(await app.vault.adapter.exists(path))) return Object.fromEntries(names.map(n => [n, null]));
+    const types = (JSON.parse(await app.vault.adapter.read(path)) as { types?: Record<string, unknown> } | null)?.types;
+    if (!types || typeof types !== "object") return null;
+    const lower = new Map(Object.entries(types).map(([k, v]) => [k.toLowerCase(), v]));
+    return Object.fromEntries(names.map(n => { const t = lower.get(n.toLowerCase()); return [n, typeof t === "string" ? t : null]; }));
+  } catch (e) { console.error(e); return null; }
 }
 /** Sets a property's type (as Settings → Properties does). False when this Obsidian has no such call or it fails. */
 export async function setPropertyType(app: App, name: string, type: string): Promise<boolean> {
