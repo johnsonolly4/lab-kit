@@ -18,6 +18,12 @@ Decided with the user 2026-10-13 (chat, mockup, then the survey below):
 - **Horizontal layout**: arrows end at the card's left-middle (`plan-map.ts:157`). The gutter lies inside the card box (reserved padding), so arrows still end at the card edge; no geometry change. **Vertical layout**: arrows use top / bottom centre, so the left strip does not collide; same strip, the right-edge handle stays on the bottom edge as built.
 - Rejected: a second (top-edge) handle, a modifier key, drop zones on the card halves (user chose the whole-card drag, 2026-10-13).
 
+## Added 2026-10-13 after the user's first look at Phases 2-3 (screenshots; user answers to a survey)
+- **Alignment:** the buttons by "Plan" (⇄ − + Fit, picture) sit at different heights: `.vt-map-slide` is `inline-flex`, the rest inline-block (`vault-theme.css:554-559`). Fix in Phase 5.
+- **Not linked becomes small tiles** in a wrapping grid under the map (user's choice): the same look as a card but narrow and short, title cut with "…" and the full name in `title` on hover, the same left strip (subtask drag) and right node ("comes after" drag). This also removes the strip-over-the-first-letter bug, whose root cause is `.vt-map-unlinked li { padding: 3px 0 }` (`:505`) beating `.vt-map-unlinked-row { padding-left: 22px }` (`:513`).
+- **Add a to-do from the vault** (user's wording: "drag an active right-node over a ghost box that opens search"): while a node's right dot is dragged, a dashed "+ add after this" box appears; dropping on it opens a search of **every open to-do in the vault** (this project's and other projects'); picking one writes `after` on it (it comes after the dragged node); **typing text that matches nothing offers "Create new to-do"**, which makes a new to-do for this project that comes after the node. No far-left "comes before" box, no permanent box (user declined both).
+- Claude's choices, the user can overrule: a tile has no tick circle and no result / experiment lines; a tile's subtask list opens inside the tile (the grid row grows) with the "▸ n/m" badge; the node and the strip are always shown on touch devices (`@media (hover: none)`), also for cards; a to-do of another project that has its own `after`, `sub` or subtasks is refused in the search ("has links in its own project"), any other one asks "Move … to this project?" and then also gets this project's `project` link; finished to-dos are not offered; to-dos that would make a loop (`canLink`) are not offered.
+
 ## Out of scope
 - Building anything in this session (plan only).
 - Cmd+Z / an Undo command (the buttons in Phase 4 are the answer); dragging to reorder subtasks; multi-select drag.
@@ -51,12 +57,26 @@ Decided with the user 2026-10-13 (chat, mockup, then the survey below):
 
 ### Phase 4 — Undo / Redo buttons
 - Depends on: Phase 3 (all four changes exist: link, unlink, nest, clear)
-- Files: new pure `src/planning/plan-history.ts` (stack of `{ path, key: "after" | "sub", before, after }` records, limit 20 as a constant, `record`, `undo`, `redo`, a new change clears the redo side), `src/planning/plan-map-render.ts` (`link`, `unlink` at `:53-64` and the nest / clear calls record into the history; the notice Undo goes through the same stack), `src/planning/blocks.ts` (↶ ↷ buttons after the zoom and export buttons; disabled when empty), `vault-theme.css`, tests `tests/plan-history.test.ts`.
+- Files: new pure `src/planning/plan-history.ts` (stack of `{ path, key: "after" | "sub" | "project", before, after }` records (`project` is used by Phase 6), limit 20 as a constant, `record`, `undo`, `redo`, a new change clears the redo side), `src/planning/plan-map-render.ts` (`link`, `unlink` at `:53-64` and the nest / clear calls record into the history; the notice Undo goes through the same stack), `src/planning/blocks.ts` (↶ ↷ buttons after the zoom and export buttons; disabled when empty), `vault-theme.css`, tests `tests/plan-history.test.ts`.
 - Behaviour: the history is kept in memory per plan block and is lost when the note closes (like the zoom). Undo writes the recorded `before` value back with `changeAfter` / `changeSub`. If the note's current value is no longer the recorded `after` (edited by hand or by another action), that step is skipped with a Notice ("changed since") and nothing is overwritten. A record for a note that was deleted or renamed is dropped with a Notice. Undoing then doing a new change drops the redo steps.
 - Done when: tests cover limit 20, undo / redo order, a new change clearing redo, and the stale-value skip; the buttons are disabled when empty (by reading). NOT seen in Obsidian until the user tries it (checklist 6i row).
 - New dependencies: none
 
+### Phase 5 — Alignment and Not linked tiles
+- Depends on: Phase 3 (the strip, `dragNest`). Independent of Phase 4; do it before Phase 4 (it is what the user sees).
+- Files: `kits/planning/.obsidian/snippets/vault-theme.css` (title row as one centred flex row or `vertical-align: middle` on the five buttons; `.vt-map-unlinked` as a wrapping grid, `.vt-map-tile` narrow and short, strip and node as on `.vt-map-card`; the node and strip always visible under `@media (hover: none)`), `src/planning/plan-map-render.ts` (`:318-336` Not linked rows → tiles: `data-plan-path`, `dragNest` on the strip, `dragLink` on the node, `title` with the full name, the "▸ n/m" badge and inline list via the existing `subsToggle` / `subsList`, right-click `menu`), `tests/plan-map-render.test.ts` (tiles drawn, one strip and one node each, the full name in `title`), docs (tutorial, guide note, Vault spec, changelog, checklist 6i row).
+- Done when: tests, lint, build pass; the row look is gone; NOT seen in Obsidian until the user has looked (screenshot): tiles wrap, long names are cut and show in full on hover, alignment of the five buttons, tile drag in both directions, phone width.
+- New dependencies: none
+
+### Phase 6 — "+ add after this": search the vault, or create a new to-do
+- Depends on: Phase 4 (so the link it writes is in the undo history; the history record then needs a third key, `project`) and Phase 5 (tiles are the drag sources too).
+- Spike first (by reading, one short step): how New to-do creates a note with a project and an `after` (`src/planning/commands.ts`, the "Comes after?" prompt of 2026-10-12, `src/planning/ask.ts`): reuse it, do not write a second creator.
+- Files: `src/planning/plan-map-render.ts` (`dragLink`: while dragging, a dashed `.vt-map-addbox` "+ add after this" beside the source card, or in a free step at the end of the map if that slot is taken; placement is the part to look at; a drop on it calls the picker), a new `src/planning/todo-picker.ts` (a suggest modal over `owner.notesIn(todoFolder)`: open to-dos, this project's first, then others with their project name; the typed text with no match gives a last row "Create new to-do: …"), pure rules in `plan-link.ts` or `todo-picker.ts` with tests (who is offered: open, not the node itself, `canLink` ok, other-project refusal), `src/planning/after-write.ts` (`changeProject`), the history from Phase 4, theme CSS, docs.
+- Done when: tests cover the offered list, the refusal and the create-row rule; a link written by the picker is in the history (Undo removes it, and for an other-project to-do restores `project`); creating a new to-do is NOT undoable from the history (a note is made; delete it by hand), said in the notice; NOT seen in Obsidian: the ghost box placement, the search, the confirm for another project, creating from the search, phone (the node is always shown, the box appears on a touch drag).
+- New dependencies: none
+
 ## Order check
+Order of work: 1 → 2 → 3 (done) → **5** → **4** → **6**. 5 first because it is what the user sees; 4 before 6 so the new writes are recorded. Original check: 
 1 → 2 → 3 → 4: the UI needs the write helper and the spike answer from Phase 1; Phase 3 reuses `dragNest` from Phase 2. Phase 3 could swap places with 2 only for the CSS gutter on Not linked rows, but the gutter has no job without `dragNest`, so keep the order.
 
 ## Verification
