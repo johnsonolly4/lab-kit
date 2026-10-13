@@ -19,4 +19,5 @@ Source: docs/reference/plugin-guidelines.md. Check there before guessing.
 - No default hotkeys. Commands: `callback` / `checkCallback` / `editorCallback` as appropriate.
 - Settings: sentence case, `setHeading()` only with several sections, no "settings" in headings.
 - Avoid private APIs (`app.plugins`, `app.customCss`, other plugins' settings). If one is unavoidable, isolate it in one function with a comment.
+- Settings code: no async DOM changes inside `render` callbacks (they froze Obsidian 1.13.7); load data first, then `update()`.
 - `manifest.json`: id has no "obsidian"; the description is one sentence ending in a period; keep `minAppVersion` accurate.
