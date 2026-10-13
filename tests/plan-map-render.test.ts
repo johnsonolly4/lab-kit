@@ -112,14 +112,11 @@ describe("drawPlanMap", () => {
   });
 });
 
-describe("the + on an arrow (insert between two)", () => {
-  const chain = [td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("S", { sub: "[[B]]" }), td("D", { after: "[[S]]" })];
-  it("every real arrow has one when inserting is wired; the dashed arrow through a subtask has none", () => {
+describe("arrows with insert between two wired", () => {
+  const chain = [td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" })];
+  it("every arrow keeps its wide hit path and no + button is drawn (the arrow itself is dragged)", () => {
     const box = draw(chain, "across", { insertBetween: () => undefined });
-    expect(box.querySelectorAll(".vt-map-arrow-hit").length).toBe(box.querySelectorAll(".vt-map-insert").length);
-    expect(box.querySelectorAll(".vt-map-insert").length).toBeGreaterThanOrEqual(2);   // A → B and B → C
-  });
-  it("none without it", () => {
-    expect(draw(chain, "across").querySelectorAll(".vt-map-insert").length).toBe(0);
+    expect(box.querySelectorAll(".vt-map-arrow-hit").length).toBe(2);
+    expect(box.querySelectorAll(".vt-map-insert").length).toBe(0);
   });
 });

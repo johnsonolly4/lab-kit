@@ -121,8 +121,8 @@ function autoScroll(scroller: HTMLElement | null, pointer: () => { x: number; y:
 const ADD_W = 130, ADD_H = 54;
 
 /** Where the "+ add after this" box goes while `source` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. In client coordinates. */
-function addBoxSpot(wrap: HTMLElement, source: HTMLElement, direction: Direction): { x: number; y: number } {
-  const w = wrap.getBoundingClientRect(), s = source.getBoundingClientRect();
+function addBoxSpot(wrap: HTMLElement, s: { left: number; right: number; top: number; bottom: number; width: number; height: number }, source: HTMLElement | null, direction: Direction): { x: number; y: number } {
+  const w = wrap.getBoundingClientRect();
   const others: DOMRect[] = [];
   wrap.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (el !== source) others.push(el.getBoundingClientRect()); });
   const right = { x: s.right + 16, y: s.top + (s.height - ADD_H) / 2 }, below = { x: s.left + (s.width - ADD_W) / 2, y: s.bottom + 16 };
@@ -133,7 +133,8 @@ function addBoxSpot(wrap: HTMLElement, source: HTMLElement, direction: Direction
 }
 
 /** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`; onto the "+ add after this" box that shows meanwhile asks for one (or a new one). A line follows the pointer; Esc cancels. */
-function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement, from: string, ins?: { b: string }): void {
+function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, handle: HTMLElement | SVGElement, from: string, ins?: { b: string; onClick: (e: MouseEvent) => void }): void {
+  const dot = handle as HTMLElement;   // an SVG arrow takes the same pointer events
   const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
   dot.addEventListener("click", stop);
   dot.addEventListener("mousedown", stop);   // Live Preview opens a code block for editing on a click inside it
@@ -148,9 +149,12 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
     let pointer = { x: down.clientX, y: down.clientY };
     let over: HTMLElement | null = null;
     let addBox: HTMLElement | null = null;
-    const source = ins ? dot : dot.parentElement;   // the + on an arrow is its own source; a card's dot is dragged from the card
-    if ((ins ? o.insertBetween : o.addAfter) && source) {
-      const spot = addBoxSpot(wrap, source, o.direction), p0 = at(spot.x, spot.y);
+    const source = ins ? null : dot.parentElement;   // a card's dot is dragged from the card; an arrow is grabbed where the pointer went down
+    const scroller = wrap.querySelector<HTMLElement>(".vt-map-scroll");
+    const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 };
+    if ((ins ? o.insertBetween : o.addAfter) && (ins || source)) {
+      const grab = { left: down.clientX, right: down.clientX, top: down.clientY, bottom: down.clientY, width: 0, height: 0 };
+      const spot = addBoxSpot(wrap, ins ? grab : source!.getBoundingClientRect(), source, o.direction), p0 = at(spot.x, spot.y);
       addBox = wrap.createDiv({ cls: "vt-map-addbox", text: ins ? "+ new here" : "+ add after this" });
       addBox.setCssProps({ "--vt-add-x": `${p0.x}px`, "--vt-add-y": `${p0.y}px`, "--vt-add-w": `${ADD_W}px`, "--vt-add-h": `${ADD_H}px` });
     }
@@ -159,9 +163,9 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       const t = dot.ownerDocument.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-plan-path]") ?? null;
       return t && t.dataset.planPath !== from && t.dataset.planPath !== ins?.b ? t : null;
     };
-    const scroller = wrap.querySelector<HTMLElement>(".vt-map-scroll");
-    const place = (): void => {   // the line runs from the dot (it moves when the map scrolls) to the pointer
-      const d = dot.getBoundingClientRect(), s = at(d.left + d.width / 2, d.top + d.height / 2), p = at(pointer.x, pointer.y);
+    const place = (): void => {   // the line runs from the dot (it moves when the map scrolls; a grabbed arrow's point moves with the scroll) to the pointer
+      const d = dot.getBoundingClientRect();
+      const s = ins ? at(down.clientX - ((scroller?.scrollLeft ?? 0) - scroll0.x), down.clientY - ((scroller?.scrollTop ?? 0) - scroll0.y)) : at(d.left + d.width / 2, d.top + d.height / 2), p = at(pointer.x, pointer.y);
       line.setAttr("x1", String(s.x)); line.setAttr("y1", String(s.y)); line.setAttr("x2", String(p.x)); line.setAttr("y2", String(p.y));
       const t = dot.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>("[data-plan-path]") ?? null;
       const target = t && t.dataset.planPath !== from && t.dataset.planPath !== ins?.b ? t : null;
@@ -181,7 +185,7 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
       if (!target || !to) {
         svg.remove();
-        if (e && ins && Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < 4) o.insertBetween?.(from, ins.b);   // a click on the +: the picker
+        if (e && ins && Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < 4) ins.onClick(e);   // a click on the arrow, not a drag: its menu
         return;
       }
       if (ins) {
@@ -424,9 +428,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (c.via) visible.addClass("vt-map-arrow-via");   // one class in `cls`: createSvg may refuse a class with a space, and a throw empties the whole block
       arrows.set(visible, c);
       if (c.via) continue;   // drawn to the parent card for a subtask's link: not a link of its own, so nothing to remove here
-      const hit = svg.createSvg("path", { cls: "vt-map-arrow-hit", attr: { d: c.d } });   // a wide invisible stroke to click on
-      hit.addEventListener("click", e => {
-        stopEvent(e);
+      const hit = svg.createSvg("path", { cls: "vt-map-arrow-hit", attr: { d: c.d } });   // a wide invisible stroke to click and drag on
+      const menu = (e: MouseEvent): void => {
         const m = new Menu();
         if (o.insertBetween) m.addItem(i => i.setTitle("Insert a to-do here…").setIcon("plus").onClick(() => o.insertBetween?.(c.from, c.to)));
         m.addItem(i => i.setTitle("Remove link").setIcon("unlink").onClick(() => {
@@ -434,20 +437,12 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
           unlink(o, c.from, c.to).catch(() => { visible.removeClass("vt-map-hidden"); hit.removeClass("vt-map-hidden"); new Notice("Could not remove that link."); });
         }));
         m.showAtMouseEvent(e);
-      });
+      };
+      hit.addEventListener("mouseenter", () => visible.addClass("vt-map-hl"));   // which arrow the pointer is on, when many cross
+      hit.addEventListener("mouseleave", () => visible.removeClass("vt-map-hl"));
       hit.addEventListener("mousedown", stopEvent);
-      if (o.insertBetween) {   // the + at the arrow's middle, shown while the pointer is on the arrow: drag it onto a to-do to put that one between the two
-        const mid = c.samples[Math.floor(c.samples.length / 2)];
-        const plus = canvas.createDiv({ cls: "vt-map-insert", text: "+", attr: { "aria-label": "Drag onto a to-do to put it between these two, or click to pick one" } });
-        plus.setCssProps({ "--vt-map-x": `${mid.x}px`, "--vt-map-y": `${mid.y}px` });
-        let hide = 0;
-        const show = (on: boolean): void => { window.clearTimeout(hide); if (on) plus.addClass("is-on"); else hide = window.setTimeout(() => plus.removeClass("is-on"), 200); };
-        hit.addEventListener("mouseenter", () => show(true));
-        hit.addEventListener("mouseleave", () => show(false));
-        plus.addEventListener("mouseenter", () => show(true));
-        plus.addEventListener("mouseleave", () => show(false));
-        dragLink(wrap, plan, o, plus, c.from, { b: c.to });
-      }
+      if (o.insertBetween) dragLink(wrap, plan, o, hit, c.from, { b: c.to, onClick: menu });   // drag from anywhere on the arrow onto a to-do to put it between the two; a click opens the menu
+      else hit.addEventListener("click", e => { stopEvent(e); menu(e); });
     }
     const cards = new Map<string, HTMLElement>();
     for (const c of map.cards) {

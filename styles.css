@@ -144,7 +144,7 @@
 .lab-header-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 .lab-header-muted { color: var(--text-muted); }
 .lab-header-back { text-decoration: none; }
-.lab-hazards > summary { cursor: pointer; }
+.lab-hazards > summary { cursor: grab; }
 
 /* Severity colours (same as the Dataview version). Chips and shaded name cells read data-level. */
 .lab-header .lab-hazard-chip { --lab-level: #CACFD9A6; }
@@ -302,13 +302,13 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px 8px 18px; cursor: pointer;   /* the left 14px is the drag strip (.vt-map-grip), reserved so the text does not move on hover */
   background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 10px; }
 .vt-map-card:hover { border-color: var(--interactive-accent); }
-.vt-map-tick { z-index: 2; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: pointer; }
+.vt-map-tick { z-index: 2; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: grab; }
 .vt-map-tick:hover { color: var(--interactive-accent); }
 .vt-map-done .vt-map-tick { color: var(--interactive-accent); }
 .vt-map-tick svg { width: 20px; height: 20px; }
 .vt-map-title { padding-right: 22px; font-weight: 600; line-height: 1.3; max-height: 2.6em; overflow: hidden; overflow-wrap: anywhere; }   /* up to two lines; the full name is the hover text */
 .vt-map-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: var(--font-ui-smaller); }
-.vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: pointer; }
+.vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: grab; }
 .vt-map-exp:hover .vt-map-exp-name { text-decoration: underline; }
 .vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-exp-missing { cursor: default; color: var(--text-faint); }
@@ -346,12 +346,10 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
 .vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }
 .vt-map-drag.vt-map-pending { stroke-dasharray: none; }
-.vt-map-insert { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); z-index: 3; width: 20px; height: 20px; margin: -10px 0 0 -10px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); color: var(--interactive-accent); font-weight: var(--font-semibold); line-height: 1; cursor: grab; opacity: 0; pointer-events: none; touch-action: none; }   /* the + on an arrow: shown while the pointer is on the arrow (desktop; a phone has the arrow's menu) */
-.vt-map-insert.is-on { opacity: 1; pointer-events: auto; }
 .vt-map-addbox { position: absolute; left: var(--vt-add-x); top: var(--vt-add-y); width: var(--vt-add-w); height: var(--vt-add-h); box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 6; border: 1.5px dashed var(--interactive-accent); border-radius: 10px; color: var(--interactive-accent); background: var(--background-primary); font-size: var(--font-ui-small); pointer-events: auto; }
 .vt-map-addbox.vt-map-drop { background: var(--background-modifier-hover); outline: 2px solid var(--interactive-accent); }
 .vt-map-card.vt-map-drop, .vt-map-tile.vt-map-drop { outline: 2px solid var(--interactive-accent); }
-.vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: grab; }
 .vt-map-hidden { display: none; }
 
 /* Plan map: dragging a whole card by its left strip to make it a subtask (src/planning/plan-map-render.ts, dragNest) */
@@ -372,7 +370,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-card.vt-map-nest-drop, .vt-map-tile.vt-map-nest-drop { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
 
 /* Plan map: subtasks (src/planning/plan-map-render.ts) */
-.vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 10px; color: var(--text-muted); cursor: pointer; }
+.vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 10px; color: var(--text-muted); cursor: grab; }
 .vt-map-subs-toggle:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-subs-toggle.vt-map-subsdone { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 .vt-map-subs { position: absolute; left: 0; top: 100%; margin-top: 4px; width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 8px; z-index: 6; cursor: default; }
@@ -385,9 +383,9 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-has-subs .vt-map-result { padding-right: 70px; }   /* the result stops before the subtask toggle at the bottom right */
 
 /* Plan map: top-to-bottom direction and the button that flips it (src/planning/plan-map-render.ts, blocks.ts) */
-.vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: grab; }
 .vt-map-dir:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
-.vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: grab; }
 .vt-map-zoom:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-slide { display: inline-flex; align-items: center; }
 .vt-plan-title.is-bar { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
@@ -397,7 +395,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-card .vt-map-warnmark { position: absolute; left: 20px; bottom: 7px; }
 .vt-map + .vt-map-issue { margin-top: 10px; }
 .vt-map-flag { outline: 2px solid var(--color-orange); outline-offset: 2px; }   /* the card or tile a hovered problem line is about */
-.vt-map-warnmark { cursor: pointer; }
+.vt-map-warnmark { cursor: grab; }
 .vt-map-pop { position: absolute; left: var(--vt-pop-x); top: var(--vt-pop-y); z-index: 9; max-width: 460px; box-sizing: border-box; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 8px; box-shadow: var(--shadow-s); cursor: default; }
 .vt-map + .vt-map-issues-head { margin-top: 10px; }
 .vt-map-issues-head .vt-map-warnmark { cursor: default; }
