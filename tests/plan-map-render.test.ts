@@ -26,7 +26,7 @@ const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
 const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
 const draw = (todos: NoteRec[], direction: "across" | "down") => {
   const plan = readPlan(todos, hub), box = new El("div");
-  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), redraw() { /* nothing */ } });
+  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ } });
   return box;
 };
 // A, B after A, C (a subtask of A) with D after C, a lone to-do with its own subtask.
@@ -61,37 +61,46 @@ describe("drawPlanMap", () => {
     expect(open.querySelectorAll(".vt-map-subsopen")).toHaveLength(0);
   });
 
-  it("a to-do with a problem gets a warning mark; the problems under the map have the fix buttons, and a fix clears just that link and is a history step", async () => {
+  it("problems: a ⚠ on the to-do, the list behind one row until opened, outlines both ways, a fix says what it does and is a history step", async () => {
     const { drawProblems } = await import("../src/planning/plan-map-render");
     const fms: Record<string, Record<string, unknown>> = { [T + "A.md"]: { kind: "todo", project: "[[Alpha]]", after: ["[[Ghost]]", "[[B]]"] }, [T + "B.md"]: { kind: "todo", project: "[[Alpha]]" }, [T + "L.md"]: { kind: "todo", project: "[[Alpha]]", sub: "[[Ghost]]" } };
     const plan = readPlan(Object.entries(fms).map(([p, fm]) => note(p, fm)), hub);
     const history = new PlanHistory();
     const app = { vault: { getFileByPath: (p: string) => (p in fms ? { path: p } : null) }, fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); } } } as never;
-    const o = { app, sourcePath: hub.path, expanded: new Set<string>(), direction: "across" as const, zoom: 1, history, redraw() { /* nothing */ } };
-    const box = new El("div");
-    drawPlanMap(box, plan, layoutPlan(plan), o);
-    drawProblems(box, plan, o);
-    expect(box.querySelectorAll(".vt-map-warnmark")).toHaveLength(2);   // A (a card) and L (a tile)
+    let opened = false;
+    const o = { app, sourcePath: hub.path, expanded: new Set<string>(), direction: "across" as const, zoom: 1, history, get problemsOpen() { return opened; }, showProblems: (v: boolean) => { opened = v; }, redraw() { /* nothing */ } };
+    const build = () => { const b = new El("div"); drawPlanMap(b, plan, layoutPlan(plan), o); drawProblems(b, plan, o); return b; };
+    type E = { hasClass(c: string): boolean; dispatch(t: string): void; getAttribute(k: string): string | undefined; querySelectorAll(s: string): E[]; parent: E; textContent: string };
+    let box = build() as unknown as E;
+    expect(box.querySelectorAll(".vt-map-issues-head")[0].textContent).toBe("2 problems in this planShow");
+    expect(box.querySelectorAll(".vt-map-issue")).toHaveLength(0);   // hidden until opened
+    box.querySelectorAll(".vt-map-issues-head button")[0].dispatch("click");
+    expect(opened).toBe(true);
+    box = build() as unknown as E;
     const lines = box.querySelectorAll(".vt-map-issue");
-    expect(lines.map((l: { textContent: string }) => l.textContent)).toEqual([
-      '"A": its after names "Ghost", but no such to-do is in this project.Remove this linkOpen note',
-      '"L": its sub names "Ghost", but no such to-do is in this project, so it shows as a plain to-do.Clear subOpen note']);
-    const card = box.querySelectorAll(".vt-map-card")[0], marked = box.querySelectorAll(".vt-map-warn");   // hover a problem line: its card or tile is marked
-    lines[0].dispatch("mouseenter");
-    expect(marked.filter((m: { hasClass(c: string): boolean }) => m.hasClass("vt-map-flag")).length).toBe(1);
+    expect(lines.map(l => l.textContent)).toEqual([
+      '"A" is set to come after "Ghost", but there is no to-do called "Ghost" in this project.Remove the link to "Ghost"Open note',
+      '"L" is set as a subtask of "Ghost", but there is no to-do with that name in this project, so it shows as a normal to-do.Make it a normal to-doOpen note']);
+    expect(lines[0].querySelectorAll("button")[0].getAttribute("aria-label")).toBe('Removes "Ghost" from the "comes after" list of "A". Its other links stay.');
+    const flaggedCards = (): number => [...box.querySelectorAll(".vt-map-card"), ...box.querySelectorAll(".vt-map-tile")].filter(c => c.hasClass("vt-map-flag")).length;
+    lines[0].dispatch("mouseenter");   // a line -> its card
+    expect(flaggedCards()).toBe(1);
     lines[0].dispatch("mouseleave");
-    expect(box.querySelectorAll(".vt-map-flag")).toHaveLength(0);
-    expect(card).toBeDefined();
-    const mark = box.querySelectorAll(".vt-map-warnmark")[0];   // click the ⚠: a box with the sentence and the buttons
-    mark.dispatch("click");
+    expect(flaggedCards()).toBe(0);
+    const cardMark = box.querySelectorAll(".vt-map-warnmark").find(m => m.parent.hasClass("vt-map-card"))!;
+    expect(cardMark.getAttribute("title")).toBeUndefined();   // one tooltip (aria-label), not two
+    cardMark.dispatch("mouseenter");   // a card's ⚠ -> its line
+    expect(lines.filter(l => l.hasClass("vt-map-flag"))).toHaveLength(1);
+    cardMark.dispatch("mouseleave");
+    expect(lines.filter(l => l.hasClass("vt-map-flag"))).toHaveLength(0);
+    cardMark.dispatch("click");   // click the ⚠: a box with the sentence and the buttons
     expect(box.querySelectorAll(".vt-map-pop .vt-map-issue")).toHaveLength(1);
-    expect(box.querySelector(".vt-map-pop").textContent).toContain("Remove this link");
-    mark.dispatch("click");
+    cardMark.dispatch("click");
     expect(box.querySelectorAll(".vt-map-pop")).toHaveLength(1);   // one box at a time
     lines[0].querySelectorAll("button")[0].dispatch("click");
     await new Promise(r => setTimeout(r, 10));
     expect(fms[T + "A.md"].after).toBe("[[B]]");
-    expect(history.peek("undo")?.label).toBe("Remove this link");
+    expect(history.peek("undo")?.label).toBe('Remove the link to "Ghost"');
     lines[1].querySelectorAll("button")[0].dispatch("click");
     await new Promise(r => setTimeout(r, 10));
     expect("sub" in fms[T + "L.md"]).toBe(false);

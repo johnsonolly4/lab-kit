@@ -21,6 +21,10 @@ export interface MapOptions {
   zoom?: number;
   /** The note's Undo / Redo steps (kept by the block's owner, so a redraw or a switch of view keeps them). */
   history: PlanHistory;
+  /** The problems list under the map is open (it is hidden until opened, or until something is refused because of a problem). */
+  problemsOpen: boolean;
+  /** Opens or closes the problems list and draws the map again. */
+  showProblems: (open: boolean) => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -162,7 +166,7 @@ function nestNo(verdict: Exclude<NestVerdict, "ok">, plan: Plan, parent: string)
     case "already": return "Already a subtask of that to-do.";
     case "has-subs": return "That to-do has subtasks of its own: subtasks go one level only.";
     case "parent-is-sub": return `"${name}" is itself a subtask: subtasks go one level only. Drop it on "${plan.rows.find(r => r.path === p?.parent)?.name ?? "its parent"}" instead.`;
-    case "parent-bad-sub": return `"${name}" has a subtask setting that does not work${via ? ` (it names "${via}", which is itself a subtask)` : ""}, so it cannot take subtasks yet. Open it and clear its sub property, then try again.`;
+    case "parent-bad-sub": return `"${name}" is set as a subtask of ${via ? `"${via}"` : "another to-do"}, which is itself a subtask, so it cannot take subtasks until that is fixed. The problems list is open below: use "Make it a normal to-do" on "${name}", then try again.`;
   }
 }
 
@@ -217,7 +221,7 @@ function dragNest(wrap: HTMLElement, plan: Plan, o: MapOptions, grip: HTMLElemen
       if (!e) return;
       if (!dragged) { open(o, from, Keymap.isModEvent(e)); return; }
       const act = nestAction(plan, from, target?.dataset.planPath ?? null, inside && !target);
-      if (act.do === "refuse") new Notice(nestNo(act.verdict, plan, target?.dataset.planPath ?? ""), 10000);
+      if (act.do === "refuse") { new Notice(nestNo(act.verdict, plan, target?.dataset.planPath ?? ""), 10000); if (act.verdict === "parent-bad-sub") o.showProblems(true); }
       else if (act.do === "nest" || act.do === "clear") nest(o, plan, from, act.do === "nest" ? act.to : null).catch(() => { new Notice("Could not change that to-do."); });
     };
     grip.addEventListener("pointermove", e => {
@@ -281,20 +285,29 @@ function tickButton(el: HTMLElement, r: PlanRow, o: MapOptions, card: boolean): 
 /** One problem as a line: the plain sentence, a button for each fix, and one to open the note (or each note). */
 function issueLine(parent: HTMLElement, plan: Plan, o: MapOptions, is: PlanIssue): HTMLElement {
   const line = parent.createDiv({ cls: "vt-map-issue" });
+  line.dataset.issue = String(plan.issues.indexOf(is));   // the ⚠ of its card or tile finds the line by this
   line.createSpan({ cls: "vt-muted", text: is.text });
   const bar = line.createSpan({ cls: "vt-map-issue-btns" });
-  const button = (text: string, run: (e: MouseEvent, b: HTMLButtonElement) => void): void => {
-    const b = bar.createEl("button", { cls: "vt-map-dir vt-map-fix", text });
+  const button = (text: string, hint: string, run: (e: MouseEvent, b: HTMLButtonElement) => void): void => {
+    const b = bar.createEl("button", { cls: "vt-map-dir vt-map-fix", text, attr: { "aria-label": hint } });
     b.addEventListener("mousedown", stopEvent);
     b.addEventListener("click", e => { stopEvent(e); run(e, b); });
   };
-  for (const f of is.fixes) button(f.label, (_e, b) => { b.disabled = true; fixIssue(o, f).catch(() => { b.disabled = false; new Notice("Could not fix that."); }); });
-  for (const p of is.paths.slice(0, 3)) button(is.paths.length > 1 ? `Open ${plan.rows.find(x => x.path === p)?.name ?? "note"}` : "Open note", e => { open(o, p, Keymap.isModEvent(e)); });
+  for (const f of is.fixes) button(f.label, f.does, (_e, b) => { b.disabled = true; fixIssue(o, f).catch(() => { b.disabled = false; new Notice("Could not fix that."); }); });
+  for (const p of is.paths.slice(0, 3)) button(is.paths.length > 1 ? `Open "${plan.rows.find(x => x.path === p)?.name ?? "note"}"` : "Open note", "Opens the note so you can look at it", e => { open(o, p, Keymap.isModEvent(e)); });
   return line;
 }
 
-/** The problems under the map. Hovering one marks the card or tile it is about. */
+/** The problems under the map: one row ("3 problems", Show / Hide) until it is opened; open, one line each. Hovering a line marks the card or tile it is about. */
 export function drawProblems(box: HTMLElement, plan: Plan, o: MapOptions): void {
+  if (!plan.issues.length) return;
+  const head = box.createDiv({ cls: "vt-map-issues-head" });
+  setIcon(head.createSpan({ cls: "vt-map-warnmark" }), "alert-triangle");
+  head.createSpan({ cls: "vt-muted", text: `${plan.issues.length} ${plan.issues.length === 1 ? "problem" : "problems"} in this plan` });
+  const toggle = head.createEl("button", { cls: "vt-map-dir vt-map-fix", text: o.problemsOpen ? "Hide" : "Show" });
+  toggle.addEventListener("mousedown", stopEvent);
+  toggle.addEventListener("click", e => { stopEvent(e); o.showProblems(!o.problemsOpen); });
+  if (!o.problemsOpen) return;
   const mark = (is: PlanIssue, on: boolean): void => { box.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (is.paths.includes(el.dataset.planPath ?? "")) el.toggleClass("vt-map-flag", on); }); };
   for (const is of plan.issues) {
     const line = issueLine(box, plan, o, is);
@@ -318,11 +331,14 @@ function issuePopup(wrap: HTMLElement, anchor: HTMLElement, plan: Plan, o: MapOp
 }
 
 /** A ⚠ on a card or tile whose note has problems: hover for what, click for the fixes. */
-function warnMark(wrap: HTMLElement, el: HTMLElement, plan: Plan, o: MapOptions, issues: PlanIssue[] | undefined): void {
+function warnMark(box: HTMLElement, wrap: HTMLElement, el: HTMLElement, plan: Plan, o: MapOptions, issues: PlanIssue[] | undefined): void {
   if (!issues?.length) return;
   el.addClass("vt-map-warn");
   const text = issues.map(i => i.text).join("\n");
-  const mark = el.createDiv({ cls: "vt-map-warnmark", attr: { "aria-label": text, title: text } });
+  const mark = el.createDiv({ cls: "vt-map-warnmark", attr: { "aria-label": text } });   // Obsidian's tooltip only: a `title` too would show a second one
+  const lines = (on: boolean): void => { box.querySelectorAll<HTMLElement>("[data-issue]").forEach(l => { if (issues.some(i => String(plan.issues.indexOf(i)) === l.dataset.issue)) l.toggleClass("vt-map-flag", on); }); };
+  mark.addEventListener("mouseenter", () => lines(true));   // and its problem lines light up, as the card does when a line is hovered
+  mark.addEventListener("mouseleave", () => lines(false));
   setIcon(mark, "alert-triangle");
   mark.addEventListener("mousedown", stopEvent);
   mark.addEventListener("click", e => { stopEvent(e); issuePopup(wrap, mark, plan, o, issues); });
@@ -331,7 +347,7 @@ function warnMark(wrap: HTMLElement, el: HTMLElement, plan: Plan, o: MapOptions,
 /** Clears the property a fix names (for `after`: only the one dead link); one step in Undo / Redo, and a notice with Undo. */
 async function fixIssue(o: MapOptions, f: PlanFix): Promise<void> {
   const step = await recordChange(o.app, o.history, f.path, f.key, f.label, f.key === "after" ? v => removeItem(v, f.target ?? "") : () => undefined);
-  undoNotice(`${f.label}: done.`, () => runHistory(o.app, o.history, "undo", step));
+  undoNotice(f.done, () => runHistory(o.app, o.history, "undo", step));
 }
 
 /** The map and the unlinked tiles inside `box`. The scroll box carries `data-start-scroll`: where to scroll once it is in the page. */
@@ -375,7 +391,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
       tickButton(el, r, o, true);
-      warnMark(wrap, el, plan, o, flagged.get(c.path));
+      warnMark(box, wrap, el, plan, o, flagged.get(c.path));
       el.createDiv({ cls: "vt-map-title", text: r.name });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
@@ -422,7 +438,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       dragNest(wrap, plan, o, tile.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), r.path, tile);
       dragLink(wrap, plan, o, tile.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), r.path);
       tile.createDiv({ cls: "vt-map-tile-title", text: r.name });
-      warnMark(wrap, tile, plan, o, flagged.get(r.path));
+      warnMark(box, wrap, tile, plan, o, flagged.get(r.path));
       subsToggle(tile, r, o);
       tickButton(tile, r, o, false);
       if (o.expanded.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });

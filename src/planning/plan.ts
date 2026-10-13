@@ -31,7 +31,15 @@ export interface PlanRow {
   experiment: { name: string; path: string; status: string } | null;
 }
 /** A one-click fix for an issue: clear `key` on the to-do `path` (`after`: only the item that names `target`). */
-export interface PlanFix { path: string; key: "sub" | "after" | "experiment"; target?: string; label: string }
+export interface PlanFix {
+  path: string; key: "sub" | "after" | "experiment"; target?: string;
+  /** The button: what it does, in a few words. */
+  label: string;
+  /** Its hover text: exactly what is changed. */
+  does: string;
+  /** The notice after it ran. */
+  done: string;
+}
 /** Something wrong in the notes: the to-dos it is about (marked on the map), a plain sentence (what is wrong and what it means), and the fixes the map can offer. */
 export interface PlanIssue { paths: string[]; text: string; fixes: PlanFix[] }
 export interface Plan { rows: PlanRow[]; problems: string[]; issues: PlanIssue[] }
@@ -54,6 +62,9 @@ const afterItems = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).map(i 
 
 const byPathRow = (rows: PlanRow[], path: string): PlanRow | undefined => rows.find(r => r.path === path);
 
+/** The fix for a `sub` that does not work: removes it, so the to-do is an ordinary one. `named`: the button names the to-do (when two buttons stand side by side). */
+const unsub = (n: NoteRec, named = false): PlanFix => ({ path: n.path, key: "sub", label: named ? `Make "${n.name}" a normal to-do` : "Make it a normal to-do", does: `Removes the subtask setting from "${n.name}", so it becomes an ordinary to-do. Its other settings stay.`, done: `"${n.name}" is a normal to-do now.` });
+
 /** The plan of `hub`: every to-do of the project (finished ones too). Parents come before their children; ties go by `order` (empty last), then by path.
  *  `labNotes`: the lab notes, for the `experiment` link; left out (lab folder not set), nothing is looked up and no message is written. */
 export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): Plan {
@@ -66,8 +77,8 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     const found: NoteRec[] = [];
     for (const target of afterItems(t.fm.after)) {
       const p = mine.find(m => m.path.replace(/\.md$/, "") === target || m.name === target.slice(target.lastIndexOf("/") + 1));
-      if (!p) issue([t.path], `"${t.name}": its after names "${target}", but no such to-do is in this project.`, [{ path: t.path, key: "after", target, label: "Remove this link" }]);
-      else if (p === t) issue([t.path], `"${t.name}": its after names itself.`);
+      if (!p) issue([t.path], `"${t.name}" is set to come after "${target}", but there is no to-do called "${target}" in this project.`, [{ path: t.path, key: "after", target, label: `Remove the link to "${target}"`, does: `Removes "${target}" from the "comes after" list of "${t.name}". Its other links stay.`, done: `Removed the link to "${target}".` }]);
+      else if (p === t) issue([t.path], `"${t.name}" is set to come after itself.`);
       else if (!found.includes(p)) found.push(p);
     }
     parents.set(t.path, found);
@@ -79,16 +90,15 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     const target = afterItems(t.fm.sub)[0];
     if (!target) continue;
     const p = mine.find(m => match(m, target));
-    const clear = (n: NoteRec, label = "Clear sub"): PlanFix => ({ path: n.path, key: "sub", label });
-    if (!p) issue([t.path], `"${t.name}": its sub names "${target}", but no such to-do is in this project, so it shows as a plain to-do.`, [clear(t)]);
-    else if (p === t) issue([t.path], `"${t.name}": its sub names itself, so it shows as a plain to-do.`, [clear(t)]);
+    if (!p) issue([t.path], `"${t.name}" is set as a subtask of "${target}", but there is no to-do with that name in this project, so it shows as a normal to-do.`, [unsub(t)]);
+    else if (p === t) issue([t.path], `"${t.name}" is set as a subtask of itself, so it shows as a normal to-do.`, [unsub(t)]);
     else wanted.set(t, p);
   }
   const parentOf = new Map<NoteRec, NoteRec>();
   for (const [t, p] of wanted) {
     if (!wanted.has(p)) { parentOf.set(t, p); continue; }
-    if (wanted.get(p) === t) { if (t.path < p.path) issue([t.path, p.path], `"${t.name}" and "${p.name}" name each other as their parent, so both show as plain to-dos.`, [{ path: t.path, key: "sub", label: `Clear sub of ${t.name}` }, { path: p.path, key: "sub", label: `Clear sub of ${p.name}` }]); }
-    else issue([t.path], `"${t.name}": its sub names "${p.name}", which is itself a subtask. Subtasks go one level only, so "${t.name}" shows as a plain to-do.`, [{ path: t.path, key: "sub", label: "Clear sub" }]);
+    if (wanted.get(p) === t) { if (t.path < p.path) issue([t.path, p.path], `"${t.name}" and "${p.name}" are each set as a subtask of the other, so both show as normal to-dos.`, [unsub(t, true), unsub(p, true)]); }
+    else issue([t.path], `"${t.name}" is set as a subtask of "${p.name}", but "${p.name}" is itself a subtask and subtasks can only go one level deep, so "${t.name}" shows as a normal to-do.`, [unsub(t)]);
   }
   const orderOfNote = (t: NoteRec): number => orderOf(t.fm.order) ?? Infinity;
   const byOrder = (a: NoteRec, b: NoteRec): number => (orderOfNote(a) === orderOfNote(b) ? 0 : orderOfNote(a) < orderOfNote(b) ? -1 : 1) || a.path.localeCompare(b.path);
@@ -103,7 +113,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     left = left.filter(t => t !== next);
   }
   if (left.length) {
-    issue(left.map(t => t.path), `These to-dos wait on each other in a circle: ${left.map(t => `"${t.name}"`).join(", ")}. Open one and remove its after link.`);
+    issue(left.map(t => t.path), `These to-dos each wait for another one in the list, so none of them can start: ${left.map(t => `"${t.name}"`).join(", ")}. Open one and remove a "comes after" link.`);
     placed.push(...left);
   }
   const finished = (n: NoteRec): boolean => isFinished({ done: n.fm.done, day: n.fm.day });
@@ -127,7 +137,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     if (target) {
       const lab = labNotes!.find(n => n.path.replace(/\.md$/, "") === target || n.name === target.slice(target.lastIndexOf("/") + 1));
       experiment = lab ? { name: lab.name, path: lab.path, status: text(lab.fm.Status) } : { name: target, path: "", status: "" };
-      if (!lab) issue([t.path], `"${t.name}": its experiment names "${target}", but no such lab note was found.`, [{ path: t.path, key: "experiment", label: "Clear experiment" }]);
+      if (!lab) issue([t.path], `"${t.name}" is linked to the experiment "${target}", but no lab note with that name was found.`, [{ path: t.path, key: "experiment", label: "Remove the experiment link", does: `Removes the experiment link from "${t.name}". The lab note "${target}" was not found, so nothing else changes.`, done: `Removed the experiment link from "${t.name}".` }]);
     }
     return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subOf: wanted.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
       order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
@@ -135,7 +145,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
   for (const r of rows) {   // ticked on the board, in the note or on the map without ticking the subtasks
     const open = r.subs.filter(s => !s.done).length;
-    if (r.done && open) issue([r.path], `"${r.name}" is finished but ${open === r.subs.length && open === 1 ? "its subtask is" : open === 1 ? "1 of its subtasks is" : `${open} of its subtasks are`} open.`);
+    if (r.done && open) issue([r.path], `"${r.name}" is ticked, but ${open === r.subs.length && open === 1 ? "its subtask is" : open === 1 ? "1 of its subtasks is" : `${open} of its subtasks are`} not done yet.`);
   }
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
   const byPath = new Map(rows.map(r => [r.path, r]));
@@ -143,7 +153,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     if (r.done || !r.due) continue;
     for (const pp of r.afterPaths) {
       const p = byPath.get(pp)!;
-      if (!p.done && p.due && r.due < p.due) issue([r.path], `"${r.name}" is due ${r.due}, before "${p.name}" (${p.due}), which it comes after.`);
+      if (!p.done && p.due && r.due < p.due) issue([r.path], `"${r.name}" is due ${r.due}, earlier than "${p.name}" (${p.due}), which it comes after.`);
     }
   }
   return { rows, problems, issues };

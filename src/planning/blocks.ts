@@ -62,6 +62,7 @@ class BlockView extends MarkdownRenderChild {
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
+  private problemsOpen = false;   // the plan map's problems list: hidden until opened
   private zoom = 1;   // the plan map's zoom buttons; not saved
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
@@ -353,7 +354,7 @@ class BlockView extends MarkdownRenderChild {
         const history = this.owner.historyFor(this.sourcePath);
         for (const side of ["undo", "redo"] as const) {   // the last 20 changes made on the map; the buttons follow the steps that are left
           const step = history.peek(side), what = side === "undo" ? "Undo" : "Redo";
-          const btn = title.createEl("button", { cls: "vt-map-zoom vt-map-slide vt-map-history", attr: { "aria-label": what, title: step ? `${what}: ${step.label}` : `Nothing to ${what.toLowerCase()}` } });
+          const btn = title.createEl("button", { cls: "vt-map-zoom vt-map-slide vt-map-history", attr: { "aria-label": step ? `${what}: ${step.label}` : `Nothing to ${what.toLowerCase()}` } });
           setIcon(btn, side === "undo" ? "undo-2" : "redo-2");
           btn.toggleClass("vt-map-off", !step);
           btn.addEventListener("mousedown", stop);
@@ -365,7 +366,7 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, redraw: () => this.draw() };
+        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw() };
         drawPlanMap(box, plan, map, mapOptions);
         drawProblems(box, plan, mapOptions);
         return;
