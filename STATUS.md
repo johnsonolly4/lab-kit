@@ -18,7 +18,6 @@ R0. PLANNED 2026-10-12 (`docs/plans/project-plan-priority.md`, 6 phases: Priorit
 8. Sample creation workflow: its own session, with a real example (BACKLOG "Decisions needed")
 
 ## Running: none
-
 ## Waiting on owner (needs a human)
 - [ ] Try Codes from (checklist 6i, last row) after Review update… for the six snippets and the scripts; read `docs/snippet-syntax.md` and say if anything is unclear — by 2026-10-13
 - [ ] Try the new Check setup row "Meta Bind buttons that differ from the kit" (checklist 6i, last row); say if it is red on a vault where nothing was changed — by 2026-10-13
