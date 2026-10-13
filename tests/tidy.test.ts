@@ -50,6 +50,12 @@ describe("Tidy up notes scan (Phase 7a)", () => {
     expect(g?.changes[4]).toMatchObject({ before: "" });
   });
 
+  it("a lab note with a Cloned from property (written only by Clone experiment, like Rig) and the template's properties is left alone", () => {
+    const full = 'Type:\nStatus: Planned\nExp. Class:\nPlan date:\nExp. Start:\nExp. End:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:\nCloned from: "[[ABC0001 - A]]"\nRig: "[[Rig one]]"';
+    const r = scan([{ path: "03 Lab Book/Notes/ABC0002 - A.md", text: `---\n${full}\n---\n` }], ctx);
+    expect(r.groups).toEqual([]);
+  });
+
   it("Phase 7b: moves: a folder and a file's folder, only when they exist and the new place is free", () => {
     expect(group(s, "move-folders")?.changes).toEqual([
       { path: "Extras/Templates/Scripts", before: "", after: "", to: "Extras/Templates/Actions", note: "1 file" },
