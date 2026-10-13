@@ -15,16 +15,16 @@ These are suggestions. Nothing is set until you do it: by hand (see the end of t
 
 | Keys | Does | Command to pick in Settings → Hotkeys |
 |---|---|---|
-| `Alt+H` | Homepage | Notebook Navigator: open the homepage |
+| `Alt+H` | Homepage | Notebook Navigator: Open homepage |
 | `Alt+D` | Today's note | Daily notes: Open today's daily note |
 | `Alt+F` | Search | Omnisearch: Vault search |
-| `Alt+Z` | Open a paper's note | ZotLit: open the literature note |
+| `Alt+Z` | Open a paper's note | ZotLit: Open literature note quick switcher |
 | `Alt+N` | Quick note into the inbox | Lab Kit: Quick capture |
 | `Alt+T` | New to-do | Lab Kit: New to-do |
 | `Alt+L` | New lab entry | Lab Kit: New lab entry |
 | `Alt+U` | Update this paper's highlights | ZotLit: Update literature note |
-| `Alt+C` | Insert a citation | ZotLit: insert citation |
-| `Alt+S` | Insert a lab snippet | Templater: Insert snippet.md (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
+| `Alt+C` | Insert a citation | ZotLit: Insert Markdown citation |
+| `Alt+S` | Insert a lab snippet | Templater: Insert snippet (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
 | `Alt+M` | New meeting note | Lab Kit: New meeting |
 | `Alt+P` | New note in a project | Lab Kit: New project note |
 | `Alt+K` | New knowledge note | Lab Kit: New concept |

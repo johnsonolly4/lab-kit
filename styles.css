@@ -61,7 +61,7 @@
 .cm-lab-kit-cell-5 { background-color: rgba(var(--lab-kit-ref-5), 0.22); border-radius: 3px; }
 /* The cell input over a copy of its text: the copy shows the colours, the input's own text is hidden while a formula is typed */
 .lab-kit-input-wrap { position: relative; }
-.lab-kit-input-hl { position: absolute; top: 0; bottom: 0; left: var(--lab-kit-hl-l, 9px); right: var(--lab-kit-hl-r, 9px); padding: 2px 0; border: solid transparent; border-width: var(--input-border-width, 1px) 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+.lab-kit-input-hl { position: absolute; top: 0; bottom: 0; left: var(--lab-kit-hl-l, 9px); right: var(--lab-kit-hl-r, 9px); padding: 2px 0; border: solid transparent; border-width: var(--input-border-width, 1px) 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
 /* The copy is clipped to the input's content box (--lab-kit-hl-l / -r, measured in src/calc/render.ts copyBox) and its text shifted by the input's scroll: Obsidian's own input padding beats .lab-kit-input, and a scrolled div stops short of a scrolled input, so the caret drifted */
 .lab-kit-input-hl-text { display: inline-block; transform: translateX(calc(-1 * var(--lab-kit-hl-x, 0px))); }
 .lab-kit-input-wrap:not(.is-hl) .lab-kit-input-hl { display: none; }
@@ -77,7 +77,7 @@
   width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
 }
 .lab-kit-input-wrap .lab-kit-input, .lab-kit-input-wrap .lab-kit-input-hl { font: inherit; font-size: inherit; line-height: inherit; letter-spacing: normal; }
-.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; padding: 2px 4px; }
+.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; padding: 2px 4px; }
 /* Chemical suggestions: the matched alias, after the note name */
 .lab-kit-suggest-alias { margin-left: 0.6em; color: var(--text-muted); font-size: 0.85em; }
 
@@ -245,8 +245,7 @@
 .lab-kit-tidy-line.is-changed { background: rgba(var(--color-orange-rgb), 0.25); }
 .lab-kit-tidy-fold { grid-column: 1 / -1; height: auto; padding: 1px 4px; justify-content: flex-start; font: inherit; color: var(--text-faint); background: var(--background-secondary); border: none; border-radius: 0; box-shadow: none; cursor: var(--cursor); }
 .lab-kit-tidy-fold:hover, .lab-kit-tidy-fold:focus-visible { color: var(--text-normal); background: var(--background-modifier-hover); box-shadow: none; }
-.lab-kit-tidy-more { display: none; }
-.lab-kit-tidy-more.is-open { display: contents; }
+.lab-kit-tidy-line.is-folded { display: none; }
 .lab-kit-tidy-notes { margin: 6px 0 0 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
 .lab-kit-tidy-notes > .lab-kit-tidy-path { margin-top: 4px; }
 .lab-kit-tidy-weeks { width: 4.5em; }
@@ -389,7 +388,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
 .vt-map-zoom:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-slide { display: inline-flex; align-items: center; }
-.vt-plan-title:has(> .vt-map-dir) { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
+.vt-plan-title.is-bar { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
 .vt-map-slide svg { width: 14px; height: 14px; }
 .vt-map-warnmark { flex: none; display: inline-flex; color: var(--color-orange); }
 .vt-map-warnmark svg { width: 15px; height: 15px; }

@@ -274,18 +274,21 @@ export class TidyNotesModal extends Modal {
     const grid = el.createDiv({ cls: "lab-kit-tidy-diff" });
     grid.createDiv({ cls: "lab-kit-tidy-head", text: "Before" });
     grid.createDiv({ cls: "lab-kit-tidy-head", text: "After" });
-    const draw = (into: HTMLElement, row: DiffRow): void => {
+    const draw = (into: HTMLElement, row: DiffRow, folded?: HTMLElement[]): void => {
       const cls = row.kind === "changed" ? "is-changed" : row.kind === "same" ? "is-same" : null;
-      const cell = (text: string | null, side: "removed" | "added"): void => { into.createDiv({ cls: `lab-kit-tidy-line ${text === null ? "is-empty" : cls ?? `is-${side}`}`, text: text ?? "" }); };
+      const cell = (text: string | null, side: "removed" | "added"): void => {
+        const el = into.createDiv({ cls: `lab-kit-tidy-line ${text === null ? "is-empty" : cls ?? `is-${side}`}`, text: text ?? "" });
+        if (folded) { el.addClass("is-folded"); folded.push(el); }
+      };
       cell(row.left, "removed");
       cell(row.right, "added");
     };
     for (const row of foldRows(diffRows(c.before, c.after))) {
       if (row.kind !== "fold") { draw(grid, row); continue; }
       const open = grid.createEl("button", { cls: "lab-kit-tidy-fold", text: `… ${row.rows.length} unchanged lines` });
-      const more = grid.createDiv({ cls: "lab-kit-tidy-more" });
-      for (const r of row.rows) draw(more, r);
-      open.addEventListener("click", () => { more.addClass("is-open"); open.remove(); });
+      const folded: HTMLElement[] = [];
+      for (const r of row.rows) draw(grid, r, folded);
+      open.addEventListener("click", () => { for (const el of folded) el.removeClass("is-folded"); open.remove(); });
     }
   }
 

@@ -340,7 +340,7 @@ class BlockView extends MarkdownRenderChild {
         if (!hasPlan(plan)) return;
         box.addClass("vt-plan");
         const direction = this.direction ?? kit.planDirection;
-        const title = box.createDiv({ cls: "vt-plan-title", text: "Plan" });
+        const title = box.createDiv({ cls: "vt-plan-title is-bar", text: "Plan" });
         const flip = title.createEl("button", { cls: "vt-map-dir", text: direction === "down" ? "\u21c5" : "\u21c4", attr: { "aria-label": "Flip the map direction", title: direction === "down" ? "Top to bottom: click for left to right" : "Left to right: click for top to bottom" } });
         const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
         flip.addEventListener("mousedown", stop);
