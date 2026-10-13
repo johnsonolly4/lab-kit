@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Fix: Insert did nothing in every Alt+S form** (kit script `labForm.js`; found by the user in Obsidian, fix not yet seen there): pressing Insert threw "rows is not defined" since the mandatory-field change, so no snippet could be inserted. The rows are now kept on the form. Review update… brings the fixed script.
 - **Check hotkeys finds the commands under the names Obsidian shows** (plugin code, planning kit note; not seen in Obsidian): the Hotkeys note and Check hotkeys now name `Notebook Navigator: Open homepage`, `ZotLit: Open literature note quick switcher`, `ZotLit: Insert Markdown citation` and `Templater: Insert snippet` (Templater lists it with its folder and without `.md`). Before, those four rows said "No command with this name" although their keys were set. Review update… offers the new Hotkeys note.
 - **Three CSS warnings from the Obsidian check removed** (plugin code; not seen in Obsidian): the Tidy window's folded lines, the Plan map's title bar and the calc cell input no longer use `display: contents`, `:has` or `text-indent`. Nothing should look different.
 - **Review update… matches Manage kit files** (plugin code; not seen in Obsidian): each row's title is the file's path (the grey monospace path line is gone), the group headings (Conflict, Updated, …) are quieter section labels you can still fold, and Tick all / Untick all are two plain buttons on one line instead of a settings row. No wording or button does anything different.
