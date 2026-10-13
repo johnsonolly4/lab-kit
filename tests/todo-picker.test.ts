@@ -102,7 +102,10 @@ describe("addAfterFlow", () => {
     expect(history.size("undo")).toBe(0);
     picked.queue.push({ index: 1 }, { value: true });
     await addAfterFlow(env, P("A"));
-    expect(f[P("X")]).toEqual({ kind: "todo", project: '"[[Alpha]]"', after: "[[A]]" });
+    expect(f[P("X")]).toEqual({ kind: "todo", project: "[[Alpha]]", after: "[[A]]" });   // the link itself: Obsidian adds the quotes when it writes the file
+    const after = readPlan(Object.entries(f).map(([p, fm]) => note(p, fm)), hub);   // the moved to-do must be read back as one of this project's
+    expect(after.rows.map(r => r.name)).toContain("X");
+    expect(after.rows.find(r => r.name === "X")?.after).toEqual(["A"]);
     expect(history.size("undo")).toBe(2);
     expect(history.peek("undo")?.group).toBe(history.withGroup("undo", history.peek("undo")!)[0].group);
     expect(history.withGroup("undo", history.peek("undo")!)).toHaveLength(2);

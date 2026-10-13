@@ -41,7 +41,7 @@ export async function addAfterFlow(env: AddAfterEnv, from: string): Promise<void
   }
   const g = ++group, text = linkText(app, from, it.path);
   const step = await recordChange(app, history, it.path, "after", `Comes after "${fromName}"`, v => addAfter(v, text), g);
-  if (!it.same) await recordChange(app, history, it.path, "project", `Moved "${it.name}" here`, () => `"[[${hub.name}]]"`, g);
+  if (!it.same) await recordChange(app, history, it.path, "project", `Moved "${it.name}" here`, () => `[[${hub.name}]]`, g);
   undoNotice(it.same ? `"${it.name}" now comes after "${fromName}".` : `Moved "${it.name}" here; it comes after "${fromName}".`, () => runHistory(app, history, "undo", step));
 }
 
