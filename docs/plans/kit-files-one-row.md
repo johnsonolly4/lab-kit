@@ -36,9 +36,10 @@ Decided with the user 2026-10-13 (chat + two surveys):
 - Done when: tests cover: both kits' safe items applied after one confirmation; cancelling writes nothing in either kit; one kit failing does not stop the other; with the planning kit off only the lab kit runs; NOT seen in Obsidian until the user has pressed it on a vault with both kits (checklist row).
 - New dependencies: none
 
-### Phase 3 — The two combined windows
+### Phase 3 — The two combined windows — BUILT 2026-10-13, not seen in Obsidian
 - Depends on: Phase 1 (ordering); Phase 2 for the shared confirmation.
 - Files: `src/kit/managed-ui.ts`: `KitManagedModal` (Review) and `KitFilesModal` (Manage) take a list of kits and draw a section per kit (heading with the status line, fold arrow, the existing per-kit body unchanged); Review's Apply collects the ticks of every section, asks once through the Phase 2 merged confirmation, applies each kit. `src/kit/ui.ts`: the commands, the start-up notice buttons and `KitController` entry methods `review()` / `manage()` open the combined window when the planning kit is enabled.
+- Result 2026-10-13: `KitReviewSection` and `KitFilesSection` (one kit's body, drawn into a container, extracted from the old windows with no change to what a kit shows), `KitManagedModal(app, kits, applyMany)` and `KitFilesModal(app, kits)` (one kit: as before; two: a `<details>` section per kit ordered by `orderKits`), `KitSet.review()` / `manage()` / `applyReviewed()` (one confirmation through `runSafeUpdate`), `asSafeKit(picked)` for the review's ticks, `KitController.review()` / `manage()`; the two commands and the start-up notice use them. The windows have no automated test (the Setting stand-in in the tests has no methods): only the tick-free parts are tested (order, merge, run). Check setup still opens `lab.manage()` / the kit's own review (Phase 4). Tests 979.
 - Done when: the existing per-kit behaviour is unchanged for one kit (tests in `tests/managed.test.ts` untouched and green); a test for the section list and its order (a kit with updates first and open, an up-to-date kit last and folded); the per-file actions in Manage files… still refresh the window; NOT seen in Obsidian until the user has opened both windows with both kits on.
 - New dependencies: none
 

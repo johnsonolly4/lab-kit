@@ -202,6 +202,10 @@
 .lab-kit-setup-row.is-missing .lab-kit-setup-mark { color: var(--text-error); }
 .lab-kit-setup-row.is-optional .lab-kit-setup-mark { color: var(--text-muted); }
 
+/* Both kits in one window (Review update… / Manage files… with the planning kit on): a section per kit, the one with something waiting first and open */
+.lab-kit-kit-section { margin: 0 0 10px; padding-top: 6px; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-kit-section > summary { cursor: pointer; padding: 2px 0 6px; }
+
 /* Install confirmation rows (src/kit/managed-ui.ts KitInstallModal): name, what it is for, path */
 .lab-kit-install-row { padding: 4px 0 6px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-install-name { font-weight: 600; }

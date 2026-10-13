@@ -333,6 +333,10 @@ export class KitController {
   /** The kits that are on, as one set (the lab kit, and the planning kit when it is switched on). */
   kitSet(): KitSet { return new KitSet(this.app, [this.managed, ...(this.planning && this.planning.slot.enabled ? [this.planning] : [])]); }
 
+  /** Review update… and Manage files…: one window for both kits when the planning kit is on, else the lab kit's. */
+  review(): ClosingModal { const set = this.kitSet(); return set.size > 1 ? set.review() : this.managed.review(); }
+  manage(): ClosingModal { const set = this.kitSet(); return set.size > 1 ? set.manage() : this.managed.manage(); }
+
   get app(): App { return this.plugin.app; }
 
   /** What the "folder not found" notice's buttons do. */
@@ -377,8 +381,8 @@ export class KitController {
       plugin.registerEvent(this.app.vault.on("delete", f => touched(f.path)));
       plugin.registerEvent(this.app.vault.on("rename", (f, old) => { touched(f.path); touched(old); }));
     });
-    plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.managed.review() });
-    plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.managed.manage() });
+    plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.review() });
+    plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
@@ -594,14 +598,14 @@ export class KitController {
       if (version) {
         f.createDiv({ text: `Lab kit v${this.managed.version} is ready.` });
         const b = f.createEl("button", { text: "Review", cls: "lab-kit-notice-btn" });
-        b.addEventListener("click", () => { notice.hide(); this.managed.review(); });
+        b.addEventListener("click", () => { notice.hide(); this.review(); });
         return;
       }
       for (const [name, files, kit] of [["lab kit", lab, this.managed], ["planning kit", planning, this.planning]] as const) {
         if (!files.length || !kit) continue;
         f.createDiv({ text: `${files.length} kept ${name} ${files.length === 1 ? "file has" : "files have"} a newer version than your copy.` });
         const b = f.createEl("button", { text: `Manage ${name} files`, cls: "lab-kit-notice-btn" });
-        b.addEventListener("click", () => { notice.hide(); kit.manage(); });
+        b.addEventListener("click", () => { notice.hide(); this.manage(); });
       }
     });
     const notice = new Notice(frag, 15000);

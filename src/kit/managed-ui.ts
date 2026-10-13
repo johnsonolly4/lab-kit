@@ -6,7 +6,7 @@ import {
   kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import type { SafeKit } from "./kit-set";
+import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
 import { makeMyCopy } from "./snippet-copy-ui";
@@ -340,11 +340,19 @@ export class KitManaged {
     return { items, select, writes, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] };
   }
 
+  /** The same for the files the review window has ticked. */
+  private pickedSpec(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<{ items: ManagedItem[]; select: (it: ManagedItem) => boolean; first: boolean; settings: SettingChange[]; folders: KitFolder[] }> {
+    const first = !this.slot.managed;
+    return Promise.resolve({ items, select, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] });
+  }
+
   /** This kit for "Update all safe files" across both kits (src/kit/kit-set.ts `runSafeUpdate`). */
-  asSafeKit(): SafeKit {
+  asSafeKit(picked?: { items: ManagedItem[]; select: (it: ManagedItem) => boolean }): SafeKit {
     const id = this.bundle.manifest.id, name = id === PLANNING_KIT ? "Planning kit" : "Lab kit";
     return { id, name, plan: async () => {
-      const { items, select, first, settings, folders } = await this.safeSpec();
+      // The review window's own pick (`picked`): the same confirmation as its Apply has for one kit
+      const spec = picked ? await this.pickedSpec(picked.items, picked.select) : await this.safeSpec();
+      const { items, select, first, settings, folders } = spec;
       const preview = await previewInstall(this.app.vault.adapter, items, select, folders);
       const extra = folders.map(f => f.path).filter(p => preview.folders.includes(p));
       return { part: { id, name, preview, settings, notes: [], ask: first, folders: extra },
@@ -420,8 +428,8 @@ export class KitManaged {
   }
 
   /** Both return their window, so a window that opened one (Check setup) can redraw itself when it closes. */
-  review(): ClosingModal { const m = new KitManagedModal(this.app, this); m.open(); return m; }
-  manage(): ClosingModal { const m = new KitFilesModal(this.app, this); m.open(); return m; }
+  review(): ClosingModal { const m = new KitManagedModal(this.app, [this]); m.open(); return m; }
+  manage(): ClosingModal { const m = new KitFilesModal(this.app, [this]); m.open(); return m; }
 
   failed(e: unknown): void {
     console.error(e);
@@ -450,29 +458,23 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "off", title: "Switched off (not installed)" }
 ];
 
-/** Dry run: what would happen to every kit file, then Apply. */
-class KitManagedModal extends Modal {
-  private items: ManagedItem[] = [];
-  private retired: RetiredItem[] = [];
+/** One kit's part of the review window: what would happen to each of its files, with the boxes. Drawn into `root`; `changed` runs after every redraw so the window's Apply button follows the ticks. */
+class KitReviewSection {
+  items: ManagedItem[] = [];
+  retired: RetiredItem[] = [];
   private recreate = new Set<string>();
   /** Clean merges are ticked by default; ids here were unticked. */
   private noMerge = new Set<string>();
   /** New and updated files are ticked by default; ids here were unticked and are left as they are. */
   private skip = new Set<string>();
 
-  constructor(app: App, private managed: KitManaged) { super(app); }
+  constructor(readonly managed: KitManaged, private root: HTMLElement, private changed: () => void) {}
 
-  async onOpen(): Promise<void> {
-    this.titleEl.setText(`Kit files, v${this.managed.version}`);
-    try { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
-    catch (e) { this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
-    this.render();
-  }
+  async load(): Promise<void> { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
 
-  private render(): void {
-    const { contentEl } = this;
+  render(): void {
+    const contentEl = this.root;
     contentEl.empty();
-    contentEl.addClass("lab-kit-modal");
     const inst = this.managed.installedVersion;
     contentEl.createEl("p", { cls: "setting-item-description",
       text: inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply." });
@@ -539,12 +541,7 @@ class KitManagedModal extends Modal {
         if (!r.exists) li.appendText(" (already deleted)");
       }
     }
-
-    const todo = this.writes();
-    new Setting(contentEl).setClass("lab-kit-sticky-foot")
-      .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
-      .addButton(b => b.setButtonText(todo ? `Apply (${todo} files)` : "Apply").setCta().setDisabled(!todo && !count("up-to-date"))
-        .onClick(() => void this.apply()));
+    this.changed();
   }
 
   /** Ticks or unticks every recreate / merge box at once. */
@@ -557,15 +554,67 @@ class KitManagedModal extends Modal {
     this.render();
   }
 
-  private select = (it: ManagedItem): boolean => (SAFE_ACTIONS.includes(it.action) && !this.skip.has(it.file.id))
+  select = (it: ManagedItem): boolean => (SAFE_ACTIONS.includes(it.action) && !this.skip.has(it.file.id))
     || (it.action === "missing" && this.recreate.has(it.file.id))
     || (it.action === "merge" && !this.noMerge.has(it.file.id));
-  private writes(): number { return this.items.filter(i => this.select(i) && i.action !== "up-to-date").length; }
+  writes(): number { return this.items.filter(i => this.select(i) && i.action !== "up-to-date").length; }
+
+  /** How many of its files are already up to date (Apply stays pressable then: it only records them). */
+  upToDate(): number { return this.items.filter(i => i.action === "up-to-date").length; }
+  /** Ids of its scripts, for the "please test" line of the report. */
+  scripts(): Set<string> { return new Set(this.items.filter(i => i.file.kind === "script").map(i => i.file.id)); }
+}
+
+/** Dry run: what would happen to every kit file, then Apply. One kit, or both kits stacked (a section each, the one with something waiting first and open). */
+export class KitManagedModal extends Modal {
+  private sections: KitReviewSection[] = [];
+  private foot: HTMLElement | null = null;
+  /** `applyMany`: writes the ticked files of several kits with one confirmation (src/kit/kit-set-ui.ts); needed when there is more than one kit. */
+  constructor(app: App, private kits: KitManaged[], private applyMany?: (picks: { kit: KitManaged; items: ManagedItem[]; select: (it: ManagedItem) => boolean }[], scripts: Set<string>) => Promise<void>) { super(app); }
+
+  async onOpen(): Promise<void> {
+    const { contentEl } = this;
+    contentEl.addClass("lab-kit-modal");
+    const many = this.kits.length > 1;
+    this.titleEl.setText(many ? "Kit files" : `Kit files, v${this.kits[0].version}`);
+    const holders = this.kits.map(() => createDiv());
+    const loaded = this.kits.map((k, n) => new KitReviewSection(k, holders[n], () => this.drawFoot()));
+    try { await Promise.all(loaded.map(sec => sec.load())); }
+    catch (e) { contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
+    const order = many ? orderKits(loaded.map(sec => ({ id: sec.managed.bundle.manifest.id, name: kitName(sec.managed), installed: sec.managed.installedVersion !== null, items: sec.items, sec }))) : loaded.map(sec => ({ sec, waiting: 0, open: true, name: "" }));
+    this.sections = order.map(o => o.sec);
+    for (const o of order) {
+      if (!many) { contentEl.appendChild(holders[loaded.indexOf(o.sec)]); continue; }
+      const det = contentEl.createEl("details", { cls: "lab-kit-kit-section" });
+      det.open = o.open;
+      const sum = det.createEl("summary");
+      sum.createSpan({ cls: "lab-kit-install-name", text: o.name });
+      sum.createDiv({ cls: "setting-item-description", text: kitStatusLine({ bundled: o.sec.managed.version, installed: o.sec.managed.installedVersion, tracked: Object.keys(o.sec.managed.slot.managed?.files ?? {}).length, waiting: o.waiting }) });
+      det.appendChild(holders[loaded.indexOf(o.sec)]);
+    }
+    this.foot = contentEl.createDiv();
+    for (const sec of this.sections) sec.render();
+  }
+
+  private drawFoot(): void {
+    if (!this.foot) return;
+    this.foot.empty();
+    const todo = this.sections.reduce((n, sec) => n + sec.writes(), 0), any = this.sections.some(sec => sec.upToDate() > 0);
+    new Setting(this.foot).setClass("lab-kit-sticky-foot")
+      .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
+      .addButton(b => b.setButtonText(todo ? `Apply (${todo} files)` : "Apply").setCta().setDisabled(!todo && !any)
+        .onClick(() => void this.apply()));
+  }
 
   private async apply(): Promise<void> {
-    const scripts = new Set(this.items.filter(i => i.file.kind === "script").map(i => i.file.id));
+    const scripts = new Set(this.sections.flatMap(sec => [...sec.scripts()]));
     this.close();
-    await this.managed.applyReviewed(this.items, this.select, results => new KitReportModal(this.app, results, scripts).open());
+    if (this.sections.length === 1 || !this.applyMany) {
+      const sec = this.sections[0];
+      await sec.managed.applyReviewed(sec.items, sec.select, results => new KitReportModal(this.app, results, scripts).open());
+      return;
+    }
+    await this.applyMany(this.sections.map(sec => ({ kit: sec.managed, items: sec.items, select: sec.select })), scripts);
   }
 
   /** Set by a window that opened this one (Check setup), to redraw itself afterwards. */
@@ -573,26 +622,24 @@ class KitManagedModal extends Modal {
   onClose(): void { this.contentEl.empty(); this.onClosed?.(); }
 }
 
-/** One row per kit file with a status label and its own buttons, plus the CSS snippet switch. */
-class KitFilesModal extends Modal {
+/** The name of a kit in the windows. */
+export const kitName = (k: KitManaged): string => (k.bundle.manifest.id === PLANNING_KIT ? "Planning kit" : "Lab kit");
+
+/** One kit's rows in the Manage window: a row per file with a status label and its own buttons, plus the CSS snippet switch. Drawn into `root`; every action redraws only this part. */
+class KitFilesSection {
   private items: ManagedItem[] = [];
   private retired: RetiredItem[] = [];
 
-  constructor(app: App, private managed: KitManaged) { super(app); }
-
-  async onOpen(): Promise<void> {
-    this.titleEl.setText(`Manage kit files, v${this.managed.version}`);
-    this.contentEl.addClass("lab-kit-modal");
-    await this.refresh();
-  }
+  /** `scroller`: the window's scrolling element (the place is kept after a redraw). `closeWindow`: closes the whole window (opening a file does). */
+  constructor(private app: App, private managed: KitManaged, private root: HTMLElement, private scroller: HTMLElement, private closeWindow: () => void) {}
 
   /** Re-reads the vault and redraws; the window stays open after every action. */
-  private async refresh(): Promise<void> {
-    const top = this.contentEl.scrollTop;   // the window scrolls its own content: keep the place after the redraw
+  async refresh(): Promise<void> {
+    const top = this.scroller.scrollTop;   // the window scrolls its own content: keep the place after the redraw
     try { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
-    catch (e) { this.contentEl.empty(); this.contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
+    catch (e) { this.root.empty(); this.root.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
     this.render();
-    this.contentEl.scrollTop = top;
+    this.scroller.scrollTop = top;
   }
 
   private async run(action: () => Promise<unknown>): Promise<void> {
@@ -615,8 +662,8 @@ class KitFilesModal extends Modal {
       }));
   }
 
-  private render(): void {
-    const { contentEl } = this;
+  render(): void {
+    const contentEl = this.root;
     contentEl.empty();
     this.snippetSwitch(contentEl);
     const ordered = sortByAttention(this.items, (id) => this.managed.stateOf(id));
@@ -664,7 +711,7 @@ class KitFilesModal extends Modal {
       }
       const file = isSnippet && isStubSnippet(it.text) ? null : this.app.vault.getFileByPath(it.dest);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
-        this.close();
+        this.closeWindow();
         void this.app.workspace.getLeaf(false).openFile(file);
       }));
     }
@@ -674,9 +721,36 @@ class KitFilesModal extends Modal {
       row.addButton(b => b.setButtonText("Forget").onClick(() => void this.run(() => this.managed.forget(r.id))));
       const file = this.app.vault.getFileByPath(r.path);
       if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
-        this.close();
+        this.closeWindow();
         void this.app.workspace.getLeaf(false).openFile(file);
       }));
+    }
+  }
+}
+
+/** One row per kit file with a status label and its own buttons, plus the CSS snippet switch. One kit, or both kits stacked (a section each, the one with something waiting first and open). */
+export class KitFilesModal extends Modal {
+  constructor(app: App, private kits: KitManaged[]) { super(app); }
+
+  async onOpen(): Promise<void> {
+    const { contentEl } = this;
+    contentEl.addClass("lab-kit-modal");
+    const many = this.kits.length > 1;
+    this.titleEl.setText(many ? "Manage kit files" : `Manage kit files, v${this.kits[0].version}`);
+    const holders = this.kits.map(() => createDiv());
+    const sections = this.kits.map((k, n) => new KitFilesSection(this.app, k, holders[n], contentEl, () => this.close()));
+    if (!many) { contentEl.appendChild(holders[0]); await sections[0].refresh(); }
+    else {
+      const plans = await Promise.all(this.kits.map(async k => ({ id: k.bundle.manifest.id, name: kitName(k), installed: k.installedVersion !== null, items: await k.plan(), kit: k })));
+      for (const o of orderKits(plans)) {
+        const det = contentEl.createEl("details", { cls: "lab-kit-kit-section" });
+        det.open = o.open;
+        const sum = det.createEl("summary");
+        sum.createSpan({ cls: "lab-kit-install-name", text: o.name });
+        sum.createDiv({ cls: "setting-item-description", text: kitStatusLine({ bundled: o.kit.version, installed: o.kit.installedVersion, tracked: Object.keys(o.kit.slot.managed?.files ?? {}).length, waiting: o.waiting }) });
+        det.appendChild(holders[this.kits.indexOf(o.kit)]);
+      }
+      await Promise.all(sections.map(sec => sec.refresh()));
     }
     new Setting(contentEl).addButton(b => b.setButtonText("Close").setCta().onClick(() => this.close()));
   }
