@@ -19,3 +19,8 @@ views:
     order:
       - file.name
       - done
+    sort:
+      - property: done
+        direction: ASC
+      - property: priority
+        direction: ASC
