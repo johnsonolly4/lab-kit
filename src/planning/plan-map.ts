@@ -87,6 +87,13 @@ export function chainOf(plan: Plan, path: string): Set<string> {
 export const CARD_W = 190, CARD_H = 108, GAP_X = 56, GAP_Y = 14, PAD = 12;
 
 /** `across`: steps run left to right; `down`: steps run top to bottom. */
+/** The zoom limits and step of the zoom buttons (1 = the size the map has always had). */
+export const ZOOM_MIN = 0.4, ZOOM_MAX = 1.6, ZOOM_STEP = 0.1;
+/** `z` kept inside the limits and rounded to a tenth, so repeated steps do not drift (0.7000000000000001). */
+export const clampZoom = (z: number): number => Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Number.isFinite(z) ? z : 1)) * 100) / 100;
+/** The zoom that makes a map `mapWidth` wide fit in `available` pixels: never larger than 1, never under the minimum. */
+export const fitZoom = (available: number, mapWidth: number): number => mapWidth > 0 && available > 0 ? clampZoom(Math.min(1, available / mapWidth)) : 1;
+
 export type Direction = "across" | "down";
 export interface Pt { x: number; y: number }
 export interface MapCurve {

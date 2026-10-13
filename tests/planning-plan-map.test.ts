@@ -223,3 +223,20 @@ describe("routed arrows that share a gap", () => {
     expect(firstOfSecond).toBeGreaterThan(lastOfFirst - 1);
   });
 });
+
+describe("zoom arithmetic", () => {
+  it("clamps and rounds to a tenth", async () => {
+    const { clampZoom, ZOOM_MIN, ZOOM_MAX } = await import("../src/planning/plan-map");
+    expect(clampZoom(0.1)).toBe(ZOOM_MIN);
+    expect(clampZoom(9)).toBe(ZOOM_MAX);
+    expect(clampZoom(0.8 - 0.1)).toBe(0.7);
+    expect(clampZoom(NaN)).toBe(1);
+  });
+  it("fits to the width, never above 1 or below the minimum", async () => {
+    const { fitZoom } = await import("../src/planning/plan-map");
+    expect(fitZoom(500, 1000)).toBe(0.5);
+    expect(fitZoom(2000, 1000)).toBe(1);
+    expect(fitZoom(100, 1000)).toBe(0.4);
+    expect(fitZoom(0, 1000)).toBe(1);
+  });
+});

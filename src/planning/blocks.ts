@@ -8,7 +8,7 @@ import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
-import { layoutPlan, type Direction } from "./plan-map";
+import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction } from "./plan-map";
 import { drawPlanMap } from "./plan-map-render";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
@@ -58,6 +58,7 @@ class BlockView extends MarkdownRenderChild {
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
+  private zoom = 1;   // the plan map's zoom buttons; not saved
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
 
@@ -334,13 +335,24 @@ class BlockView extends MarkdownRenderChild {
         flip.addEventListener("mousedown", stop);
         flip.addEventListener("click", e => { stop(e); this.direction = direction === "down" ? "across" : "down"; this.mapScroll = null; this.draw(); });
         const map = layoutPlan(plan);
+        const zoomBy = (label: string, text: string, tip: string, next: () => number): void => {
+          const b = title.createEl("button", { cls: "vt-map-zoom", text, attr: { "aria-label": label, title: tip } });
+          b.addEventListener("mousedown", stop);
+          b.addEventListener("click", e => { stop(e); this.zoom = next(); this.mapScroll = null; this.draw(); });
+        };
+        zoomBy("Make the map smaller", "\u2212", "Smaller", () => clampZoom(this.zoom - ZOOM_STEP));
+        zoomBy("Make the map larger", "+", "Larger", () => clampZoom(this.zoom + ZOOM_STEP));
+        zoomBy("Fit the map to the width", "Fit", "Fit the map to the width", () => {
+          const sc = box.querySelector<HTMLElement>(".vt-map-scroll");
+          return sc ? fitZoom(sc.clientWidth, Number(sc.dataset.mapWidth ?? 0)) : 1;
+        });
         if (hasNode()) {   // the picture for a slide is a PNG on the clipboard: desktop only
           const shot = title.createEl("button", { cls: "vt-map-dir vt-map-slide", attr: { "aria-label": "Picture for a slide", title: "Copy a picture of the plan for a slide" } });
           setIcon(shot, "image");
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        drawPlanMap(box, plan, map, { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, redraw: () => this.draw() });
+        drawPlanMap(box, plan, map, { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, redraw: () => this.draw() });
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }
