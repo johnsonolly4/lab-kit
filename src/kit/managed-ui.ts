@@ -1,11 +1,13 @@
 // Built-in kit: the glue between the plugin and src/kit/managed.ts, plus the review window, the report and the first-install question.
 // Works on mobile: only the vault adapter and crypto.subtle.
-import { Modal, Notice, Setting, parseYaml, type App, type Plugin } from "obsidian";
+import { Modal, Notice, Setting, parseYaml, setIcon, type App, type Plugin, type TFile } from "obsidian";
 import {
-  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, actionLook, trackedRoles,
+  SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
   kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
+import { actionWinState, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
+import { winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
@@ -437,14 +439,6 @@ export class KitManaged {
   }
 }
 
-/** The symbol + word for what Apply does with a file, coloured (src/kit/managed.ts `actionLook`). */
-function actionChip(parent: HTMLElement, action: ManagedAction): void {
-  const look = actionLook(action);
-  const chip = parent.createSpan({ cls: `lab-kit-act is-${look.tone}` });
-  chip.createSpan({ cls: "lab-kit-act-symbol", text: look.symbol });
-  chip.appendText(" " + look.word);
-}
-
 const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; resolve in Manage kit files)", open: true },
   { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
@@ -476,11 +470,11 @@ class KitReviewSection {
     const contentEl = this.root;
     contentEl.empty();
     const inst = this.managed.installedVersion;
-    contentEl.createEl("p", { cls: "setting-item-description",
-      text: inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply." });
+    winIntro(contentEl, inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply.");
+    winSummary(contentEl, reviewSummary(this.items));
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
-    new Setting(contentEl).setName("Changes").setDesc(
-      `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date`).setHeading();
+    contentEl.createEl("p", { cls: "setting-item-description",
+      text: `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date` });
 
     // One click ticks every file with a box (recreate / merge); nothing is written until Apply
     const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge" || i.action === "create" || i.action === "fast-forward");
@@ -496,36 +490,24 @@ class KitReviewSection {
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
       det.open = !!g.open;
       det.createEl("summary", { text: `${g.title} (${group.length})` });
-      const ul = det.createEl("ul");
       for (const it of group) {
-        const li = ul.createEl("li");
-        if (g.action === "missing") {
-          const cb = li.createEl("input", { attr: { type: "checkbox" } });
-          cb.checked = this.recreate.has(it.file.id);
-          cb.addEventListener("change", () => { if (cb.checked) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); this.render(); });
-          li.appendText(" recreate ");
-        }
-        if (g.action === "merge") {
-          const cb = li.createEl("input", { attr: { type: "checkbox" } });
-          cb.checked = !this.noMerge.has(it.file.id);
-          cb.addEventListener("change", () => { if (cb.checked) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); this.render(); });
-          li.appendText(" merge ");
-        }
-        if (g.action === "create" || g.action === "fast-forward") {
-          const cb = li.createEl("input", { attr: { type: "checkbox" } });
-          cb.checked = !this.skip.has(it.file.id);
-          cb.addEventListener("change", () => { if (cb.checked) this.skip.delete(it.file.id); else this.skip.add(it.file.id); this.render(); });
-          li.appendText(g.action === "create" ? " add " : " update ");
-        }
-        li.addClass("lab-kit-review-row");
-        actionChip(li, g.action);
-        li.appendText(" ");
-        li.createSpan({ cls: "lab-kit-install-name", text: it.dest.slice(it.dest.lastIndexOf("/") + 1) });
-        if (it.file.desc) li.createDiv({ cls: "setting-item-description", text: it.file.desc });
-        li.createEl("code", { cls: "lab-kit-install-path", text: it.dest });
-        if (it.untracked && (g.action === "user-modified")) li.appendText(" (not installed by the kit, no original to compare with)");
-        if (g.action === "needs-merge" && it.conflicts === undefined) li.appendText(" (no original copy to merge with)");
-        if (g.action === "merge" && it.file.kind === "script") li.appendText(" (merged code: please test it)");
+        const name = it.dest.slice(it.dest.lastIndexOf("/") + 1);
+        const note = [it.untracked && g.action === "user-modified" ? "Not installed by the kit, no original to compare with." : "",
+          g.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : "",
+          g.action === "merge" && it.file.kind === "script" ? "Merged code: please test it." : ""].filter(Boolean);
+        const { row, text } = winRow(det, { state: actionWinState(g.action), title: name, detail: [it.file.desc, ...note].filter(Boolean).join(" · ") });
+        text.createEl("code", { cls: "lab-kit-win-path", text: it.dest });
+        // the files with a box: what ticking it does, at the row's right end
+        const tick = (word: string, on: boolean, set: (on: boolean) => void): void => {
+          const label = row.createEl("label", { cls: "lab-kit-win-tick" });
+          const cb = label.createEl("input", { attr: { type: "checkbox" } });
+          cb.checked = on;
+          cb.addEventListener("change", () => { set(cb.checked); this.render(); });
+          label.appendText(word);
+        };
+        if (g.action === "missing") tick("recreate", this.recreate.has(it.file.id), on => { if (on) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); });
+        if (g.action === "merge") tick("merge", !this.noMerge.has(it.file.id), on => { if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); });
+        if (g.action === "create" || g.action === "fast-forward") tick(g.action === "create" ? "add" : "update", !this.skip.has(it.file.id), on => { if (on) this.skip.delete(it.file.id); else this.skip.add(it.file.id); });
       }
     }
 
@@ -533,13 +515,7 @@ class KitReviewSection {
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
       det.open = true;
       det.createEl("summary", { text: `Retired by the kit (left in place, never deleted) (${this.retired.length})` });
-      const ul = det.createEl("ul");
-      for (const r of this.retired) {
-        const li = ul.createEl("li");
-        li.createSpan({ cls: "lab-kit-act is-leave", text: "– Left in place, not deleted " });
-        li.createEl("code", { text: r.path });
-        if (!r.exists) li.appendText(" (already deleted)");
-      }
+      for (const r of this.retired) winRow(det, { state: "info", title: r.path, detail: r.exists ? "Left in place, not deleted." : "Already deleted." });
     }
     this.changed();
   }
@@ -600,10 +576,12 @@ export class KitManagedModal extends Modal {
     if (!this.foot) return;
     this.foot.empty();
     const todo = this.sections.reduce((n, sec) => n + sec.writes(), 0), any = this.sections.some(sec => sec.upToDate() > 0);
-    new Setting(this.foot).setClass("lab-kit-sticky-foot")
-      .addButton(b => b.setButtonText("Close").onClick(() => this.close()))
-      .addButton(b => b.setButtonText(todo ? `Apply (${todo} files)` : "Apply").setCta().setDisabled(!todo && !any)
-        .onClick(() => void this.apply()));
+    const foot = winFoot(this.foot);
+    foot.addClass("lab-kit-sticky-foot");
+    foot.createEl("button", { text: "Close" }).addEventListener("click", () => this.close());
+    const apply = foot.createEl("button", { text: todo ? `Apply (${todo} files)` : "Apply", cls: "mod-cta" });
+    apply.disabled = !todo && !any;
+    apply.addEventListener("click", () => void this.apply());
   }
 
   private async apply(): Promise<void> {
@@ -666,65 +644,77 @@ class KitFilesSection {
     const contentEl = this.root;
     contentEl.empty();
     this.snippetSwitch(contentEl);
+    winSummary(contentEl, reviewSummary(this.items));
     const ordered = sortByAttention(this.items, (id) => this.managed.stateOf(id));
     for (const it of ordered) {
       const id = it.file.id;
       const status = statusOf(it, this.managed.stateOf(id));
-      const row = new Setting(contentEl).setName(it.dest).setClass("lab-kit-manage-row");
-      actionChip(row.nameEl, it.action);
-      // A kept note with no record has nothing to compare: its action chip ("your settings") says all there is. Every other row says whether it is up to date
-      if (it.action !== "keep" || this.managed.stateOf(id)) row.nameEl.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
       const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
         : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";
-      row.setDesc([it.file.desc, note].filter(Boolean).join(" · "));
+      const newer = kitHasNewer(it, this.managed.stateOf(id));
+      const { text } = winRow(contentEl, { state: newer ? "todo" : actionWinState(it.action), title: it.dest, detail: [it.file.desc, note].filter(Boolean).join(" · ") });
+      // A kept note with no record has nothing to compare: its mark says all there is. Every other row says whether it is up to date
+      if (it.action !== "keep" || this.managed.stateOf(id)) text.querySelector(".lab-kit-win-title")?.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
+      const actions = text.createDiv({ cls: "lab-kit-win-actions" });
+      const button = (label: string, onClick: () => void, cta = false, tip = ""): void => {
+        const b = actions.createEl("button", { text: label, cls: cta ? "mod-cta" : "" });
+        if (tip) b.setAttribute("title", tip);
+        b.addEventListener("click", onClick);
+      };
       if (it.file.optional) {
-        row.addToggle(t => t.setTooltip("Use this file").setValue(it.action !== "off")
-          .onChange(on => void this.managed.setUse(id, on, () => void this.refresh())));
+        const use = actions.createEl("label", { cls: "lab-kit-win-tick" });
+        const cb = use.createEl("input", { attr: { type: "checkbox", title: "Use this file" } });
+        cb.checked = it.action !== "off";
+        cb.addEventListener("change", () => void this.managed.setUse(id, cb.checked, () => void this.refresh()));
+        use.appendText("use this file");
       }
       if (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge") {
-        const text = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : it.action === "merge" ? "Merge" : "Recreate";
-        row.addButton(b => b.setButtonText(text).setCta().onClick(() => void this.run(() => this.managed.updateOne(id))));
+        const label = it.action === "create" ? "Install" : it.action === "fast-forward" ? "Update" : it.action === "merge" ? "Merge" : "Recreate";
+        button(label, () => void this.run(() => this.managed.updateOne(id)), true);
       }
-      if (it.action === "needs-merge") {
-        row.addButton(b => b.setButtonText("Resolve…").setCta().onClick(() => void this.managed.resolve(id, () => void this.refresh())));
-      }
+      if (it.action === "needs-merge") button("Resolve…", () => void this.managed.resolve(id, () => void this.refresh()), true);
       if (it.action === "user-modified" || it.action === "merge" || it.action === "needs-merge") {
-        row.addButton(b => b.setButtonText("Restore kit original").onClick(() => {
+        button("Restore kit original", () => {
           new ConfirmModal(this.app, "Restore the kit's copy?", `${it.dest} goes back to the kit's version. Your copy is saved in the backup folder first.`,
             "Restore", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
-        }));
+        });
       }
-      if (kitHasNewer(it, this.managed.stateOf(id))) {
-        row.addButton(b => b.setButtonText("Compare…").onClick(() => void this.managed.resolve(id, () => void this.refresh())));
-        row.addButton(b => b.setButtonText("Use kit version…").setCta().onClick(() => {
+      if (newer) {
+        button("Compare…", () => void this.managed.resolve(id, () => void this.refresh()));
+        button("Use kit version…", () => {
           new ConfirmModal(this.app, "Replace your copy with the kit's version?", `Your copy of ${it.dest} will be replaced by the kit's new version. A backup is saved first.`,
             "Replace", async () => { await this.run(() => this.managed.restoreOne(id)); }).open();
-        }));
-        if (!kitKept(it, this.managed.stateOf(id))) row.addButton(b => b.setButtonText("Keep mine").setTooltip("Leave your copy as it is. The newer kit version stays listed here if you want it later").onClick(() => void this.run(() => this.managed.resolveOne(id, null))));
+        }, true);
+        if (!kitKept(it, this.managed.stateOf(id))) button("Keep mine", () => void this.run(() => this.managed.resolveOne(id, null)), false, "Leave your copy as it is. The newer kit version stays listed here if you want it later");
       }
-      if (it.action === "detached") row.addButton(b => b.setButtonText("Re-attach").onClick(() => void this.run(() => this.managed.detach(id, false))));
-      else if (!it.untracked && it.action !== "off") row.addButton(b => b.setButtonText("Detach").onClick(() => void this.run(() => this.managed.detach(id, true))));
+      if (it.action === "detached") button("Re-attach", () => void this.run(() => this.managed.detach(id, false)));
+      else if (!it.untracked && it.action !== "off") button("Detach", () => void this.run(() => this.managed.detach(id, true)));
       // A code snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so those rows have no Open button (token templates do)
       const isSnippet = it.file.dest.startsWith("Snippets/");
       if (isSnippet && (canCopy(snippetKey(it.text)) || isTokenTemplate(it.text, parseYaml)) && this.app.vault.getFileByPath(it.dest)) {
-        row.addButton(b => b.setButtonText("Make my own copy").onClick(() => void makeMyCopy(this.app, it.dest).then(() => this.refresh())));
+        button("Make my own copy", () => void makeMyCopy(this.app, it.dest).then(() => this.refresh()));
       }
       const file = isSnippet && isStubSnippet(it.text) ? null : this.app.vault.getFileByPath(it.dest);
-      if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
-        this.closeWindow();
-        void this.app.workspace.getLeaf(false).openFile(file);
-      }));
+      if (file) this.openButton(actions, file);
+      if (!actions.childElementCount) actions.remove();
     }
     for (const r of this.retired) {
-      const row = new Setting(contentEl).setName(r.path).setDesc("The kit no longer ships this file. Yours is left as it is; forget it to stop listing it here.");
-      row.nameEl.createSpan({ cls: "lab-kit-badge is-muted", text: "Retired" });
-      row.addButton(b => b.setButtonText("Forget").onClick(() => void this.run(() => this.managed.forget(r.id))));
+      const { text } = winRow(contentEl, { state: "info", title: r.path, detail: "The kit no longer ships this file. Yours is left as it is; forget it to stop listing it here." });
+      text.querySelector(".lab-kit-win-title")?.createSpan({ cls: "lab-kit-badge is-muted", text: "Retired" });
+      const actions = text.createDiv({ cls: "lab-kit-win-actions" });
+      actions.createEl("button", { text: "Forget" }).addEventListener("click", () => void this.run(() => this.managed.forget(r.id)));
       const file = this.app.vault.getFileByPath(r.path);
-      if (file) row.addExtraButton(b => b.setIcon("file-text").setTooltip("Open").onClick(() => {
-        this.closeWindow();
-        void this.app.workspace.getLeaf(false).openFile(file);
-      }));
+      if (file) this.openButton(actions, file);
     }
+  }
+
+  private openButton(into: HTMLElement, file: TFile): void {
+    const b = into.createEl("button", { cls: "clickable-icon", attr: { "aria-label": "Open" } });
+    setIcon(b, "file-text");
+    b.addEventListener("click", () => {
+      this.closeWindow();
+      void this.app.workspace.getLeaf(false).openFile(file);
+    });
   }
 }
 
@@ -752,7 +742,7 @@ export class KitFilesModal extends Modal {
       }
       await Promise.all(sections.map(sec => sec.refresh()));
     }
-    new Setting(contentEl).addButton(b => b.setButtonText("Close").setCta().onClick(() => this.close()));
+    winFoot(contentEl).createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
   }
 
   /** Set by a window that opened this one (Check setup), to redraw itself afterwards. */
@@ -769,7 +759,8 @@ export class KitReportModal extends Modal {
     this.titleEl.setText("Kit update report");
     contentEl.addClass("lab-kit-modal");
     const n = (o: ManagedResult["outcome"]): number => results.filter(r => r.outcome === o).length;
-    contentEl.createEl("p", { text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("moved")} renamed · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
+    winSummary(contentEl, reportSummary(results));
+    contentEl.createEl("p", { cls: "setting-item-description", text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("moved")} renamed · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
     if (results.some(r => r.outcome === "merged" && this.scripts.has(r.id))) {
       contentEl.createEl("p", { text: "Merged scripts combine your edits with the kit's code. Please test them.", cls: "mod-warning" });
     }
@@ -781,15 +772,9 @@ export class KitReportModal extends Modal {
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
       det.open = o === "created" || o === "updated" || o === "merged" || o === "moved" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
       det.createEl("summary", { text: `${names[o]} (${group.length})` });
-      const ul = det.createEl("ul");
-      for (const r of group) {
-        const li = ul.createEl("li");
-        li.createEl("code", { text: r.dest });
-        if (r.backup) li.appendText(` (old copy: ${r.backup})`);
-        else if (o === "skipped") li.appendText(` (${r.action})`);
-      }
+      for (const r of group) winRow(det, { state: outcomeWinState(o), title: r.dest, detail: r.backup ? `Old copy: ${r.backup}` : o === "skipped" ? r.action : undefined });
     }
-    new Setting(contentEl).addButton(b => b.setButtonText("Close").setCta().onClick(() => this.close()));
+    winFoot(contentEl).createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
   }
 
   onClose(): void { this.contentEl.empty(); }

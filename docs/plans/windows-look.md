@@ -26,7 +26,8 @@ User, 2026-10-13 (survey, two mockups, chat):
 - Done when: tests, lint, build clean; a test fails if a `.lab-kit-setup-` class is left in `src/` or `styles.css`; Check setup looks the same as before (the user's screenshot of 2026-10-13 is the reference); Check hotkeys and Set the suggested keys use the same rows; NOT seen in Obsidian until the user looks (checklist row).
 - New dependencies: none
 
-### Phase 2 — Review update…, Manage kit files…, Kit report
+### Phase 2 — Review update…, Manage kit files…, Kit report — BUILT 2026-10-13, not seen in Obsidian
+- Result: `src/kit/managed-look.ts` (`actionWinState`, `reviewSummary`, `reportSummary`, `outcomeWinState`, tested in `tests/managed-look.test.ts`); `managed-ui.ts` rows are `winRow`s (the old action chips and the `Setting` rows are gone; buttons are plain buttons in `.lab-kit-win-actions`); the old `.lab-kit-act*`, `.lab-kit-manage-row*`, `.lab-kit-review-row` CSS removed. Tests 999, lint 0 errors. Per-kit sections, the sticky footer and every button's action are unchanged.
 - Depends on: Phase 1
 - Files: `src/kit/managed-ui.ts` (`:569`, `:732`, `:764`; rows at `:525-539`, `:673-676`, `:720`), a pure helper that maps a file's state to a mark and builds the summary line (tested), `styles.css` (remove `.lab-kit-review-row` / `.lab-kit-manage-row` rules that the shared rows replace), `src/kit/kit-set-ui.ts` if the two-kit sections need it.
 - Done when: tests cover every file state → mark and the summary for 0, 1 and many; the per-kit sections, sticky footer and Apply behaviour are unchanged (existing tests pass untouched); phone width checked by the user.

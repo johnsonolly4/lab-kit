@@ -99,20 +99,11 @@
 .lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }
 .lab-kit-group code { font-size: 0.85em; word-break: break-all; }
 /* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
-.setting-item.lab-kit-manage-row { flex-wrap: wrap; row-gap: 6px; }
-.lab-kit-manage-row > .setting-item-info { flex: 1 1 100%; min-width: 0; }
-.lab-kit-manage-row .setting-item-name { overflow-wrap: anywhere; }
-.lab-kit-manage-row > .setting-item-control { flex: 1 1 100%; justify-content: flex-start; flex-wrap: wrap; }
 .lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
 .lab-kit-badge.is-ok { color: var(--text-success); }
 .lab-kit-badge.is-info { color: var(--text-accent); }
 .lab-kit-badge.is-warn { color: var(--text-warning); }
 /* What Apply does with a file (src/kit/managed.ts actionLook): green add, orange change, red conflict, grey leave / same */
-.lab-kit-act { display: inline-block; margin-right: 6px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
-.lab-kit-act-symbol { font-weight: 700; }
-.lab-kit-act.is-add { background: rgba(var(--color-green-rgb), 0.22); color: var(--text-normal); }
-.lab-kit-act.is-change { background: rgba(var(--color-orange-rgb), 0.25); color: var(--text-normal); }
-.lab-kit-act.is-conflict { background: rgba(var(--color-red-rgb), 0.22); color: var(--text-normal); }
 /* Merge window: one card per conflict, Yours / Kit / Original side by side (stacked on narrow screens) */
 .lab-kit-hunk { margin: 8px 0; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
 .lab-kit-hunk.is-undecided { border-color: var(--text-warning); }
@@ -211,6 +202,11 @@
 .lab-kit-win-row.is-ok .lab-kit-win-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
 .lab-kit-win-row:is(.is-todo, .is-warn) .lab-kit-win-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
 .lab-kit-win-row.is-missing .lab-kit-win-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
+.lab-kit-win-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.lab-kit-win-tick { display: inline-flex; align-items: center; gap: 6px; flex: none; margin-left: auto; white-space: nowrap; color: var(--text-muted); font-size: var(--font-ui-small); }
+.lab-kit-win-actions > .lab-kit-win-tick { margin-left: 0; }
+.lab-kit-win-path { display: block; font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
+.lab-kit-win-row .lab-kit-badge { margin-left: 8px; }
 .lab-kit-win-foot { display: flex; justify-content: flex-end; padding-top: var(--size-4-3); border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
 
 /* Both kits in one window (Review update… / Manage files… with the planning kit on): a section per kit, the one with something waiting first and open */
@@ -221,8 +217,6 @@
 .lab-kit-install-row { padding: 4px 0 6px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-install-name { font-weight: 600; }
 .lab-kit-install-path { font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
-.lab-kit-review-row { padding: 4px 0; }
-.lab-kit-review-row .lab-kit-install-path { display: block; }
 /* Planning homepage blocks (```vault-goto): one button per folder hub, wrapping */
 .lab-kit-goto { display: flex; flex-wrap: wrap; gap: 6px; }
 .lab-kit-goto-button { display: inline-flex; align-items: center; gap: 6px; }
