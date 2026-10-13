@@ -1,8 +1,10 @@
 # Lab notebook kit: changelog
 
-## Unreleased
+## v1.3.0 (2026-10-13)
+The plan map appears from two to-dos, you can insert a to-do between two by dragging an arrow, card titles are readable and the hover is gentler.
+
 - **Plan map from two to-dos** (planning kit, plugin code; not seen in Obsidian): a project hub shows the map as soon as the project has two to-dos, linked or not. To-dos with no links wait in the **Not linked** tiles; drag one onto another, or use Comes after?, to make the plan. The Plan list tile still waits for a link.
-- **Plan map: gentler hover** (plugin code; not seen in Obsidian): the rest of the map dims only after the pointer has rested on a card for a moment, and less strongly, with a short fade, so moving the mouse across the map no longer flashes.
+- **Plan map: gentler hover** (plugin code; the user tried it and set the contrast and delay): the rest of the map dims only after the pointer has rested on a card for a moment, and less strongly, with a short fade, so moving the mouse across the map no longer flashes.
 - **Plan map: insert a to-do between two** (planning kit, plugin code; first try by the user: works): drag from anywhere on an arrow onto a to-do to put that one between the two (it comes after the left card, the right card comes after it, the old link goes); drop on the **+ new here** box to search the vault or make a new to-do; or click the arrow and choose **Insert a to-do here…**. The arrow lights up under the pointer. One Undo step.
 - **Plan map card titles are readable** (plugin code; not seen in Obsidian): a long title now wraps onto a second line instead of ending in "…", and hovering the card shows the full name.
 
