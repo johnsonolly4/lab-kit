@@ -2,6 +2,7 @@
 
 ## Unreleased
 - **Plan map from two to-dos** (planning kit, plugin code; not seen in Obsidian): a project hub shows the map as soon as the project has two to-dos, linked or not. To-dos with no links wait in the **Not linked** tiles; drag one onto another, or use Comes after?, to make the plan. The Plan list tile still waits for a link.
+- **Plan map: insert a to-do between two** (planning kit, plugin code; not seen in Obsidian): hover an arrow and a **+** appears; drag it onto a to-do to put that one between the two (it comes after the left card, the right card comes after it, the old link goes), or click it, or choose **Insert a to-do here…** from the arrow's menu, to search the vault or make a new to-do. One Undo step.
 - **Plan map card titles are readable** (plugin code; not seen in Obsidian): a long title now wraps onto a second line instead of ending in "…", and hovering the card shows the full name.
 
 ## v1.2.1 (2026-10-13)

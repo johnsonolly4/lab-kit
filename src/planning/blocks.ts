@@ -377,8 +377,10 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
+        const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan };
         const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
-          addAfter: (from: string) => { addAfterFlow({ app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan }, from).catch(() => { new Notice("Could not make that link."); }); } };
+          addAfter: (from: string) => { addAfterFlow(addEnv, from).catch(() => { new Notice("Could not make that link."); }); },
+          insertBetween: (a: string, b: string) => { addAfterFlow(addEnv, a, b).catch(() => { new Notice("Could not insert that to-do."); }); } };
         drawPlanMap(box, plan, map, mapOptions);
         drawProblems(box, plan, mapOptions);
         return;

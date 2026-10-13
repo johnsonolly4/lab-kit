@@ -44,6 +44,20 @@ export function canLink(plan: Plan, from: string, to: string): LinkVerdict {
   return "ok";
 }
 
+export type InsertVerdict = "ok" | "self" | "loop" | "not-linked";
+/** What putting the to-do `n` between `a` and `b` (the arrow a → b) needs: `n` after `a`, `b` after `n` (the link a → b goes). A link that is already there is not written again. */
+export interface InsertPlan { verdict: InsertVerdict; nAfterA: boolean; bAfterN: boolean }
+
+/** May `n` go between `a` and `b`? The arrow must exist, `n` is neither end, and neither new link may make a loop (`n` already before `a`, or `b` already before `n`). */
+export function planInsert(plan: Plan, a: string, b: string, n: string): InsertPlan {
+  const no = (verdict: InsertVerdict): InsertPlan => ({ verdict, nAfterA: false, bAfterN: false });
+  if (!plan.rows.find(r => r.path === b)?.afterPaths.includes(a)) return no("not-linked");
+  if (n === a || n === b) return no("self");
+  const first = canLink(plan, a, n), second = canLink(plan, n, b);
+  if (first === "loop" || second === "loop") return no("loop");
+  return { verdict: "ok", nAfterA: first !== "already", bAfterN: second !== "already" };
+}
+
 export type NestVerdict = "ok" | "self" | "already" | "has-subs" | "parent-is-sub" | "parent-bad-sub";
 
 /** May `child` become a subtask of `parent` (`sub`)? Not itself, not its current parent again, not when `child` has subtasks of its own, not under a subtask (one level only, as `readPlan` reports), and not under a to-do whose own `sub` is refused. Its own `after` links do not matter. */
