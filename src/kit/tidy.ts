@@ -325,8 +325,12 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     }
     if (g.changes.length) groups.push(g);
 
-    // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists.
-    const hubs = new Set(notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path));
+    // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists or this scan makes it.
+    // A project folder with notes but no hub gets one below (project-hub-missing): its notes are linked to that hub in the same scan, not in a second one
+    const projectFolders = [...new Set(files.filter(f => inFolder(f.path, pf) && !hidden(f.path)).map(f => f.path.slice(pf.length + 1)).filter(r => r.includes("/")).map(r => r.split("/")[0]))].sort();
+    const newHubs = projectFolders.map(name => ({ folder: `${pf}/${name}`, path: `${pf}/${name}/${name}.md` }))
+      .filter(h => !files.some(f => f.path === h.path) && !notes.some(x => parentOf(x.path) === h.folder && kindOf(x.path) === "project")).map(h => h.path);
+    const hubs = new Set([...notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path), ...newHubs]);
     const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub; notes without the vt class get it; a back link to the project hub is added at the top of the page (a page change, shown as such).", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, pf) && !hubs.has(x.path))) {
       const name = n.path.slice(pf.length + 1).split("/")[0];
@@ -347,10 +351,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
     // A project folder with notes but no hub note (it was deleted): make it again from the Project hub template, named like the folder
     const g3: TidyGroup = { id: "project-hub-missing", title: "Project folders without a hub note", detail: "A folder under Projects that holds notes but has no hub note (kind: project) gets a new hub, named like the folder, made from the Project hub template. Existing notes are not touched; their project links work again.", changes: [] };
-    const folders = [...new Set(files.filter(f => inFolder(f.path, pf) && !hidden(f.path)).map(f => f.path.slice(pf.length + 1)).filter(r => r.includes("/")).map(r => r.split("/")[0]))].sort();
-    for (const name of folders) {
-      const folder = `${pf}/${name}`, path = `${folder}/${name}.md`;
-      if (files.some(f => f.path === path) || notes.some(x => parentOf(x.path) === folder && kindOf(x.path) === "project")) continue;
+    for (const path of newHubs) {
       g3.changes.push({ path, before: "", after: "kind: project\nStatus: Active\ndeadline:\ncssclasses:\n  - vt\n  - project", create: true, ...(ctx.projectHubText ? { text: ctx.projectHubText } : {}) });
     }
     if (g3.changes.length) groups.push(g3);
