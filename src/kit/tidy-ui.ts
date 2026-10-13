@@ -6,12 +6,12 @@ import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { batchChanges, changeKey, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { batchChanges, changeKey, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
-import { winFoot, winIntro } from "./window-look";
+import { WIN_MARK, winFoot, winIntro, winSummary } from "./window-look";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
@@ -131,13 +131,16 @@ export class TidyNotesModal extends Modal {
     banner.createSpan({ text: "Lab Kit backs up each note it changes, but that doesn't replace a backup of the vault. Nothing changes until you tick the box below, press Change notes and confirm." });
     if (this.message) el.createDiv({ cls: "lab-kit-tidy-banner", text: this.message });
 
-    if (!r.groups.length && !r.reported.length) el.createEl("p", { text: "Nothing to tidy: every note matches the kit layout." });
-    el.createEl("p", { cls: "setting-item-description", text: "Left is the note now, right is how it would look. Red: removed. Green: added. Amber: changed. Unchanged lines are folded; identical changes are shown once." });
+    winIntro(el, "Left is the note now, right is how it would look. Red: removed. Green: added. Amber: changed. Unchanged lines are folded; identical changes are shown once.");
+    winSummary(el, tidySummary(r));
+    if (!r.groups.length && !r.reported.length) el.createEl("p", { cls: "setting-item-description", text: "Every note matches the kit layout." });
 
     for (const g of r.groups) {
       const section = el.createDiv({ cls: "lab-kit-tidy-group" });
-      const head = section.createDiv({ cls: "lab-kit-tidy-rule" });
+      const state = tidyGroupState(g);
+      const head = section.createDiv({ cls: `lab-kit-tidy-rule is-${state}` });
       const box = head.createEl("input", { type: "checkbox" });
+      head.createSpan({ cls: "lab-kit-win-mark", text: WIN_MARK[state] });
       box.checked = this.ticked.has(g.id);
       box.indeterminate = this.ticked.has(g.id) && g.changes.some((_, i) => this.off.has(changeKey(g.id, i)));
       const singles: HTMLInputElement[] = [];   // one per change, at its position in g.changes
@@ -170,8 +173,8 @@ export class TidyNotesModal extends Modal {
         singles[index] = one;
         one.addEventListener("change", () => setNotes([index], one.checked));
       };
-      const label = head.createDiv();
-      label.createEl("strong", { text: `${g.title} (${g.changes.length})` });
+      const label = head.createDiv({ cls: "lab-kit-tidy-label" });
+      label.createDiv({ cls: "lab-kit-win-title", text: `${g.title} (${g.changes.length})` });
       if (g.detail) label.createDiv({ cls: "setting-item-description", text: g.detail });
       if (g.ask === "meetings") this.askMeetings(label);
       for (const { indices } of batchChanges(g.changes)) {
@@ -208,20 +211,24 @@ export class TidyNotesModal extends Modal {
       el.createEl("p", { cls: "setting-item-description", text: "These need a decision from you. Nothing here is ever changed." });
       for (const rep of r.reported) {
         const section = el.createDiv({ cls: "lab-kit-tidy-group" });
-        const label = section.createDiv({ cls: "lab-kit-tidy-rule" }).createDiv();
-        label.createEl("strong", { text: `${rep.title} (${rep.items.length})` });
+        const head = section.createDiv({ cls: "lab-kit-tidy-rule is-info" });
+        head.createSpan({ cls: "lab-kit-win-mark", text: WIN_MARK.info });
+        const label = head.createDiv({ cls: "lab-kit-tidy-label" });
+        label.createDiv({ cls: "lab-kit-win-title", text: `${rep.title} (${rep.items.length})` });
         label.createDiv({ cls: "setting-item-description", text: rep.detail });
         const list = section.createEl("ul", { cls: "lab-kit-tidy-reported" });
         for (const it of rep.items) list.createEl("li", { text: it.note ? `${it.path}: ${it.note}` : it.path });
       }
     }
 
-    const foot = el.createDiv({ cls: "lab-kit-tidy-foot" });
+    const foot = winFoot(el);
+    foot.addClass("lab-kit-tidy-foot");
     const backed = foot.createEl("label", { cls: "lab-kit-tidy-backup" });
     const backBox = backed.createEl("input", { type: "checkbox" });
     backBox.checked = this.backedUp;
     backBox.addEventListener("change", () => { this.backedUp = backBox.checked; this.refreshChange?.(); });
     backed.createSpan({ text: "I have backed up my vault" });
+    foot.createSpan({ cls: "setting-item-description lab-kit-tidy-hint", text: "Tick the box once your vault is backed up." });
     foot.createEl("button", { text: "Copy report" }).addEventListener("click", () => {
       void navigator.clipboard.writeText(reportMarkdown(r, this.ticked)).then(() => new Notice("Report copied."), () => new Notice("Couldn't copy the report."));
     });
@@ -229,7 +236,6 @@ export class TidyNotesModal extends Modal {
     this.refreshChange = () => { change.disabled = !this.backedUp || !this.selected().length; };
     this.refreshChange();
     change.addEventListener("click", () => this.confirm());
-    foot.createSpan({ cls: "setting-item-description", text: "Tick the box once your vault is backed up." });
   }
 
   private refreshChange: (() => void) | null = null;

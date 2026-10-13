@@ -38,7 +38,8 @@ User, 2026-10-13 (survey, two mockups, chat):
 - Files: `src/kit/managed-ui.ts` (`:804` Kit install, `:851` ConfirmModal), `src/kit/merge-ui.ts:31`, `src/kit/tidy-ui.ts:335` (TidyConfirmModal), `src/kit/backups-ui.ts:7`, `src/kit/moved-folders-ui.ts:27`.
 - Done when: each window has the intro / summary line / row / footer pieces that fit it (a confirmation is the intro, a summary line and the footer only; no invented marks); buttons and behaviour unchanged; tests, lint, build clean.
 
-### Phase 4 — Tidy up notes (option C) and the docs sweep
+### Phase 4 — Tidy up notes (option C) and the docs sweep — BUILT 2026-10-13, not seen in Obsidian
+- Result: `tidyGroupState` / `tidySummary` in `tidy.ts` (tested in `tests/managed-look.test.ts`), `tidy-ui.ts` rule headers with the mark and larger title, footer via `winFoot`; the diff untouched. Docs swept: changelog, checklist, architecture (`managed-look.ts`, `window-look.ts`); no other doc described the old window chrome. Tests 1003, lint 0 errors.
 - Depends on: Phases 1 and 3 (shared pieces)
 - Files: `src/kit/tidy-ui.ts` (`:92` window; rule header `:137-174`; reported `:206-214`; foot `:218-231`), `styles.css` (`.lab-kit-tidy-*` rule header only; diff rules untouched), docs: `docs/changelog.md`, `docs/tutorial.md`, `README.md` if they describe a window, `docs/obsidian-test-checklist.md` (one row per phase), `docs/architecture.md`, `BACKLOG.md`.
 - Done when: tests (the Tidy tests pass untouched; a new one for the mark per rule kind and the summary line); the diff, fold rows and batches look the same (the user checks); docs list every window's look.

@@ -4,6 +4,7 @@
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
+import type { WinState } from "./window-look";
 
 export type MigrationOp =
   /** A property with this value (e.g. `Type: Wiki`) becomes another property and value (`kind: concept`). Skipped when the new property exists. */
@@ -610,4 +611,22 @@ export function reportMarkdown(s: TidyScan, ticked?: ReadonlySet<string>): strin
     out.push("");
   }
   return out.join("\n").trimEnd() + "\n";
+}
+
+/** How a rule reads in the window: red when it removes lines of the user's (a replaced page that drops some, or a change that only deletes), else amber. */
+export function tidyGroupState(g: TidyGroup): WinState {
+  const removes = g.changes.some(c => {
+    if (c.to !== undefined || c.create || c.setting) return false;
+    if (replacesPage(c)) return pageSummary(c.before, c.after).lost.length > 0;
+    return countRows(diffRows(c.before, c.after)).removed > 0;
+  });
+  return removes ? "missing" : "todo";
+}
+
+/** The big line of the Tidy up notes window. */
+export function tidySummary(r: TidyScan): string {
+  const g = r.groups.length, n = r.reported.length;
+  if (!g && !n) return "Nothing to tidy.";
+  const will = g ? `${g} ${g === 1 ? "thing" : "things"} will change` : "", look = n ? `${n} ${n === 1 ? "needs" : "need"} a look` : "";
+  return (g && n ? `${will}, ${look}` : will || `${n} ${n === 1 ? "thing needs" : "things need"} a look`) + ".";
 }

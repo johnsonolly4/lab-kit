@@ -199,9 +199,9 @@
 /* The round mark: tinted from Lab Kit's colours (vault-colours.css) when they are there, else Obsidian's own */
 .lab-kit-win-mark { flex: none; width: 24px; height: 24px; margin-top: 2px; border-radius: 999px; text-align: center; line-height: 24px; font-size: var(--font-ui-small); font-weight: var(--font-semibold);
   color: rgb(var(--vt-neutral-text, 148, 163, 184)); background: rgba(var(--vt-neutral, 100, 116, 139), var(--vt-tint, 0.2)); }
-.lab-kit-win-row.is-ok .lab-kit-win-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
-.lab-kit-win-row:is(.is-todo, .is-warn) .lab-kit-win-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
-.lab-kit-win-row.is-missing .lab-kit-win-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
+:is(.lab-kit-win-row, .lab-kit-tidy-rule).is-ok .lab-kit-win-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
+:is(.lab-kit-win-row, .lab-kit-tidy-rule):is(.is-todo, .is-warn) .lab-kit-win-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
+:is(.lab-kit-win-row, .lab-kit-tidy-rule).is-missing .lab-kit-win-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
 .lab-kit-win-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
 .lab-kit-win-tick { display: inline-flex; align-items: center; gap: 6px; flex: none; margin-left: auto; white-space: nowrap; color: var(--text-muted); font-size: var(--font-ui-small); }
 .lab-kit-win-actions > .lab-kit-win-tick { margin-left: 0; }
@@ -249,6 +249,9 @@
 .lab-kit-tidy-weeks { width: 4.5em; }
 .lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }
+.lab-kit-tidy-hint { margin-right: auto; }
+.lab-kit-tidy-label { flex: 1 1 auto; min-width: 0; }
+.lab-kit-tidy-rule .lab-kit-win-mark { margin-top: 0; }
 
 /* Board column colours (src/kit/board-colours.ts): columns of Bases kanban boards by status name; colours are set as --lab-kit-col-* on the body (settings) */
 body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-column[data-lab-kit-group="Planned"] { --lab-kit-col: var(--lab-kit-col-planned, 148, 163, 184); }

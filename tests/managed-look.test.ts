@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "../src/kit/managed-look";
 import { backupsSummary } from "../src/kit/backups";
 import { movedSummary } from "../src/kit/moved-folders";
+import { tidyGroupState, tidySummary, type TidyGroup, type TidyScan } from "../src/kit/tidy";
 import type { ManagedAction, ManagedItem, ManagedResult } from "../src/kit/managed";
 
 const item = (action: ManagedAction): ManagedItem => ({ action } as ManagedItem);
@@ -47,5 +48,23 @@ describe("kit file windows: marks and summary", () => {
     expect(movedSummary(0)).toBe("Nothing to fix.");
     expect(movedSummary(1)).toBe("1 folder is missing.");
     expect(movedSummary(3)).toBe("3 folders are missing.");
+  });
+
+  const group = (before: string, after: string, extra: object = {}): TidyGroup => ({ id: "g", title: "t", detail: "", changes: [{ path: "a.md", before, after, ...extra }] });
+  it("Tidy up notes: a rule is amber, red only when it deletes lines of the user's", () => {
+    expect(tidyGroupState(group("kind: x", "kind: y"))).toBe("todo");
+    expect(tidyGroupState(group("a: 1", "a: 1\nb: 2"))).toBe("todo");
+    expect(tidyGroupState(group("a: 1\nold: 2", "a: 1"))).toBe("missing");
+    expect(tidyGroupState(group("", "", { to: "b.md" }))).toBe("todo");
+  });
+
+  it("Tidy up notes: the summary line", () => {
+    const scan = (g: number, r: number): TidyScan => ({ groups: Array(g).fill(group("a", "b")), reported: Array(r).fill({ id: "r", title: "t", detail: "", items: [] }) });
+    expect(tidySummary(scan(0, 0))).toBe("Nothing to tidy.");
+    expect(tidySummary(scan(1, 0))).toBe("1 thing will change.");
+    expect(tidySummary(scan(3, 1))).toBe("3 things will change, 1 needs a look.");
+    expect(tidySummary(scan(2, 2))).toBe("2 things will change, 2 need a look.");
+    expect(tidySummary(scan(0, 1))).toBe("1 thing needs a look.");
+    expect(tidySummary(scan(0, 3))).toBe("3 things need a look.");
   });
 });
