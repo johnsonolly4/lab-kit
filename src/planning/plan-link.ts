@@ -38,6 +38,18 @@ export function canLink(plan: Plan, from: string, to: string): LinkVerdict {
   return "ok";
 }
 
+export type NestVerdict = "ok" | "self" | "already" | "has-subs" | "parent-is-sub";
+
+/** May `child` become a subtask of `parent` (`sub`)? Not itself, not its current parent again, not when `child` has subtasks of its own, and not under a subtask (one level only, as `readPlan` reports). Its own `after` links do not matter. */
+export function canNest(plan: Plan, child: string, parent: string): NestVerdict {
+  if (child === parent) return "self";
+  const c = plan.rows.find(r => r.path === child), p = plan.rows.find(r => r.path === parent);
+  if (c?.parent === parent) return "already";
+  if (c && c.subs.length > 0) return "has-subs";
+  if (p && p.parent !== null) return "parent-is-sub";
+  return "ok";
+}
+
 /** `child`'s `after` when the to-do it came after is deleted: the dead link goes, and the deleted to-do's own `after` items take its place (A → B → C becomes A → C).
  *  `deleted`: the names that `after` items use for it; `own`: its `after` value; `childNames`: the names of the child, so it never comes after itself. Nothing left gives `undefined`. */
 export function bridgeAfter(value: unknown, deleted: string[], own: unknown, childNames: string[]): unknown {

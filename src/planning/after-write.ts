@@ -10,12 +10,17 @@ export function undoNotice(text: string, undo: () => Promise<void>): void {
 }
 
 /** Changes `after` on the to-do `to`. `change` gets the old value and returns the new one (undefined removes the property). */
-export async function changeAfter(app: App, to: string, change: (value: unknown) => unknown): Promise<void> {
-  const file = app.vault.getFileByPath(to);
+export const changeAfter = (app: App, to: string, change: (value: unknown) => unknown): Promise<void> => changeKey(app, to, "after", change);
+
+/** Changes `sub` (the to-do this one is a subtask of) on the to-do `child`: same as `changeAfter`; `undefined` removes the property. */
+export const changeSub = (app: App, child: string, change: (value: unknown) => unknown): Promise<void> => changeKey(app, child, "sub", change);
+
+async function changeKey(app: App, path: string, key: "after" | "sub", change: (value: unknown) => unknown): Promise<void> {
+  const file = app.vault.getFileByPath(path);
   if (!file) throw new Error("to-do not found");
   await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
-    const v = change(fm.after);
-    if (v === undefined) delete fm.after; else fm.after = v;
+    const v = change(fm[key]);
+    if (v === undefined) delete fm[key]; else fm[key] = v;
   });
 }
 

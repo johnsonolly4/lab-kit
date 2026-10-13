@@ -1,6 +1,6 @@
 // Making and removing `after` links on the plan map (src/planning/plan-link.ts).
 import { describe, it, expect } from "vitest";
-import { addAfter, bridgeAfter, canLink, removeAfter } from "../src/planning/plan-link";
+import { addAfter, bridgeAfter, canLink, canNest, removeAfter } from "../src/planning/plan-link";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -62,6 +62,41 @@ describe("canLink", () => {
     expect(canLink(plan, p("D"), p("C"))).toBe("ok");
     expect(canLink(plan, p("C"), p("D"))).toBe("ok");
     expect(canLink(plan, p("B"), p("J"))).toBe("ok");
+  });
+});
+
+describe("canNest", () => {
+  const plan = readPlan([td("A"), td("B", { after: "[[A]]" }), td("C", { sub: "[[A]]" }), td("D"), td("E", { sub: "[[D]]", after: "[[B]]" })], hub);
+  const p = (n: string) => T + n + ".md";
+  it("itself, the same parent again, a card with subtasks and a subtask as parent are refused", () => {
+    expect(canNest(plan, p("B"), p("B"))).toBe("self");
+    expect(canNest(plan, p("C"), p("A"))).toBe("already");
+    expect(canNest(plan, p("A"), p("D"))).toBe("has-subs");     // A has subtask C
+    expect(canNest(plan, p("B"), p("C"))).toBe("parent-is-sub"); // C is a subtask of A
+  });
+  it("a plain card, a re-parent and a card that has `after` links are fine", () => {
+    expect(canNest(plan, p("B"), p("D"))).toBe("ok");
+    expect(canNest(plan, p("C"), p("D"))).toBe("ok");   // C moves from A to D
+    expect(canNest(plan, p("E"), p("A"))).toBe("ok");   // E keeps `after: B`
+  });
+});
+
+describe("`sub` round trip through readPlan", () => {
+  it("a written link is read back as the parent; clearing it (no property) makes the card a plain one again", () => {
+    const nested = readPlan([td("A"), td("B", { sub: "[[A]]" })], hub);
+    expect(nested.rows.find(r => r.name === "B")?.parent).toBe(T + "A.md");
+    expect(nested.rows.find(r => r.name === "A")?.subs.map(s => s.name)).toEqual(["B"]);
+    expect(nested.problems).toEqual([]);
+    const cleared = readPlan([td("A"), td("B")], hub);
+    expect(cleared.rows.find(r => r.name === "B")?.parent).toBeNull();
+    expect(cleared.rows.find(r => r.name === "A")?.subs).toEqual([]);
+  });
+  it("a re-parent replaces the single link, and `after` is untouched", () => {
+    const moved = readPlan([td("A"), td("D"), td("B", { sub: "[[D]]", after: "[[A]]" })], hub);
+    const b = moved.rows.find(r => r.name === "B")!;
+    expect(b.parent).toBe(T + "D.md");
+    expect(b.afterPaths).toEqual([T + "A.md"]);
+    expect(moved.rows.find(r => r.name === "A")?.subs).toEqual([]);
   });
 });
 
