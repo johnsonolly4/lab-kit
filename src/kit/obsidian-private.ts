@@ -23,6 +23,10 @@ interface PrivateApp {
     customKeys?: Record<string, KitHotkey[]>;
     defaultKeys?: Record<string, KitHotkey[]>;
   };
+  /** Obsidian's own (core) plugins, by id; `instance.options` is that plugin's saved settings. */
+  internalPlugins?: { plugins?: Record<string, { enabled?: boolean; instance?: { options?: Record<string, unknown> } }> };
+  /** Property types (Settings → Properties, saved in types.json). */
+  metadataTypeManager?: { getAssignedType?: (name: string) => string | null | undefined; setType?: (name: string, type: string) => Promise<void> | void };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
@@ -323,6 +327,42 @@ export function openPluginSettings(app: App, id: string): boolean {
   setting.open();
   setting.openTabById(id);
   return true;
+}
+
+/**
+ * Which of Obsidian's core plugins are on (`app.internalPlugins`, private). Only the ids Obsidian lists are in the answer, so an id this version
+ * doesn't know reads as "can't tell", never as off. null when the list itself can't be read.
+ */
+export function corePluginsOn(app: App, ids: string[]): Record<string, boolean> | null {
+  const all = priv(app).internalPlugins?.plugins;
+  if (!all || typeof all !== "object") return null;
+  const out: Record<string, boolean> = {};
+  for (const id of ids) if (all[id] && typeof all[id].enabled === "boolean") out[id] = all[id].enabled;
+  return out;
+}
+/** The core Daily notes plugin's New file location and Date format (`instance.options`, private; empty = Obsidian's defaults). null when they can't be read. */
+export function dailyNotesOptions(app: App): { folder: string; format: string } | null {
+  const o = priv(app).internalPlugins?.plugins?.["daily-notes"]?.instance?.options;
+  if (!o || typeof o !== "object") return null;
+  const text = (v: unknown): string => (typeof v === "string" ? v.trim().replace(/^\/+|\/+$/g, "") : "");
+  return { folder: text(o.folder), format: text(o.format) };
+}
+/** Dataview's "Enable inline queries" (`settings.enableInlineDataview`, another plugin's settings). null when Dataview isn't loaded or has no such setting. */
+export function dataviewInlineQueries(app: App): boolean | null {
+  const v = (priv(app).plugins?.plugins?.dataview as { settings?: { enableInlineDataview?: unknown } } | undefined)?.settings?.enableInlineDataview;
+  return typeof v === "boolean" ? v : null;
+}
+/** The type Obsidian has assigned to each property (`app.metadataTypeManager`, private): null for a property with none. null when the manager can't be read. */
+export function propertyTypes(app: App, names: string[]): Record<string, string | null> | null {
+  const m = priv(app).metadataTypeManager;
+  if (!m?.getAssignedType) return null;
+  try { return Object.fromEntries(names.map(n => [n, m.getAssignedType?.(n) ?? null])); } catch (e) { console.error(e); return null; }
+}
+/** Sets a property's type (as Settings → Properties does). False when this Obsidian has no such call or it fails. */
+export async function setPropertyType(app: App, name: string, type: string): Promise<boolean> {
+  const m = priv(app).metadataTypeManager;
+  if (!m?.setType) return false;
+  try { await m.setType(name, type); return true; } catch (e) { console.error(e); return false; }
 }
 
 interface VaultConfig { getConfig?: (key: string) => unknown; setConfig?: (key: string, value: unknown) => void }

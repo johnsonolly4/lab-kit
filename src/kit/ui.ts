@@ -1,5 +1,5 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Modal, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
@@ -147,7 +147,7 @@ class KitSettingTab extends PluginSettingTab {
       });
     }
     const setup: SettingGroupItem[] = [];
-    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins, Templater and its folders and hotkey, CSS snippets, folders) and what is missing, with a Fix for each. Nothing changes until you confirm.",
+    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins and Obsidian's own, kit files, the settings below, Templater, Meta Bind buttons, the homepage, ZotLit, meeting series, CSS snippets, folders) and what is missing, with a Fix where Lab Kit can make the change. Nothing changes until you confirm.",
       render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
     setup.push({ name: "Check hotkeys", desc: "Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now. Changes nothing: set keys in Obsidian's Hotkeys settings.",
       render: b => { b.addButton(btn => btn.setButtonText("Check hotkeys…").onClick(() => this.ctl.checkHotkeys())); } });
@@ -318,7 +318,7 @@ export class KitController {
     openSettings: () => { openPluginSettings(this.app, this.plugin.manifest.id); },
     findMoved: () => this.findMovedFolders(),
   };
-  findMovedFolders(): void { new MovedFoldersModal(this.app, this).open(); }
+  findMovedFolders(): Modal { const m = new MovedFoldersModal(this.app, this); m.open(); return m; }
 
   /** Set by the plugin when the to-do engine runs: redraws the board's countdown badges. */
   dueCountdownChanged: (() => void) | null = null;

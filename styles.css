@@ -193,6 +193,8 @@
 
 /* Check setup window (src/kit/setup-check-ui.ts) */
 .lab-kit-setup-check h4 { margin: 12px 0 4px; }
+.lab-kit-setup-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.lab-kit-setup-top > p { margin: 0; }
 .lab-kit-setup-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-setup-text { flex: 1 1 auto; min-width: 0; }
 .lab-kit-setup-mark { flex: 0 0 1.2em; font-weight: 600; }

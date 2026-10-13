@@ -396,8 +396,9 @@ export class KitManaged {
     } catch (e) { this.failed(e); }
   }
 
-  review(): void { new KitManagedModal(this.app, this).open(); }
-  manage(): void { new KitFilesModal(this.app, this).open(); }
+  /** Both return their window, so a window that opened one (Check setup) can redraw itself when it closes. */
+  review(): Modal { const m = new KitManagedModal(this.app, this); m.open(); return m; }
+  manage(): Modal { const m = new KitFilesModal(this.app, this); m.open(); return m; }
 
   failed(e: unknown): void {
     console.error(e);
