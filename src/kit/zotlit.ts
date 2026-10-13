@@ -9,7 +9,7 @@ export interface ZotlitField { key: string; expr: string; merge: "replace" | "ke
 export const ZOTLIT_FIELDS: ZotlitField[] = [
   { key: "citekey", expr: "zt.citationKey", merge: "replace", language: "liquid" },
   { key: "kind", expr: "\"literature\"", merge: "keep", language: "liquid" },
-  { key: "Type", expr: "\"Literature Note\" | split: \",\"", merge: "keep", language: "liquid" },
+  { key: "Type", expr: "\"Literature Note\"", merge: "keep", language: "liquid" },
   { key: "Title", expr: "zt.title", merge: "replace", language: "liquid" },
   { key: "Year", expr: "zt.date.year", merge: "replace", language: "liquid" },
   { key: "Authors", expr: "zt.authors | join: \", \"", merge: "replace", language: "liquid" },

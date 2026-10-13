@@ -148,7 +148,7 @@
       "role": "howtos",
       "path": "Obsidian/Set up ZotLit.md",
       "version": "1.0.1",
-      "sha256": "4d3c1667aa01d54964dcb868e73d3c5b97c90989ad8e5d5acd6a3d3b20b4b0c0",
+      "sha256": "90b3becea57925a42346efc2bd280c131921228b0eb058680575240b66f8cc9e",
       "renamedFrom": [],
       "desc": "Checklist: ZotLit's note folder and template folder",
       "optional": true,
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "77fd3d2f3615e920ede3bfed66bdefc2f7fc01e1e17e44dff9e4b56d37eb81f2",
+      "sha256": "2a44f56276a7951d65871a8a7781cbca77b1d52e181106e59ccf9af9ffd2f967",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },

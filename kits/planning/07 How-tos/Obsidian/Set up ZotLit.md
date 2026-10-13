@@ -20,7 +20,7 @@ show: back-to-hub
   |---|---|---|
   | `citekey` | `zt.citationKey` | Replace |
   | `kind` | `"literature"` | Keep existing |
-  | `Type` | `"Literature Note" \| split: ","` | Keep existing |
+  | `Type` | `"Literature Note"` | Keep existing |
   | `Title` | `zt.title` | Replace |
   | `Year` | `zt.date.year` | Replace |
   | `Authors` | `zt.authors \| join: ", "` | Replace |

@@ -197,7 +197,7 @@ Created by **ZotLit** (command *ZotLit: Create literature note*) from three Liqu
 | Property | Expression | Merge |
 |---|---|---|
 | `kind` | `"literature"` | Keep existing |
-| `Type` | `"Literature Note" \| split: ","` | Keep existing |
+| `Type` | `"Literature Note"` | Keep existing |
 | `Title` | `zt.title` | Replace |
 | `aliases` | `zt.title \| split: "§§"` | Append arrays |
 | `Year` | `zt.date.year` | Replace |
