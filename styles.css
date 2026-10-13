@@ -274,3 +274,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 
 /* Rig block: a diagram wider than the note scrolls sideways instead of being cut off at the right */
 .lab-kit-rig-diagram, .lab-kit-rig-diagram .mermaid { overflow-x: auto; }
+
+/* Picture for a slide window (src/planning/plan-slide-ui.ts): the preview is always on white, like the picture */
+.lab-kit-slide-preview { display: block; width: 100%; height: auto; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: #fff; margin: 8px 0; }
+.lab-kit-hidden { display: none; }

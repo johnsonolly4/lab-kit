@@ -10,6 +10,8 @@ import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { layoutPlan, type Direction } from "./plan-map";
 import { drawPlanMap } from "./plan-map-render";
+import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
+import { hasNode } from "../platform";
 import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
@@ -55,6 +57,7 @@ class BlockView extends MarkdownRenderChild {
   private expanded = new Set<string>();   // plan map parents whose subtask list is open
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
+  private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
 
@@ -330,7 +333,14 @@ class BlockView extends MarkdownRenderChild {
         const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
         flip.addEventListener("mousedown", stop);
         flip.addEventListener("click", e => { stop(e); this.direction = direction === "down" ? "across" : "down"; this.mapScroll = null; this.draw(); });
-        drawPlanMap(box, plan, layoutPlan(plan), { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, redraw: () => this.draw() });
+        const map = layoutPlan(plan);
+        if (hasNode()) {   // the picture for a slide is a PNG on the clipboard: desktop only
+          const shot = title.createEl("button", { cls: "vt-map-dir vt-map-slide", attr: { "aria-label": "Picture for a slide", title: "Copy a picture of the plan for a slide" } });
+          setIcon(shot, "image");
+          shot.addEventListener("mousedown", stop);
+          shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
+        }
+        drawPlanMap(box, plan, map, { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, redraw: () => this.draw() });
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }

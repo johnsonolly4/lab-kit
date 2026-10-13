@@ -533,6 +533,8 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 /* Plan map: top-to-bottom direction and the button that flips it (src/planning/plan-map-render.ts, blocks.ts) */
 .vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
 .vt-map-dir:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-slide { display: inline-flex; align-items: center; }
+.vt-map-slide svg { width: 14px; height: 14px; }
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }
 .vt-map-down .vt-map-spacer { flex: 0 0 calc(560px - 140px); width: 100%; }
