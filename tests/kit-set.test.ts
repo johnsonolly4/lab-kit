@@ -1,6 +1,6 @@
 // Both kits in one window and one confirmation (src/kit/kit-set.ts): section order, status lines, the merged confirmation.
 import { describe, it, expect } from "vitest";
-import { combinePreviews, kitStatusLine, mergeParts, orderKits, runSafeUpdate, waitingCount, type KitPart, type KitSection, type SafeKit } from "../src/kit/kit-set";
+import { combinePreviews, kitFilesDesc, kitStatusLine, mergeParts, orderKits, runSafeUpdate, waitingCount, type KitPart, type KitSection, type SafeKit } from "../src/kit/kit-set";
 import type { InstallPreview, ManagedAction, ManagedItem, ManagedResult } from "../src/kit/managed";
 
 const item = (action: ManagedAction, n = 1): ManagedItem => ({ file: { id: `f${n}` } as never, dest: `x/${n}.md`, text: "", kitHash: "", curHash: null, action, untracked: false });
@@ -130,5 +130,13 @@ describe("runSafeUpdate", () => {
     const log: string[] = [];
     const out = await runSafeUpdate([fake("lab", log)], async () => []);
     expect(out).toEqual({ cancelled: false, results: [result("lab.md")], failed: [] });
+  });
+});
+
+describe("kitFilesDesc", () => {
+  it("each kit's installed version and files, with the bundled version only when it differs or the kit is not installed", () => {
+    expect(kitFilesDesc([{ name: "Lab kit", bundled: "1.1.0", installed: "1.1.0", tracked: 26 }, { name: "Planning kit", bundled: "1.1.0", installed: "1.0.1", tracked: 29 }]))
+      .toBe("Lab kit: v1.1.0, 26 files tracked · Planning kit: v1.0.1, 29 files tracked (bundled v1.1.0)");
+    expect(kitFilesDesc([{ name: "Planning kit", bundled: "1.1.0", installed: null, tracked: 0 }])).toBe("Planning kit: not installed yet (bundled v1.1.0)");
   });
 });

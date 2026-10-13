@@ -16,7 +16,7 @@ import type { HeaderSettings } from "../header/settings";
 import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
-export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void }
+export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void; /** Review update… and Manage files…: one window for both kits when the planning kit is on. */ review(): ClosingModal; manage(): ClosingModal }
 
 /** Reads the vault, Templater and Obsidian into the plain state checkSetup works on. */
 export function readSetupState(app: App, host: SetupHost): SetupState {
@@ -179,7 +179,7 @@ export class SetupCheckModal extends Modal {
       case "hide-properties": await confirm({ name: "Set Properties in document to Hidden", desc: "Settings → Editor. Properties stay in the note; open them from the note's menu.",
         apply: async () => { if (!hidePropertiesInDocument(this.app)) new Notice("Couldn't change it here. Set it in the editor settings."); } }); break;
       case "settings": this.close(); if (!openPluginSettings(this.app, this.host.pluginId)) new Notice("Couldn't open the settings: open them from the gear icon."); return;
-      case "manage": this.after(lab.manage()); return;
+      case "manage": this.after(this.host.manage()); return;
       case "open-note": this.close(); void this.app.workspace.openLinkText(fix.path, "", false); return;
       case "matching-mode": await confirm({ name: "Set Templater's matching mode to Folder templates", desc: "It is None now, so folder templates never run.", apply: () => setTemplaterFolderMode(this.app) }); break;
       case "startup-remove": await confirm({ name: "Remove the old roll-over from Templater's startup templates", desc: `${fix.template}. Lab Kit's to-do engine does the roll-over now. The file itself stays.`,
@@ -199,7 +199,7 @@ export class SetupCheckModal extends Modal {
       case "meta-bind-reset": await confirm({ name: "Put the kit's action on these Meta Bind buttons", desc: `${fix.ids.join(", ")}. Their old action is replaced (label and look stay). Restart Obsidian afterwards.`,
         apply: async () => { if (await resetMetaBindActions(this.app, PLANNING_BUTTONS.filter(b => fix.ids.includes(b.id)))) new Notice("Buttons changed. Restart Obsidian so they load.", 10000); } }); break;
       case "plugin": window.open(`obsidian://show-plugin?id=${encodeURIComponent(fix.id)}`); return;
-      case "install": this.after((fix.kit === "planning" ? this.host.planning ?? lab : lab).review()); return;
+      case "install": this.after(fix.kit === "planning" && !this.host.planning?.slot.enabled ? (this.host.planning ?? lab).review() : this.host.review()); return;   // both kits on: one window
       case "templater": await lab.setupTemplater(); break;
       case "css": await confirm({ name: "Turn on the CSS snippet", desc: fix.names.join(", "), apply: () => setCssSnippets(this.app, fix.names, []) }); break;
       case "find-moved": this.after(this.host.findMoved()); return;

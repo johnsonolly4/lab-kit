@@ -11,7 +11,8 @@ import { MovedFoldersModal } from "./moved-folders-ui";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
-import { KitManaged, type ClosingModal } from "./managed-ui";
+import { KitManaged, kitName, type ClosingModal } from "./managed-ui";
+import { kitFilesDesc } from "./kit-set";
 import { KitSet } from "./kit-set-ui";
 import { SetupCheckModal } from "./setup-check-ui";
 import { HotkeyCheckModal } from "./hotkey-check-ui";
@@ -113,21 +114,37 @@ class KitSettingTab extends PluginSettingTab {
       }
     });
     const updates: SettingGroupItem[] = [];
-    if (managed.updateAvailable()) updates.push({ name: "Update available", desc: `Kit v${inst} → v${managed.version}. Review it first, or update only the files you haven't changed.` });
+    const planning = this.ctl.planning;
+    const both = !!planning && planning.slot.enabled;   // the planning kit is on: one set of file buttons for both kits
+    const waiting = [managed, ...(both && planning ? [planning] : [])].filter(k => k.updateAvailable());
+    if (waiting.length) updates.push({ name: "Update available", desc: `${waiting.map(k => `${both ? `${kitName(k)} ` : "Kit "}v${k.installedVersion} → v${k.version}`).join(", ")}. Review ${waiting.length > 1 ? "them" : "it"} first, or update only the files you haven't changed.` });
     const newer = [...this.ctl.newerKit.lab, ...this.ctl.newerKit.planning];
     if (newer.length) updates.push({ name: "Kept files with a newer kit version", desc: `${newer.length} ${newer.length === 1 ? "file" : "files"} you keep as your own (${newer.join(", ")}). Manage files has Compare… and Use kit version… on each.` });
-    updates.push({
-      name: "Lab kit",
-      desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(slot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
-      render: b => {
-        b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => managed.manage()))
-          .addButton(btn => btn.setButtonText("Review update…").onClick(() => managed.review()))
-          .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
-      }
-    });
-    const planning = this.ctl.planning;
+    if (both && planning) {
+      // The planning kit is on: one row, one set of buttons, for both kits (one window, one confirmation, one report)
+      const set = this.ctl.kitSet();
+      updates.push({
+        name: "Kit files",
+        desc: kitFilesDesc([managed, planning].map(k => ({ name: kitName(k), bundled: k.version, installed: k.installedVersion, tracked: Object.keys(k.slot.managed?.files ?? {}).length }))),
+        render: b => {
+          b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => set.manage()))
+            .addButton(btn => btn.setButtonText("Review update…").onClick(() => set.review()))
+            .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void set.updateSafe()));
+        }
+      });
+    } else {
+      updates.push({
+        name: "Lab kit",
+        desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(slot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
+        render: b => {
+          b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => managed.manage()))
+            .addButton(btn => btn.setButtonText("Review update…").onClick(() => managed.review()))
+            .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void managed.updateSafe()));
+        }
+      });
+    }
     if (planning) {
-      const pSlot = planning.slot, pInst = planning.installedVersion;
+      const pSlot = planning.slot;
       updates.push({ name: "Planning kit", desc: "Homepage, to-do board, planning notes and templates, with their own commands. Switching it off removes nothing.",
         render: b => {
           b.addToggle(t => t.setValue(pSlot.enabled).onChange(async v => {
@@ -138,15 +155,6 @@ class KitSettingTab extends PluginSettingTab {
             this.update();
           }));
         } });
-      if (pSlot.enabled) updates.push({
-        name: "Planning kit files",
-        desc: `Bundled v${planning.version} · ${pInst ? `installed v${pInst}, ${Object.keys(pSlot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
-        render: b => {
-          b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => planning.manage()))
-            .addButton(btn => btn.setButtonText("Review update…").onClick(() => planning.review()))
-            .addButton(btn => btn.setButtonText("Update all safe files").setCta().onClick(() => void planning.updateSafe()));
-        }
-      });
     }
     const setup: SettingGroupItem[] = [];
     setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins and Obsidian's own, kit files, the settings below, Templater, Meta Bind buttons, the homepage, ZotLit, meeting series, CSS snippets, folders) and what is missing, with a Fix where Lab Kit can make the change. Nothing changes until you confirm.",
@@ -570,7 +578,7 @@ export class KitController {
   /** Opens the Check setup window. */
   tidyNotes(): void { new TidyNotesModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning }).open(); }
   checkHotkeys(): void { new HotkeyCheckModal(this.app, this.planning?.slot.enabled === true).open(); }
-  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save(), findMoved: () => this.findMovedFolders() }).open(); }
+  checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save(), findMoved: () => this.findMovedFolders(), review: () => this.review(), manage: () => this.manage() }).open(); }
 
   /** Opens the popup with the newest changelog section and remembers it was shown. */
   async showWhatsNew(): Promise<void> {

@@ -91,3 +91,8 @@ export async function runSafeUpdate(kits: SafeKit[], confirm: (merged: MergedPre
   for (const c of chosen) { try { await c.apply(); } catch (error) { failed.push({ name: c.name, error }); } }
   return { cancelled: false, results, failed };
 }
+
+/** The description under the single "Kit files" row: each kit's installed version and how many files it tracks, and the bundled version when it differs. */
+export function kitFilesDesc(kits: { name: string; bundled: string; installed: string | null; tracked: number }[]): string {
+  return kits.map(k => `${k.name}: ${k.installed ? `v${k.installed}, ${k.tracked} files tracked${k.installed !== k.bundled ? ` (bundled v${k.bundled})` : ""}` : `not installed yet (bundled v${k.bundled})`}`).join(" · ");
+}

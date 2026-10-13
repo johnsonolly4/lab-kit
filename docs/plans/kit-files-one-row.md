@@ -43,9 +43,10 @@ Decided with the user 2026-10-13 (chat + two surveys):
 - Done when: the existing per-kit behaviour is unchanged for one kit (tests in `tests/managed.test.ts` untouched and green); a test for the section list and its order (a kit with updates first and open, an up-to-date kit last and folded); the per-file actions in Manage files… still refresh the window; NOT seen in Obsidian until the user has opened both windows with both kits on.
 - New dependencies: none
 
-### Phase 4 — The settings row, Check setup, docs
+### Phase 4 — The settings row, Check setup, docs — BUILT 2026-10-13, not seen in Obsidian
 - Depends on: Phases 2 and 3.
 - Files: `src/kit/ui.ts` (`builtInGroups` 93-149: one "Kit files" row with the three buttons and a status line per kit when the planning kit is enabled; the "Update available" row names the kit(s); the lab-kit-only row stays when the planning kit is off; the planning toggle row stays), `src/kit/setup-check-ui.ts:182-203` (the `manage` and `install` fixes open the combined window when both kits are on), `src/kit/setup-check.ts:224,251` and the notices at `ui.ts:135,435-436` (wording: "Review update… in Settings → Lab Kit" still true), tests for the Check setup fixes, docs per `docs/maintenance.md` (README Settings, tutorial, changelog, `docs/obsidian-test-checklist.md` row, `docs/architecture.md`).
+- Result 2026-10-13: `builtInGroups` in `ui.ts` shows one "Kit files" row (description from `kitFilesDesc`, pure, tested) with the three buttons on `KitController.kitSet()` when the planning kit is on, else the old "Lab kit" row; "Update available" names each kit; the old "Planning kit files" row is gone; `SetupHost` has `review()` / `manage()` and Check setup's `install` and `manage` fixes use them (a planning-kit install fix with the planning kit off still opens that kit's own window); docs updated. Tests 981.
 - Done when: tests, lint and build clean; the checklist row says what to press (Settings → Lab Kit → Updates with both kits on: one row, the three buttons, the window with both kits, updates first); nothing left unticked in BACKLOG "One set of file buttons" except what is not seen.
 - New dependencies: none
 
