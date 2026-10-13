@@ -48,7 +48,7 @@ export class PlanSlideModal extends Modal {
       .addOption("compact", "Done and later as tiles").addOption("whole", "The whole map")
       .setValue(this.choice.whole ? "whole" : "compact")
       .onChange(v => { this.choice.whole = v === "whole"; aheadEl?.toggleClass("lab-kit-hidden", this.choice.whole); this.draw(); }));
-    const aheadRow = new Setting(contentEl).setName("Full cards for the next steps").setDesc("How many steps ahead get a full card; the rest become tiles.");
+    const aheadRow = new Setting(contentEl).setName("Columns of full cards").setDesc("How many columns of cards to show, counting from the next open one (cards that can be done together share a column); the rest become tiles.");
     aheadEl = aheadRow.settingEl;
     aheadRow.addText(t => { t.inputEl.type = "number"; t.inputEl.min = "1"; t.setValue(String(this.choice.ahead)).onChange(v => {
       const n = Math.floor(Number(v));
