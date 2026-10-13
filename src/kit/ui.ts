@@ -2,7 +2,7 @@
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, cloneExperimentTarget, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
-import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
+import { cloneLabNote, labNoteName, labPrefix, labTitle, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
@@ -503,12 +503,12 @@ export class KitController {
         source = await pick<TFile>(this.app, numbered.map(f => f.basename), numbered, "Clone which experiment? (Esc cancels)", false);
         if (!source) return;
       }
-      const title = await ask(this.app, `Title of the new experiment, a copy of ${source.basename} (Esc to cancel, Enter on empty = Untitled)`);
+      const title = await ask(this.app, `Title of the new experiment, a copy of ${source.basename} (Esc to cancel)`, labTitle(source.basename));
       if (title === null) return;
       const number = nextLabNumber(notes.map(f => f.basename), target.initials);
       const path = `${target.folder}/${labNoteName(target.initials, number, title)}.md`;
       if (this.app.vault.getAbstractFileByPath(path)) { new Notice(`${path} already exists.`); return; }
-      const made = cloneLabNote(await this.app.vault.read(source), { oldPrefix: labPrefix(source.basename)!, newPrefix: `${target.initials}${number}-`, today: localDate(new Date()) });
+      const made = cloneLabNote(await this.app.vault.read(source), { oldPrefix: labPrefix(source.basename)!, newPrefix: `${target.initials}${number}-`, today: localDate(new Date()), clonedFrom: source.basename });
       const file = await this.app.vault.create(path, made.text);
       await this.app.workspace.getLeaf(false).openFile(file);
       new Notice(`Cloned ${source.basename}: ${made.recoded} sample code${made.recoded === 1 ? "" : "s"} renumbered. Check the tables before you start.`);

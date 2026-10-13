@@ -1,7 +1,7 @@
 // Clone experiment text rules (src/kit/clone.ts): numbering, the properties that start again, the free text that is cleared, the sample codes.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "../src/kit/clone";
+import { cloneLabNote, labNoteName, labPrefix, labTitle, localDate, nextLabNumber } from "../src/kit/clone";
 
 const source = readFileSync("tests/fixtures/lab-notes/clone-source.md", "utf8");
 const OPTS = { oldPrefix: "ABC0014-", newPrefix: "ABC0015-", today: "2026-10-13" };
@@ -39,6 +39,15 @@ describe("labNoteName and labPrefix", () => {
   });
 });
 
+describe("labTitle", () => {
+  it("gives the title part of a lab note's name", () => {
+    expect(labTitle("ABC0014 - RAFT test")).toBe("RAFT test");
+    expect(labTitle("0014 - RAFT test - run 2")).toBe("RAFT test - run 2");
+    expect(labTitle("Home")).toBe("Home");
+    expect(labTitle("ABC0014")).toBe("ABC0014");
+  });
+});
+
 describe("localDate", () => {
   it("writes the local date, padded", () => {
     expect(localDate(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05");
@@ -59,6 +68,21 @@ describe("cloneLabNote", () => {
       expect(t).toContain(kept);
     expect(t).toContain("Run styrene at three residence times.");
     expect(t).toContain("1. Prime the pumps.");
+  });
+  it("adds a link back to the note it was cloned from, as the last property", () => {
+    const t = cloneLabNote(source, { ...OPTS, clonedFrom: "ABC0014 - RAFT test" }).text;
+    expect(t).toContain('  - vt\nCloned from: "[[ABC0014 - RAFT test]]"\n---\n');
+    expect(t.match(/^Cloned from:/gm)?.length).toBe(1);
+  });
+  it("a clone of a clone points at its own source, not at the first one", () => {
+    const first = cloneLabNote(source, { ...OPTS, clonedFrom: "ABC0014 - A" }).text;
+    const second = cloneLabNote(first, { oldPrefix: "ABC0015-", newPrefix: "ABC0016-", today: "2026-10-14", clonedFrom: "ABC0015 - A" }).text;
+    expect(second.match(/^Cloned from:/gm)?.length).toBe(1);
+    expect(second).toContain('Cloned from: "[[ABC0015 - A]]"');
+  });
+  it("adds no link without a name or without properties", () => {
+    expect(clone().text).not.toContain("Cloned from");
+    expect(cloneLabNote("# ⚗️ Procedure\n", { ...OPTS, clonedFrom: "X" }).text).toBe("# ⚗️ Procedure\n");
   });
   it("renumbers this note's sample codes in tables and text, and leaves other notes' codes alone", () => {
     const r = clone();

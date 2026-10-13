@@ -13,6 +13,11 @@ export function nextLabNumber(basenames: string[], initials: string): string {
   return String(Math.max(0, ...nums) + 1).padStart(4, "0");
 }
 
+/** The title part of a lab note's name: `ABC0014 - RAFT test` gives `RAFT test` (the name itself when it has no number or no title). */
+export function labTitle(basename: string): string {
+  return basename.replace(/^[A-Za-z]*\d+\s*-\s*/, "").trim() || basename;
+}
+
 /** A date as YYYY-MM-DD in the local time zone. */
 export function localDate(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -36,6 +41,8 @@ export interface CloneOptions {
   newPrefix: string;
   /** Today as YYYY-MM-DD, written to `Plan date`. */
   today: string;
+  /** Name of the note being copied: written as `Cloned from: "[[name]]"` at the end of the properties, so the clone links back. */
+  clonedFrom?: string;
 }
 
 export interface CloneResult {
@@ -59,7 +66,7 @@ const isNotes = (line: string): boolean => /^#\s/.test(line) && line.includes("N
 /**
  * The new note's text from the old one. Kept: the set-up (properties, objectives, apparatus, procedure, rig, solution and sample tables).
  * Started again: Status, Plan date, Exp. Start / End, Outcome; the free text of "Results / Analysis" (headings, tables, code blocks and
- * checklist items stay, ticks are cleared); "Notes for next time". Sample codes of the old note are renumbered to the new prefix.
+ * checklist items stay, ticks are cleared); "Notes for next time". A `Cloned from` link to the old note is added. Sample codes of the old note are renumbered to the new prefix.
  */
 export function cloneLabNote(text: string, o: CloneOptions): CloneResult {
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
@@ -72,11 +79,13 @@ export function cloneLabNote(text: string, o: CloneOptions): CloneResult {
     if (end > 0) {
       out.push("---");
       for (i = 1; i < end; i++) {
+        if (/^Cloned from:/.test(lines[i])) { while (i + 1 < end && /^(\s+|-\s)/.test(lines[i + 1])) i++; continue; }   // a clone of a clone points at its own source
         const reset = RESET.find(([rx]) => rx.test(lines[i]));
         if (!reset) { out.push(lines[i]); continue; }
         out.push(reset[1](o));
         while (i + 1 < end && /^(\s+|-\s)/.test(lines[i + 1])) i++;   // a list under the key goes with it
       }
+      if (o.clonedFrom) out.push(`Cloned from: "[[${o.clonedFrom.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}]]"`);
       out.push("---");
       i = end + 1;
     } else i = 0;
