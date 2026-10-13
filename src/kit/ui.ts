@@ -19,7 +19,7 @@ import { HotkeyCheckModal } from "./hotkey-check-ui";
 import { ClearBackupsModal } from "./backups-ui";
 import { BOARD_STATUSES } from "./board-colours";
 import { TidyNotesModal } from "./tidy-ui";
-import { wideBox } from "./settings-box";
+import { actionRow, wideBox } from "./settings-box";
 import { firstIcon, headerIcon } from "./icon-list";
 import { IconPickerModal } from "./icon-picker-ui";
 import { ensureFolder } from "./ensure-folder";
@@ -158,20 +158,20 @@ class KitSettingTab extends PluginSettingTab {
     }
     const setup: SettingGroupItem[] = [];
     setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins and Obsidian's own, kit files, the settings below, Templater, Meta Bind buttons, the homepage, ZotLit, meeting series, CSS snippets, folders) and what is missing, with a Fix where Lab Kit can make the change. Nothing changes until you confirm.",
-      render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
+      render: b => actionRow(b, () => this.ctl.checkSetup()) });
     setup.push({ name: "Check hotkeys", desc: "Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now. Changes nothing: set keys in Obsidian's Hotkeys settings.",
-      render: b => { b.addButton(btn => btn.setButtonText("Check hotkeys…").onClick(() => this.ctl.checkHotkeys())); } });
+      render: b => actionRow(b, () => this.ctl.checkHotkeys()) });
     updates.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
       render: b => { b.addToggle(t => t.setValue(kit.notifyKitUpdate).onChange(async v => { kit.notifyKitUpdate = v; await this.ctl.save(); })); } });
     updates.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
-      render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
+      render: b => actionRow(b, () => void this.ctl.showWhatsNew()) });
     const backups: SettingGroupItem[] = [];
-    backups.push({ name: "Old backups", desc: "Every update copies the files it replaces into the backup folder and never removes them. Pick how old, then move those backups to the trash.",
-      render: b => { b.addButton(btn => btn.setButtonText("Clear old backups…").onClick(() => new ClearBackupsModal(this.app, managed.roles().backups).open())); } });
+    backups.push({ name: "Clear old backups…", desc: "Every update copies the files it replaces into the backup folder and never removes them. Pick how old, then move those backups to the trash.",
+      render: b => actionRow(b, () => new ClearBackupsModal(this.app, managed.roles().backups).open()) });
     backups.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
     updates.push({ type: "page", name: "Backups", items: backups });
     setup.push({ name: "Find moved folders", desc: "A folder named in these settings that was moved or renamed outside Obsidian: finds where it went. Changes only the settings.",
-      render: b => { b.addButton(btn => btn.setButtonText("Find moved folders…").onClick(() => { this.ctl.findMovedFolders(); })); } });
+      render: b => actionRow(b, () => { this.ctl.findMovedFolders(); }) });
     const kitFolders: SettingGroupItem[] = [];
     kitFolders.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
     kitFolders.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));

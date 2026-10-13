@@ -192,6 +192,13 @@
 .modal-container.lab-kit-pick-side > .lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
 
 /* Check setup window (src/kit/setup-check-ui.ts) */
+/* A settings row that only does one thing (src/kit/settings-box.ts actionRow): its name is a link in the accent colour, the whole row is the button */
+.lab-kit-action { cursor: pointer; border-radius: var(--radius-m); }
+.lab-kit-action .setting-item-name { color: var(--interactive-accent); }
+.lab-kit-action .setting-item-control { display: none; }
+.lab-kit-action:hover { background: var(--background-modifier-hover); }
+.lab-kit-action:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
+
 .lab-kit-setup-intro { margin: 0 0 4px; color: var(--text-muted); }
 .lab-kit-setup-summary { font-size: var(--font-ui-larger); font-weight: var(--font-semibold); margin: 8px 0 6px; }
 .lab-kit-setup-row { display: flex; align-items: flex-start; gap: var(--size-4-3); padding: var(--size-4-3) 0; border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }

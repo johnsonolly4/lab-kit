@@ -30,3 +30,13 @@ export function wideBox(setting: { settingEl: HTMLElement; controlEl: HTMLElemen
   if (app) new FolderSuggest(app, text.inputEl);
   return text;
 }
+
+/** Makes a settings row that only does one thing act as a link: its name shows in the accent colour (styles.css), and a click, Enter or Space anywhere on the row runs `run`. The row has no button. */
+export function actionRow(setting: { settingEl: HTMLElement }, run: () => void): void {
+  const row = setting.settingEl;
+  row.addClass("lab-kit-action");
+  row.setAttr("role", "button");
+  row.setAttr("tabindex", "0");
+  row.addEventListener("click", () => run());
+  row.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); run(); } });
+}

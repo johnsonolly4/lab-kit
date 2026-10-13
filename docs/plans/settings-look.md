@@ -26,10 +26,11 @@ Decided with the user 2026-10-13 (mockup, two screenshots and a survey):
 - Done when: tests, lint and build clean; the order test covers all four states and a stable order inside a state; the summary covers 0, 1 and many; NOT seen in Obsidian until the user opens Check setup (checklist row): round marks tinted, title larger, summary, sorted, group label under each row, buttons still work and the list rechecks after a Fix.
 - New dependencies: none
 
-### Phase 2 — Accent-coloured action rows in the settings
+### Phase 2 — Accent-coloured action rows in the settings — BUILT 2026-10-13, not seen in Obsidian
 - Depends on: nothing (independent of Phase 1); do after item E's Phase 4 so both edit `builtInGroups` once.
 - Spike first (by reading): what `render: b => …` receives in `SettingGroupItem` (is `b` a `Setting`, is `b.settingEl` reachable) in `src/kit/ui.ts` (`getSettingDefinitions`, `builtInGroups`) and `src/header/settings.ts`.
 - Files: `src/kit/ui.ts` (a small helper `actionRow(b, run)` that adds a class, `role="button"`, `tabindex="0"`, click and Enter / Space handlers on the row and removes the control; the five rows use it; the button texts go away because the name says it), `styles.css` (`.lab-kit-action` name in `--interactive-accent`, a hover background, a focus ring, a pointer cursor), tests for the helper with the small DOM stand-in, docs per `docs/maintenance.md` (README Settings, tutorial wording that says "press the button", changelog, checklist row).
+- Result 2026-10-13: spike answer: `render: b => …` receives Obsidian's `Setting` (the code already uses `b.settingEl` / `b.controlEl` in `wideBox`); the Obsidian typings could not be read here (read denied), so nothing beyond what the code already does is assumed. `actionRow` in `src/kit/settings-box.ts` (class, role button, tabindex 0, click and Enter / Space), the five rows in `ui.ts` use it ("Old backups" is renamed "Clear old backups…", so the name is the action), `.lab-kit-action` in `styles.css` (accent name, hidden empty control, hover, focus ring), `tests/settings-box.test.ts`. Tests 986.
 - Done when: tests, lint and build clean; each of the five rows runs its old action from a click and from the keyboard; nothing else in the tab changes; NOT seen in Obsidian until the user has looked (checklist row), including a phone width.
 - New dependencies: none
 
