@@ -63,8 +63,8 @@ async function applyTick(app: App, path: string, expect: unknown, want: unknown)
 }
 
 /** A note made by the map (a new to-do) as a history step, so Undo can remove it again. */
-export function recordCreate(history: PlanHistory, path: string, text: string, label: string): HistoryStep {
-  const step: HistoryStep = { path, key: "create", before: undefined, after: text, label };
+export function recordCreate(history: PlanHistory, path: string, text: string, label: string, group?: number): HistoryStep {
+  const step: HistoryStep = { path, key: "create", before: undefined, after: text, label, group };
   history.push(step);
   return step;
 }

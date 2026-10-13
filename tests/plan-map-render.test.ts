@@ -24,9 +24,9 @@ const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
   ({ path, name: path.slice(path.lastIndexOf("/") + 1).replace(/\.md$/, ""), folder: path.slice(0, path.lastIndexOf("/")), fm, ctime: 0, mtime: 0 });
 const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
 const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
-const draw = (todos: NoteRec[], direction: "across" | "down") => {
+const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void } = {}) => {
   const plan = readPlan(todos, hub), box = new El("div");
-  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ } });
+  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ }, ...extra });
   return box;
 };
 // A, B after A, C (a subtask of A) with D after C, a lone to-do with its own subtask.
@@ -109,5 +109,17 @@ describe("drawPlanMap", () => {
     lines[1].querySelectorAll("button")[0].dispatch("click");
     await new Promise(r => setTimeout(r, 10));
     expect("sub" in fms[T + "L.md"]).toBe(false);
+  });
+});
+
+describe("the + on an arrow (insert between two)", () => {
+  const chain = [td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("S", { sub: "[[B]]" }), td("D", { after: "[[S]]" })];
+  it("every real arrow has one when inserting is wired; the dashed arrow through a subtask has none", () => {
+    const box = draw(chain, "across", { insertBetween: () => undefined });
+    expect(box.querySelectorAll(".vt-map-arrow-hit").length).toBe(box.querySelectorAll(".vt-map-insert").length);
+    expect(box.querySelectorAll(".vt-map-insert").length).toBeGreaterThanOrEqual(2);   // A → B and B → C
+  });
+  it("none without it", () => {
+    expect(draw(chain, "across").querySelectorAll(".vt-map-insert").length).toBe(0);
   });
 });

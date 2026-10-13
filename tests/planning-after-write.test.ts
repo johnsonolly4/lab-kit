@@ -40,3 +40,31 @@ describe("changeAfter (unchanged behaviour)", () => {
     expect(fm).toEqual({ sub: "[[D]]" });
   });
 });
+
+describe("insertBetween", () => {
+  const T = "T/";
+  const hub = { path: "P/Alpha.md", name: "Alpha", folder: "P", fm: { kind: "project" }, ctime: 0, mtime: 0 };
+  const note = (name: string, fm: Record<string, unknown> = {}) => ({ path: `${T}${name}.md`, name, folder: "T", fm: { kind: "todo", project: "[[Alpha]]", ...fm }, ctime: 0, mtime: 0 });
+  const fms: Record<string, Record<string, unknown>> = { "T/A.md": {}, "T/B.md": { after: "[[A]]" }, "T/X.md": {} };
+  const app = {
+    vault: { getFileByPath: (p: string) => (p in fms ? { path: p } : null) },
+    metadataCache: { fileToLinktext: (f: { path: string }) => f.path.replace(/^T\//, "").replace(/\.md$/, "") },
+    fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); } },
+  } as never;
+
+  it("writes N after A and B after N instead of A, as one Undo step, and Undo puts both back", async () => {
+    const { readPlan } = await import("../src/planning/plan");
+    const { PlanHistory } = await import("../src/planning/plan-history");
+    const { insertBetween } = await import("../src/planning/add-after");
+    const { runHistory } = await import("../src/planning/after-write");
+    const plan = readPlan([note("A"), note("B", { after: "[[A]]" }), note("X")], hub);
+    const history = new PlanHistory();
+    const step = await insertBetween(app, history, plan, "T/A.md", "T/B.md", "T/X.md", 7);
+    expect(step).not.toBeNull();
+    expect(fms["T/X.md"]).toEqual({ after: "[[A]]" });
+    expect(fms["T/B.md"]).toEqual({ after: "[[X]]" });
+    await runHistory(app, history, "undo", step!);
+    expect(fms["T/X.md"]).toEqual({});
+    expect(fms["T/B.md"]).toEqual({ after: "[[A]]" });
+  });
+});
