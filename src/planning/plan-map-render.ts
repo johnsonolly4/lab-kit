@@ -5,6 +5,7 @@ import { statusClass, type Plan, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
 import { changeAfter, linkText, namesOf, undoNotice } from "./after-write";
 import { addAfter, canLink, removeAfter } from "./plan-link";
+import { rememberText } from "./after-bridge";
 
 export interface MapOptions {
   app: App;
@@ -41,7 +42,7 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
   m.addItem(i => i.setTitle("Delete note").setIcon("trash-2").onClick(() => {
     const file = o.app.vault.getFileByPath(row.path);
     if (!file) { new Notice("That to-do is not there any more."); return; }
-    void o.app.fileManager.trashFile(file).catch(() => { new Notice("Could not delete that to-do."); });   // follows the user's trash setting; the links are passed on by src/planning/after-bridge.ts
+    void o.app.vault.read(file).then(text => { rememberText(row.path, text); return o.app.fileManager.trashFile(file); }).catch(() => { new Notice("Could not delete that to-do."); });   // follows the user's trash setting; the links are passed on by src/planning/after-bridge.ts
   }));
   m.showAtMouseEvent(e);
 }
