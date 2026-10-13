@@ -20,3 +20,5 @@ CLAUDE.local.md
 Thumbs.db
 # Font file for the planning kit: kept out of git until its licence is checked (docs/plans/planning-suite-kit.md, Phase 3)
 docs/plans/kit-files/planning/.obsidian/snippets/vault-fonts.css
+# Private: the group's own module symbols and example figures (never committed; see docs/decisions.md)
+private/

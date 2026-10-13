@@ -29,12 +29,17 @@ function idText(id: string): string {
 interface Placed { node: FigNode; sym: RigSymbol }
 const at = (p: Placed, rel: Point): Point => ({ x: p.node.x + rel.x, y: p.node.y + rel.y });
 
-/** The polyline of a process edge: out of the source, a bend in front of the target, into the target. A back edge goes round underneath. */
+/** The polyline of a process edge: out of the source, a bend in front of the target, into the target. A tee is met at its centre; a vial is entered from above; a back edge goes round underneath. */
 function edgePoints(e: FigEdge, from: Placed, to: Placed, bottom: number): Point[] {
   const a = at(from, from.sym.out), b = at(to, to.sym.in);
-  const bx = b.x - BEND;
-  if (e.back) return [a, { x: a.x + BEND, y: a.y }, { x: a.x + BEND, y: bottom }, { x: bx, y: bottom }, { x: bx, y: b.y }, b];
-  return [a, { x: bx, y: a.y }, { x: bx, y: b.y }, b];
+  let pts: Point[];
+  if (e.back) pts = [a, { x: a.x + BEND, y: a.y }, { x: a.x + BEND, y: bottom }, { x: b.x - BEND, y: bottom }, { x: b.x - BEND, y: b.y }, b];
+  else if (to.sym.enter === "top") pts = [a, { x: b.x - 2 * BEND, y: a.y }, { x: b.x - 2 * BEND, y: b.y - 2 * BEND / 3 }, { x: b.x, y: b.y - 2 * BEND / 3 }, b];
+  else if (to.node.kind === "Mixer") pts = [a, { x: b.x, y: a.y }, b];
+  else pts = [a, { x: b.x - BEND, y: a.y }, { x: b.x - BEND, y: b.y }, b];
+  // Drop repeated points and points in the middle of a straight run, so a level chain is one straight line.
+  const flat = pts.filter((p, i) => i === 0 || p.x !== pts[i - 1].x || p.y !== pts[i - 1].y);
+  return flat.filter((p, i) => i === 0 || i === flat.length - 1 || !((flat[i - 1].x === p.x && p.x === flat[i + 1].x) || (flat[i - 1].y === p.y && p.y === flat[i + 1].y)));
 }
 
 /** The dashed line of a part attached to a host: straight down from the slot above it (the host, or the part attached before it). */
@@ -53,6 +58,11 @@ function labelSvg(p: Placed, above: boolean): string {
     const x = n1(node.x + sym.w / 2 + 10);
     return `<text x="${x}" y="${n1(node.y + (detail ? 0 : 5))}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 17)}" font-size="13">${esc(detail)}</text>` : "");
+  }
+  if (node.kind === "Mixer") {   // streams run into the tee from above and below, so its label sits to the lower right
+    const x = n1(node.x + 12);
+    return `<text x="${x}" y="${n1(node.y + 24)}" font-size="16" font-weight="700">${idText(node.id)}</text>`
+      + (detail ? `<text x="${x}" y="${n1(node.y + 41)}" font-size="13">${esc(detail)}</text>` : "");
   }
   const id = n1(above ? node.y - sym.h / 2 - (detail ? 26 : 10) : node.y + sym.h / 2 + 20);
   const dy = n1(above ? node.y - sym.h / 2 - 9 : node.y + sym.h / 2 + 37);

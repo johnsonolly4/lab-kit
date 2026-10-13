@@ -87,4 +87,16 @@ describe("attached parts and repeatability", () => {
     const f = figure("T1 | Mixer | | OUT", "PB | Pump | | T1", "PA | Pump | | T1", "OUT | Outlet | |");
     expect(node(f, "PB").y).toBeLessThan(node(f, "PA").y);   // part order is the tie-break in the first layer
   });
+  it("a part with one feeder sits level with it, so a chain from a tee to the end is one straight line (a heater under the coil does not move it)", () => {
+    const f = figure(...twoPumpTee, "H1 | Heater | | C1");
+    const y = node(f, "T1").y;
+    for (const id of ["C1", "A1", "COL"]) expect(node(f, id).y).toBe(y);
+    expect(node(f, "H1").y - y).toBe(ROW_H);
+  });
+  it("a branch spreads evenly above and below the part that feeds it, and the merge sits level with the middle", () => {
+    const f = figure("P1 | Pump | | V1", "V1 | Valve | | R1, BP", "R1 | Reactor | | M1", "BP | Tubing | | M1", "M1 | Mixer | | OUT", "OUT | Outlet | |");
+    expect(node(f, "V1").y).toBe(node(f, "M1").y);
+    expect(node(f, "R1").y).toBe(node(f, "V1").y - ROW_H / 2);
+    expect(node(f, "BP").y).toBe(node(f, "V1").y + ROW_H / 2);
+  });
 });

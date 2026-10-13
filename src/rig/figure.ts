@@ -69,38 +69,50 @@ export function buildFigure(parts: RigPart[], links: RigLink[]): Figure {
   };
   for (const p of parts) if (!host.has(p.id)) layer(p.id);
 
-  // Order inside each layer: first layer by part order, then by the mean row of the feeding parts (ties: part order).
+  // Order inside each layer: first layer by part order, then by the mean position of the feeding parts (ties: part order).
+  // Positions are in row units and may be fractions: a part sits level with the parts that feed it, so a straight chain stays straight.
   const layerCount = layerOf.size ? Math.max(...layerOf.values()) + 1 : 0;
   const attachedTo = new Map<string, string[]>();
   for (const [a, h] of host) (attachedTo.get(h) ?? attachedTo.set(h, []).get(h)!).push(a);
-  const slotRow = new Map<string, number>();
+  const pos = new Map<string, number>();
   const columns: string[][] = [];
   for (let c = 0; c < layerCount; c++) {
-    const ids = parts.filter(p => layerOf.get(p.id) === c).map(p => p.id);
-    const mean = (id: string): number => {
-      const from = (into.get(id) ?? []).map(e => slotRow.get(e.from)).filter((r): r is number => r !== undefined);
-      return from.length ? from.reduce((a, b) => a + b, 0) / from.length : Infinity;
+    const desired = (id: string): number | undefined => {
+      const from = (into.get(id) ?? []).map(e => pos.get(e.from)).filter((r): r is number => r !== undefined);
+      return from.length ? from.reduce((a, b) => a + b, 0) / from.length : undefined;
     };
-    if (c > 0) ids.sort((a, b) => (mean(a) - mean(b)) || (index.get(a)! - index.get(b)!) || 0);
-    const slots: string[] = [];
+    const ids = parts.filter(p => layerOf.get(p.id) === c).map(p => p.id);
+    if (c > 0) ids.sort((a, b) => ((desired(a) ?? Infinity) - (desired(b) ?? Infinity)) || (index.get(a)! - index.get(b)!) || 0);
+    // Place each part (with the parts attached under it) at its wanted position or just below the one before, then shift the column to sit as close as it can to what was wanted.
+    let next = 0;
+    const placed: [string, number][] = [];
     for (const id of ids) {
-      slotRow.set(id, slots.length);
+      const want = desired(id);
+      const at = want === undefined ? next : Math.max(want, next);
+      placed.push([id, at]);
+      next = at + 1 + (attachedTo.get(id)?.length ?? 0);
+    }
+    const gaps = ids.map((id, i) => [desired(id), placed[i][1]] as const).filter((g): g is readonly [number, number] => g[0] !== undefined).map(([w, at]) => w - at);
+    const shift = gaps.length ? gaps.reduce((a, b) => a + b, 0) / gaps.length : 0;
+    const slots: string[] = [];
+    for (const [id, at] of placed) {
+      pos.set(id, at + shift);
       slots.push(id);
-      for (const a of attachedTo.get(id) ?? []) { slotRow.set(a, slots.length); slots.push(a); }
+      (attachedTo.get(id) ?? []).forEach((a, k) => { pos.set(a, at + shift + 1 + k); slots.push(a); });
     }
     columns.push(slots);
   }
 
-  const maxRows = Math.max(0, ...columns.map(c => c.length));
+  const top = Math.min(0, ...pos.values());
+  const bottom = Math.max(0, ...[...pos.values()].map(v => v + 1));
   const nodes: FigNode[] = [];
   columns.forEach((slots, c) => slots.forEach((id, r) => {
     const p = parts[index.get(id)!];
-    const offset = (maxRows - slots.length) / 2;
     nodes.push({
       id, kind: p.kind, detail: p.detail, layer: c, row: r, host: host.get(id) ?? "",
-      x: MARGIN + c * COL_W + COL_W / 2, y: MARGIN + (r + offset) * ROW_H + ROW_H / 2,
+      x: MARGIN + c * COL_W + COL_W / 2, y: MARGIN + (pos.get(id)! - top) * ROW_H + ROW_H / 2,
     });
   }));
 
-  return { nodes, edges, width: 2 * MARGIN + layerCount * COL_W, height: 2 * MARGIN + maxRows * ROW_H };
+  return { nodes, edges, width: 2 * MARGIN + layerCount * COL_W, height: 2 * MARGIN + (nodes.length ? bottom - top : 0) * ROW_H };
 }

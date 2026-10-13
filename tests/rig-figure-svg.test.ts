@@ -30,7 +30,7 @@ describe("symbols", () => {
   it("connection points lie on or inside the symbol's box and the input is left of the output", () => {
     for (const name of SYMBOL_NAMES) {
       const s = [...PART_KINDS, ""].map(k => symbolFor(k, name === "waste" ? "waste" : name === "flask" ? "flask" : "")).find(x => x.name === name)!;
-      expect(s.in.x).toBeLessThan(s.out.x);
+      expect(s.in.x).toBeLessThanOrEqual(s.out.x);
       for (const p of [s.in, s.out, s.top, s.bottom]) {
         expect(Math.abs(p.x)).toBeLessThanOrEqual(s.w / 2);
         expect(Math.abs(p.y)).toBeLessThanOrEqual(s.h / 2 + 8);
@@ -55,6 +55,18 @@ describe("figureSvg", () => {
       expect(start).toEqual([Math.round((a.x + sa.out.x) * 10) / 10, Math.round((a.y + sa.out.y) * 10) / 10]);
       expect(end).toEqual([Math.round((b.x + sb.in.x) * 10) / 10, Math.round((b.y + sb.in.y) * 10) / 10]);
     }
+  });
+  it("a chain level with its feeder is drawn without a bend, a tee is met at its centre and a vial is entered from above", () => {
+    const f = fig(...tee), r = figureSvg(f);
+    const d = (from: string, to: string) => new RegExp(`data-from="${from}" data-to="${to}" d="M ([^"]+)"`).exec(r.svg)![1].split(" L ");
+    expect(d("T1", "C1")).toHaveLength(2);
+    expect(d("C1", "A1")).toHaveLength(2);
+    const pa = d("PA", "T1"), t = f.nodes.find(n => n.id === "T1")!;
+    expect(pa[pa.length - 1]).toBe(`${t.x} ${t.y}`);
+    expect(pa[pa.length - 2].split(" ")[0]).toBe(String(t.x));
+    const col = f.nodes.find(n => n.id === "COL")!, v = d("A1", "COL");
+    expect(v[v.length - 1]).toBe(`${col.x} ${col.y + symbolFor(col.kind, col.detail).in.y}`);
+    expect(v[v.length - 2].split(" ")[0]).toBe(String(col.x));
   });
   it("a join dot appears where two streams meet a part that is not a tee, and not on a single line", () => {
     const joined = draw("PA | Pump | | R1", "PB | Pump | | R1", "R1 | Reactor | coil |");

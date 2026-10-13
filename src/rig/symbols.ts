@@ -4,10 +4,14 @@ import type { PartKind } from "./parts";
 
 export interface Point { x: number; y: number }
 /** A symbol: `body` is SVG in local coordinates centred on (0, 0) (black line art; the writer sets stroke and fill). The four points are where lines meet it. */
-export interface RigSymbol { name: string; w: number; h: number; body: string; in: Point; out: Point; top: Point; bottom: Point }
+export interface RigSymbol {
+  name: string; w: number; h: number; body: string; in: Point; out: Point; top: Point; bottom: Point;
+  /** Where the incoming line meets the symbol: "side" (default) or from above, into an open mouth (a collection vial). */
+  enter?: "top";
+}
 
-const make = (name: string, w: number, h: number, body: string, at: { in?: Point; out?: Point; top?: Point; bottom?: Point } = {}): RigSymbol => ({
-  name, w, h, body,
+const make = (name: string, w: number, h: number, body: string, at: { in?: Point; out?: Point; top?: Point; bottom?: Point } = {}, enter?: "top"): RigSymbol => ({
+  name, w, h, body, ...(enter ? { enter } : {}),
   in: at.in ?? { x: -w / 2, y: 0 }, out: at.out ?? { x: w / 2, y: 0 },
   top: at.top ?? { x: 0, y: -h / 2 }, bottom: at.bottom ?? { x: 0, y: h / 2 },
 });
@@ -16,7 +20,7 @@ const box = make("box", 72, 44, `<rect x="-36" y="-22" width="72" height="44" rx
 const SYMBOLS: Record<string, RigSymbol> = {
   box,
   pump: make("pump", 52, 52, `<circle r="26"/><path d="M-10 -14 L16 0 L-10 14 Z"/>`),
-  tee: make("tee", 14, 14, `<circle r="7" class="fill"/>`),
+  tee: make("tee", 14, 14, `<circle r="7" class="fill"/>`, { in: { x: 0, y: 0 }, out: { x: 0, y: 0 } }),
   valve: make("valve", 40, 32, `<path d="M-20 -16 L20 16 L20 -16 L-20 16 Z"/>`),
   regulator: make("regulator", 60, 44, `<rect x="-30" y="-22" width="60" height="44" rx="6"/><path d="M-16 -12 L16 12 L16 -12 L-16 12 Z"/>`),
   coil: make("coil", 84, 44, `<rect x="-42" y="-22" width="84" height="44" rx="10"/><path d="M-26 -22 L-18 22 M-13 -22 L-5 22 M0 -22 L8 22 M13 -22 L21 22"/>`),
@@ -24,7 +28,7 @@ const SYMBOLS: Record<string, RigSymbol> = {
   hotplate: make("hotplate", 68, 22, `<rect x="-34" y="-5" width="68" height="16" rx="3"/><path d="M-20 -11 L-20 -5 M20 -11 L20 -5"/>`, { in: { x: -34, y: 3 }, out: { x: 34, y: 3 }, top: { x: 0, y: -11 }, bottom: { x: 0, y: 11 } }),
   analysis: make("analysis", 72, 44, `<rect x="-36" y="-22" width="72" height="44" rx="6"/><path d="M-24 9 L-12 9 L-6 -9 L0 9 L7 9 L12 -3 L24 9" fill="none"/>`),
   waste: make("waste", 64, 24, `<path d="M-32 0 L16 0" fill="none"/><path d="M12 -9 L32 0 L12 9 Z" class="fill"/>`),
-  vial: make("vial", 30, 54, `<path d="M-15 -26 L-15 20 Q-15 27 -8 27 L8 27 Q15 27 15 20 L15 -26 M-19 -26 L19 -26" fill="none"/>`, { in: { x: -15, y: 0 }, out: { x: 15, y: 0 }, top: { x: 0, y: -26 }, bottom: { x: 0, y: 27 } }),
+  vial: make("vial", 30, 54, `<path d="M-15 -26 L-15 20 Q-15 27 -8 27 L8 27 Q15 27 15 20 L15 -26 M-19 -26 L19 -26" fill="none"/>`, { in: { x: 0, y: -26 }, out: { x: 15, y: 0 }, top: { x: 0, y: -26 }, bottom: { x: 0, y: 27 } }, "top"),
   tubing: make("tubing", 64, 10, `<rect x="-32" y="-5" width="64" height="10" rx="5"/>`),
 };
 /** The names of the generic symbols, for tests. */
