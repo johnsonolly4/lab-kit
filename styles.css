@@ -306,7 +306,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-tick:hover { color: var(--interactive-accent); }
 .vt-map-done .vt-map-tick { color: var(--interactive-accent); }
 .vt-map-tick svg { width: 20px; height: 20px; }
-.vt-map-title { padding-right: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-title { padding-right: 22px; font-weight: 600; line-height: 1.3; max-height: 2.6em; overflow: hidden; overflow-wrap: anywhere; }   /* up to two lines; the full name is the hover text */
 .vt-map-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: var(--font-ui-smaller); }
 .vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: pointer; }
 .vt-map-exp:hover .vt-map-exp-name { text-decoration: underline; }

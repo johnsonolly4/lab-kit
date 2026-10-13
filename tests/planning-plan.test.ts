@@ -1,6 +1,6 @@
 // The project plan engine (src/planning/plan.ts): order, blocked, problems.
 import { describe, it, expect } from "vitest";
-import { hasPlan, planLines, projectExperiments, readPlan, statusClass } from "../src/planning/plan";
+import { hasMap, hasPlan, planLines, projectExperiments, readPlan, statusClass } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
 const T = "00 Planning/To-dos/";
@@ -90,6 +90,14 @@ describe("hasPlan / planLines (the Plan tile)", () => {
     expect(hasPlan(readPlan([td("A"), td("B", { after: "[[A]]" })], hub))).toBe(true);
     expect(hasPlan(readPlan([td("A", { order: 1 })], hub))).toBe(true);
     expect(hasPlan(readPlan([td("A", { after: "[[Ghost]]" })], hub))).toBe(true);
+  });
+  it("the map shows from two to-dos, linked or not; the list tile still needs a link", () => {
+    expect(hasMap(readPlan([], hub))).toBe(false);
+    expect(hasMap(readPlan([td("A")], hub))).toBe(false);
+    expect(hasMap(readPlan([td("A"), td("B")], hub))).toBe(true);
+    expect(hasPlan(readPlan([td("A"), td("B")], hub))).toBe(false);
+    expect(hasMap(readPlan([td("A", { order: 1 })], hub))).toBe(true);   // anything hasPlan accepts
+    expect(hasMap(readPlan([td("A", { done: true }), td("B", { done: true })], hub))).toBe(true);   // finished to-dos count
   });
   it("lines: ready, then blocked with after X, then finished with the result; the finished count", () => {
     const p = readPlan([td("Done1", { done: true, result: "Mn 20 kDa" }), td("Next", { after: "[[Done1]]" }), td("Later", { after: ["[[Next]]", "[[Done1]]"] }), td("Free")], hub);
