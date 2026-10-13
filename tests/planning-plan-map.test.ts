@@ -263,3 +263,52 @@ describe("zoom arithmetic", () => {
     expect(fitZoom(0, 1000)).toBe(1);
   });
 });
+
+describe("layoutPlan with memory: cards stay where they were", () => {
+  const todos = [td("A"), td("B"), td("C", { after: "[[A]]" }), td("D", { after: "[[B]]" }), td("E", { after: ["[[C]]", "[[D]]"] }), td("F", { after: "[[C]]" })];
+  const remember = (m: ReturnType<typeof layoutPlan>) => new Map(m.cards.map(c => [c.path, { step: c.step, place: c.place }]));
+  const col = (m: ReturnType<typeof layoutPlan>, step: number) => m.cards.filter(c => c.step === step).map(c => c.row.name);
+  it("without memory the first layout is the automatic one", () => {
+    const m = layoutPlan(readPlan(todos, hub));
+    expect(col(m, 0)).toEqual(["A", "B"]);
+    expect(col(m, 1)).toEqual(["C", "D"]);
+    expect(col(m, 2)).toEqual(["F", "E"]);   // F is level with C (row 0), E sits between its two parents
+  });
+  it("adding a to-do does not reorder the others in a column", () => {
+    const first = layoutPlan(readPlan(todos, hub));
+    const next = layoutPlan(readPlan([...todos, td("G", { after: "[[B]]" })], hub), remember(first));   // a new leaf after B, next to D
+    expect(col(next, 1).filter(n => n !== "G")).toEqual(col(first, 1));
+    expect(col(next, 2)).toEqual(col(first, 2));
+    expect(col(next, 1)).toContain("G");
+  });
+  it("a new card goes next to its parent; one with no parent on the map goes to the bottom of its column", () => {
+    const mem = remember(layoutPlan(readPlan(todos, hub)));
+    const next = layoutPlan(readPlan([...todos, td("G", { after: "[[A]]" }), td("H"), td("I", { after: "[[H]]" })], hub), mem);
+    const step1 = col(next, 1);
+    expect(step1.indexOf("G")).toBeLessThan(step1.indexOf("D"));   // after A: up with C, above D's row
+    expect(col(next, 0).at(-1)).toBe("H");
+  });
+});
+
+describe("short arrows come before fewer rows", () => {
+  const rows = (m: ReturnType<typeof layoutPlan>) => Object.fromEntries(m.cards.map(c => [c.row.name, c.place]));
+  it("a card sits level with its parent when that row is free, even if that leaves an empty row above it", () => {
+    // P is on row 0, Q on row 1; X comes after Q only: X goes level with Q (row 1) and the arrow is straight
+    const r = rows(map([td("P"), td("Q"), td("Y", { after: "[[P]]" }), td("X", { after: "[[Q]]" })]));
+    expect(r).toEqual({ P: 0, Q: 1, Y: 0, X: 1 });
+  });
+  it("a card with two parents wants the average row; when another card already has that row it goes just below", () => {
+    const r = rows(map([td("P"), td("Q"), td("R"), td("J", { after: ["[[P]]", "[[R]]"] }), td("K", { after: "[[Q]]" })]));
+    expect(r.K).toBe(1);   // level with Q (row 1): a straight arrow
+    expect(r.J).toBe(2);   // wanted row 1 (between P on row 0 and R on row 2), K has it, so just below
+  });
+  it("a card with two parents sits at the average row when it is free", () => {
+    const r = rows(map([td("P"), td("Q"), td("R"), td("J", { after: ["[[P]]", "[[R]]"] }), td("K", { after: "[[Q]]" }), td("L", { after: "[[Q]]" })]));
+    expect(r.J).toBeGreaterThanOrEqual(1);
+    expect(r.K).toBeGreaterThanOrEqual(r.L - 1);   // two children of Q stay together
+  });
+  it("two children of one parent share the rows below it without overlapping", () => {
+    const r = rows(map([td("P"), td("A", { after: "[[P]]" }), td("B", { after: "[[P]]" })]));
+    expect(r).toEqual({ P: 0, A: 0, B: 1 });
+  });
+});

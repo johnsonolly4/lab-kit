@@ -8,7 +8,7 @@ import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
-import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction } from "./plan-map";
+import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
 import { PlanHistory } from "./plan-history";
@@ -63,6 +63,7 @@ class BlockView extends MarkdownRenderChild {
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
+  private places: PlaceMemory = new Map();   // where the plan map's cards were last drawn: new links do not shuffle them (lost when the note is closed)
   private problemsOpen = false;   // the plan map's problems list: hidden until opened
   private zoom = 1;   // the plan map's zoom buttons; not saved
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
@@ -340,7 +341,8 @@ class BlockView extends MarkdownRenderChild {
         const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
         flip.addEventListener("mousedown", stop);
         flip.addEventListener("click", e => { stop(e); this.direction = direction === "down" ? "across" : "down"; this.mapScroll = null; this.draw(); });
-        const map = layoutPlan(plan);
+        const map = layoutPlan(plan, this.places);
+        this.places = new Map(map.cards.map(c => [c.path, { step: c.step, place: c.place }]));   // the next draw keeps the cards where they are
         const zoomBy = (label: string, text: string, tip: string, next: () => number): void => {
           const b = title.createEl("button", { cls: "vt-map-zoom", text, attr: { "aria-label": label, title: tip } });
           b.addEventListener("mousedown", stop);

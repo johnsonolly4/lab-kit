@@ -29,8 +29,12 @@ export function subsLabel(row: { subs: { done: boolean }[] }): { text: string; a
   return { text: n ? `${done}/${n}` : "", allDone: n > 0 && done === n };
 }
 
-/** Steps left to right (0 = no parents, else 1 + the largest parent step); inside a step, near the parents, then plan order. */
-export function layoutPlan(plan: Plan): PlanMap {
+/** Where the cards were the last time the map was drawn (step and place), kept by the block while the note is open. */
+export type PlaceMemory = Map<string, { step: number; place: number }>;
+
+/** Steps left to right (0 = no parents, else 1 + the largest parent step); inside a step, near the parents, then plan order.
+ *  `memory`: a card that was already in this step keeps its order in it, and a new card goes next to its parent (or at the bottom), so adding or linking a to-do does not shuffle the others. */
+export function layoutPlan(plan: Plan, memory?: PlaceMemory): PlanMap {
   const onMap = new Set(plan.rows.filter(r => !r.parent).map(r => r.path));
   // A subtask lives inside its parent's card, not on the map: a to-do that comes after a subtask comes after that card (drawn dashed, `via`), so a chain does not break when a card is nested. Never to itself.
   const parentOf = new Map(plan.rows.filter(r => r.parent).map(r => [r.path, r.parent!]));
@@ -73,7 +77,20 @@ export function layoutPlan(plan: Plan): PlanMap {
       const ps = r.afterPaths.filter(p => place.has(p));
       return ps.length ? ps.reduce((a, p) => a + place.get(p)!, 0) / ps.length : Infinity;
     };
-    [...inStep].sort((a, b) => (key(a) === key(b) ? 0 : key(a) < key(b) ? -1 : 1)).forEach((r, i) => place.set(r.path, i));
+    const oldPlace = (r: PlanRow): number => memory?.get(r.path)?.place ?? Infinity;
+    const order = inStep.filter(r => memory?.get(r.path)?.step === s).sort((a, b) => oldPlace(a) - oldPlace(b) || a.path.localeCompare(b.path));   // the ones that were here keep their order
+    const fresh = inStep.filter(r => !order.includes(r)).sort((a, b) => (key(a) === key(b) ? 0 : key(a) < key(b) ? -1 : 1));
+    const kept = [...order];
+    for (const r of fresh) {   // a new one goes before the first kept card that was lower than its parents, else at the bottom
+      const k = key(r), at = k === Infinity ? -1 : kept.findIndex(c => oldPlace(c) > k);
+      order.splice(at < 0 ? order.length : order.indexOf(kept[at]), 0, r);
+    }
+    let prev = -1;   // each card sits level with the average row of its parents when that row is free, else just below the card above: a short arrow matters more than fewer rows
+    for (const r of order) {
+      const k = key(r), want = k === Infinity ? prev + 1 : Math.floor(k);   // half a row off both parents: the upper row, as before
+      prev = Math.max(prev + 1, want);
+      place.set(r.path, prev);
+    }
   }
 
   const cards = linked.map(r => ({ path: r.path, row: r, step: step.get(r.path)!, place: place.get(r.path)! }))
