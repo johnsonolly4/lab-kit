@@ -1,6 +1,6 @@
 // Phase 4a: the to-do board rules (src/planning/todo.ts), including the 2026-10-07 Obsidian Sync scenarios.
 import { describe, it, expect } from "vitest";
-import { applyPatch, cardDate, changePatch, dueCountdown, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
 
 const day = (s: string): Date => parseDay(s)!;
 const WED = day("2026-10-07");   // a Wednesday
@@ -179,5 +179,23 @@ describe("To-do template due date and countdown", () => {
     expect(tpl).toMatch(/^countdown: <% countdown %>$/m);
     expect(tpl).toContain("let countdown = false;");
     expect(tpl).toContain('setType?.("due", "date")');
+  });
+});
+
+describe("cardTag (priority and project on a board card)", () => {
+  it("priority only, project only, both", () => {
+    expect(cardTag({ priority: 2 })).toEqual({ text: "P2", level: "2" });
+    expect(cardTag({ project: "[[Polymers]]" })).toEqual({ text: "Polymers", level: "" });
+    expect(cardTag({ priority: "1", project: "[[Polymers]]" })).toEqual({ text: "P1 \u00b7 Polymers", level: "1" });
+  });
+  it("a project list takes the first; an alias, a path and .md are dropped", () => {
+    expect(cardTag({ project: ["[[02 Projects/Polymers/Polymers.md|my polymers]]", "[[Other]]"] })?.text).toBe("Polymers");
+    expect(cardTag({ project: "[[Polymers#Goal]]" })?.text).toBe("Polymers");
+  });
+  it("an invalid priority is ignored; neither gives none", () => {
+    expect(cardTag({ priority: 4, project: "[[A]]" })).toEqual({ text: "A", level: "" });
+    expect(cardTag({ priority: "high" })).toBeNull();
+    expect(cardTag({ priority: "", project: "" })).toBeNull();
+    expect(cardTag({})).toBeNull();
   });
 });

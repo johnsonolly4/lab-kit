@@ -147,6 +147,7 @@ Created with the **New to-do** button or command (`Alt+T`; template `Extras/Temp
 | `done_on` | date `done` was ticked | Lab Kit |
 | `project` | link to a project hub, e.g. `"[[Flow rig]]"`, or empty | template / me |
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
+| `priority` / `project` on the board | the board card shows a small tag at the bottom left, `P2 · Polymers` (priority 1, 2 or 3 and the project's name); read from the note, so the property row need not be shown on the card | plugin |
 | `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
 | `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none (New to-do asks it; the board's Sort control on `priority` also orders cards 1, 2, 3) | me |
 | `sub` | optional, by hand: one link to the to-do this one is a subtask of (`"[[Parent to-do]]"`); the parent's card on the plan map shows a count (`1/2`) that opens the list; the parent is never ticked for you; one level only; the subtask stays an ordinary to-do (board, `after`) | me |

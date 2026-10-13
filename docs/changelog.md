@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **To-do board: priority and project on every card** (planning kit, theme): a small tag at the bottom left of each board card, like `P2 · Polymers` (only the parts the to-do has), opposite the due-date countdown. Priority 1 is red, 2 amber, 3 and a project alone grey. It is read from the note, so the `priority` property does not have to be shown on the card (which made every card taller). Needs Review update… for the theme
 - **New command: Add result** (planning kit, Cmd+P): on an open to-do it asks for the one-line result (the current one is filled in; empty removes it; closing the box changes nothing) and writes `result`, which the project plan shows as `→ result` on the card. There is no prompt when you tick a to-do. No hotkey
 - **To-do board: done to-dos go last in each column, then by priority** (planning kit, To-do board file): the board is sorted on `done` and then `priority` (1, 2, 3, none). Review update… offers it; if you edited your board it asks first (Keep keeps yours)
 - **Plan map: shorter arrows** (planning kit): a card with nothing before it now sits just before its earliest child instead of at the far left, so its arrow no longer runs across the whole map

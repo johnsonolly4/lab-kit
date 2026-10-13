@@ -362,6 +362,28 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="soon"]::after { color: rgb(var(--vt-waiting-text)); background: rgba(var(--vt-waiting), var(--vt-tint)); }
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="late"]::after { color: rgb(var(--vt-overdue-text)); background: rgba(var(--vt-overdue), var(--vt-tint)); }
 
+/* Priority and project tag at the bottom left ("P2 \00b7 Polymers"): the plugin sets data-vt-tag and data-vt-prio (1, 2, 3 or empty) on the card from the
+   note, so the priority property does not have to be shown (that makes every card taller). Opposite the countdown above; no height change. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-tag]::before {
+  content: attr(data-vt-tag);
+  position: absolute;
+  inset-inline-start: 8px;
+  bottom: 6px;
+  max-width: calc(100% - 96px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: var(--font-ui-smaller);
+  line-height: 1.5;
+  color: var(--text-muted);
+  background: var(--background-modifier-hover);
+  pointer-events: none;
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="1"]::before { color: rgb(var(--vt-overdue-text)); background: rgba(var(--vt-overdue), var(--vt-tint)); }
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="2"]::before { color: rgb(var(--vt-waiting-text)); background: rgba(var(--vt-waiting), var(--vt-tint)); }
+
 /* Card layout. Obsidian places each card part with inline styles
    (title: top 8px, height 24px; done: top 40px, height 40px; card 88px tall,
    and the slot height is fixed from those). The !important rules re-place

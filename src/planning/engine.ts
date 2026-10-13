@@ -3,7 +3,7 @@
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
 import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
-import { applyPatch, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
+import { applyPatch, cardTag, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
 
 /** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
 export const ROLL_KEY = "vt-rollover";
@@ -188,6 +188,9 @@ export class TodoEngine {
         const el = card as HTMLElement;
         if (cd) { el.dataset.vtDue = cd.text; el.dataset.vtDueLevel = cd.level; }
         else { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
+        const tag = fm ? cardTag(fm) : null;
+        if (tag) { el.dataset.vtTag = tag.text; el.dataset.vtPrio = tag.level; }
+        else { delete el.dataset.vtTag; delete el.dataset.vtPrio; }
       } catch (e) { console.error("Lab Kit to-do engine", e); }
     }
   }
@@ -198,5 +201,6 @@ export class TodoEngine {
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-group]"))) delete el.dataset.vtGroup;
     for (const el of Array.from(root.querySelectorAll(".vt-rolled"))) el.classList.remove("vt-rolled");
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-due]"))) { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
+    for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-tag]"))) { delete el.dataset.vtTag; delete el.dataset.vtPrio; }
   }
 }

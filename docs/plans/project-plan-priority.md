@@ -178,6 +178,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Plan check 2026-10-12: the `order` route is not known to be the simplest. Obsidian works the card height out from what the card shows (title + done = 88px) and the theme re-places the title and tick inside that fixed height with `!important` rules (`vault-theme.css:357-363`). A third property in `order` will change the height and may break that layout. Spike in Obsidian first: add `project` to `order` in test-vault, look at the card height and the title / tick / countdown. If it breaks, use the data attribute + `::before` route (no height change, like the countdown).
 - Done when: the user sees it next to a countdown and a priority on one card.
 
+- **Phase 6 result (2026-10-13, tag logic tested, the look NOT seen in Obsidian; the spike is the user's try):** one tag at the bottom left, `P2 · Polymers` (priority and project together; user decision, also covers the priority-indication ask), drawn with `::before` from `data-vt-tag` / `data-vt-prio` set in `engine.ts` `tag()` (`cardTag` in `todo.ts`); no `order` property, so no card height change. Open until seen: whether Obsidian uses `::before` on the card; tag next to a long countdown; phone width.
+
 ## Order (checked 2026-10-12)
 3a → 3b → 4a → 4b → 4c → 4d → 4e → 5 → 6 (4d and 4e added 2026-10-12). 3a, 3b, 4a and 5 need only Phase 2 (done); 4b needs 4a; 4c needs 4b seen by the user; 4d needs 4c's patch; 4e needs 4b seen; 6 is independent and still starts with its own spike. Each is one session.
 
