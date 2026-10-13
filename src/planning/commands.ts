@@ -13,6 +13,8 @@ import { ask, pick } from "./ask";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
+import { addResult } from "./result";
+import { linkInOrder } from "./sequence";
 import { parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
@@ -58,6 +60,8 @@ export class PlanningCommands {
     add("new-todo", "New to-do", () => this.newTodo());
     add("quick-capture", "Quick capture", () => this.quickCapture());
     add("add-to-shopping", "Add to shopping list", () => this.addToShopping());
+    add("add-result", "Add result", () => addResult(this.app));
+    add("link-todos-in-order", "Link to-dos in order", () => linkInOrder(this.app, this.folders));
     add("sort-inbox", "Sort inbox", () => this.sortInbox());
     add("archive-todos", "Archive old to-dos", () => this.archiveTodos());
     add("new-meeting", "New meeting", () => this.newMeeting());

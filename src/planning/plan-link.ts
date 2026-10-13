@@ -37,3 +37,15 @@ export function canLink(plan: Plan, from: string, to: string): LinkVerdict {
   }
   return "ok";
 }
+
+/** `child`'s `after` when the to-do it came after is deleted: the dead link goes, and the deleted to-do's own `after` items take its place (A → B → C becomes A → C).
+ *  `deleted`: the names that `after` items use for it; `own`: its `after` value; `childNames`: the names of the child, so it never comes after itself. Nothing left gives `undefined`. */
+export function bridgeAfter(value: unknown, deleted: string[], own: unknown, childNames: string[]): unknown {
+  const left = items(removeAfter(value, deleted));
+  for (const i of items(own)) {
+    const itself = removeAfter(i, childNames) === undefined;
+    if (!linkTarget(i) || itself || left.some(l => linkTarget(l) === linkTarget(i))) continue;
+    left.push(i);
+  }
+  return left.length === 0 ? undefined : left.length === 1 ? left[0] : left;
+}

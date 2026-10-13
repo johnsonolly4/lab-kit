@@ -145,6 +145,8 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Tests: the list of patches for three to-dos, one already linked, a loop, a link that is not a to-do, two projects.
 - Done when: tests and lint pass; the user runs it on one list in Obsidian.
 
+- **Phase 4d result (2026-10-13, pure parts tested, the command NOT seen in Obsidian):** `src/planning/sequence.ts` (`linksIn`, `sequencePatches`, `linkInOrder`), `sequence-ui.ts` (preview modal), shared writers in `src/planning/after-write.ts` (moved out of `plan-map-render.ts`). User decisions: the list is the selected links in a note; palette command only. Not built: Plan tile order as a source, a hub button, markdown-style links.
+
 ### Phase 4e — Subtasks (`sub`)
 - Depends on: 4b seen by the user (so the questions can be answered from a real map). Model: Opus for the questions, then Sonnet.
 - A subtask is a to-do with `sub: [[Parent to-do]]` (one link, on the child). `readPlan` reads it; the parent's subtasks are worked out. Typed by hand at first.
@@ -152,6 +154,10 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Problems reported, nothing invented: `sub` naming a note that is not a to-do of the project, itself, or a loop.
 - Tests: fixture with a parent and two subtasks, a missing parent, a loop.
 - Done when: tests and lint pass; the user gives one to-do two subtasks and sees them in the hub.
+
+- **Phase 4e result (2026-10-13, tests only, not seen in Obsidian):** decided with the user: the parent card shows a count that expands to the subtasks; the parent is only marked "all done", never ticked; a subtask is an ordinary to-do (board, own `after`); typed by hand; one level only. `PlanRow.parent` / `subs` and the problem lines in `src/planning/plan.ts`; subtasks left off the map in `layoutPlan`; the toggle and list in `src/planning/plan-map-render.ts`; open lists kept in the block (`expanded` in `blocks.ts`).
+
+- **Routed arrows and vertical layout (2026-10-13, tests only, not seen in Obsidian):** the user chose both from a rendered preview (panels A to C): routed arrows like panel B ("smooth curves as a setting" maybe later: BACKLOG), vertical layout as a setting plus a ⇄ / ⇅ button on the map. `mapGeometry(map, extra, direction)` in `src/planning/plan-map.ts` (lanes between rows or columns, `samples` for tests), setting `planDirection`, the button and `placeMap` in `src/planning/blocks.ts`, `.vt-map-down` in the theme.
 
 ### Phase 4 (superseded: `plan` block, Mermaid)
 - Replaced 2026-10-12 by Phases 4a-4c (card map). Kept for the record.
@@ -166,11 +172,15 @@ To-dos get a Priority, a project tile on the board card, and (for to-dos in a pr
 - Done when: tests for the patch; the user ticks a to-do in Obsidian (unknown: a prompt from a metadata change handler has not been done before, spike first).
 - Plan check 2026-10-12: `onChanged` (`engine.ts:103`) runs for every metadata change of a to-do, not only a tick made by the user on this device. The spike must also answer (none verified): does a `done` change arriving by sync from another device fire it; what happens when several to-dos are ticked quickly or changed in bulk (roll-over, Tidy up notes, Clear old to-dos); does it fire on a phone. The prompt must open only for a tick made here by the user, at most one at a time; if that cannot be told apart, fall back to a command / button ("Add result") and no automatic prompt.
 
+- **Phase 5 result (2026-10-13, pure part tested, the command NOT seen in Obsidian):** decided with the user: **command only, no prompt at tick** ("most will just be done, unless plans change") and the prompt asks only the result, one line. So no spike and no change to the to-do engine; `src/planning/result.ts` (`cleanResult`, `addResult`), command `add-result` ("Add result", no hotkey). Not built: a prompt when ticking, "What comes next?", a button on the map card.
+
 ### Phase 6 — Project tile on board cards
 - Depends on: the user's screenshot (received 2026-10-12: card = title left, round tick top right, countdown badge bottom right; a 2-line title already runs down beside the badge; free space is a line under the title on the left); best after Phase 1 so both card additions are seen together
 - Files: `To-do board.base` (`project` in `order`, simplest) or `vault-theme.css` + `engine.ts:173-193` data attribute; tests; the 3-line title overlap and phone width checked.
 - Plan check 2026-10-12: the `order` route is not known to be the simplest. Obsidian works the card height out from what the card shows (title + done = 88px) and the theme re-places the title and tick inside that fixed height with `!important` rules (`vault-theme.css:357-363`). A third property in `order` will change the height and may break that layout. Spike in Obsidian first: add `project` to `order` in test-vault, look at the card height and the title / tick / countdown. If it breaks, use the data attribute + `::before` route (no height change, like the countdown).
 - Done when: the user sees it next to a countdown and a priority on one card.
+
+- **Phase 6 result (2026-10-13, tag logic tested, the look NOT seen in Obsidian; the spike is the user's try):** one tag at the bottom left, `P2 · Polymers` (priority and project together; user decision, also covers the priority-indication ask), drawn with `::before` from `data-vt-tag` / `data-vt-prio` set in `engine.ts` `tag()` (`cardTag` in `todo.ts`); no `order` property, so no card height change. Open until seen: whether Obsidian uses `::before` on the card; tag next to a long countdown; phone width.
 
 ## Order (checked 2026-10-12)
 3a → 3b → 4a → 4b → 4c → 4d → 4e → 5 → 6 (4d and 4e added 2026-10-12). 3a, 3b, 4a and 5 need only Phase 2 (done); 4b needs 4a; 4c needs 4b seen by the user; 4d needs 4c's patch; 4e needs 4b seen; 6 is independent and still starts with its own spike. Each is one session.

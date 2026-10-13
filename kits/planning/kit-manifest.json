@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "1.0.1",
-      "sha256": "21d7db2092a02fd308556aa321656e16d02e1cb19484b2a30ff915a3ce3b74d7",
+      "sha256": "14aca2509a8da0dba91f5c18275725bf82276132d4a37128f9f6e32ea40251ec",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.1",
-      "sha256": "4ac4232b134de459b23522ebdb40d86088d4026d10550e3fde71c38ee1c7ac51",
+      "sha256": "566a28350e08cfb61b967a883a413ca5b4452f01a974af058e0f09d39cb59915",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "77e965b4f099d254e6792d22f97458f9a06cc5af334b34681fb3382fdfd334ca",
+      "sha256": "5efcd2d68f21259c5818eb5119fe9e1bf5afbfd037806a295470025726627f3c",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -148,7 +148,7 @@
       "role": "howtos",
       "path": "Obsidian/Set up ZotLit.md",
       "version": "1.0.1",
-      "sha256": "a57e1bb3f8adce02fe57bb3bf0650a0688e3b8a28e96071b81c1db10e83e6c2f",
+      "sha256": "90b3becea57925a42346efc2bd280c131921228b0eb058680575240b66f8cc9e",
       "renamedFrom": [],
       "desc": "Checklist: ZotLit's note folder and template folder",
       "optional": true,
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "c07a7da1278907fd12e187b36e93ac4bf4ecacc2d1ecdb87d6f8b4477be804ac",
+      "sha256": "1e6a1d2c1253cb701b1fe9e340ad51eb8528ea4892268232a52ee73825c22f34",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -232,8 +232,8 @@
       "src": "00 Planning/To-do board.base",
       "role": "planning",
       "path": "To-do board.base",
-      "version": "1.0.0",
-      "sha256": "2674cba2aa4d6717255153382f4839cd4f32b9bc6ce4125ef5fc678d3c5919ea",
+      "version": "1.0.1",
+      "sha256": "21e2dba58c68c1839c04cde7fb50414aca7e8587b08299097db68ecfa3c19b11",
       "renamedFrom": [],
       "desc": "To-do board: one column per day",
       "policy": "keep"

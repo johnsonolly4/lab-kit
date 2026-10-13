@@ -21,6 +21,10 @@ export interface PlanRow {
   priority: number | null;
   /** Open, and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
   blocked: boolean;
+  /** The to-do this one is a subtask of (`sub`; its path), or null. One level only. */
+  parent: string | null;
+  /** The subtasks of this to-do, in plan order. */
+  subs: { path: string; name: string; done: boolean }[];
   /** The lab note named by `experiment` (its `Status` as written, "" when empty; path "" when no such lab note), or null. */
   experiment: { name: string; path: string; status: string } | null;
 }
@@ -42,6 +46,8 @@ const dueOf = (v: unknown): string => { const d = text(v).slice(0, 10); return p
 /** The items of `after`: one link or a list; empty items dropped. */
 const afterItems = (v: unknown): string[] => (Array.isArray(v) ? v : [v]).map(i => linkTarget(text(i))).filter(Boolean);
 
+const byPathRow = (rows: PlanRow[], path: string): PlanRow | undefined => rows.find(r => r.path === path);
+
 /** The plan of `hub`: every to-do of the project (finished ones too). Parents come before their children; ties go by `order` (empty last), then by path.
  *  `labNotes`: the lab notes, for the `experiment` link; left out (lab folder not set), nothing is looked up and no message is written. */
 export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): Plan {
@@ -58,6 +64,23 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       else if (!found.includes(p)) found.push(p);
     }
     parents.set(t.path, found);
+  }
+  // `sub`: the to-do this one belongs to. A bad one (no such to-do, itself, a loop, or a subtask of a subtask) is reported and ignored.
+  const match = (n: NoteRec, target: string): boolean => n.path.replace(/\.md$/, "") === target || n.name === target.slice(target.lastIndexOf("/") + 1);
+  const wanted = new Map<NoteRec, NoteRec>();
+  for (const t of mine) {
+    const target = afterItems(t.fm.sub)[0];
+    if (!target) continue;
+    const p = mine.find(m => match(m, target));
+    if (!p) problems.push(`"${t.name}" is a subtask of "${target}", which is not a to-do of this project.`);
+    else if (p === t) problems.push(`"${t.name}" is a subtask of itself.`);
+    else wanted.set(t, p);
+  }
+  const parentOf = new Map<NoteRec, NoteRec>();
+  for (const [t, p] of wanted) {
+    if (!wanted.has(p)) { parentOf.set(t, p); continue; }
+    if (wanted.get(p) === t) { if (t.path < p.path) problems.push(`"${t.name}" and "${p.name}" are subtasks of each other.`); }
+    else problems.push(`"${t.name}" is a subtask of "${p.name}", which is itself a subtask: subtasks go one level only.`);
   }
   const orderOfNote = (t: NoteRec): number => orderOf(t.fm.order) ?? Infinity;
   const byOrder = (a: NoteRec, b: NoteRec): number => (orderOfNote(a) === orderOfNote(b) ? 0 : orderOfNote(a) < orderOfNote(b) ? -1 : 1) || a.path.localeCompare(b.path);
@@ -98,9 +121,10 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       experiment = lab ? { name: lab.name, path: lab.path, status: text(lab.fm.Status) } : { name: target, path: "", status: "" };
       if (!lab) problems.push(`"${t.name}" names experiment "${target}", which is not a lab note.`);
     }
-    return { path: t.path, name: t.name, done, experiment, after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
+    return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
       order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
   });
+  for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
   const byPath = new Map(rows.map(r => [r.path, r]));
   for (const r of rows) {
@@ -113,8 +137,8 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
   return { rows, problems };
 }
 
-/** The project has a plan: some to-do comes after another or has an `order`, or a link is wrong (so the message shows). */
-export const hasPlan = (plan: Plan): boolean => plan.rows.some(r => r.after.length > 0 || r.order !== null) || plan.problems.length > 0;
+/** The project has a plan: some to-do comes after another, has an `order` or has subtasks, or a link is wrong (so the message shows). */
+export const hasPlan = (plan: Plan): boolean => plan.rows.some(r => r.after.length > 0 || r.order !== null || r.subs.length > 0) || plan.problems.length > 0;
 
 /** The badge class of a lab note status: `vt-` plus the status in lower case with hyphens (Planned, Started, Processing results, Closed have colours in the theme); anything else is neutral. */
 export function statusClass(status: string): string {

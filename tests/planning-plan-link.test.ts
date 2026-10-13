@@ -1,6 +1,6 @@
 // Making and removing `after` links on the plan map (src/planning/plan-link.ts).
 import { describe, it, expect } from "vitest";
-import { addAfter, canLink, removeAfter } from "../src/planning/plan-link";
+import { addAfter, bridgeAfter, canLink, removeAfter } from "../src/planning/plan-link";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -62,5 +62,25 @@ describe("canLink", () => {
     expect(canLink(plan, p("D"), p("C"))).toBe("ok");
     expect(canLink(plan, p("C"), p("D"))).toBe("ok");
     expect(canLink(plan, p("B"), p("J"))).toBe("ok");
+  });
+});
+
+describe("bridgeAfter", () => {
+  const B = [T + "B", "B"], C = [T + "C", "C"];
+  it("A → B → C becomes A → C", () => {
+    expect(bridgeAfter("[[B]]", B, "[[A]]", C)).toBe("[[A]]");
+  });
+  it("a deleted to-do with two parents gives both; the child's other links stay first", () => {
+    expect(bridgeAfter(["[[X]]", "[[B]]"], B, ["[[A]]", "[[A2]]"], C)).toEqual(["[[X]]", "[[A]]", "[[A2]]"]);
+  });
+  it("a deleted to-do with no `after` just drops the dead link; the last one removes the property", () => {
+    expect(bridgeAfter("[[B]]", B, undefined, C)).toBeUndefined();
+    expect(bridgeAfter(["[[X]]", "[[B]]"], B, undefined, C)).toBe("[[X]]");
+  });
+  it("a parent the child already has is not added twice, and the child never comes after itself", () => {
+    expect(bridgeAfter(["[[A]]", "[[B]]"], B, ["[[A|first]]", "[[C]]"], C)).toBe("[[A]]");
+  });
+  it("matches by path as well as name", () => {
+    expect(bridgeAfter("[[00 Planning/To-dos/B|b]]", B, "[[A]]", C)).toBe("[[A]]");
   });
 });

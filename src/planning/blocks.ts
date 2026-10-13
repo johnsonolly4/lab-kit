@@ -8,7 +8,7 @@ import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
-import { layoutPlan } from "./plan-map";
+import { layoutPlan, type Direction } from "./plan-map";
 import { drawPlanMap } from "./plan-map-render";
 import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
@@ -52,7 +52,9 @@ export class PlanningBlocks {
 
 class BlockView extends MarkdownRenderChild {
   private drawing = 0;
-  private mapScroll: number | null = null;   // where the user scrolled the plan map, null = not by hand
+  private expanded = new Set<string>();   // plan map parents whose subtask list is open
+  private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
+  private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
 
@@ -118,10 +120,10 @@ class BlockView extends MarkdownRenderChild {
 
   /** Puts the map where the user left it, else at the start step. Obsidian lays the note out a little after the block is added, so the position is set again on each resize for a moment; only a scroll after that counts as the user's. */
   private placeMap(scroller: HTMLElement): void {
-    const target = this.mapScroll ?? Number(scroller.dataset.startScroll ?? 0);
+    const target = this.mapScroll ?? { left: Number(scroller.dataset.startScroll ?? 0), top: Number(scroller.dataset.startScrollTop ?? 0) };
     let placing = true;
-    scroller.addEventListener("scroll", () => { if (!placing) this.mapScroll = scroller.scrollLeft; });
-    const apply = (): void => { scroller.scrollLeft = target; };
+    scroller.addEventListener("scroll", () => { if (!placing) this.mapScroll = { left: scroller.scrollLeft, top: scroller.scrollTop }; });
+    const apply = (): void => { scroller.scrollLeft = target.left; scroller.scrollTop = target.top; };
     apply();
     const watch = new ResizeObserver(() => { if (placing) apply(); });
     watch.observe(scroller);
@@ -322,8 +324,13 @@ class BlockView extends MarkdownRenderChild {
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
         if (!hasPlan(plan)) return;
         box.addClass("vt-plan");
-        box.createDiv({ cls: "vt-plan-title", text: "Plan" });
-        drawPlanMap(box, plan, layoutPlan(plan), { app: this.app, sourcePath: this.sourcePath });
+        const direction = this.direction ?? kit.planDirection;
+        const title = box.createDiv({ cls: "vt-plan-title", text: "Plan" });
+        const flip = title.createEl("button", { cls: "vt-map-dir", text: direction === "down" ? "\u21c5" : "\u21c4", attr: { "aria-label": "Flip the map direction", title: direction === "down" ? "Top to bottom: click for left to right" : "Left to right: click for top to bottom" } });
+        const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
+        flip.addEventListener("mousedown", stop);
+        flip.addEventListener("click", e => { stop(e); this.direction = direction === "down" ? "across" : "down"; this.mapScroll = null; this.draw(); });
+        drawPlanMap(box, plan, layoutPlan(plan), { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, redraw: () => this.draw() });
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }

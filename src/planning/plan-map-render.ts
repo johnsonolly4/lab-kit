@@ -2,16 +2,26 @@
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
-import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, type PlanMap } from "./plan-map";
+import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
+import { changeAfter, linkText, namesOf, undoNotice } from "./after-write";
 import { addAfter, canLink, removeAfter } from "./plan-link";
+import { rememberText } from "./after-bridge";
 
 export interface MapOptions {
   app: App;
   /** The note the map is drawn in (to resolve links). */
   sourcePath: string;
+  /** Parents whose subtask list is open, kept by the block across redraws. */
+  expanded: Set<string>;
+  /** Which way the map runs (the setting, or what the toggle on the map was last set to for this note). */
+  direction: Direction;
+  /** Draws the map again (after a list was opened or closed). */
+  redraw: () => void;
 }
 
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
+/** Height of one subtask line, for the room under the map. */
+const SUB_LINE_H = 26;
 const stopEvent = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
 const open = (o: MapOptions, path: string, newTab: PaneType | boolean): void => { void o.app.workspace.openLinkText(path, o.sourcePath, newTab); };
 
@@ -28,45 +38,27 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
   m.addItem(i => i.setTitle("Open").setIcon("file").onClick(() => open(o, row.path, false)));
   m.addItem(i => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => open(o, row.path, true)));
   m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => { void markDone(o, row.path, !row.done); }));
+  m.addSeparator();
+  m.addItem(i => i.setTitle("Delete note").setIcon("trash-2").onClick(() => {
+    const file = o.app.vault.getFileByPath(row.path);
+    if (!file) { new Notice("That to-do is not there any more."); return; }
+    void o.app.vault.read(file).then(text => { rememberText(row.path, text); return o.app.fileManager.trashFile(file); }).catch(() => { new Notice("Could not delete that to-do."); });   // follows the user's trash setting; the links are passed on by src/planning/after-bridge.ts
+  }));
   m.showAtMouseEvent(e);
 }
 
-/** A notice with an Undo button. */
-function undoNotice(text: string, undo: () => Promise<void>): void {
-  const n = new Notice("", 8000);
-  n.messageEl.createSpan({ text: `${text} ` });
-  n.messageEl.createEl("button", { text: "Undo" }).addEventListener("click", () => { n.hide(); undo().catch(() => { new Notice("Could not undo that."); }); });
-}
-
-/** Changes `after` on the to-do `to`. `value` gets the old value and returns the new one (undefined removes the property). */
-async function changeAfter(o: MapOptions, to: string, change: (value: unknown) => unknown): Promise<void> {
-  const file = o.app.vault.getFileByPath(to);
-  if (!file) throw new Error("to-do not found");
-  await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
-    const v = change(fm.after);
-    if (v === undefined) delete fm.after; else fm.after = v;
-  });
-}
-
-/** The names that `after` items use for the to-do at `path`: its path without `.md` and its name. */
-const namesOf = (path: string): string[] => { const p = path.replace(/\.md$/, ""); return [p, p.slice(p.lastIndexOf("/") + 1)]; };
-
 /** Writes the link "`to` comes after `from`" (the arrow is drawn first by the caller) and offers Undo. */
 async function link(o: MapOptions, from: string, to: string): Promise<void> {
-  const fromFile = o.app.vault.getFileByPath(from);
-  if (!fromFile) throw new Error("to-do not found");
-  const text = `[[${o.app.metadataCache.fileToLinktext(fromFile, to)}]]`;
-  await changeAfter(o, to, v => addAfter(v, text));
-  undoNotice("Linked.", () => changeAfter(o, to, v => removeAfter(v, namesOf(from))));
+  const text = linkText(o.app, from, to);
+  await changeAfter(o.app, to, v => addAfter(v, text));
+  undoNotice("Linked.", () => changeAfter(o.app, to, v => removeAfter(v, namesOf(from))));
 }
 
 /** Removes the link "`to` comes after `from`" and offers Undo. */
 async function unlink(o: MapOptions, from: string, to: string): Promise<void> {
-  const fromFile = o.app.vault.getFileByPath(from);
-  if (!fromFile) throw new Error("to-do not found");
-  const text = `[[${o.app.metadataCache.fileToLinktext(fromFile, to)}]]`;
-  await changeAfter(o, to, v => removeAfter(v, namesOf(from)));
-  undoNotice("Link removed.", () => changeAfter(o, to, v => addAfter(v, text)));
+  const text = linkText(o.app, from, to);
+  await changeAfter(o.app, to, v => removeAfter(v, namesOf(from)));
+  undoNotice("Link removed.", () => changeAfter(o.app, to, v => addAfter(v, text)));
 }
 
 /** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`. A line follows the pointer; Esc cancels. */
@@ -101,8 +93,10 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
     const scrolling = window.setInterval(() => {
       if (!scroller) return;
       const b = scroller.getBoundingClientRect();
-      if (pointer.x < b.left + EDGE) scroller.scrollLeft -= STEP; else if (pointer.x > b.right - EDGE) scroller.scrollLeft += STEP; else return;
-      place();
+      let moved = false;
+      if (pointer.x < b.left + EDGE) { scroller.scrollLeft -= STEP; moved = true; } else if (pointer.x > b.right - EDGE) { scroller.scrollLeft += STEP; moved = true; }
+      if (pointer.y < b.top + EDGE) { scroller.scrollTop -= STEP; moved = true; } else if (pointer.y > b.bottom - EDGE) { scroller.scrollTop += STEP; moved = true; }
+      if (moved) place();
     }, 30);
     const finish = (e: PointerEvent | null): void => {
       window.clearInterval(scrolling);
@@ -127,14 +121,44 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
   });
 }
 
+/** A parent's "▸ 2/3" toggle; a click opens or closes its list of subtasks. */
+function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
+  const { text, allDone } = subsLabel(row);
+  if (!text) return;
+  const open = o.expanded.has(row.path);
+  const b = parent.createEl("button", { cls: allDone ? "vt-map-subs-toggle vt-map-subsdone" : "vt-map-subs-toggle", text: `${open ? "\u25be" : "\u25b8"} ${allDone ? "\u2713 " : ""}${text}`, attr: { "aria-label": "Subtasks", title: allDone ? "All subtasks done" : "Subtasks" } });
+  b.addEventListener("mousedown", stopEvent);
+  b.addEventListener("click", e => { stopEvent(e); if (open) o.expanded.delete(row.path); else o.expanded.add(row.path); o.redraw(); });
+}
+
+/** The open list of a parent's subtasks: each with a tick circle (ticks and unticks) and its name (click opens). */
+function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string): void {
+  const list = parent.createDiv({ cls });
+  for (const ev of ["click", "mousedown", "contextmenu"]) list.addEventListener(ev, e => e.stopPropagation());   // not the parent card's open / menu
+  for (const s of row.subs) {
+    const line = list.createDiv({ cls: s.done ? "vt-map-sub vt-map-sub-done" : "vt-map-sub" });
+    let done = s.done;
+    const tick = line.createEl("button", { cls: "vt-map-tick vt-map-sub-tick", attr: { "aria-label": "Mark done" } });
+    const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); line.toggleClass("vt-map-sub-done", done); };
+    look();
+    tick.addEventListener("mousedown", stopEvent);
+    tick.addEventListener("click", e => { stopEvent(e); done = !done; look(); markDone(o, s.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); }); });
+    const a = line.createEl("a", { text: s.name, cls: "internal-link", attr: { href: s.path, "data-href": s.path } });
+    a.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, s.path, Keymap.isModEvent(e)); });
+    a.addEventListener("mousedown", e => e.stopPropagation());
+  }
+}
+
 /** The map and the unlinked list inside `box`. The scroll box carries `data-start-scroll`: where to scroll once it is in the page. */
 export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOptions): void {
   const wrap = box.createDiv({ cls: "vt-map" });
   if (map.cards.length) {
-    const g = mapGeometry(map);
+    const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
+    const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);
+    if (o.direction === "down") wrap.addClass("vt-map-down");
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
-    if (g.scrollLeft > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the left edge even when everything fits
+    if (g.scrollLeft > 0 || g.scrollTop > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the edge even when everything fits
     canvas.setCssProps({ "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
     const svg = canvas.createSvg("svg", { cls: "vt-map-arrows", attr: { width: String(g.width), height: String(g.height) } });
     const arrows = new Map<SVGPathElement, { from: string; to: string }>();
@@ -183,7 +207,10 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
         row.createSpan({ cls: "vt-map-exp-name", text: exp.name });
         if (exp.path) row.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, exp.path, Keymap.isModEvent(e)); });
       }
-      if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}` });
+      if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}`, attr: { title: r.result } });   // cut with an ellipsis (clear of the subtask toggle); the whole text on hover
+      if (r.subs.length) el.addClass("vt-map-has-subs");
+      subsToggle(el, r, o);
+      if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs");
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));
       el.addEventListener("mouseenter", () => {   // the card and everything before and after it; the rest is dimmed (desktop only: a phone has no hover)
@@ -198,6 +225,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       cards.set(c.path, el);
     }
     scroller.dataset.startScroll = String(g.scrollLeft);
+    scroller.dataset.startScrollTop = String(g.scrollTop);
   }
   if (map.unlinked.length) {
     const side = wrap.createDiv({ cls: "vt-map-unlinked" });
@@ -210,6 +238,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       const a = li.createEl("a", { text: r.name, cls: "internal-link", attr: { href: r.path, "data-href": r.path } });
       a.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       a.addEventListener("contextmenu", e => menu(o, e, r));
+      subsToggle(li, r, o);
+      if (o.expanded.has(r.path) && r.subs.length) subsList(li, r, o, "vt-map-subs vt-map-subs-inline");
     }
   }
 }

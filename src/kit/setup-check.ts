@@ -1,6 +1,7 @@
 // Setup check (Phase 6): what the kits need from other plugins, Templater, CSS snippets, folders and hotkeys, as a list of ok / missing items.
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
+import type { ZotlitScan } from "./zotlit";
 import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 
@@ -45,6 +46,8 @@ export interface SetupState {
   metaBind: { missing: number; total: number; /** Ids of the missing buttons, for the row's text. */ names?: string[] } | null;
   /** Meta Bind buttons that exist but do something else than the kit's button of that id (see `differingButtons`). */
   metaBindDiffers?: { id: string; now: string; kit: string }[];
+  /** ZotLit's frontmatter fields and folders against the kit's (see `zotlitScan`); null when ZotLit has no settings file or it can't be read. */
+  zotlitData?: ZotlitScan | null;
   /** Path of the "Set up ZotLit" checklist note when it is installed. */
   zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
@@ -94,7 +97,8 @@ export type SetupFix =
   | { kind: "meta-bind" }
   | { kind: "meta-bind-reset"; ids: string[] }
   | { kind: "open-note"; path: string }
-  | { kind: "manage" };
+  | { kind: "manage" }
+  | { kind: "zotlit-fields" };
 
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
@@ -232,7 +236,19 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: d.length ? { kind: "meta-bind-reset", ids: d.map(b => b.id) } : undefined });
   }
 
-  if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
+  if (s.planning && s.plugins.has("zotlit") && s.zotlitData?.readable) {
+    const z = s.zotlitData;
+    const bits = [...z.missing.map(f => `${f.key} is missing`), ...z.differing.map(f => `${f.key} differs (yours: ${f.now}; kit: ${f.kit})`)];
+    const clean = !z.missing.length && !z.differing.length;   // a field of yours that differs from the kit's is flagged too: Lab Kit never changes it, so check it by hand
+    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: clean, warn: !clean || undefined,
+      detail: bits.length ? `${bits.join("; ")}.${z.missing.length ? " Fix adds the missing ones," : ""} Lab Kit never changes a field you have: check the ones that differ in Settings → ZotLit → Templates → Frontmatter${z.missing.length ? ". Fix then turns ZotLit off and on so it reads the new ones" : ""}.` : "All the kit's fields are there.",
+      fix: z.missing.length ? { kind: "zotlit-fields" } : undefined });
+    const f = [z.literature === "other" ? "Literature note folder is your own (left alone)" : z.literature === "empty" ? "Literature note folder is not set" : "",
+      z.templates === "other" ? "Template folder is your own (left alone)" : z.templates === "empty" ? "Template folder is not set" : ""].filter(Boolean);
+    out.push({ id: "zotlit:folders", group: "ZotLit", label: "ZotLit folders", ok: !f.length, warn: !!f.length || undefined,
+      detail: f.length ? `${f.join("; ")}.${z.literature === "empty" || z.templates === "empty" ? " Fix (above) sets the empty ones." : ""}` : "ZotLit uses the kit's literature and template folders.",
+      fix: !z.missing.length && (z.literature === "empty" || z.templates === "empty") ? { kind: "zotlit-fields" } : undefined });
+  } else if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
     detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`
       : "Lab Kit can't read ZotLit's settings. Install the planning kit (Review update…) to get its checklist note, Set up ZotLit.",
     fix: s.zotlitGuide ? { kind: "open-note", path: s.zotlitGuide } : undefined });

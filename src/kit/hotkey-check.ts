@@ -20,7 +20,7 @@ export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: stri
   { key: { modifiers: ["Alt"], key: "K" }, does: "New knowledge note", command: "Lab Kit: New concept", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "B" }, does: "To-do board", command: "Lab Kit: Open to-do board", kit: "planning" },
   ...["Add to shopping list", "Sort inbox", "New extra meeting now", "New one-off meeting", "New meeting series", "Open meeting deck", "New project",
-    "New topic hub", "Roll over to-dos now", "Archive old to-dos"]
+    "New topic hub", "Roll over to-dos now", "Archive old to-dos", "Link to-dos in order", "Add result"]
     .map(n => ({ does: n, command: `Lab Kit: ${n}`, kit: "planning" as const })),
   { does: "New chemical", command: "Lab Kit: New chemical", kit: "lab" },
   { does: "New rig", command: "Lab Kit: New rig", kit: "lab" },
