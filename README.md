@@ -5,7 +5,7 @@ Live calculation tables, lab snippet forms and a hazard header for a chemistry l
 Lab Kit turns a plain note into an experiment page: a hazard table built from your chemical notes, tables that calculate like a spreadsheet, and pop-up forms that write the tables you use every day (solutions, recipes, RAFT, sampling timetables, NMR / GPC / DLS sample tables). It started as a PhD lab notebook; the vocabulary is a chemistry lab's, but nothing stops you using it for anything that needs small calculations in a note.
 
 > [!note] Beta
-> Version 1.0.1 is a beta: the planning kit and the multi-kit system are new and not yet tested by many people. Report problems on GitHub.
+> Lab Kit is a beta: the planning kit and the multi-kit system are new and not yet tested by many people. Report problems on GitHub.
 
 ## Contents
 - [Features](#features)
