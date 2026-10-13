@@ -49,4 +49,15 @@ describe("drawPlanMap", () => {
     expect(box.querySelectorAll(".vt-map-tile .vt-map-tick")).toHaveLength(2);   // the tile's, and LoneSub's line
     expect(box.querySelectorAll(".vt-map-unlinked li")).toHaveLength(0);
   });
+
+  it("an open subtask of a finished parent is marked missing (amber), and the badge too", () => {
+    const box = draw([td("P", { done: true }), td("S1", { sub: "[[P]]" }), td("S2", { sub: "[[P]]", done: true })], "across");
+    const lines = box.querySelectorAll(".vt-map-sub");
+    expect(lines).toHaveLength(2);
+    expect(box.querySelectorAll(".vt-map-sub-missing")).toHaveLength(1);
+    expect(box.querySelectorAll(".vt-map-subsopen")).toHaveLength(1);
+    const open = draw([td("P"), td("S1", { sub: "[[P]]" })], "across");
+    expect(open.querySelectorAll(".vt-map-sub-missing")).toHaveLength(0);
+    expect(open.querySelectorAll(".vt-map-subsopen")).toHaveLength(0);
+  });
 });

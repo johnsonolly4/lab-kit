@@ -491,7 +491,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-exp-missing { cursor: default; color: var(--text-faint); }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-map-done { opacity: 0.65; }
+.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
 .vt-map-done .vt-map-title { text-decoration: line-through; }
 .vt-map-ready { border: 2px solid var(--interactive-accent); }
 .vt-map-blocked { border: 2px dashed var(--text-muted); }
@@ -553,6 +553,8 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-sub { display: flex; gap: 6px; align-items: center; height: 26px; font-size: var(--font-ui-smaller); }
 .vt-map-sub .vt-map-sub-tick { position: static; width: 20px; height: 20px; flex: none; }
 .vt-map-sub a.internal-link { color: var(--text-normal); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-sub-missing a.internal-link, .vt-map-sub-missing .vt-map-tick { color: var(--color-orange); }   /* an open subtask of a finished parent */
+.vt-map-subs-toggle.vt-map-subsopen { color: var(--color-orange); border-color: var(--color-orange); }
 .vt-map-sub-done a.internal-link { color: var(--text-muted); text-decoration: line-through; }
 .vt-map-has-subs .vt-map-result { padding-right: 70px; }   /* the result stops before the subtask toggle at the bottom right */
 

@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Notice } from "obsidian";
 import { HISTORY_LIMIT, PlanHistory, sameValue, type HistoryStep } from "../src/planning/plan-history";
-import { recordChange, runHistory } from "../src/planning/after-write";
+import { recordChange, recordTick, runHistory } from "../src/planning/after-write";
 import { addAfter, removeAfter } from "../src/planning/plan-link";
 
 const step = (n: number): HistoryStep => ({ path: `T/${n}.md`, key: "after", before: undefined, after: `[[${n}]]`, label: "Linked" });
@@ -99,5 +99,49 @@ describe("recordChange / runHistory", () => {
     await runHistory(app2, h, "undo", gone);
     expect(messages()).toEqual(["That to-do is not there any more."]);
     expect(h.size("undo")).toBe(0);
+  });
+});
+
+describe("ticks in the history", () => {
+  beforeEach(() => { (Notice as unknown as { messages: string[] }).messages.length = 0; });
+  it("a tick and an untick (from the Done column back to Backlog) undo and redo exactly", async () => {
+    const notes: Record<string, Record<string, unknown>> = { "T/A.md": { kind: "todo", day: "Mon", done: false }, "T/B.md": { kind: "todo", day: "Done", done: true } };
+    const app = appWith(notes), h = new PlanHistory();
+    await recordTick(app, h, "T/A.md", true, "Ticked A");
+    await recordTick(app, h, "T/B.md", false, "Unticked B");
+    expect(notes["T/B.md"]).toEqual({ kind: "todo", day: "Backlog", done: false });
+    expect(h.peek("undo")?.label).toBe("Unticked B");
+    await runHistory(app, h, "undo");
+    expect(notes["T/B.md"]).toEqual({ kind: "todo", day: "Done", done: true });
+    await runHistory(app, h, "undo");
+    expect(notes["T/A.md"]).toEqual({ kind: "todo", day: "Mon", done: false });
+    await runHistory(app, h, "redo");
+    expect(notes["T/A.md"].done).toBe(true);
+    await runHistory(app, h, "redo");
+    expect(notes["T/B.md"]).toEqual({ kind: "todo", day: "Backlog", done: false });
+  });
+  it("steps of one group (Tick all) undo and redo together, from the bar or from a notice's own step", async () => {
+    const notes: Record<string, Record<string, unknown>> = { "T/P.md": { done: false }, "T/S1.md": { done: false }, "T/S2.md": { done: false } };
+    const app = appWith(notes), h = new PlanHistory();
+    await recordTick(app, h, "T/P.md", true, "Ticked 3 to-dos", 7);
+    const s1 = await recordTick(app, h, "T/S1.md", true, "Ticked 3 to-dos", 7);
+    await recordTick(app, h, "T/S2.md", true, "Ticked 3 to-dos", 7);
+    await runHistory(app, h, "undo");   // the bar
+    expect([notes["T/P.md"].done, notes["T/S1.md"].done, notes["T/S2.md"].done]).toEqual([false, false, false]);
+    expect(h.size("undo")).toBe(0);
+    expect(h.size("redo")).toBe(3);
+    await runHistory(app, h, "redo");
+    expect([notes["T/P.md"].done, notes["T/S1.md"].done, notes["T/S2.md"].done]).toEqual([true, true, true]);
+    await runHistory(app, h, "undo", s1);   // a notice's Undo holds one step of the group: the whole group goes
+    expect([notes["T/P.md"].done, notes["T/S2.md"].done]).toEqual([false, false]);
+  });
+  it("a tick changed since (unticked in the note) is left alone", async () => {
+    const notes: Record<string, Record<string, unknown>> = { "T/A.md": { done: false } };
+    const app = appWith(notes), h = new PlanHistory();
+    await recordTick(app, h, "T/A.md", true, "Ticked A");
+    notes["T/A.md"].done = false;
+    await runHistory(app, h, "undo");
+    expect(notes["T/A.md"].done).toBe(false);
+    expect((Notice as unknown as { messages: string[] }).messages).toEqual(["That to-do was changed since, so it was left as it is."]);
   });
 });

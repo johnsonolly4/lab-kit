@@ -4,7 +4,11 @@
 export const HISTORY_LIMIT = 20;
 
 /** One change to one property of one to-do: `before` and `after` are the values as written (undefined = the property was absent). */
-export interface HistoryStep { path: string; key: "after" | "sub" | "project"; before: unknown; after: unknown; label: string }
+export interface HistoryStep {
+  path: string; key: "after" | "sub" | "project" | "tick"; before: unknown; after: unknown; label: string;
+  /** Steps made by one action (Tick all) share a group: Undo and Redo run them together. */
+  group?: number;
+}
 
 export type Side = "undo" | "redo";
 
@@ -34,4 +38,6 @@ export class PlanHistory {
   has(side: Side, step: HistoryStep): boolean { return this.stacks[side].includes(step); }
   remove(side: Side, step: HistoryStep): void { this.stacks[side] = this.stacks[side].filter(s => s !== step); }
   size(side: Side): number { return this.stacks[side].length; }
+  /** The steps that run together with `step` (its whole group, in the order they were made); just `step` when it has no group. */
+  withGroup(side: Side, step: HistoryStep): HistoryStep[] { return step.group === undefined ? [step] : this.stacks[side].filter(s => s.group === step.group); }
 }

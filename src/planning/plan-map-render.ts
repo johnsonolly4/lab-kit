@@ -2,9 +2,9 @@
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
-import { CARD_H, CARD_W, chainOf, mapGeometry, openSubs, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
-import { linkText, namesOf, recordChange, runHistory, undoNotice } from "./after-write";
-import type { PlanHistory } from "./plan-history";
+import { CARD_H, CARD_W, chainOf, mapGeometry, openSubs, subsLabel, type Direction, type PlanMap } from "./plan-map";
+import { linkText, namesOf, recordChange, recordTick, runHistory, undoNotice } from "./after-write";
+import type { HistoryStep, PlanHistory } from "./plan-history";
 import { askTickSubs, type TickChoice } from "./tick-subs-ui";
 import { addAfter, canLink, nestAction, removeAfter, type NestVerdict } from "./plan-link";
 import { rememberText } from "./after-bridge";
@@ -31,11 +31,10 @@ const SUB_LINE_H = 26;
 const stopEvent = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
 const open = (o: MapOptions, path: string, newTab: PaneType | boolean): void => { void o.app.workspace.openLinkText(path, o.sourcePath, newTab); };
 
-/** Ticks or unticks a to-do; the to-do engine stamps or clears `done_on` when it sees the change. */
-async function markDone(o: MapOptions, path: string, done: boolean): Promise<void> {
-  const file = o.app.vault.getFileByPath(path);
-  if (!file) { new Notice("That to-do is not there any more."); return; }
-  await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { setDone(fm, done); });
+/** Ticks or unticks a to-do and puts it in the Undo / Redo steps; the to-do engine stamps or clears `done_on` when it sees the change. */
+async function markDone(o: MapOptions, path: string, done: boolean, name: string, group?: number): Promise<void> {
+  if (!o.app.vault.getFileByPath(path)) { new Notice("That to-do is not there any more."); return; }
+  await recordTick(o.app, o.history, path, done, `${done ? "Ticked" : "Unticked"} ${name}`, group);
 }
 
 /** Ticking `row`: when it has open subtasks, asks whether to tick them too (never blocks). */
@@ -44,13 +43,16 @@ async function askTick(o: MapOptions, row: PlanRow): Promise<TickChoice> {
   return open.length ? askTickSubs(o.app, row.name, open.map(s => s.name)) : "one";
 }
 
-/** Ticks `row` and, for "all", its open subtasks too, with one Undo for the lot. */
+let tickGroup = 0;
+/** Ticks `row` and, for "all", its open subtasks too: one step in the Undo / Redo buttons for the lot, and a notice with Undo. */
 async function tickAs(o: MapOptions, row: PlanRow, choice: TickChoice): Promise<void> {
-  await markDone(o, row.path, true);
-  if (choice !== "all") return;
-  const open = openSubs(row);
-  for (const s of open) await markDone(o, s.path, true);
-  undoNotice(`Ticked ${open.length + 1} to-dos.`, async () => { for (const p of [row.path, ...open.map(s => s.path)]) await markDone(o, p, false); });
+  if (choice !== "all") { await markDone(o, row.path, true, row.name); return; }
+  const open = openSubs(row), group = ++tickGroup;
+  await recordTick(o.app, o.history, row.path, true, `Ticked ${open.length + 1} to-dos`, group);
+  let first: HistoryStep | undefined;
+  for (const sb of open) { const st = await recordTick(o.app, o.history, sb.path, true, `Ticked ${open.length + 1} to-dos`, group); first ??= st; }
+  const step = first ?? o.history.peek("undo");
+  if (step) undoNotice(`Ticked ${open.length + 1} to-dos.`, () => runHistory(o.app, o.history, "undo", step));
 }
 
 function menu(o: MapOptions, e: MouseEvent, row: PlanRow, plan?: Plan): void {
@@ -59,7 +61,7 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow, plan?: Plan): void {
   m.addItem(i => i.setTitle("Open").setIcon("file").onClick(() => open(o, row.path, false)));
   m.addItem(i => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => open(o, row.path, true)));
   m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => {
-    if (row.done) { void markDone(o, row.path, false); return; }
+    if (row.done) { void markDone(o, row.path, false, row.name); return; }
     askTick(o, row).then(c => (c === "cancel" ? undefined : tickAs(o, row, c))).catch(() => { new Notice("Could not change that to-do."); });
   }));
   if (row.parent && plan) m.addItem(i => i.setTitle("Remove from parent").setIcon("corner-up-left").onClick(() => { nest(o, plan, row.path, null).catch(() => { new Notice("Could not change that to-do."); }); }));
@@ -233,7 +235,7 @@ function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
   const { text, allDone } = subsLabel(row);
   if (!text) return;
   const open = o.expanded.has(row.path);
-  const b = parent.createEl("button", { cls: allDone ? "vt-map-subs-toggle vt-map-subsdone" : "vt-map-subs-toggle", text: `${open ? "\u25be" : "\u25b8"} ${allDone ? "\u2713 " : ""}${text}`, attr: { "aria-label": "Subtasks", title: allDone ? "All subtasks done" : "Subtasks" } });
+  const b = parent.createEl("button", { cls: allDone ? "vt-map-subs-toggle vt-map-subsdone" : row.done ? "vt-map-subs-toggle vt-map-subsopen" : "vt-map-subs-toggle", text: `${open ? "\u25be" : "\u25b8"} ${allDone ? "\u2713 " : ""}${text}`, attr: { "aria-label": "Subtasks", title: allDone ? "All subtasks done" : "Subtasks" } });
   b.addEventListener("mousedown", stopEvent);
   b.addEventListener("click", e => { stopEvent(e); if (open) o.expanded.delete(row.path); else o.expanded.add(row.path); o.redraw(); });
 }
@@ -243,14 +245,14 @@ function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string,
   const list = parent.createDiv({ cls });
   for (const ev of ["click", "mousedown", "contextmenu"]) list.addEventListener(ev, e => e.stopPropagation());   // not the parent card's open / menu
   for (const s of row.subs) {
-    const line = list.createDiv({ cls: s.done ? "vt-map-sub vt-map-sub-done" : "vt-map-sub" });
+    const line = list.createDiv({ cls: s.done ? "vt-map-sub vt-map-sub-done" : row.done ? "vt-map-sub vt-map-sub-missing" : "vt-map-sub" });   // missing: the parent is finished and this is not
     dragNest(drag.wrap, drag.plan, o, line.createDiv({ cls: "vt-map-grip vt-map-sub-grip", attr: { "aria-label": "Drag out or onto a to-do" } }), s.path, line);
     let done = s.done;
     const tick = line.createEl("button", { cls: "vt-map-tick vt-map-sub-tick", attr: { "aria-label": "Mark done" } });
     const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); line.toggleClass("vt-map-sub-done", done); };
     look();
     tick.addEventListener("mousedown", stopEvent);
-    tick.addEventListener("click", e => { stopEvent(e); done = !done; look(); markDone(o, s.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); }); });
+    tick.addEventListener("click", e => { stopEvent(e); done = !done; look(); markDone(o, s.path, done, s.name).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); }); });
     const a = line.createEl("a", { text: s.name, cls: "internal-link", attr: { href: s.path, "data-href": s.path } });
     line.addEventListener("contextmenu", e => { const sr = drag.plan.rows.find(x => x.path === s.path); if (sr) menu(o, e, sr, drag.plan); });
     a.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, s.path, Keymap.isModEvent(e)); });
@@ -267,7 +269,7 @@ function tickButton(el: HTMLElement, r: PlanRow, o: MapOptions, card: boolean): 
   tick.addEventListener("mousedown", stopEvent);
   tick.addEventListener("click", e => {
     stopEvent(e);
-    if (done) { done = false; look(); markDone(o, r.path, false).catch(() => { done = true; look(); new Notice("Could not change that to-do."); }); return; }
+    if (done) { done = false; look(); markDone(o, r.path, false, r.name).catch(() => { done = true; look(); new Notice("Could not change that to-do."); }); return; }
     askTick(o, r).then(c => {   // with open subtasks the answer comes first; the circle changes only after it
       if (c === "cancel") return undefined;
       done = true; look();

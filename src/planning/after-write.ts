@@ -2,6 +2,7 @@
 // The values come from src/planning/plan-link.ts (pure).
 import { Notice, type App } from "obsidian";
 import { sameValue, type HistoryStep, type PlanHistory, type Side } from "./plan-history";
+import { setDone } from "./plan-map";
 
 /** A notice with an Undo button. */
 export function undoNotice(text: string, undo: () => Promise<void>): void {
@@ -22,18 +23,52 @@ export async function recordChange(app: App, history: PlanHistory, path: string,
   return step;
 }
 
-/** Undo (or Redo) one step: the latest on that side, or `step` (from a notice's Undo button) when it is still there. The value must still be what the step wrote (else the to-do was changed since: nothing is overwritten and the step is dropped). Says what went wrong in a notice. */
-export async function runHistory(app: App, history: PlanHistory, side: Side, step?: HistoryStep): Promise<void> {
-  const s = step ?? history.peek(side);
-  if (!s || !history.has(side, s)) return;
-  history.remove(side, s);
-  const want = side === "undo" ? s.after : s.before, to = side === "undo" ? s.before : s.after;
+/** Ticks or unticks a to-do (as `setDone`) and puts it in `history`; the to-do engine stamps or clears `done_on` when it sees the change. `group`: steps of one action (Tick all) share it. */
+export async function recordTick(app: App, history: PlanHistory, path: string, done: boolean, label: string, group?: number): Promise<HistoryStep> {
+  const file = app.vault.getFileByPath(path);
+  if (!file) throw new Error("to-do not found");
+  let before: unknown, after: unknown;
+  await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+    before = { done: fm.done, day: fm.day };
+    setDone(fm, done);
+    after = { done: fm.done, day: fm.day };
+  });
+  const step: HistoryStep = { path, key: "tick", before, after, label, group };
+  history.push(step);
+  return step;
+}
+
+/** Writes `want` (the `done` and `day` of a tick step) if the to-do still has `expect`; false when it was changed since. */
+async function applyTick(app: App, path: string, expect: unknown, want: unknown): Promise<boolean> {
+  const file = app.vault.getFileByPath(path);
+  if (!file) throw new Error("to-do not found");
   let same = true;
-  try {
-    await changeKey(app, s.path, s.key, v => { same = sameValue(v, want); return same ? to : v; });
-  } catch { new Notice("That to-do is not there any more."); return; }
-  if (!same) { new Notice("That to-do was changed since, so it was left as it is."); return; }
-  history.put(side === "undo" ? "redo" : "undo", s);
+  await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
+    same = sameValue({ done: fm.done, day: fm.day }, expect);
+    if (!same) return;
+    const w = want as { done?: unknown; day?: unknown };
+    for (const k of ["done", "day"] as const) { if (w[k] === undefined) delete fm[k]; else fm[k] = w[k]; }
+  });
+  return same;
+}
+
+/** Undo (or Redo) one step, with the steps of its group: the latest on that side, or `step` (from a notice's Undo button) when it is still there. The value must still be what the step wrote (else the to-do was changed since: nothing is overwritten and the step is dropped). Says what went wrong in a notice. */
+export async function runHistory(app: App, history: PlanHistory, side: Side, step?: HistoryStep): Promise<void> {
+  const first = step ?? history.peek(side);
+  if (!first || !history.has(side, first)) return;
+  const steps = history.withGroup(side, first);
+  for (const s of steps) history.remove(side, s);
+  const ordered = side === "undo" ? [...steps].reverse() : steps;   // undo the last made first
+  for (const s of ordered) {
+    const want = side === "undo" ? s.after : s.before, to = side === "undo" ? s.before : s.after;
+    let same = true;
+    try {
+      if (s.key === "tick") same = await applyTick(app, s.path, want, to);
+      else await changeKey(app, s.path, s.key, v => { same = sameValue(v, want); return same ? to : v; });
+    } catch { new Notice("That to-do is not there any more."); continue; }
+    if (!same) { new Notice("That to-do was changed since, so it was left as it is."); continue; }
+    history.put(side === "undo" ? "redo" : "undo", s);
+  }
 }
 
 /** Changes `sub` (the to-do this one is a subtask of) on the to-do `child`: same as `changeAfter`; `undefined` removes the property. */
