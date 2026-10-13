@@ -22,3 +22,12 @@ Moved from `CLAUDE.md` (Map) on 2026-10-07. Update this when a folder or entry f
 - `dist/`, `legacy/`: gitignored (old kit package output, no longer built; old v0.3 `main.js`, never committed)
 - `README.md`, `GETTING-STARTED.md` (user setup guide), `LICENSE` (MIT)
 - `STATUS.md`: now / next / blockers · `BACKLOG.md`: feedback by version
+- `styles.css`: the plugin's CSS (calc tables, rig diagram, slide preview, plan map `.vt-map*`)
+
+## Where CSS goes
+1. **Plugin `styles.css`**: rules for DOM the plugin code creates or tags (a class or `data-vt-*` attribute set in `src/`), and the layout, hit areas and hover / drag states of it. It must work with no theme snippet: colours use Obsidian variables, with `var(--vt-…, <Obsidian variable>)` where the snippet may refine them.
+2. **Vault snippet** (`vault-theme.css`, `vault-colours.css`): the vault's look (headings, links, callout types, colours) and Obsidian's own DOM (Bases / kanban, Live Preview). The user restyles here, and a snippet overrides `styles.css` because it loads later.
+3. **Both** for a look the plugin needs and the user may change: structure in `styles.css`, colours as variables the snippet defines.
+4. Note content made by kit templates (callouts, `cssclasses`) is rule 2 even though the kit ships it.
+
+A rule that fits none of these is a question for the user. Moved so far: the plan map (2026-10-13). Candidates not yet moved: `.vt-plan`, `.vt-hub-bar`, `.vt-back`, `.vt-card*`, `.vt-badge`, `.vt-muted`, `.vt-tile-toggle`, `.vt-help` (plan `docs/plans/plan-map-styles-in-plugin.md`, Phase 3).

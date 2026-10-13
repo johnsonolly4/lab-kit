@@ -1,5 +1,5 @@
 // Draws a project's card map (planning kit, `show: project-map`): cards in the vault theme, arrows behind them, the to-dos with no links in a list beside it.
-// Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
+// Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in styles.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanFix, type PlanIssue, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, openSubs, subsLabel, type Direction, type PlanMap } from "./plan-map";
