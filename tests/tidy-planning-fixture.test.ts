@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { changeKey, scan, selectChanges, wantsText, type TidyContext, type TidyFile } from "../src/kit/tidy";
+import { changeKey, countRows, diffRows, pageSummary, replacesPage, scan, selectChanges, wantsText, type TidyContext, type TidyFile } from "../src/kit/tidy";
 
 const ROOT = join(__dirname, "fixtures", "tidy-vault-planning");
 const T = "kits/planning/Extras/Templates/";
@@ -21,6 +21,20 @@ describe("Tidy up notes on the old-style planning fixture", () => {
   const before = hashes();
   const s = scan(files(), ctx);
   const paths = (id: string) => s.groups.find(g => g.id === id)?.changes.map(c => c.path);
+
+  it("a replaced hub page in short: only the lines that go, the goal counts as kept", () => {
+    const alpha = s.groups.find(x => x.id === "hub-body")!.changes.find(c => c.path === "02 Projects/Alpha/Alpha.md")!;
+    expect(replacesPage(alpha)).toBe(true);
+    const sum = pageSummary(alpha.before, alpha.after);
+    expect(sum.lost).toEqual(["# Alpha", "LIST FROM \"02 Projects/Alpha\""]);   // the goal moved into the Goal box; fence lines are in the new page too
+    expect(sum.kept).toBe(3);
+    expect(sum.added).toContain("show: project-map");
+    expect(sum.added).not.toContain("> [goal:: Make a polymer library]");
+    // the back link added to a project note only adds lines: it keeps the before / after grid
+    const note = s.groups.find(x => x.id === "project-notes")!.changes.find(c => c.body)!;
+    expect(replacesPage(note)).toBe(false);
+    expect(countRows(diffRows(note.before, note.after))).toEqual({ added: 5, removed: 0, changed: 0 });
+  });
 
   it("single notes of a ticked rule can be left out", () => {
     const g = s.groups.find(x => x.id === "todo-properties")!;

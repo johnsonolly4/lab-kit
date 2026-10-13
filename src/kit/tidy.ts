@@ -542,15 +542,49 @@ export function foldRows(rows: DiffRow[], context = 1): (DiffRow | FoldRow)[] {
   return out;
 }
 
+/** How many rows of each kind a change has, for the short count beside its path ("3 added · 1 changed"). */
+export function countRows(rows: DiffRow[]): { added: number; removed: number; changed: number } {
+  const n = { added: 0, removed: 0, changed: 0 };
+  for (const r of rows) if (r.kind !== "same") n[r.kind]++;
+  return n;
+}
+
+/** Is this a page change that takes lines away or rewrites them (a hub's page replaced by the template), not one that only adds lines? */
+export const replacesPage = (c: TidyChange): boolean => !!c.body && diffRows(c.before, c.after).some(r => r.kind === "removed" || r.kind === "changed");
+
+/** A replaced page in short: your lines that are not in the new page, how many of yours stay, and the new page's lines you did not have. */
+export interface PageSummary { lost: string[]; kept: number; added: string[] }
+
+/**
+ * Compares a page with the page that replaces it, line by line but not by position: a line counts as kept when the new page has it anywhere,
+ * also inside a callout (the leading `>` and spaces are ignored, so a goal moved into the Goal box is kept). Blank lines are left out.
+ */
+export function pageSummary(before: string, after: string): PageSummary {
+  const bare = (l: string): string => l.replace(/^[>\s]+/, "").trim();
+  const lines = (t: string): string[] => t.replace(/\r\n/g, "\n").split("\n").filter(l => bare(l) !== "");
+  const count = (ls: string[]): Map<string, number> => { const m = new Map<string, number>(); for (const l of ls) m.set(bare(l), (m.get(bare(l)) ?? 0) + 1); return m; };
+  /** The lines of `ls` that `other` does not have (each line of `other` is used once). */
+  const without = (ls: string[], other: string[]): string[] => {
+    const left = count(other);
+    return ls.filter(l => { const n = left.get(bare(l)) ?? 0; if (n > 0) { left.set(bare(l), n - 1); return false; } return true; });
+  };
+  const a = lines(before), b = lines(after), lost = without(a, b);
+  return { lost, kept: a.length - lost.length, added: without(b, a) };
+}
+
 /**
  * A rule's changes grouped into batches of the same change: the same sort (properties, page, new note) and exactly the same added, removed
- * and changed lines; the unchanged lines around them may differ. Positions in `changes`, in first-seen order. Moves and settings stay alone.
+ * and changed lines; the unchanged lines around them may differ. A replaced page is compared by the lines it loses and gains (`pageSummary`).
+ * Positions in `changes`, in first-seen order. Moves and settings stay alone.
  */
 export function batchChanges(changes: TidyChange[]): { indices: number[] }[] {
   const out: { indices: number[] }[] = [], at = new Map<string, number>();
   changes.forEach((c, i) => {
     if (c.to !== undefined || c.setting) { out.push({ indices: [i] }); return; }
-    const key = `${c.create ? "new" : c.body ? "page" : "properties"}\n${JSON.stringify(diffRows(c.before, c.after).filter(r => r.kind !== "same").map(r => [r.left, r.right]))}`;
+    // a replaced page is the same change when it loses and gains the same lines, whatever it keeps (hubs differ in their goal)
+    const sum = replacesPage(c) ? pageSummary(c.before, c.after) : null;
+    const key = sum ? `replace\n${JSON.stringify([sum.lost, sum.added])}`
+      : `${c.create ? "new" : c.body ? "page" : "properties"}\n${JSON.stringify(diffRows(c.before, c.after).filter(r => r.kind !== "same").map(r => [r.left, r.right]))}`;
     const have = at.get(key);
     if (have !== undefined) out[have].indices.push(i);
     else { at.set(key, out.length); out.push({ indices: [i] }); }

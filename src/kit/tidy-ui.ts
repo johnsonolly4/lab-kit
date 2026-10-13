@@ -6,7 +6,7 @@ import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { batchChanges, changeKey, diffRows, foldRows, reportMarkdown, scan, selectChanges, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { batchChanges, changeKey, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
@@ -134,7 +134,8 @@ export class TidyNotesModal extends Modal {
     el.createEl("p", { cls: "setting-item-description", text: "Left is the note now, right is how it would look. Red: removed. Green: added. Amber: changed. Unchanged lines are folded; identical changes are shown once." });
 
     for (const g of r.groups) {
-      const head = el.createDiv({ cls: "lab-kit-tidy-rule" });
+      const section = el.createDiv({ cls: "lab-kit-tidy-group" });
+      const head = section.createDiv({ cls: "lab-kit-tidy-rule" });
       const box = head.createEl("input", { type: "checkbox" });
       box.checked = this.ticked.has(g.id);
       box.indeterminate = this.ticked.has(g.id) && g.changes.some((_, i) => this.off.has(changeKey(g.id, i)));
@@ -174,29 +175,29 @@ export class TidyNotesModal extends Modal {
       if (g.ask === "meetings") this.askMeetings(label);
       for (const { indices } of batchChanges(g.changes)) {
         const c = g.changes[indices[0]];
-        const line = el.createDiv({ cls: "lab-kit-tidy-path" });
+        const block = section.createDiv({ cls: "lab-kit-tidy-note" });
+        const line = block.createDiv({ cls: "lab-kit-tidy-path" });
         if (indices.length === 1) {
           single(line, indices[0]);
-          if (c.to !== undefined) { line.createSpan({ text: ` ${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
-          line.createSpan({ text: ` ${c.create ? `${c.path} (new note)` : c.body ? `${c.path} (page)` : c.path}` });
-          this.grid(el, c);
+          if (c.to !== undefined) { line.createSpan({ text: `${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
+          this.path(line, c.path, c.create ? "new note" : c.body ? "page" : "");
+          this.change(block, line, c);
           continue;
         }
         // the same change in several notes: drawn once, with one box for all of them and the notes listed below
-        line.addClass("lab-kit-tidy-batch");
         const all = line.createEl("input", { type: "checkbox" });
-        line.createSpan({ text: ` Same change in ${indices.length} notes${c.create ? " (new notes)" : c.body ? " (page)" : ""}` });
+        line.createSpan({ cls: "lab-kit-tidy-name", text: `Same change in ${indices.length} notes${c.create ? " (new notes)" : c.body ? " (page)" : ""}` });
         const sync = (): void => { const n = indices.filter(on).length; all.checked = n > 0; all.indeterminate = n > 0 && n < indices.length; };
         sync();
         batchBoxes.push(sync);
         all.addEventListener("change", () => setNotes(indices, all.checked));
-        this.grid(el, c);
-        const notes = el.createEl("details", { cls: "lab-kit-tidy-notes" });
+        this.change(block, line, c);
+        const notes = block.createEl("details", { cls: "lab-kit-tidy-notes" });
         notes.createEl("summary", { text: `Notes (${indices.length})` });
         for (const i of indices) {
           const row = notes.createDiv({ cls: "lab-kit-tidy-path" });
           single(row, i);
-          row.createSpan({ text: ` ${g.changes[i].path}` });
+          this.path(row, g.changes[i].path, "");
         }
       }
     }
@@ -205,9 +206,11 @@ export class TidyNotesModal extends Modal {
       el.createEl("h4", { text: "Only reported" });
       el.createEl("p", { cls: "setting-item-description", text: "These need a decision from you. Nothing here is ever changed." });
       for (const rep of r.reported) {
-        el.createEl("strong", { text: `${rep.title} (${rep.items.length})` });
-        el.createDiv({ cls: "setting-item-description", text: rep.detail });
-        const list = el.createEl("ul");
+        const section = el.createDiv({ cls: "lab-kit-tidy-group" });
+        const label = section.createDiv({ cls: "lab-kit-tidy-rule" }).createDiv();
+        label.createEl("strong", { text: `${rep.title} (${rep.items.length})` });
+        label.createDiv({ cls: "setting-item-description", text: rep.detail });
+        const list = section.createEl("ul", { cls: "lab-kit-tidy-reported" });
         for (const it of rep.items) list.createEl("li", { text: it.note ? `${it.path}: ${it.note}` : it.path });
       }
     }
@@ -229,6 +232,35 @@ export class TidyNotesModal extends Modal {
   }
 
   private refreshChange: (() => void) | null = null;
+
+  /** A note's path: its name first, then the folder it is in, muted. `tag` says what sort of change it is ("page", "new note"). */
+  private path(line: HTMLElement, path: string, tag: string): void {
+    const cut = path.lastIndexOf("/");
+    line.createSpan({ cls: "lab-kit-tidy-name", text: `${path.slice(cut + 1)}${tag ? ` (${tag})` : ""}` });
+    if (cut !== -1) line.createSpan({ text: path.slice(0, cut) });
+  }
+
+  /** One change, under its path line: a short count on the line, then the folded grid, or the short view of a replaced page. */
+  private change(block: HTMLElement, line: HTMLElement, c: TidyChange): void {
+    if (replacesPage(c)) {
+      const s = pageSummary(c.before, c.after), n = s.lost.length;
+      line.createSpan({ cls: "lab-kit-tidy-count", text: n ? `${n} of your ${n === 1 ? "line" : "lines"} removed · new page` : "new page" });
+      const box = block.createDiv({ cls: "lab-kit-tidy-page" });
+      box.createDiv({ cls: "setting-item-description", text: n
+        ? `The page is replaced by the kit's template. ${n} of your lines ${n === 1 ? "is" : "are"} not in the new page (${s.kept} ${s.kept === 1 ? "stays" : "stay"}):`
+        : "The page is replaced by the kit's template. Nothing of yours is removed." });
+      for (const l of s.lost) box.createDiv({ cls: "lab-kit-tidy-line is-removed", text: l });
+      const page = c.after.replace(/\r\n/g, "\n").trim();
+      const more = box.createEl("details", { cls: "lab-kit-tidy-notes" });
+      more.createEl("summary", { text: `New page (${page.split("\n").length} lines)` });
+      more.createEl("pre", { cls: "lab-kit-tidy-newpage", text: page });
+      return;
+    }
+    const n = countRows(diffRows(c.before, c.after));
+    const parts = [n.added ? `${n.added} added` : "", n.changed ? `${n.changed} changed` : "", n.removed ? `${n.removed} removed` : ""].filter(Boolean);
+    line.createSpan({ cls: "lab-kit-tidy-count", text: parts.join(" · ") });
+    this.grid(block, c);
+  }
 
   /** One change as a before / after grid. Runs of unchanged lines are folded into one row; pressing it shows them. */
   private grid(el: HTMLElement, c: TidyChange): void {

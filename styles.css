@@ -216,9 +216,17 @@
 
 /* Tidy up notes window (src/kit/tidy-ui.ts): before (left) / after (right); red removed, green added, amber changed */
 .lab-kit-tidy-banner { padding: 8px 12px; margin-bottom: 8px; border-left: 3px solid var(--text-warning); background: var(--background-secondary); }
-.lab-kit-tidy-rule { display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; }
-.lab-kit-tidy-path { margin-top: 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
-.lab-kit-tidy-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; margin-top: 2px; font-family: var(--font-monospace); font-size: var(--font-smallest); }
+.lab-kit-tidy-group { margin-top: 16px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); overflow: hidden; }
+.lab-kit-tidy-rule { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: var(--background-secondary); border-bottom: 1px solid var(--background-modifier-border); }
+.lab-kit-tidy-note { margin: 12px 10px 14px 12px; padding-left: 10px; border-left: 2px solid var(--background-modifier-border-hover); }
+.lab-kit-tidy-name { color: var(--text-normal); font-weight: 600; }
+.lab-kit-tidy-count { margin-left: auto; color: var(--text-faint); white-space: nowrap; }
+.lab-kit-tidy-page { margin-top: 4px; }
+.lab-kit-tidy-page > .lab-kit-tidy-line { margin-top: 1px; font-family: var(--font-monospace); font-size: var(--font-ui-smaller); }
+.lab-kit-tidy-newpage { margin: 4px 0 0; padding: 6px 8px; max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--font-ui-smaller); background: var(--background-secondary); border-radius: var(--radius-s); }
+.lab-kit-tidy-reported { margin: 8px 10px; }
+.lab-kit-tidy-path { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
+.lab-kit-tidy-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; margin-top: 6px; font-family: var(--font-monospace); font-size: var(--font-smallest); }
 .lab-kit-tidy-head { font-family: var(--font-interface); font-weight: 600; color: var(--text-muted); padding: 0 4px; }
 .lab-kit-tidy-line { padding: 1px 4px; min-height: 1.4em; white-space: pre-wrap; overflow-wrap: anywhere; background: var(--background-secondary); }
 .lab-kit-tidy-line.is-removed { background: rgba(var(--color-red-rgb), 0.22); }
@@ -228,9 +236,8 @@
 .lab-kit-tidy-fold:hover, .lab-kit-tidy-fold:focus-visible { color: var(--text-normal); background: var(--background-modifier-hover); box-shadow: none; }
 .lab-kit-tidy-more { display: none; }
 .lab-kit-tidy-more.is-open { display: contents; }
-.lab-kit-tidy-batch { color: var(--text-normal); font-weight: 600; }
-.lab-kit-tidy-notes { margin: 2px 0 0 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
-.lab-kit-tidy-notes > .lab-kit-tidy-path { margin-top: 2px; }
+.lab-kit-tidy-notes { margin: 6px 0 0 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.lab-kit-tidy-notes > .lab-kit-tidy-path { margin-top: 4px; }
 .lab-kit-tidy-weeks { width: 4.5em; }
 .lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }
