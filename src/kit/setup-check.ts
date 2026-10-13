@@ -239,8 +239,9 @@ export function checkSetup(s: SetupState): SetupItem[] {
   if (s.planning && s.plugins.has("zotlit") && s.zotlitData?.readable) {
     const z = s.zotlitData;
     const bits = [...z.missing.map(f => `${f.key} is missing`), ...z.differing.map(f => `${f.key} differs (yours: ${f.now}; kit: ${f.kit})`)];
-    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: !z.missing.length, warn: !!z.missing.length || undefined,
-      detail: bits.length ? `${bits.join("; ")}. Fix adds the missing ones and never changes yours, then turns ZotLit off and on so it reads them.` : "All the kit's fields are there.",
+    const clean = !z.missing.length && !z.differing.length;   // a field of yours that differs from the kit's is flagged too: Lab Kit never changes it, so check it by hand
+    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: clean, warn: !clean || undefined,
+      detail: bits.length ? `${bits.join("; ")}.${z.missing.length ? " Fix adds the missing ones," : ""} Lab Kit never changes a field you have: check the ones that differ in Settings → ZotLit → Templates → Frontmatter${z.missing.length ? ". Fix then turns ZotLit off and on so it reads the new ones" : ""}.` : "All the kit's fields are there.",
       fix: z.missing.length ? { kind: "zotlit-fields" } : undefined });
     const f = [z.literature === "other" ? "Literature note folder is your own (left alone)" : z.literature === "empty" ? "Literature note folder is not set" : "",
       z.templates === "other" ? "Template folder is your own (left alone)" : z.templates === "empty" ? "Template folder is not set" : ""].filter(Boolean);

@@ -261,10 +261,12 @@ describe("check setup: ZotLit settings read from its data.json", () => {
     expect(r["zotlit:fields"].detail).toContain("DOI is missing");
     expect(r["zotlit:fields"].detail).toContain("Year differs (yours: zt.x (replace); kit: zt.date.year (replace))");
   });
-  it("only differing fields: ok, nothing to fix", () => {
+  it("only differing fields: flagged as a warning to check by hand, nothing to fix", () => {
     const r = on(zot({ differing: [{ key: "Year", now: "a", kit: "b" }] }));
-    expect(r["zotlit:fields"]).toMatchObject({ ok: true });
+    expect(r["zotlit:fields"]).toMatchObject({ ok: false, warn: true });
     expect(r["zotlit:fields"].fix).toBeUndefined();
+    expect(r["zotlit:fields"].detail).toContain("Year differs");
+    expect(r["zotlit:fields"].detail).toContain("check the ones that differ");
   });
   it("folders: empty ones are fixed through the fields row Fix when fields are fine; your own folder is left alone", () => {
     const r = on(zot({ literature: "empty", templates: "other" }));
