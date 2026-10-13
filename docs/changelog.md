@@ -1,6 +1,8 @@
 # Lab notebook kit: changelog
 
-## Unreleased
+## v1.2.0 (2026-10-13)
+The Check setup look for every window, plan map reset button and plugin-owned styles, one-action settings rows, prioritised meeting lists.
+
 - **Tidy up notes in the Check setup look** (plugin code; not seen in Obsidian): a summary line under the intro ("3 things will change, 1 needs a look."), a round mark on each rule (amber: it changes notes, red: it deletes lines of yours, grey: only reported), the rule's title larger with the description under it, and the footer in the same style. The before / after diff, the folded lines, the batches and the boxes work as before.
 - **Install confirmation, Resolve conflict, Clear old backups…, Find moved folders and the confirm windows in the Check setup look** (plugin code; not seen in Obsidian): each has the intro, a larger summary line ("3 files to create, 1 setting to change.", "2 places to decide.", "3 of 5 backups will be moved to the trash.", "1 folder is missing."), the same rows where it lists things, and the same Cancel / confirm footer. The conflict cards, the diff and every button do what they did.
 - **Review update…, Manage kit files… and the update report in the Check setup look** (plugin code; not seen in Obsidian): a summary line on top ("3 files to update, 1 conflict."), one row per file with a round mark (amber ! the kit has something to add or change, red ✗ a conflict, green ✓ up to date, grey i left alone on purpose), the file's path under its name, tick boxes at the right end of a row, and the buttons under the description. What each button does is unchanged.
