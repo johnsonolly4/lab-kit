@@ -472,7 +472,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 /* Project hub card map (src/planning/plan-map-render.ts, show: project-map) */
 .vt-map { display: flex; flex-direction: column; gap: 12px; }
 .vt-map-scroll { display: flex; min-width: 0; overflow-x: auto; }
-.vt-map-canvas { position: relative; flex: none; width: var(--vt-map-w); height: var(--vt-map-h); }
+.vt-map-canvas { zoom: var(--vt-map-zoom, 1); position: relative; flex: none; width: var(--vt-map-w); height: var(--vt-map-h); }
 /* Empty room after the map, so the next open step can be scrolled to the left edge even when all steps fit */
 .vt-map-spacer { flex: 0 0 calc(100% - 200px); }
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
@@ -533,6 +533,10 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 /* Plan map: top-to-bottom direction and the button that flips it (src/planning/plan-map-render.ts, blocks.ts) */
 .vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
 .vt-map-dir:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-zoom:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-slide { display: inline-flex; align-items: center; }
+.vt-map-slide svg { width: 14px; height: 14px; }
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }
 .vt-map-down .vt-map-spacer { flex: 0 0 calc(560px - 140px); width: 100%; }

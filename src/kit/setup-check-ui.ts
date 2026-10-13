@@ -1,21 +1,22 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
 import { Modal, Notice, Platform, type App } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
-import type { KitManaged, SettingChange } from "./managed-ui";
+import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
-  templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData } from "./obsidian-private";
+  templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData,
+  corePluginsOn, dailyNotesOptions, dataviewInlineQueries, propertyTypes, setPropertyType } from "./obsidian-private";
 import { zotlitApply, zotlitScan, type ZotlitScan } from "./zotlit";
 import { deckPath } from "../planning/actions";
 import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { checkSetup, differingButtons, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
-export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): void }
+export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void }
 
 /** Reads the vault, Templater and Obsidian into the plain state checkSetup works on. */
 export function readSetupState(app: App, host: SetupHost): SetupState {
@@ -55,6 +56,9 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length, names: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).map(b => b.id) } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
+    corePlugins: corePluginsOn(app, CORE_PLUGINS.map(c => c.id)),
+    dailyNotes: planningOn ? (d => d ? { ...d, want: pf.daily } : null)(dailyNotesOptions(app)) : undefined,
+    dataviewInline: planningOn ? dataviewInlineQueries(app) : undefined,
     navigator: { homepage: navigatorHomepage(app), home: planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md" },
     plugins: loadedPlugins(app),
     planning: planningOn,
@@ -80,11 +84,37 @@ export class SetupCheckModal extends Modal {
   constructor(app: App, private host: SetupHost) { super(app); }
 
   private newerKit: string[] | undefined;
+  private kitFiles: SetupState["kitFiles"];
+  private types: SetupState["propertyTypes"];
   private zotlit: ZotlitScan | null = null;
 
   onOpen(): void {
     this.render();
-    void Promise.all([this.countNewer(), this.loadZotlit()]).then(() => { if (this.contentEl.isConnected) this.render(); });
+    void this.refresh();
+  }
+
+  /** Reads again what needs files read (kept files, kit files, ZotLit's settings), then redraws. */
+  private async refresh(): Promise<void> {
+    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(),
+      (async () => { this.types = this.host.planning?.slot.enabled ? await propertyTypes(this.app, PROPERTY_TYPES.map(p => p.name)) : undefined; })()]);
+    if (this.contentEl.isConnected) this.render();
+  }
+
+  /** A window opened from here (Review update…, Manage files…, Find moved folders) sits on top; this list redraws when it closes. */
+  private after(opened: ClosingModal | void): void {
+    if (!opened) return;
+    opened.onClosed = () => void this.refresh();
+  }
+
+  /** Per installed kit: the files with an update waiting, missing or in conflict (from the same plan Review update… shows). */
+  private async countKitFiles(): Promise<void> {
+    try {
+      const kits: ["lab" | "planning", KitManaged][] = [["lab", this.host.managed], ...(this.host.planning?.slot.enabled ? [["planning", this.host.planning] as ["planning", KitManaged]] : [])];
+      this.kitFiles = await Promise.all(kits.filter(([, k]) => !!k.installedVersion).map(async ([kit, k]) => {
+        const items = await k.plan(), names = (...actions: string[]): string[] => items.filter(i => actions.includes(i.action)).map(i => i.dest.slice(i.dest.lastIndexOf("/") + 1));
+        return { kit, update: names("create", "fast-forward", "merge"), missing: names("missing"), conflict: names("needs-merge") };
+      }));
+    } catch (e) { console.error(e); }
   }
 
   /** The folders the kit's Set up ZotLit checklist names, from the planning folders setting and the templates folder. */
@@ -114,9 +144,11 @@ export class SetupCheckModal extends Modal {
     el.empty();
     el.addClass("lab-kit-setup-check");
     this.setTitle("Check setup");
-    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, zotlitData: this.zotlit });
+    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit });
     const missing = items.filter(i => !i.ok && !i.optional && !i.warn).length;
-    el.createEl("p", { text: missing ? `${missing} to fix. Nothing changes until you press Fix and confirm.` : "Everything the kits need is in place." });
+    const top = el.createDiv({ cls: "lab-kit-setup-top" });
+    top.createEl("p", { text: missing ? `${missing} to fix. Nothing changes until you press Fix and confirm.` : "Everything the kits need is in place." });
+    top.createEl("button", { text: "Check again" }).addEventListener("click", () => void this.refresh());
     let group = "";
     for (const it of items) {
       if (it.group !== group) { group = it.group; el.createEl("h4", { text: group }); }
@@ -147,7 +179,7 @@ export class SetupCheckModal extends Modal {
       case "hide-properties": await confirm({ name: "Set Properties in document to Hidden", desc: "Settings → Editor. Properties stay in the note; open them from the note's menu.",
         apply: async () => { if (!hidePropertiesInDocument(this.app)) new Notice("Couldn't change it here. Set it in the editor settings."); } }); break;
       case "settings": this.close(); if (!openPluginSettings(this.app, this.host.pluginId)) new Notice("Couldn't open the settings: open them from the gear icon."); return;
-      case "manage": this.close(); lab.manage(); return;
+      case "manage": this.after(lab.manage()); return;
       case "open-note": this.close(); void this.app.workspace.openLinkText(fix.path, "", false); return;
       case "matching-mode": await confirm({ name: "Set Templater's matching mode to Folder templates", desc: "It is None now, so folder templates never run.", apply: () => setTemplaterFolderMode(this.app) }); break;
       case "startup-remove": await confirm({ name: "Remove the old roll-over from Templater's startup templates", desc: `${fix.template}. Lab Kit's to-do engine does the roll-over now. The file itself stays.`,
@@ -167,10 +199,13 @@ export class SetupCheckModal extends Modal {
       case "meta-bind-reset": await confirm({ name: "Put the kit's action on these Meta Bind buttons", desc: `${fix.ids.join(", ")}. Their old action is replaced (label and look stay). Restart Obsidian afterwards.`,
         apply: async () => { if (await resetMetaBindActions(this.app, PLANNING_BUTTONS.filter(b => fix.ids.includes(b.id)))) new Notice("Buttons changed. Restart Obsidian so they load.", 10000); } }); break;
       case "plugin": window.open(`obsidian://show-plugin?id=${encodeURIComponent(fix.id)}`); return;
-      case "install": this.close(); (fix.kit === "planning" ? this.host.planning ?? lab : lab).review(); return;
-      case "templater": this.close(); await lab.setupTemplater(); return;
+      case "install": this.after((fix.kit === "planning" ? this.host.planning ?? lab : lab).review()); return;
+      case "templater": await lab.setupTemplater(); break;
       case "css": await confirm({ name: "Turn on the CSS snippet", desc: fix.names.join(", "), apply: () => setCssSnippets(this.app, fix.names, []) }); break;
-      case "find-moved": this.close(); this.host.findMoved(); return;
+      case "find-moved": this.after(this.host.findMoved()); return;
+      case "property-type": await confirm({ name: `Make ${fix.name} a ${fix.type} property`, desc: "Obsidian's property type (Settings → Properties). Values already typed in notes are not changed.",
+        apply: async () => { if (!(await setPropertyType(this.app, fix.name, fix.type))) new Notice("Couldn't set it here. Set the type in a note's properties (click the property's icon)."); } });
+        await this.refresh(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
         apply: () => addTemplaterFolderTemplate(this.app, fix.folder, fix.template) }); break;

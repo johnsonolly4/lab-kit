@@ -15,6 +15,8 @@ export interface MapOptions {
   expanded: Set<string>;
   /** Which way the map runs (the setting, or what the toggle on the map was last set to for this note). */
   direction: Direction;
+  /** How big the map is drawn: 1 = normal (for the open note, not saved). Left out = 1. */
+  zoom?: number;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -159,7 +161,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
     if (g.scrollLeft > 0 || g.scrollTop > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the edge even when everything fits
-    canvas.setCssProps({ "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
+    canvas.setCssProps({ "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px`, "--vt-map-zoom": String(o.zoom ?? 1) });
     const svg = canvas.createSvg("svg", { cls: "vt-map-arrows", attr: { width: String(g.width), height: String(g.height) } });
     const arrows = new Map<SVGPathElement, { from: string; to: string }>();
     for (const c of g.curves) {
@@ -224,8 +226,10 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       });
       cards.set(c.path, el);
     }
-    scroller.dataset.startScroll = String(g.scrollLeft);
-    scroller.dataset.startScrollTop = String(g.scrollTop);
+    const z = o.zoom ?? 1;   // the start positions are in map pixels; the scroll box counts the zoomed ones
+    scroller.dataset.startScroll = String(g.scrollLeft * z);
+    scroller.dataset.startScrollTop = String(g.scrollTop * z);
+    scroller.dataset.mapWidth = String(g.width);
   }
   if (map.unlinked.length) {
     const side = wrap.createDiv({ cls: "vt-map-unlinked" });

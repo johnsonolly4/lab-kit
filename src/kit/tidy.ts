@@ -325,8 +325,12 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     }
     if (g.changes.length) groups.push(g);
 
-    // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists.
-    const hubs = new Set(notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path));
+    // Notes in a project's folder: the `project` property, a link to the folder's hub (what the New project note template writes). Only where the hub exists or this scan makes it.
+    // A project folder with notes but no hub gets one below (project-hub-missing): its notes are linked to that hub in the same scan, not in a second one
+    const projectFolders = [...new Set(files.filter(f => inFolder(f.path, pf) && !hidden(f.path)).map(f => f.path.slice(pf.length + 1)).filter(r => r.includes("/")).map(r => r.split("/")[0]))].sort();
+    const newHubs = projectFolders.map(name => ({ folder: `${pf}/${name}`, path: `${pf}/${name}/${name}.md` }))
+      .filter(h => !files.some(f => f.path === h.path) && !notes.some(x => parentOf(x.path) === h.folder && kindOf(x.path) === "project")).map(h => h.path);
+    const hubs = new Set([...notes.filter(x => inFolder(x.path, pf) && isHub(x.path)).map(x => x.path), ...newHubs]);
     const g2: TidyGroup = { id: "project-notes", title: "Project notes: add the project property", detail: "Notes inside a project's folder (not the hub, not to-dos, meetings or literature) without a project property get a link to that project's hub; notes without the vt class get it; a back link to the project hub is added at the top of the page (a page change, shown as such).", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, pf) && !hubs.has(x.path))) {
       const name = n.path.slice(pf.length + 1).split("/")[0];
@@ -347,10 +351,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
     // A project folder with notes but no hub note (it was deleted): make it again from the Project hub template, named like the folder
     const g3: TidyGroup = { id: "project-hub-missing", title: "Project folders without a hub note", detail: "A folder under Projects that holds notes but has no hub note (kind: project) gets a new hub, named like the folder, made from the Project hub template. Existing notes are not touched; their project links work again.", changes: [] };
-    const folders = [...new Set(files.filter(f => inFolder(f.path, pf) && !hidden(f.path)).map(f => f.path.slice(pf.length + 1)).filter(r => r.includes("/")).map(r => r.split("/")[0]))].sort();
-    for (const name of folders) {
-      const folder = `${pf}/${name}`, path = `${folder}/${name}.md`;
-      if (files.some(f => f.path === path) || notes.some(x => parentOf(x.path) === folder && kindOf(x.path) === "project")) continue;
+    for (const path of newHubs) {
       g3.changes.push({ path, before: "", after: "kind: project\nStatus: Active\ndeadline:\ncssclasses:\n  - vt\n  - project", create: true, ...(ctx.projectHubText ? { text: ctx.projectHubText } : {}) });
     }
     if (g3.changes.length) groups.push(g3);
@@ -522,6 +523,74 @@ export function diffRows(before: string, after: string): DiffRow[] {
   }
   flush();
   return rows;
+}
+
+/** A run of unchanged rows the window shows as one line ("… N unchanged lines") until it is opened. */
+export interface FoldRow { kind: "fold"; rows: DiffRow[] }
+
+/**
+ * The rows with the unchanged ones folded away: `context` unchanged rows stay next to every added, removed or changed row, and a longer run
+ * between them becomes one fold. A run is folded only when it hides 3 rows or more. Added, removed and changed rows are never folded.
+ */
+export function foldRows(rows: DiffRow[], context = 1): (DiffRow | FoldRow)[] {
+  const keep = rows.map(r => r.kind !== "same");
+  rows.forEach((r, i) => { if (r.kind !== "same") for (let k = Math.max(0, i - context); k <= Math.min(rows.length - 1, i + context); k++) keep[k] = true; });
+  const out: (DiffRow | FoldRow)[] = [];
+  let run: DiffRow[] = [];
+  const flush = (): void => { if (run.length >= 3) out.push({ kind: "fold", rows: run }); else out.push(...run); run = []; };
+  rows.forEach((r, i) => { if (keep[i]) { flush(); out.push(r); } else run.push(r); });
+  flush();
+  return out;
+}
+
+/** How many rows of each kind a change has, for the short count beside its path ("3 added · 1 changed"). */
+export function countRows(rows: DiffRow[]): { added: number; removed: number; changed: number } {
+  const n = { added: 0, removed: 0, changed: 0 };
+  for (const r of rows) if (r.kind !== "same") n[r.kind]++;
+  return n;
+}
+
+/** Is this a page change that takes lines away or rewrites them (a hub's page replaced by the template), not one that only adds lines? */
+export const replacesPage = (c: TidyChange): boolean => !!c.body && diffRows(c.before, c.after).some(r => r.kind === "removed" || r.kind === "changed");
+
+/** A replaced page in short: your lines that are not in the new page, how many of yours stay, and the new page's lines you did not have. */
+export interface PageSummary { lost: string[]; kept: number; added: string[] }
+
+/**
+ * Compares a page with the page that replaces it, line by line but not by position: a line counts as kept when the new page has it anywhere,
+ * also inside a callout (the leading `>` and spaces are ignored, so a goal moved into the Goal box is kept). Blank lines are left out.
+ */
+export function pageSummary(before: string, after: string): PageSummary {
+  const bare = (l: string): string => l.replace(/^[>\s]+/, "").trim();
+  const lines = (t: string): string[] => t.replace(/\r\n/g, "\n").split("\n").filter(l => bare(l) !== "");
+  const count = (ls: string[]): Map<string, number> => { const m = new Map<string, number>(); for (const l of ls) m.set(bare(l), (m.get(bare(l)) ?? 0) + 1); return m; };
+  /** The lines of `ls` that `other` does not have (each line of `other` is used once). */
+  const without = (ls: string[], other: string[]): string[] => {
+    const left = count(other);
+    return ls.filter(l => { const n = left.get(bare(l)) ?? 0; if (n > 0) { left.set(bare(l), n - 1); return false; } return true; });
+  };
+  const a = lines(before), b = lines(after), lost = without(a, b);
+  return { lost, kept: a.length - lost.length, added: without(b, a) };
+}
+
+/**
+ * A rule's changes grouped into batches of the same change: the same sort (properties, page, new note) and exactly the same added, removed
+ * and changed lines; the unchanged lines around them may differ. A replaced page is compared by the lines it loses and gains (`pageSummary`).
+ * Positions in `changes`, in first-seen order. Moves and settings stay alone.
+ */
+export function batchChanges(changes: TidyChange[]): { indices: number[] }[] {
+  const out: { indices: number[] }[] = [], at = new Map<string, number>();
+  changes.forEach((c, i) => {
+    if (c.to !== undefined || c.setting) { out.push({ indices: [i] }); return; }
+    // a replaced page is the same change when it loses and gains the same lines, whatever it keeps (hubs differ in their goal)
+    const sum = replacesPage(c) ? pageSummary(c.before, c.after) : null;
+    const key = sum ? `replace\n${JSON.stringify([sum.lost, sum.added])}`
+      : `${c.create ? "new" : c.body ? "page" : "properties"}\n${JSON.stringify(diffRows(c.before, c.after).filter(r => r.kind !== "same").map(r => [r.left, r.right]))}`;
+    const have = at.get(key);
+    if (have !== undefined) out[have].indices.push(i);
+    else { at.set(key, out.length); out.push({ indices: [i] }); }
+  });
+  return out;
 }
 
 /** The scan as Markdown, for Copy report (paths and counts only; no note text). `ticked` = rule ids the user left ticked (default: all). */

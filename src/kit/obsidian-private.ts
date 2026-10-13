@@ -22,7 +22,14 @@ interface PrivateApp {
   hotkeyManager?: {
     customKeys?: Record<string, KitHotkey[]>;
     defaultKeys?: Record<string, KitHotkey[]>;
+    setHotkeys?: (id: string, keys: KitHotkey[]) => void;
+    save?: () => Promise<void> | void;
+    bake?: () => void;
   };
+  /** Obsidian's own (core) plugins, by id; `instance.options` is that plugin's saved settings. */
+  internalPlugins?: { plugins?: Record<string, { enabled?: boolean; instance?: { options?: Record<string, unknown> } }> };
+  /** Property types (Settings → Properties, saved in types.json). */
+  metadataTypeManager?: { setType?: (name: string, type: string) => Promise<void> | void };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
@@ -136,6 +143,24 @@ export async function addTemplaterFolderTemplate(app: App, folder: string, templ
 
 /** True when this Obsidian exposes the hotkey manager we can read hotkeys from (private API). */
 export const hotkeysSupported = (app: App): boolean => typeof priv(app).hotkeyManager?.customKeys === "object";
+
+/** True when this Obsidian lets a hotkey be set from code (`hotkeyManager.setHotkeys`, private). */
+export const hotkeysWritable = (app: App): boolean => hotkeysSupported(app) && typeof priv(app).hotkeyManager?.setHotkeys === "function";
+
+/**
+ * Gives commands a hotkey, the way Settings → Hotkeys does (`hotkeyManager.setHotkeys`, then `save` and `bake`; private API). Only called from
+ * Set the suggested keys, after the user confirmed the list; the caller passes only commands that have no key. Returns how many were set.
+ */
+export async function setHotkeys(app: App, keys: { id: string; key: KitHotkey }[]): Promise<number> {
+  const hm = priv(app).hotkeyManager;
+  if (!hm?.setHotkeys) return 0;
+  let n = 0;
+  for (const k of keys) {
+    try { hm.setHotkeys(k.id, [{ modifiers: [...k.key.modifiers], key: k.key.key }]); n++; } catch (e) { console.error(e); }
+  }
+  try { await hm.save?.(); hm.bake?.(); } catch (e) { console.error(e); }
+  return n;
+}
 
 /** The hotkeys in use, per command id: your own hotkeys where set, else Obsidian's defaults. {} when unknown. */
 export function hotkeysInUse(app: App): Record<string, KitHotkey[]> {
@@ -323,6 +348,51 @@ export function openPluginSettings(app: App, id: string): boolean {
   setting.open();
   setting.openTabById(id);
   return true;
+}
+
+/**
+ * Which of Obsidian's core plugins are on (`app.internalPlugins`, private). Only the ids Obsidian lists are in the answer, so an id this version
+ * doesn't know reads as "can't tell", never as off. null when the list itself can't be read.
+ */
+export function corePluginsOn(app: App, ids: string[]): Record<string, boolean> | null {
+  const all = priv(app).internalPlugins?.plugins;
+  if (!all || typeof all !== "object") return null;
+  const out: Record<string, boolean> = {};
+  for (const id of ids) if (all[id] && typeof all[id].enabled === "boolean") out[id] = all[id].enabled;
+  return out;
+}
+/** The core Daily notes plugin's New file location and Date format (`instance.options`, private; empty = Obsidian's defaults). null when they can't be read. */
+export function dailyNotesOptions(app: App): { folder: string; format: string } | null {
+  const o = priv(app).internalPlugins?.plugins?.["daily-notes"]?.instance?.options;
+  if (!o || typeof o !== "object") return null;
+  const text = (v: unknown): string => (typeof v === "string" ? v.trim().replace(/^\/+|\/+$/g, "") : "");
+  return { folder: text(o.folder), format: text(o.format) };
+}
+/** Dataview's "Enable inline queries" (`settings.enableInlineDataview`, another plugin's settings). null when Dataview isn't loaded or has no such setting. */
+export function dataviewInlineQueries(app: App): boolean | null {
+  const v = (priv(app).plugins?.plugins?.dataview as { settings?: { enableInlineDataview?: unknown } } | undefined)?.settings?.enableInlineDataview;
+  return typeof v === "boolean" ? v : null;
+}
+/**
+ * The type Obsidian has assigned to each property: null for a property with none. Read from the vault's `types.json` (what Settings → Properties
+ * saves: `{ "types": { "due": "date" } }`), because the manager's read call differs between Obsidian versions (`getAssignedType` was not there
+ * in 1.14, seen by the user 2026-10-13). A vault with no such file has no types assigned. null when the file is there but can't be read.
+ */
+export async function propertyTypes(app: App, names: string[]): Promise<Record<string, string | null> | null> {
+  const path = `${app.vault.configDir}/types.json`;
+  try {
+    if (!(await app.vault.adapter.exists(path))) return Object.fromEntries(names.map(n => [n, null]));
+    const types = (JSON.parse(await app.vault.adapter.read(path)) as { types?: Record<string, unknown> } | null)?.types;
+    if (!types || typeof types !== "object") return null;
+    const lower = new Map(Object.entries(types).map(([k, v]) => [k.toLowerCase(), v]));
+    return Object.fromEntries(names.map(n => { const t = lower.get(n.toLowerCase()); return [n, typeof t === "string" ? t : null]; }));
+  } catch (e) { console.error(e); return null; }
+}
+/** Sets a property's type (as Settings → Properties does). False when this Obsidian has no such call or it fails. */
+export async function setPropertyType(app: App, name: string, type: string): Promise<boolean> {
+  const m = priv(app).metadataTypeManager;
+  if (!m?.setType) return false;
+  try { await m.setType(name, type); return true; } catch (e) { console.error(e); return false; }
 }
 
 interface VaultConfig { getConfig?: (key: string) => unknown; setConfig?: (key: string, value: unknown) => void }

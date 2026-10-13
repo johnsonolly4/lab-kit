@@ -8,7 +8,7 @@ export interface FolderGuardActions { openSettings(): void; findMoved(): void }
 
 /** The line shown by the notice and by blocks that read the folder. */
 export const folderMissingText = (path: string): string =>
-  `Folder "${path}" not found. Moved outside Obsidian? Set it in Settings → Planning folders, or use Find moved folders.`;
+  `Folder "${path}" not found. Moved outside Obsidian? Set it in Settings → Lab Kit → Planning → Planning folders, or use Find moved folders.`;
 
 /** Notice with Find moved folders / Open settings / Create it. */
 export function missingFolderNotice(app: App, path: string, actions: FolderGuardActions): void {

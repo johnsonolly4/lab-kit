@@ -20,6 +20,9 @@ const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", 
 
 export interface ManagedHost { kit: KitData; save(): Promise<void>; /** Called after a kit's files were written (e.g. to start the planning commands without a reload). */ installed?(): void }
 
+/** A window that tells whoever opened it when it has closed. */
+export type ClosingModal = Modal & { onClosed?: () => void };
+
 export class KitManaged {
   constructor(private plugin: Plugin, private host: ManagedHost, readonly bundle: EmbeddedKit) {}
 
@@ -396,8 +399,9 @@ export class KitManaged {
     } catch (e) { this.failed(e); }
   }
 
-  review(): void { new KitManagedModal(this.app, this).open(); }
-  manage(): void { new KitFilesModal(this.app, this).open(); }
+  /** Both return their window, so a window that opened one (Check setup) can redraw itself when it closes. */
+  review(): ClosingModal { const m = new KitManagedModal(this.app, this); m.open(); return m; }
+  manage(): ClosingModal { const m = new KitFilesModal(this.app, this); m.open(); return m; }
 
   failed(e: unknown): void {
     console.error(e);
@@ -544,7 +548,9 @@ class KitManagedModal extends Modal {
     await this.managed.applyReviewed(this.items, this.select, results => new KitReportModal(this.app, results, scripts).open());
   }
 
-  onClose(): void { this.contentEl.empty(); }
+  /** Set by a window that opened this one (Check setup), to redraw itself afterwards. */
+  onClosed?: () => void;
+  onClose(): void { this.contentEl.empty(); this.onClosed?.(); }
 }
 
 /** One row per kit file with a status label and its own buttons, plus the CSS snippet switch. */
@@ -655,7 +661,9 @@ class KitFilesModal extends Modal {
     new Setting(contentEl).addButton(b => b.setButtonText("Close").setCta().onClick(() => this.close()));
   }
 
-  onClose(): void { this.contentEl.empty(); }
+  /** Set by a window that opened this one (Check setup), to redraw itself afterwards. */
+  onClosed?: () => void;
+  onClose(): void { this.contentEl.empty(); this.onClosed?.(); }
 }
 
 /** What a run did: counts and a file list. */

@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "1.0.1",
-      "sha256": "14aca2509a8da0dba91f5c18275725bf82276132d4a37128f9f6e32ea40251ec",
+      "sha256": "9e324da11242b5a8d5849c66f9e236c8ec8e30cb0bfb2c2549aeffdd5af6ab75",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.1",
-      "sha256": "566a28350e08cfb61b967a883a413ca5b4452f01a974af058e0f09d39cb59915",
+      "sha256": "509d7593bec3adc3d4188b40f6296318e9c927c167a22eba76ba77606479b0b8",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "5efcd2d68f21259c5818eb5119fe9e1bf5afbfd037806a295470025726627f3c",
+      "sha256": "bcc5e594e90109c32d9354349e382fe8cb12ee01e02357453af889eb7fc7b029",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -148,7 +148,7 @@
       "role": "howtos",
       "path": "Obsidian/Set up ZotLit.md",
       "version": "1.0.1",
-      "sha256": "90b3becea57925a42346efc2bd280c131921228b0eb058680575240b66f8cc9e",
+      "sha256": "7b1fe1ceab889c5989cfd857c9bfdb0430470c2992a0e382295b998cb63b9a42",
       "renamedFrom": [],
       "desc": "Checklist: ZotLit's note folder and template folder",
       "optional": true,
@@ -161,7 +161,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "1.0.1",
-      "sha256": "571fbd65fac429bf3a7c7cc91556fe56eacd2b0c5f76a23495b494324dbfcac2",
+      "sha256": "b28245c3b9cd28d08d7de7a1376527fe8e3da9e1dd0f06972198642e17d73f61",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer"
     },
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "1e6a1d2c1253cb701b1fe9e340ad51eb8528ea4892268232a52ee73825c22f34",
+      "sha256": "6e3a7fe2c7d242e481d3175e495242b5bdfbd8f1635dce993696187df2d591d7",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },

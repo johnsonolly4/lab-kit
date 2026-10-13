@@ -23,8 +23,8 @@ export const labFolderTemplates = (labFolder: string, chemicalFolder = ""): { fo
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [
   { id: "templater-obsidian", name: "Templater", kit: "lab", why: "Runs the kit's templates and the Alt+S snippet forms." },
-  { id: "dataview", name: "Dataview", kit: "lab", why: "Lists and tables in the hub notes." },
   { id: "table-editor-obsidian", name: "Advanced Tables", kit: "lab", optional: true, why: "Tab between table cells and keep tables aligned while you type." },
+  { id: "dataview", name: "Dataview", kit: "planning", why: "The lists Lab Kit doesn't draw itself (weekly review, daily notes, Literature, a hub's papers) and the date on the homepage." },
   { id: "obsidian-meta-bind-plugin", name: "Meta Bind", kit: "planning", why: "The buttons on the homepage and in planning notes." },
   { id: "obsidian-view-mode-by-frontmatter", name: "Force note view mode", kit: "planning", why: "Opens the homepage read-only, so a click can't edit it." },
   { id: "omnisearch", name: "Omnisearch", kit: "planning", why: "Searches the whole vault by content, PDFs included." },
@@ -34,6 +34,22 @@ export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning";
   { id: "editing-toolbar", name: "Editing Toolbar", kit: "planning", optional: true, why: "A formatting toolbar above notes (handy on a phone)." },
   { id: "css-editor", name: "CSS Editor", kit: "planning", optional: true, why: "Edit the vault's CSS snippets inside Obsidian." },
   { id: "advanced-canvas", name: "Advanced Canvas", kit: "planning", optional: true, why: "More shapes and connections in Canvas (for diagrams and plans)." },
+];
+
+/** Obsidian's own (core) plugins the kits use, by their id in Settings → Core plugins. */
+export const CORE_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; why: string }[] = [
+  { id: "bases", name: "Bases", kit: "lab", why: "The Lab book board, the Chemical database and the to-do board are bases." },
+  { id: "daily-notes", name: "Daily notes", kit: "planning", why: "The homepage's Today's note button runs its command." },
+];
+
+/** The date format the planning kit's daily notes use (a folder per year), as in the Vault spec. */
+export const DAILY_FORMAT = "YYYY/YYYY-MM-DD";
+
+/** Property types the kit's lists and boards rely on (Obsidian keeps them in types.json; the templates set them at first use). */
+export const PROPERTY_TYPES: { name: string; type: string; why: string }[] = [
+  { name: "due", type: "date", why: "A to-do's due date: the countdown and the overdue lists compare dates." },
+  { name: "deadline", type: "date", why: "A project's deadline: counted down like a due date." },
+  { name: "priority", type: "number", why: "A to-do's priority: the board sorts on it as a number (1, 2, 3)." },
 ];
 
 /** The old roll-over startup template (replaced by the plugin's to-do engine). */
@@ -77,6 +93,16 @@ export interface SetupState {
   meetings?: { name: string; path: string; error?: string; deck: boolean }[];
   /** Kit files you keep as your own that the kit has a newer text for (paths); undefined until counted. */
   newerKit?: string[];
+  /** Per installed kit, the files (names) with an update waiting, missing from the vault, or in conflict; undefined until counted. Kept and switched-off files are not in it. */
+  kitFiles?: { kit: "lab" | "planning"; update: string[]; missing: string[]; conflict: string[] }[];
+  /** Obsidian's core plugins that are on, by id; null when Obsidian's list can't be read; undefined = not looked at (no rows). */
+  corePlugins?: Record<string, boolean> | null;
+  /** The core Daily notes plugin's folder and date format, and the kit's Daily notes folder; null when they can't be read; undefined = no row. */
+  dailyNotes?: { folder: string; format: string; want: string } | null;
+  /** Dataview's "Enable inline queries"; null when it can't be read; undefined = no row. */
+  dataviewInline?: boolean | null;
+  /** The type Obsidian has assigned to each property of `PROPERTY_TYPES` (null = none assigned); null when it can't be read; undefined = no rows. */
+  propertyTypes?: Record<string, string | null> | null;
 }
 
 export type SetupFix =
@@ -98,13 +124,16 @@ export type SetupFix =
   | { kind: "meta-bind-reset"; ids: string[] }
   | { kind: "open-note"; path: string }
   | { kind: "manage" }
-  | { kind: "zotlit-fields" };
+  | { kind: "zotlit-fields" }
+  | { kind: "property-type"; name: string; type: string };
 
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
 
 /** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
 export const METHODS_DEFAULT = "Extras/methods";
+
+const names1 = (list: unknown[], one: string, many: string): string => list.length === 1 ? one : many;
 
 /** "Alt+S", "Mod+Shift+T": how a hotkey is written in the list. */
 export const hotkeyText = (k: KitHotkey): string => [...k.modifiers, k.key].join("+");
@@ -135,7 +164,8 @@ export function checkSetup(s: SetupState): SetupItem[] {
   const made: Record<string, SetupFix & { path: string }> = { "methods-folder": { kind: "methods-folder", path: METHODS_DEFAULT }, "rigs-folder": { kind: "rigs-folder", path: l.rigsFolder.trim() || RIGS_DEFAULT } };
   for (const [id, label, ok, what, optional] of labRows) {
     const fix: SetupFix | undefined = ok ? undefined : made[id] ?? settings;
-    out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : made[id] ? `Not set. ${what} Fix creates ${made[id].path} and uses it.` : `Not set. ${what}`, fix });
+    const gone = id === "rigs-folder" && !!l.rigsFolder.trim();   // the Rigs folder always has a value (its default): not ok means the folder isn't there
+    out.push({ id: `lab:${id}`, group: "Lab Kit settings", label, ok, optional, detail: ok ? "Set." : gone ? `Folder missing: ${made[id].path}. ${what} Fix creates it.` : made[id] ? `Not set. ${what} Fix creates ${made[id].path} and uses it.` : `Not set. ${what}`, fix });
   }
 
   const pv = s.propertiesView;
@@ -145,11 +175,54 @@ export function checkSetup(s: SetupState): SetupItem[] {
       : `Set to ${pv}. The kit's notes keep their details in properties, which fill the top of every note.`,
     fix: pv && pv !== "hidden" ? { kind: "hide-properties" } : undefined });
 
+  if (s.corePlugins !== undefined) for (const c of CORE_PLUGINS.filter(c => kitOn(c.kit))) {
+    const on = s.corePlugins?.[c.id];
+    out.push({ id: `core:${c.id}`, group: "Obsidian", label: `${c.name} (core plugin)`, ok: on === true, warn: on === undefined || undefined,
+      detail: on === true ? `On. ${c.why}` : on === undefined ? `Can't read Obsidian's core plugins in this version: check ${c.name} is on in Settings → Core plugins. ${c.why}`
+        : `Off. ${c.why} Switch it on in Settings → Core plugins.` });
+  }
+  if (s.planning && s.dailyNotes !== undefined) {
+    // Today's note (homepage button, Alt+D) is made by Obsidian's own Daily notes plugin: its folder and file name must be the kit's, or the note lands outside the Daily notes folder
+    const d = s.dailyNotes;
+    const wrong = d ? [
+      d.folder !== d.want ? { now: `New file location is ${d.folder || "empty (the top of the vault)"}`, set: `New file location to ${d.want}` } : null,
+      d.format !== DAILY_FORMAT ? { now: `Date format is ${d.format || "empty (so YYYY-MM-DD)"}`, set: `Date format to ${DAILY_FORMAT} (a folder per year)` } : null,
+    ].filter((x): x is { now: string; set: string } => !!x) : [];
+    out.push({ id: "core:daily-notes-settings", group: "Obsidian", label: "Today's note is made in the Daily notes folder", ok: !!d && !wrong.length, warn: true,
+      detail: !d ? `Can't read Obsidian's Daily notes settings. Check them yourself: Settings → Daily notes, New file location should be the kit's Daily notes folder and Date format ${DAILY_FORMAT}.`
+        : wrong.length ? `Not yet. Today's note (the homepage button) is made by Obsidian's Daily notes plugin, and there ${wrong.map(w => w.now).join(" and ")}. So the note is made outside ${d.want} and stays empty, because the daily note template only fills notes in that folder. To fix it: open Settings → Daily notes and set ${wrong.map(w => w.set).join(", and ")}. Lab Kit does not change this for you.`
+        : `Yes: in ${d.want}, named ${DAILY_FORMAT}.` });
+  }
+  if (s.planning && s.dataviewInline !== undefined && s.plugins.has("dataview")) {
+    const v = s.dataviewInline;
+    out.push({ id: "dataview:inline", group: "Obsidian", label: "Dataview inline queries", ok: v === true, warn: true,
+      detail: v === true ? "On (the date at the top of the homepage is one)." : v === null ? "Can't read Dataview's settings: check Enable inline queries is on (the date at the top of the homepage is one)."
+        : "Off, so the date at the top of the homepage shows as code. Switch on Enable inline queries in Settings → Dataview." });
+  }
+  if (s.planning && s.propertyTypes !== undefined) for (const p of PROPERTY_TYPES) {
+    const have = s.propertyTypes?.[p.name];
+    if (s.propertyTypes && have == null) continue;   // never used in this vault: the template sets it at first use
+    out.push({ id: `type:${p.name}`, group: "Obsidian", label: `Property ${p.name} is a ${p.type}`, ok: have === p.type, warn: s.propertyTypes === null || undefined,
+      detail: s.propertyTypes === null ? `Can't read property types in this Obsidian version. ${p.why}` : have === p.type ? "Set."
+        : `It is ${have} now. ${p.why} Fix sets the type; values already typed stay as they are.`,
+      fix: s.propertyTypes && have !== p.type ? { kind: "property-type", name: p.name, type: p.type } : undefined });
+  }
+
   for (const kit of ["lab", "planning"] as const) {
     if (!kitOn(kit)) continue;
     const ok = s.installed[kit];
     out.push({ id: `install:${kit}`, group: "Kit files", label: kit === "lab" ? "Lab kit installed" : "Planning kit installed", ok,
       detail: ok ? "Installed." : "Not installed yet.", fix: ok ? undefined : { kind: "install", kit } });
+  }
+
+  for (const k of s.kitFiles ?? []) {
+    if (!kitOn(k.kit) || !s.installed[k.kit]) continue;
+    const part = (names: string[], what: string): string => names.length ? `${names.length} ${what} (${names.join(", ")})` : "";
+    const bits = [part(k.missing, "missing"), part(k.conflict, names1(k.conflict, "conflict", "conflicts")), part(k.update, names1(k.update, "update waiting", "updates waiting"))].filter(Boolean);
+    const broken = k.missing.length + k.conflict.length > 0;
+    out.push({ id: `kit-files:${k.kit}`, group: "Kit files", label: k.kit === "lab" ? "Lab kit files" : "Planning kit files", ok: !bits.length, optional: !broken,
+      detail: bits.length ? `${bits.join("; ")}. Fix opens Review update…, which shows each file before anything is written.` : "Every file is there and current.",
+      fix: bits.length ? { kind: "install", kit: k.kit } : undefined });
   }
 
   if (s.newerKit) {
@@ -239,14 +312,15 @@ export function checkSetup(s: SetupState): SetupItem[] {
   if (s.planning && s.plugins.has("zotlit") && s.zotlitData?.readable) {
     const z = s.zotlitData;
     const bits = [...z.missing.map(f => `${f.key} is missing`), ...z.differing.map(f => `${f.key} differs (yours: ${f.now}; kit: ${f.kit})`)];
-    const clean = !z.missing.length && !z.differing.length;   // a field of yours that differs from the kit's is flagged too: Lab Kit never changes it, so check it by hand
-    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: clean, warn: !clean || undefined,
-      detail: bits.length ? `${bits.join("; ")}.${z.missing.length ? " Fix adds the missing ones," : ""} Lab Kit never changes a field you have: check the ones that differ in Settings → ZotLit → Templates → Frontmatter${z.missing.length ? ". Fix then turns ZotLit off and on so it reads the new ones" : ""}.` : "All the kit's fields are there.",
+    const clean = !z.missing.length && !z.differing.length;
+    // a missing field is something to fix; a field of yours that only differs is a warning: Lab Kit never changes it, so check it by hand
+    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: clean, warn: (!clean && !z.missing.length) || undefined,
+      detail: bits.length ? `${bits.join("; ")}.${z.missing.length ? " Fix adds the missing ones, then turns ZotLit off and on so it reads them." : ""}${z.differing.length ? " Lab Kit never changes a field you have: check the ones that differ in Settings → ZotLit → Templates → Frontmatter." : ""}` : "All the kit's fields are there.",
       fix: z.missing.length ? { kind: "zotlit-fields" } : undefined });
     const f = [z.literature === "other" ? "Literature note folder is your own (left alone)" : z.literature === "empty" ? "Literature note folder is not set" : "",
       z.templates === "other" ? "Template folder is your own (left alone)" : z.templates === "empty" ? "Template folder is not set" : ""].filter(Boolean);
     out.push({ id: "zotlit:folders", group: "ZotLit", label: "ZotLit folders", ok: !f.length, warn: !!f.length || undefined,
-      detail: f.length ? `${f.join("; ")}.${z.literature === "empty" || z.templates === "empty" ? " Fix (above) sets the empty ones." : ""}` : "ZotLit uses the kit's literature and template folders.",
+      detail: f.length ? `${f.join("; ")}.${z.literature === "empty" || z.templates === "empty" ? (z.missing.length ? " The Fix on the fields row sets the empty ones." : " Fix sets the empty ones.") : ""}` : "ZotLit uses the kit's literature and template folders.",
       fix: !z.missing.length && (z.literature === "empty" || z.templates === "empty") ? { kind: "zotlit-fields" } : undefined });
   } else if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
     detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`

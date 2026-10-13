@@ -1,4 +1,5 @@
 ---
+kind: guide
 cssclasses:
   - vt
 ---
@@ -37,7 +38,7 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 
 1. **Enable community plugins** if Obsidian asks (Settings > Community plugins > Turn on).
 2. **ZotLit** - open Settings > ZotLit and check it found Zotero (it detects the Zotero folders itself, separately on each computer). If not, set the Zotero data directory by hand. When it asks to import highlight images, allow it.
-3. **Lab Kit** - run **Check setup…** (Settings > Lab Kit). It lists what this computer is missing (plugins, Templater's folders, Meta Bind buttons, the homepage, the deck path) with a **Fix** for each.
+3. **Lab Kit** - run **Check setup…** (Settings > Lab Kit). It lists what this computer is missing (plugins and Obsidian's own Bases and Daily notes, kit files that are missing or have an update waiting, Templater's folders, Meta Bind buttons, the homepage, the Daily notes folder and date format, ZotLit's frontmatter fields and folders, the deck path) with a **Fix** where Lab Kit can make the change. The window stays open while you work through it; **Check again** redraws it.
 4. **Omnisearch** - let it build its index (first search is slow); if results look wrong, clear its cache in its settings.
 5. **Hotkeys** - they carry over, with `Ctrl` becoming `Cmd` on the Mac. Test `Alt+H` (Option+H on the Mac) - if a key types a symbol instead, tell Claude which.
 
@@ -58,7 +59,7 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 3. Make a ZotLit note for a paper you've already highlighted - colours land in the right sections and its filename matches the other computer.
 4. **Meeting deck** opens the deck (or the folder of decks).
 5. **Projects** on the homepage shows a card per project, and a card's **New note** button makes a note in that project's folder.
-6. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check the planning kit is on and its files are installed (Settings > Lab Kit > Built-in kit), then restart Obsidian. Lab Kit does the roll-over itself; no Templater startup template is needed.
+6. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check the planning kit is on and its files are installed (Settings > Lab Kit > Updates), then restart Obsidian. Lab Kit does the roll-over itself; no Templater startup template is needed.
 
 > [!note] Keeping this list right
 > Anything new that has to be set up per computer goes here - see the rule in [[Vault spec#Rules for changes|Vault spec]].

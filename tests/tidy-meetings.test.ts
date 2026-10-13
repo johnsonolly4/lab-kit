@@ -206,10 +206,12 @@ describe("Tidy up notes: the properties of meeting notes and project hubs", () =
     m.set("02 Projects/NoHub/Orphan.md", "---\ncssclasses:\n  - vt\n---\n");
     const g = group(c(), m, "project-notes")!;
     const props = g.changes.filter(x => !x.body);
-    expect(props.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md"]);
-    // every project note (not the hub, to-dos, orphans) also gets the back link to its project hub at the top of the page
+    // NoHub has no hub yet: the scan makes one (project-hub-missing), so its note is linked in the same scan, not in a second one
+    expect(props.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md", "02 Projects/NoHub/Orphan.md"]);
+    expect(props.find(x => x.path.endsWith("Orphan.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[NoHub]]"');
+    // every project note (not the hub, to-dos) also gets the back link to its project hub at the top of the page
     const pages = g.changes.filter(x => x.body);
-    expect(pages.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Has.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md"]);
+    expect(pages.map(x => x.path).sort()).toEqual(["02 Projects/Alpha/Empty.md", "02 Projects/Alpha/Has.md", "02 Projects/Alpha/Idea.md", "02 Projects/Alpha/Linked.md", "02 Projects/Alpha/Sub/Deep.md", "02 Projects/NoHub/Orphan.md"]);
     expect(pages.find(x => x.path.endsWith("Deep.md"))!.after).toBe("\n\n```vault-card\nshow: back-to-project\n```\n\njust text\n");
     expect(props.find(x => x.path.endsWith("Linked.md"))!.after).toBe('project:\n  - "[[Alpha]]"\ncssclasses:\n  - vt');
     expect(props.find(x => x.path.endsWith("Idea.md"))!.after).toBe('cssclasses:\n  - vt\nproject:\n  - "[[Alpha]]"');

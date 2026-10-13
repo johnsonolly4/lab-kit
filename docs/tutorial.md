@@ -46,8 +46,8 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Settings → Lab Kit → Kit folders and setup → **Check setup…** → press **Fix** on the Templater rows. That adds `Insert snippet.md` to Templater's **Template hotkeys** and sets its **User script functions** folder when it has none (a folder you set yourself is never changed). Doing it by hand works too: Settings → Lab Kit → **Manage files…** shows where each kit file is.
-> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**. Lab Kit never sets a hotkey itself; **Check hotkeys…** shows which of the recommended keys are set.
+> 1. Settings → Lab Kit → Setup → **Check setup…** → press **Fix** on the Templater rows. That adds `Insert snippet.md` to Templater's **Template hotkeys** and sets its **User script functions** folder when it has none (a folder you set yourself is never changed). Doing it by hand works too: Settings → Lab Kit → **Manage files…** shows where each kit file is.
+> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**. Or let Lab Kit do it: **Check hotkeys…** shows which of the recommended keys are set, and its **Set the suggested keys…** sets the ones that are free after you confirm (a key you have is never changed).
 > 3. If the forms ask one question at a time, Templater's **User script functions** folder is not the folder that holds `labSnippets.js` (Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
@@ -223,10 +223,10 @@ flowchart LR
 | Which property holds the molecular weight | Settings → Lab Kit → Molecular weight property (empty = MW, Mr, Molecular weight and similar are tried) |
 | Your own analysis methods and machines | Settings → Lab Kit → Methods folder (empty = only the built-in NMR, GPC and DLS; a folder that does not exist yet is created when you leave the box). See section 6.1 |
 | Your flow rigs | Settings → Lab Kit → Rigs folder (empty: `03 Lab Book/Rigs`, shown greyed; a folder that does not exist yet is created when you leave the box or run New rig). Then Review update… installs the **Rig template**, and the command **New rig** asks a name and makes the rig note: fill in the parts tables (`ID`, `Feeds`) and the `rig` block at the top draws the diagram |
-| Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab header → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
-| A snippet's menu icon | Settings → Lab Kit → Snippet menu → Snippet icons (press **Choose…** and pick an icon, or type a Lucide name; empty keeps the built-in one) |
-| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table) has `icon:` and `desc:` in its header |
-| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other six are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
+| Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab notebook → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
+| A snippet's menu icon | Settings → Lab Kit → Lab notebook → Snippet icons (press **Choose…** and pick an icon, or type a Lucide name; empty keeps the built-in one) |
+| A snippet's built-in icon or text | first two lines of its file in the `Snippets` folder next to `Insert snippet.md` (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table, rig) has `icon:` and `desc:` in its header |
+| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other seven (the six above and Rig) are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
 | A new snippet | Settings → Lab Kit → **Manage files…** → **Make my own copy** on a snippet row (asks a name, never overwrites, and updates never touch the copy), or copy a file in the `Snippets` folder by hand and give it a new number and name. Token syntax: [snippet-syntax.md](snippet-syntax.md) |
 | Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 
@@ -282,7 +282,7 @@ Ionisation: APCI
 
 ## 7. Updating the kit
 
-The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.14 or newer. **Settings → Lab Kit → Built-in kit** (the update buttons; Check setup and the folders are in the next group, **Kit folders and setup**). The lab kit and the planning kit (section 8) each have their own row of these buttons:
+The kit files (templates, scripts, CSS snippet) are built into the plugin, so this works on desktop and mobile. It needs Obsidian 1.14 or newer. **Settings → Lab Kit → Updates** (the update buttons; Check setup and the kit's folders are in the next group, **Setup**). The lab kit and the planning kit (section 8) each have their own row of these buttons:
 
 | Button | Does |
 |---|---|
@@ -312,30 +312,40 @@ After an update, a **What's new** popup opens once. Open it again from **Setting
 
 ## 8. Planning kit
 
-> [!note] Preview
-> The planning kit is a preview and is off until you switch it on. It is new in 1.0.0: most of it is tested in code and not yet used by many people in Obsidian. Report what breaks on GitHub.
+> [!note] Off until you switch it on
+> The planning kit is new in 1.0.0: most of it is tested in code and not yet used by many people in Obsidian. Report what breaks on GitHub.
 
 The planning kit turns the vault around the lab book into a planner: a homepage, a to-do board, projects, meetings, knowledge notes and an inbox. The day-to-day routine (what to press in the morning, the Friday review) is in the note it installs, **How my vault works** (the **How it works** button on the homepage); this section says what there is and how to set it up.
 
 ### 8.1 Switching it on
-1. Settings → Lab Kit → Built-in kit → **Planning kit (preview)** → on. Switching it off later removes nothing.
+1. Settings → Lab Kit → Updates → **Planning kit** → on. Switching it off later removes nothing.
 2. **Planning kit files** → **Review update…** → **Apply**. A list shows every file, folder and setting first. The planning commands start once the files are installed.
-3. **Check setup…** lists what is missing, each with a **Fix**: the plugins (needed: Meta Bind, Force note view mode, Omnisearch, Notebook Navigator; optional: ZotLit, Outliner, Editing Toolbar, CSS Editor, Advanced Canvas; Lab Kit never installs a plugin), the Meta Bind buttons, Templater's folder templates (daily notes and to-dos), the homepage in Notebook Navigator, and the CSS snippets. Restart Obsidian after the Meta Bind Fix: it loads its buttons at start-up.
-4. The folders are settings (Settings → Lab Kit → **Planning folders**; empty = the default, `00 Inbox` … `99 Archive`). Rename a folder inside Obsidian and its setting follows; the kit files you have not edited get the new name written in.
+3. **Check setup…** lists what is missing, with a **Fix** where Lab Kit can make the change (the window stays open while you work through it; **Check again** redraws it): kit files that are missing or have an update waiting, Obsidian's own Bases and Daily notes plugins, the Daily notes folder and date format, Dataview's inline queries, the types of `due`, `deadline` and `priority`, the plugins (needed: Dataview, Meta Bind, Force note view mode, Omnisearch, Notebook Navigator; optional: ZotLit, Outliner, Editing Toolbar, CSS Editor, Advanced Canvas; Lab Kit never installs a plugin), the Meta Bind buttons, Templater's folder templates (daily notes and to-dos), the homepage in Notebook Navigator, the meeting series, and the CSS snippets. With ZotLit on there are two more rows, **ZotLit frontmatter fields** and **ZotLit folders**: Fix adds only the fields that are missing and sets a folder only when it is empty, never changes a field you have, then turns ZotLit off and on so it reads them. Restart Obsidian after the Meta Bind Fix: it loads its buttons at start-up.
+4. The folders are settings (Settings → Lab Kit → Planning → **Planning folders**, a sub-menu whose row says how many are changed from the default; empty = the default, `00 Inbox` … `99 Archive`). Rename a folder inside Obsidian and its setting follows; the kit files you have not edited get the new name written in.
 
 ### 8.2 Homepage
 `00 Home` has a row of action buttons (Today's note, New to-do, New lab entry, Quick capture, Add to shopping, Search), a **Go to** bar with one button per top-level folder that has a hub note or a board, and five tiles: **This week** (with the inbox count), **Experiments on the go**, **Projects**, **Recently read** and **Next meetings**. A tile shows at most 8 rows (Recently read 5) and a **Show all** toggle when it has more; a tile's heading opens its board or hub. The tiles are drawn by Lab Kit (`vault-card` and `vault-goto` blocks), follow the folder settings and redraw when notes change.
 
 ### 8.3 To-dos
-- **New to-do** asks the text, the project (or none), which meeting to raise it at (only when you have several series), and a due date (Enter = none; with a date, whether to show a countdown). Esc at any box makes nothing. It is filed in the Planning folder's `To-dos` and starts in **Backlog**.
-- The **To-do board** has the columns Backlog, Mon … Fri. Drag a card onto a day; click its circle to tick it done.
+- **New to-do** asks the text, the project (or none), **Comes after?** (only for a project that has other open to-dos: pick the to-do that has to be done first, or "(nothing)"), which meeting to raise it at (only when you have several series), a due date (Enter = none; `YYYY-MM-DD`, or `today`, `tomorrow`, `fri`, `next mon`; with a date, whether to show a countdown) and a priority (none, 1 - high, 2 - medium, 3 - low). Esc at any box makes nothing, except at Comes after?, where it means nothing comes first. It is filed in the Planning folder's `To-dos` and starts in **Backlog**.
+- The **To-do board** has the columns Backlog, Mon … Fri. Drag a card onto a day; click its circle to tick it done. In each column done cards go last, then cards are ordered by priority (1, 2, 3, none). A card with a priority or a project shows a small tag at the bottom left, like `↑ Polymers` (↑ = 1, – = 2, ↓ = 3).
 - **Roll-over** is done by the plugin, about 90 seconds after Obsidian opens and again when the date changes: an unfinished card whose day has passed moves to today and is marked carried over; a done card stays on its day until the next week, then leaves the board. **Roll over to-dos now** runs it at once.
-- **Due-date countdown** (Planning folders): a badge with the days left (`3d`, `Today`, `2d late`) on cards with a `due` date, for every such to-do or only those with `countdown: true`.
-- **Archive old to-dos** moves to-dos finished more than 30 days ago into the Archive folder.
+- **Due-date countdown** (Settings → Lab Kit → Planning): a badge with the days left (`3d`, `Today`, `2d late`) on cards with a `due` date, for every such to-do or only those with `countdown: true`.
+- **Archive old to-dos** moves to-dos finished more than 30 days ago into the Archive folder, except those of a project that is not Done (its plan still shows them).
 
 ### 8.4 Projects
 - **New project** asks a name and makes the project's folder and hub note under Projects. The hub's top row has a back link, **New to-do**, **New note**, a **Status** drop-down (Active, Paused, Done), a **Deadline** date and, with the countdown on, the days left.
-- The hub lists the project's to-dos and notes (10 rows, **Show all**), the meeting notes that name it (last 8) and its papers.
+- The hub lists the project's to-dos and notes (10 rows, **Show all**; to-dos ordered overdue, day, priority, name), the meeting notes that name it (last 8) and its papers.
+- **The plan.** When a to-do of the project comes after another one (its `after` property: set by Comes after?, by dragging on the map, or typed by hand), the hub shows a **plan map**: one card per to-do, joined by arrows, with the due date, priority and one-line result. A to-do is blocked while anything before it in the chain is open. On the map:
+  - click a card to open the to-do; the circle ticks and unticks it; right-click has Open, Open in new tab, Mark done / Mark not done and **Delete note** (the to-dos after it then come after what it came after, with Undo);
+  - hover a card, or a row under **Not linked**, and drag the dot onto another card to make that to-do come after it; click an arrow, then **Remove link**, to remove one. Both show a notice with **Undo** (Ctrl / Cmd+Z does not undo them);
+  - the ⇄ / ⇅ button by the title flips the map between left to right and top to bottom for the open note; **−**, **+** and **Fit** next to it make the map smaller or larger (Fit: the whole map across the width) for the open note;
+  - the image button (**Picture for a slide**, desktop only) opens a window to copy a picture of the plan for your weekly slides: choose the layout (finished and later to-dos as tiles with full cards for the next N columns of the map, or the whole map), check the preview, press **Copy picture** and paste into the slide. The picture is always light, whatever theme you use. A line under the preview warns when the text would be small on a slide: use fewer columns.
+- **Add result** (command, on an open to-do) sets its one-line `result`, shown as `→ result` on its card. **Link to-dos in order**: select a list of `[[to-do]]` links in a note and each to-do comes after the one before it (a preview first, Undo afterwards).
+- A to-do with `sub: "[[Parent to-do]]"` (typed by hand) is a subtask: the parent's card shows a count (`▸ 1/2`) that opens the list. The parent is never ticked for you.
+- A to-do with `experiment: "[[ABC0014-A]]"` (typed by hand, a link to a lab note) shows that lab note's Status on its card, and the hub's **Experiments** tile lists those lab notes. Needs the Lab notes folder set.
+- Settings → Lab Kit → Planning: **Project plan view** (the card map only, or the map with the plan list above it) and **Project plan map direction** (left to right, or top to bottom).
+- An older hub gets the map and the Experiments tile from Review update… (Project hub template, theme) and **Tidy up notes** → *Hubs: bring the page up to the current template*.
 - **New project note** files a note in a project's folder with a link to the hub and a back link at the top.
 - **Projects overview** shows one card per project: goal, next to-dos, counts, and New note / New to-do / Open.
 
@@ -350,11 +360,11 @@ The planning kit turns the vault around the lab book into a planner: a homepage,
 - **New concept** asks a title and a topic and files a knowledge note (`kind: concept`, with `summary`, `sources`, `checked`) in that topic's folder under Knowledge. **New topic hub** makes the index note of a topic folder; its **New concept** button skips the topic question. The Knowledge index lists every topic.
 - **Quick capture** makes an empty note in the Inbox. **Sort inbox** opens each inbox note in turn, in a bar at the bottom of the window, and asks where it goes: to-do, a project, Knowledge, How-tos, Meetings, archive, delete, skip or stop. In a folder list, type a name that is not there to make a new folder.
 - **Weekly review** is a six-step checklist with a button for each step; **Shopping list** takes items from **Add to shopping list** (commas between them) and **Clear ticked** removes the ticked ones.
-- **Checklist progress** (Planning folders, off by default) writes `progress: 3/7` into lab notes and the Shopping list as you tick boxes, and the Lab book board draws it as a bar.
+- **Checklist progress** (Settings → Lab Kit → Lab notebook, off by default; it works without the planning kit) writes `progress: 3/7` into lab notes and the Shopping list as you tick boxes, and the Lab book board draws it as a bar.
 - Literature notes come from the ZotLit plugin; the kit has three templates for it and a checklist note, **Set up ZotLit**.
 
 ### 8.7 A vault that already has notes
-**Tidy up notes** (command palette) scans the vault and shows, rule by rule, the notes that don't match the kit's layout, before on the left and after on the right. Every rule and every note has a tick box. **Change notes…** needs the backup box ticked and a second confirmation, backs up each note first, and skips a note you edited since the scan. Some findings are only listed, never changed. The rule **Hubs: bring the page up to the current template** rewrites the page of project, topic and series hubs (a project keeps its goal and Related text, a topic its intro) and is never ticked for you.
+**Tidy up notes** (command palette) scans the vault and shows, rule by rule, the notes that don't match the kit's layout, before on the left and after on the right. Every rule and every note has a tick box. Unchanged lines are folded (press "… N unchanged lines" to see them), and a change that is the same in several notes is shown once, as **Same change in N notes**, with one tick box and the list of notes. **Change notes…** needs the backup box ticked and a second confirmation, backs up each note first, and skips a note you edited since the scan. Some findings are only listed, never changed. The rule **Hubs: bring the page up to the current template** rewrites the page of project, topic and series hubs (a project keeps its goal and Related text, a topic its intro) and is never ticked for you.
 
 **Find moved folders** points the folder settings at folders that were moved outside Obsidian.
 
@@ -373,7 +383,7 @@ The planning kit turns the vault around the lab book into a planner: a homepage,
 | Hazard table empty | Chemicals property empty, or chemical notes missing `H_Phrase` |
 | "Folder … not found. Moved outside Obsidian?", or empty homepage lists | A folder named in the settings was moved or renamed outside Obsidian, so its setting couldn't follow. Run **Find moved folders** (command palette, the notice's button, or Check setup → Find): it suggests where each folder went; Apply changes only the settings. Move folders inside Obsidian to avoid this |
 | A homepage or hub button does nothing, or shows "Button ID not found" | **Check setup…** → Fix on the Meta Bind buttons row, then restart Obsidian |
-| Today's column on the To-do board is not marked, cards don't roll over | The planning kit must be on **and** its files installed (Settings → Lab Kit → Built-in kit); then **Roll over to-dos now** |
+| Today's column on the To-do board is not marked, cards don't roll over | The planning kit must be on **and** its files installed (Settings → Lab Kit → Updates); then **Roll over to-dos now** |
 | A kit board shows nothing after a folder rename | The board's file still filters on the old folder: the notice's **Patch folder only** button changes just the folder |
 
 Related: [Changelog](changelog.md) · [Snippet syntax](snippet-syntax.md)
