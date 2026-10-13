@@ -15,7 +15,7 @@ export const layoutOf = (c: SlideChoice): SlideLayout => c.whole ? { kind: "whol
 /** The warning under the preview, "" when the text is big enough. */
 export function readableNote(p: Pick<SlidePicture, "minText" | "tooSmall">, whole: boolean): string {
   if (!p.tooSmall) return "";
-  return `The smallest text is ${Math.round(p.minText)} px of ${MIN_READABLE} (it may be hard to read on a slide): ${whole ? "choose the layout with tiles and fewer steps ahead." : "use fewer steps ahead."}`;
+  return `The smallest text is ${Math.round(p.minText)} px of ${MIN_READABLE} (it may be hard to read on a slide): ${whole ? "choose the layout with tiles and fewer columns." : "use fewer columns."}`;
 }
 
 /** The SVG text drawn onto a canvas and copied as a PNG. Rejects when the picture cannot be drawn or the clipboard refuses. */

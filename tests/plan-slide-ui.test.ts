@@ -8,7 +8,7 @@ describe("slide window helpers", () => {
   });
   it("warns only when the text is too small", () => {
     expect(readableNote({ minText: 24, tooSmall: false }, false)).toBe("");
-    expect(readableNote({ minText: 18.9, tooSmall: true }, false)).toContain("fewer steps ahead");
+    expect(readableNote({ minText: 18.9, tooSmall: true }, false)).toContain("fewer columns");
     expect(readableNote({ minText: 18.9, tooSmall: true }, true)).toContain("19 px");
   });
 });
