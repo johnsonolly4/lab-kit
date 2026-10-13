@@ -82,7 +82,8 @@ flowchart LR
 > [!planning] The project plan
 > - When one to-do has to wait for another, say so: **New to-do** asks *Comes after?*, or drag on the hub's **plan map**. The map shows the to-dos as cards joined by arrows; a to-do is **blocked** (dashed) until everything before it is done.
 > - On the map: click a card to open it, click its circle to tick it. Hover a card and drag the dot onto another card to make that one come after it. Click an arrow, then **Remove link**, to undo a link. Right-click a card for **Mark done** and **Delete note**. A notice offers **Undo** each time (Ctrl/Cmd+Z does not undo these).
-> - The ⇄ / ⇅ button by the title turns the map from left-to-right to top-to-bottom.
+> - The ⇄ / ⇅ button by the title turns the map from left-to-right to top-to-bottom. **−**, **+** and **Fit** make it smaller or larger.
+> - The image button (desktop only) copies a picture of the plan for your weekly slides: pick the layout, check the preview, press **Copy picture**, paste it into the slide.
 > - Finished a step? **Add result** (command palette, with the to-do open) writes one line that shows on its card as `→ result`.
 > - Have the steps as a list of `[[to-do]]` links in a note? Select them and run **Link to-dos in order**.
 > - A to-do with `experiment` set to a lab note shows that experiment's status on its card, and the hub's **Experiments** tile lists those lab notes. A to-do with `sub` set to another to-do is its subtask (the parent's card shows `1/2`). Both are typed in the to-do's properties.

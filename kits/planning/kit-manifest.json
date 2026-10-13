@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "192b353aab172aedc335307d5b3df2088c32cb3c7de60947051225a616bd286a",
+      "sha256": "f6c6c4feb667f1ae39dbee84e3a47b0917cf72d1895af360a090dec1b6370cbc",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "a94df787cd6fc4b7b95ab48ddf2a97c84b98237d06d418f1bd624dcb4aa66cfd",
+      "sha256": "e3c4fb3dbdff773ba24b1af678b0d18551badfe1c7161078a6cc52fa42c14c34",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },

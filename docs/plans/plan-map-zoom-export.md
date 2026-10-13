@@ -1,6 +1,6 @@
 # Plan map: zoom, and a picture of the plan for the weekly slides
 
-Planned on Opus 2026-10-13 and approved by the user the same day; to be built on Sonnet, one phase per session (user: "Plan this then sonnet will complete"). Phases 1-3 DONE 2026-10-13 (Sonnet); the rest is not built. Tick each phase here when it is done.
+Planned on Opus 2026-10-13 and approved by the user the same day; to be built on Sonnet, one phase per session (user: "Plan this then sonnet will complete"). All 4 phases DONE 2026-10-13 (Sonnet); the rest is not built. Tick each phase here when it is done.
 
 ## Context
 User, 2026-10-13: "for the plan map, a zoom and an export button. The export is so I can add the tasks to my weekly slides, so the scripting will need to make sure it is visible on a slide. Completed tasks can be compacted to a list of tiles, then maybe anything more than 5 task blocks ahead also gets compacted?"
@@ -52,7 +52,7 @@ A new pure module `src/planning/plan-slide.ts` (no DOM, no Obsidian) makes an **
 1. **Slide model and SVG (pure). DONE 2026-10-13** (`slideModel(map, layout)` takes the `PlanMap` only, not the `Plan`: nothing else was needed; `slideSvg` returns `{ svg, minText, tooSmall }`, `MIN_READABLE` = 22; 12 tests; the example's SVG was turned into a PNG and looked at, compact and whole). `src/planning/plan-slide.ts`, `tests/plan-slide.test.ts`. Done when: the tests below pass, and one generated SVG for the test-vault's "Plan map example" project has been turned into a PNG and looked at (see Verification).
 2. **Export window and the button. DONE 2026-10-13** (tests 879, lint 0 errors; copy path NOT seen in Obsidian, BACKLOG "Slide picture, Phase 2 built"). `plan-slide-ui.ts`, `blocks.ts`, theme CSS for the button, `npm run kit:manifest`. Done when: tests and lint pass; the copy path is "not seen in Obsidian" until the user pastes one into a slide.
 3. **Zoom. DONE 2026-10-13** (tests 881; NOT seen in Obsidian, BACKLOG "Zoom on the plan map, BUILT"; spike by reading only). Spike first (the drag risk), then `blocks.ts`, `plan-map-render.ts`, theme CSS, a test for the fit and clamp arithmetic (put it in a pure helper in `plan-map.ts`).
-4. **Docs.** `docs/changelog.md`, `docs/tutorial.md` 8.4, `How my vault works.md` (the project plan callout), `Vault spec.md` (Plan map row), `docs/architecture.md` (two new files), `docs/obsidian-test-checklist.md`, README Mobile ("the slide picture is desktop only") and Privacy (the clipboard: a picture, only when you press Copy picture).
+4. **Docs. DONE 2026-10-13.** `docs/changelog.md`, `docs/tutorial.md` 8.4, `How my vault works.md` (the project plan callout), `Vault spec.md` (Plan map row), `docs/architecture.md` (two new files), `docs/obsidian-test-checklist.md`, README Mobile ("the slide picture is desktop only") and Privacy (the clipboard: a picture, only when you press Copy picture).
 
 ## Tests (phase 1)
 - compact, ahead 5: done to-dos are tiles and not cards; cards are exactly the open ones within five steps of the first open step; later ones are tiles; arrows only join shown cards.
