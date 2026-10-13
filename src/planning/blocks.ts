@@ -10,6 +10,8 @@ import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction } from "./plan-map";
 import { drawPlanMap } from "./plan-map-render";
+import { PlanHistory } from "./plan-history";
+import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
 import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
@@ -20,6 +22,7 @@ type Lang = (typeof LANGS)[number];
 /** Draws the blocks and redraws the open ones when notes change. Registered at load; shows a line instead while the planning kit is off. */
 export class PlanningBlocks {
   private views = new Set<BlockView>();
+  private histories = new Map<string, PlanHistory>();   // each project hub's plan map Undo / Redo steps, until Obsidian closes
 
   constructor(readonly plugin: Plugin, readonly kit: () => KitData, readonly commands: () => PlanningCommands | null) {}
 
@@ -39,6 +42,7 @@ export class PlanningBlocks {
 
   add(v: BlockView): void { this.views.add(v); }
   remove(v: BlockView): void { this.views.delete(v); }
+  historyFor(path: string): PlanHistory { let h = this.histories.get(path); if (!h) { h = new PlanHistory(); this.histories.set(path, h); } return h; }
 
   /** Notes in `folder` and below, as the lists see them. */
   notesIn(folder: string): NoteRec[] {
@@ -346,13 +350,22 @@ class BlockView extends MarkdownRenderChild {
           const sc = box.querySelector<HTMLElement>(".vt-map-scroll");
           return sc ? fitZoom(sc.clientWidth, Number(sc.dataset.mapWidth ?? 0)) : 1;
         });
+        const history = this.owner.historyFor(this.sourcePath);
+        for (const side of ["undo", "redo"] as const) {   // the last 20 changes made on the map; the buttons follow the steps that are left
+          const step = history.peek(side), what = side === "undo" ? "Undo" : "Redo";
+          const btn = title.createEl("button", { cls: "vt-map-zoom vt-map-slide vt-map-history", attr: { "aria-label": what, title: step ? `${what}: ${step.label}` : `Nothing to ${what.toLowerCase()}` } });
+          setIcon(btn, side === "undo" ? "undo-2" : "redo-2");
+          btn.toggleClass("vt-map-off", !step);
+          btn.addEventListener("mousedown", stop);
+          btn.addEventListener("click", e => { stop(e); runHistory(this.app, history, side).then(() => { this.draw(); }).catch(() => { new Notice("Could not change that to-do."); }); });
+        }
         if (hasNode()) {   // the picture for a slide is a PNG on the clipboard: desktop only
           const shot = title.createEl("button", { cls: "vt-map-dir vt-map-slide", attr: { "aria-label": "Picture for a slide", title: "Copy a picture of the plan for a slide" } });
           setIcon(shot, "image");
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        drawPlanMap(box, plan, map, { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, redraw: () => this.draw() });
+        drawPlanMap(box, plan, map, { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, redraw: () => this.draw() });
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }

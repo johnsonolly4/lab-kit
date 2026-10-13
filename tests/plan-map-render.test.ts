@@ -3,6 +3,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { createRequire } from "node:module";
 import { drawPlanMap } from "../src/planning/plan-map-render";
+import { PlanHistory } from "../src/planning/plan-history";
 import { layoutPlan } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
@@ -25,7 +26,7 @@ const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
 const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
 const draw = (todos: NoteRec[], direction: "across" | "down") => {
   const plan = readPlan(todos, hub), box = new El("div");
-  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, redraw() { /* nothing */ } });
+  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), redraw() { /* nothing */ } });
   return box;
 };
 // A, B after A, C (a subtask of A) with D after C, a lone to-do with its own subtask.

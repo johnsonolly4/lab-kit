@@ -55,10 +55,11 @@ Decided with the user 2026-10-13 (chat, mockup, then the survey below):
 - Done when: tests pass; the Not linked rows no longer have the handle over the first letter (the user's screenshot of the old look vs the new, BACKLOG "Link handle overlaps the title" ticked only after the user has seen it); right-click Remove from parent clears `sub` with Undo; vertical layout checked by reading the CSS and, if the user sends a screenshot, by eye. Anything not seen → BACKLOG.
 - New dependencies: none
 
-### Phase 4 — Undo / Redo buttons
+### Phase 4 — Undo / Redo buttons — BUILT 2026-10-13, not seen in Obsidian
 - Depends on: Phase 3 (all four changes exist: link, unlink, nest, clear)
 - Files: new pure `src/planning/plan-history.ts` (stack of `{ path, key: "after" | "sub" | "project", before, after }` records (`project` is used by Phase 6), limit 20 as a constant, `record`, `undo`, `redo`, a new change clears the redo side), `src/planning/plan-map-render.ts` (`link`, `unlink` at `:53-64` and the nest / clear calls record into the history; the notice Undo goes through the same stack), `src/planning/blocks.ts` (↶ ↷ buttons after the zoom and export buttons; disabled when empty), `vault-theme.css`, tests `tests/plan-history.test.ts`.
 - Behaviour: the history is kept in memory per plan block and is lost when the note closes (like the zoom). Undo writes the recorded `before` value back with `changeAfter` / `changeSub`. If the note's current value is no longer the recorded `after` (edited by hand or by another action), that step is skipped with a Notice ("changed since") and nothing is overwritten. A record for a note that was deleted or renamed is dropped with a Notice. Undoing then doing a new change drops the redo steps.
+- Result 2026-10-13: `plan-history.ts` (`PlanHistory`, `sameValue`), `recordChange` / `runHistory` in `after-write.ts` (the notice Undo runs its own step through the same stack, only while it is still there), the history is kept per hub path by `PlanningBlocks.historyFor` (survives redraws and Live Preview / Reading switches; lost when Obsidian closes), buttons ↶ ↷ before the picture button in `blocks.ts` (dim when empty, the tooltip names the step). Tests 931. The key `project` is allowed in the step type for Phase 6.
 - Done when: tests cover limit 20, undo / redo order, a new change clearing redo, and the stale-value skip; the buttons are disabled when empty (by reading). NOT seen in Obsidian until the user tries it (checklist 6i row).
 - New dependencies: none
 

@@ -3,7 +3,8 @@
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
-import { changeAfter, changeSub, linkText, namesOf, undoNotice } from "./after-write";
+import { linkText, namesOf, recordChange, runHistory, undoNotice } from "./after-write";
+import type { PlanHistory } from "./plan-history";
 import { addAfter, canLink, nestAction, removeAfter, type NestVerdict } from "./plan-link";
 import { rememberText } from "./after-bridge";
 
@@ -17,6 +18,8 @@ export interface MapOptions {
   direction: Direction;
   /** How big the map is drawn: 1 = normal (for the open note, not saved). Left out = 1. */
   zoom?: number;
+  /** The note's Undo / Redo steps (kept by the block's owner, so a redraw or a switch of view keeps them). */
+  history: PlanHistory;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -53,15 +56,14 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow, plan?: Plan): void {
 /** Writes the link "`to` comes after `from`" (the arrow is drawn first by the caller) and offers Undo. */
 async function link(o: MapOptions, from: string, to: string): Promise<void> {
   const text = linkText(o.app, from, to);
-  await changeAfter(o.app, to, v => addAfter(v, text));
-  undoNotice("Linked.", () => changeAfter(o.app, to, v => removeAfter(v, namesOf(from))));
+  const step = await recordChange(o.app, o.history, to, "after", "Linked", v => addAfter(v, text));
+  undoNotice("Linked.", () => runHistory(o.app, o.history, "undo", step));
 }
 
 /** Removes the link "`to` comes after `from`" and offers Undo. */
 async function unlink(o: MapOptions, from: string, to: string): Promise<void> {
-  const text = linkText(o.app, from, to);
-  await changeAfter(o.app, to, v => removeAfter(v, namesOf(from)));
-  undoNotice("Link removed.", () => changeAfter(o.app, to, v => addAfter(v, text)));
+  const step = await recordChange(o.app, o.history, to, "after", "Link removed", v => removeAfter(v, namesOf(from)));
+  undoNotice("Link removed.", () => runHistory(o.app, o.history, "undo", step));
 }
 
 /** The map scrolls by itself while a drag is near its edge (`pointer` gives where it is now; `moved` runs after each step). Returns the function that stops it. */
@@ -139,13 +141,12 @@ const NEST_NO: Record<Exclude<NestVerdict, "ok">, string> = {
 
 /** Makes `to-do from` a subtask of `to` (or, `to` null, clears it) and offers Undo. The card disappears from the map (a subtask lives in its parent's list), so its arrows do too: the notice says so. */
 async function nest(o: MapOptions, plan: Plan, from: string, to: string | null): Promise<void> {
-  let old: unknown;
   const row = plan.rows.find(r => r.path === from);
   const parent = to ? plan.rows.find(r => r.path === to) : undefined;
   const text = to ? linkText(o.app, to, from) : undefined;
-  await changeSub(o.app, from, v => { old = v; return text; });
+  const step = await recordChange(o.app, o.history, from, "sub", to ? "Made a subtask" : "Subtask cleared", () => text);
   const arrows = !!row && (row.afterPaths.length > 0 || plan.rows.some(r => r.afterPaths.includes(from)));
-  undoNotice(to ? `Made a subtask of ${parent?.name ?? "that to-do"}.${arrows ? " Its arrows are hidden while it is a subtask." : ""}` : "Subtask cleared.", () => changeSub(o.app, from, () => old));
+  undoNotice(to ? `Made a subtask of ${parent?.name ?? "that to-do"}.${arrows ? " Its arrows are hidden while it is a subtask." : ""}` : "Subtask cleared.", () => runHistory(o.app, o.history, "undo", step));
 }
 
 /** Makes `grip` a handle: dragging from it moves the whole to-do (`source` is its card or subtask line; a ghost follows the pointer). Dropped on another card it becomes that card's subtask; a subtask dropped on the map background stops being one. Under 5 px of movement it is a click and opens the note. Esc cancels. */
