@@ -51,6 +51,7 @@ function replaceItem(value, cursor, name) {
   return { value: value.slice(0, start) + name + value.slice(cursor), cursor: start + name.length };
 }
 
+// REMOVING `mandatory` (if testing shows it does not work): see docs/decisions.md, "Removing experimental features". It is this function, the `rows` / `required` lines in labForm and the check at the start of submit().
 /** Keys of the mandatory fields (`required: true`) that hold no text. Toggles, selects and headings always have an answer. */
 function missingRequired(fields, values) {
   return fields

@@ -373,7 +373,7 @@
       "role": "userScripts",
       "path": "labForm.js",
       "version": "1.0.1",
-      "sha256": "eb979768b4b03314d29595b3114270ebf19e3c35042052b951634fef6a2b0456",
+      "sha256": "763ee825d31560568857cdbd6bde01be1c4ddb550bc160eecf1695bfd4810076",
       "renamedFrom": [],
       "desc": "The pop-up form every snippet uses"
     },

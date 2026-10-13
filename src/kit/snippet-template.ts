@@ -10,7 +10,7 @@ export interface TemplateField {
   key: string;
   label: string;
   hint?: string;
-  /** `mandatory: true`: the form marks the field with * and does not close while it is empty. Only the form checks it; `required` in the header is a different rule. */
+  /** REMOVING: see docs/decisions.md, "Removing experimental features". `mandatory: true`: the form marks the field with * and does not close while it is empty. Only the form checks it; `required` in the header is a different rule. */
   mandatory?: boolean;
   placeholder?: string;
   type: "text" | "number" | "textarea";
