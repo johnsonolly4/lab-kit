@@ -358,6 +358,10 @@ class BlockView extends MarkdownRenderChild {
           const sc = box.querySelector<HTMLElement>(".vt-map-scroll");
           return sc ? fitZoom(sc.clientWidth, Number(sc.dataset.mapWidth ?? 0)) : 1;
         });
+        const reset = title.createEl("button", { cls: "vt-map-zoom vt-map-slide", attr: { "aria-label": "Reset the map view", title: "Reset: zoom, direction and card positions back to the default" } });
+        setIcon(reset, "rotate-ccw");
+        reset.addEventListener("mousedown", stop);
+        reset.addEventListener("click", e => { stop(e); this.zoom = 1; this.direction = null; this.places = new Map(); this.mapScroll = null; this.draw(); });
         const history = this.owner.historyFor(this.sourcePath);
         for (const side of ["undo", "redo"] as const) {   // the last 20 changes made on the map; the buttons follow the steps that are left
           const step = history.peek(side), what = side === "undo" ? "Undo" : "Redo";
