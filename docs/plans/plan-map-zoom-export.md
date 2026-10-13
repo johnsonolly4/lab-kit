@@ -1,6 +1,6 @@
 # Plan map: zoom, and a picture of the plan for the weekly slides
 
-Planned on Opus 2026-10-13 and approved by the user the same day; to be built on Sonnet, one phase per session (user: "Plan this then sonnet will complete"). Nothing is built yet. Tick each phase here when it is done.
+Planned on Opus 2026-10-13 and approved by the user the same day; to be built on Sonnet, one phase per session (user: "Plan this then sonnet will complete"). Phase 1 DONE 2026-10-13 (Sonnet); the rest is not built. Tick each phase here when it is done.
 
 ## Context
 User, 2026-10-13: "for the plan map, a zoom and an export button. The export is so I can add the tasks to my weekly slides, so the scripting will need to make sure it is visible on a slide. Completed tasks can be compacted to a list of tiles, then maybe anything more than 5 task blocks ahead also gets compacted?"
@@ -49,7 +49,7 @@ A new pure module `src/planning/plan-slide.ts` (no DOM, no Obsidian) makes an **
 - **Risk to check first** (spike, before anything else in this phase): link dragging measures screen positions (`plan-map-render.ts:74-113`) and draws the temporary arrow in map coordinates. With CSS zoom those differ by the zoom factor: divide the measured offsets by `zoom` in `at()`. If CSS `zoom` misbehaves in Obsidian's Chromium, fall back to multiplying the geometry constants (pass a scale into `mapGeometry`) and scaling fonts with a CSS variable.
 
 ## Phases (one session each; tests and lint pass before the next)
-1. **Slide model and SVG (pure).** `src/planning/plan-slide.ts`, `tests/plan-slide.test.ts`. Done when: the tests below pass, and one generated SVG for the test-vault's "Plan map example" project has been turned into a PNG and looked at (see Verification).
+1. **Slide model and SVG (pure). DONE 2026-10-13** (`slideModel(map, layout)` takes the `PlanMap` only, not the `Plan`: nothing else was needed; `slideSvg` returns `{ svg, minText, tooSmall }`, `MIN_READABLE` = 22; 12 tests; the example's SVG was turned into a PNG and looked at, compact and whole). `src/planning/plan-slide.ts`, `tests/plan-slide.test.ts`. Done when: the tests below pass, and one generated SVG for the test-vault's "Plan map example" project has been turned into a PNG and looked at (see Verification).
 2. **Export window and the button.** `plan-slide-ui.ts`, `blocks.ts`, theme CSS for the button, `npm run kit:manifest`. Done when: tests and lint pass; the copy path is "not seen in Obsidian" until the user pastes one into a slide.
 3. **Zoom.** Spike first (the drag risk), then `blocks.ts`, `plan-map-render.ts`, theme CSS, a test for the fit and clamp arithmetic (put it in a pure helper in `plan-map.ts`).
 4. **Docs.** `docs/changelog.md`, `docs/tutorial.md` 8.4, `How my vault works.md` (the project plan callout), `Vault spec.md` (Plan map row), `docs/architecture.md` (two new files), `docs/obsidian-test-checklist.md`, README Mobile ("the slide picture is desktop only") and Privacy (the clipboard: a picture, only when you press Copy picture).
