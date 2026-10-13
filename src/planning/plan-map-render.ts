@@ -119,6 +119,8 @@ function autoScroll(scroller: HTMLElement | null, pointer: () => { x: number; y:
 }
 
 const ADD_W = 130, ADD_H = 54;
+/** How long the pointer rests on a card before the rest of the map dims, and how long the dimming stays after it leaves (ms). */
+const HOVER_DELAY = 350, HOVER_CLEAR = 150;
 
 /** Where the "+ add after this" box goes while `source` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. In client coordinates. */
 function addBoxSpot(wrap: HTMLElement, s: { left: number; right: number; top: number; bottom: number; width: number; height: number }, source: HTMLElement | null, direction: Direction): { x: number; y: number } {
@@ -445,6 +447,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       else hit.addEventListener("click", e => { stopEvent(e); menu(e); });
     }
     const cards = new Map<string, HTMLElement>();
+    const hover = { apply: 0, clear: 0 };   // the pending timers of the highlight under the pointer
     for (const c of map.cards) {
       const r = c.row, p = g.pos.get(c.path)!;
       const el = canvas.createDiv({ cls: ["vt-map-card", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
@@ -473,13 +476,21 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));
       el.addEventListener("mouseenter", () => {   // the card and everything before and after it; the rest is dimmed (desktop only: a phone has no hover)
-        const chain = chainOf(plan, c.path);
-        for (const [path, other] of cards) { const on = path === c.path || chain.has(path); other.toggleClass("vt-map-hl", on); other.toggleClass("vt-map-dim", !on); }
-        for (const [a, link] of arrows) { const on = (link.from === c.path || chain.has(link.from)) && (link.to === c.path || chain.has(link.to)); a.classList.toggle("vt-map-hl", on); a.classList.toggle("vt-map-dim", !on); }
+        window.clearTimeout(hover.clear);   // only after the pointer has rested on the card: sweeping across the map does not flash
+        window.clearTimeout(hover.apply);
+        hover.apply = window.setTimeout(() => {
+          const chain = chainOf(plan, c.path);
+          for (const [path, other] of cards) { const on = path === c.path || chain.has(path); other.toggleClass("vt-map-hl", on); other.toggleClass("vt-map-dim", !on); }
+          for (const [a, link] of arrows) { const on = (link.from === c.path || chain.has(link.from)) && (link.to === c.path || chain.has(link.to)); a.classList.toggle("vt-map-hl", on); a.classList.toggle("vt-map-dim", !on); }
+        }, HOVER_DELAY);
       });
       el.addEventListener("mouseleave", () => {
-        for (const other of cards.values()) { other.removeClass("vt-map-hl"); other.removeClass("vt-map-dim"); }
-        for (const a of arrows.keys()) { a.classList.remove("vt-map-hl", "vt-map-dim"); }
+        window.clearTimeout(hover.apply);
+        window.clearTimeout(hover.clear);
+        hover.clear = window.setTimeout(() => {   // a short grace: moving on to the next card keeps the highlight until the new one is drawn
+          for (const other of cards.values()) { other.removeClass("vt-map-hl"); other.removeClass("vt-map-dim"); }
+          for (const a of arrows.keys()) { a.classList.remove("vt-map-hl", "vt-map-dim"); }
+        }, HOVER_CLEAR);
       });
       cards.set(c.path, el);
     }
