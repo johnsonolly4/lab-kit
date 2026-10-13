@@ -1,5 +1,6 @@
 # Plan: Rig notes
 
+**COMPLETE (2026-10-13):** Phases 1-5 DONE 2026-10-12. What is left is the user's tries in Obsidian (BACKLOG).
 _Agreed: 2026-10-12. Written by `/phase-plan`. Each phase = one session._
 
 ## Goal

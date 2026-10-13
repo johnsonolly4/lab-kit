@@ -1,5 +1,6 @@
 # Plan map: zoom, and a picture of the plan for the weekly slides
 
+**COMPLETE (2026-10-13):** Phases 1-4 DONE 2026-10-13. What is left is the user's tries in Obsidian (BACKLOG).
 Planned on Opus 2026-10-13 and approved by the user the same day; to be built on Sonnet, one phase per session (user: "Plan this then sonnet will complete"). All 4 phases DONE 2026-10-13 (Sonnet); the rest is not built. Tick each phase here when it is done.
 
 ## Context

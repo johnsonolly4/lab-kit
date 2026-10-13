@@ -1,5 +1,6 @@
 # Plan: Make my own copy (snippets)
 
+**COMPLETE (2026-10-13):** Phases 1-3 DONE 2026-10-09; Phase 4 DROPPED (replaced by snippet-token-templates), Phase 5 in that plan. What is left is the user's tries in Obsidian (BACKLOG).
 _Agreed: 2026-10-08. Written by `/phase-plan`. Each phase = one session._
 
 ## Goal

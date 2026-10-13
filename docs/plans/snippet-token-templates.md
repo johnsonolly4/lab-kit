@@ -1,5 +1,6 @@
 # Plan: Snippets as token templates
 
+**COMPLETE (2026-10-13):** Phases 1-5 DONE 2026-10-09. What is left is the user's tries in Obsidian (BACKLOG).
 _Agreed: 2026-10-09. Written by `/phase-plan`. Phase 1 DONE 2026-10-09 (spec below). Each phase = one session. Replaces Phase 4 (split `labSnippets.js`) of `docs/plans/make-my-own-copy.md`._
 
 ## Goal
