@@ -34,12 +34,13 @@ async function markDone(o: MapOptions, path: string, done: boolean): Promise<voi
   await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { setDone(fm, done); });
 }
 
-function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
+function menu(o: MapOptions, e: MouseEvent, row: PlanRow, plan?: Plan): void {
   e.preventDefault();
   const m = new Menu();
   m.addItem(i => i.setTitle("Open").setIcon("file").onClick(() => open(o, row.path, false)));
   m.addItem(i => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => open(o, row.path, true)));
   m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => { void markDone(o, row.path, !row.done); }));
+  if (row.parent && plan) m.addItem(i => i.setTitle("Remove from parent").setIcon("corner-up-left").onClick(() => { nest(o, plan, row.path, null).catch(() => { new Notice("Could not change that to-do."); }); }));
   m.addSeparator();
   m.addItem(i => i.setTitle("Delete note").setIcon("trash-2").onClick(() => {
     const file = o.app.vault.getFileByPath(row.path);
@@ -225,6 +226,7 @@ function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string,
     tick.addEventListener("mousedown", stopEvent);
     tick.addEventListener("click", e => { stopEvent(e); done = !done; look(); markDone(o, s.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); }); });
     const a = line.createEl("a", { text: s.name, cls: "internal-link", attr: { href: s.path, "data-href": s.path } });
+    line.addEventListener("contextmenu", e => { const sr = drag.plan.rows.find(x => x.path === s.path); if (sr) menu(o, e, sr, drag.plan); });
     a.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, s.path, Keymap.isModEvent(e)); });
     a.addEventListener("mousedown", e => e.stopPropagation());
   }
@@ -319,6 +321,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     for (const r of map.unlinked) {
       const li = ul.createEl("li", { cls: "vt-map-unlinked-row" });
       li.dataset.planPath = r.path;
+      dragNest(wrap, plan, o, li.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), r.path, li);
       dragLink(wrap, plan, o, li.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), r.path);
       const a = li.createEl("a", { text: r.name, cls: "internal-link", attr: { href: r.path, "data-href": r.path } });
       a.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
