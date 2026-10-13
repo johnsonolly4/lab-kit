@@ -57,7 +57,7 @@ flowchart LR
 - Tick **meeting** on a to-do (open the note) if you want to raise it at the next meeting.
 - A card with a priority or a project shows a small tag at the bottom left, like `↑ Polymers` (↑ high, – medium, ↓ low). In each column done cards go last, then the highest priority comes first.
 - A long name shows on one line on a card with a tag or a countdown (up to 3 lines on a plain card) - open the card to see the rest.
-- Today's column not blue? The roll-over isn't running: the planning kit must be on and its files installed (Settings → Lab Kit → Built-in kit). **Roll over to-dos now** in the command palette runs it at once.
+- Today's column not blue? The roll-over isn't running: the planning kit must be on and its files installed (Settings → Lab Kit → Updates). **Roll over to-dos now** in the command palette runs it at once.
 
 ## Experiments
 
@@ -121,7 +121,7 @@ flowchart LR
 
 ## Snippets (Alt+S)
 
-`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original. **Settings → Lab Kit → Snippet menu → Snippet icons** sets each snippet's icon.
+`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original. **Settings → Lab Kit → Lab notebook → Snippet icons** sets each snippet's icon.
 
 ## Keeping the vault healthy
 

@@ -65,6 +65,10 @@ export const PLANNING_FOLDER_DEFAULTS: PlanningFolders = {
 export type PlanningRole = keyof PlanningFolders;
 
 /** Saved planning folders over the defaults: unknown keys dropped, an empty or missing one is the default. */
+/** How many planning folders are not the default (shown on the settings tab's Planning folders row). */
+export const changedPlanningFolders = (f: PlanningFolders): number =>
+  (Object.keys(PLANNING_FOLDER_DEFAULTS) as PlanningRole[]).filter(r => (f[r] ?? "").trim() !== PLANNING_FOLDER_DEFAULTS[r]).length;
+
 export function planningFoldersLoad(saved: unknown): PlanningFolders {
   const raw = (saved && typeof saved === "object" ? saved : {}) as Record<string, unknown>;
   const out = { ...PLANNING_FOLDER_DEFAULTS };

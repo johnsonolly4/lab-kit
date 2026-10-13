@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
@@ -88,8 +88,8 @@ class KitSettingTab extends PluginSettingTab {
     return rows;
   }
 
-  /** The kit files built into the plugin, as two groups: the update rows, then setup (Templater and the folders the kit's files go to). */
-  private builtInGroups(): { updates: SettingGroupItem[]; setup: SettingGroupItem[] } {
+  /** The kit rows: the Updates group, the Setup group (checks, the folders the kit's files go to), and the board colour rows (a page of the Lab notebook group). */
+  private builtInGroups(): { updates: SettingGroupItem[]; setup: SettingGroupItem[]; boards: SettingGroupItem[] } {
     const kit = this.ctl.kit, managed = this.ctl.managed, slot = managed.slot, roles = managed.roles();
     const inst = managed.installedVersion;
     const isHidden = (path: string): boolean => path.split("/").some(p => p.startsWith("."));
@@ -115,7 +115,7 @@ class KitSettingTab extends PluginSettingTab {
     const newer = [...this.ctl.newerKit.lab, ...this.ctl.newerKit.planning];
     if (newer.length) updates.push({ name: "Kept files with a newer kit version", desc: `${newer.length} ${newer.length === 1 ? "file" : "files"} you keep as your own (${newer.join(", ")}). Manage files has Compare… and Use kit version… on each.` });
     updates.push({
-      name: "Kit version",
+      name: "Lab kit",
       desc: `Bundled v${managed.version} · ${inst ? `installed v${inst}, ${Object.keys(slot.managed?.files ?? {}).length} files tracked` : "not installed yet"}`,
       render: b => {
         b.addButton(btn => btn.setButtonText("Manage files…").onClick(() => managed.manage()))
@@ -151,22 +151,29 @@ class KitSettingTab extends PluginSettingTab {
       render: b => { b.addButton(btn => btn.setButtonText("Check setup…").onClick(() => this.ctl.checkSetup())); } });
     setup.push({ name: "Check hotkeys", desc: "Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now. Changes nothing: set keys in Obsidian's Hotkeys settings.",
       render: b => { b.addButton(btn => btn.setButtonText("Check hotkeys…").onClick(() => this.ctl.checkHotkeys())); } });
-    updates.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
-      render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
     updates.push({ name: "Tell me when a kit update is ready", desc: "A notice when Obsidian starts, after the plugin brought a newer kit.",
       render: b => { b.addToggle(t => t.setValue(kit.notifyKitUpdate).onChange(async v => { kit.notifyKitUpdate = v; await this.ctl.save(); })); } });
-    updates.push({ name: "Old backups", desc: "Every update copies the files it replaces into the backup folder and never removes them. Pick how old, then move those backups to the trash.",
+    updates.push({ name: "What's new", desc: "The changes in this version of Lab Kit.",
+      render: b => { b.addButton(btn => btn.setButtonText("What's new").onClick(() => void this.ctl.showWhatsNew())); } });
+    const backups: SettingGroupItem[] = [];
+    backups.push({ name: "Old backups", desc: "Every update copies the files it replaces into the backup folder and never removes them. Pick how old, then move those backups to the trash.",
       render: b => { b.addButton(btn => btn.setButtonText("Clear old backups…").onClick(() => new ClearBackupsModal(this.app, managed.roles().backups).open())); } });
-    setup.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
-    setup.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
-    updates.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
-    setup.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
+    backups.push(folder("backups", "Backup folder", "Every file the update replaces is copied here first, in a folder named by date and time. Empty: inside Lab Kit's plugin folder, so it stays out of your file list."));
+    updates.push({ type: "page", name: "Backups", items: backups });
+    setup.push({ name: "Find moved folders", desc: "A folder named in these settings that was moved or renamed outside Obsidian: finds where it went. Changes only the settings.",
+      render: b => { b.addButton(btn => btn.setButtonText("Find moved folders…").onClick(() => { this.ctl.findMovedFolders(); })); } });
+    const kitFolders: SettingGroupItem[] = [];
+    kitFolders.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
+    kitFolders.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
+    kitFolders.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
       render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });
+    setup.push({ type: "page", name: "Kit folders", items: kitFolders });
     const bc = kit.boardColours;
-    setup.push({ name: "Colour board columns", desc: "Colours the columns of kanban boards by status (Planned, Started, Processing results, Closed), so the Lab book board has them without the planning kit.",
+    const boards: SettingGroupItem[] = [];
+    boards.push({ name: "Colour board columns", desc: "Colours the columns of kanban boards by status (Planned, Started, Processing results, Closed), so the Lab book board has them without the planning kit.",
       render: b => { b.addToggle(t => t.setValue(bc.enabled).onChange(async v => { bc.enabled = v; await this.ctl.save(); this.ctl.boardColoursChanged?.(); })); } });
     for (const [name, key, hex] of BOARD_STATUSES) {
-      setup.push({ name: `Board colour: ${name}`, desc: "Pick another colour for this status.",
+      boards.push({ name: `Board colour: ${name}`, desc: "Pick another colour for this status.",
         render: b => {
           b.addColorPicker(c => c.setValue(bc.colours[key] ?? hex).onChange(async v => { bc.colours[key] = v; await this.ctl.save(); this.ctl.boardColoursChanged?.(); }));
           b.addExtraButton(x => x.setIcon("rotate-ccw").setTooltip("Back to the default").onClick(async () => { delete bc.colours[key]; await this.ctl.save(); this.ctl.boardColoursChanged?.(); this.update(); }));
@@ -174,11 +181,14 @@ class KitSettingTab extends PluginSettingTab {
     }
     setup.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
       render: b => { b.addToggle(t => t.setValue(kit.debug).onChange(async v => { kit.debug = v; await this.ctl.save(); })); } });
-    return { updates, setup };
+    return { updates, setup, boards };
   }
 
-  /** One folder box per planning role. Empty = the default; a folder that doesn't exist is outlined (moved outside Obsidian?). */
-  private planningFolderRows(): SettingGroupItem[] {
+  /**
+   * The planning rows: the three options of the Planning group, the folders page (one box per planning role; empty = the default; a folder that
+   * doesn't exist is outlined: moved outside Obsidian?), and Checklist progress (a Lab notebook row: its bar is on the Lab book board).
+   */
+  private planningRows(): { options: SettingGroupItem[]; folders: SettingGroupItem[]; progress: SettingGroupItem } {
     const pf = this.ctl.kit.planningFolders;
     const rows: [PlanningRole, string, string][] = [
       ["inbox", "Inbox", "Quick capture puts notes here; Sort inbox empties it."],
@@ -191,8 +201,7 @@ class KitSettingTab extends PluginSettingTab {
       ["meetings", "Meetings", "Meeting series and their notes."],
       ["archive", "Archive", "Old to-dos and archived inbox notes (made when first needed)."],
     ];
-    const intro: SettingGroupItem = { name: "Where the planning kit's notes go", desc: "And what its lists read. Changing a folder here doesn't move notes: rename the folder in Obsidian and the setting follows. Moved it outside Obsidian? Use Find moved folders.",
-      render: b => { b.addButton(btn => btn.setButtonText("Find moved folders…").onClick(() => this.ctl.findMovedFolders())); } };
+    const intro: SettingGroupItem = { name: "Where the planning kit's notes go", desc: "And what its lists read. Changing a folder here doesn't move notes: rename the folder in Obsidian and the setting follows. Moved it outside Obsidian? Use Find moved folders (Setup)." };
     const countdown: SettingGroupItem = { name: "Due-date countdown", desc: "A badge on the to-do board card with the days left until its due property (for example 3d, Today, 2d late). Only to-dos with countdown: true shows it for the notes you pick; every to-do shows it for any note with a due date. Done cards show none.",
       render: b => {
         b.addDropdown(d => d.addOption("off", "Off").addOption("marked", "Only to-dos with countdown: true").addOption("all", "Every to-do with a due date")
@@ -214,7 +223,8 @@ class KitSettingTab extends PluginSettingTab {
       } };
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
-    return [intro, countdown, planView, planDirection, progress, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    const changed = changedPlanningFolders(pf);
+    return { options: [countdown, planView, planDirection], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
@@ -226,25 +236,20 @@ class KitSettingTab extends PluginSettingTab {
           });
           mark();
           // once the box is left (not on every key): the kit files get the new folder
-          t.inputEl.addEventListener("change", () => void this.ctl.foldersChanged(false));
+          // and the count on the main menu's Planning folders row is brought up to date (a redraw only when the count changed)
+          t.inputEl.addEventListener("change", () => { void this.ctl.foldersChanged(false); if (changedPlanningFolders(pf) !== changed) this.update(); });
         });
-      } }))];
+      } }))] };
   }
 
   getSettingDefinitions(): SettingDefinitionItem[] {
     const kit = this.ctl.kit;
+    const snippets = this.snippetRows();
+    const builtIn = this.builtInGroups();
+    const planning = this.planningRows();
     const notebook: SettingGroupItem[] = [
       { name: "Initials", desc: "Used in sample codes, for example ABC0014-A. Read by the Alt+S snippets.",
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.initials).onChange(async v => { kit.initials = v.trim(); await this.ctl.save(); })); } },
-      { name: "Chemical folder", desc: "The folder of your chemical notes. Typing [[ in a calc cell, and the reagent and solvent fields of the Alt+S forms, then suggest them by note name or by the names in their Names property. Empty: no suggestions.",
-        render: b => {
-          b.addText(t => {
-            wideBox(b, t, this.app);
-            t.setValue(kit.chemicalFolder).onChange(async v => { kit.chemicalFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
-          });
-        } },
-      { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
-        render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
       { name: "Lab notes folder", desc: "The folder of your experiment notes. New lab entry creates notes here, and the kit's Lab book base (a board of your experiments by Status) goes in the folder above it. Empty: neither is used.",
         render: b => {
           b.addText(t => {
@@ -252,8 +257,13 @@ class KitSettingTab extends PluginSettingTab {
             t.setValue(kit.labFolder).onChange(async v => { kit.labFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
           });
         } },
-      { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
-        render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
+      { name: "Chemical folder", desc: "The folder of your chemical notes. Typing [[ in a calc cell, and the reagent and solvent fields of the Alt+S forms, then suggest them by note name or by the names in their Names property. Empty: no suggestions.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.chemicalFolder).onChange(async v => { kit.chemicalFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+          });
+        } },
       { name: "Methods folder", desc: "The folder of your analysis method notes (one note per method, with its columns and machines). The Alt+S analysis snippets then offer them next to the built-in NMR, GPC and DLS. Empty: only the built-in methods. A folder that does not exist yet is created.",
         render: b => {
           b.addText(t => {
@@ -277,18 +287,25 @@ class KitSettingTab extends PluginSettingTab {
               if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
             });
           });
-        } }
+        } },
+      ...this.header.rootRows(),
+      { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
+        render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
+      { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
+        render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
+      planning.progress,
+      { type: "page", name: "Board colours", items: builtIn.boards },
+      ...(snippets.length ? [{ type: "page" as const, name: "Snippet icons", items: snippets }] : [])
     ];
-    const snippets = this.snippetRows();
-    const builtIn = this.builtInGroups();
     const planningOn = !!kit.kits[PLANNING_KIT]?.enabled;
+    const changed = changedPlanningFolders(kit.planningFolders);
     return [
-      { type: "group", heading: "Built-in kit", items: builtIn.updates },
-      { type: "group", heading: "Kit folders and setup", items: builtIn.setup },
+      { type: "group", heading: "Updates", items: builtIn.updates },
+      { type: "group", heading: "Setup", items: builtIn.setup },
       { type: "group", heading: "Lab notebook", items: notebook },
-      ...(planningOn ? [{ type: "group" as const, heading: "Planning folders", items: this.planningFolderRows() }] : []),
-      ...(snippets.length ? [{ type: "group" as const, heading: "Snippet menu", items: [{ type: "page" as const, name: "Snippet icons", items: snippets }] }] : []),
-      ...this.header.definitions()
+      ...this.header.definitions(),
+      ...(planningOn ? [{ type: "group" as const, heading: "Planning", items: [...planning.options,
+        { type: "page" as const, name: `Planning folders · ${changed ? `${changed} of ${Object.keys(kit.planningFolders).length} changed` : "all default"}`, items: planning.folders }] }] : [])
     ];
   }
 }

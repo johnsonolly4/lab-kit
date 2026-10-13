@@ -40,7 +40,7 @@ show: back-to-hub
 | `Extras/` | Templates, scripts, attachments. The kit's own files here are managed by Lab Kit (Settings > Lab Kit > Manage files). |
 | `99 Archive/` | Anything finished or retired. Never deleted outright. |
 
-These are the default names. Each folder is a setting (Settings > Lab Kit > Planning folders, Lab notes folder, Chemical folder, Rigs folder); rename a folder inside Obsidian and its setting follows.
+These are the default names. Each folder is a setting (Settings > Lab Kit > Planning > Planning folders, and Lab notebook for the Lab notes, Chemical and Rigs folders); rename a folder inside Obsidian and its setting follows.
 
 > [!question] Project, Knowledge or How-to?
 > - **Project** - notes about *doing* something with an end point.
@@ -167,7 +167,7 @@ The template always files the to-do in `00 Planning/To-dos`, wherever it was sta
 - Dragging a card yourself stamps `planned` and clears `rolled`. Backlog cards never roll.
 - No weekend column: weekend leftovers roll to Monday.
 - Lab Kit also makes the circle on each card clickable, marks carried-over cards orange (`vt-rolled`), marks today's column (`body[data-vt-today]`) and puts the countdown on cards with a `due` date.
-- Check it is running: today's column is blue. If not, check the planning kit is on and its files installed (Settings > Lab Kit > Built-in kit); restart Obsidian.
+- Check it is running: today's column is blue. If not, check the planning kit is on and its files installed (Settings > Lab Kit > Updates); restart Obsidian.
 
 ```mermaid
 flowchart LR

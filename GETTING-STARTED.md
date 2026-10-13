@@ -50,7 +50,7 @@ Then open the `lab-kit` folder in Claude Code.
 1. Run `npm run dev` (or ask Claude to). It builds the plugin into `test-vault/.obsidian/plugins/lab-kit/` and rebuilds on every change.
 2. In Obsidian: **Open another vault → Open folder as vault → `test-vault`**.
 3. Enable community plugins there. Install **Templater** in the test vault too, then turn on **Lab Kit**.
-4. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts into the test vault. For the planning kit: switch on **Planning kit**, then **Review update…** on its own row, then **Check setup…**.
+4. Settings → Lab Kit → Updates → **Review update…** installs the templates and scripts into the test vault. For the planning kit: switch on **Planning kit**, then **Review update…** on its own row, then **Check setup…**.
 
 > [!tip] Optional
 > The **Hot-Reload** plugin (https://github.com/pjeby/hot-reload) reloads the plugin automatically after each build.

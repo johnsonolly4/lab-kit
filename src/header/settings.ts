@@ -142,16 +142,20 @@ export class HeaderStore {
     } };
   }
 
-  /** The "Lab header" and "Hazards" sections of the settings tab. */
+  /** The two Data folder root rows: shown in the Lab notebook group, beside the other folders. */
+  rootRows(): SettingDefinition[] {
+    return [
+      this.root("dataRootWindows", "Data folder root (Windows)",
+        "Where the Open data folder button at the top of a lab note makes each note's folder: a subfolder named after the note. Empty: the button asks you to set this."),
+      this.root("dataRootMac", "Data folder root (macOS or Linux)",
+        "Same, for a Mac or Linux computer. The button creates the note's folder when you press it.")
+    ];
+  }
+
+  /** The "Hazards" section of the settings tab. */
   definitions(): SettingDefinitionItem[] {
     const s = this.settings;
     return [
-      { type: "group", heading: "Lab header", items: [
-      this.root("dataRootWindows", "Data folder root (Windows)",
-        "Each note gets a subfolder named after it here. Empty: the button asks you to set this."),
-      this.root("dataRootMac", "Data folder root (macOS or Linux)",
-        "Same, for a Mac or Linux computer. The button creates the note's folder when you press it.")
-      ] },
       { type: "group", heading: "Hazards", items: [
       { name: "Per-note options", desc: "Any option can be set for one note with a line inside the block, e.g. collapsed: false (names are in the tutorial)." },
       { name: "Layout", desc: "Chips: one row per chemical with a coloured chip for each H-code. Table: the two-column table.",

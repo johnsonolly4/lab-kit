@@ -41,8 +41,8 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 Needs Obsidian 1.14 or newer. For the snippet forms, also install [Templater](https://github.com/SilentVoid13/Templater). **Check setup…** (step 3) lists every plugin the kits use, which are needed and which are optional, and what each is for (the lab kit needs only Templater; Dataview belongs to the planning kit); Lab Kit never installs a plugin for you.
 
 1. Settings → Community plugins → Browse → search **Lab Kit** → Install → Enable.
-2. Settings → Lab Kit → Built-in kit → **Review update…** installs the templates and scripts. The first install can also turn on the CSS snippet and, if Templater has no user scripts folder yet, set one.
-3. For Alt+S: Settings → Lab Kit → Kit folders and setup → **Check setup…** → Fix the Templater rows, then Obsidian → Hotkeys → search *Insert snippet* → set **Alt+S**.
+2. Settings → Lab Kit → Updates → **Review update…** installs the templates and scripts. The first install can also turn on the CSS snippet and, if Templater has no user scripts folder yet, set one.
+3. For Alt+S: Settings → Lab Kit → Setup → **Check setup…** → Fix the Templater rows, then Obsidian → Hotkeys → search *Insert snippet* → set **Alt+S**.
 4. Settings → Lab Kit → **Initials**: your initials go into sample codes (`ABC0016-A`). Until then the snippets use `XX`.
 
 The full walk-through, with every feature explained, is the [tutorial](docs/tutorial.md). What changed in each version: [changelog](docs/changelog.md).
@@ -124,7 +124,7 @@ One note per method in your **Methods folder**, with a `Columns` property, gives
 A ```` ```lab-header ```` block shows, for the note it is in:
 - a **hazard table** with every chemical in **Chemicals**, worst first, each H-code coloured by severity, as one row per chemical with chips (default) or as the two-column table;
 - a **← Lab book** link to the Lab book board in the folder above the note's folder (when there is one; `back: false` in the block hides it);
-- an **Open data folder** button that creates `<data folder root>/<note name>` and opens it (desktop only; set the root in Settings → Lab Kit → Lab header).
+- an **Open data folder** button that creates `<data folder root>/<note name>` and opens it (desktop only; set the root in Settings → Lab Kit → Lab notebook).
 
 It only redraws when this note's Chemicals or a linked chemical note changes. The command **Insert lab header block** adds one; the Lab Book template already has it. Every option is in Settings → Lab Kit → Hazards and can be overridden for one note with lines inside the block (`layout: table`, `collapsed: false`, …): see [tutorial section 4](docs/tutorial.md#4-hazards).
 
@@ -153,22 +153,20 @@ The kits expect these folders. Each is a setting; empty means the default below,
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
 | `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
 | `99 Archive` (made when first needed) | planning kit | Planning folders |
-| `Extras/` (templates, scripts, fonts) | both kits | Kit folders and setup |
+| `Extras/` (templates, scripts, fonts) | both kits | Setup → Kit folders |
 
 A new vault can get this layout, the plugin list and the Templater settings from the generated starter (see Development).
 
 ## Settings
-Settings → Lab Kit is searchable and grouped:
+Settings → Lab Kit is searchable and grouped. A name in bold with several settings after it in brackets is a sub-menu: a row that opens its own page.
 
 | Group | What is in it |
 |---|---|
-| **Built-in kit** | Update available, Kept files with a newer kit version, Kit version (Manage files, Review update, Update all safe files), Planning kit switch and its files, What's new, update notice, Old backups (**Clear old backups…**), Backup folder |
-| **Kit folders and setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, Templates folder, Scripts folder, Snippets folder, **Colour board columns** (kanban columns coloured by status: Planned, Started, Processing results, Closed) with a colour for each status, console log |
-| **Lab notebook** | Initials, Chemical folder, Only suggest chemicals of the asked class, Lab notes folder, Molecular weight property, Methods folder, Rigs folder |
-| **Planning folders** (planning kit on) | Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive (empty = the default, e.g. `02 Projects`), **Find moved folders…**, **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Project plan view** (a project hub shows the card map only, or the map with the plan list above it), **Project plan map direction** (left to right, or top to bottom), **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default) |
-| **Snippet menu → Snippet icons** | A page with one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name. Empty keeps the snippet's own icon |
-| **Lab header** | Data folder root (one for Windows, one for macOS / Linux) |
+| **Updates** | Update available, Kept files with a newer kit version, Lab kit (Manage files, Review update, Update all safe files), Planning kit switch and its files, update notice, What's new, **Backups** (Old backups with **Clear old backups…**, Backup folder) |
+| **Setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, **Find moved folders…**, **Kit folders** (Templates folder, Scripts folder, Snippets folder), console log |
+| **Lab notebook** | Initials; Lab notes folder, Chemical folder, Methods folder, Rigs folder; Data folder root (one for Windows, one for macOS / Linux); Molecular weight property; Only suggest chemicals of the asked class; **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default); **Board colours** (**Colour board columns**: kanban columns coloured by status, Planned, Started, Processing results, Closed, with a colour for each); **Snippet icons** (one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name; empty keeps the snippet's own icon) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
+| **Planning** (planning kit on) | **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Project plan view** (a project hub shows the card map only, or the map with the plan list above it), **Project plan map direction** (left to right, or top to bottom), **Planning folders** (Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive; empty = the default, e.g. `02 Projects`; the row says how many are changed, for example "2 of 9 changed") |
 
 Folder settings left empty are detected; the data folder roots are empty until you set them. Rename or move folders **inside Obsidian** and the folder settings follow; a folder moved outside Obsidian (Finder, File Explorer, a sync tool) is found again with **Find moved folders**. Settings changed on another device (Obsidian Sync, iCloud, Dropbox, Syncthing, Git) are read again when they arrive.
 
@@ -190,7 +188,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys: **Che
 | Check setup | Lists what the kits need (plugins and Obsidian's Bases and Daily notes, kit files that are missing or have an update waiting, Lab Kit's settings, Templater and its scripts, Meta Bind buttons, the homepage and its read-only mode, the Daily notes folder and date format, Dataview's inline queries, property types, ZotLit's frontmatter fields and folders, meeting series, CSS snippets, folders) with a Fix where Lab Kit can make the change; nothing changes until you confirm. The window stays open behind the windows it opens; **Check again** redraws it |
 | Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; every rule and every note has a tick box, and **Change notes…** rewrites only what you tick, after a backup and a second confirmation. Unchanged lines are folded and a change that is the same in several notes is shown once, with one tick box. One rule, **Hubs: bring the page up to the current template**, rewrites the page of project, topic and meeting series hubs from the kit's templates (keeping a project's goal and Related text and a topic's intro) and is never ticked by default |
 
-With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are added. Open meeting deck is desktop only.
+With the **planning kit** on (Settings → Lab Kit → Updates), these are added. Open meeting deck is desktop only.
 
 | Command | Does |
 |---|---|
@@ -215,7 +213,7 @@ With the **planning kit** on (Settings → Lab Kit → Built-in kit), these are 
 - **Files in your vault**: the built-in kit reads and writes only the folders you set in Settings → Lab Kit, and copies a replaced file to a backup folder first. To find where your templates and scripts are, it lists the files in your vault.
 - **Other plugins' settings**: never changed without asking. Before the first kit install (and before a Check setup Fix) a confirmation lists every file, folder and setting it will touch, each setting with a switch: the kit's CSS snippet, Templater's user scripts folder when Templater has none (a folder you set is never changed; the lab scripts go into a `lab-kit` folder inside it), Templater's template folder when it is empty (Set up only), and the Alt+S template in Templater's hotkeys. A **Check setup** Fix changes one thing, after its own confirmation: Templater's folder templates, its template matching mode (only from None) and the old roll-over entry in its startup templates; Obsidian's *Properties in document* (to Hidden) and the type of the properties `due`, `deadline` and `priority` (values in notes are not changed); with the planning kit, Meta Bind's button templates (adds the missing ones; a second Fix puts the kit's action back on a kit button that does something else), Notebook Navigator's homepage (only when none is set) and ZotLit's settings (adds the frontmatter fields that are missing, sets its two folders when they are empty, then turns ZotLit off and on so it reads them). **Check hotkeys** → **Set the suggested keys…** sets Obsidian hotkeys for the commands you leave ticked, only where the command has no key and the key is free. **Tidy up notes** can change Templater paths and Meta Bind buttons that point at a renamed folder or an old template, only the ones you tick, after a backup.
 - **Clipboard**: the **Copy** button on a table writes to the clipboard, only when you click it.
-- **Files outside your vault** (optional, desktop only): the **data-folder button** in the experiment header creates `<data folder root>/<note name>` on your computer and opens it in your file manager, only when you press it. The root is empty until you set it in Settings → Lab Kit → Lab header. Nothing else reads or writes outside your vault.
+- **Files outside your vault** (optional, desktop only): the **data-folder button** in the experiment header creates `<data folder root>/<note name>` on your computer and opens it in your file manager, only when you press it. The root is empty until you set it in Settings → Lab Kit → Lab notebook. Nothing else reads or writes outside your vault.
 
 ## Mobile
 Calc tables, the hazard header and the built-in kit work on mobile. The data-folder button is desktop only: on mobile the header shows "Data folder: desktop only". Snippet forms need Templater. The planning kit's **Open meeting deck** is desktop only.
@@ -223,7 +221,7 @@ Calc tables, the hazard header and the built-in kit work on mobile. The data-fol
 ## Troubleshooting
 | Problem | Fix |
 |---|---|
-| Alt+S does nothing, or the forms ask one question at a time | Install Templater, run **Check setup…** and Fix the Templater rows (Settings → Lab Kit → Kit folders and setup), and set the Alt+S hotkey |
+| Alt+S does nothing, or the forms ask one question at a time | Install Templater, run **Check setup…** and Fix the Templater rows (Settings → Lab Kit → Setup), and set the Alt+S hotkey |
 | `#NOTE?` in an MW cell | No chemical note with that name: check the spelling, or type the MW over the formula |
 | `#PROP?` in an MW cell | The note has no molecular weight property (set **Molecular weight property**) |
 | `#REF!` | The formula points at a deleted row, or a table name that doesn't exist or is used twice |

@@ -59,7 +59,7 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 3. Make a ZotLit note for a paper you've already highlighted - colours land in the right sections and its filename matches the other computer.
 4. **Meeting deck** opens the deck (or the folder of decks).
 5. **Projects** on the homepage shows a card per project, and a card's **New note** button makes a note in that project's folder.
-6. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check the planning kit is on and its files are installed (Settings > Lab Kit > Built-in kit), then restart Obsidian. Lab Kit does the roll-over itself; no Templater startup template is needed.
+6. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check the planning kit is on and its files are installed (Settings > Lab Kit > Updates), then restart Obsidian. Lab Kit does the roll-over itself; no Templater startup template is needed.
 
 > [!note] Keeping this list right
 > Anything new that has to be set up per computer goes here - see the rule in [[Vault spec#Rules for changes|Vault spec]].
