@@ -207,3 +207,19 @@ describe("vertical layout", () => {
     expect(mapGeometry(m)).toMatchObject({ scrollLeft: CARD_W + GAP_X, scrollTop: 0 });
   });
 });
+
+describe("routed arrows that share a gap", () => {
+  it("one leaving and one arriving in the same gap use different places, and a shared lane gets separate lines", () => {
+    // A → B → C → D → E; A → C and C → E are both routed over a card; B, D sit in one row so the lane is shared
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: ["[[B]]", "[[A]]"] }), td("D", { after: "[[C]]" }), td("E", { after: ["[[D]]", "[[C]]"] })]);
+    const routed = mapGeometry(m).curves.filter(c => c.routed);
+    expect(routed.length).toBe(2);
+    const laneY = (c: (typeof routed)[number]): number => Math.min(...c.samples.map(s => s.y));
+    expect(laneY(routed[0])).not.toBe(laneY(routed[1]));
+    const xs = (c: (typeof routed)[number]): number[] => c.samples.map(s => s.x);
+    // the first arrow arrives in the gap before C; the second leaves from the gap after C: not the same x
+    const lastOfFirst = Math.max(...xs(routed[0])), firstOfSecond = Math.min(...xs(routed[1]));
+    expect(lastOfFirst).toBeLessThan(CARD_W * 3);   // arrives in a gap, not on the card
+    expect(firstOfSecond).toBeGreaterThan(lastOfFirst - 1);
+  });
+});

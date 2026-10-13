@@ -37,6 +37,12 @@ function menu(o: MapOptions, e: MouseEvent, row: PlanRow): void {
   m.addItem(i => i.setTitle("Open").setIcon("file").onClick(() => open(o, row.path, false)));
   m.addItem(i => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => open(o, row.path, true)));
   m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => { void markDone(o, row.path, !row.done); }));
+  m.addSeparator();
+  m.addItem(i => i.setTitle("Delete note").setIcon("trash-2").onClick(() => {
+    const file = o.app.vault.getFileByPath(row.path);
+    if (!file) { new Notice("That to-do is not there any more."); return; }
+    void o.app.fileManager.trashFile(file).catch(() => { new Notice("Could not delete that to-do."); });   // follows the user's trash setting; the links are passed on by src/planning/after-bridge.ts
+  }));
   m.showAtMouseEvent(e);
 }
 

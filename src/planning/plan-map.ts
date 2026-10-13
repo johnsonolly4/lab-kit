@@ -143,6 +143,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
     });
   };
 
+  const inLane = new Map<number, number>();   // routed arrows so far per lane: each gets its own line, so two do not merge into one
   const curves = map.arrows.flatMap((a): MapCurve[] => {
     const f = pos.get(a.from), t = pos.get(a.to);
     if (!f || !t) return [];
@@ -157,7 +158,9 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
     const mid = (crossOf(o) + crossOf(i)) / 2;
     let best = 0;
     for (let n = 1; n <= places; n++) if (Math.abs(lane(n) - mid) < Math.abs(lane(best) - mid)) best = n;
-    const cor = lane(best), a0 = alongOf(o), a1 = alongOf(i), g = GAP_X / 2, q = GAP_X / 4;
+    const seen = inLane.get(best) ?? 0;
+    inLane.set(best, seen + 1);
+    const cor = lane(best) + [0, 3, -3][seen % 3], a0 = alongOf(o), a1 = alongOf(i), g = GAP_X * 0.35, q = g / 2;   // out and in at different places of a shared gap, else an arrow leaving and one arriving there look like one bump
     const p1 = at(a0 + g, cor), p2 = at(a1 - g, cor);
     const out1 = at(a0 + q, crossOf(o)), out2 = at(a0 + q, cor), in1 = at(a1 - q, cor), in2 = at(a1 - q, crossOf(i));
     const d = `M${o.x} ${o.y} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
