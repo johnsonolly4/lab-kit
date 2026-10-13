@@ -76,8 +76,15 @@ Decided with the user 2026-10-13 (chat, mockup, then the survey below):
 - Done when: tests cover the offered list, the refusal and the create-row rule; a link written by the picker is in the history (Undo removes it, and for an other-project to-do restores `project`); creating a new to-do is NOT undoable from the history (a note is made; delete it by hand), said in the notice; NOT seen in Obsidian: the ghost box placement, the search, the confirm for another project, creating from the search, phone (the node is always shown, the box appears on a touch drag).
 - New dependencies: none
 
+### Phase 7 — Ticking a parent with open subtasks asks first
+- Depends on: Phase 3 (subtask lines and the menu exist). Independent of 4 and 6; small.
+- Decided with the user 2026-10-13 (survey, after the question "maybe parents can't be ticked until the subtasks are done, how would this interact with the to-do base"): the map asks, nothing is blocked. A to-do is finished when `done: true` OR `day: Done` (`isFinished`, `src/planning/actions.ts:24`) and `To-do board.base` can set either (checkbox, drag to the Done column, typing in the note), which the plugin cannot stop and, by the 2026-10-13 rule that the engine only stamps, will not revert.
+- Files: `src/planning/plan.ts` (a pure line in `problems`: `"X" is finished but N of its subtasks are open.`, only for a parent with `subs` not all done; shown under the map and in the Plan tile like the other problems), `src/planning/plan-map-render.ts` (`tickButton` and the menu's Mark done: when a parent with open subtasks is ticked, a small prompt "Tick its N open subtasks too?" with **Tick all**, **Only this one**, **Cancel**; Tick all writes each subtask with `markDone` and offers one Undo notice for the lot; unticking never asks), `src/planning/ask.ts` or a small Modal for the three-button prompt (reuse what exists), tests (the problem line, which rows count as open), docs.
+- Done when: tests cover the problem line and the open-subtask rule; NOT seen in Obsidian: the prompt on the card's circle and on right-click Mark done, Tick all with Undo, the warning line after a drag to Done on the board.
+- New dependencies: none
+
 ## Order check
-Order of work: 1 → 2 → 3 (done) → **5** → **4** → **6**. 5 first because it is what the user sees; 4 before 6 so the new writes are recorded. Original check: 
+Order of work: 1 → 2 → 3 (done) → 5 (built) → **4** → **6**; Phase 7 (parent tick) whenever there is room, e.g. before 6. 5 first because it is what the user sees; 4 before 6 so the new writes are recorded. Original check: 
 1 → 2 → 3 → 4: the UI needs the write helper and the spike answer from Phase 1; Phase 3 reuses `dragNest` from Phase 2. Phase 3 could swap places with 2 only for the CSS gutter on Not linked rows, but the gutter has no job without `dragNest`, so keep the order.
 
 ## Verification
