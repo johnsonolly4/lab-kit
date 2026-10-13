@@ -120,7 +120,7 @@ function autoScroll(scroller: HTMLElement | null, pointer: () => { x: number; y:
 
 const ADD_W = 130, ADD_H = 54;
 /** How long the pointer rests on a card before the rest of the map dims, and how long the dimming stays after it leaves (ms). */
-const HOVER_DELAY = 350, HOVER_CLEAR = 150;
+const HOVER_DELAY = 175, HOVER_CLEAR = 150;
 
 /** Where the "+ add after this" box goes while `source` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. In client coordinates. */
 function addBoxSpot(wrap: HTMLElement, s: { left: number; right: number; top: number; bottom: number; width: number; height: number }, source: HTMLElement | null, direction: Direction): { x: number; y: number } {
