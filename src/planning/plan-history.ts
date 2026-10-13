@@ -5,7 +5,7 @@ export const HISTORY_LIMIT = 20;
 
 /** One change to one property of one to-do: `before` and `after` are the values as written (undefined = the property was absent). */
 export interface HistoryStep {
-  path: string; key: "after" | "sub" | "project" | "tick" | "experiment"; before: unknown; after: unknown; label: string;
+  path: string; key: "after" | "sub" | "project" | "tick" | "experiment" | "create"; before: unknown; after: unknown; label: string;
   /** Steps made by one action (Tick all) share a group: Undo and Redo run them together. */
   group?: number;
 }

@@ -38,6 +38,16 @@ export async function recordTick(app: App, history: PlanHistory, path: string, d
   return step;
 }
 
+/** Undo of a made note removes it (to the trash, as the user's setting says) when it still has the text it was made with; Redo makes it again. False when the note was changed since. */
+async function applyCreate(app: App, s: HistoryStep, side: Side): Promise<boolean> {
+  const file = app.vault.getFileByPath(s.path);
+  if (side === "redo") { if (!file) await app.vault.create(s.path, String(s.after)); return true; }
+  if (!file) return true;   // already gone
+  if ((await app.vault.read(file)) !== s.after) return false;   // written in since: not deleted
+  await app.fileManager.trashFile(file);
+  return true;
+}
+
 /** Writes `want` (the `done` and `day` of a tick step) if the to-do still has `expect`; false when it was changed since. */
 async function applyTick(app: App, path: string, expect: unknown, want: unknown): Promise<boolean> {
   const file = app.vault.getFileByPath(path);
@@ -52,6 +62,13 @@ async function applyTick(app: App, path: string, expect: unknown, want: unknown)
   return same;
 }
 
+/** A note made by the map (a new to-do) as a history step, so Undo can remove it again. */
+export function recordCreate(history: PlanHistory, path: string, text: string, label: string): HistoryStep {
+  const step: HistoryStep = { path, key: "create", before: undefined, after: text, label };
+  history.push(step);
+  return step;
+}
+
 /** Undo (or Redo) one step, with the steps of its group: the latest on that side, or `step` (from a notice's Undo button) when it is still there. The value must still be what the step wrote (else the to-do was changed since: nothing is overwritten and the step is dropped). Says what went wrong in a notice. */
 export async function runHistory(app: App, history: PlanHistory, side: Side, step?: HistoryStep): Promise<void> {
   const first = step ?? history.peek(side);
@@ -64,6 +81,7 @@ export async function runHistory(app: App, history: PlanHistory, side: Side, ste
     let same = true;
     try {
       if (s.key === "tick") same = await applyTick(app, s.path, want, to);
+      else if (s.key === "create") same = await applyCreate(app, s, side);
       else await changeKey(app, s.path, s.key, v => { same = sameValue(v, want); return same ? to : v; });
     } catch { new Notice("That to-do is not there any more."); continue; }
     if (!same) { new Notice("That to-do was changed since, so it was left as it is."); continue; }

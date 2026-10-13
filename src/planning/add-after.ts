@@ -2,7 +2,7 @@
 // The rules are in src/planning/todo-picker.ts (pure); the picker is the planning kit's own `pick`.
 import { Notice, type App } from "obsidian";
 import { pick } from "./ask";
-import { linkText, recordChange, runHistory, undoNotice } from "./after-write";
+import { linkText, recordChange, recordCreate, runHistory, undoNotice } from "./after-write";
 import type { NoteRec } from "./lists";
 import type { Plan } from "./plan";
 import type { PlanHistory } from "./plan-history";
@@ -24,7 +24,7 @@ export interface AddAfterEnv {
 type Choice = { kind: "todo"; item: Offered } | { kind: "new"; text: string };
 let group = 0;
 
-/** Asks which to-do comes after `from` (search, or type a new name) and writes it. Every link written goes in Undo / Redo; a new to-do is a new note and is not undone from there. */
+/** Asks which to-do comes after `from` (search, or type a new name) and writes it. Every link written and every new to-do goes in Undo / Redo (undoing a new to-do removes the note, if nobody has written in it since). */
 export async function addAfterFlow(env: AddAfterEnv, from: string): Promise<void> {
   const { app, history, hub } = env;
   const fromName = env.plan.rows.find(r => r.path === from)?.name ?? from;
@@ -52,6 +52,8 @@ async function createAfter(env: AddAfterEnv, from: string, fromName: string, typ
   let name = base, n = 2;
   while (env.app.vault.getFileByPath(`${env.folder}/${name}.md`)) name = `${base} ${n++}`;
   const path = `${env.folder}/${name}.md`;
-  await env.app.vault.create(path, newTodoText(env.hub.name, linkText(env.app, from, path), new Date()));
-  new Notice(`Made the to-do "${name}", coming after "${fromName}". It is a new note, so Undo does not remove it.`, 8000);
+  const text = newTodoText(env.hub.name, linkText(env.app, from, path), new Date());
+  await env.app.vault.create(path, text);
+  const step = recordCreate(env.history, path, text, `Made "${name}"`);
+  undoNotice(`Made the to-do "${name}", coming after "${fromName}".`, () => runHistory(env.app, env.history, "undo", step));
 }

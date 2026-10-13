@@ -72,8 +72,8 @@ describe("addAfterFlow", () => {
   const setup = (fms: Record<string, Record<string, unknown>>) => {
     const created: Record<string, string> = {};
     const app = {
-      vault: { getFileByPath: (p: string) => (p in fms || p in created ? { path: p } : null), create: async (p: string, t: string) => { created[p] = t; } },
-      fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); } },
+      vault: { getFileByPath: (p: string) => (p in fms || p in created ? { path: p } : null), create: async (p: string, t: string) => { created[p] = t; }, read: async (f: { path: string }) => created[f.path] },
+      fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); }, trashFile: async (f: { path: string }) => { delete created[f.path]; } },
       metadataCache: { fileToLinktext: (f: { path: string }) => f.path.replace(/^.*\//, "").replace(/\.md$/, "") },
     } as never;
     const todos = Object.entries(fms).map(([p, fm]) => note(p, fm));
@@ -127,11 +127,25 @@ describe("addAfterFlow", () => {
     expect(path).toBe("00 Planning/To-dos/Book pump service.md");
     expect(text).toContain('project: "[[Alpha]]"');
     expect(text).toContain('after: "[[A]]"');
-    expect(history.size("undo")).toBe(0);   // a new note is not in the history
-    expect(messages()[0]).toContain("Undo does not remove it");
+    expect(history.peek("undo")?.label).toBe('Made "Book pump service"');   // the new note is a history step: Undo removes it
     picked.queue.push(null);
     await addAfterFlow(env, P("A"));
     expect(Object.keys(created)).toHaveLength(1);
+  });
+  it("Undo removes a made to-do, Redo makes it again; one written in since is left alone", async () => {
+    const { env, created, history } = setup(fms());
+    const { runHistory } = await import("../src/planning/after-write");
+    picked.queue.push({ typed: "Temp" });
+    await addAfterFlow(env, P("A"));
+    const path = "00 Planning/To-dos/Temp.md", text = created[path];
+    await runHistory(env.app, history, "undo");
+    expect(path in created).toBe(false);
+    await runHistory(env.app, history, "redo");
+    expect(created[path]).toBe(text);
+    created[path] = text + "typed in Obsidian\n";   // the user wrote in it
+    await runHistory(env.app, history, "undo");
+    expect(created[path]).toContain("typed in Obsidian");
+    expect(messages().pop()).toContain("changed since");
   });
   it("a name that is taken gets a number", async () => {
     const { env, created } = setup({ ...fms(), [P("New")]: { kind: "todo", project: "[[Alpha]]" } });
