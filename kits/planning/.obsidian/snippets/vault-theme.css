@@ -497,6 +497,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-blocked { border: 2px dashed var(--text-muted); }
 .vt-map-cyclic { border-color: var(--text-error); }
 .vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.25; }
+.vt-map-arrow-via { stroke-dasharray: 5 4; }
 .vt-map-arrow.vt-map-hl { stroke: var(--interactive-accent); stroke-width: 2.5; }
 .vt-map-unlinked { border-top: 1px solid var(--vt-divider); padding-top: 8px; }
 .vt-map-unlinked-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 4px; }

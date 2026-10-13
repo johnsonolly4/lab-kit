@@ -244,8 +244,9 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     const svg = canvas.createSvg("svg", { cls: "vt-map-arrows", attr: { width: String(g.width), height: String(g.height) } });
     const arrows = new Map<SVGPathElement, { from: string; to: string }>();
     for (const c of g.curves) {
-      const visible = svg.createSvg("path", { cls: "vt-map-arrow", attr: { d: c.d } });
+      const visible = svg.createSvg("path", { cls: c.via ? "vt-map-arrow vt-map-arrow-via" : "vt-map-arrow", attr: { d: c.d } });
       arrows.set(visible, c);
+      if (c.via) continue;   // drawn to the parent card for a subtask's link: not a link of its own, so nothing to remove here
       const hit = svg.createSvg("path", { cls: "vt-map-arrow-hit", attr: { d: c.d } });   // a wide invisible stroke to click on
       hit.addEventListener("click", e => {
         stopEvent(e);

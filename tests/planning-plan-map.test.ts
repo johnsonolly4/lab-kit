@@ -134,10 +134,29 @@ describe("subtasks on the map", () => {
     expect(m.arrows).toHaveLength(1);
     expect(m.unlinked.map(r => r.name)).toEqual(["Lone"]);
   });
-  it("an after that points at a subtask is dropped from the map and does not flag a cycle", () => {
+  it("an after that points at a subtask counts as an after on its parent card: a dashed arrow `via` the subtask, no cycle", () => {
     const m = map([td("P"), td("S", { sub: "[[P]]" }), td("N", { after: "[[S]]" }), td("M", { after: "[[P]]" })]);
     expect(m.cyclic.size).toBe(0);
-    expect(m.cards.map(c => c.row.name)).toEqual(["P", "M"]);
+    expect(at(m)).toEqual(["P:0.0", "M:1.0", "N:1.1"]);
+    expect(m.arrows).toEqual([{ from: T + "P.md", to: T + "M.md" }, { from: T + "P.md", to: T + "N.md", via: T + "S.md" }]);
+    expect(m.unlinked).toEqual([]);
+  });
+  it("nesting a middle card keeps the chain: A, B, C with B nested under A leaves A and C joined", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]", sub: "[[A]]" }), td("C", { after: "[[B]]" })]);
+    expect(at(m)).toEqual(["A:0.0", "C:1.0"]);
+    expect(m.arrows).toEqual([{ from: T + "A.md", to: T + "C.md", via: T + "B.md" }]);
+    expect(m.unlinked).toEqual([]);
+  });
+  it("a direct link wins over the same one through a subtask; a to-do never comes after itself through its own subtask; a link through a subtask of an unrelated card is kept", () => {
+    const direct = map([td("P"), td("S", { sub: "[[P]]" }), td("N", { after: ["[[P]]", "[[S]]"] })]);
+    expect(direct.arrows).toEqual([{ from: T + "P.md", to: T + "N.md" }]);
+    const own = map([td("P", { after: "[[S]]" }), td("S", { sub: "[[P]]" }), td("Z")]);
+    expect(own.arrows).toEqual([]);
+    expect(own.cards).toEqual([]);
+  });
+  it("mapGeometry carries `via` onto the curve", () => {
+    const m = map([td("A"), td("B", { sub: "[[A]]" }), td("C", { after: "[[B]]" })]);
+    expect(mapGeometry(m).curves.map(c => c.via)).toEqual([T + "B.md"]);
   });
   it("subsLabel counts and says when all are done", () => {
     expect(subsLabel({ subs: [{ done: true }, { done: false }, { done: false }] })).toEqual({ text: "1/3", allDone: false });

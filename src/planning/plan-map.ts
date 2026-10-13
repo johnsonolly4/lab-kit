@@ -3,7 +3,11 @@
 import type { Plan, PlanRow } from "./plan";
 
 export interface MapCard { path: string; row: PlanRow; step: number; place: number }
-export interface MapArrow { from: string; to: string }
+export interface MapArrow {
+  from: string; to: string;
+  /** Set when `to` really comes after this subtask of `from`: the arrow is drawn to the parent card instead, dashed, and is not a link to remove. */
+  via?: string;
+}
 export interface PlanMap {
   /** Linked to-dos (a parent or a child), by step then place. */
   cards: MapCard[];
@@ -25,11 +29,23 @@ export function subsLabel(row: { subs: { done: boolean }[] }): { text: string; a
 /** Steps left to right (0 = no parents, else 1 + the largest parent step); inside a step, near the parents, then plan order. */
 export function layoutPlan(plan: Plan): PlanMap {
   const onMap = new Set(plan.rows.filter(r => !r.parent).map(r => r.path));
-  const top = plan.rows.filter(r => !r.parent).map(r => ({ ...r, afterPaths: r.afterPaths.filter(p => onMap.has(p)) }));   // a subtask lives inside its parent's card, not on the map
+  // A subtask lives inside its parent's card, not on the map: a to-do that comes after a subtask comes after that card (drawn dashed, `via`), so a chain does not break when a card is nested. Never to itself.
+  const parentOf = new Map(plan.rows.filter(r => r.parent).map(r => [r.path, r.parent!]));
+  const via = new Map<string, string>();   // `from→to` -> the subtask, only when no direct link says the same
+  const top = plan.rows.filter(r => !r.parent).map(r => {
+    const afterPaths: string[] = [];
+    for (const p of r.afterPaths) {
+      const from = parentOf.get(p) ?? p;
+      if (from === r.path || !onMap.has(from)) continue;
+      if (from !== p) { if (!afterPaths.includes(from) && !r.afterPaths.includes(from)) via.set(`${from}\u2192${r.path}`, p); } else via.delete(`${from}\u2192${r.path}`);
+      if (!afterPaths.includes(from)) afterPaths.push(from);
+    }
+    return { ...r, afterPaths };
+  });
   const hasChild = new Set(top.flatMap(r => r.afterPaths));
   const linked = top.filter(r => r.afterPaths.length > 0 || hasChild.has(r.path));
   const unlinked = top.filter(r => !linked.includes(r));
-  const arrows = linked.flatMap(r => r.afterPaths.map(from => ({ from, to: r.path })));
+  const arrows = linked.flatMap(r => r.afterPaths.map((from): MapArrow => { const v = via.get(`${from}\u2192${r.path}`); return v ? { from, to: r.path, via: v } : { from, to: r.path }; }));
 
   // Rows are in plan order: parents first, except inside a cycle (a parent not yet placed).
   const step = new Map<string, number>();
@@ -98,6 +114,8 @@ export type Direction = "across" | "down";
 export interface Pt { x: number; y: number }
 export interface MapCurve {
   from: string; to: string;
+  /** The subtask a dashed arrow stands for (see `MapArrow`). */
+  via?: string;
   /** The SVG path: from the first card's outgoing edge to the second's incoming edge. */
   d: string;
   /** True when the arrow skips steps and was sent through a lane between cards instead of straight across them. */
@@ -160,7 +178,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
     const c1 = at(alongOf(o) + k, crossOf(o)), c2 = at(alongOf(i) - k, crossOf(i));
     const straight = Array.from({ length: 25 }, (_, n) => cubic(o, c1, c2, i, n / 24));
     const skips = stepOf.get(a.to)! - stepOf.get(a.from)! >= 2;
-    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${o.x} ${o.y} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight }];
+    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${o.x} ${o.y} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight, via: a.via }];
     // Out into the gap after the first card, along the nearest lane between rows, in through the gap before the last card.
     const mid = (crossOf(o) + crossOf(i)) / 2;
     let best = 0;
@@ -172,7 +190,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
     const out1 = at(a0 + q, crossOf(o)), out2 = at(a0 + q, cor), in1 = at(a1 - q, cor), in2 = at(a1 - q, crossOf(i));
     const d = `M${o.x} ${o.y} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
     const samples = [...Array.from({ length: 13 }, (_, n) => cubic(o, out1, out2, p1, n / 12)), ...line(p1, p2, 12), ...Array.from({ length: 13 }, (_, n) => cubic(p2, in1, in2, i, n / 12))];
-    return [{ from: a.from, to: a.to, d, routed: true, samples }];
+    return [{ from: a.from, to: a.to, d, routed: true, samples, via: a.via }];
   });
   return {
     width: steps ? (across ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 2 * PAD + places * CARD_W + (places - 1) * GAP_Y) : 0,
