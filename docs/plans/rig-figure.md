@@ -1,6 +1,6 @@
 # Plan: rig figure for posters and publications
 
-_Agreed: 2026-10-13. Written by `/phase-plan` (Sonnet, with the user's survey answers). Each phase = one session; the user looks at the result after each of 2, 4, 5 and 6 before the next starts. Replaces the open item "Reactor schematics for publications" in BACKLOG._
+_Agreed and approved by the user: 2026-10-13. Written by `/phase-plan` (Sonnet, with the user's survey answers). Each phase = one session; the user looks at the result after each of 2, 4, 5 and 6 before the next starts. Replaces the open item "Reactor schematics for publications" in BACKLOG._
 
 ## Goal
 From a rig note's parts tables (`Feeds`, `Part`, ...) Lab Kit draws a clean flow-chemistry schematic as a vector figure the user can nudge by hand and export as SVG and a very large PNG, sharp at full width on an A0 or larger poster, in the style of the figures in the user's field (line art, symbols per module, coloured control lines).
@@ -13,6 +13,9 @@ User, 2026-10-13 (chat, ten example figures looked at, survey):
 - **Layout starts automatic from the `Feeds` tables, then is tweaked by hand** in a drag window; the positions are saved in the note as a `rig-layout` block (kept when the note is closed, unlike the plan map).
 - **Colour:** process lines (monomer and tubing) stay black. Control and feedback lines from the computer are coloured and dashed: one colour for control (computer to part), one for data back (part to computer); both settable. Parts tables get two optional columns for this (names below, for the user to check at Phase 3).
 - Rejected: Mermaid for the figure (cannot take coordinates: the figure is drawn as SVG like `src/planning/plan-slide.ts`); a zip library; saving positions in a separate file; colour per stream.
+
+## What the user's example figures show (ten published flow-chemistry figures, pasted in chat 2026-10-13; not stored; no names)
+Black line art on white, bold sans-serif labels with subscripts and units. Symbols: pump (circle with a triangle), tee / mixer (a small filled dot where lines meet), valve (bowtie), multiport valve (circle with arrows or ports), coil reactor (ribbed cylinder), CSTR (rounded box with a fan), tubular and column reactors (plain boxes), back-pressure regulator (box or valve labelled BPR), flask / vial, laptop or monitor for the controller, photo-like pictures for instruments (NMR magnet, light-scattering cell, GPC stack, small spectrum thumbnails). Dashed or dotted control and feedback lines in red, green and blue, labelled ("Flow rate", "Temperature", "Data output"); red-outlined frames that group analysis modules, panel letters (a) (b) (c); a reaction scheme with structures beside the rig; "Waste" arrows, a "Product collection" fan of arrows; a stage repeated n times in brackets. Use these to choose what to draw, never to copy a figure.
 
 ## Out of scope
 - Chemical structures and reaction schemes (they come from a structure editor); the user places them in the poster tool.
