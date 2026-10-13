@@ -109,3 +109,4 @@ Backfilled lines cite where the repo records them. Never invent a past decision 
 - 2026-10-13: The planning kit is no longer called a preview; it stays off until switched on (user).
 - 2026-10-13: Check setup stays open behind the windows it opens, and closes only for Open (a note, the settings) (user).
 - 2026-10-13: Tidy up notes folds unchanged lines with 1 line of context, and batches only changes whose added, removed and changed lines match exactly (user).
+- 2026-10-13: The plan map's slide picture is built from the plan as an SVG and copied as a PNG (light colours, 16:9, desktop only), not a screenshot of the map; zoom is three buttons, not remembered (user; plan `docs/plans/plan-map-zoom-export.md`).
