@@ -473,8 +473,6 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map { display: flex; flex-direction: column; gap: 12px; }
 .vt-map-scroll { display: flex; min-width: 0; overflow-x: auto; }
 .vt-map-canvas { zoom: var(--vt-map-zoom, 1); position: relative; flex: none; width: var(--vt-map-w); height: var(--vt-map-h); }
-/* Empty room after the map, so the next open step can be scrolled to the left edge even when all steps fit */
-.vt-map-spacer { flex: 0 0 calc(100% - 200px); }
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 .vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
 .vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px 8px 18px; cursor: pointer;   /* the left 14px is the drag strip (.vt-map-grip), reserved so the text does not move on hover */
@@ -582,5 +580,4 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-history.vt-map-off { opacity: 0.35; cursor: default; }   /* nothing to undo / redo: still there, so the row does not move */
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }
-.vt-map-down .vt-map-spacer { flex: 0 0 calc(560px - 140px); width: 100%; }
 .vt-map-down .vt-map-handle { top: auto; bottom: -8px; right: calc(50% - 7px); margin-top: 0; }
