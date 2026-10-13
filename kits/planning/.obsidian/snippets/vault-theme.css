@@ -576,7 +576,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map + .vt-map-issues-head { margin-top: 10px; }
 .vt-map-issues-head .vt-map-warnmark { cursor: default; }
 .vt-map-issues-head { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
-.vt-map-issue { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 3px 0; }
+.vt-map-issue { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 3px 0; width: fit-content; max-width: 100%; border-radius: 8px; }   /* as wide as its text and buttons, so the outline fits them and has rounded corners */
 .vt-map-issue-btns { display: inline-flex; flex-wrap: wrap; }
 .vt-map-fix { margin-left: 8px; }
 .vt-map-history.vt-map-off { opacity: 0.35; cursor: default; }   /* nothing to undo / redo: still there, so the row does not move */
