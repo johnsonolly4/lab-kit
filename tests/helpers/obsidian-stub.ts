@@ -18,6 +18,7 @@ export class Plugin extends Component {
 export class Notice {
   static messages: string[] = [];
   constructor(m: unknown) { Notice.messages.push(String(m)); }
+  messageEl = { createSpan: () => ({}), createEl: () => ({ addEventListener(): void { /* ignored */ } }) };
   hide(): void { /* ignored */ }
 }
 export class Menu { addItem(): this { return this; } showAtMouseEvent(): void { /* ignored */ } }

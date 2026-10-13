@@ -10,6 +10,7 @@ import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
+import { addAfterFlow } from "./add-after";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -366,7 +367,8 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw() };
+        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
+          addAfter: (from: string) => { addAfterFlow({ app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan }, from).catch(() => { new Notice("Could not make that link."); }); } };
         drawPlanMap(box, plan, map, mapOptions);
         drawProblems(box, plan, mapOptions);
         return;

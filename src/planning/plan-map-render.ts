@@ -25,6 +25,8 @@ export interface MapOptions {
   problemsOpen: boolean;
   /** Opens or closes the problems list and draws the map again. */
   showProblems: (open: boolean) => void;
+  /** "+ add after this": dropped on the box that shows while a node is dragged; asks which to-do comes after `from` (search the vault, or make a new one). Left out: no box. */
+  addAfter?: (from: string) => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -105,7 +107,21 @@ function autoScroll(scroller: HTMLElement | null, pointer: () => { x: number; y:
   return () => window.clearInterval(id);
 }
 
-/** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`. A line follows the pointer; Esc cancels. */
+const ADD_W = 130, ADD_H = 54;
+
+/** Where the "+ add after this" box goes while `source` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. In client coordinates. */
+function addBoxSpot(wrap: HTMLElement, source: HTMLElement, direction: Direction): { x: number; y: number } {
+  const w = wrap.getBoundingClientRect(), s = source.getBoundingClientRect();
+  const others: DOMRect[] = [];
+  wrap.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (el !== source) others.push(el.getBoundingClientRect()); });
+  const right = { x: s.right + 16, y: s.top + (s.height - ADD_H) / 2 }, below = { x: s.left + (s.width - ADD_W) / 2, y: s.bottom + 16 };
+  const edge = { x: w.right - ADD_W - 12, y: Math.min(Math.max(s.top, w.top), w.bottom - ADD_H) };
+  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom
+    && !others.some(o => p.x < o.right + 6 && p.x + ADD_W > o.left - 6 && p.y < o.bottom + 6 && p.y + ADD_H > o.top - 6);
+  return [direction === "down" ? below : right, direction === "down" ? right : below].find(free) ?? edge;
+}
+
+/** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`; onto the "+ add after this" box that shows meanwhile asks for one (or a new one). A line follows the pointer; Esc cancels. */
 function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement, from: string): void {
   const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
   dot.addEventListener("click", stop);
@@ -120,6 +136,13 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
     const line = svg.createSvg("line", { cls: "vt-map-drag" });
     let pointer = { x: down.clientX, y: down.clientY };
     let over: HTMLElement | null = null;
+    let addBox: HTMLElement | null = null;
+    if (o.addAfter && dot.parentElement) {
+      const spot = addBoxSpot(wrap, dot.parentElement, o.direction), p0 = at(spot.x, spot.y);
+      addBox = wrap.createDiv({ cls: "vt-map-addbox", text: "+ add after this" });
+      addBox.setCssProps({ "--vt-add-x": `${p0.x}px`, "--vt-add-y": `${p0.y}px`, "--vt-add-w": `${ADD_W}px`, "--vt-add-h": `${ADD_H}px` });
+    }
+    const overBox = (): boolean => !!addBox && dot.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest(".vt-map-addbox") === addBox;
     const targetAt = (e: PointerEvent): HTMLElement | null => {
       const t = dot.ownerDocument.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-plan-path]") ?? null;
       return t && t.dataset.planPath !== from ? t : null;
@@ -131,6 +154,7 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       const t = dot.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>("[data-plan-path]") ?? null;
       const target = t && t.dataset.planPath !== from ? t : null;
       if (target !== over) { over?.removeClass("vt-map-drop"); over = target; over?.addClass("vt-map-drop"); }
+      addBox?.toggleClass("vt-map-drop", overBox());
     };
     place();
     const stopScroll = autoScroll(scroller, () => pointer, place);
@@ -138,6 +162,10 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       stopScroll();
       ac.abort();
       over?.removeClass("vt-map-drop");
+      if (e) pointer = { x: e.clientX, y: e.clientY };
+      const onBox = !!e && overBox();
+      addBox?.remove();
+      if (onBox) { svg.remove(); o.addAfter?.(from); return; }
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
       if (!target || !to) { svg.remove(); return; }
       const verdict = canLink(plan, from, to);

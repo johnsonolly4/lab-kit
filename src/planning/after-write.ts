@@ -14,11 +14,11 @@ export function undoNotice(text: string, undo: () => Promise<void>): void {
 /** Changes `after` on the to-do `to`. `change` gets the old value and returns the new one (undefined removes the property). */
 export const changeAfter = (app: App, to: string, change: (value: unknown) => unknown): Promise<void> => changeKey(app, to, "after", change);
 
-/** A change to `after`, `sub` or `experiment` that is also put in `history` (with the old and the new value), so Undo and Redo can run it again. Returns the step. */
-export async function recordChange(app: App, history: PlanHistory, path: string, key: "after" | "sub" | "experiment", label: string, change: (value: unknown) => unknown): Promise<HistoryStep> {
+/** A change to `after`, `sub`, `experiment` or `project` that is also put in `history` (with the old and the new value), so Undo and Redo can run it again. Returns the step. */
+export async function recordChange(app: App, history: PlanHistory, path: string, key: "after" | "sub" | "experiment" | "project", label: string, change: (value: unknown) => unknown, group?: number): Promise<HistoryStep> {
   let before: unknown, after: unknown;
   await changeKey(app, path, key, v => { before = v; after = change(v); return after; });
-  const step: HistoryStep = { path, key, before, after, label };
+  const step: HistoryStep = { path, key, before, after, label, group };
   history.push(step);
   return step;
 }
