@@ -35,6 +35,9 @@ flowchart LR
    - ⚠️ **Hazards**: fills in once you add chemicals to the **Chemicals** property
    - **Objectives · Apparatus · Procedure · Results / Analysis · Notes for next time**
 
+> [!tip] Repeating an experiment
+> **Clone experiment** (command palette) copies the open lab note, or one you pick, into a new numbered lab note: properties, objectives, apparatus, procedure, rig and tables are kept with the sample codes renumbered; Status goes back to Planned, dates, Outcome and the free text under Results / Analysis and Notes for next time are cleared. The title box starts with the old title, the new note links back to the old one in `Cloned from`, and the old note is not changed. (Not seen in Obsidian yet.)
+
 > [!tip] Add chemicals early
 > Put them in **Chemicals** as links (`[[DCM]]`): the hazard table is built from this property. The snippet forms start empty; to pick chemicals quickly in them, set **Chemical folder** (section 6) and they suggest your notes as you type.
 
