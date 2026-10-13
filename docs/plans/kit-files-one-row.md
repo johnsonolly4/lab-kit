@@ -21,10 +21,11 @@ Decided with the user 2026-10-13 (chat + two surveys):
 
 ## Phases
 
-### Phase 1 — The pure core (no windows)
+### Phase 1 — The pure core (no windows) — DONE 2026-10-13
 - Depends on: nothing.
 - Spike first (by reading): the types behind `previewInstall` (`src/kit/managed-ui.ts` `confirmThen` 112-130, `SettingChange`, `kitFolders`, `firstInstallSettings`, `hotkeySetting`) and `ManagedItem` (`src/kit/managed.ts` 47-178): what a merged preview has to hold.
 - Files: new `src/kit/kit-set.ts` (pure: `orderKits(sections)` → attention first, then by name; `attention(items)` count; `kitStatusLine`; `mergePreviews(previews)` → one list of folders to create (deduplicated by path), one list of settings changes (deduplicated by id; asked if any kit's first install asks), and which kit each came from), `tests/kit-set.test.ts`.
+- Result 2026-10-13: spike answer: a merged confirmation holds, per kit, an `InstallPreview` (create / update / leftAlone / folders / about), the `SettingChange[]` (name, desc, apply), the `PreviewNote[]`, and whether it `ask`s; two kits can both offer "Turn on the CSS snippet" with different text, so only a change with the same name AND text is merged, the rest stays separate. `src/kit/kit-set.ts` (`waitingCount`, `orderKits`, `kitStatusLine`, `mergeParts`), `PreviewNote` now exported, `tests/kit-set.test.ts`. Tests 972.
 - Done when: tests cover the ordering (updates first, a fully up-to-date kit last and folded, a kit not installed yet first), the merge (two kits that both want the CSS snippet or the Templater scripts folder give one setting; folders deduplicated; nothing to ask returns "no confirmation"), and the status lines; `npm test` and `npm run lint` clean. Nothing visible changes.
 - New dependencies: none
 

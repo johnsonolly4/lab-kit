@@ -704,7 +704,7 @@ class KitReportModal extends Modal {
 /** A change to Obsidian's or another plugin's settings: listed with a switch (on) in the confirmation dialog, made only when confirmed. */
 export interface SettingChange { name: string; desc: string; apply: () => Promise<unknown> }
 /** An extra list in the confirmation dialog (e.g. old copies that are left in place). */
-interface PreviewNote { heading: string; paths: string[]; text?: string }
+export interface PreviewNote { heading: string; paths: string[]; text?: string }
 
 /** The confirmation before a kit writes anything new: grouped lists with counts, a switch per settings change; Cancel writes nothing. */
 class KitInstallModal extends Modal {
