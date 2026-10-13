@@ -1,0 +1,62 @@
+# Plan: Plan map, drag a card to make it a subtask
+
+_Agreed: 2026-10-13 (user approved in chat after adding the Undo / Redo buttons; written by `/phase-plan`, on Sonnet). Each phase = one session, on Sonnet._
+
+## Goal
+On the plan map, drag a whole card (or a Not linked row) by a left-edge strip onto another card to make it a subtask (`sub`), drag a subtask out onto the map background to clear it, and stop the Not linked handle covering the title.
+
+## Decision taken
+Decided with the user 2026-10-13 (chat, mockup, then the survey below):
+- The strip is on the card's **left edge**: a thin bar at rest that grows into a grip gutter (⋮⋮) on hover, accent colour, grab cursor. The card text must not jump: the gutter is **reserved at rest** (the bar sits inside it), so hover only changes what is drawn in that box.
+- Drop on a card sets `sub`; the target gets a **dashed accent border** while dragging. Drop on the map background clears `sub` (only if the dragged to-do is a subtask; otherwise nothing, no notice).
+- The right-edge handle ("comes after", `dragLink`) stays as it is.
+- **Not linked rows**: the left gutter is the nesting handle (as on cards); the "comes after" handle moves to the **right end** of the row, so neither covers the title. (Changes the earlier wording "the handle moves into a left gutter"; user, survey 2026-10-13.)
+- **Phone / touch (no hover)**: the gutter is always shown and the drag starts at once (user, survey).
+- **Edge cases** (user, survey): the dragged to-do keeps its own `after` links; a subtask dropped on another card is re-parented (`sub` replaced); nesting two deep is refused with a Notice (target is already a subtask, or the dragged card has subtasks of its own), matching the engine's "subtask of a subtask" error in `src/planning/plan.ts:80-84`. Dropping on its current parent or itself: Notice "already" / nothing.
+- **Undo** (user, 2026-10-13, replaces "only the 8-second notice, no Cmd+Z"): Phases 1-3 use the existing 8-second notice with Undo (`undoNotice`, `src/planning/after-write.ts:6`): "Made a subtask of X." / "Subtask cleared." Phase 4 then adds **Undo and Redo buttons** next to the zoom and export buttons, keeping the last 20 plan changes (link, unlink, make subtask, clear subtask). Delete and tick stay out (delete removes a file; ticking again is its own undo). Plus a right-click **Remove from parent** on a subtask card / row, so clearing works without dragging (and on a phone).
+- **Click vs drag**: a click on the strip must still open the note. A press on the strip only becomes a drag after the pointer moves ≥ 5 px; below that it is a click (opens the note, Ctrl/Cmd = new tab, as `open()` at `plan-map-render.ts:28`).
+- **Horizontal layout**: arrows end at the card's left-middle (`plan-map.ts:157`). The gutter lies inside the card box (reserved padding), so arrows still end at the card edge; no geometry change. **Vertical layout**: arrows use top / bottom centre, so the left strip does not collide; same strip, the right-edge handle stays on the bottom edge as built.
+- Rejected: a second (top-edge) handle, a modifier key, drop zones on the card halves (user chose the whole-card drag, 2026-10-13).
+
+## Out of scope
+- Building anything in this session (plan only).
+- Cmd+Z / an Undo command (the buttons in Phase 4 are the answer); dragging to reorder subtasks; multi-select drag.
+- Moving the right-edge "comes after" handle on cards.
+- The reactor schematics (waiting on the user's examples).
+- Drag in the slide picture (it is a fixed image, `plan-slide.ts`).
+
+## Phases
+
+### Phase 1 — `sub` write engine (no UI)
+- Files: `src/planning/plan-link.ts` (new pure `canNest(plan, child, parent)` → `"ok" | "self" | "already" | "parent-is-sub" | "has-subs"`, and `setSub` / `clearSub` value helpers beside `addAfter`), `src/planning/after-write.ts` (`changeSub(app, child, link | undefined)` via `processFrontMatter`, key deleted when cleared; reuse `linkText` and `undoNotice`), tests in `tests/planning-plan-link.test.ts` and a `changeSub` test next to any existing after-write test (else a new file).
+- Done when: tests cover every verdict, a re-parent, clear, keeping `after`, and that `readPlan` (`plan.ts:68-84`) reads back what was written (round trip through `afterItems`, one link only). `npm test` and `npm run lint` clean. Nothing visible changes.
+- Spike inside the phase (by reading): is a subtask also drawn as its own card on the map, or only as a row in the parent's list (`plan-map.ts` `layoutPlan`, `plan-map-render.ts:137-152`)? Write the answer into this plan: Phase 2 depends on it.
+- New dependencies: none
+
+### Phase 2 — The strip and the drag on the map cards (desktop and touch)
+- Depends on: Phase 1
+- Files: `src/planning/plan-map-render.ts` (new `dragNest(wrap, plan, o, strip, from)` beside `dragLink`; share only what is already identical: `at()`, `targetAt`, the edge auto-scroll, Esc cancel — extract small helpers rather than copy; the card gets a `.vt-map-grip` element created before the tick button), `kits/planning/.obsidian/snippets/vault-theme.css` (strip at rest, gutter on hover, `@media (hover: none)` always shown, `touch-action: none` on the strip, ghost, `.vt-map-nest-drop` dashed accent border, subtask row grip), tests for any new pure helper (hit-test result → action: card = nest, background = clear, own parent = nothing).
+- Behaviour: pointerdown on the strip, capture, 5 px threshold, then a ghost (a dimmed clone of the card, moved under the pointer; the original dims) follows the pointer; drop target highlighted; on drop run `canNest` (refusal → Notice, as `finish()` does at `:112`), else `changeSub` with the undo notice. Drop on the map background (inside `.vt-map-scroll`, no card) clears `sub` if the card is a subtask. Subtask rows in a parent's list get the same grip so "drag out of the parent's list" works. Zoom: the ghost and `at()` use the same coordinates as `dragLink`, which works while zoomed (user, 2026-10-13); check the ghost size is scaled by `o.zoom`.
+- Done when: tests pass; kit manifest regenerated (`npm run kit:manifest`, CSS is in the kit; the user needs Review update… for the theme); `docs/architecture.md` line for the new function. NOT seen in Obsidian: the user's look at hover, the drag, and the drop highlight, in Live Preview and Reading view (checklist 6i row; add one). Say what was not verified.
+- New dependencies: none
+
+### Phase 3 — Not linked gutter, right-click, vertical layout, docs
+- Depends on: Phase 2
+- Files: `src/planning/plan-map-render.ts` (`:234-248` Not linked rows: the after-handle `dragLink` call at `:241` moves to a right-end element; the left gutter gets `dragNest` for the row; `menu()` at `:37-50` gets **Remove from parent** for subtasks), `vault-theme.css` (`.vt-map-unlinked-row .vt-map-handle` at :512–513 moved from `left: 0` to the right end; row left padding for the gutter; the tooltip must not cover the rows below: place it above or drop it for a `title`; `.vt-map-down` rules :540–543 checked with the strip), docs per `docs/maintenance.md` (tutorial plan-map section, guide note in the kit if it names the handle, changelog, checklist 6i row, `docs/decisions.md` stays as written here).
+- Done when: tests pass; the Not linked rows no longer have the handle over the first letter (the user's screenshot of the old look vs the new, BACKLOG "Link handle overlaps the title" ticked only after the user has seen it); right-click Remove from parent clears `sub` with Undo; vertical layout checked by reading the CSS and, if the user sends a screenshot, by eye. Anything not seen → BACKLOG.
+- New dependencies: none
+
+### Phase 4 — Undo / Redo buttons
+- Depends on: Phase 3 (all four changes exist: link, unlink, nest, clear)
+- Files: new pure `src/planning/plan-history.ts` (stack of `{ path, key: "after" | "sub", before, after }` records, limit 20 as a constant, `record`, `undo`, `redo`, a new change clears the redo side), `src/planning/plan-map-render.ts` (`link`, `unlink` at `:53-64` and the nest / clear calls record into the history; the notice Undo goes through the same stack), `src/planning/blocks.ts` (↶ ↷ buttons after the zoom and export buttons; disabled when empty), `vault-theme.css`, tests `tests/plan-history.test.ts`.
+- Behaviour: the history is kept in memory per plan block and is lost when the note closes (like the zoom). Undo writes the recorded `before` value back with `changeAfter` / `changeSub`. If the note's current value is no longer the recorded `after` (edited by hand or by another action), that step is skipped with a Notice ("changed since") and nothing is overwritten. A record for a note that was deleted or renamed is dropped with a Notice. Undoing then doing a new change drops the redo steps.
+- Done when: tests cover limit 20, undo / redo order, a new change clearing redo, and the stale-value skip; the buttons are disabled when empty (by reading). NOT seen in Obsidian until the user tries it (checklist 6i row).
+- New dependencies: none
+
+## Order check
+1 → 2 → 3 → 4: the UI needs the write helper and the spike answer from Phase 1; Phase 3 reuses `dragNest` from Phase 2. Phase 3 could swap places with 2 only for the CSS gutter on Not linked rows, but the gutter has no job without `dragNest`, so keep the order.
+
+## Verification
+- Pure rules by tests (Phase 1), including the round trip through `readPlan`.
+- Pointer drag, ghost, hover pop-out, dashed border, touch gutter and the phone cannot be tested without Obsidian: `drawPlanMap` has no DOM tests today (explorer, 2026-10-13). Each is listed as NOT seen until the user has tried it; do not claim more.
+- Check by hand in `test-vault` that clearing `sub` deletes the key and that the notes' other properties and `after` are untouched.
