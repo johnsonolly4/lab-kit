@@ -473,30 +473,30 @@ class KitReviewSection {
     winIntro(contentEl, inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply.");
     winSummary(contentEl, reviewSummary(this.items));
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
-    contentEl.createEl("p", { cls: "setting-item-description",
+    contentEl.createDiv({ cls: "setting-item-description",
       text: `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date` });
 
     // One click ticks every file with a box (recreate / merge); nothing is written until Apply
     const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge" || i.action === "create" || i.action === "fast-forward");
     if (boxed.length) {
-      new Setting(contentEl).setName(`Tick or untick all ${boxed.length} files with a box`)
-        .addButton(b => b.setButtonText("Tick all").setCta().onClick(() => this.tick(boxed, true)))
-        .addButton(b => b.setButtonText("Untick all").onClick(() => this.tick(boxed, false)));
+      const bar = contentEl.createDiv({ cls: "lab-kit-win-bar" });
+      bar.createSpan({ text: `Tick or untick all ${boxed.length} files with a box` });
+      const buttons = bar.createDiv({ cls: "lab-kit-win-actions" });
+      buttons.createEl("button", { text: "Tick all", cls: "mod-cta" }).addEventListener("click", () => this.tick(boxed, true));
+      buttons.createEl("button", { text: "Untick all" }).addEventListener("click", () => this.tick(boxed, false));
     }
 
     for (const g of GROUPS) {
       const group = this.items.filter(i => i.action === g.action);
       if (!group.length) continue;
-      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
+      const det = contentEl.createEl("details", { cls: "lab-kit-group is-label" });
       det.open = !!g.open;
       det.createEl("summary", { text: `${g.title} (${group.length})` });
       for (const it of group) {
-        const name = it.dest.slice(it.dest.lastIndexOf("/") + 1);
         const note = [it.untracked && g.action === "user-modified" ? "Not installed by the kit, no original to compare with." : "",
           g.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : "",
           g.action === "merge" && it.file.kind === "script" ? "Merged code: please test it." : ""].filter(Boolean);
-        const { row, text } = winRow(det, { state: actionWinState(g.action), title: name, detail: [it.file.desc, ...note].filter(Boolean).join(" · ") });
-        text.createEl("code", { cls: "lab-kit-win-path", text: it.dest });
+        const { row } = winRow(det, { state: actionWinState(g.action), title: it.dest, detail: [it.file.desc, ...note].filter(Boolean).join(" · ") });
         // the files with a box: what ticking it does, at the row's right end
         const tick = (word: string, on: boolean, set: (on: boolean) => void): void => {
           const label = row.createEl("label", { cls: "lab-kit-win-tick" });
@@ -512,7 +512,7 @@ class KitReviewSection {
     }
 
     if (this.retired.length) {
-      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
+      const det = contentEl.createEl("details", { cls: "lab-kit-group is-label" });
       det.open = true;
       det.createEl("summary", { text: `Retired by the kit (left in place, never deleted) (${this.retired.length})` });
       for (const r of this.retired) winRow(det, { state: "info", title: r.path, detail: r.exists ? "Left in place, not deleted." : "Already deleted." });

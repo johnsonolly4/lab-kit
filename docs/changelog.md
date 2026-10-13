@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Review update… matches Manage kit files** (plugin code; not seen in Obsidian): each row's title is the file's path (the grey monospace path line is gone), the group headings (Conflict, Updated, …) are quieter section labels you can still fold, and Tick all / Untick all are two plain buttons on one line instead of a settings row. No wording or button does anything different.
+
 ## v1.2.0 (2026-10-13)
 The Check setup look for every window, plan map reset button and plugin-owned styles, one-action settings rows, prioritised meeting lists.
 
