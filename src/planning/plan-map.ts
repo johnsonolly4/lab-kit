@@ -40,6 +40,11 @@ export function layoutPlan(plan: Plan): PlanMap {
     step.set(r.path, known.length ? 1 + Math.max(...known.map(p => step.get(p)!)) : 0);
   }
 
+  // A card with nothing before it sits just before its earliest child, so its arrow stays short (not all the way back at step 0).
+  const childStep = new Map<string, number>();
+  for (const r of linked) for (const p of r.afterPaths) childStep.set(p, Math.min(childStep.get(p) ?? Infinity, step.get(r.path)!));
+  for (const r of linked) if (r.afterPaths.length === 0 && childStep.has(r.path)) step.set(r.path, Math.max(0, childStep.get(r.path)! - 1));
+
   const place = new Map<string, number>();
   const last = linked.length ? Math.max(...step.values()) : 0;
   for (let s = 0; s <= last; s++) {

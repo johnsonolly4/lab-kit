@@ -57,6 +57,20 @@ describe("layoutPlan", () => {
   });
 });
 
+describe("short arrows", () => {
+  it("a card with nothing before it sits just before its earliest child", () => {
+    // Late has a long chain before its child J; Lone has nothing before it and its only child is J
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("J", { after: ["[[C]]", "[[Lone]]"] }), td("Lone")]);
+    expect(at(m)).toEqual(["A:0.0", "B:1.0", "C:2.0", "Lone:2.1", "J:3.0"]);
+  });
+  it("a source with a child in the next step stays at step 0; a source with children at different steps goes by the earliest", () => {
+    const a = map([td("S"), td("T", { after: "[[S]]" })]);
+    expect(at(a)).toEqual(["S:0.0", "T:1.0"]);
+    const b = map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("S"), td("T1", { after: ["[[S]]", "[[C]]"] }), td("T2", { after: "[[S]]" })]);
+    expect(b.cards.find(c => c.row.name === "S")!.step).toBe(0);   // T2 is at step 1
+  });
+});
+
 describe("chainOf", () => {
   const plan = (todos: NoteRec[]) => readPlan(todos, hub);
   it("a chain: everything before and after, not itself", () => {
