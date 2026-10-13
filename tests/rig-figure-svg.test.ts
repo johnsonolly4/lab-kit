@@ -22,14 +22,15 @@ describe("symbols", () => {
   });
   it("the detail picks a flask, a column box or a waste arrow", () => {
     expect(symbolFor("Reactor", "Batch vessel").name).toBe("flask");
-    expect(symbolFor("Reactor", "packed column").name).toBe("box");
+    expect(symbolFor("Reactor", "packed column").name).toBe("column");
+    expect(symbolFor("Reactor", "chip").name).toBe("box");
     expect(symbolFor("Reactor", "coil").name).toBe("coil");
     expect(symbolFor("Outlet", "Waste").name).toBe("waste");
     expect(symbolFor("Outlet", "collection vial").name).toBe("vial");
   });
   it("connection points lie on or inside the symbol's box and the input is left of the output", () => {
     for (const name of SYMBOL_NAMES) {
-      const s = [...PART_KINDS, ""].map(k => symbolFor(k, name === "waste" ? "waste" : name === "flask" ? "flask" : "")).find(x => x.name === name)!;
+      const s = [...PART_KINDS, ""].map(k => symbolFor(k, ["waste", "flask", "column"].includes(name) ? name : "")).find(x => x.name === name)!;
       expect(s.in.x).toBeLessThanOrEqual(s.out.x);
       for (const p of [s.in, s.out, s.top, s.bottom]) {
         expect(Math.abs(p.x)).toBeLessThanOrEqual(s.w / 2);

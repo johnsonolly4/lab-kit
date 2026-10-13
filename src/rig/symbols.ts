@@ -19,10 +19,11 @@ const make = (name: string, w: number, h: number, body: string, at: { in?: Point
 const box = make("box", 72, 44, `<rect x="-36" y="-22" width="72" height="44" rx="6"/>`);
 const SYMBOLS: Record<string, RigSymbol> = {
   box,
-  pump: make("pump", 52, 52, `<circle r="26"/><path d="M-10 -14 L16 0 L-10 14 Z"/>`),
+  pump: make("pump", 52, 52, `<circle r="26"/><path d="M-22.5 -13 L26 0 L-22.5 13"/>`),
   tee: make("tee", 14, 14, `<circle r="7" class="fill"/>`, { in: { x: 0, y: 0 }, out: { x: 0, y: 0 } }),
   valve: make("valve", 40, 32, `<path d="M-20 -16 L20 16 L20 -16 L-20 16 Z"/>`),
   regulator: make("regulator", 60, 44, `<rect x="-30" y="-22" width="60" height="44" rx="6"/><path d="M-16 -12 L16 12 L16 -12 L-16 12 Z"/>`),
+  column: make("column", 96, 22, `<rect x="-48" y="-11" width="96" height="22" rx="8"/>`),
   coil: make("coil", 84, 44, `<rect x="-42" y="-22" width="84" height="44" rx="10"/><path d="M-26 -22 L-18 22 M-13 -22 L-5 22 M0 -22 L8 22 M13 -22 L21 22"/>`),
   flask: make("flask", 52, 62, `<circle cx="0" cy="8" r="24"/><path d="M-7 -30 L-7 -14 M7 -30 L7 -14 M-9 -30 L9 -30"/>`, { in: { x: -24, y: 8 }, out: { x: 24, y: 8 }, bottom: { x: 0, y: 32 } }),
   hotplate: make("hotplate", 68, 22, `<rect x="-34" y="-5" width="68" height="16" rx="3"/><path d="M-20 -11 L-20 -5 M20 -11 L20 -5"/>`, { in: { x: -34, y: 3 }, out: { x: 34, y: 3 }, top: { x: 0, y: -11 }, bottom: { x: 0, y: 11 } }),
@@ -37,7 +38,8 @@ export const SYMBOL_NAMES = Object.keys(SYMBOLS);
 /** Keyword tests on the lower-cased detail that pick a symbol for a Reactor or an Outlet; the first match wins. */
 const REACTOR_BY_DETAIL: [RegExp, string][] = [
   [/vessel|flask|batch|rbf|round.?bottom/, "flask"],
-  [/column|packed|chip|cstr|plate/, "box"],
+  [/column|packed|bed|beads/, "column"],
+  [/chip|cstr|plate/, "box"],
 ];
 const OUTLET_BY_DETAIL: [RegExp, string][] = [[/waste/, "waste"]];
 
