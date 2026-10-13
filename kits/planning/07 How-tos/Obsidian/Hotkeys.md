@@ -11,7 +11,7 @@ show: back-to-hub
 > [!tip] One rule: `Alt` + the first letter of what you want
 > **H** home, **D** day, **F** find, **Z** Zotero paper, **N** note, **T** to-do, **L** lab entry, **U** update, **C** citation, **S** snippet, **M** meeting, **P** project note, **K** knowledge note, **B** board.
 
-These are suggestions. Lab Kit never sets a hotkey for you, so nothing changes until you do it yourself (see the end of this note).
+These are suggestions. Nothing is set until you do it: by hand (see the end of this note), or with **Set the suggested keys…** in Settings → Lab Kit → **Check hotkeys…**, which lists the keys first, sets only commands that have no key and whose suggested key is free, and never changes a key you have.
 
 | Keys | Does | Command to pick in Settings → Hotkeys |
 |---|---|---|
@@ -50,6 +50,8 @@ Rules: one key per command, no duplicates. Don't use `Ctrl+Alt` (it is AltGr on 
 In Zotero: `1` yellow, `2` red, `3` green.
 
 ## Set one
+
+All at once: Settings → Lab Kit → **Check hotkeys…** → **Set the suggested keys…** (untick any you don't want). One at a time:
 
 1. Obsidian → **Settings → Hotkeys**.
 2. Search for the command name from the table.

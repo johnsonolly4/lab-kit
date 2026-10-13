@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.0.1",
-      "sha256": "c8a32f9fabb30d926fedd1912009adc381f4bacabd47280d0bf26786f993fd1c",
+      "sha256": "3801d7a6a78fc327fdfe214a4ccf633055a25dd1b74b83b02c8d66c30e74bdd7",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.0.1",
-      "sha256": "4c4c4b4307ad7aded8740724c996b789e173035d276f146cdc7dec31929a76ef",
+      "sha256": "ce98bf4ef9a53d8ac8876d7910af7c944d0c2427048d35f7482fb476b608a5ee",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -161,7 +161,7 @@
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
       "version": "1.0.1",
-      "sha256": "40c11302e091e643703773a12af5a8269dc9a9bd8bf196b618319694d279a699",
+      "sha256": "fb055ea75f1e66910f4038b6ab349c2ebacc2fdbfd49df98e656b21c95442113",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer"
     },
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "e60c378c5428c8712809b82681ede70b4614af0cc7819b41c9aa5dc47b335c8e",
+      "sha256": "d178191ab4162ad11a659870406998625096891ec70d59f64f8d171c3b35f825",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },

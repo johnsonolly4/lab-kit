@@ -322,7 +322,7 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 ### Hotkeys
 
 > [!tip] One rule: `Alt` + the first letter of what you want
-> The recommended keys are in [[Hotkeys]]. They are suggestions: Lab Kit never sets them for you (Obsidian → Settings → Hotkeys). **Check hotkeys…** (Settings > Lab Kit) shows which are set.
+> The recommended keys are in [[Hotkeys]]. They are suggestions: nothing is set until I do it, in Obsidian → Settings → Hotkeys or with **Set the suggested keys…** in **Check hotkeys…** (Settings > Lab Kit), which shows which are set, sets only commands with no key whose suggested key is free, and asks first.
 
 Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkeys]], and only there. In Zotero: `1` `2` `3` pick the highlight colour (see [[#Literature note (`04 Literature/ZotLit Imports`)|Literature note]]).
 

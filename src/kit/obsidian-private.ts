@@ -22,6 +22,9 @@ interface PrivateApp {
   hotkeyManager?: {
     customKeys?: Record<string, KitHotkey[]>;
     defaultKeys?: Record<string, KitHotkey[]>;
+    setHotkeys?: (id: string, keys: KitHotkey[]) => void;
+    save?: () => Promise<void> | void;
+    bake?: () => void;
   };
   /** Obsidian's own (core) plugins, by id; `instance.options` is that plugin's saved settings. */
   internalPlugins?: { plugins?: Record<string, { enabled?: boolean; instance?: { options?: Record<string, unknown> } }> };
@@ -140,6 +143,24 @@ export async function addTemplaterFolderTemplate(app: App, folder: string, templ
 
 /** True when this Obsidian exposes the hotkey manager we can read hotkeys from (private API). */
 export const hotkeysSupported = (app: App): boolean => typeof priv(app).hotkeyManager?.customKeys === "object";
+
+/** True when this Obsidian lets a hotkey be set from code (`hotkeyManager.setHotkeys`, private). */
+export const hotkeysWritable = (app: App): boolean => hotkeysSupported(app) && typeof priv(app).hotkeyManager?.setHotkeys === "function";
+
+/**
+ * Gives commands a hotkey, the way Settings → Hotkeys does (`hotkeyManager.setHotkeys`, then `save` and `bake`; private API). Only called from
+ * Set the suggested keys, after the user confirmed the list; the caller passes only commands that have no key. Returns how many were set.
+ */
+export async function setHotkeys(app: App, keys: { id: string; key: KitHotkey }[]): Promise<number> {
+  const hm = priv(app).hotkeyManager;
+  if (!hm?.setHotkeys) return 0;
+  let n = 0;
+  for (const k of keys) {
+    try { hm.setHotkeys(k.id, [{ modifiers: [...k.key.modifiers], key: k.key.key }]); n++; } catch (e) { console.error(e); }
+  }
+  try { await hm.save?.(); hm.bake?.(); } catch (e) { console.error(e); }
+  return n;
+}
 
 /** The hotkeys in use, per command id: your own hotkeys where set, else Obsidian's defaults. {} when unknown. */
 export function hotkeysInUse(app: App): Record<string, KitHotkey[]> {

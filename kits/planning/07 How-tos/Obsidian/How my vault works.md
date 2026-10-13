@@ -126,7 +126,7 @@ flowchart LR
 ## Keeping the vault healthy
 
 - **Check setup…** (Settings → Lab Kit) lists what the kits need and fixes it.
-- **Check hotkeys…** shows the keys [[Hotkeys]] recommends and what is set.
+- **Check hotkeys…** shows the keys [[Hotkeys]] recommends and what is set; **Set the suggested keys…** there sets the ones that are free (it asks first and never changes a key you have).
 - **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, folds the lines that stay the same, shows a change that is the same in several notes once, and keeps a backup). An old project, topic or series hub gets the current buttons and tiles from the rule **Hubs: bring the page up to the current template** (not ticked until you tick it).
 - **Manage files…** shows kit files with a newer version. On a file you keep as your own: **Compare…** shows both, **Use kit version…** swaps yours for the kit's (a backup is saved first), **Keep mine** leaves yours. **Clear old backups…** (Settings → Lab Kit) empties old ones.
 
@@ -197,7 +197,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | Tidy up notes | Finds notes that don't follow the vault's rules and fixes the ones you tick |
 | Find moved folders | Points the settings at folders you moved outside Obsidian |
 | Check setup | Lists what the kits need and fixes it |
-| Check hotkeys | Shows the recommended keys and what is set |
+| Check hotkeys | Shows the recommended keys and what is set; can set the free ones after asking |
 | Review kit files | Preview of every kit file the plugin would add or update |
 | Manage kit files | Every kit file with its status and buttons (Compare, Use kit version, Keep mine) |
 | Show what's new | The newest changes of Lab Kit |

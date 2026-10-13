@@ -1,6 +1,6 @@
 // Check hotkeys: the report per kit function (pure: a HotkeyState in, rows out).
 import { describe, it, expect } from "vitest";
-import { RECOMMENDED_HOTKEYS, checkHotkeys, hotkeyReportMarkdown, type HotkeyState } from "../src/kit/hotkey-check";
+import { RECOMMENDED_HOTKEYS, checkHotkeys, hotkeyReportMarkdown, settableHotkeys, type HotkeyState } from "../src/kit/hotkey-check";
 
 const SNIP = "templater-obsidian:Extras/Templates/Lab Kit/Insert snippet.md";
 const state = (o: Partial<HotkeyState> = {}): HotkeyState => ({
@@ -39,5 +39,16 @@ describe("check hotkeys", () => {
     const md = hotkeyReportMarkdown(checkHotkeys(state()));
     expect(md.split("\n").length).toBe(2 + RECOMMENDED_HOTKEYS.length);
     expect(md).toContain("`Alt+S`");
+  });
+  it("Set the suggested keys: only commands with no key at all whose suggested key is free; yours, clashes, missing and unreadable are never in it", () => {
+    const ids = (st: HotkeyState) => settableHotkeys(checkHotkeys(st)).map(r => [r.id, r.recommended]);
+    // Alt+S is set already; New to-do and Search have no key and their keys are free; the rest of the list has no such command here
+    expect(ids(state())).toEqual([["omnisearch:show-modal", "Alt+F"], ["lab-kit:new-todo", "Alt+T"]]);
+    expect(ids(state({ hotkeys: { "lab-kit:new-todo": [{ modifiers: ["Mod"], key: "T" }] } }))).toEqual([["omnisearch:show-modal", "Alt+F"], ["templater-obsidian:Extras/Templates/Lab Kit/Insert snippet.md", "Alt+S"]]);   // a key of your own
+    expect(ids(state({ hotkeys: { "editor:save": [{ modifiers: ["Alt"], key: "T" }] } }))).toEqual([["omnisearch:show-modal", "Alt+F"], ["templater-obsidian:Extras/Templates/Lab Kit/Insert snippet.md", "Alt+S"]]);        // Alt+T is taken
+    expect(ids(state({ hotkeys: null }))).toEqual([]);                                                                                          // unreadable
+    expect(settableHotkeys(checkHotkeys(state())).every(r => r.key && r.status === "none")).toBe(true);
+    // a command with no suggested key is never set
+    expect(ids(state({ commands: { "lab-kit:sort-inbox": "Lab Kit: Sort inbox" }, hotkeys: {} }))).toEqual([]);
   });
 });

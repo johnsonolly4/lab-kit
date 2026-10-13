@@ -36,7 +36,9 @@ export interface HotkeyState {
 
 /** set: has the recommended key · other: has a key of your own (left as it is) · none: no key · clash: the recommended key is used by another command · missing: no such command · unreadable: hotkeys can't be read */
 export type HotkeyStatus = "set" | "other" | "none" | "clash" | "missing" | "unreadable";
-export interface HotkeyRow { does: string; command: string; recommended: string; current: string[]; status: HotkeyStatus; detail: string }
+export interface HotkeyRow { does: string; command: string; recommended: string; current: string[]; status: HotkeyStatus; detail: string;
+  /** The command's id when it was found, and the suggested key: what Set the suggested keys writes. */
+  id?: string; key?: KitHotkey }
 
 /** The command id whose name is `name`; else one with the same plugin prefix whose name contains the part after the colon (Templater names a template command after its path). */
 function findCommand(commands: Record<string, string>, name: string): string | undefined {
@@ -53,8 +55,8 @@ function findCommand(commands: Record<string, string>, name: string): string | u
 export function checkHotkeys(s: HotkeyState): HotkeyRow[] {
   return RECOMMENDED_HOTKEYS.filter(r => r.kit === "lab" || s.planning).map(r => {
     const recommended = r.key ? hotkeyText(r.key) : "";
-    const row = (status: HotkeyStatus, detail: string, current: string[] = []): HotkeyRow => ({ does: r.does, command: r.command, recommended, current, status, detail });
     const id = findCommand(s.commands, r.command);
+    const row = (status: HotkeyStatus, detail: string, current: string[] = []): HotkeyRow => ({ does: r.does, command: r.command, recommended, current, status, detail, ...(id ? { id } : {}), ...(r.key ? { key: r.key } : {}) });
     if (!id) return row("missing", "No command with this name: its plugin is off or not installed, or the name differs in this version.");
     if (!s.hotkeys) return row("unreadable", "Can't read hotkeys in this Obsidian version: look in Settings → Hotkeys.");
     const own = s.hotkeys[id] ?? [], current = own.map(hotkeyText);
@@ -65,6 +67,13 @@ export function checkHotkeys(s: HotkeyState): HotkeyRow[] {
     return row(clash ? "clash" : "none", clash ? `Not set. ${recommended} is already used by ${s.commands[clash] ?? clash}.` : "Not set.", current);
   });
 }
+
+/**
+ * The rows Set the suggested keys may write: the command is there, has no key at all, and its suggested key is used by nothing else.
+ * A command with a key of your own, a clash, a missing command or unreadable hotkeys is never in it.
+ */
+export const settableHotkeys = (rows: HotkeyRow[]): (HotkeyRow & { id: string; key: KitHotkey })[] =>
+  rows.filter((r): r is HotkeyRow & { id: string; key: KitHotkey } => r.status === "none" && !!r.key && !!r.id && !r.current.length);
 
 /** The report as a Markdown table, for pasting into a note or a message. */
 export function hotkeyReportMarkdown(rows: HotkeyRow[]): string {

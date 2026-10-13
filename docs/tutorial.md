@@ -47,7 +47,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 > [!note] One-time setup for Alt+S
 > Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
 > 1. Settings → Lab Kit → Kit folders and setup → **Check setup…** → press **Fix** on the Templater rows. That adds `Insert snippet.md` to Templater's **Template hotkeys** and sets its **User script functions** folder when it has none (a folder you set yourself is never changed). Doing it by hand works too: Settings → Lab Kit → **Manage files…** shows where each kit file is.
-> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**. Lab Kit never sets a hotkey itself; **Check hotkeys…** shows which of the recommended keys are set.
+> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet.md") → set **Alt+S**. Or let Lab Kit do it: **Check hotkeys…** shows which of the recommended keys are set, and its **Set the suggested keys…** sets the ones that are free after you confirm (a key you have is never changed).
 > 3. If the forms ask one question at a time, Templater's **User script functions** folder is not the folder that holds `labSnippets.js` (Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
@@ -312,15 +312,15 @@ After an update, a **What's new** popup opens once. Open it again from **Setting
 
 ## 8. Planning kit
 
-> [!note] Preview
-> The planning kit is a preview and is off until you switch it on. It is new in 1.0.0: most of it is tested in code and not yet used by many people in Obsidian. Report what breaks on GitHub.
+> [!note] Off until you switch it on
+> The planning kit is new in 1.0.0: most of it is tested in code and not yet used by many people in Obsidian. Report what breaks on GitHub.
 
 The planning kit turns the vault around the lab book into a planner: a homepage, a to-do board, projects, meetings, knowledge notes and an inbox. The day-to-day routine (what to press in the morning, the Friday review) is in the note it installs, **How my vault works** (the **How it works** button on the homepage); this section says what there is and how to set it up.
 
 ### 8.1 Switching it on
-1. Settings → Lab Kit → Built-in kit → **Planning kit (preview)** → on. Switching it off later removes nothing.
+1. Settings → Lab Kit → Built-in kit → **Planning kit** → on. Switching it off later removes nothing.
 2. **Planning kit files** → **Review update…** → **Apply**. A list shows every file, folder and setting first. The planning commands start once the files are installed.
-3. **Check setup…** lists what is missing, each with a **Fix**: the plugins (needed: Meta Bind, Force note view mode, Omnisearch, Notebook Navigator; optional: ZotLit, Outliner, Editing Toolbar, CSS Editor, Advanced Canvas; Lab Kit never installs a plugin), the Meta Bind buttons, Templater's folder templates (daily notes and to-dos), the homepage in Notebook Navigator, the meeting series, and the CSS snippets. With ZotLit on there are two more rows, **ZotLit frontmatter fields** and **ZotLit folders**: Fix adds only the fields that are missing and sets a folder only when it is empty, never changes a field you have, then turns ZotLit off and on so it reads them. Restart Obsidian after the Meta Bind Fix: it loads its buttons at start-up.
+3. **Check setup…** lists what is missing, with a **Fix** where Lab Kit can make the change (the window stays open while you work through it; **Check again** redraws it): kit files that are missing or have an update waiting, Obsidian's own Bases and Daily notes plugins, the Daily notes folder and date format, Dataview's inline queries, the types of `due`, `deadline` and `priority`, the plugins (needed: Dataview, Meta Bind, Force note view mode, Omnisearch, Notebook Navigator; optional: ZotLit, Outliner, Editing Toolbar, CSS Editor, Advanced Canvas; Lab Kit never installs a plugin), the Meta Bind buttons, Templater's folder templates (daily notes and to-dos), the homepage in Notebook Navigator, the meeting series, and the CSS snippets. With ZotLit on there are two more rows, **ZotLit frontmatter fields** and **ZotLit folders**: Fix adds only the fields that are missing and sets a folder only when it is empty, never changes a field you have, then turns ZotLit off and on so it reads them. Restart Obsidian after the Meta Bind Fix: it loads its buttons at start-up.
 4. The folders are settings (Settings → Lab Kit → **Planning folders**; empty = the default, `00 Inbox` … `99 Archive`). Rename a folder inside Obsidian and its setting follows; the kit files you have not edited get the new name written in.
 
 ### 8.2 Homepage
