@@ -372,8 +372,8 @@
       "src": "Extras/scripts/templater/labForm.js",
       "role": "userScripts",
       "path": "labForm.js",
-      "version": "0.4.9",
-      "sha256": "3acec997f788c75896b3842ab73b8718647a74b3c55c97fbd6a8fd9c0b77ab2d",
+      "version": "1.0.1",
+      "sha256": "763ee825d31560568857cdbd6bde01be1c4ddb550bc160eecf1695bfd4810076",
       "renamedFrom": [],
       "desc": "The pop-up form every snippet uses"
     },

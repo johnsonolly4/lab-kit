@@ -22,11 +22,11 @@ A note in the `Snippets` folder whose first lines are a header between `---` lin
 |---|---|
 | `title` | form title and the name in the Alt+S menu |
 | `icon`, `desc` | menu icon (a Lucide name) and the one-line description |
-| `required` | key of a field that must hold at least one list item, else nothing is inserted |
+| `required` | key of a field that must hold at least one list item, else nothing is inserted (silently; to make the form refuse an empty field, give that field `mandatory: true`, below) |
 | `set` | properties written on the note you are in when the snippet is inserted, one `Name: value` line each; the value may hold tokens (`Rig: "[[{{rig}}]]"`). An existing property is replaced; an empty value is not written |
 | `fields` | the questions (below); an empty list is allowed |
 
-A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint`, `placeholder`, `type` (`text` default, `number`, `textarea`), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered). A field with `suggest: notes` and `folder: <setting>` lists the notes of one of your Lab Kit folders (`rigsFolder`, `methodsFolder`, `chemicalFolder`, `labFolder`); the answer must be one of those notes, and the snippet stops with a message while the folder setting is empty or has no notes.
+A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint` (the help text under the label), `placeholder`, `mandatory: true` (the form marks the label with `*` and stays open, with "Needs an answer" under the field, until it holds text; Esc still inserts nothing; any field you do not mark can simply be left empty to skip it), `type` (`text` default, `number`, `textarea`), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered). A field with `suggest: notes` and `folder: <setting>` lists the notes of one of your Lab Kit folders (`rigsFolder`, `methodsFolder`, `chemicalFolder`, `labFolder`); the answer must be one of those notes, and the snippet stops with a message while the folder setting is empty or has no notes.
 
 ### Tokens (`{{…}}` in the body and in a field's `value`)
 

@@ -182,6 +182,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys.
 | New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
 | New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder (needs Templater) |
 | New rig | Asks the rig's name; makes the note from the Rig template in your Rigs folder and opens it |
+| Clone experiment | Copies the open lab note (or one you pick) into a new numbered lab note and opens it: properties, objectives, apparatus, procedure, rig and tables are kept with the sample codes renumbered; Status goes back to Planned, dates and Outcome are emptied, free text under Results / Analysis and Notes for next time is cleared. The title box starts with the old title and the new note gets a `Cloned from` link to the old one. The old note is not changed. Not seen in Obsidian yet |
 | Review kit files | Opens the update preview |
 | Manage kit files | Opens the list of kit files |
 | Show what's new | Opens the What's new popup for this version |

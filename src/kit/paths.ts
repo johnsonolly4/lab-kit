@@ -281,6 +281,15 @@ export function newChemicalTarget(o: { templater: boolean; template: string | nu
   return { template: o.template, folder };
 }
 
+/** What Clone experiment needs before it can run: the folder of lab notes and the initials, or the reason it can't (shown as a notice). No Templater: the old note's text is copied. */
+export function cloneExperimentTarget(o: { labFolder: string; initials: string }): { folder: string; initials: string } | { error: string } {
+  const initials = o.initials.trim();
+  if (!initials) return { error: "Set your initials in Lab Kit settings first: lab notes are named ABC0001 - Title." };
+  const folder = kitJoin(o.labFolder.trim());
+  if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
+  return { folder, initials };
+}
+
 /** What New rig needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). No Templater: the template's text is copied as it is. */
 export function newRigTarget(o: { template: string | null; rigsFolder: string }): { template: string; folder: string } | { error: string } {
   const folder = kitJoin(o.rigsFolder.trim());

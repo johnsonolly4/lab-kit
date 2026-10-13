@@ -81,6 +81,7 @@ flowchart LR
 > - `kind` marks system notes: `project`, `todo`, `literature`, `meeting`, `meeting-series`, `concept`, `review`, `hub`, `daily`, `guide`, `list`, `spec`. (Not `type` - that clashes with the lab book's `Type`.)
 > - Exception: literature notes have no `Status`. Their state is the inline field `[takeaway:: ...]` (empty = to process), because ZotLit refreshes the properties on every update (see below).
 > - Lab book properties keep the lab kit's names (`Type`, `Exp. Class`, `Plan date`, ...).
+> - Two lab note properties are written by a command or snippet, not by the template, so a note without them is normal and Tidy up notes never adds them: `Rig` (the Rig snippet, a link to the rig note) and `Cloned from` (Clone experiment, a link to the note it was copied from).
 
 ### Lab entry (`03 Lab Book/Notes`)
 Created with the **New lab entry** command, or by making a note in the folder (a Templater folder template), from the lab kit's *Lab Book Template* (numbering + title prompt).

@@ -14,7 +14,7 @@ export interface SnippetTp {
   file?: { title?: string };
   user: { labForm?: (tp: unknown, title: string, fields: FormField[], opts?: unknown) => Promise<Record<string, unknown> | null> };
 }
-interface FormField { key: string; label: string; hint?: string; placeholder?: string; type: string; value: string; suggest?: { name: string; aliases: string[] }[] }
+interface FormField { key: string; label: string; hint?: string; required?: boolean; placeholder?: string; type: string; value: string; suggest?: { name: string; aliases: string[] }[] }
 
 /** Title, icon and description for the Alt+S menu. */
 export interface SnippetMeta { title?: string; icon?: string; desc?: string }
@@ -119,6 +119,7 @@ export class SnippetTemplates {
       const got = await tp.user.labForm(tp, title, header.fields.flatMap(f => {
         const isCodes = f.suggest === "codes";
         const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: isCodes && parts.prefill ? parts.prefill : defaults[f.key],
+          ...(f.mandatory ? { required: true } : {}),
           ...(f.suggest === "chemicals" ? { suggest: classFilter(chems, f.classes, kit.chemClassOnly) } : {}),
           ...(f.suggest === "notes" ? { suggest: listed.get(f.key)!.map(n => ({ name: n.basename, aliases: [] })) } : {}) };
         return isCodes && parts.options.length
