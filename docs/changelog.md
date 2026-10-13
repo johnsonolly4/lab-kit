@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Plan map: drag a card onto another to make it a subtask** (planning kit, plugin code; Review update… for the theme; not seen in Obsidian): each card has a strip on its left edge, a thin bar that becomes a ⋮⋮ grip when the pointer is over it (always shown on a phone). Drag the whole card by it onto another card to set `sub`; the card you are over gets a dashed border. A to-do that already has `after` links keeps them; one that is already a subtask moves to the new parent; subtasks go one level only (a to-do with subtasks, or a subtask as the target, is refused with a notice). The card then shows only in its parent's "▸ n/m" list, and so its arrows are hidden. In an open subtask list each line has a grip: drag it onto the map background to make it a plain to-do again, or onto another card to move it. A click on the strip still opens the note. Each change has an Undo in its notice. The card text sits 8 px further right to make room for the strip.
+
 ## v1.1.0 (2026-10-13)
 Plan map picture for slides and zoom, Clone experiment, a regrouped settings tab, a bigger Check setup and Tidy up notes window.
 

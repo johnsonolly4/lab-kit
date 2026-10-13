@@ -1,6 +1,6 @@
 // Making and removing `after` links on the plan map (src/planning/plan-link.ts).
 import { describe, it, expect } from "vitest";
-import { addAfter, bridgeAfter, canLink, canNest, removeAfter } from "../src/planning/plan-link";
+import { addAfter, bridgeAfter, canLink, canNest, nestAction, removeAfter } from "../src/planning/plan-link";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -78,6 +78,24 @@ describe("canNest", () => {
     expect(canNest(plan, p("B"), p("D"))).toBe("ok");
     expect(canNest(plan, p("C"), p("D"))).toBe("ok");   // C moves from A to D
     expect(canNest(plan, p("E"), p("A"))).toBe("ok");   // E keeps `after: B`
+  });
+});
+
+describe("nestAction", () => {
+  const plan = readPlan([td("A"), td("B"), td("C", { sub: "[[A]]" })], hub);
+  const p = (n: string) => T + n + ".md";
+  it("a drop on a card nests, or is refused with the reason", () => {
+    expect(nestAction(plan, p("B"), p("A"), false)).toEqual({ do: "nest", to: p("A") });
+    expect(nestAction(plan, p("C"), p("B"), false)).toEqual({ do: "nest", to: p("B") });   // re-parent
+    expect(nestAction(plan, p("C"), p("A"), false)).toEqual({ do: "refuse", verdict: "already" });
+    expect(nestAction(plan, p("A"), p("B"), false)).toEqual({ do: "refuse", verdict: "has-subs" });
+  });
+  it("a drop on the background clears a subtask and does nothing for a plain to-do", () => {
+    expect(nestAction(plan, p("C"), null, true)).toEqual({ do: "clear" });
+    expect(nestAction(plan, p("B"), null, true)).toEqual({ do: "none" });
+  });
+  it("a drop outside the map does nothing", () => {
+    expect(nestAction(plan, p("C"), null, false)).toEqual({ do: "none" });
   });
 });
 

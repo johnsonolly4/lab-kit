@@ -90,8 +90,8 @@
       "src": ".obsidian/snippets/vault-theme.css",
       "role": "cssSnippets",
       "path": "vault-theme.css",
-      "version": "1.0.1",
-      "sha256": "9e324da11242b5a8d5849c66f9e236c8ec8e30cb0bfb2c2549aeffdd5af6ab75",
+      "version": "1.1.0",
+      "sha256": "281c699a6968a7a743ce1756bf54f144ced0250d1e7ed1a685399252598fb039",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },

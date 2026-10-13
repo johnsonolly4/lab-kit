@@ -3,8 +3,8 @@
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
 import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
-import { changeAfter, linkText, namesOf, undoNotice } from "./after-write";
-import { addAfter, canLink, removeAfter } from "./plan-link";
+import { changeAfter, changeSub, linkText, namesOf, undoNotice } from "./after-write";
+import { addAfter, canLink, nestAction, removeAfter, type NestVerdict } from "./plan-link";
 import { rememberText } from "./after-bridge";
 
 export interface MapOptions {
@@ -63,6 +63,20 @@ async function unlink(o: MapOptions, from: string, to: string): Promise<void> {
   undoNotice("Link removed.", () => changeAfter(o.app, to, v => addAfter(v, text)));
 }
 
+/** The map scrolls by itself while a drag is near its edge (`pointer` gives where it is now; `moved` runs after each step). Returns the function that stops it. */
+function autoScroll(scroller: HTMLElement | null, pointer: () => { x: number; y: number }, moved: () => void): () => void {
+  const EDGE = 48, STEP = 14;
+  const id = window.setInterval(() => {
+    if (!scroller) return;
+    const b = scroller.getBoundingClientRect(), p = pointer();
+    let did = false;
+    if (p.x < b.left + EDGE) { scroller.scrollLeft -= STEP; did = true; } else if (p.x > b.right - EDGE) { scroller.scrollLeft += STEP; did = true; }
+    if (p.y < b.top + EDGE) { scroller.scrollTop -= STEP; did = true; } else if (p.y > b.bottom - EDGE) { scroller.scrollTop += STEP; did = true; }
+    if (did) moved();
+  }, 30);
+  return () => window.clearInterval(id);
+}
+
 /** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`. A line follows the pointer; Esc cancels. */
 function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement, from: string): void {
   const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
@@ -91,17 +105,9 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       if (target !== over) { over?.removeClass("vt-map-drop"); over = target; over?.addClass("vt-map-drop"); }
     };
     place();
-    const EDGE = 48, STEP = 14;   // the map scrolls sideways by itself while the pointer is near its left or right edge
-    const scrolling = window.setInterval(() => {
-      if (!scroller) return;
-      const b = scroller.getBoundingClientRect();
-      let moved = false;
-      if (pointer.x < b.left + EDGE) { scroller.scrollLeft -= STEP; moved = true; } else if (pointer.x > b.right - EDGE) { scroller.scrollLeft += STEP; moved = true; }
-      if (pointer.y < b.top + EDGE) { scroller.scrollTop -= STEP; moved = true; } else if (pointer.y > b.bottom - EDGE) { scroller.scrollTop += STEP; moved = true; }
-      if (moved) place();
-    }, 30);
+    const stopScroll = autoScroll(scroller, () => pointer, place);
     const finish = (e: PointerEvent | null): void => {
-      window.clearInterval(scrolling);
+      stopScroll();
       ac.abort();
       over?.removeClass("vt-map-drop");
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
@@ -123,6 +129,78 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
   });
 }
 
+const NEST_NO: Record<Exclude<NestVerdict, "ok">, string> = {
+  self: "A to-do cannot be its own subtask.",
+  already: "Already a subtask of that to-do.",
+  "has-subs": "That to-do has subtasks of its own: subtasks go one level only.",
+  "parent-is-sub": "That to-do is itself a subtask: subtasks go one level only.",
+};
+
+/** Makes `to-do from` a subtask of `to` (or, `to` null, clears it) and offers Undo. The card disappears from the map (a subtask lives in its parent's list), so its arrows do too: the notice says so. */
+async function nest(o: MapOptions, plan: Plan, from: string, to: string | null): Promise<void> {
+  let old: unknown;
+  const row = plan.rows.find(r => r.path === from);
+  const parent = to ? plan.rows.find(r => r.path === to) : undefined;
+  const text = to ? linkText(o.app, to, from) : undefined;
+  await changeSub(o.app, from, v => { old = v; return text; });
+  const arrows = !!row && (row.afterPaths.length > 0 || plan.rows.some(r => r.afterPaths.includes(from)));
+  undoNotice(to ? `Made a subtask of ${parent?.name ?? "that to-do"}.${arrows ? " Its arrows are hidden while it is a subtask." : ""}` : "Subtask cleared.", () => changeSub(o.app, from, () => old));
+}
+
+/** Makes `grip` a handle: dragging from it moves the whole to-do (`source` is its card or subtask line; a ghost follows the pointer). Dropped on another card it becomes that card's subtask; a subtask dropped on the map background stops being one. Under 5 px of movement it is a click and opens the note. Esc cancels. */
+function dragNest(wrap: HTMLElement, plan: Plan, o: MapOptions, grip: HTMLElement, from: string, source: HTMLElement): void {
+  grip.addEventListener("click", stopEvent);
+  grip.addEventListener("mousedown", stopEvent);   // Live Preview opens a code block for editing on a click inside it
+  grip.addEventListener("pointerdown", down => {
+    const row = plan.rows.find(r => r.path === from);
+    if (down.button !== 0 || !row) return;
+    stopEvent(down);
+    grip.setPointerCapture(down.pointerId);
+    const ac = new AbortController();
+    const at = (x: number, y: number): { x: number; y: number } => { const w = wrap.getBoundingClientRect(); return { x: x - w.left, y: y - w.top }; };
+    const scroller = wrap.querySelector<HTMLElement>(".vt-map-scroll");
+    let pointer = { x: down.clientX, y: down.clientY };
+    let ghost: HTMLElement | null = null, over: HTMLElement | null = null, stopScroll: (() => void) | null = null;
+    const hit = (): HTMLElement | null => {
+      const t = grip.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>("[data-plan-path]") ?? null;
+      return t && t.dataset.planPath !== from ? t : null;
+    };
+    const place = (): void => {
+      if (!ghost) return;
+      const p = at(pointer.x, pointer.y);
+      ghost.setCssProps({ "--vt-ghost-x": `${p.x}px`, "--vt-ghost-y": `${p.y}px` });
+      const t = hit();
+      if (t !== over) { over?.removeClass("vt-map-nest-drop"); over = t; over?.addClass("vt-map-nest-drop"); }
+    };
+    const begin = (): void => {
+      ghost = wrap.createDiv({ cls: "vt-map-ghost", text: row.name });
+      ghost.setCssProps({ "--vt-ghost-w": `${CARD_W * (o.zoom ?? 1)}px` });
+      source.addClass("vt-map-lifted");
+      stopScroll = autoScroll(scroller, () => pointer, place);
+      place();
+    };
+    const finish = (e: PointerEvent | null): void => {
+      if (e) pointer = { x: e.clientX, y: e.clientY };
+      const dragged = ghost !== null, target = e ? hit() : null, w = wrap.getBoundingClientRect();
+      const inside = pointer.x >= w.left && pointer.x <= w.right && pointer.y >= w.top && pointer.y <= w.bottom;
+      stopScroll?.(); ac.abort();
+      over?.removeClass("vt-map-nest-drop"); source.removeClass("vt-map-lifted"); ghost?.remove();
+      if (!e) return;
+      if (!dragged) { open(o, from, Keymap.isModEvent(e)); return; }
+      const act = nestAction(plan, from, target?.dataset.planPath ?? null, inside && !target);
+      if (act.do === "refuse") new Notice(NEST_NO[act.verdict]);
+      else if (act.do === "nest" || act.do === "clear") nest(o, plan, from, act.do === "nest" ? act.to : null).catch(() => { new Notice("Could not change that to-do."); });
+    };
+    grip.addEventListener("pointermove", e => {
+      pointer = { x: e.clientX, y: e.clientY };
+      if (!ghost && Math.hypot(pointer.x - down.clientX, pointer.y - down.clientY) >= 5) begin(); else place();
+    }, { signal: ac.signal });
+    grip.addEventListener("pointerup", e => finish(e), { signal: ac.signal });
+    grip.addEventListener("pointercancel", () => finish(null), { signal: ac.signal });
+    grip.ownerDocument.addEventListener("keydown", e => { if (e.key === "Escape") finish(null); }, { signal: ac.signal });
+  });
+}
+
 /** A parent's "▸ 2/3" toggle; a click opens or closes its list of subtasks. */
 function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
   const { text, allDone } = subsLabel(row);
@@ -134,11 +212,12 @@ function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
 }
 
 /** The open list of a parent's subtasks: each with a tick circle (ticks and unticks) and its name (click opens). */
-function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string): void {
+function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string, drag: { wrap: HTMLElement; plan: Plan }): void {
   const list = parent.createDiv({ cls });
   for (const ev of ["click", "mousedown", "contextmenu"]) list.addEventListener(ev, e => e.stopPropagation());   // not the parent card's open / menu
   for (const s of row.subs) {
     const line = list.createDiv({ cls: s.done ? "vt-map-sub vt-map-sub-done" : "vt-map-sub" });
+    dragNest(drag.wrap, drag.plan, o, line.createDiv({ cls: "vt-map-grip vt-map-sub-grip", attr: { "aria-label": "Drag out to make it a plain to-do, or onto another to-do to move it" } }), s.path, line);
     let done = s.done;
     const tick = line.createEl("button", { cls: "vt-map-tick vt-map-sub-tick", attr: { "aria-label": "Mark done" } });
     const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); line.toggleClass("vt-map-sub-done", done); };
@@ -185,6 +264,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       const el = canvas.createDiv({ cls: ["vt-map-card", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
       el.setCssProps({ "--vt-map-x": `${p.x}px`, "--vt-map-y": `${p.y}px` });
       el.dataset.planPath = c.path;
+      dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto another to-do to make it a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
       const tick = el.createEl("button", { cls: "vt-map-tick", attr: { "aria-label": r.done ? "Mark not done" : "Mark done" } });   // a circle: ticks and unticks, so a wrong tick can be undone
       let done = r.done;   // what the card shows now: it changes at the click, before the note's properties are saved and the map redraws
@@ -212,7 +292,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}`, attr: { title: r.result } });   // cut with an ellipsis (clear of the subtask toggle); the whole text on hover
       if (r.subs.length) el.addClass("vt-map-has-subs");
       subsToggle(el, r, o);
-      if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs");
+      if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs", { wrap, plan });
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));
       el.addEventListener("mouseenter", () => {   // the card and everything before and after it; the rest is dimmed (desktop only: a phone has no hover)
@@ -243,7 +323,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       a.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       a.addEventListener("contextmenu", e => menu(o, e, r));
       subsToggle(li, r, o);
-      if (o.expanded.has(r.path) && r.subs.length) subsList(li, r, o, "vt-map-subs vt-map-subs-inline");
+      if (o.expanded.has(r.path) && r.subs.length) subsList(li, r, o, "vt-map-subs vt-map-subs-inline", { wrap, plan });
     }
   }
 }

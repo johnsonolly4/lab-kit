@@ -50,6 +50,14 @@ export function canNest(plan: Plan, child: string, parent: string): NestVerdict 
   return "ok";
 }
 
+export type NestAction = { do: "nest"; to: string } | { do: "clear" } | { do: "refuse"; verdict: Exclude<NestVerdict, "ok"> } | { do: "none" };
+
+/** What dropping the to-do `from` does: on a card (`target`) it becomes that card's subtask (or is refused); on the map background it stops being a subtask (a to-do that is not one: nothing); anywhere else nothing. */
+export function nestAction(plan: Plan, from: string, target: string | null, onBackground: boolean): NestAction {
+  if (target) { const v = canNest(plan, from, target); return v === "ok" ? { do: "nest", to: target } : { do: "refuse", verdict: v }; }
+  return onBackground && plan.rows.find(r => r.path === from)?.parent ? { do: "clear" } : { do: "none" };
+}
+
 /** `child`'s `after` when the to-do it came after is deleted: the dead link goes, and the deleted to-do's own `after` items take its place (A → B → C becomes A → C).
  *  `deleted`: the names that `after` items use for it; `own`: its `after` value; `childNames`: the names of the child, so it never comes after itself. Nothing left gives `undefined`. */
 export function bridgeAfter(value: unknown, deleted: string[], own: unknown, childNames: string[]): unknown {
