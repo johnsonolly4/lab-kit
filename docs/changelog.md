@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **New command: Add result** (planning kit, Cmd+P): on an open to-do it asks for the one-line result (the current one is filled in; empty removes it; closing the box changes nothing) and writes `result`, which the project plan shows as `→ result` on the card. There is no prompt when you tick a to-do. No hotkey
 - **To-do board: done to-dos go last in each column, then by priority** (planning kit, To-do board file): the board is sorted on `done` and then `priority` (1, 2, 3, none). Review update… offers it; if you edited your board it asks first (Keep keeps yours)
 - **Plan map: shorter arrows** (planning kit): a card with nothing before it now sits just before its earliest child instead of at the far left, so its arrow no longer runs across the whole map
 - **Subtasks in the project plan** (planning kit, theme, Vault spec): a to-do with `sub: "[[Parent to-do]]"` (typed by hand) is a subtask of that parent. On the plan map the parent's card shows `▸ 1/2`; click it to open a list of its subtasks, each with a tick circle and its name (click opens it). When every subtask is done the count shows `✓` but the parent is not ticked for you. Subtasks are not cards on the map; they stay ordinary to-dos on the board and may have their own `after`. A `sub` that names a missing to-do, itself, a loop or another subtask is ignored and a line under the plan says so (subtasks go one level only)

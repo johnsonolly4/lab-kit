@@ -37,7 +37,7 @@ function registered(): string[] {
 
 describe("planning commands", () => {
   it("registers the fixed IDs (never renamed: buttons call them)", () => {
-    expect(registered().sort()).toEqual(["add-to-shopping", "archive-todos", "link-todos-in-order", "new-concept", "new-extra-meeting", "new-meeting", "new-meeting-series", "new-one-off-meeting", "new-project", "new-project-note", "new-todo", "new-topic-hub",
+    expect(registered().sort()).toEqual(["add-result", "add-to-shopping", "archive-todos", "link-todos-in-order", "new-concept", "new-extra-meeting", "new-meeting", "new-meeting-series", "new-one-off-meeting", "new-project", "new-project-note", "new-todo", "new-topic-hub",
       "open-deck", "open-todo-board", "quick-capture", "roll-over-todos", "sort-inbox"]);
   });
 
