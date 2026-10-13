@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, linkTarget, meetingDone, meetingExperiments, meetingPapers, meetingWindow, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
+import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, hasPriority, linkTarget, meetingDone, meetingExperiments, meetingPapers, meetingWindow, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -260,15 +260,30 @@ describe("Meeting note tiles (the window is the note's since and date)", () => {
     expect(got.map(l => l.text)).toEqual(["A", "B"]);
     expect(got[1].badges).toEqual([{ text: "started", cls: "vt-badge vt-started" }]);
   });
-  it("Done this week: finished after since up to the meeting day, with the project", () => {
+  it("Done this week: finished after since up to the meeting day, with a priority, with the project", () => {
     const got = meetingDone([
-      note(T + "On the day.md", { kind: "todo", done: true, done_on: "2026-10-08", project: "[[Alpha]]" }),
-      note(T + "On since.md", { kind: "todo", done: true, done_on: "2026-10-01" }),   // since itself is before the window
-      note(T + "Inside.md", { kind: "todo", done: true, done_on: "2026-10-03" }),
-      note(T + "Open.md", { kind: "todo", day: "Mon" }),
+      note(T + "On the day.md", { kind: "todo", done: true, done_on: "2026-10-08", project: "[[Alpha]]", priority: 1 }),
+      note(T + "On since.md", { kind: "todo", done: true, done_on: "2026-10-01", priority: 1 }),   // since itself is before the window
+      note(T + "Inside.md", { kind: "todo", done: true, done_on: "2026-10-03", priority: "3" }),
+      note(T + "Open.md", { kind: "todo", day: "Mon", priority: 1 }),
     ], w);
-    expect(got.map(l => l.text)).toEqual(["Inside", "On the day"]);
-    expect(got[1].badges).toEqual([{ text: "· Alpha", cls: "vt-muted" }]);
+    expect(got.lines.map(l => l.text)).toEqual(["Inside", "On the day"]);
+    expect(got.lines[1].badges).toEqual([{ text: "· Alpha", cls: "vt-muted" }]);
+    expect(got.hidden).toBe(0);
+  });
+  it("Done this week: a finished to-do with no priority (none, 0, 4, words) is left out and counted; a ticked subtask is neither listed nor counted", () => {
+    const d = { kind: "todo", done: true, done_on: "2026-10-05" };
+    const got = meetingDone([
+      note(T + "P1.md", { ...d, priority: 1 }), note(T + "P2.md", { ...d, priority: 2 }), note(T + "P3.md", { ...d, priority: 3 }),
+      note(T + "None.md", d), note(T + "Zero.md", { ...d, priority: 0 }), note(T + "Four.md", { ...d, priority: 4 }), note(T + "Words.md", { ...d, priority: "high" }),
+      note(T + "Sub.md", { ...d, priority: 1, sub: "[[P1]]" }), note(T + "SubNone.md", { ...d, sub: "[[P1]]" }),
+    ], w);
+    expect(got.lines.map(l => l.text)).toEqual(["P1", "P2", "P3"]);
+    expect(got.hidden).toBe(4);
+  });
+  it("hasPriority: 1, 2 or 3 as a number or text; nothing else", () => {
+    expect([1, 2, 3, "1", " 2 ", "3"].every(hasPriority)).toBe(true);
+    expect([undefined, null, "", 0, 4, "0", "high", NaN, true].some(hasPriority)).toBe(false);
   });
   it("Papers read: imported after since up to the meeting day (else created), shown by Title", () => {
     const lit = "04 Literature/";

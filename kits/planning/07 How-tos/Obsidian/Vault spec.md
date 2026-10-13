@@ -277,7 +277,7 @@ A meeting note is `YYYY-MM-DD <series name>`, created by **New meeting note** (c
 | `since` | the last meeting of the series, else one interval back - the start of the window the lists read |
 | `project` | empty, a link or a list of links to project hubs - the note then shows on those hubs |
 
-The note starts with a top row (`show: meeting-bar`: back link to its series, **Meeting deck**) and fills itself from `since` to `date`: experiments edited (`show: meeting-experiments`), to-dos ticked done (`show: meeting-done`), papers imported (`show: meeting-papers`), and the open to-dos whose `meeting` links this series (Dataview).
+The note starts with a top row (`show: meeting-bar`: back link to its series, **Meeting deck**) and fills itself from `since` to `date`: experiments edited (`show: meeting-experiments`), to-dos ticked done that have a priority of 1, 2 or 3 and are not subtasks (`show: meeting-done`; a muted line says how many without a priority are left out), papers imported (`show: meeting-papers`), and the open to-dos whose `meeting` links this series (Dataview).
 
 - **Extra meeting now** (series hub and card; command **New extra meeting now**) makes a meeting note on a date I give, in between; the schedule doesn't move.
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files `<date> <title>` in the `One-off` hub, from the smaller **One-off meeting** template.

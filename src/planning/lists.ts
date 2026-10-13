@@ -100,11 +100,20 @@ export function meetingExperiments(notes: NoteRec[], w: { since: string; date: s
     .map(n => { const s = str(n.fm.Status); return { path: n.path, text: n.name, badges: s ? [{ text: s.toLowerCase(), cls: `vt-badge vt-${slug(s)}` }] : [] }; });
 }
 
-/** Meeting note, Done this week: to-dos finished after `since` up to the meeting day; badge: its project. */
-export function meetingDone(todos: NoteRec[], w: { since: string; date: string }): ListLine[] {
-  return todos.filter(n => n.fm.kind === "todo" && n.fm.done === true && str(n.fm.done_on).slice(0, 10) > w.since && str(n.fm.done_on).slice(0, 10) <= w.date)
-    .sort((a, b) => a.name.localeCompare(b.name))
+/** `priority` is 1, 2 or 3 (a number or text); anything else (none, 0, 4, words) is no priority. */
+export function hasPriority(v: unknown): boolean {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() ? Number(v) : NaN;
+  return n === 1 || n === 2 || n === 3;
+}
+
+/** Meeting note, Done this week: the to-dos finished after `since` up to the meeting day that have a priority (1 to 3), without ticked subtasks (a to-do with `sub`); badge: its project.
+ *  `hidden`: how many finished to-dos were left out for having no priority (subtasks are not counted). */
+export function meetingDone(todos: NoteRec[], w: { since: string; date: string }): { lines: ListLine[]; hidden: number } {
+  const finished = todos.filter(n => n.fm.kind === "todo" && n.fm.done === true && str(n.fm.done_on).slice(0, 10) > w.since && str(n.fm.done_on).slice(0, 10) <= w.date && !linkTarget(n.fm.sub));
+  const shown = finished.filter(n => hasPriority(n.fm.priority));
+  const lines = shown.sort((a, b) => a.name.localeCompare(b.name))
     .map(n => { const p = linkTarget(n.fm.project); return { path: n.path, text: n.name, badges: p ? [{ text: `· ${p}`, cls: "vt-muted" }] : [] }; });
+  return { lines, hidden: finished.length - shown.length };
 }
 
 /** Meeting note, Papers read: literature notes imported after `since` up to the meeting day, shown by Title; badge: its takeaway. */

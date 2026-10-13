@@ -206,7 +206,11 @@ class BlockView extends MarkdownRenderChild {
       }
       case "meeting-done": {   // on a meeting note: to-dos finished since the last meeting
         const w = this.window(box);
-        if (w && this.need(box, todoFolder(f))) this.capped(box, meetingDone(this.owner.notesIn(todoFolder(f)), w), o.limit ?? PROJECT_TILE_ROWS, "No to-dos finished since the last meeting.");
+        if (w && this.need(box, todoFolder(f))) {
+          const { lines, hidden } = meetingDone(this.owner.notesIn(todoFolder(f)), w);   // only to-dos with a priority: the small ones would crowd the meeting
+          this.capped(box, lines, o.limit ?? PROJECT_TILE_ROWS, hidden ? "No prioritised to-dos finished since the last meeting." : "No to-dos finished since the last meeting.");
+          if (hidden) box.createDiv({ cls: "vt-muted", text: `${hidden} finished ${hidden === 1 ? "to-do" : "to-dos"} without a priority ${hidden === 1 ? "isn't" : "aren't"} listed. Give a to-do a priority (1 to 3) to list it here.` });
+        }
         return;
       }
       case "meeting-papers": {   // on a meeting note: papers imported since the last meeting
