@@ -30,7 +30,9 @@ export class MovedFoldersModal extends Modal {
   constructor(app: App, private host: MovedHost) { super(app); }
 
   onOpen(): void { this.render(); }
-  onClose(): void { this.contentEl.empty(); }
+  /** Set by a window that opened this one (Check setup), to redraw itself afterwards. */
+  onClosed?: () => void;
+  onClose(): void { this.contentEl.empty(); this.onClosed?.(); }
 
   private render(): void {
     const el = this.contentEl;

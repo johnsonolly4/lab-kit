@@ -1,7 +1,7 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
 import { Modal, Notice, Platform, type App } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
-import type { KitManaged, SettingChange } from "./managed-ui";
+import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
@@ -16,7 +16,7 @@ import type { HeaderSettings } from "../header/settings";
 import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
-export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): Modal | void }
+export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void }
 
 /** Reads the vault, Templater and Obsidian into the plain state checkSetup works on. */
 export function readSetupState(app: App, host: SetupHost): SetupState {
@@ -100,10 +100,9 @@ export class SetupCheckModal extends Modal {
   }
 
   /** A window opened from here (Review update…, Manage files…, Find moved folders) sits on top; this list redraws when it closes. */
-  private after(opened: Modal | void): void {
+  private after(opened: ClosingModal | void): void {
     if (!opened) return;
-    const close = opened.onClose.bind(opened);
-    opened.onClose = () => { close(); void this.refresh(); };
+    opened.onClosed = () => void this.refresh();
   }
 
   /** Per installed kit: the files with an update waiting, missing or in conflict (from the same plan Review update… shows). */

@@ -1,5 +1,5 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Modal, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { chemicalClasses } from "./snippet-env";
@@ -10,7 +10,7 @@ import { MovedFoldersModal } from "./moved-folders-ui";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
-import { KitManaged } from "./managed-ui";
+import { KitManaged, type ClosingModal } from "./managed-ui";
 import { SetupCheckModal } from "./setup-check-ui";
 import { HotkeyCheckModal } from "./hotkey-check-ui";
 import { ClearBackupsModal } from "./backups-ui";
@@ -318,7 +318,7 @@ export class KitController {
     openSettings: () => { openPluginSettings(this.app, this.plugin.manifest.id); },
     findMoved: () => this.findMovedFolders(),
   };
-  findMovedFolders(): Modal { const m = new MovedFoldersModal(this.app, this); m.open(); return m; }
+  findMovedFolders(): ClosingModal { const m = new MovedFoldersModal(this.app, this); m.open(); return m; }
 
   /** Set by the plugin when the to-do engine runs: redraws the board's countdown badges. */
   dueCountdownChanged: (() => void) | null = null;
