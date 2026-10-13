@@ -6,6 +6,7 @@ import {
   kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
+import type { SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
 import { makeMyCopy } from "./snippet-copy-ui";
@@ -321,16 +322,35 @@ export class KitManaged {
   /** "Update all safe files": new files and unmodified files only. Asks first on the kit's first install, and before any new folder or settings change. */
   async updateSafe(): Promise<void> {
     try {
-      const items = await this.plan();
-      const select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action);
-      const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
-      const first = !this.slot.managed && writes > 0;
+      const { items, select, writes, first, settings, folders } = await this.safeSpec();
       await this.confirmThen({
         title: first ? `Create ${writes} kit files?` : writes ? `Update ${writes} kit files?` : "Change these settings?", yes: first ? `Create ${writes} files` : "Update", ask: first,
-        items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [],
+        items, select, settings, folders,
         run: async () => { new KitReportModal(this.app, await this.apply(items, select)).open(); },
       });
     } catch (e) { this.failed(e); }
+  }
+
+  /** What "Update all safe files" does for this kit: the files, how many are written, whether it is the first install, and the settings and folders that come with it. */
+  private async safeSpec(): Promise<{ items: ManagedItem[]; select: (it: ManagedItem) => boolean; writes: number; first: boolean; settings: SettingChange[]; folders: KitFolder[] }> {
+    const items = await this.plan();
+    const select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action);
+    const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
+    const first = !this.slot.managed && writes > 0;
+    return { items, select, writes, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] };
+  }
+
+  /** This kit for "Update all safe files" across both kits (src/kit/kit-set.ts `runSafeUpdate`). */
+  asSafeKit(): SafeKit {
+    const id = this.bundle.manifest.id, name = id === PLANNING_KIT ? "Planning kit" : "Lab kit";
+    return { id, name, plan: async () => {
+      const { items, select, first, settings, folders } = await this.safeSpec();
+      const preview = await previewInstall(this.app.vault.adapter, items, select, folders);
+      const extra = folders.map(f => f.path).filter(p => preview.folders.includes(p));
+      return { part: { id, name, preview, settings, notes: [], ask: first, folders: extra },
+        ensure: async () => { for (const p of extra) await ensureFolder(this.app.vault, p); },
+        run: () => this.apply(items, select) };
+    } };
   }
 
   /** Called by the review window's Apply: the same confirmation as "Update all safe files", for the files ticked there. */
@@ -667,7 +687,7 @@ class KitFilesModal extends Modal {
 }
 
 /** What a run did: counts and a file list. */
-class KitReportModal extends Modal {
+export class KitReportModal extends Modal {
   constructor(app: App, private results: ManagedResult[], private scripts: Set<string> = new Set()) { super(app); }
 
   onOpen(): void {
@@ -707,7 +727,7 @@ export interface SettingChange { name: string; desc: string; apply: () => Promis
 export interface PreviewNote { heading: string; paths: string[]; text?: string }
 
 /** The confirmation before a kit writes anything new: grouped lists with counts, a switch per settings change; Cancel writes nothing. */
-class KitInstallModal extends Modal {
+export class KitInstallModal extends Modal {
   private confirmed = false;
   private on: boolean[];
   constructor(app: App, private title: string, private yes: string, private preview: InstallPreview, private settings: SettingChange[], private notes: PreviewNote[],

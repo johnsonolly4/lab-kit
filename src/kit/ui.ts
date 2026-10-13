@@ -12,6 +12,7 @@ import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
 import embedded from "lab-kit-embedded";
 import { KitManaged, type ClosingModal } from "./managed-ui";
+import { KitSet } from "./kit-set-ui";
 import { SetupCheckModal } from "./setup-check-ui";
 import { HotkeyCheckModal } from "./hotkey-check-ui";
 import { ClearBackupsModal } from "./backups-ui";
@@ -328,6 +329,9 @@ export class KitController {
     const planning = embedded.kits.find(k => k.manifest.id === PLANNING_KIT);
     this.planning = planning ? new KitManaged(plugin, this, planning) : null;
   }
+
+  /** The kits that are on, as one set (the lab kit, and the planning kit when it is switched on). */
+  kitSet(): KitSet { return new KitSet(this.app, [this.managed, ...(this.planning && this.planning.slot.enabled ? [this.planning] : [])]); }
 
   get app(): App { return this.plugin.app; }
 

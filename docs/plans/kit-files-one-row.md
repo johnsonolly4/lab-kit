@@ -29,9 +29,10 @@ Decided with the user 2026-10-13 (chat + two surveys):
 - Done when: tests cover the ordering (updates first, a fully up-to-date kit last and folded, a kit not installed yet first), the merge (two kits that both want the CSS snippet or the Templater scripts folder give one setting; folders deduplicated; nothing to ask returns "no confirmation"), and the status lines; `npm test` and `npm run lint` clean. Nothing visible changes.
 - New dependencies: none
 
-### Phase 2 — Update all safe files, both kits, one confirmation
+### Phase 2 — Update all safe files, both kits, one confirmation — DONE 2026-10-13 (engine only; nothing calls it from a button yet)
 - Depends on: Phase 1.
 - Files: `src/kit/managed-ui.ts` (a small `KitSet` over the `KitManaged` instances: `updateSafe()` plans each kit, builds the merged preview, asks once (`KitInstallModal` shows the merged list, a heading per kit), then applies each kit in turn and shows one `KitReportModal` with results per kit; a failed kit is reported and the other still runs), `src/kit/ui.ts` (`KitController` builds the `KitSet` from `managed` and `planning`), tests for the order of operations with fake `KitManaged`-like objects (they are an interface in the test: `plan`, `preview`, `apply`).
+- Result 2026-10-13: `runSafeUpdate`, `combinePreviews` and the `SafeKit` / `SafeKitPlan` interfaces in `kit-set.ts`; `KitManaged.safeSpec()` (shared by the old `updateSafe()`, whose behaviour is unchanged) and `asSafeKit()`; `KitSet.updateSafe()` in `kit-set-ui.ts` (uses the existing `KitInstallModal` with the combined list, one `KitReportModal`; both are exported now); `KitController.kitSet()` gives the kits that are on. No button or command calls `kitSet().updateSafe()` yet: that is Phase 4 (so the user cannot press it before then, by design). Tests 979 (fake kits: order, one confirmation, Cancel writes nothing, a failing kit or setting named and the other still runs, a switched-off setting not made).
 - Done when: tests cover: both kits' safe items applied after one confirmation; cancelling writes nothing in either kit; one kit failing does not stop the other; with the planning kit off only the lab kit runs; NOT seen in Obsidian until the user has pressed it on a vault with both kits (checklist row).
 - New dependencies: none
 
