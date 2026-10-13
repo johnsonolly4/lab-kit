@@ -149,3 +149,61 @@ describe("subtasks on the map", () => {
     expect(mapGeometry(m, 50).height - mapGeometry(m).height).toBe(50);
   });
 });
+
+describe("arrows routed around cards", () => {
+  // A -> B -> C in one row, and A -> C skipping B: the straight line would run behind B
+  const skip = () => map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: ["[[B]]", "[[A]]"] })]);
+  const inside = (p: { x: number; y: number }, r: { x: number; y: number }) => p.x > r.x && p.x < r.x + CARD_W && p.y > r.y && p.y < r.y + CARD_H;
+  it("a skip arrow behind a middle card is routed and never enters a card", () => {
+    const g = mapGeometry(skip());
+    const long = g.curves.find(c => c.from === T + "A.md" && c.to === T + "C.md")!;
+    expect(long.routed).toBe(true);
+    for (const c of g.pos.values()) expect(long.samples.some(s => inside(s, c))).toBe(false);
+  });
+  it("neighbouring-step arrows are not routed; the same arrows come out as before", () => {
+    const g = mapGeometry(skip());
+    expect(g.curves.filter(c => c.routed)).toHaveLength(1);
+    expect(g.curves.find(c => c.from === T + "A.md" && c.to === T + "B.md")!.d.startsWith(`M${PAD + CARD_W} ${PAD + CARD_H / 2} C`)).toBe(true);
+  });
+  it("a skip arrow with a free straight line stays straight", () => {
+    // A (row 0) -> C (row 1), with B in row 0 in between: the line from A's right edge down to C does not touch B
+    const m = map([td("A"), td("X", { after: "[[A]]" }), td("B", { after: "[[X]]", order: 1 }), td("C", { after: ["[[A]]", "[[B]]"] }), td("Y", { after: "[[X]]", order: 2 })]);
+    for (const c of mapGeometry(m).curves.filter(c => !c.routed)) expect(c.samples.length).toBe(25);
+  });
+  it("the lane is above the first row or below the last when that is nearest", () => {
+    const g = mapGeometry(skip());
+    const long = g.curves.find(c => c.routed)!;
+    const ys = long.samples.map(s => s.y);
+    // one row only: the lane is above (5px) or below (row bottom + 7px) the cards
+    const below = PAD + CARD_H + GAP_Y / 2, above = PAD - GAP_Y / 2;
+    expect(ys.some(y => Math.abs(y - below) < 0.5 || Math.abs(y - above) < 0.5)).toBe(true);
+  });
+});
+
+describe("vertical layout", () => {
+  const chain = () => map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("D", { after: "[[A]]" })]);
+  it("steps go down and places go across; the canvas swaps its sides", () => {
+    const g = mapGeometry(chain(), 0, "down");
+    expect(g.pos.get(T + "A.md")).toEqual({ x: PAD, y: PAD });
+    expect(g.pos.get(T + "B.md")).toEqual({ x: PAD, y: PAD + CARD_H + GAP_X });
+    expect(g.pos.get(T + "D.md")).toEqual({ x: PAD + CARD_W + GAP_Y, y: PAD + CARD_H + GAP_X });
+    expect(g.width).toBe(2 * PAD + 2 * CARD_W + GAP_Y);
+    expect(g.height).toBe(2 * PAD + 3 * CARD_H + 2 * GAP_X);
+  });
+  it("arrows leave the bottom centre and enter the top centre", () => {
+    const g = mapGeometry(chain(), 0, "down");
+    expect(g.curves.find(c => c.from === T + "A.md" && c.to === T + "B.md")!.d.startsWith(`M${PAD + CARD_W / 2} ${PAD + CARD_H} C`)).toBe(true);
+  });
+  it("a skip arrow is routed down a lane between columns and never enters a card", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: ["[[B]]", "[[A]]"] })]);
+    const g = mapGeometry(m, 0, "down");
+    const long = g.curves.find(c => c.routed)!;
+    expect(long).toBeTruthy();
+    for (const c of g.pos.values()) expect(long.samples.some(s => s.x > c.x && s.x < c.x + CARD_W && s.y > c.y && s.y < c.y + CARD_H)).toBe(false);
+  });
+  it("the scroll is on the step axis only; across stays as it was", () => {
+    const m = map([td("A", { done: true }), td("B", { after: "[[A]]" })]);
+    expect(mapGeometry(m, 0, "down")).toMatchObject({ scrollLeft: 0, scrollTop: CARD_H + GAP_X });
+    expect(mapGeometry(m)).toMatchObject({ scrollLeft: CARD_W + GAP_X, scrollTop: 0 });
+  });
+});

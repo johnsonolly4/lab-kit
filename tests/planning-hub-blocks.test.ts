@@ -133,5 +133,6 @@ describe("Project hub template: the Plan tile", () => {
     expect(t.indexOf("```vault-card\nshow: project-map\n```")).toBeGreaterThan(t.indexOf("show: project-plan"));
     expect(t.indexOf("show: project-map")).toBeLessThan(t.indexOf("> [!focus] Goal"));
     expect(KIT_DEFAULTS.planView).toBe("map");
+    expect(KIT_DEFAULTS.planDirection).toBe("across");
   });
 });

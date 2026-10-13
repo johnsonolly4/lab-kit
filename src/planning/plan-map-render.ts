@@ -2,7 +2,7 @@
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
-import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type PlanMap } from "./plan-map";
+import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
 import { changeAfter, linkText, namesOf, undoNotice } from "./after-write";
 import { addAfter, canLink, removeAfter } from "./plan-link";
 
@@ -12,6 +12,8 @@ export interface MapOptions {
   sourcePath: string;
   /** Parents whose subtask list is open, kept by the block across redraws. */
   expanded: Set<string>;
+  /** Which way the map runs (the setting, or what the toggle on the map was last set to for this note). */
+  direction: Direction;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -84,8 +86,10 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
     const scrolling = window.setInterval(() => {
       if (!scroller) return;
       const b = scroller.getBoundingClientRect();
-      if (pointer.x < b.left + EDGE) scroller.scrollLeft -= STEP; else if (pointer.x > b.right - EDGE) scroller.scrollLeft += STEP; else return;
-      place();
+      let moved = false;
+      if (pointer.x < b.left + EDGE) { scroller.scrollLeft -= STEP; moved = true; } else if (pointer.x > b.right - EDGE) { scroller.scrollLeft += STEP; moved = true; }
+      if (pointer.y < b.top + EDGE) { scroller.scrollTop -= STEP; moved = true; } else if (pointer.y > b.bottom - EDGE) { scroller.scrollTop += STEP; moved = true; }
+      if (moved) place();
     }, 30);
     const finish = (e: PointerEvent | null): void => {
       window.clearInterval(scrolling);
@@ -143,10 +147,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
   const wrap = box.createDiv({ cls: "vt-map" });
   if (map.cards.length) {
     const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
-    const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0);
+    const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);
+    if (o.direction === "down") wrap.addClass("vt-map-down");
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
-    if (g.scrollLeft > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the left edge even when everything fits
+    if (g.scrollLeft > 0 || g.scrollTop > 0) scroller.createDiv({ cls: "vt-map-spacer" });   // room to scroll the start step to the edge even when everything fits
     canvas.setCssProps({ "--vt-map-w": `${g.width}px`, "--vt-map-h": `${g.height}px`, "--vt-map-card-w": `${CARD_W}px`, "--vt-map-card-h": `${CARD_H}px` });
     const svg = canvas.createSvg("svg", { cls: "vt-map-arrows", attr: { width: String(g.width), height: String(g.height) } });
     const arrows = new Map<SVGPathElement, { from: string; to: string }>();
@@ -213,6 +218,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       cards.set(c.path, el);
     }
     scroller.dataset.startScroll = String(g.scrollLeft);
+    scroller.dataset.startScrollTop = String(g.scrollTop);
   }
   if (map.unlinked.length) {
     const side = wrap.createDiv({ cls: "vt-map-unlinked" });

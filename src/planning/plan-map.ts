@@ -86,32 +86,90 @@ export function chainOf(plan: Plan, path: string): Set<string> {
 
 export const CARD_W = 190, CARD_H = 108, GAP_X = 56, GAP_Y = 14, PAD = 12;
 
+/** `across`: steps run left to right; `down`: steps run top to bottom. */
+export type Direction = "across" | "down";
+export interface Pt { x: number; y: number }
+export interface MapCurve {
+  from: string; to: string;
+  /** The SVG path: from the first card's outgoing edge to the second's incoming edge. */
+  d: string;
+  /** True when the arrow skips steps and was sent through a lane between cards instead of straight across them. */
+  routed: boolean;
+  /** Points along the path (for tests and the check that no card is crossed). */
+  samples: Pt[];
+}
+
 export interface MapGeometry {
   width: number; height: number;
   /** Top-left corner of each card, by path. */
-  pos: Map<string, { x: number; y: number }>;
-  /** One curve per arrow, from the right edge of the first card to the left edge of the second. */
-  curves: { from: string; to: string; d: string }[];
-  /** Scroll position that puts the start step at the left edge. */
+  pos: Map<string, Pt>;
+  curves: MapCurve[];
+  /** Scroll position that puts the start step at the left edge (`across`; 0 in `down`). */
   scrollLeft: number;
+  /** Scroll position that puts the start step at the top (`down`; 0 in `across`). */
+  scrollTop: number;
 }
 
-/** Pixels for a layout: steps go left to right, places top to bottom. */
-export function mapGeometry(map: PlanMap, extraHeight = 0): MapGeometry {
-  const pos = new Map<string, { x: number; y: number }>();
-  for (const c of map.cards) pos.set(c.path, { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) });
+const cubic = (p: Pt, q: Pt, r: Pt, s: Pt, t: number): Pt => {
+  const u = 1 - t;
+  return { x: u * u * u * p.x + 3 * u * u * t * q.x + 3 * u * t * t * r.x + t * t * t * s.x, y: u * u * u * p.y + 3 * u * u * t * q.y + 3 * u * t * t * r.y + t * t * t * s.y };
+};
+const line = (p: Pt, q: Pt, n: number): Pt[] => Array.from({ length: n + 1 }, (_, i) => ({ x: p.x + (q.x - p.x) * i / n, y: p.y + (q.y - p.y) * i / n }));
+
+/** Pixels for a layout. `across`: steps left to right, places top to bottom. `down`: steps top to bottom, places left to right.
+ *  An arrow that skips steps and would run behind a card in between is sent through a lane between rows (columns in `down`). `extraHeight`: room under the lowest card. */
+export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction = "across"): MapGeometry {
+  const across = direction === "across";
+  const pos = new Map<string, Pt>();
+  for (const c of map.cards) {
+    pos.set(c.path, across ? { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) } : { x: PAD + c.place * (CARD_W + GAP_Y), y: PAD + c.step * (CARD_H + GAP_X) });
+  }
   const steps = map.cards.length ? Math.max(...map.cards.map(c => c.step)) + 1 : 0;
   const places = map.cards.length ? Math.max(...map.cards.map(c => c.place)) + 1 : 0;
-  const curves = map.arrows.flatMap(a => {
+  const stepOf = new Map(map.cards.map(c => [c.path, c.step]));
+  const alongOf = (p: Pt): number => (across ? p.x : p.y);   // position along the step axis
+  const crossOf = (p: Pt): number => (across ? p.y : p.x);
+  const at = (a: number, c: number): Pt => (across ? { x: a, y: c } : { x: c, y: a });
+  const crossSize = across ? CARD_H : CARD_W;
+  const lane = (k: number): number => PAD + k * (crossSize + GAP_Y) - GAP_Y / 2;   // between rows (columns); k = 0 above the first, `places` below the last
+
+  const hitsCard = (pts: Pt[], f: string, t: string): boolean => {
+    const lo = Math.min(stepOf.get(f)!, stepOf.get(t)!), hi = Math.max(stepOf.get(f)!, stepOf.get(t)!);
+    return map.cards.some(c => {
+      const st = stepOf.get(c.path)!;
+      if (c.path === f || c.path === t || st <= lo || st >= hi) return false;
+      const p = pos.get(c.path)!;
+      return pts.some(q => q.x > p.x - 4 && q.x < p.x + CARD_W + 4 && q.y > p.y - 4 && q.y < p.y + CARD_H + 4);
+    });
+  };
+
+  const curves = map.arrows.flatMap((a): MapCurve[] => {
     const f = pos.get(a.from), t = pos.get(a.to);
     if (!f || !t) return [];
-    const x1 = f.x + CARD_W, y1 = f.y + CARD_H / 2, x2 = t.x, y2 = t.y + CARD_H / 2, k = Math.max(GAP_X / 2, Math.abs(x2 - x1) / 2);
-    return [{ from: a.from, to: a.to, d: `M${x1} ${y1} C${x1 + k} ${y1} ${x2 - k} ${y2} ${x2} ${y2}` }];
+    const o = across ? { x: f.x + CARD_W, y: f.y + CARD_H / 2 } : { x: f.x + CARD_W / 2, y: f.y + CARD_H };
+    const i = across ? { x: t.x, y: t.y + CARD_H / 2 } : { x: t.x + CARD_W / 2, y: t.y };
+    const k = Math.max(GAP_X / 2, Math.abs(alongOf(i) - alongOf(o)) / 2);
+    const c1 = at(alongOf(o) + k, crossOf(o)), c2 = at(alongOf(i) - k, crossOf(i));
+    const straight = Array.from({ length: 25 }, (_, n) => cubic(o, c1, c2, i, n / 24));
+    const skips = stepOf.get(a.to)! - stepOf.get(a.from)! >= 2;
+    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${o.x} ${o.y} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight }];
+    // Out into the gap after the first card, along the nearest lane between rows, in through the gap before the last card.
+    const mid = (crossOf(o) + crossOf(i)) / 2;
+    let best = 0;
+    for (let n = 1; n <= places; n++) if (Math.abs(lane(n) - mid) < Math.abs(lane(best) - mid)) best = n;
+    const cor = lane(best), a0 = alongOf(o), a1 = alongOf(i), g = GAP_X / 2, q = GAP_X / 4;
+    const p1 = at(a0 + g, cor), p2 = at(a1 - g, cor);
+    const out1 = at(a0 + q, crossOf(o)), out2 = at(a0 + q, cor), in1 = at(a1 - q, cor), in2 = at(a1 - q, crossOf(i));
+    const d = `M${o.x} ${o.y} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
+    const samples = [...Array.from({ length: 13 }, (_, n) => cubic(o, out1, out2, p1, n / 12)), ...line(p1, p2, 12), ...Array.from({ length: 13 }, (_, n) => cubic(p2, in1, in2, i, n / 12))];
+    return [{ from: a.from, to: a.to, d, routed: true, samples }];
   });
   return {
-    width: steps ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 0,
-    height: places ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y + extraHeight : 0,
-    pos, curves, scrollLeft: Math.max(0, map.startStep * (CARD_W + GAP_X)),
+    width: steps ? (across ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 2 * PAD + places * CARD_W + (places - 1) * GAP_Y) : 0,
+    height: steps ? (across ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y : 2 * PAD + steps * CARD_H + (steps - 1) * GAP_X) + extraHeight : 0,
+    pos, curves,
+    scrollLeft: across ? Math.max(0, map.startStep * (CARD_W + GAP_X)) : 0,
+    scrollTop: across ? 0 : Math.max(0, map.startStep * (CARD_H + GAP_X)),
   };
 }
 

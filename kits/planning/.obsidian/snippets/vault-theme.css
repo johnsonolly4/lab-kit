@@ -529,3 +529,11 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-sub a.internal-link { color: var(--text-normal); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-sub-done a.internal-link { color: var(--text-muted); text-decoration: line-through; }
 .vt-map-has-subs .vt-map-result { padding-right: 70px; }   /* the result stops before the subtask toggle at the bottom right */
+
+/* Plan map: top-to-bottom direction and the button that flips it (src/planning/plan-map-render.ts, blocks.ts) */
+.vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-dir:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
+.vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
+.vt-map-down .vt-map-canvas { flex: none; }
+.vt-map-down .vt-map-spacer { flex: 0 0 calc(560px - 140px); width: 100%; }
+.vt-map-down .vt-map-handle { top: auto; bottom: -8px; right: calc(50% - 7px); margin-top: 0; }
