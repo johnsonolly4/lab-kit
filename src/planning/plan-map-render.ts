@@ -195,7 +195,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
         row.createSpan({ cls: "vt-map-exp-name", text: exp.name });
         if (exp.path) row.addEventListener("click", e => { e.stopPropagation(); e.preventDefault(); open(o, exp.path, Keymap.isModEvent(e)); });
       }
-      if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}` });
+      if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}`, attr: { title: r.result } });   // cut with an ellipsis (clear of the subtask toggle); the whole text on hover
+      if (r.subs.length) el.addClass("vt-map-has-subs");
       subsToggle(el, r, o);
       if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs");
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });

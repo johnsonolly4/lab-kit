@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "1.0.1",
-      "sha256": "2f19716a89b750d26332cb321a00923f0eddd0957a25e94ce0a95bc9baa57fff",
+      "sha256": "f19ff601fd5edffbf8bd61243c0b2d424fc8eb18533bb00a215b69c34c13c957",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.0.1",
-      "sha256": "8f1669c95dfa7a38f5a49af9ed82317981d08f23a701387ce73ab9e2f68a2be2",
+      "sha256": "1ef58d93e2734f7f9d2280852d8d60b491f2a574ec2b87e64fbbc0e95248a479",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
