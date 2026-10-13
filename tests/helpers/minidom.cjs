@@ -33,5 +33,5 @@ class El {
   appendText(t){ const e=new El("#text"); e._text=String(t); this.appendChild(e); }
   setText(t){ this.textContent=t; } setAttr(k,v){ this.setAttribute(k,v); }
 }
-class CL { constructor(){ this.s=new Set(); } add(c){ this.s.add(c); } remove(c){ this.s.delete(c); } contains(c){ return this.s.has(c); } }
+class CL { constructor(){ this.s=new Set(); } add(...c){ c.forEach(x=>this.s.add(x)); } remove(...c){ c.forEach(x=>this.s.delete(x)); } toggle(c,b){ (b===undefined?!this.s.has(c):b)?this.s.add(c):this.s.delete(c); } contains(c){ return this.s.has(c); } }
 module.exports = { El };

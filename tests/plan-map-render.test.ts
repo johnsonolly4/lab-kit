@@ -83,16 +83,21 @@ describe("drawPlanMap", () => {
       '"L" is a subtask of "Ghost", which isn\'t in this project.Make it a normal to-doOpen note']);
     expect(lines[0].querySelectorAll("button")[0].getAttribute("aria-label")).toBe('Removes "Ghost" from the "comes after" list of "A"; its other links stay.');
     const flaggedCards = (): number => [...box.querySelectorAll(".vt-map-card"), ...box.querySelectorAll(".vt-map-tile")].filter(c => c.hasClass("vt-map-flag")).length;
-    lines[0].dispatch("mouseenter");   // a line -> its card
+    lines[0].dispatch("mouseenter");   // a line -> itself and its card
     expect(flaggedCards()).toBe(1);
+    expect(lines[0].hasClass("vt-map-flag")).toBe(true);
+    expect(lines[1].hasClass("vt-map-flag")).toBe(false);
     lines[0].dispatch("mouseleave");
     expect(flaggedCards()).toBe(0);
+    expect(lines[0].hasClass("vt-map-flag")).toBe(false);
     const cardMark = box.querySelectorAll(".vt-map-warnmark").find(m => m.parent.hasClass("vt-map-card"))!;
     expect(cardMark.getAttribute("title")).toBeUndefined();   // one tooltip (aria-label), not two
-    cardMark.dispatch("mouseenter");   // a card's ⚠ -> its line
+    cardMark.parent.dispatch("mouseenter");   // a card (anywhere on it) -> itself and its line
     expect(lines.filter(l => l.hasClass("vt-map-flag"))).toHaveLength(1);
-    cardMark.dispatch("mouseleave");
+    expect(cardMark.parent.hasClass("vt-map-flag")).toBe(true);
+    cardMark.parent.dispatch("mouseleave");
     expect(lines.filter(l => l.hasClass("vt-map-flag"))).toHaveLength(0);
+    expect(cardMark.parent.hasClass("vt-map-flag")).toBe(false);
     cardMark.dispatch("click");   // click the ⚠: a box with the sentence and the buttons
     expect(box.querySelectorAll(".vt-map-pop .vt-map-issue")).toHaveLength(1);
     cardMark.dispatch("click");

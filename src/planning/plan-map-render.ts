@@ -311,8 +311,9 @@ export function drawProblems(box: HTMLElement, plan: Plan, o: MapOptions): void 
   const mark = (is: PlanIssue, on: boolean): void => { box.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (is.paths.includes(el.dataset.planPath ?? "")) el.toggleClass("vt-map-flag", on); }); };
   for (const is of plan.issues) {
     const line = issueLine(box, plan, o, is);
-    line.addEventListener("mouseenter", () => mark(is, true));
-    line.addEventListener("mouseleave", () => mark(is, false));
+    const both = (on: boolean): void => { mark(is, on); line.toggleClass("vt-map-flag", on); };   // the line and its card or tile light up together
+    line.addEventListener("mouseenter", () => both(true));
+    line.addEventListener("mouseleave", () => both(false));
   }
 }
 
@@ -336,9 +337,12 @@ function warnMark(box: HTMLElement, wrap: HTMLElement, el: HTMLElement, plan: Pl
   el.addClass("vt-map-warn");
   const text = issues.map(i => i.text).join("\n");
   const mark = el.createDiv({ cls: "vt-map-warnmark", attr: { "aria-label": text } });   // Obsidian's tooltip only: a `title` too would show a second one
-  const lines = (on: boolean): void => { box.querySelectorAll<HTMLElement>("[data-issue]").forEach(l => { if (issues.some(i => String(plan.issues.indexOf(i)) === l.dataset.issue)) l.toggleClass("vt-map-flag", on); }); };
-  mark.addEventListener("mouseenter", () => lines(true));   // and its problem lines light up, as the card does when a line is hovered
-  mark.addEventListener("mouseleave", () => lines(false));
+  const both = (on: boolean): void => {   // the card or tile and its problem lines light up together, as they do when a line is hovered
+    el.toggleClass("vt-map-flag", on);
+    box.querySelectorAll<HTMLElement>("[data-issue]").forEach(l => { if (issues.some(i => String(plan.issues.indexOf(i)) === l.dataset.issue)) l.toggleClass("vt-map-flag", on); });
+  };
+  el.addEventListener("mouseenter", () => both(true));   // anywhere on the card or tile, not only on the small ⚠
+  el.addEventListener("mouseleave", () => both(false));
   setIcon(mark, "alert-triangle");
   mark.addEventListener("mousedown", stopEvent);
   mark.addEventListener("click", e => { stopEvent(e); issuePopup(wrap, mark, plan, o, issues); });
