@@ -329,8 +329,12 @@ describe("check setup: kit files, core plugins, Daily notes, Dataview and proper
     const wrong = row({ folder: "", format: "", want: "01 Daily Notes" });
     expect(wrong).toMatchObject({ ok: false, warn: true });
     expect(wrong.fix).toBeUndefined();
-    expect(wrong.detail).toContain("the folder is the vault's top level (the kit's Daily notes folder is 01 Daily Notes)");
-    expect(wrong.detail).toContain("the date format is YYYY-MM-DD (the kit uses YYYY/YYYY-MM-DD)");
+    expect(wrong.detail).toBe("Not yet. Today's note (the homepage button) is made by Obsidian's Daily notes plugin, and there New file location is empty (the top of the vault) and Date format is empty (so YYYY-MM-DD). So the note is made outside 01 Daily Notes and stays empty, because the daily note template only fills notes in that folder. To fix it: open Settings → Daily notes and set New file location to 01 Daily Notes, and Date format to YYYY/YYYY-MM-DD (a folder per year). Lab Kit does not change this for you.");
+    // only what is wrong is named
+    const half = row({ folder: "01 Daily Notes", format: "YYYY-MM-DD", want: "01 Daily Notes" });
+    expect(half.detail).toContain("and there Date format is YYYY-MM-DD. So");
+    expect(half.detail).toContain("and set Date format to YYYY/YYYY-MM-DD (a folder per year). Lab Kit");
+    expect(row({ folder: "01 Daily Notes", format: "YYYY/YYYY-MM-DD", want: "01 Daily Notes" }).detail).toBe("Yes: in 01 Daily Notes, named YYYY/YYYY-MM-DD.");
     expect(row(null)).toMatchObject({ ok: false, warn: true });
     expect(byId(state({ dailyNotes: null }))["core:daily-notes-settings"]).toBeUndefined();   // planning kit off
   });

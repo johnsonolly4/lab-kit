@@ -182,11 +182,16 @@ export function checkSetup(s: SetupState): SetupItem[] {
         : `Off. ${c.why} Switch it on in Settings → Core plugins.` });
   }
   if (s.planning && s.dailyNotes !== undefined) {
+    // Today's note (homepage button, Alt+D) is made by Obsidian's own Daily notes plugin: its folder and file name must be the kit's, or the note lands outside the Daily notes folder
     const d = s.dailyNotes;
-    const wrong = d ? [d.folder !== d.want ? `the folder is ${d.folder || "the vault's top level"} (the kit's Daily notes folder is ${d.want})` : "", d.format !== DAILY_FORMAT ? `the date format is ${d.format || "YYYY-MM-DD"} (the kit uses ${DAILY_FORMAT})` : ""].filter(Boolean) : [];
-    out.push({ id: "core:daily-notes-settings", group: "Obsidian", label: "Daily notes folder and date format", ok: !!d && !wrong.length, warn: true,
-      detail: !d ? `Can't read the Daily notes settings: in Settings → Daily notes, New file location should be the kit's Daily notes folder and Date format ${DAILY_FORMAT}.`
-        : wrong.length ? `In Settings → Daily notes ${wrong.join(" and ")}. Today's note then lands where the daily note template doesn't run. Lab Kit doesn't change this: set it there.` : "As the kit expects." });
+    const wrong = d ? [
+      d.folder !== d.want ? { now: `New file location is ${d.folder || "empty (the top of the vault)"}`, set: `New file location to ${d.want}` } : null,
+      d.format !== DAILY_FORMAT ? { now: `Date format is ${d.format || "empty (so YYYY-MM-DD)"}`, set: `Date format to ${DAILY_FORMAT} (a folder per year)` } : null,
+    ].filter((x): x is { now: string; set: string } => !!x) : [];
+    out.push({ id: "core:daily-notes-settings", group: "Obsidian", label: "Today's note is made in the Daily notes folder", ok: !!d && !wrong.length, warn: true,
+      detail: !d ? `Can't read Obsidian's Daily notes settings. Check them yourself: Settings → Daily notes, New file location should be the kit's Daily notes folder and Date format ${DAILY_FORMAT}.`
+        : wrong.length ? `Not yet. Today's note (the homepage button) is made by Obsidian's Daily notes plugin, and there ${wrong.map(w => w.now).join(" and ")}. So the note is made outside ${d.want} and stays empty, because the daily note template only fills notes in that folder. To fix it: open Settings → Daily notes and set ${wrong.map(w => w.set).join(", and ")}. Lab Kit does not change this for you.`
+        : `Yes: in ${d.want}, named ${DAILY_FORMAT}.` });
   }
   if (s.planning && s.dataviewInline !== undefined && s.plugins.has("dataview")) {
     const v = s.dataviewInline;
