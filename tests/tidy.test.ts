@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { createHash } from "crypto";
 import { readFileSync, readdirSync, statSync } from "fs";
 import { join, relative, sep } from "path";
-import { applyMigration, diffRows, reportMarkdown, scan, wantsText, type Migration, type TidyContext, type TidyFile } from "../src/kit/tidy";
+import { applyMigration, batchChanges, diffRows, foldRows, reportMarkdown, scan, wantsText, type Migration, type TidyChange, type TidyContext, type TidyFile } from "../src/kit/tidy";
 
 const ROOT = join(__dirname, "fixtures", "tidy-vault");
 const walk = (dir: string): string[] => readdirSync(dir).flatMap(n => statSync(join(dir, n)).isDirectory() ? walk(join(dir, n)) : [join(dir, n)]);
@@ -120,6 +120,39 @@ describe("Tidy up notes scan (Phase 7a)", () => {
     ]);
     expect(diffRows("x\ny", "x").map(r => r.kind)).toEqual(["same", "removed"]);
     expect(diffRows("", "kind: hub")).toEqual([{ kind: "added", left: null, right: "kind: hub" }]);
+  });
+
+  it("foldRows: unchanged runs of 3 or more fold, one row of context stays, changed rows never fold", () => {
+    const page = (mid: string): string => ["a", "b", "c", "d", "e", mid, "f", "g", "h", "i", "j"].join("\n");
+    const folded = foldRows(diffRows(page("old"), page("new")));
+    expect(folded.map(r => r.kind === "fold" ? `fold ${r.rows.length}` : `${r.kind} ${r.left}`)).toEqual(["fold 4", "same e", "changed old", "same f", "fold 4"]);
+    expect(folded.flatMap(r => r.kind === "fold" ? r.rows : [r])).toEqual(diffRows(page("old"), page("new")));   // nothing lost, order kept
+    // a run of 2 hidden rows is not worth a fold; added and removed rows always show
+    expect(foldRows(diffRows("a\nb\nc\nd\nx", "a\nb\nc\nd\ny")).map(r => r.kind)).toEqual(["fold", "same", "changed"]);
+    expect(foldRows(diffRows("a\nb\nc\nx", "a\nb\nc\ny")).map(r => r.kind)).toEqual(["same", "same", "same", "changed"]);
+    expect(foldRows(diffRows("", "k: 1\nl: 2\nm: 3\nn: 4")).map(r => r.kind)).toEqual(["added", "added", "added", "added"]);
+    expect(foldRows(diffRows("k\nl\nm\nn", "")).map(r => r.kind)).toEqual(["removed", "removed", "removed", "removed"]);
+    expect(foldRows(diffRows(page("old"), page("new")), 0).map(r => r.kind)).toEqual(["fold", "changed", "fold"]);
+  });
+
+  it("batchChanges: the same added, removed and changed lines are one batch, whatever stays the same around them", () => {
+    const lab = (n: number): TidyChange => ({ path: `03 Lab Book/Notes/00${n}.md`, before: `Type: T${n}\nStatus: Planned`, after: `Type: T${n}\nStatus: Planned\nRA:\nCoSHH:` });
+    const changes: TidyChange[] = [
+      lab(1), lab(2),
+      { path: "03 Lab Book/Notes/0003.md", before: "Status: Planned", after: "Status: Planned\nRA:" },   // one line fewer: its own
+      lab(4),
+      { path: "Extras/Templates/Scripts", before: "", after: "", to: "Extras/Templates/Actions" },
+      { path: "fonts", before: "", after: "", to: "Extras/fonts" },
+      { path: "02 Projects/A/A.md", before: "Type: T5\nStatus: Planned", after: "Type: T5\nStatus: Planned\nRA:\nCoSHH:", body: true },   // same lines, but a page
+      { path: "Templater", before: "a", after: "b", setting: { target: "templater-startup", key: "a", from: "a", to: "b" } },
+      { path: "Templater", before: "a", after: "b", setting: { target: "templater-startup", key: "a", from: "a", to: "b" } },
+    ];
+    expect(batchChanges(changes).map(b => b.indices)).toEqual([[0, 1, 3], [2], [4], [5], [6], [7], [8]]);
+    expect(batchChanges([])).toEqual([]);
+  });
+
+  it("batchChanges on the fixture: every change is in exactly one batch", () => {
+    for (const g of s.groups) expect(batchChanges(g.changes).flatMap(b => b.indices).sort((a, b) => a - b)).toEqual(g.changes.map((_, i) => i));
   });
 
   it("report: counts, paths and not-ticked rules, no note text", () => {

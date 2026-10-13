@@ -524,6 +524,40 @@ export function diffRows(before: string, after: string): DiffRow[] {
   return rows;
 }
 
+/** A run of unchanged rows the window shows as one line ("… N unchanged lines") until it is opened. */
+export interface FoldRow { kind: "fold"; rows: DiffRow[] }
+
+/**
+ * The rows with the unchanged ones folded away: `context` unchanged rows stay next to every added, removed or changed row, and a longer run
+ * between them becomes one fold. A run is folded only when it hides 3 rows or more. Added, removed and changed rows are never folded.
+ */
+export function foldRows(rows: DiffRow[], context = 1): (DiffRow | FoldRow)[] {
+  const keep = rows.map(r => r.kind !== "same");
+  rows.forEach((r, i) => { if (r.kind !== "same") for (let k = Math.max(0, i - context); k <= Math.min(rows.length - 1, i + context); k++) keep[k] = true; });
+  const out: (DiffRow | FoldRow)[] = [];
+  let run: DiffRow[] = [];
+  const flush = (): void => { if (run.length >= 3) out.push({ kind: "fold", rows: run }); else out.push(...run); run = []; };
+  rows.forEach((r, i) => { if (keep[i]) { flush(); out.push(r); } else run.push(r); });
+  flush();
+  return out;
+}
+
+/**
+ * A rule's changes grouped into batches of the same change: the same sort (properties, page, new note) and exactly the same added, removed
+ * and changed lines; the unchanged lines around them may differ. Positions in `changes`, in first-seen order. Moves and settings stay alone.
+ */
+export function batchChanges(changes: TidyChange[]): { indices: number[] }[] {
+  const out: { indices: number[] }[] = [], at = new Map<string, number>();
+  changes.forEach((c, i) => {
+    if (c.to !== undefined || c.setting) { out.push({ indices: [i] }); return; }
+    const key = `${c.create ? "new" : c.body ? "page" : "properties"}\n${JSON.stringify(diffRows(c.before, c.after).filter(r => r.kind !== "same").map(r => [r.left, r.right]))}`;
+    const have = at.get(key);
+    if (have !== undefined) out[have].indices.push(i);
+    else { at.set(key, out.length); out.push({ indices: [i] }); }
+  });
+  return out;
+}
+
 /** The scan as Markdown, for Copy report (paths and counts only; no note text). `ticked` = rule ids the user left ticked (default: all). */
 export function reportMarkdown(s: TidyScan, ticked?: ReadonlySet<string>): string {
   const out = ["# Tidy up notes: report", ""];
