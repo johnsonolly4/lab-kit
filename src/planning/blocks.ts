@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
+import { hasMap, hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
@@ -333,11 +333,11 @@ class BlockView extends MarkdownRenderChild {
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }
-      case "project-map": {   // on a project hub: the plan as cards joined by arrows; nothing when the project has no plan
+      case "project-map": {   // on a project hub: the plan as cards joined by arrows; nothing until the project has two to-dos or a link
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
-        if (!hasPlan(plan)) return;
+        if (!hasMap(plan)) return;
         box.addClass("vt-plan");
         const direction = this.direction ?? kit.planDirection;
         const title = box.createDiv({ cls: "vt-plan-title is-bar", text: "Plan" });

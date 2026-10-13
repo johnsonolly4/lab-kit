@@ -171,8 +171,8 @@
       "src": "07 How-tos/Obsidian/Vault spec.md",
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
-      "version": "1.1.0",
-      "sha256": "9b39c08933575ea94d3d302acfb377c94af7b2299aae3fb19bf846148ef5e956",
+      "version": "1.2.1",
+      "sha256": "f7fb38fe7729667109208b85987c1a523f91aa42b6c0810e7ed8094634312ece",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },

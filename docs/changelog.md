@@ -1,5 +1,9 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Plan map from two to-dos** (planning kit, plugin code; not seen in Obsidian): a project hub shows the map as soon as the project has two to-dos, linked or not. To-dos with no links wait in the **Not linked** tiles; drag one onto another, or use Comes after?, to make the plan. The Plan list tile still waits for a link.
+- **Plan map card titles are readable** (plugin code; not seen in Obsidian): a long title now wraps onto a second line instead of ending in "…", and hovering the card shows the full name.
+
 ## v1.2.1 (2026-10-13)
 Insert works in every Alt+S form again, Check hotkeys finds the renamed commands, Review update… looks like Manage kit files, and three CSS warnings from the store check are gone.
 

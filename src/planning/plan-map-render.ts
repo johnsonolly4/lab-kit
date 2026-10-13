@@ -423,7 +423,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
       tickButton(el, r, o, true);
       warnMark(box, wrap, el, plan, o, flagged.get(c.path));
-      el.createDiv({ cls: "vt-map-title", text: r.name });
+      el.createDiv({ cls: "vt-map-title", text: r.name, attr: { title: r.name } });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
       if (r.due) meta.createSpan({ cls: "vt-muted", text: r.due });
