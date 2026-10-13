@@ -394,3 +394,8 @@ From ## Plan map: zoom and export (user, 2026-10-13, chat; NEXT TASK; PLANNED 20
 ## This task
 
 - [x] (DONE 2026-10-13, user approved each phase; 224 ticked items archived, 19 closed or merged, 12 long lines shortened, 10 branches deleted, 4 plans marked COMPLETE, 1 fixture removed; left: the folder `../lab-kit-form-fields` is on disk, in STATUS → Waiting on owner) **Clear out the backlog and the repo**
+
+## Closed 2026-10-13, after the clear-out
+
+  - [x] (CLOSED 2026-10-13, user chat: already built: setting plus toggle button, commit e36e4f0) A **vertical layout** for the map (steps top to bottom), as a setting next to Project plan view (`src/kit/ui.ts`, `planView`) or its own; to avoid sideways scrolling (`src/planning/plan-map.ts` `mapGeometry`, `plan-map-render.ts`).
+  - [x] (CLOSED 2026-10-13, user chat: user thinks it is in; option E (arrow / dash / dot tag) was seen and accepted 2026-10-13, see archive) **Priority indication on board cards without the property row** (user, 2026-10-13). Not planned. Ideas, none verified: (a) a coloured left bar or dot on the card by priority, like the status colours on columns (`src/kit/board-colours.ts` tags the Bases kanban markup; but a card whose `priority` property is hidden carries no priority text, so the plugin would have to look the note up from the card title with the metadata cache); (b) a small `P1` badge next to the title done the same way; (c) put `priority` first in the card's properties and shrink its row with CSS. Needs the Bases card markup seen in Obsidian (the user pastes a card's outerHTML, as asked for the status colours: checklist 6i, DOM-check steps) and a design choice, then `/phase-plan`. Related old item: "card colour left" in BACKLOG "Priority / importance property".
