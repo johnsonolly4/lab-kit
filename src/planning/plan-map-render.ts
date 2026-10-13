@@ -232,7 +232,21 @@ function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string,
   }
 }
 
-/** The map and the unlinked list inside `box`. The scroll box carries `data-start-scroll`: where to scroll once it is in the page. */
+/** The tick circle of a card or tile: ticks and unticks, so a wrong tick can be undone. `card`: also marks the card ready (open and not blocked). */
+function tickButton(el: HTMLElement, r: PlanRow, o: MapOptions, card: boolean): void {
+  const tick = el.createEl("button", { cls: "vt-map-tick", attr: { "aria-label": r.done ? "Mark not done" : "Mark done" } });
+  let done = r.done;   // what it shows now: it changes at the click, before the note's properties are saved and the map redraws
+  const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); el.toggleClass("vt-map-done", done); if (card) el.toggleClass("vt-map-ready", !done && !r.blocked); };
+  look();
+  tick.addEventListener("mousedown", stopEvent);
+  tick.addEventListener("click", e => {
+    stopEvent(e);
+    done = !done; look();
+    markDone(o, r.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); });
+  });
+}
+
+/** The map and the unlinked tiles inside `box`. The scroll box carries `data-start-scroll`: where to scroll once it is in the page. */
 export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOptions): void {
   const wrap = box.createDiv({ cls: "vt-map" });
   if (map.cards.length) {
@@ -270,17 +284,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.dataset.planPath = c.path;
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
-      const tick = el.createEl("button", { cls: "vt-map-tick", attr: { "aria-label": r.done ? "Mark not done" : "Mark done" } });   // a circle: ticks and unticks, so a wrong tick can be undone
-      let done = r.done;   // what the card shows now: it changes at the click, before the note's properties are saved and the map redraws
-      const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); el.toggleClass("vt-map-done", done); el.toggleClass("vt-map-ready", !done && !r.blocked); };
-      look();
-      const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
-      tick.addEventListener("mousedown", stop);
-      tick.addEventListener("click", e => {
-        stop(e);
-        done = !done; look();
-        markDone(o, r.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); });
-      });
+      tickButton(el, r, o, true);
       el.createDiv({ cls: "vt-map-title", text: r.name });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
@@ -315,20 +319,23 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     scroller.dataset.startScrollTop = String(g.scrollTop * z);
     scroller.dataset.mapWidth = String(g.width);
   }
-  if (map.unlinked.length) {
+  if (map.unlinked.length) {   // small tiles in a wrapping grid: the strip (subtask drag) on the left, the node ("comes after" drag) on the right, the full name on hover
     const side = wrap.createDiv({ cls: "vt-map-unlinked" });
+    const room = Math.max(0, ...map.unlinked.filter(r => o.expanded.has(r.path)).map(r => r.subs.length));
+    if (room) side.setCssProps({ "--vt-map-tile-room": `${room * SUB_LINE_H + 12}px` });   // a subtask list floats under its tile: keep clear of what comes after
     side.createDiv({ cls: "vt-map-unlinked-title", text: "Not linked" });
-    const ul = side.createEl("ul");
+    const grid = side.createDiv({ cls: "vt-map-tiles" });
     for (const r of map.unlinked) {
-      const li = ul.createEl("li", { cls: "vt-map-unlinked-row" });
-      li.dataset.planPath = r.path;
-      dragNest(wrap, plan, o, li.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), r.path, li);
-      dragLink(wrap, plan, o, li.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), r.path);
-      const a = li.createEl("a", { text: r.name, cls: "internal-link", attr: { href: r.path, "data-href": r.path } });
-      a.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
-      a.addEventListener("contextmenu", e => menu(o, e, r));
-      subsToggle(li, r, o);
-      if (o.expanded.has(r.path) && r.subs.length) subsList(li, r, o, "vt-map-subs vt-map-subs-inline", { wrap, plan });
+      const tile = grid.createDiv({ cls: "vt-map-tile", attr: { title: r.name } });
+      tile.dataset.planPath = r.path;
+      dragNest(wrap, plan, o, tile.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), r.path, tile);
+      dragLink(wrap, plan, o, tile.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), r.path);
+      tile.createDiv({ cls: "vt-map-tile-title", text: r.name });
+      subsToggle(tile, r, o);
+      tickButton(tile, r, o, false);
+      if (o.expanded.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });
+      tile.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
+      tile.addEventListener("contextmenu", e => menu(o, e, r, plan));
     }
   }
 }

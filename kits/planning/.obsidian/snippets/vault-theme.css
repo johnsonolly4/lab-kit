@@ -499,25 +499,32 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.25; }
 .vt-map-arrow-via { stroke-dasharray: 5 4; }
 .vt-map-arrow.vt-map-hl { stroke: var(--interactive-accent); stroke-width: 2.5; }
-.vt-map-unlinked { border-top: 1px solid var(--vt-divider); padding-top: 8px; }
-.vt-map-unlinked-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 4px; }
-.vt-map-unlinked ul { list-style: none; padding: 0; margin: 0; }
-.vt-map-unlinked li { padding: 3px 0; margin: 0; }
-.vt-map-unlinked li::marker { content: ""; }
-.vt-map-unlinked li a.internal-link { color: var(--text-normal); text-decoration: none; }
+.vt-map-unlinked { border-top: 1px solid var(--vt-divider); padding: 8px 0 var(--vt-map-tile-room, 0px); }
+.vt-map-unlinked-title { font-weight: 600; color: var(--vt-card-title); margin-bottom: 6px; }
+/* Not linked: small tiles in a wrapping grid (src/planning/plan-map-render.ts) */
+.vt-map-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.vt-map-tile { position: relative; display: flex; align-items: center; gap: 6px; height: 34px; box-sizing: border-box; padding: 0 30px 0 18px; cursor: pointer; font-size: var(--font-ui-small);
+  background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 8px; }
+.vt-map-tile:hover { border-color: var(--interactive-accent); }
+.vt-map-tile-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-tile .vt-map-tick { top: 50%; right: 5px; width: 20px; height: 20px; margin-top: -10px; }
+.vt-map-tile .vt-map-tick svg { width: 18px; height: 18px; }
+.vt-map-tile .vt-map-subs-toggle { position: static; flex: none; height: 18px; }
+.vt-map-tile .vt-map-subs { z-index: 8; }
+.vt-map-tile .vt-map-grip { width: 12px; border-radius: 7px 0 0 7px; }
+.vt-map-tile .vt-map-grip::before { height: calc(100% - 10px); width: 3px; }
+.vt-map-tile .vt-map-handle { width: 12px; height: 12px; margin-top: -6px; right: -7px; }
+.vt-map-down .vt-map-tile .vt-map-handle { top: 50%; bottom: auto; right: -7px; margin-top: -6px; }   /* the tiles do not follow the map's direction */
 
 /* Plan map: linking by dragging a card's dot (src/planning/plan-map-render.ts) */
 .vt-map { position: relative; }
 .vt-map-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
-.vt-map-card:hover .vt-map-handle, .vt-map-unlinked-row:hover .vt-map-handle { opacity: 1; }
-.vt-map-unlinked-row { position: relative; padding-left: 22px; }
-.vt-map-unlinked-row .vt-map-handle { right: 0; }   /* the "comes after" handle at the right end of the row, so it never covers the title; the left gutter is the subtask grip */
-.vt-map-unlinked-row .vt-map-grip { border-radius: 4px; }
-.vt-map-unlinked-row .vt-map-grip::before { height: calc(100% - 8px); }
+.vt-map-card:hover .vt-map-handle, .vt-map-tile:hover .vt-map-handle { opacity: 1; }
+@media (hover: none) { .vt-map-handle { opacity: 1; } }   /* a phone has no hover: the node is always shown */
 .vt-map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
 .vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }
 .vt-map-drag.vt-map-pending { stroke-dasharray: none; }
-.vt-map-card.vt-map-drop, .vt-map-unlinked-row.vt-map-drop { outline: 2px solid var(--interactive-accent); }
+.vt-map-card.vt-map-drop, .vt-map-tile.vt-map-drop { outline: 2px solid var(--interactive-accent); }
 .vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
 .vt-map-hidden { display: none; }
 
@@ -536,14 +543,13 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-sub-grip::after { display: block; }
 .vt-map-lifted { opacity: 0.4; }
 .vt-map-ghost { position: absolute; left: var(--vt-ghost-x); top: var(--vt-ghost-y); width: var(--vt-ghost-w); box-sizing: border-box; padding: 6px 10px; transform: translate(-16px, -12px); background: var(--background-primary); border: 1px solid var(--interactive-accent); border-radius: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-s); pointer-events: none; z-index: 7; }
-.vt-map-card.vt-map-nest-drop, .vt-map-unlinked-row.vt-map-nest-drop { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
+.vt-map-card.vt-map-nest-drop, .vt-map-tile.vt-map-nest-drop { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
 
 /* Plan map: subtasks (src/planning/plan-map-render.ts) */
 .vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 10px; color: var(--text-muted); cursor: pointer; }
 .vt-map-subs-toggle:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-subs-toggle.vt-map-subsdone { color: var(--interactive-accent); border-color: var(--interactive-accent); }
 .vt-map-subs { position: absolute; left: 0; top: 100%; margin-top: 4px; width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--background-primary); border: 1px solid var(--vt-card-border); border-radius: 8px; z-index: 6; cursor: default; }
-.vt-map-subs-inline { position: static; width: auto; margin: 4px 0 0; }
 .vt-map-sub { display: flex; gap: 6px; align-items: center; height: 26px; font-size: var(--font-ui-smaller); }
 .vt-map-sub .vt-map-sub-tick { position: static; width: 20px; height: 20px; flex: none; }
 .vt-map-sub a.internal-link { color: var(--text-normal); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -556,6 +562,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
 .vt-map-zoom:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-slide { display: inline-flex; align-items: center; }
+.vt-plan-title:has(> .vt-map-dir) { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
 .vt-map-slide svg { width: 14px; height: 14px; }
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }

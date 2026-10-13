@@ -62,9 +62,10 @@ Decided with the user 2026-10-13 (chat, mockup, then the survey below):
 - Done when: tests cover limit 20, undo / redo order, a new change clearing redo, and the stale-value skip; the buttons are disabled when empty (by reading). NOT seen in Obsidian until the user tries it (checklist 6i row).
 - New dependencies: none
 
-### Phase 5 — Alignment and Not linked tiles
+### Phase 5 — Alignment and Not linked tiles — BUILT 2026-10-13, not seen in Obsidian (user chose a floating subtask list, B)
 - Depends on: Phase 3 (the strip, `dragNest`). Independent of Phase 4; do it before Phase 4 (it is what the user sees).
 - Files: `kits/planning/.obsidian/snippets/vault-theme.css` (title row as one centred flex row or `vertical-align: middle` on the five buttons; `.vt-map-unlinked` as a wrapping grid, `.vt-map-tile` narrow and short, strip and node as on `.vt-map-card`; the node and strip always visible under `@media (hover: none)`), `src/planning/plan-map-render.ts` (`:318-336` Not linked rows → tiles: `data-plan-path`, `dragNest` on the strip, `dragLink` on the node, `title` with the full name, the "▸ n/m" badge and inline list via the existing `subsToggle` / `subsList`, right-click `menu`), `tests/plan-map-render.test.ts` (tiles drawn, one strip and one node each, the full name in `title`), docs (tutorial, guide note, Vault spec, changelog, checklist 6i row).
+- Result 2026-10-13: tiles replace the rows (`tickButton` helper shared by cards and tiles; `.vt-map-tiles` grid; strip, node, tick, title in `title`, floating subtask list; the room under the grid is kept by `--vt-map-tile-room`); the title row is a flex row via `.vt-plan-title:has(> .vt-map-dir)`; the node is always shown under `@media (hover: none)`; the old `li` padding rule is gone. `tests/plan-map-render.test.ts` covers the tile. Tests 924. Open: how two floating lists (a card's and a tile's) overlap if both are open: tile lists are z-index 8, a card's 6.
 - Done when: tests, lint, build pass; the row look is gone; NOT seen in Obsidian until the user has looked (screenshot): tiles wrap, long names are cut and show in full on hover, alignment of the five buttons, tile drag in both directions, phone width.
 - New dependencies: none
 

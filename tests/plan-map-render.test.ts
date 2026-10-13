@@ -40,6 +40,12 @@ describe("drawPlanMap", () => {
     expect(box.querySelectorAll(".vt-map-arrow")).toHaveLength(2);   // A → B and A → D
     expect(box.querySelectorAll(".vt-map-arrow-via")).toHaveLength(1);
     expect(box.querySelectorAll(".vt-map-arrow-hit")).toHaveLength(1);   // the dashed one has no Remove link
-    expect(box.querySelectorAll(".vt-map-unlinked-row .vt-map-grip")).toHaveLength(2);   // the row's own strip, and LoneSub's line
+    const tiles = box.querySelectorAll(".vt-map-tile");   // Not linked: one small tile per to-do, strip + node + tick, the full name in `title`
+    expect(tiles).toHaveLength(1);
+    expect(tiles[0].getAttribute("title")).toBe("Lone");
+    expect(box.querySelectorAll(".vt-map-tile .vt-map-grip")).toHaveLength(2);   // the tile's own strip, and LoneSub's line in its list
+    expect(box.querySelectorAll(".vt-map-tile .vt-map-handle")).toHaveLength(1);
+    expect(box.querySelectorAll(".vt-map-tile .vt-map-tick")).toHaveLength(2);   // the tile's, and LoneSub's line
+    expect(box.querySelectorAll(".vt-map-unlinked li")).toHaveLength(0);
   });
 });
