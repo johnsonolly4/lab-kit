@@ -13,6 +13,11 @@ export function nextLabNumber(basenames: string[], initials: string): string {
   return String(Math.max(0, ...nums) + 1).padStart(4, "0");
 }
 
+/** A date as YYYY-MM-DD in the local time zone. */
+export function localDate(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 /** `ABC0015 - Title`, with the characters a file name cannot hold replaced by `-`. An empty title is "Untitled". */
 export function labNoteName(initials: string, number: string, title: string): string {
   return `${initials}${number} - ${title.trim() || "Untitled"}`.replace(/[\\/:*?"<>|]/g, "-");

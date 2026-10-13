@@ -1,7 +1,7 @@
 // Clone experiment text rules (src/kit/clone.ts): numbering, the properties that start again, the free text that is cleared, the sample codes.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { cloneLabNote, labNoteName, labPrefix, nextLabNumber } from "../src/kit/clone";
+import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "../src/kit/clone";
 
 const source = readFileSync("tests/fixtures/lab-notes/clone-source.md", "utf8");
 const OPTS = { oldPrefix: "ABC0014-", newPrefix: "ABC0015-", today: "2026-10-13" };
@@ -36,6 +36,13 @@ describe("labNoteName and labPrefix", () => {
     expect(labPrefix("ABC0014 - RAFT test")).toBe("ABC0014-");
     expect(labPrefix("0014 - RAFT test")).toBe("0014-");
     expect(labPrefix("Home")).toBeNull();
+  });
+});
+
+describe("localDate", () => {
+  it("writes the local date, padded", () => {
+    expect(localDate(new Date(2026, 0, 5, 23, 30))).toBe("2026-01-05");
+    expect(localDate(new Date(2026, 9, 13, 0, 5))).toBe("2026-10-13");
   });
 });
 

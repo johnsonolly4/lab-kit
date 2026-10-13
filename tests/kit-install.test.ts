@@ -5,7 +5,7 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, newChemicalTarget, newLabEntryTarget, newRigTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget } from "../src/kit/paths";
 import { readRig } from "../src/rig/parts";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -415,6 +415,14 @@ describe("New chemical", () => {
     expect(newChemicalTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
     expect(newChemicalTarget({ ...ok, chemicalFolder: "" })).toHaveProperty("error", expect.stringContaining("Chemical folder"));
     expect(newChemicalTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Chemical database template"));
+  });
+});
+
+describe("Clone experiment", () => {
+  it("needs the initials and the Lab notes folder, not Templater or a template", () => {
+    expect(cloneExperimentTarget({ labFolder: " 03 Lab Book/Notes/ ", initials: " ABC " })).toEqual({ folder: "03 Lab Book/Notes", initials: "ABC" });
+    expect(cloneExperimentTarget({ labFolder: "03 Lab Book/Notes", initials: " " })).toHaveProperty("error", expect.stringContaining("initials"));
+    expect(cloneExperimentTarget({ labFolder: "", initials: "ABC" })).toHaveProperty("error", expect.stringContaining("Lab notes folder"));
   });
 });
 
