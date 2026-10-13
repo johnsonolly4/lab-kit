@@ -13,7 +13,7 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { CORE_PLUGINS, PROPERTY_TYPES, SETUP_MARK, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void; /** Review update… and Manage files…: one window for both kits when the planning kit is on. */ review(): ClosingModal; manage(): ClosingModal }
@@ -145,22 +145,21 @@ export class SetupCheckModal extends Modal {
     el.addClass("lab-kit-setup-check");
     this.setTitle("Check setup");
     const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit });
-    const missing = items.filter(i => !i.ok && !i.optional && !i.warn).length;
-    const top = el.createDiv({ cls: "lab-kit-setup-top" });
-    top.createEl("p", { text: missing ? `${missing} to fix. Nothing changes until you press Fix and confirm.` : "Everything the kits need is in place." });
-    top.createEl("button", { text: "Check again" }).addEventListener("click", () => void this.refresh());
-    let group = "";
-    for (const it of items) {
-      if (it.group !== group) { group = it.group; el.createEl("h4", { text: group }); }
-      const state = it.ok ? "is-ok" : it.warn ? "is-warn" : it.optional ? "is-optional" : "is-missing";
-      const row = el.createDiv({ cls: `lab-kit-setup-row ${state}` });
-      row.createSpan({ cls: "lab-kit-setup-mark", text: it.ok ? "✓" : it.warn ? "!" : it.optional ? "–" : "✗" });
+    el.createEl("p", { cls: "lab-kit-setup-intro", text: "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one." });
+    el.createDiv({ cls: "lab-kit-setup-summary", text: setupSummary(items) });
+    for (const it of orderSetupItems(items)) {
+      const state = setupRowState(it);
+      const row = el.createDiv({ cls: `lab-kit-setup-row is-${state}` });
+      row.createSpan({ cls: "lab-kit-setup-mark", text: SETUP_MARK[state] });
       const text = row.createDiv({ cls: "lab-kit-setup-text" });
-      text.createDiv({ text: it.label });
+      text.createDiv({ cls: "lab-kit-setup-title", text: it.label });
       text.createDiv({ cls: "setting-item-description", text: it.detail });
+      text.createDiv({ cls: "lab-kit-setup-group", text: it.group });
       const fix = it.fix;
       if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note", "manage"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
     }
+    const foot = el.createDiv({ cls: "lab-kit-setup-foot" });
+    foot.createEl("button", { text: "Check again" }).addEventListener("click", () => void this.refresh());
   }
 
   /** Runs one fix. Settings and folders go through the kit's confirmation dialog; plugin pages, kit install and Templater set up have their own. */

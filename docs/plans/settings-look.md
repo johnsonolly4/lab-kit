@@ -20,8 +20,9 @@ Decided with the user 2026-10-13 (mockup, two screenshots and a survey):
 
 ## Phases
 
-### Phase 1 — The Check setup window
+### Phase 1 — The Check setup window — BUILT 2026-10-13, not seen in Obsidian
 - Files: `src/kit/setup-check.ts` or a new small pure file (`orderSetupItems(items)` → sorted by missing, warn, optional, ok then the original order; `summaryLine(items)`; the mark symbol and class per item), `src/kit/setup-check-ui.ts` (`render`, lines 142-160: the intro sentence, the summary line, the rows with the round mark, title, description and group label, Check again at the bottom), `styles.css` (replace the `.lab-kit-setup-*` block at lines 195-211), `tests/setup-check.test.ts` (or a new test file) for the order and the summary, a render test with the small DOM stand-in (marks, order, button labels Fix / Open / Find).
+- Result 2026-10-13: `setupRowState`, `SETUP_MARK`, `orderSetupItems`, `setupSummary` in `setup-check.ts` (pure, tested), `render` in `setup-check-ui.ts` (intro sentence, summary, rows with mark / title / description / group label, Check again in the foot), the `.lab-kit-setup-*` block in `styles.css` (tint from `--vt-*` with fallbacks); the Check hotkeys window shares the row classes and keeps its states (`is-warn`, `is-optional` map to the amber and grey marks). No render test of the window itself (the test Modal stand-in is empty). Tests 983.
 - Done when: tests, lint and build clean; the order test covers all four states and a stable order inside a state; the summary covers 0, 1 and many; NOT seen in Obsidian until the user opens Check setup (checklist row): round marks tinted, title larger, summary, sorted, group label under each row, buttons still work and the list rechecks after a Fix.
 - New dependencies: none
 

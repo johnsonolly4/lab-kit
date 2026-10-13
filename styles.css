@@ -192,15 +192,19 @@
 .modal-container.lab-kit-pick-side > .lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
 
 /* Check setup window (src/kit/setup-check-ui.ts) */
-.lab-kit-setup-check h4 { margin: 12px 0 4px; }
-.lab-kit-setup-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
-.lab-kit-setup-top > p { margin: 0; }
-.lab-kit-setup-row { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-top: 1px solid var(--background-modifier-border); }
+.lab-kit-setup-intro { margin: 0 0 4px; color: var(--text-muted); }
+.lab-kit-setup-summary { font-size: var(--font-ui-larger); font-weight: var(--font-semibold); margin: 8px 0 6px; }
+.lab-kit-setup-row { display: flex; align-items: flex-start; gap: var(--size-4-3); padding: var(--size-4-3) 0; border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
 .lab-kit-setup-text { flex: 1 1 auto; min-width: 0; }
-.lab-kit-setup-mark { flex: 0 0 1.2em; font-weight: 600; }
-.lab-kit-setup-row.is-ok .lab-kit-setup-mark { color: var(--text-success); }
-.lab-kit-setup-row.is-missing .lab-kit-setup-mark { color: var(--text-error); }
-.lab-kit-setup-row.is-optional .lab-kit-setup-mark { color: var(--text-muted); }
+.lab-kit-setup-title { font-size: var(--font-ui-medium); font-weight: var(--font-semibold); }
+.lab-kit-setup-group { margin-top: 4px; font-size: var(--font-ui-smaller); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+/* The round mark: tinted from Lab Kit's colours (vault-colours.css) when they are there, else Obsidian's own */
+.lab-kit-setup-mark { flex: none; width: 24px; height: 24px; margin-top: 2px; border-radius: 999px; text-align: center; line-height: 24px; font-size: var(--font-ui-small); font-weight: var(--font-semibold);
+  color: rgb(var(--vt-neutral-text, 148, 163, 184)); background: rgba(var(--vt-neutral, 100, 116, 139), var(--vt-tint, 0.2)); }
+.lab-kit-setup-row.is-ok .lab-kit-setup-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
+.lab-kit-setup-row:is(.is-todo, .is-warn) .lab-kit-setup-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
+.lab-kit-setup-row.is-missing .lab-kit-setup-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
+.lab-kit-setup-foot { display: flex; justify-content: flex-end; padding-top: var(--size-4-3); border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
 
 /* Both kits in one window (Review update… / Manage files… with the planning kit on): a section per kit, the one with something waiting first and open */
 .lab-kit-kit-section { margin: 0 0 10px; padding-top: 6px; border-top: 1px solid var(--background-modifier-border); }
@@ -212,7 +216,6 @@
 .lab-kit-install-path { font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
 .lab-kit-review-row { padding: 4px 0; }
 .lab-kit-review-row .lab-kit-install-path { display: block; }
-.lab-kit-setup-row.is-warn .lab-kit-setup-mark { color: var(--text-warning); }
 /* Planning homepage blocks (```vault-goto): one button per folder hub, wrapping */
 .lab-kit-goto { display: flex; flex-wrap: wrap; gap: 6px; }
 .lab-kit-goto-button { display: inline-flex; align-items: center; gap: 6px; }

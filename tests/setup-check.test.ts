@@ -1,6 +1,6 @@
 // Phase 6: the setup check's list (pure: a SetupState in, items out).
 import { describe, it, expect } from "vitest";
-import { checkSetup, describeActions, differingButtons, labFolderTemplates, type SetupState } from "../src/kit/setup-check";
+import { SETUP_MARK, checkSetup, describeActions, differingButtons, labFolderTemplates, orderSetupItems, setupRowState, setupSummary, type SetupItem, type SetupState } from "../src/kit/setup-check";
 
 const MENU = "Extras/Templates/Lab Kit/Insert snippet.md";
 const CMD = `templater-obsidian:${MENU}`;
@@ -360,5 +360,24 @@ describe("check setup: kit files, core plugins, Daily notes, Dataview and proper
     const r = byId(state({ lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", rigsFolder: "03 Lab Book/Rigs", rigsFolderMissing: true, labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" } }));
     expect(r["lab:rigs-folder"].detail).toMatch(/^Folder missing: 03 Lab Book\/Rigs\./);
     expect(r["lab:rigs-folder"].fix).toEqual({ kind: "rigs-folder", path: "03 Lab Book/Rigs" });
+  });
+});
+
+describe("the Check setup window's order and summary", () => {
+  const row = (id: string, o: Partial<SetupItem> = {}): SetupItem => ({ id, group: "G", label: id, ok: false, detail: "", ...o });
+  const items = [row("fine1", { ok: true }), row("optional1", { optional: true }), row("warn1", { warn: true }), row("missing1"), row("fine2", { ok: true }), row("missing2"), row("warn2", { warn: true }), row("optional2", { optional: true })];
+  it("each row is missing, to do, information or fine, with its mark", () => {
+    expect(items.map(setupRowState)).toEqual(["ok", "info", "todo", "missing", "ok", "missing", "todo", "info"]);
+    expect(SETUP_MARK).toEqual({ missing: "✗", todo: "!", info: "i", ok: "✓" });
+    expect(setupRowState(row("x", { ok: true, warn: true }))).toBe("ok");   // fine wins over a leftover warning
+  });
+  it("missing first, then to do, then information, then fine; the original order inside each", () => {
+    expect(orderSetupItems(items).map(i => i.id)).toEqual(["missing1", "missing2", "warn1", "warn2", "optional1", "optional2", "fine1", "fine2"]);
+  });
+  it("the summary counts the missing and the to-do rows, not information or fine ones", () => {
+    expect(setupSummary(items)).toBe("4 things to do.");
+    expect(setupSummary([row("a", { warn: true }), row("b", { ok: true })])).toBe("1 thing to do.");
+    expect(setupSummary([row("a", { optional: true }), row("b", { ok: true })])).toBe("Everything the kits need is in place.");
+    expect(setupSummary([])).toBe("Everything the kits need is in place.");
   });
 });

@@ -130,6 +130,24 @@ export type SetupFix =
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
 
+/** How a row is shown: missing (red), to do (amber: a warning), optional or information (grey), fine (green). */
+export type SetupRowState = "missing" | "todo" | "info" | "ok";
+export const setupRowState = (it: SetupItem): SetupRowState => (it.ok ? "ok" : it.warn ? "todo" : it.optional ? "info" : "missing");
+/** The mark inside a row's round badge. */
+export const SETUP_MARK: Record<SetupRowState, string> = { missing: "✗", todo: "!", info: "i", ok: "✓" };
+const ROW_RANK: Record<SetupRowState, number> = { missing: 0, todo: 1, info: 2, ok: 3 };
+
+/** The rows in the order the window shows them: what needs the user first (missing, then to do), then optional and information, then what is fine; the order inside each is the order of `checkSetup`. */
+export function orderSetupItems(items: SetupItem[]): SetupItem[] {
+  return items.map((it, i) => ({ it, i })).sort((a, b) => ROW_RANK[setupRowState(a.it)] - ROW_RANK[setupRowState(b.it)] || a.i - b.i).map(x => x.it);
+}
+
+/** The big line at the top: how many things need doing (missing and to do), or that everything is in place. */
+export function setupSummary(items: SetupItem[]): string {
+  const n = items.filter(it => { const s = setupRowState(it); return s === "missing" || s === "todo"; }).length;
+  return n ? `${n} ${n === 1 ? "thing" : "things"} to do.` : "Everything the kits need is in place.";
+}
+
 /** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
 export const METHODS_DEFAULT = "Extras/methods";
 
