@@ -206,10 +206,11 @@ Created by **ZotLit** (command *ZotLit: Create literature note*) from three Liqu
 | `Collections` | `zt.collections \| collection_paths` | Replace |
 | `citekey` | `zt.citationKey` | Replace |
 | `URL` | `zt.url` | Keep existing |
+| `DOI` | `zt.DOI` | Keep existing |
 | `imported` | `"now" \| date: "%Y-%m-%d"` | Keep existing |
 | `cssclasses` | `"vt,literature,wide" \| split: ","` | Keep existing |
 
-`zotero-key` is added by ZotLit itself and marks the note as a literature note. `imported` is the date the note was first created (queries fall back to `file.ctime`).
+`DOI` is for your own use (the kit reads no DOI); its expression is the one Zotero's field name suggests and has not been checked in ZotLit: if it stays empty, look the field name up in ZotLit's template data explorer. `zotero-key` is added by ZotLit itself and marks the note as a literature note. `imported` is the date the note was first created (queries fall back to `file.ctime`).
 
 | Field | Where | Meaning |
 |---|---|---|

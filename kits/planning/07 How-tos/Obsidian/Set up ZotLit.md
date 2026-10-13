@@ -14,7 +14,7 @@ show: back-to-hub
 - [ ] Zotero is running, with the Better BibTeX add-on (ZotLit's setup page says what it needs)
 - [ ] **Literature note folder**: `04 Literature/ZotLit Imports`
 - [ ] **Template folder**: `Extras/Templates/ZotLit` (the kit puts its three templates there: note, literature item, annotations)
-- [ ] **Frontmatter**: in **Settings → ZotLit → Templates → Frontmatter** add these fields. The kit's lists, project pages and key-paper lists read them; without `kind`, `Collections` and `Zotero Tags` a paper doesn't show up where it should. The full table and what each is for are in [[Vault spec]] (Literature note)
+- [ ] **Frontmatter**: in **Settings → ZotLit → Templates → Frontmatter** add these fields (or let **Lab Kit → Check setup → ZotLit** add the missing ones with its **Fix**: it never changes a field you already have, and turns ZotLit off and on so it reads them). The kit's lists, project pages and key-paper lists read them; without `kind`, `Collections` and `Zotero Tags` a paper doesn't show up where it should. The full table and what each is for are in [[Vault spec]] (Literature note)
 
   | Property | Expression | Merge |
   |---|---|---|
@@ -26,6 +26,7 @@ show: back-to-hub
   | `Authors` | `zt.authors \| join: ", "` | Replace |
   | `Zotero Tags` | `zt.tags \| map: "name"` | Replace |
   | `URL` | `zt.url` | Keep existing |
+  | `DOI` | `zt.DOI` | Keep existing |
   | `cssclasses` | `"vt,literature,wide" \| split: ","` | Keep existing |
   | `Collections` | `zt.collections \| collection_paths` | Replace |
   | `aliases` | `zt.title \| split: "§§"` | Append arrays |
