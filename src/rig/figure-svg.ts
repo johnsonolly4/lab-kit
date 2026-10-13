@@ -1,9 +1,13 @@
 // Rig figure: the SVG text of a laid-out figure (symbols, lines, labels). Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. Colour and control lines come in Phase 3.
-import type { FigEdge, Figure, FigNode } from "./figure";
-import { symbolFor, type Point, type RigSymbol } from "./symbols";
+import { LANE, type FigEdge, type Figure, type FigNode } from "./figure";
+import { COMPUTER, symbolFor, type Point, type RigSymbol } from "./symbols";
 
-export interface FigureSvgOptions { title?: string }
+export interface FigureSvgOptions {
+  title?: string;
+  /** Colour of the lines the computer sends to the parts, and of the lines that bring data back. */
+  controlColor?: string; dataColor?: string;
+}
 export interface FigureSvg {
   svg: string;
   /** IDs of the parts drawn as a plain box because their kind is unknown. */
@@ -29,6 +33,12 @@ function idText(id: string): string {
 interface Placed { node: FigNode; sym: RigSymbol }
 const at = (p: Placed, rel: Point): Point => ({ x: p.node.x + rel.x, y: p.node.y + rel.y });
 
+/** Drops repeated points and points in the middle of a straight run, so a level chain is one straight line. */
+function tidy(pts: Point[]): Point[] {
+  const flat = pts.filter((p, i) => i === 0 || p.x !== pts[i - 1].x || p.y !== pts[i - 1].y);
+  return flat.filter((p, i) => i === 0 || i === flat.length - 1 || !((flat[i - 1].x === p.x && p.x === flat[i + 1].x) || (flat[i - 1].y === p.y && p.y === flat[i + 1].y)));
+}
+
 /** The polyline of a process edge: out of the source, a bend in front of the target, into the target. A tee is met at its centre; a vial is entered from above; a back edge goes round underneath. */
 function edgePoints(e: FigEdge, from: Placed, to: Placed, bottom: number): Point[] {
   const a = at(from, from.sym.out), b = at(to, to.sym.in);
@@ -37,9 +47,7 @@ function edgePoints(e: FigEdge, from: Placed, to: Placed, bottom: number): Point
   else if (to.sym.enter === "top") pts = [a, { x: b.x - 2 * BEND, y: a.y }, { x: b.x - 2 * BEND, y: b.y - 2 * BEND / 3 }, { x: b.x, y: b.y - 2 * BEND / 3 }, b];
   else if (to.node.kind === "Mixer") pts = [a, { x: b.x, y: a.y }, b];
   else pts = [a, { x: b.x - BEND, y: a.y }, { x: b.x - BEND, y: b.y }, b];
-  // Drop repeated points and points in the middle of a straight run, so a level chain is one straight line.
-  const flat = pts.filter((p, i) => i === 0 || p.x !== pts[i - 1].x || p.y !== pts[i - 1].y);
-  return flat.filter((p, i) => i === 0 || i === flat.length - 1 || !((flat[i - 1].x === p.x && p.x === flat[i + 1].x) || (flat[i - 1].y === p.y && p.y === flat[i + 1].y)));
+  return tidy(pts);
 }
 
 /** The dashed line of a part attached to a host: straight down from the slot above it (the host, or the part attached before it). */
@@ -68,6 +76,63 @@ function labelSvg(p: Placed, above: boolean): string {
   const dy = n1(above ? node.y - sym.h / 2 - 9 : node.y + sym.h / 2 + 37);
   return `<text x="${n1(node.x)}" y="${id}" font-size="16" font-weight="700" text-anchor="middle">${idText(node.id)}</text>`
     + (detail ? `<text x="${n1(node.x)}" y="${dy}" font-size="13" text-anchor="middle">${esc(detail)}</text>` : "");
+}
+
+const CONTROL_COLOR = "#1f4fd8", DATA_COLOR = "#d62728";
+
+/** A filled arrowhead whose tip is `tip`, pointing along the last segment of the line. */
+function arrowhead(pts: Point[], colour: string): string {
+  const a = pts[pts.length - 2], b = pts[pts.length - 1];
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+  const base = { x: b.x - ux * 11, y: b.y - uy * 11 };
+  return `<polygon points="${pt(b)} ${pt({ x: base.x - uy * 5, y: base.y + ux * 5 })} ${pt({ x: base.x + uy * 5, y: base.y - ux * 5 })}" fill="${colour}" stroke="none"/>`;
+}
+
+/**
+ * The dashed coloured lines between the computer and the parts. Each starts on the computer's lower edge, runs along a lane under it, then
+ * drops to the top of its part. Starts are spread in the order of the parts' x, and the line with the longest run takes the highest lane, so lines nest instead of crossing.
+ */
+function controlSvg(fig: Figure, placed: Map<string, Placed>, colours: { control: string; data: string }): string {
+  const comp = fig.computer;
+  if (!comp || !fig.controls.length) return "";
+  const both = new Set(fig.controls.filter(c => c.dir === "data").map(c => c.part).filter(id => fig.controls.some(c => c.part === id && c.dir === "control")));
+  // A part with another part above it in its column cannot be reached from above: its line comes down left of the column and enters from the side.
+  const lines = fig.controls.flatMap(c => {
+    const p = placed.get(c.part);
+    if (!p) return [];
+    const shift = both.has(c.part) ? (c.dir === "control" ? -10 : 10) : 0;
+    const column = fig.nodes.filter(m => m.layer === p.node.layer && !m.host);
+    const blocked = fig.nodes.some(m => m.layer === p.node.layer && m.y < p.node.y);
+    if (!blocked) return [{ c, tx: p.node.x + shift, ty: p.node.y + p.sym.top.y, side: false, endX: 0, sideY: 0 }];
+    const left = Math.min(...column.map(m => m.x - placed.get(m.id)!.sym.w / 2));
+    return [{ c, tx: left - 24 - (c.dir === "data" ? 8 : 0), ty: p.node.y, side: true, endX: p.node.x - p.sym.w / 2, sideY: p.node.y + (shift || -12) }];
+  }).sort((a, b) => a.tx - b.tx);
+  const n = lines.length, bottom = comp.y + COMPUTER.h / 2;
+  const gap = n > 1 ? Math.min(10, 56 / (n - 1)) : 0;
+  const starts = lines.map((_, i) => comp.x + (i - (n - 1) / 2) * gap);
+  const rank = new Map(lines.map((l, i) => [l, i] as const));
+  const order = [...lines].sort((a, b) => (Math.abs(b.tx - starts[rank.get(b)!]) - Math.abs(a.tx - starts[rank.get(a)!])) || (rank.get(a)! - rank.get(b)!));
+  const out: string[] = [];
+  lines.forEach((l, i) => {
+    const lane = bottom + 16 + order.indexOf(l) * LANE;
+    const toPart = tidy(l.side
+      ? [{ x: starts[i], y: bottom }, { x: starts[i], y: lane }, { x: l.tx, y: lane }, { x: l.tx, y: l.sideY }, { x: l.endX, y: l.sideY }]
+      : [{ x: starts[i], y: bottom }, { x: starts[i], y: lane }, { x: l.tx, y: lane }, { x: l.tx, y: l.ty }]);
+    const colour = l.c.dir === "control" ? colours.control : colours.data;
+    const pts = l.c.dir === "control" ? toPart : [...toPart].reverse();
+    out.push(`<path data-${l.c.dir}="${esc(l.c.part)}" d="M ${pts.map(pt).join(" L ")}" stroke="${colour}" stroke-dasharray="7 5" fill="none"/>`
+      + arrowhead(pts, colour)
+      + `<text x="${n1(l.tx + (l.side || l.c.dir === "control" ? -8 : 8))}" y="${n1(l.side ? l.sideY - 6 : l.ty - 10)}" font-size="13" font-weight="700" fill="${colour}" stroke="none" text-anchor="${l.side || l.c.dir === "control" ? "end" : "start"}">${esc(l.c.label)}</text>`);
+  });
+  return out.join("");
+}
+
+function computerSvg(fig: Figure): string {
+  const c = fig.computer;
+  if (!c) return "";
+  return `<g data-computer="1" transform="translate(${n1(c.x)} ${n1(c.y)})">${COMPUTER.body}</g>`
+    + `<text x="${n1(c.x + COMPUTER.w / 2 + 10)}" y="${n1(c.y + 5)}" font-size="16" font-weight="700" stroke="none">${esc(c.label)}</text>`;
 }
 
 /** The SVG of a figure: black line art on white, one symbol and label per part, lines ending on the symbols' connection points. */
@@ -104,7 +169,7 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
     + `<style>.fill{fill:${INK}}</style>`
     + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
-    + `<g fill="none">${lines.join("")}</g>${dots.join("")}${parts.map(symbolSvg).join("")}</g>`
+    + `<g fill="none">${lines.join("")}</g>${dots.join("")}${parts.map(symbolSvg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
     + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id))).join("")}</g></svg>`;
   return { svg, missing };
 }

@@ -143,3 +143,11 @@ describe("Mermaid text", () => {
     ].join("\n"));
   });
 });
+
+describe("Control and Data columns (rig figure)", () => {
+  it("are read when present, case-insensitively, and are empty strings when absent", () => {
+    const r = readRig(table("| ID | Part | Control | DATA | Feeds |", "| P1 | Pump | Flow rate | | R1 |", "| R1 | Reactor | Temperature | Conversion | |"));
+    expect(r.parts.map(p => [p.control, p.data])).toEqual([["Flow rate", ""], ["Temperature", "Conversion"]]);
+    expect(readRig(table("| ID | Part | Feeds |", "| P1 | Pump | |")).parts[0]).toMatchObject({ control: "", data: "" });
+  });
+});

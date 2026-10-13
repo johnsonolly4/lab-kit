@@ -32,6 +32,9 @@ const SYMBOLS: Record<string, RigSymbol> = {
   vial: make("vial", 30, 54, `<path d="M-15 -26 L-15 20 Q-15 27 -8 27 L8 27 Q15 27 15 20 L15 -26 M-19 -26 L19 -26" fill="none"/>`, { in: { x: 0, y: -26 }, out: { x: 15, y: 0 }, top: { x: 0, y: -26 }, bottom: { x: 0, y: 27 } }, "top"),
   tubing: make("tubing", 64, 10, `<rect x="-32" y="-5" width="64" height="10" rx="5"/>`),
 };
+/** The computer that sets and reads the rig: a monitor on a stand over a keyboard. Not a part kind, so not in the table above. */
+export const COMPUTER: RigSymbol = make("computer", 72, 70,
+  `<rect x="-30" y="-35" width="60" height="40" rx="3"/><rect x="-25" y="-30" width="50" height="30"/><path d="M-6 5 L-8 14 L8 14 L6 5"/><path d="M-34 33 L-26 17 L26 17 L34 33 Z"/><path d="M-18 25 L18 25"/>`);
 /** The names of the generic symbols, for tests. */
 export const SYMBOL_NAMES = Object.keys(SYMBOLS);
 

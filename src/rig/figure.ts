@@ -19,10 +19,19 @@ export interface FigNode {
 }
 /** A connection. `attached` = not in the flow. `back` = the flow comes back to an earlier part (a cycle): it is drawn, but did not decide any layer. */
 export interface FigEdge { from: string; to: string; attached: boolean; back: boolean }
-export interface Figure { nodes: FigNode[]; edges: FigEdge[]; width: number; height: number }
+/** The computer, drawn above the flow when any part has a `Control` or `Data` cell. */
+export interface FigComputer { x: number; y: number; label: string }
+/** A line between the computer and a part: `control` runs to the part (what the computer sets), `data` back from it. */
+export interface FigControl { part: string; dir: "control" | "data"; label: string }
+export interface Figure { nodes: FigNode[]; edges: FigEdge[]; width: number; height: number; computer: FigComputer | null; controls: FigControl[] }
+export interface FigureOptions { /** The computer's label (the rig note's `Control:` property). */ computer?: string }
+
+/** Room above the flow for the computer (its height, a gap) and one lane per control line. */
+export const COMPUTER_BAND = 110;
+export const LANE = 14;
 
 /** Lay out the parts: layers by the `Feeds` graph (longest path from the start), order inside a layer by the rows of the parts that feed it. */
-export function buildFigure(parts: RigPart[], links: RigLink[]): Figure {
+export function buildFigure(parts: RigPart[], links: RigLink[], opts: FigureOptions = {}): Figure {
   const index = new Map(parts.map((p, i) => [p.id, i]));
   const known = links.filter(l => index.has(l.from) && index.has(l.to));
 
@@ -114,5 +123,22 @@ export function buildFigure(parts: RigPart[], links: RigLink[]): Figure {
     });
   }));
 
-  return { nodes, edges, width: 2 * MARGIN + layerCount * COL_W, height: 2 * MARGIN + (nodes.length ? bottom - top : 0) * ROW_H };
+  const width = 2 * MARGIN + layerCount * COL_W;
+  let height = 2 * MARGIN + (nodes.length ? bottom - top : 0) * ROW_H;
+
+  // Control and data lines: the computer sits above the flow, which moves down to make room for the lines' lanes.
+  const controls: FigControl[] = [];
+  for (const n of nodes) {
+    const p = parts[index.get(n.id)!];
+    if (p.control) controls.push({ part: n.id, dir: "control", label: p.control });
+    if (p.data) controls.push({ part: n.id, dir: "data", label: p.data });
+  }
+  let computer: FigComputer | null = null;
+  if (controls.length) {
+    const band = COMPUTER_BAND + controls.length * LANE;
+    for (const n of nodes) n.y += band;
+    height += band;
+    computer = { x: width / 2, y: MARGIN + 35, label: opts.computer ?? "Control" };
+  }
+  return { nodes, edges, width, height, computer, controls };
 }

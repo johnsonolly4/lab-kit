@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { readRig, PART_KINDS } from "../src/rig/parts";
 import { buildFigure } from "../src/rig/figure";
 import { figureSvg } from "../src/rig/figure-svg";
-import { symbolFor, SYMBOL_NAMES } from "../src/rig/symbols";
+import { COMPUTER, symbolFor, SYMBOL_NAMES } from "../src/rig/symbols";
 
 const header = "| ID | Part | Type | Feeds |";
 const fig = (...rows: string[]) => { const r = readRig([header, "|---|---|---|---|", ...rows.map(x => `| ${x} |`)].join("\n")); return buildFigure(r.parts, r.links); };
@@ -100,5 +100,43 @@ describe("figureSvg", () => {
     const e = figureSvg(buildFigure([], []));
     expect(e.svg).toMatch(/^<svg [^>]*viewBox="0 0 80 80"/);
     expect(e.svg.endsWith("</svg>")).toBe(true);
+  });
+});
+
+describe("computer and control lines", () => {
+  const ctl = (opts = {}) => { const r = readRig(["| ID | Part | Type | Feeds | Control | Data |", "|---|---|---|---|---|---|", "| PA | Pump | | T1 | Flow rate | |", "| PB | Pump | | T1 | Flow rate | |", "| T1 | Mixer | | C1 | | |", "| C1 | Reactor | coil | A1 | Temperature | Conversion |", "| A1 | Analysis | | | | |"].join("\n")); const f = buildFigure(r.parts, r.links, { computer: "PC & co" }); return { f, svg: figureSvg(f, opts).svg }; };
+  const path = (svg: string, attr: string) => new RegExp(`<path data-${attr} d="M ([^"]+)" stroke="([^"]+)" stroke-dasharray="7 5"`).exec(svg)!;
+  it("draws the computer with its escaped label, and a dashed coloured line per control and data cell", () => {
+    const { svg, f } = ctl();
+    expect(svg).toContain('data-computer="1"');
+    expect(svg).toContain("PC &amp; co");
+    expect((svg.match(/data-control="/g) ?? [])).toHaveLength(3);
+    expect((svg.match(/data-data="/g) ?? [])).toHaveLength(1);
+    expect(path(svg, 'control="PA"')[2]).toBe("#1f4fd8");
+    expect(path(svg, 'data="C1"')[2]).toBe("#d62728");
+    expect(f.computer).not.toBeNull();
+  });
+  it("a control line starts on the computer and ends on the top of its part; a data line starts on the part and ends on the computer", () => {
+    const { svg, f } = ctl();
+    const c = f.computer!, bottom = c.y + COMPUTER.h / 2;
+    const pts = (m: RegExpExecArray) => m[1].split(" L ").map(p => p.split(" ").map(Number));
+    const part = (id: string) => f.nodes.find(n => n.id === id)!;
+    const ctrl = pts(path(svg, 'control="PA"')), pa = part("PA");
+    expect(ctrl[0][1]).toBe(bottom);
+    expect(ctrl[ctrl.length - 1][1]).toBe(pa.y + symbolFor(pa.kind, pa.detail).top.y);
+    const data = pts(path(svg, 'data="C1"'));
+    expect(data[data.length - 1][1]).toBe(bottom);
+    expect(Math.abs(data[0][0] - part("C1").x)).toBeLessThanOrEqual(10);
+  });
+  it("process lines stay black and solid, and the colours can be set", () => {
+    const { svg } = ctl({ controlColor: "#00aa00", dataColor: "#aa00aa" });
+    expect(path(svg, 'control="PA"')[2]).toBe("#00aa00");
+    expect(path(svg, 'data="C1"')[2]).toBe("#aa00aa");
+    expect(/<path data-from="PA" data-to="T1" d="[^"]+"\/>/.test(svg)).toBe(true);
+  });
+  it("a figure with no control cells has no computer and no coloured lines", () => {
+    const { svg } = { svg: draw(...tee).svg };
+    expect(svg).not.toContain("data-computer");
+    expect(svg).not.toContain("#1f4fd8");
   });
 });

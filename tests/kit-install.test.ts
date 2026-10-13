@@ -350,7 +350,7 @@ describe("lab kit completion (Phase 2)", () => {
     const rig = readRig(text);
     expect(rig.problems).toEqual([]);
     expect(rig.tables.map(t => t.heading)).toEqual(["Pumps", "Reactor line", "Analysis"]);
-    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds"]);
+    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds", "Control"]);
   });
 
   it("the bases' filters follow the folder settings", async () => {

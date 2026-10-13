@@ -1,7 +1,7 @@
 // Rig figure Phase 1: layers, order and positions from the parts and links (src/rig/figure.ts). Fictional rigs only.
 import { describe, it, expect } from "vitest";
 import { readRig } from "../src/rig/parts";
-import { buildFigure, COL_W, MARGIN, ROW_H } from "../src/rig/figure";
+import { buildFigure, COL_W, COMPUTER_BAND, LANE, MARGIN, ROW_H } from "../src/rig/figure";
 
 const header = "| ID | Part | Type | Feeds |";
 const rig = (...rows: string[]) => readRig([header, "|---|---|---|---|", ...rows.map(r => `| ${r} |`)].join("\n"));
@@ -61,7 +61,7 @@ describe("odd input", () => {
     expect(f.edges).toEqual([]);
     expect(f.nodes).toHaveLength(1);
     const e = buildFigure([], []);
-    expect(e).toEqual({ nodes: [], edges: [], width: 2 * MARGIN, height: 2 * MARGIN });
+    expect(e).toEqual({ nodes: [], edges: [], width: 2 * MARGIN, height: 2 * MARGIN, computer: null, controls: [] });
   });
   it("a part with no links is placed in the first layer", () => {
     const f = figure("P1 | Pump | | R1", "R1 | Reactor | |", "LONE | Valve | |");
@@ -98,5 +98,24 @@ describe("attached parts and repeatability", () => {
     expect(node(f, "V1").y).toBe(node(f, "M1").y);
     expect(node(f, "R1").y).toBe(node(f, "V1").y - ROW_H / 2);
     expect(node(f, "BP").y).toBe(node(f, "V1").y + ROW_H / 2);
+  });
+});
+
+describe("computer and control lines", () => {
+  const withControl = (...rows: string[]) => { const r = readRig(["| ID | Part | Type | Feeds | Control | Data |", "|---|---|---|---|---|---|", ...rows.map(x => `| ${x} |`)].join("\n")); return buildFigure(r.parts, r.links, { computer: "PC" }); };
+  const rows = ["PA | Pump | | T1 | Flow rate | ", "PB | Pump | | T1 | Flow rate | ", "T1 | Mixer | | C1 | | ", "C1 | Reactor | coil | A1 | Temperature | ", "A1 | Analysis | | | | Conversion"];
+  it("no Control / Data cells: no computer, and the figure is the same as before", () => {
+    const f = figure(...twoPumpTee);
+    expect(f.computer).toBeNull();
+    expect(f.controls).toEqual([]);
+  });
+  it("lists the lines, puts the computer on top in the middle and moves the flow down, without changing its shape", () => {
+    const f = withControl(...rows), base = figure(...twoPumpTee.slice(0, 5));
+    expect(f.controls.map(c => `${c.part}:${c.dir}:${c.label}`)).toEqual(["PA:control:Flow rate", "PB:control:Flow rate", "C1:control:Temperature", "A1:data:Conversion"]);
+    expect(f.computer).toEqual({ x: f.width / 2, y: MARGIN + 35, label: "PC" });
+    const band = COMPUTER_BAND + 4 * LANE;
+    expect(f.height).toBe(base.height + band);
+    for (const n of base.nodes) expect(f.nodes.find(m => m.id === n.id)!.y).toBe(n.y + band);   // the flow is as straight as before, only lower
+    expect(f.nodes.find(n => n.id === "C1")!.y).toBe(f.nodes.find(n => n.id === "T1")!.y);
   });
 });
