@@ -33,7 +33,7 @@ describe("check hotkeys", () => {
   it("planning rows are left out with the planning kit off", () => {
     const r = checkHotkeys(state({ planning: false }));
     expect(r.every(x => RECOMMENDED_HOTKEYS.find(h => h.command === x.command)?.kit === "lab")).toBe(true);
-    expect(r.map(x => x.command)).toEqual(["Lab Kit: New lab entry", "Templater: Insert snippet.md", "Lab Kit: New chemical", "Lab Kit: New rig"]);
+    expect(r.map(x => x.command)).toEqual(["Lab Kit: New lab entry", "Templater: Insert snippet.md", "Lab Kit: New chemical", "Lab Kit: New rig", "Lab Kit: Clone experiment"]);
   });
   it("Markdown report has a row per function", () => {
     const md = hotkeyReportMarkdown(checkHotkeys(state()));

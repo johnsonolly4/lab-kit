@@ -10,6 +10,8 @@ export interface TemplateField {
   key: string;
   label: string;
   hint?: string;
+  /** REMOVING: see docs/decisions.md, "Removing experimental features". `mandatory: true`: the form marks the field with * and does not close while it is empty. Only the form checks it; `required` in the header is a different rule. */
+  mandatory?: boolean;
   placeholder?: string;
   type: "text" | "number" | "textarea";
   /** The default answer; may hold computed tokens such as {{next-letter:sampling}}. */
@@ -116,7 +118,9 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     const classes = (Array.isArray(f.class) ? f.class : f.class === undefined ? [] : [f.class]).map(c => asText(c)?.trim() ?? "");
     if (classes.some(c => !c)) throw new TemplateError(`Field "${key}": class must be text or a list of texts.`);
     if (classes.length && suggest !== "chemicals") throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
+    if (f.mandatory !== undefined && typeof f.mandatory !== "boolean") throw new TemplateError(`Field "${key}": mandatory must be true or false.`);
     fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "",
+      ...(f.mandatory ? { mandatory: true } : {}),
       ...(suggest === "chemicals" || suggest === "codes" || suggest === "notes" ? { suggest } : {}), ...(classes.length ? { classes } : {}), ...(folder ? { folder } : {}) });
   }
   for (const f of fields.filter(x => x.suggest === "codes")) {

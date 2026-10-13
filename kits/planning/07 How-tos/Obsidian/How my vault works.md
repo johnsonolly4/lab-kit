@@ -193,6 +193,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | New lab entry | Makes a lab book entry from the Lab Book Template |
 | New chemical | Makes a chemical note (asks the name, then the class) |
 | New rig | Makes a rig note from the Rig template in your Rigs folder (asks the name) |
+| Clone experiment | Copies a lab note (the open one, or pick) into a new numbered lab note: set-up kept, sample codes renumbered, status, dates, results and notes started again, with a `Cloned from` link back |
 | Insert empty calc block | A blank calc table at the cursor |
 | Insert lab header block | The hazard / data-folder header at the cursor |
 | Tidy up notes | Finds notes that don't follow the vault's rules and fixes the ones you tick |

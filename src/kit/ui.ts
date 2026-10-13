@@ -1,7 +1,8 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
+import { cloneLabNote, labNoteName, labPrefix, labTitle, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
@@ -380,6 +381,7 @@ export class KitController {
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
+    plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
@@ -507,6 +509,32 @@ export class KitController {
       const file = await this.app.vault.create(path, await this.app.vault.read(template));
       await this.app.workspace.getLeaf(false).openFile(file);
     } catch (e) { console.error(e); new Notice("New rig failed. See the developer console for details."); }
+  }
+
+  /** Clone experiment: a new lab note from an old one (the open lab note, else a pick) with the set-up kept and the run started again (rules in `clone.ts`). No Templater; the old note is not changed. To remove: docs/decisions.md, "Removing experimental features". */
+  async cloneExperiment(): Promise<void> {
+    const target = cloneExperimentTarget({ labFolder: this.kit.labFolder, initials: this.kit.initials });
+    if ("error" in target) { new Notice(target.error); return; }
+    try {
+      const notes = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === target.folder);
+      const active = this.app.workspace.getActiveFile();
+      let source: TFile | null = active && notes.some(f => f.path === active.path) && labPrefix(active.basename) ? active : null;
+      if (!source) {
+        const numbered = notes.filter(f => labPrefix(f.basename)).sort((a, b) => b.basename.localeCompare(a.basename));
+        if (!numbered.length) { new Notice(`No lab notes with a number found in ${target.folder}.`); return; }
+        source = await pick<TFile>(this.app, numbered.map(f => f.basename), numbered, "Clone which experiment? (Esc cancels)", false);
+        if (!source) return;
+      }
+      const title = await ask(this.app, `Title of the new experiment, a copy of ${source.basename} (Esc to cancel)`, labTitle(source.basename));
+      if (title === null) return;
+      const number = nextLabNumber(notes.map(f => f.basename), target.initials);
+      const path = `${target.folder}/${labNoteName(target.initials, number, title)}.md`;
+      if (this.app.vault.getAbstractFileByPath(path)) { new Notice(`${path} already exists.`); return; }
+      const made = cloneLabNote(await this.app.vault.read(source), { oldPrefix: labPrefix(source.basename)!, newPrefix: `${target.initials}${number}-`, today: localDate(new Date()), clonedFrom: source.basename });
+      const file = await this.app.vault.create(path, made.text);
+      await this.app.workspace.getLeaf(false).openFile(file);
+      new Notice(`Cloned ${source.basename}: ${made.recoded} sample code${made.recoded === 1 ? "" : "s"} renumbered. Check the tables before you start.`);
+    } catch (e) { console.error(e); new Notice("Clone experiment failed. See the developer console for details."); }
   }
 
   /** Pick a Chemical class from the ones the existing chemical notes use, type another, or skip it. The class text ("" = skip), or null when Esc was pressed. */
