@@ -26,7 +26,7 @@ show: back-to-hub
 > | I want to... | Do this |
 > |---|---|
 > | Note down a thought quickly | **Quick capture** (`Alt+N`) - it goes to the inbox |
-> | Remember to do something | **New to-do** (`Alt+T`) - type it, press Enter, pick a project (or "(no project)"), then a due date (Enter = none). Esc cancels. Started from a project? It picks the project for you. Or press **New** in a day's column on the board - it lands on that day |
+> | Remember to do something | **New to-do** (`Alt+T`) - type it, press Enter, pick a project (or "(no project)"), what it **comes after** (only asked in a project with open to-dos), a due date (Enter = none; `fri`, `tomorrow` and `next mon` work too) and a priority. Esc cancels. Started from a project? It picks the project for you. Or press **New** in a day's column on the board - it lands on that day |
 > | Start an experiment | **New lab entry** (`Alt+L`) - it numbers itself and asks for a title |
 > | Find anything | **Search** (`Alt+F`) |
 > | Make a note for a paper | `Ctrl+P`, then **ZotLit: Create literature note** |
@@ -55,7 +55,8 @@ flowchart LR
 - Planning next week on a Friday? Drag cards onto Mon-Thu as normal - a day that's already passed this week means *next* week.
 - Only give it a **due** date if there's a real deadline - those show in red when they're late. New to-do asks for one (Enter = none). With Settings → Lab Kit → **Due-date countdown** on, the card shows the days left (`3d`, `Today`, `2d late`); a to-do with `countdown: true` shows it even in the "marked only" setting.
 - Tick **meeting** on a to-do (open the note) if you want to raise it at the next meeting.
-- Long names show up to 3 lines on the card - open the card to see the rest.
+- A card with a priority or a project shows a small tag at the bottom left, like `↑ Polymers` (↑ high, – medium, ↓ low). In each column done cards go last, then the highest priority comes first.
+- A long name shows on one line on a card with a tag or a countdown (up to 3 lines on a plain card) - open the card to see the rest.
 - Today's column not blue? The roll-over isn't running: the planning kit must be on and its files installed (Settings → Lab Kit → Built-in kit). **Roll over to-dos now** in the command palette runs it at once.
 
 ## Experiments
@@ -77,6 +78,14 @@ flowchart LR
 - The row at the top of a hub has a link back to [[Projects overview]], **New to-do**, **New note**, the **Status** drop-down (Active, Paused, Done) and the **Deadline** date.
 - Give a hub a **deadline** date and, with Due-date countdown on, it shows `deadline 5d` on the hub, its card and the homepage (gone when the project is Done).
 - A note made with **New note** links to its project and starts with a link back to the hub.
+
+> [!planning] The project plan
+> - When one to-do has to wait for another, say so: **New to-do** asks *Comes after?*, or drag on the hub's **plan map**. The map shows the to-dos as cards joined by arrows; a to-do is **blocked** (dashed) until everything before it is done.
+> - On the map: click a card to open it, click its circle to tick it. Hover a card and drag the dot onto another card to make that one come after it. Click an arrow, then **Remove link**, to undo a link. Right-click a card for **Mark done** and **Delete note**. A notice offers **Undo** each time (Ctrl/Cmd+Z does not undo these).
+> - The ⇄ / ⇅ button by the title turns the map from left-to-right to top-to-bottom.
+> - Finished a step? **Add result** (command palette, with the to-do open) writes one line that shows on its card as `→ result`.
+> - Have the steps as a list of `[[to-do]]` links in a note? Select them and run **Link to-dos in order**.
+> - A to-do with `experiment` set to a lab note shows that experiment's status on its card, and the hub's **Experiments** tile lists those lab notes. A to-do with `sub` set to another to-do is its subtask (the parent's card shows `1/2`). Both are typed in the to-do's properties.
 
 ## Reading papers
 
@@ -118,7 +127,7 @@ flowchart LR
 
 - **Check setup…** (Settings → Lab Kit) lists what the kits need and fixes it.
 - **Check hotkeys…** shows the keys [[Hotkeys]] recommends and what is set.
-- **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, and keeps a backup). An old project, topic or series hub gets the current buttons and tiles from the rule **Hubs: bring the page up to the current template** (not ticked until you tick it).
+- **Tidy up notes** finds notes that don't follow the vault's rules and fixes the ones you tick (it shows before and after, folds the lines that stay the same, shows a change that is the same in several notes once, and keeps a backup). An old project, topic or series hub gets the current buttons and tiles from the rule **Hubs: bring the page up to the current template** (not ticked until you tick it).
 - **Manage files…** shows kit files with a newer version. On a file you keep as your own: **Compare…** shows both, **Use kit version…** swaps yours for the kit's (a backup is saved first), **Keep mine** leaves yours. **Clear old backups…** (Settings → Lab Kit) empties old ones.
 
 ## Friday review (15 minutes)
@@ -129,7 +138,7 @@ Open [[Weekly review]] (button **Weekly review** on the homepage) and work down 
 3. Plan next week - drag to-dos from Backlog onto days (Mon-Thu mean *next* week when you plan on a Friday).
 4. Process one paper.
 5. Flag anything for the next meeting.
-6. First Friday of the month: **Archive old to-dos** (anything finished over 30 days ago).
+6. First Friday of the month: **Archive old to-dos** (anything finished over 30 days ago; a project's to-dos stay until the project is Done).
 
 Then press **Start a new review**.
 

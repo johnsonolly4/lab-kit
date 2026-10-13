@@ -1,6 +1,6 @@
 ---
 kind: spec
-updated: 2026-10-12
+updated: 2026-10-13
 cssclasses:
   - vt
 ---
@@ -31,7 +31,7 @@ show: back-to-hub
 | `00 Planning/` | `To-dos/` (one note per to-do), `To-do board.base`, [[Weekly review]] and [[Shopping list]]. |
 | `01 Daily Notes/` | Daily notes, by year. A log of the day, not a to-do list. |
 | `02 Projects/` | One subfolder per project, each with a hub note. Plans, progress, decisions, paper drafts. |
-| `03 Lab Book/` | `Notes/` = numbered lab entries (`0014 - Title`), plus `Lab book base.base`. |
+| `03 Lab Book/` | `Notes/` = numbered lab entries (`0014 - Title`), `Rigs/` = one note per flow rig (the lab kit's Rigs folder), plus `Lab book base.base`. |
 | `04 Literature/` | `ZotLit Imports/` (one ZotLit note per paper, named by citekey; `ZotLit attachments/` holds highlight images) and the [[Literature]] hub. Key papers are tagged `key-paper` in Zotero. |
 | `05 Chemicals/` | Chemical database notes and base. |
 | `06 Knowledge/` | Concepts and theory, by topic subfolder. Index: [[Knowledge index]]. |
@@ -40,7 +40,7 @@ show: back-to-hub
 | `Extras/` | Templates, scripts, attachments. The kit's own files here are managed by Lab Kit (Settings > Lab Kit > Manage files). |
 | `99 Archive/` | Anything finished or retired. Never deleted outright. |
 
-These are the default names. Each folder is a setting (Settings > Lab Kit > Planning folders, Lab notes folder, Chemical folder); rename a folder inside Obsidian and its setting follows.
+These are the default names. Each folder is a setting (Settings > Lab Kit > Planning folders, Lab notes folder, Chemical folder, Rigs folder); rename a folder inside Obsidian and its setting follows.
 
 > [!question] Project, Knowledge or How-to?
 > - **Project** - notes about *doing* something with an end point.
@@ -89,6 +89,7 @@ Created with the **New lab entry** command, or by making a note in the folder (a
 |---|---|
 | `Status` | `Planned` -> `Started` -> `Processing results` -> `Closed` |
 | `Based on` | links to the papers (citekeys) the experiment builds on |
+| `Rig` | link to the rig note, set by the Alt+S **Rig** snippet |
 | `progress` | ticked / all check boxes, e.g. `3/7`; written by the plugin when Settings > Lab Kit > Checklist progress is on (also on the Shopping list) |
 | `cssclasses` | includes `vt` |
 
@@ -110,17 +111,18 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | Section | What it shows |
 |---|---|
 | Top row (`show: hub-bar`) | no `# heading` (Obsidian's inline title is the title); back link to [[Projects overview]]; **New to-do**; **New note**; the Status drop-down; the Deadline date; the countdown |
-| *Plan map* (`show: project-map`) | same condition as the Plan tile: to-dos with a link as cards, left to right, joined by arrows; click opens, right-click: Open, Open in new tab, Mark done; hover marks everything before and after; long arrows are routed around the cards between (not behind them); the ⇄ / ⇅ button by the title flips the map between left to right and top to bottom (default: Settings → Project plan map direction); hover a card and drag the dot that appears onto another card (or a **Not linked** row) to make that to-do come after it, click an arrow then **Remove link** to remove one (both write `after`, both have Undo); to-dos with no links sit in a **Not linked** list beside it. It replaces the Plan list unless Settings → Lab Kit → Project plan view says both |
-| *Plan* (`show: project-plan`) | only when a to-do of the project has `after` or `order`: ready to-dos, then blocked ones (`after X`; blocked = anything earlier in the chain is still open), finished ones with their `result` behind **Show all**; set `after` (link to the to-do before it), `order` (number) and `result` (one line) by hand |
+| *Plan* (`show: project-plan`) | only when a to-do of the project has `after` or `order`: ready to-dos, then blocked ones (`after X`; blocked = anything earlier in the chain is still open), finished ones with their `result` behind **Show all**. Drawn only on a hub without the map, or when Settings > Lab Kit > **Project plan view** says both |
+| *Plan map* (`show: project-map`) | same condition as the Plan list: to-dos with a link as cards joined by arrows (title, due date, priority, `→ result`; finished faded, blocked dashed); click opens, the circle ticks and unticks, right-click: Open, Open in new tab, Mark done / Mark not done, Delete note; hover marks everything before and after; long arrows are routed around the cards between (not behind them); the ⇄ / ⇅ button by the title flips the map between left to right and top to bottom for the open note (default: Settings > Lab Kit > **Project plan map direction**); hover a card and drag the dot that appears onto another card (or a **Not linked** row) to make that to-do come after it, click an arrow then **Remove link** to remove one (both write `after`, both have Undo in a notice; Ctrl/Cmd+Z does not undo them); to-dos with no links sit in a **Not linked** list beside it |
 | *Goal* | `[goal:: ...]` - also shown on the project's card |
-| *To-dos* (`show: project-todos`) | open to-dos whose `project` is this hub, overdue first, then by day; 10 rows, **Show all** |
+| *To-dos* (`show: project-todos`) | open to-dos whose `project` is this hub: overdue first, then by day, then by `priority` (1 first, empty last), then by name; 10 rows, **Show all** |
 | *Notes* (`show: project-notes`) | every note in the project folder (and subfolders), newest first; 10 rows, **Show all** |
-| *Link to-dos in order* (command) | select a list of `[[to-do]]` links in a note and run it: each to-do gets `after` naming the one before it (preview, then confirm; Undo afterwards); pairs already linked or that would make a loop are left out |
 | *Experiments* (`show: project-experiments`) | the lab notes that this project's to-dos name in `experiment`, each once, with its `Status` and the to-do that names it; open ones first, Closed last; nothing is written to the lab notes (a lab note has no `project`); needs the Lab folder set |
 | *Meetings* (`show: project-meetings`) | meeting notes whose `project` names this hub, newest first; the last 8, **Show all** |
 | *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, key papers first (&#9733;), with my reason from its *For my projects* line (Dataview) |
 | *Done to-dos* | collapsed (Dataview) |
 | `## Related` | links I add by hand (concepts, how-tos); anything else project-specific goes below it |
+
+**Changing the plan.** `after` is written by *Comes after?* at New to-do, by dragging on the map, by the command **Link to-dos in order** (select a list of `[[to-do]]` links in a note: each to-do gets `after` naming the one before it; preview, then confirm; pairs already linked or that would make a loop are left out) or by hand. `result` is written by the command **Add result** or by hand; `order`, `sub` and `experiment` by hand. Deleting a to-do (the map's Delete note, or anywhere in Obsidian) passes its `after` on: A → B → C becomes A → C, with Undo in a notice; moving a to-do to the archive changes nothing.
 
 **New note in a project** (**New project note**, template `Extras/Templates/New project note.md`) files the note in the project's folder: the folder of the card it was pressed on, else the project you're in, else it asks which project. Then it asks for the title. The note gets `project: [[<hub>]]` and starts with a back link to the hub (`show: back-to-project`).
 
@@ -149,13 +151,13 @@ Created with the **New to-do** button or command (`Alt+T`; template `Extras/Temp
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
 | `priority` / `project` on the board | the board card shows a small tag at the bottom left, `↑ Polymers` (an arrow for priority 1, 2 or 3: ↑, –, ↓, and the project's name); read from the note, so the property row need not be shown on the card | plugin |
 | `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
-| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none (New to-do asks it; the board's Sort control on `priority` also orders cards 1, 2, 3) | me |
+| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none; the board sorts each column the same way, after putting done cards last (`sort:` in `To-do board.base`) | template (New to-do asks it) / me |
 | `sub` | optional, by hand: one link to the to-do this one is a subtask of (`"[[Parent to-do]]"`); the parent's card on the plan map shows a count (`1/2`) that opens the list; the parent is never ticked for you; one level only; the subtask stays an ordinary to-do (board, `after`) | me |
 | `experiment` | optional, by hand: one link to the lab note this to-do runs (`"[[ABC0014-A]]"`); the project plan shows that note's `Status` as a badge on the to-do's card. Display only; needs the Lab folder set | me |
-| `after`, `result`, `order` | for a to-do in a project, by hand for now: `after` = link(s) to the to-dos that come first, `result` = one line (also set by the Add result command), `order` = a number; read by the project plan (coming), not asked at New to-do | me |
+| `after`, `result`, `order` | for a to-do in a project: `after` = link(s) to the to-dos that come first (New to-do's *Comes after?* writes one; dragging on the plan map and Link to-dos in order write it too; a second one by hand, as a list), `result` = one line (the Add result command, or by hand), `order` = a number, by hand; read by the project hub's plan map and Plan list | template / plugin / me |
 | `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; `false` = not flagged | template / me |
 
-The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); which meeting to raise it at (only when there are several series); a due date (Enter = none) and, with a date, whether to show a countdown. Esc at any box cancels the to-do. New to-dos get `cssclasses: [vt]`.
+The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); *Comes after?* (only for a project with other open to-dos: one pick, "(nothing)" first); which meeting to raise it at (only when there are several series); a due date (Enter = none; `YYYY-MM-DD`, or `today`, `tomorrow`, a weekday such as `fri`, `next mon`) and, with a date, whether to show a countdown; the priority (none, 1, 2, 3). Esc at any box cancels the to-do, except at *Comes after?*, where it picks nothing. New to-dos get `cssclasses: [vt]`.
 
 **Roll-over** is done by Lab Kit itself (no Templater startup template), when the planning kit is on and installed: about 90 seconds after Obsidian opens, and again when the date changes while Obsidian stays open. The command **Roll over to-dos now** runs it at once.
 - A card's day means *the first such weekday on or after `planned`*. So a card dragged onto Mon on a Friday waits for next Monday.
@@ -283,7 +285,7 @@ The note starts with a top row (`show: meeting-bar`: back link to its series, **
 The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the series hub and opens that location with this computer's default app (desktop only). On a series hub or a meeting note it opens that series' deck; elsewhere it asks which series.
 
 ### Weekly review ([[Weekly review]])
-Friday, 15 minutes: inbox, close experiments, plan next week, process one paper, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`).
+Friday, 15 minutes: inbox, close experiments, plan next week, process one paper, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
 
 ### Daily note (`01 Daily Notes/YYYY/YYYY-MM-DD`)
 Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kind: daily`, `Experiments`, `cssclasses: [vt]`.
@@ -349,8 +351,8 @@ Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkey
 - Experiments: `Planned` slate, `Started` blue, `Processing results` amber, `Closed` green. Closed entries leave the board after 30 days; the base's second view, *All experiments*, lists every one. With Settings > Lab Kit > **Checklist progress** on, a card shows `progress` as a bar.
 - To-dos: `Backlog` slate; Mon-Fri alternate two neutral shades so the days read as separate bands; **today's column blue**. Cards: **green** = done, **amber** = carried over.
 
-**To-do cards** show only the title and `done` (view `order:` in `To-do board.base`) - every extra property makes every card taller. The due-date countdown is a small badge at the bottom right of the card (`data-vt-due`), not a property row.
-- The title wraps onto up to 3 lines, then "...". The tick circle sits top right; **clicking it ticks `done`** (Lab Kit handles the click, because Bases cards are read-only). Clicking anywhere else opens the note.
+**To-do cards** show only the title and `done` (view `order:` in `To-do board.base`) - every extra property makes every card taller. Each column is sorted done last, then by `priority` (view `sort:`). The priority and project tag sits at the bottom left (`data-vt-tag`, `data-vt-prio`). The due-date countdown is a small badge at the bottom right of the card (`data-vt-due`), not a property row.
+- The title wraps onto up to 3 lines, then "..."; on a card with a tag or a countdown it is one line, so it stays clear of the bottom row. The tick circle sits top right; **clicking it ticks `done`** (Lab Kit handles the click, because Bases cards are read-only). Clicking anywhere else opens the note.
 - Cards are a **fixed 88px**: Bases works out card heights itself and places each part with inline styles (`top`, `height`), so the CSS overrides those with `!important` rather than changing the height.
 - Card HTML, for future CSS: `.bases-kanban-card` > `.bases-kanban-card-property.mod-title[data-property="file.name"]` and `.bases-kanban-card-property[data-property="note.done"]`, each with a `.bases-kanban-card-label` and `.bases-kanban-card-line`. A ticked box renders an `input:checked`.
 - Green comes from `done` in the card; amber from a `vt-rolled` class Lab Kit adds (no `rolled` row needed on the card).
@@ -425,3 +427,4 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 ## Changelog
 - 2026-10-07 - First kit version.
 - 2026-10-12 - Brought up to Lab Kit 1.0.0: meeting series, hub top rows, tiles drawn by Lab Kit, roll-over in the plugin, planning commands instead of action templates.
+- 2026-10-13 - Project plan: plan map and Plan list, `after` / `result` / `order` / `sub` / `experiment`, `priority`, the card tag and board sort, New to-do's questions; Rigs folder and the `Rig` property; ZotLit `DOI` and plain-text `Type`.

@@ -9,7 +9,7 @@ show: back-to-hub
 ```
 
 > [!info] Why a checklist
-> Lab Kit can't change ZotLit's settings for you. Set these once in **Settings → ZotLit**, then tick them off. The exact setting names may differ a little between ZotLit versions.
+> ZotLit keeps these settings itself. Set them once in **Settings → ZotLit**, then tick them off; or let **Lab Kit → Check setup → ZotLit** do part of it: its **Fix** sets the two folders when they are empty and adds the frontmatter fields that are missing, and never changes one you have. The exact setting names may differ a little between ZotLit versions.
 
 - [ ] Zotero is running, with the Better BibTeX add-on (ZotLit's setup page says what it needs)
 - [ ] **Literature note folder**: `04 Literature/ZotLit Imports`
