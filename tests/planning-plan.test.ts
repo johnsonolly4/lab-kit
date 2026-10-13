@@ -224,3 +224,18 @@ describe("subtasks (sub)", () => {
     expect(p.rows.find(r => r.name === "N")!.blocked).toBe(true);
   });
 });
+
+describe("a finished parent with open subtasks", () => {
+  it("is reported, so a drag to Done on the board or a tick in the note does not hide it", () => {
+    const one = readPlan([td("P", { done: true }), td("S", { sub: "[[P]]" })], hub);
+    expect(one.problems).toEqual(['"P" is finished but its subtask is open.']);
+    const some = readPlan([td("P", { day: "Done" }), td("S1", { sub: "[[P]]" }), td("S2", { sub: "[[P]]" }), td("S3", { sub: "[[P]]", done: true })], hub);
+    expect(some.problems).toEqual(['"P" is finished but 2 of its subtasks are open.']);
+    const mixed = readPlan([td("P", { done: true }), td("S1", { sub: "[[P]]" }), td("S2", { sub: "[[P]]", done: true })], hub);
+    expect(mixed.problems).toEqual(['"P" is finished but 1 of its subtasks is open.']);
+  });
+  it("is not reported when the parent is open, or when every subtask is done", () => {
+    expect(readPlan([td("P"), td("S", { sub: "[[P]]" })], hub).problems).toEqual([]);
+    expect(readPlan([td("P", { done: true }), td("S", { sub: "[[P]]", done: true })], hub).problems).toEqual([]);
+  });
+});

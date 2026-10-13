@@ -20,6 +20,9 @@ export interface PlanMap {
   cyclic: Set<string>;
 }
 
+/** The subtasks of a to-do that are not done yet. */
+export const openSubs = (row: { subs: { path: string; name: string; done: boolean }[] }): { path: string; name: string }[] => row.subs.filter(s => !s.done).map(s => ({ path: s.path, name: s.name }));
+
 /** The subtask count of a to-do: "2/3", and whether all are done (no subtasks: empty and false). */
 export function subsLabel(row: { subs: { done: boolean }[] }): { text: string; allDone: boolean } {
   const n = row.subs.length, done = row.subs.filter(s => s.done).length;

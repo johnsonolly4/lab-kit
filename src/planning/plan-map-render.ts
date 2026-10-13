@@ -2,9 +2,10 @@
 // Layout: src/planning/plan-map.ts. Styles: `.vt-map*` in vault-theme.css.
 import { Keymap, Menu, Notice, setIcon, type App, type PaneType } from "obsidian";
 import { statusClass, type Plan, type PlanRow } from "./plan";
-import { CARD_H, CARD_W, chainOf, mapGeometry, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
+import { CARD_H, CARD_W, chainOf, mapGeometry, openSubs, setDone, subsLabel, type Direction, type PlanMap } from "./plan-map";
 import { linkText, namesOf, recordChange, runHistory, undoNotice } from "./after-write";
 import type { PlanHistory } from "./plan-history";
+import { askTickSubs, type TickChoice } from "./tick-subs-ui";
 import { addAfter, canLink, nestAction, removeAfter, type NestVerdict } from "./plan-link";
 import { rememberText } from "./after-bridge";
 
@@ -37,12 +38,30 @@ async function markDone(o: MapOptions, path: string, done: boolean): Promise<voi
   await o.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { setDone(fm, done); });
 }
 
+/** Ticking `row`: when it has open subtasks, asks whether to tick them too (never blocks). */
+async function askTick(o: MapOptions, row: PlanRow): Promise<TickChoice> {
+  const open = openSubs(row);
+  return open.length ? askTickSubs(o.app, row.name, open.map(s => s.name)) : "one";
+}
+
+/** Ticks `row` and, for "all", its open subtasks too, with one Undo for the lot. */
+async function tickAs(o: MapOptions, row: PlanRow, choice: TickChoice): Promise<void> {
+  await markDone(o, row.path, true);
+  if (choice !== "all") return;
+  const open = openSubs(row);
+  for (const s of open) await markDone(o, s.path, true);
+  undoNotice(`Ticked ${open.length + 1} to-dos.`, async () => { for (const p of [row.path, ...open.map(s => s.path)]) await markDone(o, p, false); });
+}
+
 function menu(o: MapOptions, e: MouseEvent, row: PlanRow, plan?: Plan): void {
   e.preventDefault();
   const m = new Menu();
   m.addItem(i => i.setTitle("Open").setIcon("file").onClick(() => open(o, row.path, false)));
   m.addItem(i => i.setTitle("Open in new tab").setIcon("file-plus").onClick(() => open(o, row.path, true)));
-  m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => { void markDone(o, row.path, !row.done); }));
+  m.addItem(i => i.setTitle(row.done ? "Mark not done" : "Mark done").setIcon(row.done ? "circle" : "check").onClick(() => {
+    if (row.done) { void markDone(o, row.path, false); return; }
+    askTick(o, row).then(c => (c === "cancel" ? undefined : tickAs(o, row, c))).catch(() => { new Notice("Could not change that to-do."); });
+  }));
   if (row.parent && plan) m.addItem(i => i.setTitle("Remove from parent").setIcon("corner-up-left").onClick(() => { nest(o, plan, row.path, null).catch(() => { new Notice("Could not change that to-do."); }); }));
   m.addSeparator();
   m.addItem(i => i.setTitle("Delete note").setIcon("trash-2").onClick(() => {
@@ -248,8 +267,12 @@ function tickButton(el: HTMLElement, r: PlanRow, o: MapOptions, card: boolean): 
   tick.addEventListener("mousedown", stopEvent);
   tick.addEventListener("click", e => {
     stopEvent(e);
-    done = !done; look();
-    markDone(o, r.path, done).catch(() => { done = !done; look(); new Notice("Could not change that to-do."); });
+    if (done) { done = false; look(); markDone(o, r.path, false).catch(() => { done = true; look(); new Notice("Could not change that to-do."); }); return; }
+    askTick(o, r).then(c => {   // with open subtasks the answer comes first; the circle changes only after it
+      if (c === "cancel") return undefined;
+      done = true; look();
+      return tickAs(o, r, c);
+    }).catch(() => { done = false; look(); new Notice("Could not change that to-do."); });
   });
 }
 

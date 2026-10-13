@@ -127,6 +127,10 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
   });
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
+  for (const r of rows) {   // ticked on the board, in the note or on the map without ticking the subtasks
+    const open = r.subs.filter(s => !s.done).length;
+    if (r.done && open) problems.push(`"${r.name}" is finished but ${open === r.subs.length && open === 1 ? "its subtask is" : open === 1 ? "1 of its subtasks is" : `${open} of its subtasks are`} open.`);
+  }
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
   const byPath = new Map(rows.map(r => [r.path, r]));
   for (const r of rows) {

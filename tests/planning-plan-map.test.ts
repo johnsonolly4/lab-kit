@@ -1,6 +1,6 @@
 // The card map layout (src/planning/plan-map.ts): steps, places, arrows, unlinked, start step, chains.
 import { describe, it, expect } from "vitest";
-import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, setDone, subsLabel } from "../src/planning/plan-map";
+import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, openSubs, setDone, subsLabel } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -157,6 +157,10 @@ describe("subtasks on the map", () => {
   it("mapGeometry carries `via` onto the curve", () => {
     const m = map([td("A"), td("B", { sub: "[[A]]" }), td("C", { after: "[[B]]" })]);
     expect(mapGeometry(m).curves.map(c => c.via)).toEqual([T + "B.md"]);
+  });
+  it("openSubs lists the subtasks that are not done", () => {
+    expect(openSubs({ subs: [{ path: "a", name: "A", done: true }, { path: "b", name: "B", done: false }] })).toEqual([{ path: "b", name: "B" }]);
+    expect(openSubs({ subs: [] })).toEqual([]);
   });
   it("subsLabel counts and says when all are done", () => {
     expect(subsLabel({ subs: [{ done: true }, { done: false }, { done: false }] })).toEqual({ text: "1/3", allDone: false });
