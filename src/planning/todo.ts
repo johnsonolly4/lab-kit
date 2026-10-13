@@ -107,14 +107,17 @@ export type CountdownMode = "off" | "marked" | "all";
 /** `level`: "late" (overdue), "soon" (today to 2 days), "later". */
 export interface Countdown { text: string; level: "late" | "soon" | "later" }
 
-/** The small tag at the bottom left of a board card: `P2` for priority 1, 2 or 3, and the project hub's name ("P2 · Polymers"). null when the to-do has neither. `level` is the priority (for the colour). */
+/** The marker for each priority: an up arrow, a dash, a down arrow (visual only: no "P1" text). */
+const PRIORITY_MARK = { "1": "\u2191", "2": "\u2013", "3": "\u2193" } as const;
+
+/** The small tag at the bottom left of a board card: an arrow for priority 1, 2 or 3 (↑ high, – medium, ↓ low) and the project hub's name ("↑ Polymers"). null when the to-do has neither. `level` is the priority (for the colour). */
 export function cardTag(fm: TodoFm): { text: string; level: "1" | "2" | "3" | "" } | null {
   const n = Number(typeof fm.priority === "string" ? fm.priority.trim() || NaN : fm.priority);
   const level = n === 1 || n === 2 || n === 3 ? (String(n) as "1" | "2" | "3") : "";
   const first = Array.isArray(fm.project) ? (fm.project as unknown[])[0] : fm.project;
   const target = str(first).trim().replace(/^\[\[|\]\]$/g, "").split("|")[0].split("#")[0].replace(/\.md$/, "").trim();
   const project = target.slice(target.lastIndexOf("/") + 1);
-  const text = [level ? `P${level}` : "", project].filter(Boolean).join(" \u00b7 ");
+  const text = [level ? PRIORITY_MARK[level] : "", project].filter(Boolean).join(" ");
   return text ? { text, level } : null;
 }
 

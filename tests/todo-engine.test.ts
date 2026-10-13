@@ -183,10 +183,12 @@ describe("To-do template due date and countdown", () => {
 });
 
 describe("cardTag (priority and project on a board card)", () => {
-  it("priority only, project only, both", () => {
-    expect(cardTag({ priority: 2 })).toEqual({ text: "P2", level: "2" });
+  it("priority only, project only, both: an arrow for the priority", () => {
+    expect(cardTag({ priority: 1 })).toEqual({ text: "\u2191", level: "1" });
+    expect(cardTag({ priority: 2 })).toEqual({ text: "\u2013", level: "2" });
+    expect(cardTag({ priority: "3" })).toEqual({ text: "\u2193", level: "3" });
     expect(cardTag({ project: "[[Polymers]]" })).toEqual({ text: "Polymers", level: "" });
-    expect(cardTag({ priority: "1", project: "[[Polymers]]" })).toEqual({ text: "P1 \u00b7 Polymers", level: "1" });
+    expect(cardTag({ priority: "1", project: "[[Polymers]]" })).toEqual({ text: "\u2191 Polymers", level: "1" });
   });
   it("a project list takes the first; an alias, a path and .md are dropped", () => {
     expect(cardTag({ project: ["[[02 Projects/Polymers/Polymers.md|my polymers]]", "[[Other]]"] })?.text).toBe("Polymers");

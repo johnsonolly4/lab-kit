@@ -362,7 +362,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="soon"]::after { color: rgb(var(--vt-waiting-text)); background: rgba(var(--vt-waiting), var(--vt-tint)); }
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-due-level="late"]::after { color: rgb(var(--vt-overdue-text)); background: rgba(var(--vt-overdue), var(--vt-tint)); }
 
-/* Priority and project tag at the bottom left ("P2 \00b7 Polymers"): the plugin sets data-vt-tag and data-vt-prio (1, 2, 3 or empty) on the card from the
+/* Priority and project tag at the bottom left ("\2191 Polymers"): the plugin sets data-vt-tag and data-vt-prio (1, 2, 3 or empty) on the card from the
    note, so the priority property does not have to be shown (that makes every card taller). Opposite the countdown above; no height change. */
 .bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-tag]::before {
   content: attr(data-vt-tag);
@@ -381,8 +381,9 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   background: var(--background-modifier-hover);
   pointer-events: none;
 }
-.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="1"]::before { color: rgb(var(--vt-overdue-text)); background: rgba(var(--vt-overdue), var(--vt-tint)); }
-.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="2"]::before { color: rgb(var(--vt-waiting-text)); background: rgba(var(--vt-waiting), var(--vt-tint)); }
+/* Priority: ↑ high (the vault's accent colour), – medium (as above), ↓ low (faint). Red and amber are left to the countdown. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="1"]::before { color: var(--text-accent); background: color-mix(in srgb, var(--interactive-accent) 22%, transparent); font-weight: 600; }
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-prio="3"]::before { color: var(--text-faint); }
 
 /* Card layout. Obsidian places each card part with inline styles
    (title: top 8px, height 24px; done: top 40px, height 40px; card 88px tall,
