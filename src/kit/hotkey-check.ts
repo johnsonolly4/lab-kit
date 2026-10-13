@@ -2,6 +2,7 @@
 // Pure: the caller reads Obsidian's hotkeys and command list into a HotkeyState. Commands are found by the name Obsidian shows (third-party command ids are not known).
 import type { KitHotkey } from "./obsidian-private";
 import { hotkeyText, sameKey } from "./setup-check";
+import type { WinState } from "./window-look";
 
 /** The Hotkeys note's table (`07 How-tos/Obsidian/Hotkeys.md`), one entry per function; `key` is empty for the "no key suggested" commands. tests/hotkeys-note.test.ts keeps both in step. */
 export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: string; kit: "lab" | "planning" }[] = [
@@ -81,4 +82,15 @@ export function hotkeyReportMarkdown(rows: HotkeyRow[]): string {
   const cell = (t: string): string => t.replace(/\|/g, "\\|");
   return ["| Function | Command | Recommended | Now | Status |", "|---|---|---|---|---|",
     ...rows.map(r => `| ${cell(r.does)} | ${cell(r.command)} | ${r.recommended ? `\`${r.recommended}\`` : ""} | ${r.current.map(c => `\`${c}\``).join(", ")} | ${cell(r.detail)} |`)].join("\n");
+}
+
+/** How a row reads in the window: fine, optional (nothing recommended and none set), something to look at, or missing. */
+export function hotkeyRowState(r: HotkeyRow): WinState {
+  return r.status === "set" ? "ok" : r.status === "none" && !r.recommended ? "info" : r.status === "other" || r.status === "unreadable" ? "todo" : "missing";
+}
+
+/** The big line at the top of Check hotkeys: how many keys need a look, or that all are in place. */
+export function hotkeySummary(rows: HotkeyRow[]): string {
+  const n = rows.filter(r => { const s = hotkeyRowState(r); return s === "missing" || s === "todo"; }).length;
+  return n ? `${n} ${n === 1 ? "key" : "keys"} to look at.` : "Every recommended key is in place.";
 }

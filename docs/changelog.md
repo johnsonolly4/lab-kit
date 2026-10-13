@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Check hotkeys and Set the suggested keys in the Check setup look** (plugin code; not seen in Obsidian): both windows now have the intro, a larger summary line ("2 keys to look at."), rows with a round tinted mark, bigger titles and the same footer. Check setup looks as before; behind it the windows share one set of styles.
 - **Plan map: a reset button** (planning kit, plugin code; not seen in Obsidian): a ↺ button after **Fit** puts the map back to its default: zoom 100%, the direction from Settings, and the cards laid out fresh (positions remembered while the note is open are forgotten).
 - **Plan map styles come with the plugin** (planning kit, plugin code; not seen in Obsidian): the map's look moved from the theme snippet into the plugin, so it updates with the plugin and no longer needs Review update… for the theme. Nothing should look different. If you restyle the map, put your rules in a vault snippet: it wins over the plugin's. The old copy in an unreviewed snippet is harmless.
 - **Settings rows that only do one thing are links** (plugin code; not seen in Obsidian): Check setup, Check hotkeys, What's new, Clear old backups… and Find moved folders have no button now: the name is in the accent colour and the whole row is the button (click, or Enter / Space with the keyboard). Rows with a toggle, a box, a menu or several buttons are unchanged.

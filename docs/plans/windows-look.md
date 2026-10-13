@@ -1,6 +1,6 @@
 # Plan: list and confirmation windows in the Check setup look
 
-_Agreed: 2026-10-13. Written by `/phase-plan` (Sonnet). Each phase = one session, on Sonnet; the user looks in Obsidian after each before the next starts._
+_Agreed: 2026-10-13 (approved by the user 2026-10-13, "Continue here"). Written by `/phase-plan` (Sonnet). Each phase = one session, on Sonnet; the user looks in Obsidian after each before the next starts._
 
 ## Goal
 Lab Kit's list and confirmation windows look like Check setup (itself drawn after the Literature Feed plugin): intro sentence, a larger summary line, rows with a round tinted mark, a larger title with a muted description, and a footer with the buttons.
@@ -20,7 +20,8 @@ User, 2026-10-13 (survey, two mockups, chat):
 
 ## Phases
 
-### Phase 1 — Shared look and the hotkey windows
+### Phase 1 — Shared look and the hotkey windows — BUILT 2026-10-13, not seen in Obsidian
+- Result: `src/kit/window-look.ts` (`winIntro`, `winSummary`, `winRow`, `winFoot`, `WIN_MARK`), classes renamed to `lab-kit-win-*`, `hotkeyRowState` / `hotkeySummary` in `hotkey-check.ts`, `tests/window-look.test.ts`; tests 996, lint 0 errors. `SETUP_MARK` is now `WIN_MARK`. Check hotkeys' optional mark changed from "–" to "i" (same as Check setup).
 - Files: `styles.css` (rename `.lab-kit-setup-*` to `.lab-kit-win-*`, same rules), `src/kit/setup-check-ui.ts` (`:142-163`), `src/kit/hotkey-check-ui.ts` (`:7` Check hotkeys: add title / group classes; `:51` Set the suggested keys: add the mark), `src/kit/setup-check.ts` (`SETUP_MARK`, `setupSummary`: move to or re-export from a small shared pure file if the other windows need them), a test (class names present, summary strings), docs per `docs/maintenance.md`.
 - Done when: tests, lint, build clean; a test fails if a `.lab-kit-setup-` class is left in `src/` or `styles.css`; Check setup looks the same as before (the user's screenshot of 2026-10-13 is the reference); Check hotkeys and Set the suggested keys use the same rows; NOT seen in Obsidian until the user looks (checklist row).
 - New dependencies: none

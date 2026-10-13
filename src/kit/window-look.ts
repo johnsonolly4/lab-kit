@@ -1,0 +1,31 @@
+// The look shared by Lab Kit's list windows (Check setup, Check hotkeys, ...): an intro, a big summary line, rows with a round tinted mark, a footer.
+// Styles: `.lab-kit-win-*` in styles.css. Each window decides what its rows mean; this file only draws them.
+
+export type WinState = "missing" | "todo" | "info" | "ok";
+/** The mark inside a row's round badge. */
+export const WIN_MARK: Record<WinState, string> = { missing: "✗", todo: "!", info: "i", ok: "✓" };
+
+export function winIntro(el: HTMLElement, text: string): HTMLElement {
+  return el.createEl("p", { cls: "lab-kit-win-intro", text });
+}
+
+export function winSummary(el: HTMLElement, text: string): HTMLElement {
+  return el.createDiv({ cls: "lab-kit-win-summary", text });
+}
+
+export interface WinRow { title: string; detail?: string; group?: string; state: WinState; label?: boolean; }
+
+/** One row: mark, title, muted description and optional group label. Returns the row (add buttons or a tick box to it) and its text block. */
+export function winRow(el: HTMLElement, o: WinRow): { row: HTMLElement; text: HTMLElement } {
+  const row = o.label ? el.createEl("label", { cls: `lab-kit-win-row is-${o.state}` }) : el.createDiv({ cls: `lab-kit-win-row is-${o.state}` });
+  row.createSpan({ cls: "lab-kit-win-mark", text: WIN_MARK[o.state] });
+  const text = row.createDiv({ cls: "lab-kit-win-text" });
+  text.createDiv({ cls: "lab-kit-win-title", text: o.title });
+  if (o.detail) text.createDiv({ cls: "setting-item-description", text: o.detail });
+  if (o.group) text.createDiv({ cls: "lab-kit-win-group", text: o.group });
+  return { row, text };
+}
+
+export function winFoot(el: HTMLElement): HTMLElement {
+  return el.createDiv({ cls: "lab-kit-win-foot" });
+}

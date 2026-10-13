@@ -4,6 +4,7 @@ import type { KitHotkey } from "./obsidian-private";
 import type { ZotlitScan } from "./zotlit";
 import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
+import { WIN_MARK } from "./window-look";
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
 export const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
@@ -134,7 +135,7 @@ export interface SetupItem { id: string; group: string; label: string; ok: boole
 export type SetupRowState = "missing" | "todo" | "info" | "ok";
 export const setupRowState = (it: SetupItem): SetupRowState => (it.ok ? "ok" : it.warn ? "todo" : it.optional ? "info" : "missing");
 /** The mark inside a row's round badge. */
-export const SETUP_MARK: Record<SetupRowState, string> = { missing: "✗", todo: "!", info: "i", ok: "✓" };
+export const SETUP_MARK: Record<SetupRowState, string> = WIN_MARK;
 const ROW_RANK: Record<SetupRowState, number> = { missing: 0, todo: 1, info: 2, ok: 3 };
 
 /** The rows in the order the window shows them: what needs the user first (missing, then to do), then optional and information, then what is fine; the order inside each is the order of `checkSetup`. */

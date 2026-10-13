@@ -13,7 +13,8 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { CORE_PLUGINS, PROPERTY_TYPES, SETUP_MARK, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { winFoot, winIntro, winRow, winSummary } from "./window-look";
+import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void; /** Review update… and Manage files…: one window for both kits when the planning kit is on. */ review(): ClosingModal; manage(): ClosingModal }
@@ -142,23 +143,17 @@ export class SetupCheckModal extends Modal {
   private render(): void {
     const el = this.contentEl;
     el.empty();
-    el.addClass("lab-kit-setup-check");
+    el.addClass("lab-kit-win");
     this.setTitle("Check setup");
     const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit });
-    el.createEl("p", { cls: "lab-kit-setup-intro", text: "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one." });
-    el.createDiv({ cls: "lab-kit-setup-summary", text: setupSummary(items) });
+    winIntro(el, "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one.");
+    winSummary(el, setupSummary(items));
     for (const it of orderSetupItems(items)) {
-      const state = setupRowState(it);
-      const row = el.createDiv({ cls: `lab-kit-setup-row is-${state}` });
-      row.createSpan({ cls: "lab-kit-setup-mark", text: SETUP_MARK[state] });
-      const text = row.createDiv({ cls: "lab-kit-setup-text" });
-      text.createDiv({ cls: "lab-kit-setup-title", text: it.label });
-      text.createDiv({ cls: "setting-item-description", text: it.detail });
-      text.createDiv({ cls: "lab-kit-setup-group", text: it.group });
+      const { row } = winRow(el, { state: setupRowState(it), title: it.label, detail: it.detail, group: it.group });
       const fix = it.fix;
       if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note", "manage"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
     }
-    const foot = el.createDiv({ cls: "lab-kit-setup-foot" });
+    const foot = winFoot(el);
     foot.createEl("button", { text: "Check again" }).addEventListener("click", () => void this.refresh());
   }
 

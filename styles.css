@@ -199,19 +199,19 @@
 .lab-kit-action:hover { background: var(--background-modifier-hover); }
 .lab-kit-action:focus-visible { outline: 2px solid var(--interactive-accent); outline-offset: -2px; }
 
-.lab-kit-setup-intro { margin: 0 0 4px; color: var(--text-muted); }
-.lab-kit-setup-summary { font-size: var(--font-ui-larger); font-weight: var(--font-semibold); margin: 8px 0 6px; }
-.lab-kit-setup-row { display: flex; align-items: flex-start; gap: var(--size-4-3); padding: var(--size-4-3) 0; border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
-.lab-kit-setup-text { flex: 1 1 auto; min-width: 0; }
-.lab-kit-setup-title { font-size: var(--font-ui-medium); font-weight: var(--font-semibold); }
-.lab-kit-setup-group { margin-top: 4px; font-size: var(--font-ui-smaller); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
+.lab-kit-win-intro { margin: 0 0 4px; color: var(--text-muted); }
+.lab-kit-win-summary { font-size: var(--font-ui-larger); font-weight: var(--font-semibold); margin: 8px 0 6px; }
+.lab-kit-win-row { display: flex; align-items: flex-start; gap: var(--size-4-3); padding: var(--size-4-3) 0; border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
+.lab-kit-win-text { flex: 1 1 auto; min-width: 0; }
+.lab-kit-win-title { font-size: var(--font-ui-medium); font-weight: var(--font-semibold); }
+.lab-kit-win-group { margin-top: 4px; font-size: var(--font-ui-smaller); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
 /* The round mark: tinted from Lab Kit's colours (vault-colours.css) when they are there, else Obsidian's own */
-.lab-kit-setup-mark { flex: none; width: 24px; height: 24px; margin-top: 2px; border-radius: 999px; text-align: center; line-height: 24px; font-size: var(--font-ui-small); font-weight: var(--font-semibold);
+.lab-kit-win-mark { flex: none; width: 24px; height: 24px; margin-top: 2px; border-radius: 999px; text-align: center; line-height: 24px; font-size: var(--font-ui-small); font-weight: var(--font-semibold);
   color: rgb(var(--vt-neutral-text, 148, 163, 184)); background: rgba(var(--vt-neutral, 100, 116, 139), var(--vt-tint, 0.2)); }
-.lab-kit-setup-row.is-ok .lab-kit-setup-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
-.lab-kit-setup-row:is(.is-todo, .is-warn) .lab-kit-setup-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
-.lab-kit-setup-row.is-missing .lab-kit-setup-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
-.lab-kit-setup-foot { display: flex; justify-content: flex-end; padding-top: var(--size-4-3); border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
+.lab-kit-win-row.is-ok .lab-kit-win-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
+.lab-kit-win-row:is(.is-todo, .is-warn) .lab-kit-win-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
+.lab-kit-win-row.is-missing .lab-kit-win-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
+.lab-kit-win-foot { display: flex; justify-content: flex-end; padding-top: var(--size-4-3); border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
 
 /* Both kits in one window (Review update… / Manage files… with the planning kit on): a section per kit, the one with something waiting first and open */
 .lab-kit-kit-section { margin: 0 0 10px; padding-top: 6px; border-top: 1px solid var(--background-modifier-border); }
