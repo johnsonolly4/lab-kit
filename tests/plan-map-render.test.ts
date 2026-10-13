@@ -79,9 +79,9 @@ describe("drawPlanMap", () => {
     box = build() as unknown as E;
     const lines = box.querySelectorAll(".vt-map-issue");
     expect(lines.map(l => l.textContent)).toEqual([
-      '"A" is set to come after "Ghost", but there is no to-do called "Ghost" in this project.Remove the link to "Ghost"Open note',
-      '"L" is set as a subtask of "Ghost", but there is no to-do with that name in this project, so it shows as a normal to-do.Make it a normal to-doOpen note']);
-    expect(lines[0].querySelectorAll("button")[0].getAttribute("aria-label")).toBe('Removes "Ghost" from the "comes after" list of "A". Its other links stay.');
+      '"A" comes after "Ghost", which isn\'t in this project.Remove the link to "Ghost"Open note',
+      '"L" is a subtask of "Ghost", which isn\'t in this project.Make it a normal to-doOpen note']);
+    expect(lines[0].querySelectorAll("button")[0].getAttribute("aria-label")).toBe('Removes "Ghost" from the "comes after" list of "A"; its other links stay.');
     const flaggedCards = (): number => [...box.querySelectorAll(".vt-map-card"), ...box.querySelectorAll(".vt-map-tile")].filter(c => c.hasClass("vt-map-flag")).length;
     lines[0].dispatch("mouseenter");   // a line -> its card
     expect(flaggedCards()).toBe(1);

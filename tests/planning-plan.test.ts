@@ -42,13 +42,13 @@ describe("readPlan", () => {
   it("a missing link is a problem and is ignored; a self link too", () => {
     const p = readPlan([td("A", { after: ["[[Ghost]]", "[[A]]"] })], hub);
     expect(p.rows[0]).toMatchObject({ blocked: false, after: [] });
-    expect(p.problems).toEqual(['"A" is set to come after "Ghost", but there is no to-do called "Ghost" in this project.', '"A" is set to come after itself.']);
+    expect(p.problems).toEqual(['"A" comes after "Ghost", which isn\'t in this project.', '"A" comes after itself.']);
   });
 
   it("a cycle: reported, every row still listed", () => {
     const p = readPlan([td("A", { after: "[[B]]" }), td("B", { after: "[[A]]" }), td("C")], hub);
     expect(p.rows.map(r => r.name)).toEqual(["C", "A", "B"]);
-    expect(p.problems).toEqual(['These to-dos each wait for another one in the list, so none of them can start: "A", "B". Open one and remove a "comes after" link.']);
+    expect(p.problems).toEqual(['These wait on each other, so none can start: "A", "B". Remove one "comes after" link.']);
   });
 
   it("only this project's to-dos; a link to another project's to-do is missing", () => {
@@ -67,7 +67,7 @@ describe("date warning", () => {
   const warn = (todos: NoteRec[]) => readPlan(todos, hub).problems;
   it("an open to-do due before the open to-do it comes after", () => {
     expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]", due: "2026-10-01" })]))
-      .toEqual(['"B" is due 2026-10-01, earlier than "A" (2026-10-05), which it comes after.']);
+      .toEqual(['"B" is due 2026-10-01, before "A" (2026-10-05), which it comes after.']);
   });
   it("equal dates, a later date, a missing or unreadable date give no line", () => {
     expect(warn([td("A", { due: "2026-10-05" }), td("B", { after: "[[A]]", due: "2026-10-05" })])).toEqual([]);
@@ -120,7 +120,7 @@ describe("experiment", () => {
   it("a link to something that is not a lab note: no status and a message", () => {
     const p = rowOf([td("A", { experiment: "[[Ghost]]" })], [lab("X1")]);
     expect(p.rows[0].experiment).toEqual({ name: "Ghost", path: "", status: "" });
-    expect(p.problems).toEqual(['"A" is linked to the experiment "Ghost", but no lab note with that name was found.']);
+    expect(p.problems).toEqual(['"A" links to the experiment "Ghost", which wasn\'t found.']);
   });
   it("no lab notes given (lab folder not set): nothing looked up, no message", () => {
     const p = rowOf([td("A", { experiment: "[[X1]]" })]);
@@ -211,10 +211,10 @@ describe("subtasks (sub)", () => {
     const p = readPlan([td("A", { sub: "[[Ghost]]" }), td("B", { sub: "[[B]]" }), td("C", { sub: "[[D]]" }), td("D", { sub: "[[C]]" }),
       td("P"), td("S", { sub: "[[P]]" }), td("X", { sub: "[[S]]" })], hub);
     expect(p.problems).toEqual([
-      '"A" is set as a subtask of "Ghost", but there is no to-do with that name in this project, so it shows as a normal to-do.',
-      '"B" is set as a subtask of itself, so it shows as a normal to-do.',
-      '"C" and "D" are each set as a subtask of the other, so both show as normal to-dos.',
-      '"X" is set as a subtask of "S", but "S" is itself a subtask and subtasks can only go one level deep, so "X" shows as a normal to-do.']);
+      '"A" is a subtask of "Ghost", which isn\'t in this project.',
+      '"B" is a subtask of itself.',
+      '"C" and "D" are subtasks of each other.',
+      '"X" is a subtask of "S", which is itself a subtask (one level only).']);
     const row = (n: string) => p.rows.find(r => r.name === n)!;
     expect([row("A").parent, row("B").parent, row("C").parent, row("D").parent, row("X").parent]).toEqual([null, null, null, null, null]);
     expect(row("P").subs.map(s => s.name)).toEqual(["S"]);
@@ -228,11 +228,11 @@ describe("subtasks (sub)", () => {
 describe("a finished parent with open subtasks", () => {
   it("is reported, so a drag to Done on the board or a tick in the note does not hide it", () => {
     const one = readPlan([td("P", { done: true }), td("S", { sub: "[[P]]" })], hub);
-    expect(one.problems).toEqual(['"P" is ticked, but its subtask is not done yet.']);
+    expect(one.problems).toEqual(['"P" is ticked, but its subtask isn\'t.']);
     const some = readPlan([td("P", { day: "Done" }), td("S1", { sub: "[[P]]" }), td("S2", { sub: "[[P]]" }), td("S3", { sub: "[[P]]", done: true })], hub);
-    expect(some.problems).toEqual(['"P" is ticked, but 2 of its subtasks are not done yet.']);
+    expect(some.problems).toEqual(['"P" is ticked, but 2 of its subtasks aren\'t.']);
     const mixed = readPlan([td("P", { done: true }), td("S1", { sub: "[[P]]" }), td("S2", { sub: "[[P]]", done: true })], hub);
-    expect(mixed.problems).toEqual(['"P" is ticked, but 1 of its subtasks is not done yet.']);
+    expect(mixed.problems).toEqual(['"P" is ticked, but 1 of its subtasks isn\'t.']);
   });
   it("is not reported when the parent is open, or when every subtask is done", () => {
     expect(readPlan([td("P"), td("S", { sub: "[[P]]" })], hub).problems).toEqual([]);
@@ -245,15 +245,15 @@ describe("issues: what is wrong, where, and what the map can fix", () => {
   it("a link to something not found: marks the to-do and offers to clear just that link, saying what that does", () => {
     const p = readPlan([td("A", { after: ["[[Ghost]]", "[[B]]"] }), td("B"), td("E", { experiment: "[[Nope]]" })], hub, []);
     expect(p.issues).toEqual([
-      { paths: [P("A")], text: '"A" is set to come after "Ghost", but there is no to-do called "Ghost" in this project.', fixes: [{ path: P("A"), key: "after", target: "Ghost", label: 'Remove the link to "Ghost"', does: 'Removes "Ghost" from the "comes after" list of "A". Its other links stay.', done: 'Removed the link to "Ghost".' }] },
-      { paths: [P("E")], text: '"E" is linked to the experiment "Nope", but no lab note with that name was found.', fixes: [{ path: P("E"), key: "experiment", label: "Remove the experiment link", does: 'Removes the experiment link from "E". The lab note "Nope" was not found, so nothing else changes.', done: 'Removed the experiment link from "E".' }] },
+      { paths: [P("A")], text: '"A" comes after "Ghost", which isn\'t in this project.', fixes: [{ path: P("A"), key: "after", target: "Ghost", label: 'Remove the link to "Ghost"', does: 'Removes "Ghost" from the "comes after" list of "A"; its other links stay.', done: 'Removed the link to "Ghost".' }] },
+      { paths: [P("E")], text: '"E" links to the experiment "Nope", which wasn\'t found.', fixes: [{ path: P("E"), key: "experiment", label: "Remove the experiment link", does: 'Removes the experiment link from "E".', done: 'Removed the experiment link from "E".' }] },
     ]);
     expect(p.problems).toEqual(p.issues.map(i => i.text));
   });
   it("a refused sub: the fix removes the subtask setting of the to-do named; two that name each other get one button each, naming the to-do", () => {
     const p = readPlan([td("A", { sub: "[[Ghost]]" }), td("C", { sub: "[[D]]" }), td("D", { sub: "[[C]]" }), td("S", { sub: "[[P]]" }), td("P"), td("X", { sub: "[[S]]" })], hub);
     const by = (name: string) => p.issues.find(i => i.text.startsWith(`"${name}"`));
-    expect(by("A")?.fixes).toEqual([{ path: P("A"), key: "sub", label: "Make it a normal to-do", does: 'Removes the subtask setting from "A", so it becomes an ordinary to-do. Its other settings stay.', done: '"A" is a normal to-do now.' }]);
+    expect(by("A")?.fixes).toEqual([{ path: P("A"), key: "sub", label: "Make it a normal to-do", does: 'Removes the subtask setting from "A"; its other settings stay.', done: '"A" is a normal to-do now.' }]);
     expect(by("C")?.paths).toEqual([P("C"), P("D")]);
     expect(by("C")?.fixes.map(f => f.label)).toEqual(['Make "C" a normal to-do', 'Make "D" a normal to-do']);
     expect(by("X")?.fixes.map(f => f.label)).toEqual(["Make it a normal to-do"]);
@@ -263,6 +263,6 @@ describe("issues: what is wrong, where, and what the map can fix", () => {
     expect(circle.issues[0].paths).toHaveLength(2);
     expect(circle.issues[0].fixes).toEqual([]);
     const fin = readPlan([td("P", { done: true }), td("S", { sub: "[[P]]" })], hub);
-    expect(fin.issues).toEqual([{ paths: [P("P")], text: '"P" is ticked, but its subtask is not done yet.', fixes: [] }]);
+    expect(fin.issues).toEqual([{ paths: [P("P")], text: '"P" is ticked, but its subtask isn\'t.', fixes: [] }]);
   });
 });

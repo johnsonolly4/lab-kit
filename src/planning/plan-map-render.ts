@@ -166,7 +166,7 @@ function nestNo(verdict: Exclude<NestVerdict, "ok">, plan: Plan, parent: string)
     case "already": return "Already a subtask of that to-do.";
     case "has-subs": return "That to-do has subtasks of its own: subtasks go one level only.";
     case "parent-is-sub": return `"${name}" is itself a subtask: subtasks go one level only. Drop it on "${plan.rows.find(r => r.path === p?.parent)?.name ?? "its parent"}" instead.`;
-    case "parent-bad-sub": return `"${name}" is set as a subtask of ${via ? `"${via}"` : "another to-do"}, which is itself a subtask, so it cannot take subtasks until that is fixed. The problems list is open below: use "Make it a normal to-do" on "${name}", then try again.`;
+    case "parent-bad-sub": return `"${name}" can't take subtasks: it is a subtask of ${via ? `"${via}"` : "another to-do"}, which is itself a subtask. Fix it in the problems list below, then try again.`;
   }
 }
 
