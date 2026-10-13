@@ -132,12 +132,18 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
   });
 }
 
-const NEST_NO: Record<Exclude<NestVerdict, "ok">, string> = {
-  self: "A to-do cannot be its own subtask.",
-  already: "Already a subtask of that to-do.",
-  "has-subs": "That to-do has subtasks of its own: subtasks go one level only.",
-  "parent-is-sub": "That to-do is itself a subtask: subtasks go one level only.",
-};
+/** Why a drop onto `parent` was refused, in words: what is wrong and what to do. */
+function nestNo(verdict: Exclude<NestVerdict, "ok">, plan: Plan, parent: string): string {
+  const p = plan.rows.find(r => r.path === parent);
+  const name = p?.name ?? "That to-do", via = p?.subOf ? plan.rows.find(r => r.path === p.subOf)?.name : undefined;
+  switch (verdict) {
+    case "self": return "A to-do cannot be its own subtask.";
+    case "already": return "Already a subtask of that to-do.";
+    case "has-subs": return "That to-do has subtasks of its own: subtasks go one level only.";
+    case "parent-is-sub": return `"${name}" is itself a subtask: subtasks go one level only. Drop it on "${plan.rows.find(r => r.path === p?.parent)?.name ?? "its parent"}" instead.`;
+    case "parent-bad-sub": return `"${name}" has a subtask setting that does not work${via ? ` (it names "${via}", which is itself a subtask)` : ""}, so it cannot take subtasks yet. Open it and clear its sub property, then try again.`;
+  }
+}
 
 /** Makes `to-do from` a subtask of `to` (or, `to` null, clears it) and offers Undo. The card disappears from the map (a subtask lives in its parent's list), so its arrows do too: the notice says so. */
 async function nest(o: MapOptions, plan: Plan, from: string, to: string | null): Promise<void> {
@@ -190,7 +196,7 @@ function dragNest(wrap: HTMLElement, plan: Plan, o: MapOptions, grip: HTMLElemen
       if (!e) return;
       if (!dragged) { open(o, from, Keymap.isModEvent(e)); return; }
       const act = nestAction(plan, from, target?.dataset.planPath ?? null, inside && !target);
-      if (act.do === "refuse") new Notice(NEST_NO[act.verdict]);
+      if (act.do === "refuse") new Notice(nestNo(act.verdict, plan, target?.dataset.planPath ?? ""), 10000);
       else if (act.do === "nest" || act.do === "clear") nest(o, plan, from, act.do === "nest" ? act.to : null).catch(() => { new Notice("Could not change that to-do."); });
     };
     grip.addEventListener("pointermove", e => {

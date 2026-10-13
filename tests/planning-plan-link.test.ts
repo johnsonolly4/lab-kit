@@ -74,6 +74,15 @@ describe("canNest", () => {
     expect(canNest(plan, p("A"), p("D"))).toBe("has-subs");     // A has subtask C
     expect(canNest(plan, p("B"), p("C"))).toBe("parent-is-sub"); // C is a subtask of A
   });
+  it("a to-do whose own `sub` is refused cannot take subtasks (it would be written, then ignored)", () => {
+    const bad = readPlan([td("P"), td("S", { sub: "[[P]]" }), td("X", { sub: "[[S]]" }), td("Y")], hub);   // X names S, which is a subtask: X's `sub` is refused
+    expect(bad.rows.find(r => r.name === "X")?.subOf).toBe(T + "S.md");
+    expect(bad.rows.find(r => r.name === "X")?.parent).toBeNull();
+    expect(canNest(bad, T + "Y.md", T + "X.md")).toBe("parent-bad-sub");
+    expect(nestAction(bad, T + "Y.md", T + "X.md", false)).toEqual({ do: "refuse", verdict: "parent-bad-sub" });
+    const missing = readPlan([td("Y"), td("W", { sub: "[[Ghost]]" })], hub);   // a `sub` naming nothing found does not block it
+    expect(canNest(missing, T + "Y.md", T + "W.md")).toBe("ok");
+  });
   it("a plain card, a re-parent and a card that has `after` links are fine", () => {
     expect(canNest(plan, p("B"), p("D"))).toBe("ok");
     expect(canNest(plan, p("C"), p("D"))).toBe("ok");   // C moves from A to D

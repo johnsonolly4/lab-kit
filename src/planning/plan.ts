@@ -23,6 +23,8 @@ export interface PlanRow {
   blocked: boolean;
   /** The to-do this one is a subtask of (`sub`; its path), or null. One level only. */
   parent: string | null;
+  /** The to-do its `sub` names, found in this project, even when that `sub` is refused (a subtask of a subtask, a loop): null when `sub` is empty or names nothing found. */
+  subOf: string | null;
   /** The subtasks of this to-do, in plan order. */
   subs: { path: string; name: string; done: boolean }[];
   /** The lab note named by `experiment` (its `Status` as written, "" when empty; path "" when no such lab note), or null. */
@@ -121,7 +123,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       experiment = lab ? { name: lab.name, path: lab.path, status: text(lab.fm.Status) } : { name: target, path: "", status: "" };
       if (!lab) problems.push(`"${t.name}" names experiment "${target}", which is not a lab note.`);
     }
-    return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
+    return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subOf: wanted.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
       order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
   });
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
