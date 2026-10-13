@@ -217,7 +217,7 @@ function subsList(parent: HTMLElement, row: PlanRow, o: MapOptions, cls: string,
   for (const ev of ["click", "mousedown", "contextmenu"]) list.addEventListener(ev, e => e.stopPropagation());   // not the parent card's open / menu
   for (const s of row.subs) {
     const line = list.createDiv({ cls: s.done ? "vt-map-sub vt-map-sub-done" : "vt-map-sub" });
-    dragNest(drag.wrap, drag.plan, o, line.createDiv({ cls: "vt-map-grip vt-map-sub-grip", attr: { "aria-label": "Drag out to make it a plain to-do, or onto another to-do to move it" } }), s.path, line);
+    dragNest(drag.wrap, drag.plan, o, line.createDiv({ cls: "vt-map-grip vt-map-sub-grip", attr: { "aria-label": "Drag out or onto a to-do" } }), s.path, line);
     let done = s.done;
     const tick = line.createEl("button", { cls: "vt-map-tick vt-map-sub-tick", attr: { "aria-label": "Mark done" } });
     const look = (): void => { setIcon(tick, done ? "check-circle-2" : "circle"); tick.setAttr("aria-label", done ? "Mark not done" : "Mark done"); line.toggleClass("vt-map-sub-done", done); };
@@ -264,7 +264,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       const el = canvas.createDiv({ cls: ["vt-map-card", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
       el.setCssProps({ "--vt-map-x": `${p.x}px`, "--vt-map-y": `${p.y}px` });
       el.dataset.planPath = c.path;
-      dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto another to-do to make it a subtask" } }), c.path, el);
+      dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
       const tick = el.createEl("button", { cls: "vt-map-tick", attr: { "aria-label": r.done ? "Mark not done" : "Mark done" } });   // a circle: ticks and unticks, so a wrong tick can be undone
       let done = r.done;   // what the card shows now: it changes at the click, before the note's properties are saved and the map redraws

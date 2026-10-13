@@ -521,15 +521,16 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 /* Plan map: dragging a whole card by its left strip to make it a subtask (src/planning/plan-map-render.ts, dragNest) */
 .vt-map-grip { position: absolute; left: 0; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center; border-radius: 9px 0 0 9px; cursor: grab; touch-action: none; z-index: 1; }
 .vt-map-grip::before { content: ""; width: 4px; height: calc(100% - 16px); border-radius: 2px; background: var(--vt-card-border); }   /* the bar at rest */
-.vt-map-grip::after { content: "\22EE\22EE"; display: none; letter-spacing: -4px; font-size: var(--font-ui-small); line-height: 1; color: var(--interactive-accent); }   /* the grip */
+.vt-map-grip::after { content: ""; display: none; width: 10px; height: 15px; background: radial-gradient(circle, var(--vt-grip, var(--interactive-accent)) 1.3px, transparent 1.7px) 0 0 / 5px 5px; }   /* the grip: two columns of three dots */
 .vt-map-grip:hover { background: var(--background-modifier-hover); }
 .vt-map-grip:hover::before { display: none; }
 .vt-map-grip:hover::after { display: block; }
 @media (hover: none) { .vt-map-grip::before { display: none; } .vt-map-grip::after { display: block; } }   /* a phone has no hover: the grip is always shown */
 .vt-map-sub-grip { position: static; width: 10px; height: 20px; flex: none; border-radius: 4px; }
 .vt-map-sub-grip::before { display: none; }
-.vt-map-sub-grip::after { display: block; color: var(--text-faint); }
-.vt-map-sub-grip:hover::after { color: var(--interactive-accent); }
+.vt-map-sub-grip { --vt-grip: var(--text-faint); }
+.vt-map-sub-grip:hover { --vt-grip: var(--interactive-accent); }
+.vt-map-sub-grip::after { display: block; }
 .vt-map-lifted { opacity: 0.4; }
 .vt-map-ghost { position: absolute; left: var(--vt-ghost-x); top: var(--vt-ghost-y); width: var(--vt-ghost-w); box-sizing: border-box; padding: 6px 10px; transform: translate(-16px, -12px); background: var(--background-primary); border: 1px solid var(--interactive-accent); border-radius: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-s); pointer-events: none; z-index: 7; }
 .vt-map-card.vt-map-nest-drop, .vt-map-unlinked-row.vt-map-nest-drop { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
