@@ -1,6 +1,6 @@
 // Making and removing `after` links on the plan map (src/planning/plan-link.ts).
 import { describe, it, expect } from "vitest";
-import { addAfter, bridgeAfter, canLink, canNest, nestAction, removeAfter } from "../src/planning/plan-link";
+import { addAfter, bridgeAfter, canLink, canNest, nestAction, removeAfter, removeItem } from "../src/planning/plan-link";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -144,5 +144,15 @@ describe("bridgeAfter", () => {
   });
   it("matches by path as well as name", () => {
     expect(bridgeAfter("[[00 Planning/To-dos/B|b]]", B, "[[A]]", C)).toBe("[[A]]");
+  });
+});
+
+describe("removeItem", () => {
+  it("drops the one item that names the target; one left becomes a single value; none left removes the property", () => {
+    expect(removeItem(["[[Ghost]]", "[[B]]"], "Ghost")).toBe("[[B]]");
+    expect(removeItem(["[[Ghost]]", "[[B]]", "[[C]]"], "Ghost")).toEqual(["[[B]]", "[[C]]"]);
+    expect(removeItem("[[Ghost|alias]]", "Ghost")).toBeUndefined();
+    expect(removeItem("[[B]]", "Ghost")).toBe("[[B]]");
+    expect(removeItem(undefined, "Ghost")).toBeUndefined();
   });
 });

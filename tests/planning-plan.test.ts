@@ -42,13 +42,13 @@ describe("readPlan", () => {
   it("a missing link is a problem and is ignored; a self link too", () => {
     const p = readPlan([td("A", { after: ["[[Ghost]]", "[[A]]"] })], hub);
     expect(p.rows[0]).toMatchObject({ blocked: false, after: [] });
-    expect(p.problems).toEqual(['"A" comes after "Ghost", which is not a to-do of this project.', '"A" comes after itself.']);
+    expect(p.problems).toEqual(['"A": its after names "Ghost", but no such to-do is in this project.', '"A": its after names itself.']);
   });
 
   it("a cycle: reported, every row still listed", () => {
     const p = readPlan([td("A", { after: "[[B]]" }), td("B", { after: "[[A]]" }), td("C")], hub);
     expect(p.rows.map(r => r.name)).toEqual(["C", "A", "B"]);
-    expect(p.problems).toEqual(['These to-dos wait on each other in a circle: "A", "B".']);
+    expect(p.problems).toEqual(['These to-dos wait on each other in a circle: "A", "B". Open one and remove its after link.']);
   });
 
   it("only this project's to-dos; a link to another project's to-do is missing", () => {
@@ -120,7 +120,7 @@ describe("experiment", () => {
   it("a link to something that is not a lab note: no status and a message", () => {
     const p = rowOf([td("A", { experiment: "[[Ghost]]" })], [lab("X1")]);
     expect(p.rows[0].experiment).toEqual({ name: "Ghost", path: "", status: "" });
-    expect(p.problems).toEqual(['"A" names experiment "Ghost", which is not a lab note.']);
+    expect(p.problems).toEqual(['"A": its experiment names "Ghost", but no such lab note was found.']);
   });
   it("no lab notes given (lab folder not set): nothing looked up, no message", () => {
     const p = rowOf([td("A", { experiment: "[[X1]]" })]);
@@ -211,10 +211,10 @@ describe("subtasks (sub)", () => {
     const p = readPlan([td("A", { sub: "[[Ghost]]" }), td("B", { sub: "[[B]]" }), td("C", { sub: "[[D]]" }), td("D", { sub: "[[C]]" }),
       td("P"), td("S", { sub: "[[P]]" }), td("X", { sub: "[[S]]" })], hub);
     expect(p.problems).toEqual([
-      '"A" is a subtask of "Ghost", which is not a to-do of this project.',
-      '"B" is a subtask of itself.',
-      '"C" and "D" are subtasks of each other.',
-      '"X" is a subtask of "S", which is itself a subtask: subtasks go one level only.']);
+      '"A": its sub names "Ghost", but no such to-do is in this project, so it shows as a plain to-do.',
+      '"B": its sub names itself, so it shows as a plain to-do.',
+      '"C" and "D" name each other as their parent, so both show as plain to-dos.',
+      '"X": its sub names "S", which is itself a subtask. Subtasks go one level only, so "X" shows as a plain to-do.']);
     const row = (n: string) => p.rows.find(r => r.name === n)!;
     expect([row("A").parent, row("B").parent, row("C").parent, row("D").parent, row("X").parent]).toEqual([null, null, null, null, null]);
     expect(row("P").subs.map(s => s.name)).toEqual(["S"]);
@@ -237,5 +237,32 @@ describe("a finished parent with open subtasks", () => {
   it("is not reported when the parent is open, or when every subtask is done", () => {
     expect(readPlan([td("P"), td("S", { sub: "[[P]]" })], hub).problems).toEqual([]);
     expect(readPlan([td("P", { done: true }), td("S", { sub: "[[P]]", done: true })], hub).problems).toEqual([]);
+  });
+});
+
+describe("issues: what is wrong, where, and what the map can fix", () => {
+  const P = (n: string) => T + n + ".md";
+  it("a link to something not found: marks the to-do and offers to clear just that link", () => {
+    const p = readPlan([td("A", { after: ["[[Ghost]]", "[[B]]"] }), td("B"), td("E", { experiment: "[[Nope]]" })], hub, []);
+    expect(p.issues).toEqual([
+      { paths: [P("A")], text: '"A": its after names "Ghost", but no such to-do is in this project.', fixes: [{ path: P("A"), key: "after", target: "Ghost", label: "Remove this link" }] },
+      { paths: [P("E")], text: '"E": its experiment names "Nope", but no such lab note was found.', fixes: [{ path: P("E"), key: "experiment", label: "Clear experiment" }] },
+    ]);
+    expect(p.problems).toEqual(p.issues.map(i => i.text));
+  });
+  it("a refused sub: the fix clears the sub of the to-do named; two that name each other get one button each", () => {
+    const p = readPlan([td("A", { sub: "[[Ghost]]" }), td("C", { sub: "[[D]]" }), td("D", { sub: "[[C]]" }), td("S", { sub: "[[P]]" }), td("P"), td("X", { sub: "[[S]]" })], hub);
+    const by = (name: string) => p.issues.find(i => i.text.startsWith(`"${name}"`));
+    expect(by("A")?.fixes).toEqual([{ path: P("A"), key: "sub", label: "Clear sub" }]);
+    expect(by("C")?.paths).toEqual([P("C"), P("D")]);
+    expect(by("C")?.fixes.map(f => f.label)).toEqual(["Clear sub of C", "Clear sub of D"]);
+    expect(by("X")?.fixes).toEqual([{ path: P("X"), key: "sub", label: "Clear sub" }]);
+  });
+  it("a circle, an open subtask of a finished parent and a date out of order are marked but have no button", () => {
+    const circle = readPlan([td("A", { after: "[[B]]" }), td("B", { after: "[[A]]" })], hub);
+    expect(circle.issues[0].paths).toHaveLength(2);
+    expect(circle.issues[0].fixes).toEqual([]);
+    const fin = readPlan([td("P", { done: true }), td("S", { sub: "[[P]]" })], hub);
+    expect(fin.issues).toEqual([{ paths: [P("P")], text: '"P" is finished but its subtask is open.', fixes: [] }]);
   });
 });

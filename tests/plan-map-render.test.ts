@@ -60,4 +60,28 @@ describe("drawPlanMap", () => {
     expect(open.querySelectorAll(".vt-map-sub-missing")).toHaveLength(0);
     expect(open.querySelectorAll(".vt-map-subsopen")).toHaveLength(0);
   });
+
+  it("a to-do with a problem gets a warning mark; the problems under the map have the fix buttons, and a fix clears just that link and is a history step", async () => {
+    const { drawProblems } = await import("../src/planning/plan-map-render");
+    const fms: Record<string, Record<string, unknown>> = { [T + "A.md"]: { kind: "todo", project: "[[Alpha]]", after: ["[[Ghost]]", "[[B]]"] }, [T + "B.md"]: { kind: "todo", project: "[[Alpha]]" }, [T + "L.md"]: { kind: "todo", project: "[[Alpha]]", sub: "[[Ghost]]" } };
+    const plan = readPlan(Object.entries(fms).map(([p, fm]) => note(p, fm)), hub);
+    const history = new PlanHistory();
+    const app = { vault: { getFileByPath: (p: string) => (p in fms ? { path: p } : null) }, fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); } } } as never;
+    const o = { app, sourcePath: hub.path, expanded: new Set<string>(), direction: "across" as const, zoom: 1, history, redraw() { /* nothing */ } };
+    const box = new El("div");
+    drawPlanMap(box, plan, layoutPlan(plan), o);
+    drawProblems(box, plan, o);
+    expect(box.querySelectorAll(".vt-map-warnmark")).toHaveLength(2);   // A (a card) and L (a tile)
+    const lines = box.querySelectorAll(".vt-map-issue");
+    expect(lines.map((l: { textContent: string }) => l.textContent)).toEqual([
+      '"A": its after names "Ghost", but no such to-do is in this project.Remove this linkOpen note',
+      '"L": its sub names "Ghost", but no such to-do is in this project, so it shows as a plain to-do.Clear subOpen note']);
+    lines[0].querySelectorAll("button")[0].dispatch("click");
+    await new Promise(r => setTimeout(r, 10));
+    expect(fms[T + "A.md"].after).toBe("[[B]]");
+    expect(history.peek("undo")?.label).toBe("Remove this link");
+    lines[1].querySelectorAll("button")[0].dispatch("click");
+    await new Promise(r => setTimeout(r, 10));
+    expect("sub" in fms[T + "L.md"]).toBe(false);
+  });
 });

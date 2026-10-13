@@ -9,7 +9,7 @@ import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction } from "./plan-map";
-import { drawPlanMap } from "./plan-map-render";
+import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -365,8 +365,9 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        drawPlanMap(box, plan, map, { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, redraw: () => this.draw() });
-        for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
+        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, redraw: () => this.draw() };
+        drawPlanMap(box, plan, map, mapOptions);
+        drawProblems(box, plan, mapOptions);
         return;
       }
       case "meeting-cards": {   // the Meetings hub: one card per series

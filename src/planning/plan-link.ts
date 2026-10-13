@@ -19,6 +19,12 @@ export function removeAfter(value: unknown, names: string[]): unknown {
   return left.length === 0 ? undefined : left.length === 1 ? left[0] : left;
 }
 
+/** `after` without the items that point at `target` (a link target as `readPlan` reads it): used to drop one dead link. One item left becomes a single value; none left gives `undefined`. */
+export function removeItem(value: unknown, target: string): unknown {
+  const left = items(value).filter(i => linkTarget(i) !== target);
+  return left.length === 0 ? undefined : left.length === 1 ? left[0] : left;
+}
+
 export type LinkVerdict = "ok" | "self" | "already" | "loop";
 
 /** May `to` come after `from`? Not itself, not twice, and not when `to` already comes before `from` (that would make a loop). */

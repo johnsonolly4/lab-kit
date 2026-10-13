@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "1.1.0",
-      "sha256": "08356325a53d21a4423e23c939c72223cd1cab4be0a453118f6b2e36d3112d9c",
+      "sha256": "c35aceadab29d68714fab79bced46d465ddf28471d91adff8666d09d51ad8513",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },

@@ -30,7 +30,11 @@ export interface PlanRow {
   /** The lab note named by `experiment` (its `Status` as written, "" when empty; path "" when no such lab note), or null. */
   experiment: { name: string; path: string; status: string } | null;
 }
-export interface Plan { rows: PlanRow[]; problems: string[] }
+/** A one-click fix for an issue: clear `key` on the to-do `path` (`after`: only the item that names `target`). */
+export interface PlanFix { path: string; key: "sub" | "after" | "experiment"; target?: string; label: string }
+/** Something wrong in the notes: the to-dos it is about (marked on the map), a plain sentence (what is wrong and what it means), and the fixes the map can offer. */
+export interface PlanIssue { paths: string[]; text: string; fixes: PlanFix[] }
+export interface Plan { rows: PlanRow[]; problems: string[]; issues: PlanIssue[] }
 
 const text = (v: unknown): string => (typeof v === "string" ? v : typeof v === "number" ? String(v) : "").trim();
 /** `order` as a number: a number, or text like "2"; anything else is none. */
@@ -55,14 +59,15 @@ const byPathRow = (rows: PlanRow[], path: string): PlanRow | undefined => rows.f
 export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): Plan {
   const mine = todos.filter(t => t.fm.kind === "todo" && pointsTo(t.fm.project, hub))
     .sort((a, b) => a.path.localeCompare(b.path));
-  const problems: string[] = [];
+  const problems: string[] = [], issues: PlanIssue[] = [];
+  const issue = (paths: string[], text: string, fixes: PlanFix[] = []): void => { problems.push(text); issues.push({ paths, text, fixes }); };
   const parents = new Map<string, NoteRec[]>();
   for (const t of mine) {
     const found: NoteRec[] = [];
     for (const target of afterItems(t.fm.after)) {
       const p = mine.find(m => m.path.replace(/\.md$/, "") === target || m.name === target.slice(target.lastIndexOf("/") + 1));
-      if (!p) problems.push(`"${t.name}" comes after "${target}", which is not a to-do of this project.`);
-      else if (p === t) problems.push(`"${t.name}" comes after itself.`);
+      if (!p) issue([t.path], `"${t.name}": its after names "${target}", but no such to-do is in this project.`, [{ path: t.path, key: "after", target, label: "Remove this link" }]);
+      else if (p === t) issue([t.path], `"${t.name}": its after names itself.`);
       else if (!found.includes(p)) found.push(p);
     }
     parents.set(t.path, found);
@@ -74,15 +79,16 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     const target = afterItems(t.fm.sub)[0];
     if (!target) continue;
     const p = mine.find(m => match(m, target));
-    if (!p) problems.push(`"${t.name}" is a subtask of "${target}", which is not a to-do of this project.`);
-    else if (p === t) problems.push(`"${t.name}" is a subtask of itself.`);
+    const clear = (n: NoteRec, label = "Clear sub"): PlanFix => ({ path: n.path, key: "sub", label });
+    if (!p) issue([t.path], `"${t.name}": its sub names "${target}", but no such to-do is in this project, so it shows as a plain to-do.`, [clear(t)]);
+    else if (p === t) issue([t.path], `"${t.name}": its sub names itself, so it shows as a plain to-do.`, [clear(t)]);
     else wanted.set(t, p);
   }
   const parentOf = new Map<NoteRec, NoteRec>();
   for (const [t, p] of wanted) {
     if (!wanted.has(p)) { parentOf.set(t, p); continue; }
-    if (wanted.get(p) === t) { if (t.path < p.path) problems.push(`"${t.name}" and "${p.name}" are subtasks of each other.`); }
-    else problems.push(`"${t.name}" is a subtask of "${p.name}", which is itself a subtask: subtasks go one level only.`);
+    if (wanted.get(p) === t) { if (t.path < p.path) issue([t.path, p.path], `"${t.name}" and "${p.name}" name each other as their parent, so both show as plain to-dos.`, [{ path: t.path, key: "sub", label: `Clear sub of ${t.name}` }, { path: p.path, key: "sub", label: `Clear sub of ${p.name}` }]); }
+    else issue([t.path], `"${t.name}": its sub names "${p.name}", which is itself a subtask. Subtasks go one level only, so "${t.name}" shows as a plain to-do.`, [{ path: t.path, key: "sub", label: "Clear sub" }]);
   }
   const orderOfNote = (t: NoteRec): number => orderOf(t.fm.order) ?? Infinity;
   const byOrder = (a: NoteRec, b: NoteRec): number => (orderOfNote(a) === orderOfNote(b) ? 0 : orderOfNote(a) < orderOfNote(b) ? -1 : 1) || a.path.localeCompare(b.path);
@@ -97,7 +103,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     left = left.filter(t => t !== next);
   }
   if (left.length) {
-    problems.push(`These to-dos wait on each other in a circle: ${left.map(t => `"${t.name}"`).join(", ")}.`);
+    issue(left.map(t => t.path), `These to-dos wait on each other in a circle: ${left.map(t => `"${t.name}"`).join(", ")}. Open one and remove its after link.`);
     placed.push(...left);
   }
   const finished = (n: NoteRec): boolean => isFinished({ done: n.fm.done, day: n.fm.day });
@@ -121,7 +127,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     if (target) {
       const lab = labNotes!.find(n => n.path.replace(/\.md$/, "") === target || n.name === target.slice(target.lastIndexOf("/") + 1));
       experiment = lab ? { name: lab.name, path: lab.path, status: text(lab.fm.Status) } : { name: target, path: "", status: "" };
-      if (!lab) problems.push(`"${t.name}" names experiment "${target}", which is not a lab note.`);
+      if (!lab) issue([t.path], `"${t.name}": its experiment names "${target}", but no such lab note was found.`, [{ path: t.path, key: "experiment", label: "Clear experiment" }]);
     }
     return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subOf: wanted.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
       order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
@@ -129,7 +135,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
   for (const r of rows) {   // ticked on the board, in the note or on the map without ticking the subtasks
     const open = r.subs.filter(s => !s.done).length;
-    if (r.done && open) problems.push(`"${r.name}" is finished but ${open === r.subs.length && open === 1 ? "its subtask is" : open === 1 ? "1 of its subtasks is" : `${open} of its subtasks are`} open.`);
+    if (r.done && open) issue([r.path], `"${r.name}" is finished but ${open === r.subs.length && open === 1 ? "its subtask is" : open === 1 ? "1 of its subtasks is" : `${open} of its subtasks are`} open.`);
   }
   // Only dates the user typed: an open to-do due before an open to-do it comes after.
   const byPath = new Map(rows.map(r => [r.path, r]));
@@ -137,10 +143,10 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     if (r.done || !r.due) continue;
     for (const pp of r.afterPaths) {
       const p = byPath.get(pp)!;
-      if (!p.done && p.due && r.due < p.due) problems.push(`"${r.name}" is due ${r.due}, before "${p.name}" (${p.due}), which it comes after.`);
+      if (!p.done && p.due && r.due < p.due) issue([r.path], `"${r.name}" is due ${r.due}, before "${p.name}" (${p.due}), which it comes after.`);
     }
   }
-  return { rows, problems };
+  return { rows, problems, issues };
 }
 
 /** The project has a plan: some to-do comes after another, has an `order` or has subtasks, or a link is wrong (so the message shows). */

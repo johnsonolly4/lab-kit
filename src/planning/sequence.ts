@@ -30,7 +30,7 @@ export function sequencePatches(plan: Plan, paths: string[]): SequenceResult {
   const result: SequenceResult = { links: [], skipped: [] };
   for (let i = 1; i < paths.length; i++) {
     const from = paths[i - 1], to = paths[i];
-    const why = canLink({ rows, problems: [] }, from, to);
+    const why = canLink({ rows, problems: [], issues: [] }, from, to);
     if (why !== "ok") { result.skipped.push({ from, to, why }); continue; }
     result.links.push({ from, to });
     rows = rows.map(r => (r.path === to ? { ...r, afterPaths: [...r.afterPaths, from] } : r));

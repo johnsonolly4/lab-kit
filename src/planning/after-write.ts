@@ -14,8 +14,8 @@ export function undoNotice(text: string, undo: () => Promise<void>): void {
 /** Changes `after` on the to-do `to`. `change` gets the old value and returns the new one (undefined removes the property). */
 export const changeAfter = (app: App, to: string, change: (value: unknown) => unknown): Promise<void> => changeKey(app, to, "after", change);
 
-/** A change to `after` or `sub` that is also put in `history` (with the old and the new value), so Undo and Redo can run it again. Returns the step. */
-export async function recordChange(app: App, history: PlanHistory, path: string, key: "after" | "sub", label: string, change: (value: unknown) => unknown): Promise<HistoryStep> {
+/** A change to `after`, `sub` or `experiment` that is also put in `history` (with the old and the new value), so Undo and Redo can run it again. Returns the step. */
+export async function recordChange(app: App, history: PlanHistory, path: string, key: "after" | "sub" | "experiment", label: string, change: (value: unknown) => unknown): Promise<HistoryStep> {
   let before: unknown, after: unknown;
   await changeKey(app, path, key, v => { before = v; after = change(v); return after; });
   const step: HistoryStep = { path, key, before, after, label };
@@ -74,7 +74,7 @@ export async function runHistory(app: App, history: PlanHistory, side: Side, ste
 /** Changes `sub` (the to-do this one is a subtask of) on the to-do `child`: same as `changeAfter`; `undefined` removes the property. */
 export const changeSub = (app: App, child: string, change: (value: unknown) => unknown): Promise<void> => changeKey(app, child, "sub", change);
 
-async function changeKey(app: App, path: string, key: "after" | "sub" | "project", change: (value: unknown) => unknown): Promise<void> {
+async function changeKey(app: App, path: string, key: "after" | "sub" | "project" | "experiment", change: (value: unknown) => unknown): Promise<void> {
   const file = app.vault.getFileByPath(path);
   if (!file) throw new Error("to-do not found");
   await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {

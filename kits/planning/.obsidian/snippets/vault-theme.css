@@ -566,6 +566,13 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
 .vt-map-slide { display: inline-flex; align-items: center; }
 .vt-plan-title:has(> .vt-map-dir) { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
 .vt-map-slide svg { width: 14px; height: 14px; }
+.vt-map-warnmark { flex: none; display: inline-flex; color: var(--color-orange); }
+.vt-map-warnmark svg { width: 15px; height: 15px; }
+.vt-map-card .vt-map-warnmark { position: absolute; left: 20px; bottom: 7px; }
+.vt-map + .vt-map-issue { margin-top: 10px; }
+.vt-map-issue { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 3px 0; }
+.vt-map-issue-btns { display: inline-flex; flex-wrap: wrap; }
+.vt-map-fix { margin-left: 8px; }
 .vt-map-history.vt-map-off { opacity: 0.35; cursor: default; }   /* nothing to undo / redo: still there, so the row does not move */
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }
