@@ -214,9 +214,7 @@
 .lab-kit-kit-section > summary { cursor: pointer; padding: 2px 0 6px; }
 
 /* Install confirmation rows (src/kit/managed-ui.ts KitInstallModal): name, what it is for, path */
-.lab-kit-install-row { padding: 4px 0 6px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-install-name { font-weight: 600; }
-.lab-kit-install-path { font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
 /* Planning homepage blocks (```vault-goto): one button per folder hub, wrapping */
 .lab-kit-goto { display: flex; flex-wrap: wrap; gap: 6px; }
 .lab-kit-goto-button { display: inline-flex; align-items: center; gap: 6px; }

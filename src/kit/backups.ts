@@ -26,3 +26,9 @@ export async function listBackupRuns(adapter: Pick<DataAdapter, "exists" | "list
 /** The runs older than `days` days before `now`; `days` 0 = all of them. */
 export const olderThan = (runs: BackupRun[], days: number, now: number): BackupRun[] =>
   days <= 0 ? runs : runs.filter(r => r.time < now - days * 864e5);
+
+/** The big line of Clear old backups: how many backups there are and how many the choice would move to the trash. */
+export function backupsSummary(total: number, picked: number): string {
+  if (!total) return "No backups.";
+  return picked ? `${picked} of ${total} ${total === 1 ? "backup" : "backups"} will be moved to the trash.` : `${total} ${total === 1 ? "backup" : "backups"}, none match.`;
+}

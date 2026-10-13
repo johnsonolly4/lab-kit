@@ -3,7 +3,8 @@
 import { Modal, Notice, Setting, TFile, normalizePath, type App } from "obsidian";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
-import { findMoved, missingFolderSettings, type MissingFolder } from "./moved-folders";
+import { findMoved, missingFolderSettings, movedSummary, type MissingFolder } from "./moved-folders";
+import { winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitJoin, missingPlanningFolders, PLANNING_KIT, type KitData, type PlanningRole } from "./paths";
 import { loadedPlugins } from "./obsidian-private";
 import { wideBox } from "./settings-box";
@@ -39,8 +40,9 @@ export class MovedFoldersModal extends Modal {
     el.empty();
     this.setTitle("Find moved folders");
     const missing = missingNow(this.app, this.host.kit);
-    if (!missing.length) { el.createEl("p", { text: "Every folder named in the settings exists. Nothing to fix." }); return; }
-    el.createEl("p", { text: "These folders named in the settings no longer exist, most likely because they were moved outside Obsidian. Pick where each one went. Apply only changes the settings: no note or folder is moved." });
+    if (!missing.length) { winIntro(el, "Every folder named in the settings exists."); winSummary(el, movedSummary(0)); return; }
+    winIntro(el, "These folders named in the settings no longer exist, most likely because they were moved outside Obsidian. Pick where each one went. Apply only changes the settings: no note or folder is moved.");
+    winSummary(el, movedSummary(missing.length));
 
     const folders = this.app.vault.getAllFolders(false).map(f => f.path);
     const files = this.app.vault.getFiles().map(f => f.path);
@@ -52,8 +54,8 @@ export class MovedFoldersModal extends Modal {
     for (const m of missing) {
       const found = findMoved(m, folders, notes, files, tracked.filter(p => p.startsWith(m.path + "/")), taken).slice(0, 5);
       this.choices.set(m.key, found.length ? { to: found[0].path } : { leave: true });
-      new Setting(el).setName(`${m.label}: ${m.path}`)
-        .setDesc(found.length ? `Found: ${found[0].path} (${found[0].reason}).` : "Not found. Pick the folder, or make it again.")
+      const { text } = winRow(el, { state: found.length ? "todo" : "missing", title: `${m.label}: ${m.path}`, detail: found.length ? `Found: ${found[0].path} (${found[0].reason}).` : "Not found. Pick the folder, or make it again." });
+      new Setting(text).setName("Where it went")
         .addDropdown(d => {
         for (const c of found) d.addOption(`to:${c.path}`, `${c.path} (${c.reason})`);
         d.addOption("create", `Make ${m.path} again (empty)`);
@@ -61,15 +63,15 @@ export class MovedFoldersModal extends Modal {
         d.setValue(found.length ? `to:${found[0].path}` : "leave");
         d.onChange(v => this.choices.set(m.key, v === "create" ? { create: true } : v === "leave" ? { leave: true } : { to: v.slice(3) }));
       });
-      const other = new Setting(el).setName("Or another folder").setDesc("Type or pick a folder; it is used instead of the choice above.");
+      const other = new Setting(text).setName("Or another folder").setDesc("Type or pick a folder; it is used instead of the choice above.");
       other.addText(t => {
         wideBox(other, t, this.app);
         t.setPlaceholder("Folder").onChange(v => { if (v.trim()) this.choices.set(m.key, { to: normalizePath(v.trim()) }); });
       });
     }
-    new Setting(el)
-      .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton(b => b.setButtonText("Apply").setCta().onClick(() => void this.apply(missing)));
+    const foot = winFoot(el);
+    foot.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
+    foot.createEl("button", { text: "Apply", cls: "mod-cta" }).addEventListener("click", () => void this.apply(missing));
   }
 
   private kindOf(f: TFile): string {

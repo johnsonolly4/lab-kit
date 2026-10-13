@@ -87,3 +87,6 @@ export function missingFolderSettings(o: { planning: Record<string, string>; pla
   if (o.chemicalFolder && !o.exists(o.chemicalFolder)) out.push({ key: "lab:chemicalFolder", label: "Chemicals", path: o.chemicalFolder });
   return out;
 }
+
+/** The big line of Find moved folders. */
+export const movedSummary = (n: number): string => (n ? `${n} ${n === 1 ? "folder is" : "folders are"} missing.` : "Nothing to fix.");

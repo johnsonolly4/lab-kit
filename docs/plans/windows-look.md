@@ -32,7 +32,8 @@ User, 2026-10-13 (survey, two mockups, chat):
 - Files: `src/kit/managed-ui.ts` (`:569`, `:732`, `:764`; rows at `:525-539`, `:673-676`, `:720`), a pure helper that maps a file's state to a mark and builds the summary line (tested), `styles.css` (remove `.lab-kit-review-row` / `.lab-kit-manage-row` rules that the shared rows replace), `src/kit/kit-set-ui.ts` if the two-kit sections need it.
 - Done when: tests cover every file state → mark and the summary for 0, 1 and many; the per-kit sections, sticky footer and Apply behaviour are unchanged (existing tests pass untouched); phone width checked by the user.
 
-### Phase 3 — Install, Merge, confirmations, Clear backups, Find moved folders
+### Phase 3 — Install, Merge, confirmations, Clear backups, Find moved folders — BUILT 2026-10-13, not seen in Obsidian
+- Result: `installSummary` (managed-look.ts), `backupsSummary` (backups.ts), `movedSummary` (moved-folders.ts), tests 1001. Install: rows with amber marks (grey for left alone and the notes), a tick box per settings change; Merge: summary and footer, cards untouched; the two confirm windows: intro and footer only; Find moved folders: a row per folder with the dropdown and the other-folder box inside it. Removed `.lab-kit-install-row` / `-path` CSS.
 - Depends on: Phase 1
 - Files: `src/kit/managed-ui.ts` (`:804` Kit install, `:851` ConfirmModal), `src/kit/merge-ui.ts:31`, `src/kit/tidy-ui.ts:335` (TidyConfirmModal), `src/kit/backups-ui.ts:7`, `src/kit/moved-folders-ui.ts:27`.
 - Done when: each window has the intro / summary line / row / footer pieces that fit it (a confirmation is the intro, a summary line and the footer only; no invented marks); buttons and behaviour unchanged; tests, lint, build clean.

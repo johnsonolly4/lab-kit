@@ -6,7 +6,7 @@ import {
   kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { actionWinState, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
+import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
 import { winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
@@ -796,38 +796,43 @@ export class KitInstallModal extends Modal {
     const { contentEl, preview } = this;
     this.titleEl.setText(this.title);
     contentEl.addClass("lab-kit-modal");
-    contentEl.createEl("p", { text: `Nothing is written until you press ${this.yes}. A file that is already there is never overwritten.` });
+    winIntro(contentEl, `Nothing is written until you press ${this.yes}. A file that is already there is never overwritten.`);
+    winSummary(contentEl, installSummary(preview, this.settings.length));
     // One row per file or folder, like the Check setup list: its name, what it is for, then where it goes
-    const group = (heading: string, paths: string[], text?: string): void => {
+    const group = (heading: string, paths: string[], text?: string, state: "todo" | "info" = "todo"): void => {
       if (!paths.length) return;
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
       det.open = paths.length <= 8;
       det.createEl("summary", { text: `${heading} (${paths.length})` });
       if (text) det.createEl("p", { cls: "setting-item-description", text });
       for (const p of paths) {
-        const row = det.createDiv({ cls: "lab-kit-install-row" });
-        row.createDiv({ cls: "lab-kit-install-name", text: p.slice(p.lastIndexOf("/") + 1) });
-        const about = preview.about?.[p];
-        if (about) row.createDiv({ cls: "setting-item-description", text: about });
-        row.createEl("code", { cls: "lab-kit-install-path", text: p });
+        const { text: body } = winRow(det, { state, title: p.slice(p.lastIndexOf("/") + 1), detail: preview.about?.[p] });
+        body.createEl("code", { cls: "lab-kit-win-path", text: p });
       }
     };
     group("Files to create", preview.create, "New files, written now.");
     group("Files to update", preview.update, "Kit files you haven't changed. The old copy is backed up first.");
-    group("Files left alone", preview.leftAlone, "A file with this name is already there. It is never changed.");
+    group("Files left alone", preview.leftAlone, "A file with this name is already there. It is never changed.", "info");
     group("Folders to create", preview.folders, "Made empty where needed, so the layout is complete.");
-    for (const n of this.notes) group(n.heading, n.paths, n.text);
+    for (const n of this.notes) group(n.heading, n.paths, n.text, "info");
     if (this.settings.length) {
-      new Setting(contentEl).setName(`Settings to change (${this.settings.length})`).setHeading();
-      this.settings.forEach((c, i) => { new Setting(contentEl).setName(c.name).setDesc(c.desc).addToggle(g => g.setValue(true).onChange(v => { this.on[i] = v; })); });
+      contentEl.createEl("h4", { text: `Settings to change (${this.settings.length})` });
+      this.settings.forEach((c, i) => {
+        const { row } = winRow(contentEl, { state: "todo", title: c.name, detail: c.desc });
+        const label = row.createEl("label", { cls: "lab-kit-win-tick" });
+        const box = label.createEl("input", { attr: { type: "checkbox" } });
+        box.checked = true;
+        box.addEventListener("change", () => { this.on[i] = box.checked; });
+        label.appendText("change");
+      });
     }
-    new Setting(contentEl)
-      .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => {
-        this.confirmed = true;
-        this.close();
-        void this.onYes(this.settings.filter((_, i) => this.on[i]));
-      }));
+    const foot = winFoot(contentEl);
+    foot.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
+    foot.createEl("button", { text: this.yes, cls: "mod-cta" }).addEventListener("click", () => {
+      this.confirmed = true;
+      this.close();
+      void this.onYes(this.settings.filter((_, i) => this.on[i]));
+    });
   }
 
   onClose(): void { this.contentEl.empty(); if (!this.confirmed) this.onCancel(); }
@@ -839,10 +844,10 @@ class ConfirmModal extends Modal {
 
   onOpen(): void {
     this.titleEl.setText(this.title);
-    this.contentEl.createEl("p", { text: this.text });
-    new Setting(this.contentEl)
-      .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton(b => b.setButtonText(this.yes).setCta().onClick(() => { this.confirmed = true; this.close(); void this.onYes(); }));
+    winIntro(this.contentEl, this.text);
+    const foot = winFoot(this.contentEl);
+    foot.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
+    foot.createEl("button", { text: this.yes, cls: "mod-cta" }).addEventListener("click", () => { this.confirmed = true; this.close(); void this.onYes(); });
   }
 
   onClose(): void { this.contentEl.empty(); if (!this.confirmed) this.onCancel?.(); }

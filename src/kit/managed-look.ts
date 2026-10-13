@@ -1,5 +1,5 @@
 // What the kit-file windows (Review update, Manage kit files, the report) show per file: the round mark and the summary line. Pure.
-import type { ManagedAction, ManagedItem, ManagedResult } from "./managed";
+import type { InstallPreview, ManagedAction, ManagedItem, ManagedResult } from "./managed";
 import type { WinState } from "./window-look";
 
 /** Conflict = red; something the kit would add, change or merge = amber; same = green; everything left alone on purpose = grey. */
@@ -28,4 +28,11 @@ export const outcomeWinState = (o: ManagedResult["outcome"]): WinState => (o ===
 export function reportSummary(results: ManagedResult[]): string {
   const n = results.filter(r => r.outcome === "created" || r.outcome === "updated" || r.outcome === "merged" || r.outcome === "moved").length;
   return n ? `${files(n)} changed.` : "Nothing was changed.";
+}
+
+/** The big line of the install confirmation: what would be written, and how many settings would change. */
+export function installSummary(p: InstallPreview, settings: number): string {
+  const parts = [p.create.length ? `${files(p.create.length)} to create` : "", p.update.length ? `${files(p.update.length)} to update` : "",
+    p.folders.length ? `${p.folders.length} ${p.folders.length === 1 ? "folder" : "folders"} to create` : "", settings ? `${settings} ${settings === 1 ? "setting" : "settings"} to change` : ""].filter(Boolean);
+  return parts.length ? parts.join(", ") + "." : "Nothing to write.";
 }

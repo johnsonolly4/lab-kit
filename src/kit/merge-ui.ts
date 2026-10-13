@@ -2,6 +2,7 @@
 // Nothing is written until Apply; the file never gets conflict markers (the preview marks undecided hunks, the file does not).
 import { ButtonComponent, Modal, Setting, type App } from "obsidian";
 import { mergeRegions, resolveRegions, type HunkChoice, type Region } from "./merge";
+import { winFoot, winIntro, winSummary } from "./window-look";
 
 export interface MergeInputs {
   dest: string;
@@ -50,11 +51,13 @@ export class KitMergeModal extends Modal {
     if (input.isScript) contentEl.createEl("p", { text: "This is code. After merging, please test it. Taking the kit's version is the safe choice.", cls: "mod-warning" });
 
     if (!this.conflicts.length) {
-      contentEl.createEl("p", { text: input.base === null
+      winSummary(contentEl, "Nothing to decide.");
+      winIntro(contentEl, input.base === null
         ? "There is no copy of the original kit file to compare with, so the changes can't be split into parts. Keep your file, or put the kit's version back."
-        : "Nothing overlaps any more. Close this window and use Merge in Manage kit files." });
+        : "Nothing overlaps any more. Close this window and use Merge in Manage kit files.");
     } else {
-      contentEl.createEl("p", { text: `${this.conflicts.length} place${this.conflicts.length === 1 ? "" : "s"} where you and the kit changed the same lines. Decide each one, then Apply.` });
+      winSummary(contentEl, `${this.conflicts.length} ${this.conflicts.length === 1 ? "place" : "places"} to decide.`);
+      winIntro(contentEl, "You and the kit changed the same lines in each of these. Decide each one, then Apply.");
       this.conflicts.forEach((c, i) => this.renderHunk(contentEl.createDiv({ cls: "lab-kit-hunk" }), i, c));
       const det = contentEl.createEl("details", { cls: "lab-kit-group" });
       det.open = true;
@@ -66,9 +69,10 @@ export class KitMergeModal extends Modal {
       .addButton(b => b.setButtonText("Keep all mine").onClick(() => void this.run(() => this.actions.apply(null))));
     new Setting(contentEl).setName("Take kit version").setDesc("Replaces your file with the kit's. Your copy is backed up first.")
       .addButton(b => b.setButtonText("Take kit version").onClick(() => this.actions.takeKit()));
-    const footer = new Setting(contentEl).addButton(b => b.setButtonText("Later").onClick(() => this.close()));
+    const footer = winFoot(contentEl);
+    footer.createEl("button", { text: "Later" }).addEventListener("click", () => this.close());
     if (this.conflicts.length) {
-      footer.addButton(b => { this.applyBtn = b; b.setButtonText("Apply").setCta().onClick(() => void this.run(() => this.actions.apply(this.resolved()))); });
+      this.applyBtn = new ButtonComponent(footer).setButtonText("Apply").setCta().onClick(() => void this.run(() => this.actions.apply(this.resolved())));
     }
     this.refresh();
   }

@@ -11,6 +11,7 @@ import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, se
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
+import { winFoot, winIntro } from "./window-look";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
@@ -336,8 +337,8 @@ class TidyConfirmModal extends Modal {
   constructor(app: App, private n: number, private rules: number, private onConfirm: () => void) { super(app); }
   onOpen(): void {
     this.setTitle(`Change ${this.n} ${this.n === 1 ? "item" : "items"} (${this.rules} ${this.rules === 1 ? "rule" : "rules"})?`);
-    this.contentEl.createEl("p", { text: "Each note is backed up first. Notes you have edited since the scan are skipped." });
-    const row = this.contentEl.createDiv({ cls: "lab-kit-tidy-foot" });
+    winIntro(this.contentEl, "Each note is backed up first. Notes you have edited since the scan are skipped.");
+    const row = winFoot(this.contentEl);
     row.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
     row.createEl("button", { text: "Confirm", cls: "mod-warning" }).addEventListener("click", () => { this.close(); this.onConfirm(); });
   }

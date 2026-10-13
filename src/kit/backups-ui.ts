@@ -1,6 +1,7 @@
 // Settings → Lab Kit → Clear old backups…: pick how old, see how many, move those backup folders to the trash.
 import { Modal, Notice, Setting, type App } from "obsidian";
-import { listBackupRuns, olderThan, type BackupRun } from "./backups";
+import { backupsSummary, listBackupRuns, olderThan, type BackupRun } from "./backups";
+import { winFoot, winIntro, winSummary } from "./window-look";
 
 const CHOICES: [string, string][] = [["30", "Older than 30 days"], ["7", "Older than 7 days"], ["0", "All of them"]];
 
@@ -18,14 +19,17 @@ export class ClearBackupsModal extends Modal {
   private render(): void {
     const { contentEl } = this;
     contentEl.empty();
-    if (!this.runs.length) { contentEl.createEl("p", { text: `No backups in ${this.folder || "the backup folder"}.` }); return; }
+    if (!this.runs.length) { winIntro(contentEl, `No backups in ${this.folder || "the backup folder"}.`); winSummary(contentEl, backupsSummary(0, 0)); return; }
     const pick = olderThan(this.runs, this.days, Date.now());
-    new Setting(contentEl).setName("Delete backups").setDesc(`${this.runs.length} backups in ${this.folder}. Each is a copy of files an update replaced.`)
+    winIntro(contentEl, `${this.runs.length} backups in ${this.folder}. Each is a copy of files an update replaced.`);
+    winSummary(contentEl, backupsSummary(this.runs.length, pick.length));
+    new Setting(contentEl).setName("Delete backups")
       .addDropdown(d => { for (const [v, t] of CHOICES) d.addOption(v, t); d.setValue(String(this.days)).onChange(v => { this.days = Number(v); this.render(); }); });
-    contentEl.createEl("p", { text: pick.length ? `${pick.length} will be moved to the trash.` : "None match." });
-    new Setting(contentEl)
-      .addButton(b => b.setButtonText("Cancel").onClick(() => this.close()))
-      .addButton(b => b.setButtonText("Move to trash").setDestructive().setDisabled(!pick.length).onClick(() => { this.close(); void this.clear(pick); }));
+    const foot = winFoot(contentEl);
+    foot.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
+    const trash = foot.createEl("button", { text: "Move to trash", cls: "mod-warning" });
+    trash.disabled = !pick.length;
+    trash.addEventListener("click", () => { this.close(); void this.clear(pick); });
   }
 
   private async clear(pick: BackupRun[]): Promise<void> {
