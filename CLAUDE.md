@@ -40,6 +40,7 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Make claims (docs, UI text, reports) only from measured results. Say what was not verified (e.g. "not seen in Obsidian").
 - If the user's short reply could answer more than one open question, say which one you think it answers before acting.
 - Multi-line edits: use the Edit tool, not escaped shell scripts.
+- Anything that changes how a window, chip, menu, tile or button looks: read `docs/design-standard.md` (corner sizes) and `docs/reference/visual/README.md` (screenshots the user approved; kept on this machine only, gitignored, so it may be missing: then say so), open the matching image, and match it. New approved looks are saved there when the user says a screen is right.
 
 ## Terse commands
 - "continue" → top item in `STATUS.md` → Next

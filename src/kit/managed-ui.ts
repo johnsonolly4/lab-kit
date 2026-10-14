@@ -576,8 +576,8 @@ export class KitManagedModal extends Modal {
     if (!this.foot) return;
     this.foot.empty();
     const todo = this.sections.reduce((n, sec) => n + sec.writes(), 0), any = this.sections.some(sec => sec.upToDate() > 0);
+    this.foot.addClass("lab-kit-sticky-foot");   // the wrapper sticks, not the row inside it (a sticky child cannot leave a wrapper that is only as tall as itself)
     const foot = winFoot(this.foot);
-    foot.addClass("lab-kit-sticky-foot");
     foot.createEl("button", { text: "Close" }).addEventListener("click", () => this.close());
     const apply = foot.createEl("button", { text: todo ? `Apply (${todo} files)` : "Apply", cls: "mod-cta" });
     apply.disabled = !todo && !any;

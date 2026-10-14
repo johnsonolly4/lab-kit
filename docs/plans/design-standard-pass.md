@@ -26,5 +26,9 @@ Colours, spacing, fonts; Obsidian's own windows and other plugins' screens (they
 - Files: read-only first: Alt+S snippet forms (`kits/lab/Extras/scripts/templater/labForm.js`), calc tables (`styles.css` calc rules), the rig diagram renderer (`src/rig/`). Report sizes against the standard; changes only after the user agrees (they change what users see in the lab notebook).
 - Done when: a short report in BACKLOG; the user decides.
 
+### Phase 5: the remaining prompts and buttons (added 2026-10-14 from the user's test)
+- Files: every `ask` / `pick` still used as a plain box or Obsidian list: Add to shopping list, Quick capture, New project (name), New concept, New topic hub, New chemical, New rig, Add result, the snippet-copy name, the Name box, Sort inbox's folder pick, Move / Delete confirmations (list from `grep "await ask(\|await pick(" src`); decide per prompt: the entry window (a name plus chips), or just the same look (the `.lab-kit-ask` / `.lab-kit-pick-side` classes get the standard corners and spacing). Also the hub bar's Status select / Deadline box / countdown badge, Back to hub / Home, and the Open folder / Open deck buttons in the lab and meeting templates (Meta Bind buttons, styled in `vault-theme.css`).
+- Done when: a list of every prompt and its decision in BACKLOG; tests; not seen.
+
 ## Verification
 Beyond tests: side by side screenshots of home, a project hub with the plan map, the entry window with a dropdown open, and Check setup, before and after; the user looks (Claude cannot see Obsidian).
