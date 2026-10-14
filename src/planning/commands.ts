@@ -99,27 +99,27 @@ export class PlanningCommands {
   }
 
   /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): what the To-do template reads as `window.vtTodo`, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in) is named in the heading. */
-  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null } = {}, day?: string): Promise<Handoff["vtTodo"] | null> {
+  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<Handoff["vtTodo"] | null> {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => ({ name: f.basename, fm: (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) }));
     const inside = project ?? this.hubOfActiveNote();
-    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(projectNames(hubs), named("meeting-series")), { title: initial.title, anchor: initial.anchor, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
+    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(projectNames(hubs), named("meeting-series")), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
     if (!answer) return null;
     const v = answer.values;
     return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "" };
   }
 
   /** Highlighted text in the open note as a quick to-do: the title and the `@project`, `%date`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */
-  private selectionTodo(): { title?: string; values?: EntryValues; anchor?: EntryAnchor | null } {
+  private selectionTodo(): { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } {
     const text = this.app.workspace.activeEditor?.editor?.getSelection() ?? "";
     if (!text.trim()) return {};
     const projects = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => f.basename);
     const q = parseQuickTodo(text, projects, new Date());
-    return { title: q.title, anchor: selectionAnchor(this.app), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
+    return { title: q.title, anchor: selectionAnchor(this.app), ...(q.projectGuess ? { openField: { key: "project", search: q.projectGuess } } : {}), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
   }
 
   /** New to-do: the entry window, then the To-do template makes the note from what was set. */
-  async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null } = {}): Promise<void> {
+  async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}): Promise<void> {
     const todo = await this.askTodo(project, initial);
     if (!todo) return;
     handoff().vtTodo = todo;

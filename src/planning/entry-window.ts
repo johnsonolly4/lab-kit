@@ -22,9 +22,9 @@ export function selectionAnchor(app: App): EntryAnchor | null {
 }
 
 /** Asks for the value of one field in a dropdown under `anchor` (the chip); null when it was closed without a choice. A toggle just flips. */
-export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<EntryValue | null> {
+export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement, initialSearch?: string): Promise<EntryValue | null> {
   if (field.kind === "toggle") return current !== true;
-  return openFieldPopover(app, anchor, field, current);
+  return openFieldPopover(app, anchor, field, current, initialSearch);
 }
 
 class EntryModal extends Modal {
@@ -35,7 +35,7 @@ class EntryModal extends Modal {
   private hint!: HTMLElement;
   private busy = false;   // a list or the date box is open: a click on another chip waits (no stack of boxes)
 
-  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private validate: ((a: EntryAnswer) => string | null) | null, private done: (a: EntryAnswer | null) => void) {
+  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private validate: ((a: EntryAnswer) => string | null) | null, private openField: { key: string; search: string } | null, private done: (a: EntryAnswer | null) => void) {
     super(app);
     this.values = { ...values };
   }
@@ -70,6 +70,11 @@ class EntryModal extends Modal {
     this.drawChips();
     this.input.focus();
     this.input.select();
+    if (this.openField) {   // quick capture with an unknown `+name`: that chip's search opens, filled
+      const i = visibleFields(this.fields, this.values).findIndex(f => f.key === this.openField?.key);
+      const btn = this.chips.children[i] as HTMLElement | undefined;
+      if (btn) window.setTimeout(() => { void this.edit(visibleFields(this.fields, this.values)[i], btn, this.openField?.search); }, 0);
+    }
   }
 
   private drawChips(): void {
@@ -83,11 +88,11 @@ class EntryModal extends Modal {
     }
   }
 
-  private async edit(f: EntryField, anchor: HTMLElement): Promise<void> {
+  private async edit(f: EntryField, anchor: HTMLElement, search?: string): Promise<void> {
     if (this.busy) return;
     this.busy = true;
     try {
-      const got = await editEntryField(this.app, f, this.values[f.key], anchor);
+      const got = await editEntryField(this.app, f, this.values[f.key], anchor, search);
       if (got !== null) { this.values = setEntryValue(this.fields, this.values, f.key, got); this.drawChips(); }
     } finally { this.busy = false; }
     this.input.focus();
@@ -122,5 +127,5 @@ export function buttonAnchor(): EntryAnchor | null {
 }
 
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `initial` fills it in (quick capture). */
-export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null } = {}): Promise<EntryAnswer | null> =>
-  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, resolve).open());
+export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null; /** Opens this chip's dropdown at once with its search filled. */ openField?: { key: string; search: string } } = {}): Promise<EntryAnswer | null> =>
+  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, initial.openField ?? null, resolve).open());

@@ -5,6 +5,8 @@ export interface QuickTodo {
   title: string;
   /** A project's name (one of the known names, as written there). */
   project?: string;
+  /** A `+name` that matched no project: it stays in the title, and the window opens the Project search with it. */
+  projectGuess?: string;
   /** YYYY-MM-DD. */
   due?: string;
   /** 1 (highest) to 3. */
@@ -15,7 +17,7 @@ const WORDS_AFTER_PERCENT = 3;   // "%next mon" and "%in 3 days" take up to thre
 const PRIORITY_WORDS: Record<string, number> = { "1": 1, "2": 2, "3": 3, high: 1, medium: 2, med: 2, low: 3 };
 
 /** Reads `+project`, `%date` and `!priority` marks out of `text`; everything else is the title. (Not `@`: ZotLit uses it for citations.)
- *  - `+Name` or `+"Name with spaces"`: matches a known project name (case-insensitive, the longest name first); unknown names stay in the title. One space after the mark is fine.
+ *  - `+Name` or `+"Name with spaces"`: matches a known project name (case-insensitive, the longest name first), else the longest run of words that starts exactly one name (`+plan map` for "Plan map example"); an unknown name stays in the title and is returned as `projectGuess`. One space after the mark is fine.
  *  - `%fri`, `%15 nov`, `%in 3 days`, `%"next mon"`: the longest run of words that reads as a date (see `parseDue`); a run that is not a date stays in the title.
  *  - `!1`, `!2`, `!3`, `!high`, `!medium`, `!low`: the priority.
  *  Each mark counts once (the first); a mark that does not read is left as typed. A list marker the text was selected with (`- `, `1. `, `- [ ] `) is dropped. */
@@ -30,8 +32,18 @@ export function parseQuickTodo(text: string, projects: string[], now: Date): Qui
   if (pj) {
     const skip = rest[pj.index + 1] === " " ? 1 : 0, from = pj.index + 1 + skip, after = rest.slice(from);
     const quoted = /^"([^"]+)"/.exec(after);
-    const hit = quoted ? names.find(n => n.toLowerCase() === quoted[1].toLowerCase()) : names.find(n => after.toLowerCase().startsWith(n.toLowerCase()) && (after.length === n.length || /[\s.,;:]/.test(after[n.length])));
-    if (hit) { out.project = hit; cut(pj.index, from + (quoted ? quoted[0].length : hit.length)); }
+    let hit = quoted ? names.find(n => n.toLowerCase() === quoted[1].toLowerCase()) : names.find(n => after.toLowerCase().startsWith(n.toLowerCase()) && (after.length === n.length || /[\s.,;:]/.test(after[n.length])));
+    let used = quoted ? quoted[0].length : hit?.length ?? 0;
+    if (!hit) {   // near match: the longest run of words that starts exactly one name's words ("plan map" for "Plan map example")
+      const typed = quoted ? quoted[1].split(" ") : after.split(" "), most = Math.max(0, ...names.map(n => n.split(" ").length));
+      for (let n = Math.min(most, typed.length); n >= 1 && !hit; n--) {
+        const run = typed.slice(0, n).join(" ").replace(/[.,;:]$/, "").toLowerCase();
+        const found = projects.filter(p => (p.toLowerCase() + " ").startsWith(run + " "));
+        if (run && found.length === 1) { hit = found[0]; used = quoted ? quoted[0].length : typed.slice(0, n).join(" ").length; }
+      }
+    }
+    if (hit) { out.project = hit; cut(pj.index, from + used); }
+    else if (after) out.projectGuess = quoted ? quoted[1] : after.split(" ")[0].replace(/[.,;:]$/, "") || undefined;
   }
 
   const pm = at(/%/g);

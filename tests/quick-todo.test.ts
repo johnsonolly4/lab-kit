@@ -40,7 +40,7 @@ describe("parseQuickTodo", () => {
     expect(q('x +"Flow reactor" y')).toEqual({ title: "x y", project: "Flow reactor" });
   });
   it("an unknown project, and a plus inside a word, stay in the title", () => {
-    expect(q("ask +Nobody about it")).toEqual({ title: "ask +Nobody about it" });
+    expect(q("ask +Nobody about it")).toEqual({ title: "ask +Nobody about it", projectGuess: "Nobody" });
     expect(q("mail a+Thesis.org")).toEqual({ title: "mail a+Thesis.org" });
     expect(q("a +Thesisx b").project).toBeUndefined();
   });
@@ -91,5 +91,21 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^day:/.test(l.trim()))");
     expect(tpl).toContain("f.path.startsWith(`${folder}/`) && rest.trim() === \"\"");
     expect(tpl).toContain("app.fileManager.trashFile(f)");
+  });
+  it("near match (2026-10-14): a run of words that starts exactly one name", () => {
+    const pr = ["Plan map example", "Plan b", "Flow reactor"];
+    const r = (t: string) => parseQuickTodo(t, pr, NOW);
+    expect(r("Book NMR +plan map %fri")).toEqual({ title: "Book NMR", project: "Plan map example", due: "2026-10-09" });
+    expect(r("+flow Book NMR")).toEqual({ title: "Book NMR", project: "Flow reactor" });
+    expect(r("Book +plan map example now")).toEqual({ title: "Book now", project: "Plan map example" });
+    expect(r('Book +"plan map"')).toEqual({ title: "Book", project: "Plan map example" });
+    expect(r("Book +plan map Book")).toEqual({ title: "Book Book", project: "Plan map example" });
+  });
+  it("an ambiguous or unknown name stays in the title and is the guess for the Project search", () => {
+    const pr = ["Plan map example", "Plan b"];
+    expect(parseQuickTodo("Book +plan now", pr, NOW)).toEqual({ title: "Book +plan now", projectGuess: "plan" });
+    expect(parseQuickTodo("Book +Nobody", pr, NOW)).toEqual({ title: "Book +Nobody", projectGuess: "Nobody" });
+    expect(parseQuickTodo('Book +"No body"', pr, NOW)).toEqual({ title: 'Book +"No body"', projectGuess: "No body" });
+    expect(parseQuickTodo("Book + ", pr, NOW).projectGuess).toBeUndefined();
   });
 });

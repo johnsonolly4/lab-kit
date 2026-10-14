@@ -10,7 +10,7 @@ let lastClosed: { anchor: HTMLElement; at: number } | null = null;
 const nice = (ymd: string): string => new Date(`${ymd}T00:00:00`).toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
 /** Opens the dropdown under `anchor` for a pick or date field; the value, or null when it was closed without a choice. A click on the chip that is already open just closes it. */
-export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryField, current: EntryValue | undefined): Promise<EntryValue | null> {
+export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryField, current: EntryValue | undefined, initialSearch?: string): Promise<EntryValue | null> {
   if (lastClosed && lastClosed.anchor === anchor && Date.now() - lastClosed.at < 300) return Promise.resolve(null);   // the click that closed it
   return new Promise(resolve => {
     const pop = document.body.createDiv({ cls: "vt-pop", attr: { role: "listbox", "aria-label": field.name } });
@@ -32,7 +32,7 @@ export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryFiel
 
     if (field.kind === "pick") {
       const options = field.options ?? [];
-      const search = options.length >= SEARCH_FROM || field.allowNew ? pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: field.prompt } }) : null;
+      const search = options.length >= SEARCH_FROM || field.allowNew || initialSearch ? pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: field.prompt } }) : null;
       const list = pop.createDiv({ cls: "vt-pop-list" });
       let shown = options, active = Math.max(0, options.findIndex(o => o.value === current));
       const draw = (): void => {
@@ -50,12 +50,14 @@ export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryFiel
         else if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); if (shown[active]) close(shown[active].value); }
       };
       if (search) {
-        search.addEventListener("input", () => {
+        const filter = (): void => {
           const typed = search.value.trim(), q = typed.toLowerCase();
           shown = options.filter(o => o.label.toLowerCase().includes(q));
           if (field.allowNew && typed && !options.some(o => o.label.toLowerCase() === q)) shown = [...shown, { label: `+ New: ${typed}`, value: typed }];   // typed text that is not in the list
           active = 0; draw();
-        });
+        };
+        search.addEventListener("input", filter);
+        if (initialSearch) { search.value = initialSearch; filter(); }   // quick capture: the `+name` that matched no project
         search.addEventListener("keydown", key);
         window.setTimeout(() => search.focus(), 0);
       } else {
