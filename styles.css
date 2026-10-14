@@ -459,6 +459,8 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-fold { margin: var(--lk-block-gap) 0; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); overflow: hidden; }
 .lab-kit-fold-head { display: flex; align-items: center; gap: var(--size-4-2); width: 100%; height: auto; padding: var(--size-4-2) var(--size-4-3); border: none; border-radius: 0; box-shadow: none; text-align: left; white-space: normal; background: var(--background-secondary); color: var(--text-normal); cursor: pointer; }
 .lab-kit-fold-head:hover { background: var(--background-modifier-hover); }
+.lab-kit-fold-head:is(:focus, :active) { box-shadow: none; }   /* Obsidian's button focus ring sticks out of the header and shows as a thick line under it (light theme, seen 2026-10-14) */
+.lab-kit-fold-head:focus-visible { box-shadow: inset 0 0 0 2px var(--background-modifier-border-focus); }
 .lab-kit-fold-chev { flex: none; width: 7px; height: 7px; margin: 0 var(--size-4-2) 0 var(--size-4-1); border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(-45deg); transition: transform 0.12s; }
 .lab-kit-fold.is-open > .lab-kit-fold-head .lab-kit-fold-chev { transform: rotate(45deg); }
 .lab-kit-fold-text { flex: 1; min-width: 0; padding-right: var(--size-4-2); }

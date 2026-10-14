@@ -28,6 +28,7 @@ describe("Review update and Manage kit files folds", () => {
   });
   it("the fold box uses the standard corners and a chevron drawn in CSS", () => {
     expect(css).toMatch(/\.lab-kit-fold \{[^}]*border-radius: var\(--lk-radius-control\)/);
+    expect(css).toMatch(/\.lab-kit-fold-head:focus-visible \{ box-shadow: inset/);   // no focus ring sticking out under the header
     expect(css).toContain(".lab-kit-fold.is-open > .lab-kit-fold-head .lab-kit-fold-chev");
   });
   it("the review window has one 'To update' box across kits, with the kit named on each row; the kit folds keep the rest", () => {
