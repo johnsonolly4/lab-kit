@@ -29,7 +29,7 @@ Colours and corner sizes (`design-standard-pass.md`), the other `<details>` (ins
 - Rule: ticking a row in the top box writes through the same `sec.select` as before (no change to what Apply / Update writes).
 - Done when: tests; the Apply/Update confirmation lists the same files as before; row.
 
-### Phase 4: the Kit update report in the new look
+### Phase 4: the Kit update report in the new look (BUILT 2026-10-14)
 - Files: `KitReportModal` (`src/kit/managed-ui.ts` ~760-785: the `details` / `summary` groups at 775 and 807 become `winFold`; counts line like the Kit files window; the left-alone rows keep their `i` mark), `styles.css`, tests.
 - Done when: no `<details>` left in that modal; tests; row.
 

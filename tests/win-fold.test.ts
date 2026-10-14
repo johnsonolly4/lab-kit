@@ -42,4 +42,10 @@ describe("Review update and Manage kit files folds", () => {
     expect(css).toMatch(/\.lab-kit-win-tick \{[^}]*align-self: center/);
     expect(css).toMatch(/\.lab-kit-win-tick input\[type=checkbox\] \{[^}]*--lk-radius-pill/);
   });
+  it("the Kit update report uses boxed folds like the Kit files window, and keeps its Close button on screen", () => {
+    const report = ui.slice(ui.indexOf("export class KitReportModal"), ui.indexOf("/** A change to Obsidian's"));
+    expect(report).toContain("winFold(");
+    expect(report).not.toContain("details");
+    expect(report).toContain('foot.addClass("lab-kit-sticky-foot")');
+  });
 });

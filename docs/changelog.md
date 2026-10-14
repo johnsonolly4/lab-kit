@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Kit update report in the boxed-fold look** (plugin; not seen in Obsidian): Created, Updated, Merged, Renamed, Already up to date and Left alone are boxes with a header row (chevron, title, count) like Review update…, instead of the browser's triangles; the counts line is the same muted line, and Close stays on screen.
 - **Review update…: one "To update" box at the top** (plugin; not seen in Obsidian): every file that needs action (Updated, New files, merges, conflicts, deleted by you) is listed in one open box at the top, across kits, each row tagged with its kit name when both kits are on; Tick all / Untick all moved there. The kit folds below keep the rest (changed by you, up to date, kept). The tick boxes are round and centred on their row. "Nothing is written until you press Update." is said once at the top. What Update writes is unchanged.
 - **Fold headers no longer clip** (plugin CSS; not seen in Obsidian): in Review update… and Manage kit files a long group title wraps beside its count instead of running under it, the chevron has room, the body has a gap under the header, and the first row no longer draws a line right under it.
 - **Review update… says Update, not Apply** (plugin; not seen in Obsidian): in the Kit files window the button reads **Update (N files)**, the intro line says "press Update", and the confirmation asks "Update these files?" with an **Update** button. The merge and moved-folders windows still say Apply: they don't update kit files.

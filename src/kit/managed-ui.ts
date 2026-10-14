@@ -799,7 +799,7 @@ export class KitReportModal extends Modal {
     contentEl.addClass("lab-kit-modal");
     const n = (o: ManagedResult["outcome"]): number => results.filter(r => r.outcome === o).length;
     winSummary(contentEl, reportSummary(results));
-    contentEl.createEl("p", { cls: "setting-item-description", text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("moved")} renamed · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
+    contentEl.createDiv({ cls: "setting-item-description", text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("moved")} renamed · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
     if (results.some(r => r.outcome === "merged" && this.scripts.has(r.id))) {
       contentEl.createEl("p", { text: "Merged scripts combine your edits with the kit's code. Please test them.", cls: "mod-warning" });
     }
@@ -808,12 +808,13 @@ export class KitReportModal extends Modal {
     for (const o of order) {
       const group = results.filter(r => r.outcome === o);
       if (!group.length) continue;
-      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
-      det.open = o === "created" || o === "updated" || o === "merged" || o === "moved" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
-      det.createEl("summary", { text: `${names[o]} (${group.length})` });
+      const open = o === "created" || o === "updated" || o === "merged" || o === "moved" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
+      const det = winFold(contentEl, { title: names[o], count: group.length, open }).body;
       for (const r of group) winRow(det, { state: outcomeWinState(o), title: r.dest, detail: r.backup ? `Old copy: ${r.backup}` : o === "skipped" ? r.action : undefined });
     }
-    winFoot(contentEl).createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
+    const foot = winFoot(contentEl);
+    foot.addClass("lab-kit-sticky-foot");   // Close stays on screen, as in the Kit files window
+    foot.createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
   }
 
   onClose(): void { this.contentEl.empty(); }
