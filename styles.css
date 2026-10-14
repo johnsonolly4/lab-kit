@@ -450,3 +450,15 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-entry-anchored .vt-entry { pointer-events: auto; }
 ::highlight(vt-quick-todo) { text-decoration: underline; text-decoration-color: var(--interactive-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; background-color: transparent; }
 .vt-entry-anchored .vt-entry { position: absolute; left: var(--vt-entry-x); top: var(--vt-entry-y); margin: 0; }
+
+/* ---- Folding groups in the Review update and Manage kit files windows (winFold in src/kit/window-look.ts): a box with a header row, as in Tidy up notes ---- */
+.lab-kit-fold { margin: var(--size-4-3) 0; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); overflow: hidden; }
+.lab-kit-fold-head { display: flex; align-items: center; gap: var(--size-4-2); width: 100%; height: auto; padding: var(--size-4-2) var(--size-4-3); border: none; border-radius: 0; box-shadow: none; text-align: left; background: var(--background-secondary); color: var(--text-normal); cursor: pointer; }
+.lab-kit-fold-head:hover { background: var(--background-modifier-hover); }
+.lab-kit-fold-chev { flex: none; width: 7px; height: 7px; margin: 0 var(--size-4-1); border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(-45deg); transition: transform 0.12s; }
+.lab-kit-fold.is-open > .lab-kit-fold-head .lab-kit-fold-chev { transform: rotate(45deg); }
+.lab-kit-fold-text { flex: 1; min-width: 0; }
+.lab-kit-fold-title { font-weight: var(--font-semibold); overflow-wrap: anywhere; }
+.lab-kit-fold-count { flex: none; margin-left: auto; padding: 0 var(--size-4-2); border-radius: var(--lk-radius-pill); background: var(--background-modifier-border); color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.lab-kit-fold-body { display: none; padding: 0 var(--size-4-3); }
+.lab-kit-fold.is-open > .lab-kit-fold-body { display: block; }

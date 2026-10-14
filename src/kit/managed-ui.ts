@@ -7,7 +7,7 @@ import {
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
-import { winFoot, winIntro, winRow, winSummary } from "./window-look";
+import { winFold, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
@@ -440,11 +440,11 @@ export class KitManaged {
 }
 
 const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
-  { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; resolve in Manage kit files)", open: true },
-  { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
-  { action: "missing", title: "Deleted by you (tick to recreate)", open: true },
-  { action: "create", title: "New files", open: true },
   { action: "fast-forward", title: "Updated (the old copy is backed up first)", open: true },
+  { action: "create", title: "New files", open: true },
+  { action: "merge", title: "Changed by you and by the kit, merges cleanly (tick to merge; your copy is backed up first)", open: true },
+  { action: "needs-merge", title: "Conflict: you and the kit changed the same lines (left untouched; resolve in Manage kit files)", open: true },
+  { action: "missing", title: "Deleted by you (tick to recreate)", open: true },
   { action: "user-modified", title: "Changed by you (left untouched)" },
   { action: "up-to-date", title: "Already up to date" },
   { action: "keep", title: "Kept: files you are meant to edit (your settings); the kit never updates them. If the kit has a newer version, Manage kit files offers to replace yours" },
@@ -461,6 +461,8 @@ class KitReviewSection {
   private noMerge = new Set<string>();
   /** New and updated files are ticked by default; ids here were unticked and are left as they are. */
   private skip = new Set<string>();
+  /** Which groups the user opened or closed, so ticking a box does not fold them back. */
+  private folds = new Map<string, boolean>();
 
   constructor(readonly managed: KitManaged, private root: HTMLElement, private changed: () => void) {}
 
@@ -489,9 +491,7 @@ class KitReviewSection {
     for (const g of GROUPS) {
       const group = this.items.filter(i => i.action === g.action);
       if (!group.length) continue;
-      const det = contentEl.createEl("details", { cls: "lab-kit-group is-label" });
-      det.open = !!g.open;
-      det.createEl("summary", { text: `${g.title} (${group.length})` });
+      const det = winFold(contentEl, { title: g.title, count: group.length, open: this.folds.get(g.action) ?? !!g.open, onToggle: open => this.folds.set(g.action, open) }).body;
       for (const it of group) {
         const note = [it.untracked && g.action === "user-modified" ? "Not installed by the kit, no original to compare with." : "",
           g.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : "",
@@ -512,9 +512,7 @@ class KitReviewSection {
     }
 
     if (this.retired.length) {
-      const det = contentEl.createEl("details", { cls: "lab-kit-group is-label" });
-      det.open = true;
-      det.createEl("summary", { text: `Retired by the kit (left in place, never deleted) (${this.retired.length})` });
+      const det = winFold(contentEl, { title: "Retired by the kit (left in place, never deleted)", count: this.retired.length, open: this.folds.get("retired") ?? true, onToggle: open => this.folds.set("retired", open) }).body;
       for (const r of this.retired) winRow(det, { state: "info", title: r.path, detail: r.exists ? "Left in place, not deleted." : "Already deleted." });
     }
     this.changed();
@@ -561,12 +559,8 @@ export class KitManagedModal extends Modal {
     this.sections = order.map(o => o.sec);
     for (const o of order) {
       if (!many) { contentEl.appendChild(holders[loaded.indexOf(o.sec)]); continue; }
-      const det = contentEl.createEl("details", { cls: "lab-kit-kit-section" });
-      det.open = o.open;
-      const sum = det.createEl("summary");
-      sum.createSpan({ cls: "lab-kit-install-name", text: o.name });
-      sum.createDiv({ cls: "setting-item-description", text: kitStatusLine({ bundled: o.sec.managed.version, installed: o.sec.managed.installedVersion, tracked: Object.keys(o.sec.managed.slot.managed?.files ?? {}).length, waiting: o.waiting }) });
-      det.appendChild(holders[loaded.indexOf(o.sec)]);
+      const fold = winFold(contentEl, { title: o.name, sub: kitStatusLine({ bundled: o.sec.managed.version, installed: o.sec.managed.installedVersion, tracked: Object.keys(o.sec.managed.slot.managed?.files ?? {}).length, waiting: o.waiting }), count: o.waiting ? `${o.waiting} waiting` : "up to date", open: o.open });
+      fold.body.appendChild(holders[loaded.indexOf(o.sec)]);
     }
     this.foot = contentEl.createDiv();
     for (const sec of this.sections) sec.render();
@@ -605,6 +599,8 @@ export const kitName = (k: KitManaged): string => (k.bundle.manifest.id === PLAN
 
 /** One kit's rows in the Manage window: a row per file with a status label and its own buttons, plus the CSS snippet switch. Drawn into `root`; every action redraws only this part. */
 class KitFilesSection {
+  /** Which folds the user opened or closed, kept across redraws. */
+  private folds = new Map<string, boolean>();
   private items: ManagedItem[] = [];
   private retired: RetiredItem[] = [];
 
@@ -646,13 +642,21 @@ class KitFilesSection {
     this.snippetSwitch(contentEl);
     winSummary(contentEl, reviewSummary(this.items));
     const ordered = sortByAttention(this.items, (id) => this.managed.stateOf(id));
+    // Two folds, what needs an update first and open; the rest folded away behind it (when nothing needs one, the rest is open)
+    const needs = (i: ManagedItem): boolean => ["create", "fast-forward", "missing", "merge", "needs-merge"].includes(i.action) || kitHasNewer(i, this.managed.stateOf(i.file.id));
+    const nNeeds = ordered.filter(needs).length;
+    const folds: Record<string, HTMLElement> = {};
+    const bodyFor = (key: "needs" | "rest"): HTMLElement => folds[key] ??= winFold(contentEl, key === "needs"
+      ? { title: "Needs an update", count: nNeeds, open: this.folds.get("needs") ?? true, onToggle: o => this.folds.set("needs", o) }
+      : { title: nNeeds ? "Up to date, kept and yours" : "All files", count: ordered.length - nNeeds, open: this.folds.get("rest") ?? !nNeeds, onToggle: o => this.folds.set("rest", o) }).body;
     for (const it of ordered) {
       const id = it.file.id;
+      const place = bodyFor(needs(it) ? "needs" : "rest");
       const status = statusOf(it, this.managed.stateOf(id));
       const note = it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it. Your copy is backed up first."
         : it.action === "needs-merge" && it.file.kind === "script" ? "Code: after merging, please test it." : "";
       const newer = kitHasNewer(it, this.managed.stateOf(id));
-      const { text } = winRow(contentEl, { state: newer ? "todo" : actionWinState(it.action), title: it.dest, detail: [it.file.desc, note].filter(Boolean).join(" · ") });
+      const { text } = winRow(place, { state: newer ? "todo" : actionWinState(it.action), title: it.dest, detail: [it.file.desc, note].filter(Boolean).join(" · ") });
       // A kept note with no record has nothing to compare: its mark says all there is. Every other row says whether it is up to date
       if (it.action !== "keep" || this.managed.stateOf(id)) text.querySelector(".lab-kit-win-title")?.createSpan({ cls: `lab-kit-badge is-${status.tone}`, text: status.label });
       const actions = text.createDiv({ cls: "lab-kit-win-actions" });
@@ -698,8 +702,9 @@ class KitFilesSection {
       if (file) this.openButton(actions, file);
       if (!actions.childElementCount) actions.remove();
     }
+    const retiredBody = this.retired.length ? winFold(contentEl, { title: "Retired by the kit", count: this.retired.length, open: this.folds.get("retired") ?? true, onToggle: o => this.folds.set("retired", o) }).body : contentEl;
     for (const r of this.retired) {
-      const { text } = winRow(contentEl, { state: "info", title: r.path, detail: "The kit no longer ships this file. Yours is left as it is; forget it to stop listing it here." });
+      const { text } = winRow(retiredBody, { state: "info", title: r.path, detail: "The kit no longer ships this file. Yours is left as it is; forget it to stop listing it here." });
       text.querySelector(".lab-kit-win-title")?.createSpan({ cls: "lab-kit-badge is-muted", text: "Retired" });
       const actions = text.createDiv({ cls: "lab-kit-win-actions" });
       actions.createEl("button", { text: "Forget" }).addEventListener("click", () => void this.run(() => this.managed.forget(r.id)));
@@ -733,16 +738,14 @@ export class KitFilesModal extends Modal {
     else {
       const plans = await Promise.all(this.kits.map(async k => ({ id: k.bundle.manifest.id, name: kitName(k), installed: k.installedVersion !== null, items: await k.plan(), kit: k })));
       for (const o of orderKits(plans)) {
-        const det = contentEl.createEl("details", { cls: "lab-kit-kit-section" });
-        det.open = o.open;
-        const sum = det.createEl("summary");
-        sum.createSpan({ cls: "lab-kit-install-name", text: o.name });
-        sum.createDiv({ cls: "setting-item-description", text: kitStatusLine({ bundled: o.kit.version, installed: o.kit.installedVersion, tracked: Object.keys(o.kit.slot.managed?.files ?? {}).length, waiting: o.waiting }) });
-        det.appendChild(holders[this.kits.indexOf(o.kit)]);
+        const fold = winFold(contentEl, { title: o.name, sub: kitStatusLine({ bundled: o.kit.version, installed: o.kit.installedVersion, tracked: Object.keys(o.kit.slot.managed?.files ?? {}).length, waiting: o.waiting }), count: o.waiting ? `${o.waiting} waiting` : "up to date", open: o.open });
+        fold.body.appendChild(holders[this.kits.indexOf(o.kit)]);
       }
       await Promise.all(sections.map(sec => sec.refresh()));
     }
-    winFoot(contentEl).createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
+    const foot = winFoot(contentEl);
+    foot.addClass("lab-kit-sticky-foot");   // Close stays on screen without scrolling to the end
+    foot.createEl("button", { text: "Close", cls: "mod-cta" }).addEventListener("click", () => this.close());
   }
 
   /** Set by a window that opened this one (Check setup), to redraw itself afterwards. */

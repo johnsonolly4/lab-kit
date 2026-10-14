@@ -20,6 +20,9 @@ Rules
 - Integrated plugins' own windows follow the user's theme; do not restyle them. Anything Lab Kit draws follows this table.
 - Before adding a size, ask: a fifth size needs the user's OK and a line here.
 
+## Groups that fold
+A group that opens and closes is a box with a header row: chevron, title, a count at the right (and a muted line under the title when it helps), as in the Tidy up notes window. Use `winFold` in `src/kit/window-look.ts`, not the browser's `<details>` triangles. Chosen by the user 2026-10-14 (option B of three renders). Done so far: Review update and Manage kit files. Still `<details>`: the update report, the install confirmation, the merge preview, Tidy up notes' "Notes" and "New page" lines (`docs/plans/design-standard-pass.md`).
+
 ## The window rule (dimming and place)
 A window the plugin opens either has something on screen to point at, or it does not.
 - Opened from highlighted text: just under the highlighted line, the line underlined, no dimmed background.

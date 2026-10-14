@@ -30,5 +30,9 @@ Colours, spacing, fonts; Obsidian's own windows and other plugins' screens (they
 - Files: every `ask` / `pick` still used as a plain box or Obsidian list: Add to shopping list, Quick capture, New project (name), New concept, New topic hub, New chemical, New rig, Add result, the snippet-copy name, the Name box, Sort inbox's folder pick, Move / Delete confirmations (list from `grep "await ask(\|await pick(" src`); decide per prompt: the entry window (a name plus chips), or just the same look (the `.lab-kit-ask` / `.lab-kit-pick-side` classes get the standard corners and spacing). Also the hub bar's Status select / Deadline box / countdown badge, Back to hub / Home, and the Open folder / Open deck buttons in the lab and meeting templates (Meta Bind buttons, styled in `vault-theme.css`).
 - Done when: a list of every prompt and its decision in BACKLOG; tests; not seen.
 
+### Phase 6: the other folds
+- Files: the remaining `<details>` in `src/kit/managed-ui.ts` (the update report, the install confirmation), `src/kit/merge-ui.ts` ("Preview of the file"), `src/kit/tidy-ui.ts` ("Notes", "New page"): move them to `winFold` (the Review update and Manage kit files windows already use it, 2026-10-14).
+- Done when: no `createEl("details"` is left in `src/kit/` (a test); not seen.
+
 ## Verification
 Beyond tests: side by side screenshots of home, a project hub with the plan map, the entry window with a dropdown open, and Check setup, before and after; the user looks (Claude cannot see Obsidian).
