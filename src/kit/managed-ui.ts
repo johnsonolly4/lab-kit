@@ -367,7 +367,7 @@ export class KitManaged {
   async applyReviewed(items: ManagedItem[], select: (it: ManagedItem) => boolean, report: (results: ManagedResult[]) => void): Promise<void> {
     const first = !this.slot.managed;
     await this.confirmThen({
-      title: first ? "Install the kit?" : "Apply these changes?", yes: "Apply", ask: first,
+      title: first ? "Install the kit?" : "Update these files?", yes: "Update", ask: first,
       items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [],
       run: async () => report(await this.apply(items, select)),
     });
@@ -472,7 +472,7 @@ class KitReviewSection {
     const contentEl = this.root;
     contentEl.empty();
     const inst = this.managed.installedVersion;
-    winIntro(contentEl, inst ? `Installed: v${inst}. Nothing is written until you press Apply.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Apply.");
+    winIntro(contentEl, inst ? `Installed: v${inst}. Nothing is written until you press Update.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Update.");
     winSummary(contentEl, reviewSummary(this.items));
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
     contentEl.createDiv({ cls: "setting-item-description",
@@ -573,7 +573,7 @@ export class KitManagedModal extends Modal {
     this.foot.addClass("lab-kit-sticky-foot");   // the wrapper sticks, not the row inside it (a sticky child cannot leave a wrapper that is only as tall as itself)
     const foot = winFoot(this.foot);
     foot.createEl("button", { text: "Close" }).addEventListener("click", () => this.close());
-    const apply = foot.createEl("button", { text: todo ? `Apply (${todo} files)` : "Apply", cls: "mod-cta" });
+    const apply = foot.createEl("button", { text: todo ? `Update (${todo} files)` : "Update", cls: "mod-cta" });
     apply.disabled = !todo && !any;
     apply.addEventListener("click", () => void this.apply());
   }

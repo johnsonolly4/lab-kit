@@ -8,7 +8,7 @@ The Review update… ("Kit files") window and the Kit update report look like on
 ## Out of scope
 Colours and corner sizes (`design-standard-pass.md`), the other `<details>` (install confirmation, merge preview, Tidy "Notes"; that plan's Phase 6), the to-do cursor (separate BACKLOG item), releasing, pushing.
 
-## Questions for the user before Phase 1 (ask once, multiple choice)
+## Questions for the user before Phase 1 (ANSWERED 2026-10-14: 1 = Kit files window only; 2 = shape A; Phase 1 BUILT 2026-10-14)
 1. "Apply" → "Update": only in the Kit files window (button, intro line, confirmation)? The merge window (`src/kit/merge-ui.ts:75,90`) and the moved-folders window (`moved-folders-ui.ts:74`) also say "Apply". Recommended: change the Kit files window and its confirmation only; leave the other two (they do not update kit files).
 2. Phase 3 shape: recommended **A**: one box "To update (N)" at the top of the window listing every file that needs an update, each row tagged with its kit name; the per-kit folds below hold only the rest (up to date, kept). Alternative B: keep per-kit folds but always open and sorted first. Mock up A in one render before building.
 
