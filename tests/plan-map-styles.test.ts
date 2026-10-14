@@ -50,6 +50,15 @@ describe("plan map styles", () => {
   });
 });
 
+describe("plain prompt corners", () => {
+  it("ask and pick add the lab-kit-prompt class and styles.css styles it", () => {
+    const ask = readFileSync("src/planning/ask.ts", "utf8");
+    expect((ask.match(/lab-kit-prompt/g) ?? []).length).toBeGreaterThanOrEqual(2);
+    expect(css).toMatch(/\.modal\.lab-kit-prompt \{[^}]*--lk-radius-card/);
+    expect(css).toMatch(/\.lab-kit-prompt \.prompt-input \{[^}]*--lk-radius-control/);
+  });
+});
+
 describe("theme snippet corners", () => {
   it("vault-theme.css has no bare border-radius number (variables with a fallback only)", () => {
     const bad = snippet.split("\n").filter(l => /border-radius:/.test(l) && !/var\(--(lk-radius-[a-z]+|vt-card-radius)/.test(l));
