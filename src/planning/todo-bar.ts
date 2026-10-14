@@ -1,6 +1,7 @@
 // The chip bar on a to-do note (`show: todo-bar`): what each chip shows, and the property each one writes. Pure: the block draws it (blocks.ts).
 import { linkTarget } from "./lists";
 import { parseDue } from "./due-words";
+import type { EntryField, EntryValues } from "./entry-fields";
 
 export type ChipKey = "project" | "meeting" | "due" | "priority" | "countdown";
 
@@ -56,4 +57,32 @@ export function readDueText(text: string, now: Date): { date: string | null } | 
   if (!t) return { date: null };
   const date = parseDue(t, now);
   return date ? { date } : null;
+}
+
+/** The fields of a to-do (the entry window and the in-note bar): `projects` and `series` are the names to pick from. */
+export function todoFields(projects: string[], series: string[]): EntryField[] {
+  const none = (label: string): { label: string; value: string } => ({ label, value: "" });
+  return [
+    { key: "project", name: "Project", icon: "folder", kind: "pick", prompt: "Project?", options: [none("(none)"), ...projects.map(p => ({ label: p, value: p }))] },
+    { key: "meeting", name: "Meeting", icon: "users", kind: "pick", prompt: "Raise at which meeting?", options: [none("(none)"), ...series.map(p => ({ label: p, value: p }))] },
+    { key: "due", name: "Due", icon: "calendar", kind: "date", prompt: "Due date? (fri, 15 nov, 15/11, in 3 days; empty clears)" },
+    { key: "priority", name: "Priority", icon: "flag", kind: "pick", prompt: "Priority? (1 = high, 3 = low)", options: [none("No priority"), ...PRIORITY_LABELS.map((label, i) => ({ label, value: i + 1 }))] },
+    { key: "countdown", name: "Countdown", icon: "hourglass", kind: "toggle", prompt: "", showWhen: "due" },
+  ];
+}
+
+/** A to-do's properties as entry values (what the in-note bar starts from). */
+export function todoValues(fm: Record<string, unknown>): EntryValues {
+  const chips = todoChips(fm), at = (k: string): string => chips.find(c => c.key === k)?.value ?? "";
+  const p = Number(fm.priority);
+  return { project: at("project"), meeting: at("meeting"), due: at("due"), priority: p >= 1 && p <= 3 ? p : "", countdown: fm.countdown === true };
+}
+
+/** Writes one entry value into the frontmatter object. */
+export function applyTodoValue(fm: Record<string, unknown>, key: string, value: string | number | boolean): void {
+  if (key === "project") setProject(fm, String(value) || null);
+  else if (key === "meeting") setMeeting(fm, String(value) || null);
+  else if (key === "due") setDue(fm, String(value) || null);
+  else if (key === "priority") setPriority(fm, value === "" ? null : (Number(value) as 1 | 2 | 3));
+  else if (key === "countdown") setCountdown(fm, value === true);
 }

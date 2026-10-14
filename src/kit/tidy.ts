@@ -227,6 +227,9 @@ const BUTTON_COMMANDS: Record<string, string> = {
 /** The block a project note starts with: a link to its project's hub (the New project note template writes the same). */
 const BACK_TO_PROJECT = "```vault-card\nshow: back-to-project\n```";
 
+/** The chip bar a to-do starts with (the To-do template writes the same). */
+const TODO_BAR = "```vault-card\nshow: todo-bar\n```";
+
 export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   const groups: TidyGroup[] = [];
   const skipped: TidyReported = { id: "left-alone", title: "Left as they are", detail: "A rule matched, but changing the note would mean guessing.", items: [] };
@@ -396,6 +399,14 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       put(n.path, full.join("\n"));
     }
     if (g.changes.length) groups.push(g);
+
+    // The chip bar at the top of each to-do (show: todo-bar): opt-in, because it touches every to-do
+    const bar: TidyGroup = { id: "todo-bar", title: "To-dos: add the chip bar", detail: "Every to-do (kind: todo) gets the bar of chips (project, meeting, due, priority) at the top of the page, like the To-do template writes now. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes.filter(x => inFolder(x.path, mt.todos) && kindOf(x.path) === "todo")) {
+      const body = split(effective.get(n.path) ?? "")?.body;
+      if (body !== undefined && !body.includes("show: todo-bar")) bar.changes.push({ path: n.path, before: body, after: `\n\n${TODO_BAR}\n${body.replace(/^\n+/, "\n")}`, body: true });
+    }
+    if (bar.changes.length) groups.push(bar);
   }
 
   // Hubs: index / hub notes without `kind`

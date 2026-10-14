@@ -11,8 +11,9 @@ import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
-import { ask, pick } from "./ask";
-import { PRIORITY_LABELS, readDueText, setCountdown, setDue, setMeeting, setPriority, setProject, todoChips, type Chip } from "./todo-bar";
+import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
+import { editEntryField } from "./entry-window";
+import { applyTodoValue, todoFields, todoValues } from "./todo-bar";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -475,48 +476,31 @@ class BlockView extends MarkdownRenderChild {
     if (!file) return;
     const fm = this.owner.rec(file).fm;
     if (fm.kind !== "todo") { box.createDiv({ cls: "vt-muted", text: "todo-bar belongs on a to-do note." }); return; }
+    const fields = this.todoEntryFields(), values = todoValues(fm);
     const bar = box.createDiv({ cls: "vt-todo-bar" });
-    const icons: Record<Chip["key"], string> = { project: "folder", meeting: "users", due: "calendar", priority: "flag", countdown: "hourglass" };
-    for (const chip of todoChips(fm)) {
-      const text = chip.key === "countdown" ? (chip.value ? "Countdown on" : "Countdown off") : chip.value || `+ ${chip.name}`;
-      const btn = bar.createEl("button", { cls: `vt-todo-chip ${chip.value ? "is-set" : "is-empty"}`, attr: { "aria-label": chip.name, title: chip.name } });
-      if (chip.value || chip.key === "countdown") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), icons[chip.key]);
-      btn.createSpan({ text });
+    for (const f of visibleFields(fields, values)) {
+      const view = chipView(f, values[f.key]);
+      const btn = bar.createEl("button", { cls: `vt-todo-chip ${view.set ? "is-set" : "is-empty"}`, attr: { "aria-label": f.name, title: f.name } });
+      if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
+      btn.createSpan({ text: view.text });
       for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
-      btn.addEventListener("click", () => { void this.editChip(file, chip, fm); });
+      btn.addEventListener("click", () => { void this.editChip(file, f, values[f.key]); });
     }
   }
 
-  /** Asks for the value of one chip and writes it; Esc changes nothing. */
-  private async editChip(file: TFile, chip: Chip, fm: Record<string, unknown>): Promise<void> {
+  /** The to-do fields with the live lists of projects and meeting series. */
+  private todoEntryFields(): EntryField[] {
     const notes = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x));
     const named = (kind: string): string[] => notes.filter(n => n.fm.kind === kind).map(n => n.name).sort((a, b) => a.localeCompare(b));
-    let write: ((f: Record<string, unknown>) => void) | null = null;
-    if (chip.key === "project") {
-      const hubs = named("project"), got = await pick<string>(this.app, ["(none)", ...hubs], ["", ...hubs], "Project?", true);
-      if (got !== null) write = f => setProject(f, got || null);
-    } else if (chip.key === "meeting") {
-      const series = named("meeting-series"), got = await pick<string>(this.app, ["(none)", ...series], ["", ...series], "Raise at which meeting?", true);
-      if (got !== null) write = f => setMeeting(f, got || null);
-    } else if (chip.key === "priority") {
-      const got = await pick<number | "">(this.app, ["No priority", ...PRIORITY_LABELS], ["", 1, 2, 3], "Priority? (1 = high, 3 = low)", true);
-      if (got !== null) write = f => setPriority(f, got === "" ? null : (got as 1 | 2 | 3));
-    } else if (chip.key === "countdown") {
-      write = f => setCountdown(f, fm.countdown !== true);
-    } else {
-      let prompt = "Due date? (fri, 15 nov, 15/11, in 3 days; empty clears)";
-      for (;;) {
-        const text = await ask(this.app, prompt, chip.value);
-        if (text === null) return;
-        const read = readDueText(text, new Date());
-        if (read) { write = f => setDue(f, read.date); break; }
-        prompt = `"${text}" is not a date. Try fri, 15 nov, 15/11, in 3 days or YYYY-MM-DD (empty clears)`;
-      }
-    }
-    if (!write) return;
-    const apply = write;
-    await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { apply(f); })
-      .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${chip.name.toLowerCase()}.`); });
+    return todoFields(named("project"), named("meeting-series"));
+  }
+
+  /** Asks for the value of one chip and writes it; Esc changes nothing. */
+  private async editChip(file: TFile, field: EntryField, current: EntryValue | undefined): Promise<void> {
+    const got = await editEntryField(this.app, field, current);
+    if (got === null) return;
+    await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyTodoValue(f, field.key, got); })
+      .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });
   }
 
   /** A drop-down for a project's Status (no label), written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */

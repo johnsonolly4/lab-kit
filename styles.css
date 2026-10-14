@@ -419,3 +419,10 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-todo-chip.is-set { border-color: var(--interactive-accent); color: var(--text-accent); }
 .vt-todo-chip-icon { display: inline-flex; }
 .vt-todo-chip-icon .svg-icon { width: 14px; height: 14px; }
+
+/* ---- Entry window (New to-do and the other New … flows): a title box with the chips under it ---- */
+.vt-entry { width: min(560px, 92vw); }
+.vt-entry-heading { margin: 0 0 8px; }
+.vt-entry-title { width: 100%; font-size: var(--font-ui-large, 1.1em); margin: 0 0 10px; }
+.vt-entry-chips { margin: 0 0 8px; }
+.vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }

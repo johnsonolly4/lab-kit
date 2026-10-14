@@ -69,6 +69,14 @@ describe("due words: the script and the plugin's copy agree", () => {
 
 describe("To-do template", () => {
   const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+  it("asks nothing when the plugin's entry window handed the values over (window.vtTodo), and writes the chip bar block", () => {
+    expect(tpl).toContain("const preset = window.vtTodo;");
+    expect(tpl).toContain("preset ? preset.text : await tp.user.vtAsk");
+    expect(tpl).toContain("if (!project && !preset) {");
+    expect(tpl).toContain("while (!preset) {");
+    expect(tpl).toContain("const pr = preset ? preset.priority : await");
+    expect(tpl).toMatch(/\n---\n\n```vault-card\nshow: todo-bar\n```\n/);
+  });
   it("asks with the words and uses parseDue, falling back to YYYY-MM-DD when the script is old", () => {
     expect(tpl).toContain("tp.user.vtAsk.parseDue");
     expect(tpl).toContain("today, tomorrow, fri, next mon");
@@ -83,7 +91,7 @@ describe("To-do template", () => {
   it("asks Comes after? only for a project with open to-dos (Esc = nothing) and writes after only when picked", () => {
     expect(tpl).toContain('["(nothing)", ...open], ["", ...open]');
     expect(tpl).toContain("Comes after? (optional: pick (nothing) to skip)");
-    expect(tpl).toContain("if (project) {");
+    expect(tpl).toContain("if (project && !preset) {");
     expect(tpl).toContain("if (open.length) {");
     expect(tpl).toContain("after = before || \"\";");
     expect(tpl).toMatch(/^priority: <% priority %>\n<% after \? `after: "\[\[\$\{after\}\]\]"\\n` : "" -%>\n/m);

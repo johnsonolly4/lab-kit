@@ -138,7 +138,7 @@ Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue 
 > Meta Bind buttons can't be generated per project, so Lab Kit draws the cards (a `vault-projects` block, styled by `vault-theme.css`). Their buttons call Lab Kit's New project note and New to-do. With a `deadline` and the countdown on, a card shows the days left.
 
 ### To-do (`00 Planning/To-dos`)
-Created with the **New to-do** button or command (`Alt+T`; template `Extras/Templates/To-do.md`), or **New** in a column on the board. A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).
+Created with the **New to-do** button or command (`Alt+T`): an entry window (title box, chips for Project, Meeting, Due, Priority, Countdown; Enter creates), then the template `Extras/Templates/To-do.md` makes the note from what was set (it writes a `todo-bar` block, the chip bar, under the properties; Tidy up notes can add it to old to-dos). **New** in a column on the board still asks the questions one by one. A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).
 
 | Property | Values | Set by |
 |---|---|---|

@@ -10,6 +10,9 @@ import { nodeModule } from "../node";
 import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
+import type { EntryValues } from "./entry-fields";
+import { openEntry } from "./entry-window";
+import { todoFields as todoEntryFields } from "./todo-bar";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
@@ -30,7 +33,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtPresetProject?: string; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+interface Handoff { vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; countdown: boolean }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -90,11 +93,28 @@ export class PlanningCommands {
     new Notice(`${name} failed. See the developer console for details.`);
   }
 
-  /** New to-do; `project` (a project hub's name) is filled in without asking: for project cards. */
-  async newTodo(project?: string): Promise<void> {
-    if (project) handoff().vtPresetProject = project;
+  /** New to-do: the entry window (title, then chips for project, meeting, due, priority and countdown; Enter creates), then the To-do template makes the note from what was set. `project` (a project hub's name) is already set in the window: for project cards and from inside a project. */
+  async newTodo(project?: string, initial: { title?: string; values?: EntryValues } = {}): Promise<void> {
+    const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
+    const inside = project ?? this.hubOfActiveNote();
+    const answer = await openEntry(this.app, "New to-do", todoEntryFields(named("project"), named("meeting-series")), { title: initial.title, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
+    if (!answer) return;
+    const v = answer.values;
+    handoff().vtTodo = { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", countdown: v.countdown === true };
     try { await this.fromTemplate(TPL.todo, this.folders.planning, todoFolder(this.folders), false); }   // not opened, as the old button
-    finally { delete handoff().vtPresetProject; }   // the template deletes it when it runs; also gone when it didn't or failed
+    finally { delete handoff().vtTodo; }   // the template deletes it when it runs; also gone when it didn't or failed
+  }
+
+  /** The project hub the open note is, or is inside (as the To-do template works it out), else "". */
+  private hubOfActiveNote(): string {
+    const here = this.app.workspace.getActiveFile();
+    if (!here) return "";
+    const isHub = (f: TFile | null | undefined): boolean => !!f && this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project";
+    if (isHub(here)) return here.basename;
+    const root = this.folders.projects;
+    if (!here.path.startsWith(root + "/") || here.parent?.path === root) return "";
+    const top = here.path.slice(root.length + 1).split("/")[0], hub = this.app.vault.getFileByPath(`${root}/${top}/${top}.md`);
+    return hub && isHub(hub) ? hub.basename : "";
   }
 
   /** The meeting series hubs (`kind: meeting-series`) in the meetings folder, by name; a hub with a wrong field is left out (Check setup names it). */

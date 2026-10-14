@@ -60,5 +60,9 @@ cssclasses:
   - vt
 ---
 
+\`\`\`vault-card
+show: todo-bar
+\`\`\`
+
 `;
 }
