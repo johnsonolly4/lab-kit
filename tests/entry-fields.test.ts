@@ -7,9 +7,13 @@ const fields = todoFields(["Alpha", "Beta"], ["Group meeting"]);
 const keys = (v: Record<string, string | number | boolean>) => visibleFields(fields, v).map(f => f.key);
 
 describe("entry fields", () => {
-  it("Countdown shows only once Due has a value", () => {
+  it("the to-do fields are Project, Meeting, Due and Priority", () => {
     expect(keys({})).toEqual(["project", "meeting", "due", "priority"]);
-    expect(keys({ due: "2026-11-15" })).toEqual(["project", "meeting", "due", "priority", "countdown"]);
+  });
+  it("a field with showWhen is visible only once the field it names has a value", () => {
+    const extra = [...fields, { key: "flag", name: "Flag", icon: "flag", kind: "toggle" as const, prompt: "", showWhen: "due" }];
+    expect(visibleFields(extra, {}).map(f => f.key)).not.toContain("flag");
+    expect(visibleFields(extra, { due: "2026-11-15" }).map(f => f.key)).toContain("flag");
   });
   it("chips: empty ones say + name, set ones their label, the toggle on / off", () => {
     const f = (k: string) => fields.find(x => x.key === k)!;
@@ -18,22 +22,22 @@ describe("entry fields", () => {
     expect(chipView(f("priority"), 1)).toEqual({ text: "1 high", set: true });
     expect(chipView(f("priority"), "")).toEqual({ text: "+ Priority", set: false });
     expect(chipView(f("due"), "2026-11-15")).toEqual({ text: "2026-11-15", set: true });
-    expect(chipView(f("countdown"), true)).toEqual({ text: "Countdown on", set: true });
-    expect(chipView(f("countdown"), undefined)).toEqual({ text: "Countdown off", set: false });
+    expect(chipView({ key: "t", name: "Countdown", icon: "x", kind: "toggle", prompt: "" }, true)).toEqual({ text: "Countdown on", set: true });
   });
-  it("clearing Due clears Countdown with it; the result keeps only visible, set values", () => {
-    let v = setEntryValue(fields, {}, "due", "2026-11-15");
-    v = setEntryValue(fields, v, "countdown", true);
-    v = setEntryValue(fields, v, "project", "Alpha");
-    expect(entryResult(fields, v)).toEqual({ project: "Alpha", due: "2026-11-15", countdown: true });
-    v = setEntryValue(fields, v, "due", "");
-    expect(v.countdown).toBeUndefined();
-    expect(entryResult(fields, v)).toEqual({ project: "Alpha" });
+  it("clearing a field clears the ones that need it; the result keeps only visible, set values", () => {
+    const extra = [...fields, { key: "flag", name: "Flag", icon: "flag", kind: "toggle" as const, prompt: "", showWhen: "due" }];
+    let v = setEntryValue(extra, {}, "due", "2026-11-15");
+    v = setEntryValue(extra, v, "flag", true);
+    v = setEntryValue(extra, v, "project", "Alpha");
+    expect(entryResult(extra, v)).toEqual({ project: "Alpha", due: "2026-11-15", flag: true });
+    v = setEntryValue(extra, v, "due", "");
+    expect(v.flag).toBeUndefined();
+    expect(entryResult(extra, v)).toEqual({ project: "Alpha" });
     expect(entryResult(fields, {})).toEqual({});
   });
   it("a to-do's properties as values and back", () => {
-    const fm = { project: "[[Alpha]]", meeting: false, due: "2026-11-15", priority: 2, countdown: true };
-    expect(todoValues(fm)).toEqual({ project: "Alpha", meeting: "", due: "2026-11-15", priority: 2, countdown: true });
+    const fm = { project: "[[Alpha]]", meeting: false, due: "2026-11-15", priority: 2 };
+    expect(todoValues(fm)).toEqual({ project: "Alpha", meeting: "", due: "2026-11-15", priority: 2 });
     const out: Record<string, unknown> = {};
     applyTodoValue(out, "project", "Beta"); applyTodoValue(out, "priority", ""); applyTodoValue(out, "due", "2026-12-01");
     expect(out).toEqual({ project: "[[Beta]]", priority: null, due: "2026-12-01" });

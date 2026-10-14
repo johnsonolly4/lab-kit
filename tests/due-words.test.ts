@@ -72,7 +72,7 @@ describe("To-do template", () => {
   it("asks nothing when the plugin's entry window handed the values over (window.vtTodo), and writes the chip bar block", () => {
     expect(tpl).toContain("let preset = window.vtTodo;");
     expect(tpl).toContain("window.vtEntryTodo(found ? day : undefined)");
-    expect(tpl).toContain("<% tp.file.cursor() %>");
+    expect(tpl).not.toContain("tp.file.cursor");   // Templater leaves it as visible text in a note that is not opened
     expect(tpl).toContain("preset ? preset.text : await tp.user.vtAsk");
     expect(tpl).toContain("if (!project && !preset) {");
     expect(tpl).toContain("while (!preset) {");

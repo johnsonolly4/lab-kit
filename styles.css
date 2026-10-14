@@ -437,3 +437,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-pop-empty, .vt-pop-hint { padding: 4px 10px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
 .vt-pop-hint.is-bad { color: var(--text-error); }
 .vt-pop-date { width: 100%; margin-top: 4px; }
+
+/* The window opened from highlighted text: just under the highlighted line (the plain command keeps it in the middle) */
+.vt-entry-anchored.modal-container { align-items: flex-start; justify-content: flex-start; }
+.vt-entry-anchored .vt-entry { position: absolute; left: var(--vt-entry-x); top: var(--vt-entry-y); margin: 0; }

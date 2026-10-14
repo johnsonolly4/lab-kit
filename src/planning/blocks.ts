@@ -13,7 +13,7 @@ import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
-import { applyTodoValue, todoFields, todoValues } from "./todo-bar";
+import { applyTodoValue, projectNames, todoFields, todoValues } from "./todo-bar";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -493,7 +493,7 @@ class BlockView extends MarkdownRenderChild {
   private todoEntryFields(): EntryField[] {
     const notes = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x));
     const named = (kind: string): string[] => notes.filter(n => n.fm.kind === kind).map(n => n.name).sort((a, b) => a.localeCompare(b));
-    return todoFields(named("project"), named("meeting-series"));
+    return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"));
   }
 
   /** Asks for the value of one chip and writes it; Esc changes nothing. */

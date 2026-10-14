@@ -79,12 +79,8 @@ while (!preset) {
   if (words) { due = words; break; }
   prompt = `"${d}" is not a date. Use YYYY-MM-DD, or today, tomorrow, fri, next mon (Enter = none, Esc to cancel)`;
 }
-let countdown = preset ? (!!due && preset.countdown === true) : false;
-if (due && !preset) {
-  const c = await tp.system.suggester(["No countdown", "Show a countdown on the board"], [false, true], false, "Countdown on the board card? (Esc to cancel)");
-  if (c === null || c === undefined) { await trashIfBlank(); throw new Error("Cancelled - no countdown choice"); }
-  countdown = c;
-}
+// The countdown badge on the board is one setting for all to-dos (Settings > Lab Kit > Due-date countdown); `countdown` stays false here (mode "marked" reads a `countdown: true` typed by hand).
+const countdown = false;
 // Priority: optional, a number property (1 = highest). Esc cancels.
 try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") { await app.metadataTypeManager?.setType?.("priority", "number"); } } catch (e) { /* older Obsidian: priority stays text */ }
 const pr = preset ? preset.priority : await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
@@ -116,4 +112,3 @@ cssclasses:
 show: todo-bar
 ```
 
-<% tp.file.cursor() %>
