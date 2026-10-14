@@ -43,6 +43,15 @@ export async function insertBetween(app: App, history: PlanHistory, plan: Plan, 
 
 /** Asks which to-do comes after `from` (search, or type a new name) and writes it. With `before` (the to-do `from` → `before` is an arrow of) the chosen one goes between the two instead. Every link written and every new to-do goes in Undo / Redo (undoing a new to-do removes the note, if nobody has written in it since). */
 export async function addAfterFlow(env: AddAfterEnv, from: string, before?: string): Promise<void> {
+  const fromName = env.plan.rows.find(r => r.path === from)?.name ?? from;
+  const answer = await openEntry(env.app, "New to-do", entryFields(env), { requireTitle: true, alt: "Or pick an existing to-do…" });
+  if (!answer) return;
+  if (answer.alt) { await pickFlow(env, from, before); return; }
+  await createFrom(env, from, fromName, answer, before);
+}
+
+/** The search list: an existing to-do of the vault (moved here if it is in another project), or a typed name that makes a new one. */
+async function pickFlow(env: AddAfterEnv, from: string, before?: string): Promise<void> {
   const { app, history, hub } = env;
   const fromName = env.plan.rows.find(r => r.path === from)?.name ?? from;
   const offered = offeredTodos(env.todos, env.plan, hub.name, from);
@@ -73,9 +82,18 @@ export async function addAfterFlow(env: AddAfterEnv, from: string, before?: stri
 
 /** Makes a to-do in the project of this map, coming after `from`: the entry window (the name typed in the search is the title; the project is this map's, so no Project chip) sets its meeting, due date and priority. */
 async function createAfter(env: AddAfterEnv, from: string, fromName: string, typed: string, before?: string): Promise<void> {
-  const series = env.app.vault.getMarkdownFiles().filter(f => env.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
-  const answer = await openEntry(env.app, "New to-do", todoFields([], series).filter(f => f.key !== "project"), { title: typed, requireTitle: true });
+  const answer = await openEntry(env.app, "New to-do", entryFields(env), { title: typed, requireTitle: true });
   if (!answer) return;
+  await createFrom(env, from, fromName, answer, before);
+}
+
+/** The chips of the window: a to-do's, without Project (this map's project is the project). */
+function entryFields(env: AddAfterEnv): ReturnType<typeof todoFields> {
+  const series = env.app.vault.getMarkdownFiles().filter(f => env.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
+  return todoFields([], series).filter(f => f.key !== "project");
+}
+
+async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: { title: string; values: Record<string, unknown> }, before?: string): Promise<void> {
   const base = todoFileName(answer.title);
   if (!base) return;
   const v = answer.values;

@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Plan map: dropping on "+ add after this" (and "+ new here") opens the to-do window first** (plugin; not seen in Obsidian): the window with the title box and the Due / Priority / Meeting chips opens at once; Enter makes the to-do after the one you dragged from. A link under the chips, "Or pick an existing to-do…", opens the old search list for linking a to-do that already exists.
 - **Every fold in the kit windows is a boxed fold** (plugin; not seen in Obsidian): the install confirmation groups, the merge window's "Preview of the file" and Tidy up notes' "Notes" and "New page" lines have a header row (chevron, title, count) like the other windows, instead of the browser's triangles.
 - **Plain prompts use the same corners** (plugin; not seen in Obsidian): the name boxes (shopping list, topic hub, rename, new folder, result, snippet copy, chemical, rig) and the pick lists (topic, folder, where, project, delete) have the 14 px window corner, a 10 px text box and 6 px list rows.
 - **Slide picture of the plan: 10 px corners** (plugin; not seen in Obsidian): cards and tiles in the exported picture use the same corner as the plan map on screen (they were 8).

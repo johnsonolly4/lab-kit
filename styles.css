@@ -434,6 +434,8 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-entry-title.vt-hidden { display: none; }
 .vt-entry-chips { margin: 0 0 8px; }
 .vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.vt-entry-alt { align-self: flex-start; height: auto; padding: 0; border: none; box-shadow: none; background: transparent; color: var(--text-accent); font-size: var(--font-ui-smaller); cursor: pointer; }
+.vt-entry-alt:hover { text-decoration: underline; }
 .vt-entry-hint.is-bad { color: var(--text-error); }
 
 /* ---- Dropdown under a chip (entry window, to-do chip bar) ---- */

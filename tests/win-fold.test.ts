@@ -64,3 +64,13 @@ describe("no browser folds left in src/kit", () => {
     expect(bad).toEqual([]);
   });
 });
+
+describe("add after this opens the entry window first", () => {
+  it("addAfterFlow opens the entry window with a link to the search list", () => {
+    const src = readFileSync("src/planning/add-after.ts", "utf8");
+    const flow = src.slice(src.indexOf("export async function addAfterFlow"), src.indexOf("async function pickFlow"));
+    expect(flow).toContain("openEntry(");
+    expect(flow).toContain("alt:");
+    expect(flow).toContain("pickFlow(");
+  });
+});
