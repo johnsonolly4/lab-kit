@@ -53,5 +53,6 @@ describe("Review update and Manage kit files folds", () => {
     expect(css).toMatch(/\.lab-kit-modal \{ --lk-block-gap: var\(--size-4-3\);/);
     for (const sel of [".lab-kit-fold", ".lab-kit-win-bar", ".lab-kit-modal .lab-kit-sticky-foot"]) expect(css, sel).toMatch(new RegExp(`${sel.replace(/\./g, "\\.")} \\{[^}]*var\\(--lk-block-gap\\)`));
     expect(css).toMatch(/\.lab-kit-modal \.setting-item:first-child \{ padding-top: 0;/);
+    expect(css).toMatch(/\.lab-kit-modal \.setting-item \+ \.lab-kit-win-summary \{ margin-top: 0;/);
   });
 });

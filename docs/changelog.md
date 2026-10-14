@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Review update…: no repeated version, even gap in Manage** (plugin; not seen in Obsidian): the kit's version is shown once (in the fold's subtitle) instead of again as "Installed: v…"; in Manage kit files the gap under the CSS snippet row is the row's own padding, not that plus the summary's margin. The fold header's focus ring no longer shows as a line under it.
 - **Even spacing in the Kit files windows** (plugin CSS; not seen in Obsidian): the gap between folds, bars and the footer comes from one value, and a settings row such as **CSS snippet** no longer adds its own space above itself, so it lines up with the other blocks.
 - **Kit update report in the boxed-fold look** (plugin; not seen in Obsidian): Created, Updated, Merged, Renamed, Already up to date and Left alone are boxes with a header row (chevron, title, count) like Review update…, instead of the browser's triangles; the counts line is the same muted line, and Close stays on screen.
 - **Review update…: one "To update" box at the top** (plugin; not seen in Obsidian): every file that needs action (Updated, New files, merges, conflicts, deleted by you) is listed in one open box at the top, across kits, each row tagged with its kit name when both kits are on; Tick all / Untick all moved there. The kit folds below keep the rest (changed by you, up to date, kept). The tick boxes are round and centred on their row. "Nothing is written until you press Update." is said once at the top. What Update writes is unchanged.

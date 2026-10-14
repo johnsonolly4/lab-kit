@@ -483,7 +483,7 @@ class KitReviewSection {
     const contentEl = this.root;
     contentEl.empty();
     const inst = this.managed.installedVersion;
-    winIntro(contentEl, inst ? `Installed: v${inst}.` : "Nothing installed by the built-in kit yet.");
+    if (!inst) winIntro(contentEl, "Nothing installed by the built-in kit yet.");   // the version is in the fold's subtitle already
     winSummary(contentEl, reviewSummary(this.items));
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
     contentEl.createDiv({ cls: "setting-item-description",

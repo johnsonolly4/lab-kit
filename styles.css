@@ -95,6 +95,7 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 .lab-kit-modal { --lk-block-gap: var(--size-4-3); max-height: 70vh; overflow-y: auto; }   /* the one gap between blocks (folds, bars, the footer) in the kit windows */
 .lab-kit-modal .setting-item { padding: var(--size-4-2) 0; }   /* a Setting row (CSS snippet) takes its gap from the block around it, not its own */
 .lab-kit-modal .setting-item:first-child { padding-top: 0; border-top: none; }
+.lab-kit-modal .setting-item + .lab-kit-win-summary { margin-top: 0; }   /* the row's own padding is the gap */
 /* Review window: the Apply row stays in view while the list scrolls */
 .lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; z-index: 2; margin-top: var(--lk-block-gap); padding-bottom: var(--size-4-2); background: var(--background-primary); }
 .lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
