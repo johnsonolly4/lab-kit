@@ -485,7 +485,7 @@ class BlockView extends MarkdownRenderChild {
       if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
       btn.createSpan({ text: view.text });
       for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
-      btn.addEventListener("click", () => { void this.editChip(file, f, values[f.key]); });
+      btn.addEventListener("click", () => { void this.editChip(file, f, values[f.key], btn); });
     }
   }
 
@@ -497,10 +497,10 @@ class BlockView extends MarkdownRenderChild {
   }
 
   /** Asks for the value of one chip and writes it; Esc changes nothing. */
-  private async editChip(file: TFile, field: EntryField, current: EntryValue | undefined): Promise<void> {
+  private async editChip(file: TFile, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<void> {
     if (this.chipBusy) return;   // one list at a time: a click on another chip meanwhile does nothing
     this.chipBusy = true;
-    const got = await editEntryField(this.app, field, current, false).finally(() => { this.chipBusy = false; });
+    const got = await editEntryField(this.app, field, current, anchor).finally(() => { this.chipBusy = false; });
     if (got === null) return;
     await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyTodoValue(f, field.key, got); })
       .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });

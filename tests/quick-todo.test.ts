@@ -7,24 +7,42 @@ const projects = ["Polymer A", "Polymer", "Flow reactor", "Thesis"];
 const q = (t: string) => parseQuickTodo(t, projects, NOW);
 
 describe("parseQuickTodo", () => {
+  it("the user's two examples (2026-10-14): spaces after the marks, a word priority, a leading list dash", () => {
+    const pr = ["plan map example", "feature test round 2"];
+    const now = new Date(2026, 9, 14);   // Wed
+    expect(parseQuickTodo("- Testing how the planning kit works + plan map example ! high % next week", pr, now))
+      .toEqual({ title: "Testing how the planning kit works", project: "plan map example", priority: 1, due: "2026-10-19" });
+    expect(parseQuickTodo("Testing how the project selection works +feature test round 2 !1 %fri", pr, now))
+      .toEqual({ title: "Testing how the project selection works", project: "feature test round 2", priority: 1, due: "2026-10-16" });
+  });
+  it("@ is not a mark (ZotLit uses it for citations)", () => {
+    expect(q("cite @Thesis")).toEqual({ title: "cite @Thesis" });
+  });
+  it("priority words, any case; a list marker is dropped, a + bullet is not one", () => {
+    expect(q("a !Medium")).toEqual({ title: "a", priority: 2 });
+    expect(q("a !low.")).toEqual({ title: "a", priority: 3 });
+    expect(q("- [ ] a !high")).toEqual({ title: "a", priority: 1 });
+    expect(q("1. a")).toEqual({ title: "a" });
+    expect(q("+ Thesis a")).toEqual({ title: "a", project: "Thesis" });
+  });
   it("text without marks is just a title", () => {
     expect(q("  Book   NMR time ")).toEqual({ title: "Book NMR time" });
   });
-  it("@project, %date and !priority anywhere in the text", () => {
-    expect(q("Book NMR time @Thesis %fri !1")).toEqual({ title: "Book NMR time", project: "Thesis", due: "2026-10-09", priority: 1 });
-    expect(q("%fri @Thesis !2 Book NMR time")).toEqual({ title: "Book NMR time", project: "Thesis", due: "2026-10-09", priority: 2 });
-    expect(q("Book @Thesis NMR time")).toEqual({ title: "Book NMR time", project: "Thesis" });
+  it("+project, %date and !priority anywhere in the text", () => {
+    expect(q("Book NMR time +Thesis %fri !1")).toEqual({ title: "Book NMR time", project: "Thesis", due: "2026-10-09", priority: 1 });
+    expect(q("%fri +Thesis !2 Book NMR time")).toEqual({ title: "Book NMR time", project: "Thesis", due: "2026-10-09", priority: 2 });
+    expect(q("Book +Thesis NMR time")).toEqual({ title: "Book NMR time", project: "Thesis" });
   });
   it("a project name with spaces, longest name first, any case; quotes work too", () => {
-    expect(q("order solvent @flow reactor")).toEqual({ title: "order solvent", project: "Flow reactor" });
-    expect(q("order solvent @Polymer A today").project).toBe("Polymer A");
-    expect(q("order solvent @Polymer B").project).toBe("Polymer");   // "Polymer" matches, "B" stays
-    expect(q('x @"Flow reactor" y')).toEqual({ title: "x y", project: "Flow reactor" });
+    expect(q("order solvent +flow reactor")).toEqual({ title: "order solvent", project: "Flow reactor" });
+    expect(q("order solvent +Polymer A today").project).toBe("Polymer A");
+    expect(q("order solvent +Polymer B").project).toBe("Polymer");   // "Polymer" matches, "B" stays
+    expect(q('x +"Flow reactor" y')).toEqual({ title: "x y", project: "Flow reactor" });
   });
-  it("an unknown project, and an @ inside a word (an email), stay in the title", () => {
-    expect(q("ask @Nobody about it")).toEqual({ title: "ask @Nobody about it" });
-    expect(q("mail me@Thesis.org")).toEqual({ title: "mail me@Thesis.org" });
-    expect(q("a @Thesisx b").project).toBeUndefined();
+  it("an unknown project, and a plus inside a word, stay in the title", () => {
+    expect(q("ask +Nobody about it")).toEqual({ title: "ask +Nobody about it" });
+    expect(q("mail a+Thesis.org")).toEqual({ title: "mail a+Thesis.org" });
+    expect(q("a +Thesisx b").project).toBeUndefined();
   });
   it("dates after % take one to three words: the longest run that reads", () => {
     expect(q("call %15 nov about it")).toEqual({ title: "call about it", due: "2026-11-15" });
@@ -45,10 +63,10 @@ describe("parseQuickTodo", () => {
     expect(q("wow!1")).toEqual({ title: "wow!1" });
   });
   it("only the first mark of each kind counts; the next stays in the title", () => {
-    expect(q("a @Thesis @Polymer")).toEqual({ title: "a @Polymer", project: "Thesis" });
+    expect(q("a +Thesis +Polymer")).toEqual({ title: "a +Polymer", project: "Thesis" });
   });
   it("marks only: the title is empty (the caller decides)", () => {
-    expect(q("@Thesis !1").title).toBe("");
+    expect(q("+Thesis !1").title).toBe("");
   });
 });
 

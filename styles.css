@@ -426,3 +426,14 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-entry-title { width: 100%; font-size: var(--font-ui-large, 1.1em); margin: 0 0 10px; }
 .vt-entry-chips { margin: 0 0 8px; }
 .vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }
+
+/* ---- Dropdown under a chip (entry window, to-do chip bar) ---- */
+.vt-pop { position: fixed; left: var(--vt-pop-left, 0); top: var(--vt-pop-top, 0); z-index: 100; min-width: 220px; max-width: min(340px, 92vw); padding: 6px; border-radius: var(--radius-m, 8px); border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: var(--shadow-l); outline: none; }
+.vt-pop-search { width: 100%; margin: 0 0 4px; }
+.vt-pop-list { max-height: 260px; overflow-y: auto; }
+.vt-pop-row { padding: 5px 10px; border-radius: var(--radius-s, 6px); cursor: pointer; font-size: var(--font-ui-small); }
+.vt-pop-row.is-active { background: var(--background-modifier-hover); }
+.vt-pop-row.is-current { color: var(--text-accent); }
+.vt-pop-empty, .vt-pop-hint { padding: 4px 10px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.vt-pop-hint.is-bad { color: var(--text-error); }
+.vt-pop-date { width: 100%; margin-top: 4px; }

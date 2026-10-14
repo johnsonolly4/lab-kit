@@ -1,27 +1,15 @@
 // The entry window: a title box with a row of chips under it, so a new note is made with everything set at once. Enter creates, Esc cancels.
 // The fields and what they show are in entry-fields.ts (pure); the to-do's are in todo-bar.ts. The in-note chip bar uses `editEntryField` too.
 import { Modal, setIcon, type App } from "obsidian";
-import { ask, pick } from "./ask";
+import { openFieldPopover } from "./entry-popover";
 import { chipView, entryResult, setEntryValue, visibleFields, type EntryField, type EntryValue, type EntryValues } from "./entry-fields";
-import { readDueText } from "./todo-bar";
 
 export interface EntryAnswer { title: string; values: EntryValues }
 
-/** Asks for the value of one field; null when Esc was pressed (nothing changes). A toggle just flips. */
-export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined, side = true): Promise<EntryValue | null> {
+/** Asks for the value of one field in a dropdown under `anchor` (the chip); null when it was closed without a choice. A toggle just flips. */
+export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<EntryValue | null> {
   if (field.kind === "toggle") return current !== true;
-  if (field.kind === "pick") {
-    const options = field.options ?? [];
-    return pick<EntryValue>(app, options.map(o => o.label), options.map(o => o.value), field.prompt, side);
-  }
-  let prompt = field.prompt;
-  for (;;) {
-    const text = await ask(app, prompt, typeof current === "string" ? current : "");
-    if (text === null) return null;
-    const read = readDueText(text, new Date());
-    if (read) return read.date ?? "";
-    prompt = `"${text}" is not a date. Try fri, 15 nov, 15/11, in 3 days or YYYY-MM-DD (empty clears)`;
-  }
+  return openFieldPopover(app, anchor, field, current);
 }
 
 class EntryModal extends Modal {
@@ -58,15 +46,15 @@ class EntryModal extends Modal {
       const btn = this.chips.createEl("button", { cls: `vt-todo-chip ${view.set ? "is-set" : "is-empty"}`, attr: { "aria-label": f.name } });
       if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
       btn.createSpan({ text: view.text });
-      btn.addEventListener("click", () => { void this.edit(f); });
+      btn.addEventListener("click", () => { void this.edit(f, btn); });
     }
   }
 
-  private async edit(f: EntryField): Promise<void> {
+  private async edit(f: EntryField, anchor: HTMLElement): Promise<void> {
     if (this.busy) return;
     this.busy = true;
     try {
-      const got = await editEntryField(this.app, f, this.values[f.key], false);
+      const got = await editEntryField(this.app, f, this.values[f.key], anchor);
       if (got !== null) { this.values = setEntryValue(this.fields, this.values, f.key, got); this.drawChips(); }
     } finally { this.busy = false; }
     this.input.focus();
