@@ -27,4 +27,25 @@ describe("plan map styles", () => {
     expect(bare).toBeNull();
     expect(map).toMatch(/var\(--vt-card-border, var\(--background-modifier-border\)\)/);
   });
+
+  // Shape standard (docs/design-standard.md): corners use the --lk-radius-* variables, never a number.
+  // Each exception is an inline mark inside text or a grip corner, with the reason.
+  const RADIUS_EXCEPTIONS: Record<string, string> = {
+    ".cm-lab-kit-cell-": "3px: inline highlight of a calc table cell inside text (calc tables are audited in Phase 4)",
+    ".lab-hazard-chip": "3px: inline hazard mark inside text (hazard header, Phase 4)",
+    ".lab-hazard-row .lab-hazard-name": "3px: inline hazard name (hazard header, Phase 4)",
+    ".vt-map-sub-grip": "4px: 10 px wide sub-tile grip, an inner corner of its tile",
+  };
+
+  it("styles.css has no bare border-radius number outside the listed exceptions", () => {
+    const bad = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+      .filter(m => /border-radius:(?![^;]*--lk-radius)[^;]*\b[1-9]\d*(px|%)/.test(m[2]))
+      .map(m => m[1].replace(/\/\*[\s\S]*?\*\//g, "").trim())
+      .filter(sel => !Object.keys(RADIUS_EXCEPTIONS).some(k => sel.startsWith(k)));
+    expect(bad).toEqual([]);
+  });
+
+  it("styles.css does not use Obsidian's --radius-* for a Lab Kit corner", () => {
+    expect(css).not.toMatch(/border-radius:[^;}]*var\(--radius-/);
+  });
 });

@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **One set of corner sizes in the plugin's styles** (plugin CSS; not seen in Obsidian): the plan map's pop-up menu, cards, tiles, boxes, subtask list and small buttons, the Kit files / Tidy boxes and the slide preview now use the same 10 px corner (some were 8); badges and bars stay fully round; the small code previews use 6 px. Inline marks in calc tables and the hazard header are unchanged for now.
 - **Review update…: no repeated version, even gap in Manage** (plugin; not seen in Obsidian): the kit's version is shown once (in the fold's subtitle) instead of again as "Installed: v…"; in Manage kit files the gap under the CSS snippet row is the row's own padding, not that plus the summary's margin. The fold header's focus ring no longer shows as a line under it.
 - **Even spacing in the Kit files windows** (plugin CSS; not seen in Obsidian): the gap between folds, bars and the footer comes from one value, and a settings row such as **CSS snippet** no longer adds its own space above itself, so it lines up with the other blocks.
 - **Kit update report in the boxed-fold look** (plugin; not seen in Obsidian): Created, Updated, Merged, Renamed, Already up to date and Left alone are boxes with a header row (chevron, title, count) like Review update…, instead of the browser's triangles; the counts line is the same muted line, and Close stays on screen.
