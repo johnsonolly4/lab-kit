@@ -3,12 +3,12 @@
 _Agreed: 2026-10-14 (user, chat + survey). Written by `/phase-plan`. Each phase = one session, Sonnet (fully specified). Re-cut 2026-10-14: Phases 3-7 after the user asked for one entry window across the similar flows._
 
 ## Goal
-Making a to-do takes one box (the title). Project, meeting, due, priority and countdown are set afterwards by clicking chips in a bar at the top of the to-do note, instead of typing frontmatter or answering seven prompts. Highlighted text plus the New to-do hotkey makes a to-do from the selection, reading `@project`, `%date` and `!priority` marks in it.
+Making a to-do takes one box (the title). Project, meeting, due, priority and countdown are set afterwards by clicking chips in a bar at the top of the to-do note, instead of typing frontmatter or answering seven prompts. Highlighted text plus the New to-do hotkey makes a to-do from the selection, reading `+project`, `%date` and `!priority` marks in it (`@` was dropped: ZotLit uses it).
 
 ## Decision taken
 - A plugin-drawn `vault-card` block, `show: todo-bar` (like `hub-bar`, `src/planning/blocks.ts:442`), not Meta Bind inputs: the lists of projects, meetings and open to-dos are live, it works on phone, and no new dependency. Rejected: Meta Bind inputs in the template (option lists go stale), and "Just the title / Set details" skip (no way to set things afterwards).
 - Quick capture is part of this plan (user): it reuses the same setters and parser.
-- Marks (to confirm in Phase 1, from the user's own examples): `@` project, `%` date, `!` priority 1-3. Dates use the due words. Anything unparsed stays in the title.
+- Marks (changed after the user's first try, 2026-10-14): `+` project (not `@`: ZotLit uses it for citations), `%` date, `!` priority (1-3, high, medium, low); one space after a mark is fine. Dates use the due words. Anything unparsed stays in the title.
 - Due words, today (`vtAsk.js:43-72`): `YYYY-MM-DD`, `today`, `tomorrow`, a weekday, `next <weekday>`. NOT today: months, `15/11`, `in 3 days`, `next week`. Added in Phase 1 (user asked 2026-10-14), day before month: `15 nov`, `nov 15`, `15th november`, `15/11`, `15/11/2026`, `in 3 days`, `in 2 weeks`, `next week` (Monday), `next month` (the 1st). Numbers are day first (`3/11` = 3 November; confirmed by the user 2026-10-14). A day-month with no year is the next one that is today or later. Both the TS and the template's JS get them (one table in the tests).
 - Project: inside a project (its hub, or any note in its folder) the to-do gets that project automatically, as today; outside one nothing is asked and the Project chip shows "+ Project" (user, 2026-10-14).
 
