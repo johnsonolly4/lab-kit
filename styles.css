@@ -92,6 +92,8 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 }
 
 /* Lab Kit windows (review, manage, merge, what's new) */
+/* Lab Kit windows (Check setup, hotkeys, Tidy, Manage / Review update / report / install, merge) use the card corner: the .modal is the parent of the content element that carries our class */
+.modal:has(> .modal-content.lab-kit-modal, > .modal-content.lab-kit-win, > .modal-content.lab-kit-tidy) { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
 .lab-kit-modal { --lk-block-gap: var(--size-4-3); max-height: 70vh; overflow-y: auto; }   /* the one gap between blocks (folds, bars, the footer) in the kit windows */
 .lab-kit-modal .setting-item { padding: var(--size-4-2) 0; }   /* a Setting row (CSS snippet) takes its gap from the block around it, not its own */
 .lab-kit-modal .setting-item:first-child { padding-top: 0; border-top: none; }

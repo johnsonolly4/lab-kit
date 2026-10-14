@@ -33,4 +33,5 @@ Code: `buttonAnchor` and `selectionAnchor` in `src/planning/entry-window.ts`; `o
 ## Where it applies today (checked 2026-10-14, read from the CSS, not measured on screen)
 - Already on the standard: home / hub cards (14), hub buttons (10), badges (pill), plan map cards, tiles and the new-to-do box (10), the entry window, its chips and its dropdown (built on it 2026-10-14).
 - Done in `styles.css` (Phase 1, 2026-10-14, not seen): every Lab Kit corner uses the variables, except inline marks in calc table cells (3 px), the hazard chips (3 px) and the sub-tile grip (4 px); `tests/plan-map-styles.test.ts` lists them with the reason and fails on a new bare number.
-- Still to move in the pass: windows 12 to 14 (Check setup, Tidy, Manage files); the theme snippet's 10 px / 8 px literals. See `docs/plans/design-standard-pass.md`.
+- Windows at 14 px (Phase 2, 2026-10-14, not seen): one `.modal:has(...)` rule in `styles.css` picks every window whose content element carries `lab-kit-modal`, `lab-kit-win` or `lab-kit-tidy`; a new Lab Kit window must carry one of them. Moved folders and Clear backups carry none yet.
+- Still to move in the pass: the theme snippet's 10 px / 8 px literals. See `docs/plans/design-standard-pass.md`.

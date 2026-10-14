@@ -49,3 +49,11 @@ describe("plan map styles", () => {
     expect(css).not.toMatch(/border-radius:[^;}]*var\(--radius-/);
   });
 });
+
+describe("lab-kit windows corner", () => {
+  it("every contentEl class the kit windows use is covered by the card-corner rule", () => {
+    const rule = css.split("\n").find(l => l.includes("--modal-radius: var(--lk-radius-card)") && l.startsWith(".modal:has("))!;
+    expect(rule).toBeTruthy();
+    for (const c of ["lab-kit-modal", "lab-kit-win", "lab-kit-tidy"]) expect(rule).toContain(`.modal-content.${c}`);
+  });
+});
