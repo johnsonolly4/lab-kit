@@ -92,9 +92,11 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 }
 
 /* Lab Kit windows (review, manage, merge, what's new) */
-.lab-kit-modal { max-height: 70vh; overflow-y: auto; }
+.lab-kit-modal { --lk-block-gap: var(--size-4-3); max-height: 70vh; overflow-y: auto; }   /* the one gap between blocks (folds, bars, the footer) in the kit windows */
+.lab-kit-modal .setting-item { padding: var(--size-4-2) 0; }   /* a Setting row (CSS snippet) takes its gap from the block around it, not its own */
+.lab-kit-modal .setting-item:first-child { padding-top: 0; border-top: none; }
 /* Review window: the Apply row stays in view while the list scrolls */
-.lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; z-index: 2; margin-top: var(--size-4-3); padding-bottom: var(--size-4-2); background: var(--background-primary); }
+.lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; z-index: 2; margin-top: var(--lk-block-gap); padding-bottom: var(--size-4-2); background: var(--background-primary); }
 .lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
 .lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .lab-kit-group { margin: 4px 0; font-size: 0.88em; }
@@ -103,7 +105,7 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 .lab-kit-group code { font-size: 0.85em; word-break: break-all; }
 .lab-kit-group.is-label { font-size: var(--font-ui-small); }
 .lab-kit-group.is-label > summary { padding: var(--size-4-2) 0; color: var(--text-muted); font-weight: var(--font-semibold); }
-.lab-kit-win-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--size-4-2); margin: var(--size-4-3) 0; }
+.lab-kit-win-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--size-4-2); margin: var(--lk-block-gap) 0; }
 /* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
 .lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
 .lab-kit-badge.is-ok { color: var(--text-success); }
@@ -454,7 +456,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-entry-anchored .vt-entry { position: absolute; left: var(--vt-entry-x); top: var(--vt-entry-y); margin: 0; }
 
 /* ---- Folding groups in the Review update and Manage kit files windows (winFold in src/kit/window-look.ts): a box with a header row, as in Tidy up notes ---- */
-.lab-kit-fold { margin: var(--size-4-3) 0; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); overflow: hidden; }
+.lab-kit-fold { margin: var(--lk-block-gap) 0; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); overflow: hidden; }
 .lab-kit-fold-head { display: flex; align-items: center; gap: var(--size-4-2); width: 100%; height: auto; padding: var(--size-4-2) var(--size-4-3); border: none; border-radius: 0; box-shadow: none; text-align: left; white-space: normal; background: var(--background-secondary); color: var(--text-normal); cursor: pointer; }
 .lab-kit-fold-head:hover { background: var(--background-modifier-hover); }
 .lab-kit-fold-chev { flex: none; width: 7px; height: 7px; margin: 0 var(--size-4-2) 0 var(--size-4-1); border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(-45deg); transition: transform 0.12s; }

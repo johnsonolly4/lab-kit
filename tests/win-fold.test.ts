@@ -48,4 +48,9 @@ describe("Review update and Manage kit files folds", () => {
     expect(report).not.toContain("details");
     expect(report).toContain('foot.addClass("lab-kit-sticky-foot")');
   });
+  it("the kit windows take their block gap from one variable, and a Setting row (CSS snippet) has no gap of its own at the top", () => {
+    expect(css).toMatch(/\.lab-kit-modal \{ --lk-block-gap: var\(--size-4-3\);/);
+    for (const sel of [".lab-kit-fold", ".lab-kit-win-bar", ".lab-kit-modal .lab-kit-sticky-foot"]) expect(css, sel).toMatch(new RegExp(`${sel.replace(/\./g, "\\.")} \\{[^}]*var\\(--lk-block-gap\\)`));
+    expect(css).toMatch(/\.lab-kit-modal \.setting-item:first-child \{ padding-top: 0;/);
+  });
 });

@@ -33,7 +33,7 @@ Colours and corner sizes (`design-standard-pass.md`), the other `<details>` (ins
 - Files: `KitReportModal` (`src/kit/managed-ui.ts` ~760-785: the `details` / `summary` groups at 775 and 807 become `winFold`; counts line like the Kit files window; the left-alone rows keep their `i` mark), `styles.css`, tests.
 - Done when: no `<details>` left in that modal; tests; row.
 
-### Phase 5: spacing audit
+### Phase 5: spacing audit (BUILT 2026-10-14, from the CSS; see BACKLOG)
 - Seen: more space above the "CSS snippet" row than elsewhere (Planning kit box, `managed-ui.ts` ~741+). Audit every `.lab-kit-*` block in the Kit files window, the report, Manage kit files and Check setup for the vertical gaps between a fold body, a setting row and a heading; pick one block gap (`var(--size-4-3)`) and apply it in one place (CSS) instead of per-element margins.
 - List what was checked and what was changed in the checklist row; screenshots from the user before / after go in `docs/reference/visual/` only when they say the screen is right.
 - Done when: tests; row; user's check.
