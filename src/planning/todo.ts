@@ -43,6 +43,16 @@ export function isBlankBoardNote(raw: string): boolean {
   return rest.trim() === "";
 }
 
+/** Where the cursor goes in a to-do with nothing typed yet: the last (empty) line under the chip bar. Null for any other note. */
+export function emptyTodoCursorLine(raw: string): number | null {
+  const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(raw);
+  if (!m || !/^kind:\s*["']?todo["']?\s*$/m.test(m[1])) return null;
+  const body = raw.slice(m[0].length);
+  const bar = /```vault-card\r?\n\s*show:\s*todo-bar\s*\r?\n```[ \t]*\r?\n/.exec(body);
+  if (!bar || body.slice(bar.index + bar[0].length).trim() !== "") return null;
+  return raw.split("\n").length - 1;   // the text ends with a newline: the last line is empty
+}
+
 export const snapOf = (fm: TodoFm): TodoSnap => ({ day: str(fm.day), done: fm.done === true });
 
 /** The date a card's day refers to: the first such weekday on or after the day it was planned. */

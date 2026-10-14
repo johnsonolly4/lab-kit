@@ -1,9 +1,9 @@
 // To-do engine (planning kit): stamps dragged / ticked cards, rolls unfinished cards over, and tags the board for vault-theme.css.
 // Replaces the planning suite's To-do roll-over startup template. Rules: src/planning/todo.ts. Plan: docs/plans/phase-4a-todo-engine.md.
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
-import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
+import { MarkdownView, Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
-import { applyPatch, cardTag, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
+import { applyPatch, cardTag, changePatch, emptyTodoCursorLine, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
 
 /** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
 export const ROLL_KEY = "vt-rollover";
@@ -78,6 +78,16 @@ export class TodoEngine {
         if (s && this.isTodo(f)) this.seen.set(f.path, s);
       }));
       plugin.registerEvent(app.vault.on("delete", f => { this.seen.delete(f.path); }));
+
+      // A to-do with nothing typed yet opens with the cursor under the chip bar, not above it
+      plugin.registerEvent(app.workspace.on("file-open", f => {
+        const view = app.workspace.getActiveViewOfType(MarkdownView);
+        if (!f || !view || view.file?.path !== f.path || view.getMode() !== "source") return;
+        const line = emptyTodoCursorLine(view.editor.getValue());
+        if (line === null || view.editor.getCursor().line >= line) return;
+        view.editor.setCursor({ line, ch: 0 });
+        view.editor.focus();
+      }));
 
       // Clicking the done circle on a board card ticks / unticks done in that note (Bases cards are read-only)
       plugin.registerDomEvent(window, "click", e => this.onCardClick(e), { capture: true });

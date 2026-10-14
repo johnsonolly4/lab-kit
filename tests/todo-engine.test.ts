@@ -1,6 +1,6 @@
 // Phase 4a: the to-do board rules (src/planning/todo.ts), including the 2026-10-07 Obsidian Sync scenarios.
 import { describe, it, expect } from "vitest";
-import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, emptyTodoCursorLine, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
 
 const day = (s: string): Date => parseDay(s)!;
 const WED = day("2026-10-07");   // a Wednesday
@@ -198,5 +198,21 @@ describe("cardTag (priority and project on a board card)", () => {
     expect(cardTag({ priority: "high" })).toBeNull();
     expect(cardTag({ priority: "", project: "" })).toBeNull();
     expect(cardTag({})).toBeNull();
+  });
+});
+
+describe("cursor under the chip bar", () => {
+  const head = "---\nkind: todo\nday: Mon\n---\n\n```vault-card\nshow: todo-bar\n```\n";
+  it("is the last line of an empty to-do", () => {
+    expect(emptyTodoCursorLine(head)).toBe(8);
+    expect(emptyTodoCursorLine(head + "\n")).toBe(9);
+    expect(emptyTodoCursorLine(head.replace(/\n/g, "\r\n"))).toBe(8);
+  });
+  it("leaves every other note alone", () => {
+    expect(emptyTodoCursorLine(head + "Buy tubes\n")).toBeNull();
+    expect(emptyTodoCursorLine(head.replace("kind: todo", "kind: lab"))).toBeNull();
+    expect(emptyTodoCursorLine(head.replace("show: todo-bar", "show: inbox"))).toBeNull();
+    expect(emptyTodoCursorLine(head.slice(0, -1))).toBeNull();
+    expect(emptyTodoCursorLine("no properties\n")).toBeNull();
   });
 });
