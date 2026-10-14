@@ -2,7 +2,7 @@
 // The fields and what they show are in entry-fields.ts (pure); the to-do's are in todo-bar.ts. The in-note chip bar uses `editEntryField` too.
 import { Modal, Platform, setIcon, type App } from "obsidian";
 import { openFieldPopover } from "./entry-popover";
-import { chipView, entryResult, setEntryValue, visibleFields, type EntryField, type EntryValue, type EntryValues } from "./entry-fields";
+import { chipView, entryResult, missingRequired, setEntryValue, visibleFields, type EntryField, type EntryValue, type EntryValues } from "./entry-fields";
 
 export interface EntryAnswer { title: string; values: EntryValues }
 /** Where to open the window: just under this point (screen pixels). */
@@ -32,9 +32,10 @@ class EntryModal extends Modal {
   private values: EntryValues;
   private input!: HTMLInputElement;
   private chips!: HTMLElement;
+  private hint!: HTMLElement;
   private busy = false;   // a list or the date box is open: a click on another chip waits (no stack of boxes)
 
-  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private done: (a: EntryAnswer | null) => void) {
+  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private done: (a: EntryAnswer | null) => void) {
     super(app);
     this.values = { ...values };
   }
@@ -53,9 +54,15 @@ class EntryModal extends Modal {
     this.input = this.contentEl.createEl("input", { type: "text", cls: "vt-entry-title", attr: { placeholder: "Title" } });
     this.input.value = this.title;
     this.chips = this.contentEl.createDiv({ cls: "vt-todo-bar vt-entry-chips" });
-    this.contentEl.createDiv({ cls: "vt-entry-hint", text: "Enter creates with what is set. Esc cancels." });
+    this.hint = this.contentEl.createDiv({ cls: "vt-entry-hint", text: "Enter creates with what is set. Esc cancels." });
     this.input.addEventListener("keydown", e => {
-      if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); this.finish({ title: this.input.value.trim(), values: entryResult(this.fields, this.values) }); this.close(); }
+      if (e.key !== "Enter" || e.isComposing) return;
+      e.preventDefault();
+      const missing = missingRequired(this.fields, this.values);
+      if (this.requireTitle && !this.input.value.trim()) { this.hint.setText("Type a title first."); this.hint.addClass("is-bad"); return; }
+      if (missing) { this.hint.setText(`Pick a ${missing.name.toLowerCase()} first.`); this.hint.addClass("is-bad"); return; }
+      this.finish({ title: this.input.value.trim(), values: entryResult(this.fields, this.values) });
+      this.close();
     });
     this.drawChips();
     this.input.focus();
@@ -103,5 +110,5 @@ class EntryModal extends Modal {
 }
 
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `initial` fills it in (quick capture). */
-export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null } = {}): Promise<EntryAnswer | null> =>
-  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? null, resolve).open());
+export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean } = {}): Promise<EntryAnswer | null> =>
+  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? null, initial.requireTitle ?? false, resolve).open());

@@ -10,9 +10,9 @@ import { nodeModule } from "../node";
 import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
-import type { EntryValues } from "./entry-fields";
+import type { EntryField, EntryValues } from "./entry-fields";
 import { openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
-import { projectNames, todoFields as todoEntryFields } from "./todo-bar";
+import { projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { parseQuickTodo } from "./quick-todo";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
@@ -34,7 +34,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | "" }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | "" }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -205,18 +205,14 @@ export class PlanningCommands {
     if (!(await this.ready(root))) return;
     const NAME = "One-off";
     let hub = this.seriesList().find(s => s.interval === ONCE);
-    const title = await ask(this.app, "What is the meeting about? (Enter = One-off)");
-    if (title === null) return;
-    const asked = await this.askDate("Date of the meeting (YYYY-MM-DD)", ymd(new Date()));
-    if (!asked) return;
-    const date = ymd(asked);
-    const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").sort((a, b) => a.basename.localeCompare(b.basename));
-    let project = "";
-    if (hubs.length) {
-      const chosen = await pick(this.app, ["(no project)", ...hubs.map(h => h.basename)], ["", ...hubs.map(h => h.basename)], "Which project? (Esc to cancel)");
-      if (chosen === null) return;
-      project = chosen;
-    }
+    const hubFiles = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project");
+    const fields: EntryField[] = [
+      { key: "date", name: "Date", icon: "calendar", kind: "date", prompt: "Date of the meeting", required: true },
+      projectField(projectNames(hubFiles.map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })))),
+    ];
+    const answer = await openEntry(this.app, "New one-off meeting", fields, { values: { date: ymd(new Date()), ...(this.hubOfActiveNote() ? { project: this.hubOfActiveNote() } : {}) } });
+    if (!answer) return;
+    const title = answer.title, date = String(answer.values.date), project = String(answer.values.project ?? "");
     if (!hub) {
       const folder = kitJoin(root, NAME);
       handoff().vtSeries = { name: NAME, folder, interval: ONCE, day: "Mon", start: date, deckKey: "deck_windows", deck: "" };
@@ -315,9 +311,16 @@ export class PlanningCommands {
 
   /** New note in a project; `folder` (the project's folder) is used without asking: for project cards. */
   async newProjectNote(folder?: string): Promise<void> {
-    if (folder) handoff().vtNewNoteFolder = folder;
-    try { await this.fromTemplate(TPL.projectNote, this.folders.projects, folder ?? this.folders.projects); }
-    finally { delete handoff().vtNewNoteFolder; }
+    const hubs = this.app.vault.getMarkdownFiles().filter(f => f.path.startsWith(this.folders.projects + "/") && this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project");
+    const names = projectNames(hubs.map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })));
+    const preset = folder ? hubs.find(f => f.parent?.path === folder)?.basename : this.hubOfActiveNote();
+    const answer = await openEntry(this.app, "New project note", [projectField(names, true)], { requireTitle: true, values: preset ? { project: preset } : {} });
+    if (!answer) return;
+    const hub = hubs.find(f => f.basename === answer.values.project);
+    if (!hub?.parent) return;
+    handoff().vtNote = { title: answer.title, folder: hub.parent.path };
+    try { await this.fromTemplate(TPL.projectNote, this.folders.projects, hub.parent.path); }
+    finally { delete handoff().vtNote; delete handoff().vtNewNoteFolder; }
   }
 
   /** New concept; `folder` (a topic hub's folder) files it there without asking the topic. */

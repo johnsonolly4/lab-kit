@@ -314,8 +314,8 @@
       "src": "Extras/Templates/New project note.md",
       "role": "templates",
       "path": "New project note.md",
-      "version": "1.0.0",
-      "sha256": "b42394461522eae474d3eb83ac23698ab57ad6b8f269b163390cd97b98d0f3d0",
+      "version": "1.3.0",
+      "sha256": "1fb72c0dd02154240b7fcdeba81483a5e882574c3a85cdacc958ae153338d2a3",
       "renamedFrom": [],
       "desc": "New note inside a project"
     },

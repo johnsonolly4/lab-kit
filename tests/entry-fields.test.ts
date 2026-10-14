@@ -43,3 +43,25 @@ describe("entry fields", () => {
     expect(out).toEqual({ project: "[[Beta]]", priority: null, due: "2026-12-01" });
   });
 });
+
+import { missingRequired } from "../src/planning/entry-fields";
+import { projectField } from "../src/planning/todo-bar";
+import { readFileSync } from "node:fs";
+
+describe("required fields (New project note, New one-off meeting)", () => {
+  it("a required project has no (none) and Enter waits for it", () => {
+    const f = projectField(["Alpha", "Beta"], true);
+    expect(f.options?.map(o => o.label)).toEqual(["Alpha", "Beta"]);
+    expect(missingRequired([f], {})?.key).toBe("project");
+    expect(missingRequired([f], { project: "Alpha" })).toBeNull();
+    expect(projectField(["Alpha"]).options?.[0].label).toBe("(none)");
+    expect(missingRequired([projectField(["Alpha"])], {})).toBeNull();
+  });
+  it("the New project note template takes the window's answers (window.vtNote) and still asks without them", () => {
+    const tpl = readFileSync("kits/planning/Extras/Templates/New project note.md", "utf8");
+    expect(tpl).toContain("const preset = window.vtNote;");
+    expect(tpl).toContain("let folder = preset ? preset.folder : window.vtNewNoteFolder;");
+    expect(tpl).toContain('let title = preset ? preset.title : await tp.user.vtAsk(tp, "Note title");');
+    expect(tpl).toContain("Cancelled - no title");
+  });
+});

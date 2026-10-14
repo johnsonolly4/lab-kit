@@ -16,8 +16,10 @@ export interface EntryField {
   options?: EntryOption[];
   /** The box's placeholder. */
   prompt: string;
-  /** Visible only once the field with this key has a value (Countdown needs Due). */
+  /** Visible only once the field with this key has a value. */
   showWhen?: string;
+  /** Enter does not create until it has a value. */
+  required?: boolean;
 }
 
 const empty = (v: EntryValue | undefined): boolean => v === undefined || v === "" || v === false;
@@ -32,6 +34,9 @@ export function chipView(f: EntryField, v: EntryValue | undefined): { text: stri
   if (f.kind === "pick") return { text: f.options?.find(o => o.value === v)?.label ?? String(v), set: true };
   return { text: String(v), set: true };
 }
+
+/** The first visible required field with no value, or null. */
+export const missingRequired = (fields: EntryField[], values: EntryValues): EntryField | null => visibleFields(fields, values).find(f => f.required && empty(values[f.key])) ?? null;
 
 /** The values to hand over: only those of visible fields that have one (a hidden Countdown is dropped with its Due). */
 export function entryResult(fields: EntryField[], values: EntryValues): EntryValues {

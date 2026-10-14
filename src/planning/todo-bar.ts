@@ -60,11 +60,17 @@ export function projectNames(hubs: { name: string; fm: Record<string, unknown> }
   return [...hubs].sort((a, b) => Number(done(a)) - Number(done(b)) || a.name.localeCompare(b.name)).map(h => h.name);
 }
 
+/** The Project chip: `projects` are the names to pick from; `required` takes away "(none)" and Enter waits for a pick. */
+export function projectField(projects: string[], required = false): EntryField {
+  const options = projects.map(p => ({ label: p, value: p }));
+  return { key: "project", name: "Project", icon: "folder", kind: "pick", prompt: "Project?", required, options: required ? options : [{ label: "(none)", value: "" }, ...options] };
+}
+
 /** The fields of a to-do (the entry window and the in-note bar): `projects` and `series` are the names to pick from. */
 export function todoFields(projects: string[], series: string[]): EntryField[] {
   const none = (label: string): { label: string; value: string } => ({ label, value: "" });
   return [
-    { key: "project", name: "Project", icon: "folder", kind: "pick", prompt: "Project?", options: [none("(none)"), ...projects.map(p => ({ label: p, value: p }))] },
+    projectField(projects),
     { key: "meeting", name: "Meeting", icon: "users", kind: "pick", prompt: "Raise at which meeting?", options: [none("(none)"), ...series.map(p => ({ label: p, value: p }))] },
     { key: "due", name: "Due", icon: "calendar", kind: "date", prompt: "Due date? (fri, 15 nov, 15/11, in 3 days; empty clears)" },
     { key: "priority", name: "Priority", icon: "flag", kind: "pick", prompt: "Priority? (1 = high, 3 = low)", options: [none("No priority"), ...PRIORITY_LABELS.map((label, i) => ({ label, value: i + 1 }))] },
