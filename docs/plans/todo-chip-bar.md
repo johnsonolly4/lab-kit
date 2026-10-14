@@ -56,7 +56,7 @@ _The user's idea (2026-10-14): when New to-do runs, one window shows the title b
 - Depends on: Phase 3.
 - Files: `kits/lab/Templates/Lab Book Template.md:31` (experiment title), `src/kit/ui.ts:475` (New lab entry title) and `:541-544` (Clone: source pick, then title). Needs a spike first: which properties of a lab entry are worth a chip (Project? date? class?). Without one, the window is a title box with the same look (a consistent look, little else).
 
-### Phase 7: New meeting series as a form
+### Phase 7: New meeting series as a form (BUILT 2026-10-14: name = title box; chips How often, First meeting, Deck, Note template; the day is the first date's weekday)
 - Depends on: Phase 3.
 - Files: `src/planning/commands.ts:207-240` (name, how often, every N weeks, first date, deck folder, template: six boxes). Fields here are not chips so much as a small form; the window gets a "field list" with text and pick fields. Own design in the phase (user to confirm the field order).
 

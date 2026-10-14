@@ -13,10 +13,11 @@ import { ask, pick } from "./ask";
 import type { EntryField, EntryValues } from "./entry-fields";
 import { openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
 import { projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
+import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { parseQuickTodo } from "./quick-todo";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
-import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
+import { firstDefaultDate, nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { addResult } from "./result";
 import { linkInOrder } from "./sequence";
 import { parseDay, ymd } from "./todo";
@@ -152,14 +153,6 @@ export class PlanningCommands {
     return out.sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  /** Mon to Fri; "Sat / Sun…" opens the weekend. The day as 0 (Sun) to 6 (Sat), or null on Esc. */
-  private async askDay(): Promise<number | null> {
-    const weekdays = [1, 2, 3, 4, 5], WEEKEND = -1;
-    const first = await pick(this.app, [...weekdays.map(d => WEEKDAYS[d]), "Sat / Sun…"], [...weekdays, WEEKEND], "On which day?");
-    if (first !== WEEKEND) return first;
-    return pick(this.app, [WEEKDAYS[6], WEEKDAYS[0]], [6, 0], "On which day?");
-  }
-
   /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
   private async pickSeries(regularOnly = false): Promise<Series | null> {
     const all = this.seriesList().filter(s => !regularOnly || s.interval !== ONCE);
@@ -240,43 +233,16 @@ export class PlanningCommands {
     const root = this.folders.meetings;
     if (!this.app.vault.getFolderByPath(root)) { missingFolderNotice(this.app, root, this.guard); return; }
     const taken = (name: string): boolean => !!this.app.vault.getAbstractFileByPath(kitJoin(root, name)) || this.seriesList().some(s => s.name.toLowerCase() === name.toLowerCase());
-    let name = "";
-    for (let typed = await ask(this.app, "Name of the meeting series (for example Group meeting)"); ; typed = await ask(this.app, "Name of the meeting series", typed ?? "")) {
-      if (typed === null) return;
-      const checked = checkSeriesName(typed);
-      if ("error" in checked) { new Notice(checked.error); continue; }
-      if (taken(checked.name)) { new Notice(`A meeting series called ${checked.name} already exists in ${root}. Choose another name.`); continue; }
-      name = checked.name;
-      break;
-    }
-    const CUSTOM = "every N weeks…";
-    let interval = await pick<string>(this.app, [...INTERVALS, CUSTOM], [...INTERVALS, CUSTOM], "How often?");
-    if (!interval) return;
-    if (interval === CUSTOM) {
-      let n = 0;
-      for (let typed = await ask(this.app, "Every how many weeks? (1-52)", "3"); ; typed = await ask(this.app, "Every how many weeks? (1-52)", typed ?? "")) {
-        if (typed === null) return;
-        n = /^\d{1,2}$/.test(typed.trim()) ? +typed.trim() : 0;
-        if (n >= 1 && n <= 52) break;
-        new Notice("Type a whole number of weeks from 1 to 52.");
-      }
-      interval = everyWeeks(n);
-    }
-    const day = await this.askDay();
-    if (day === null) return;
-    let start = ymd(firstDefaultDate(day, new Date()));
-    for (let date = await ask(this.app, "Date of the first meeting (YYYY-MM-DD)", start); ; date = await ask(this.app, "Date of the first meeting (YYYY-MM-DD)", date ?? "")) {
-      if (date === null) return;
-      const checked = checkFirstDate(date, day);
-      if ("error" in checked) { new Notice(checked.error); continue; }
-      start = ymd(checked.date);
-      break;
-    }
-    const deck = await ask(this.app, `Meeting deck on ${Platform.isMacOS ? "this Mac" : "this computer"}: a folder of decks, or the path to one deck file (Enter to leave empty)`);
-    if (deck === null) return;
-    const template = await ask(this.app, "Meeting note template for this series: the name of a template note (Enter = the kit's Meeting template)");
-    if (template === null) return;
-    handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck: cleanDeckPath(deck), template: templateRef(template) };
+    const where = Platform.isMacOS ? "this Mac" : "this computer";
+    let series: SeriesAnswer | null = null;
+    const answer = await openEntry(this.app, "New meeting series", seriesFields(where), {
+      requireTitle: true,
+      values: { interval: "weekly", date: ymd(firstDefaultDate(4, new Date())) },   // weekly, on the next Thursday
+      validate: a => { const r = readSeries(a.title, a.values, taken); if ("error" in r) return r.error; series = r; return null; },
+    });
+    if (!answer || !series) return;
+    const { name, interval, day, start, deck, template } = series as SeriesAnswer;
+    handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck, template };
     try { await this.fromTemplate(TPL.series, root, kitJoin(root, name)); }
     finally { delete handoff().vtSeries; }
   }

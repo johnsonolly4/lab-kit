@@ -63,6 +63,12 @@ export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryFiel
         pop.addEventListener("keydown", key);
         window.setTimeout(() => pop.focus(), 0);
       }
+    } else if (field.kind === "text") {
+      const input = pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: field.prompt } });
+      pop.createDiv({ cls: "vt-pop-hint", text: "Enter saves. Empty clears." });
+      if (typeof current === "string") input.value = current;
+      input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); close(input.value.trim()); } });
+      window.setTimeout(() => { input.focus(); input.select(); }, 0);
     } else {
       const input = pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: "A date, or words like next friday" } });
       const hint = pop.createDiv({ cls: "vt-pop-hint", text: typeof current === "string" && current ? `Now ${nice(current)}. Empty clears.` : "Type words or pick a date." });

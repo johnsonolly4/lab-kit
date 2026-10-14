@@ -11,8 +11,8 @@ export interface EntryField {
   name: string;
   /** An Obsidian icon name. */
   icon: string;
-  /** pick: a list of `options`; date: a text box that reads dates and words; toggle: click to turn on / off. */
-  kind: "pick" | "date" | "toggle";
+  /** pick: a list of `options`; date: a text box that reads dates and words; text: a text box; toggle: click to turn on / off. */
+  kind: "pick" | "date" | "toggle" | "text";
   options?: EntryOption[];
   /** The box's placeholder. */
   prompt: string;

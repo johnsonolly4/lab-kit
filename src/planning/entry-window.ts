@@ -35,7 +35,7 @@ class EntryModal extends Modal {
   private hint!: HTMLElement;
   private busy = false;   // a list or the date box is open: a click on another chip waits (no stack of boxes)
 
-  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private done: (a: EntryAnswer | null) => void) {
+  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private validate: ((a: EntryAnswer) => string | null) | null, private done: (a: EntryAnswer | null) => void) {
     super(app);
     this.values = { ...values };
   }
@@ -61,7 +61,10 @@ class EntryModal extends Modal {
       const missing = missingRequired(this.fields, this.values);
       if (this.requireTitle && !this.input.value.trim()) { this.hint.setText("Type a title first."); this.hint.addClass("is-bad"); return; }
       if (missing) { this.hint.setText(`Pick a ${missing.name.toLowerCase()} first.`); this.hint.addClass("is-bad"); return; }
-      this.finish({ title: this.input.value.trim(), values: entryResult(this.fields, this.values) });
+      const answer = { title: this.input.value.trim(), values: entryResult(this.fields, this.values) };
+      const problem = this.validate?.(answer);
+      if (problem) { this.hint.setText(problem); this.hint.addClass("is-bad"); return; }
+      this.finish(answer);
       this.close();
     });
     this.drawChips();
@@ -119,5 +122,5 @@ export function buttonAnchor(): EntryAnchor | null {
 }
 
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `initial` fills it in (quick capture). */
-export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean } = {}): Promise<EntryAnswer | null> =>
-  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, resolve).open());
+export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null } = {}): Promise<EntryAnswer | null> =>
+  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, resolve).open());
