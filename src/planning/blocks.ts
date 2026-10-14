@@ -7,7 +7,7 @@ import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
 import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
-import { hasMap, hasPlan, planLines, projectExperiments, readPlan } from "./plan";
+import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
@@ -333,11 +333,10 @@ class BlockView extends MarkdownRenderChild {
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }
-      case "project-map": {   // on a project hub: the plan as cards joined by arrows; nothing until the project has two to-dos or a link
+      case "project-map": {   // on a project hub: the plan as cards joined by arrows; with no to-dos, a box that makes one
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
-        if (!hasMap(plan)) return;
         box.addClass("vt-plan");
         const direction = this.direction ?? kit.planDirection;
         const title = box.createDiv({ cls: "vt-plan-title is-bar", text: "Plan" });
@@ -380,6 +379,7 @@ class BlockView extends MarkdownRenderChild {
         const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan };
         const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
           addAfter: (from: string) => { addAfterFlow(addEnv, from).catch(() => { new Notice("Could not make that link."); }); },
+          newTodo: () => { void this.commands()?.newTodo(hubFile.basename); },
           insertBetween: (a: string, b: string) => { addAfterFlow(addEnv, a, b).catch(() => { new Notice("Could not insert that to-do."); }); } };
         drawPlanMap(box, plan, map, mapOptions);
         drawProblems(box, plan, mapOptions);

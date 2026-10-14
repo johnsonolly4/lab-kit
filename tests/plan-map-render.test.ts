@@ -24,7 +24,7 @@ const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
   ({ path, name: path.slice(path.lastIndexOf("/") + 1).replace(/\.md$/, ""), folder: path.slice(0, path.lastIndexOf("/")), fm, ctime: 0, mtime: 0 });
 const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
 const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
-const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void } = {}) => {
+const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void; newTodo?: () => void } = {}) => {
   const plan = readPlan(todos, hub), box = new El("div");
   drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ }, ...extra });
   return box;
@@ -33,6 +33,17 @@ const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBet
 const todos = [td("A"), td("B", { after: "[[A]]" }), td("C", { sub: "[[A]]" }), td("D", { after: "[[C]]" }), td("Lone"), td("LoneSub", { sub: "[[Lone]]" })];
 
 describe("drawPlanMap", () => {
+  it("a project with no to-dos shows one box that makes a to-do, and a project with to-dos does not", () => {
+    const newTodo = vi.fn();
+    const box = draw([], "across", { newTodo });
+    expect(box.querySelectorAll(".vt-map-card")).toHaveLength(0);
+    const empty = box.querySelectorAll(".vt-map-empty");
+    expect(empty).toHaveLength(1);
+    empty[0].dispatch("click");
+    expect(newTodo).toHaveBeenCalledTimes(1);
+    expect(draw([td("Only")], "across", { newTodo }).querySelectorAll(".vt-map-empty")).toHaveLength(0);
+  });
+
   for (const direction of ["across", "down"] as const) it(`draws cards, strips and a dashed arrow for a link through a subtask (${direction})`, () => {
     const box = draw(todos, direction);
     expect(box.querySelectorAll(".vt-map-card").map((c: { querySelector(s: string): { textContent: string } }) => c.querySelector(".vt-map-title").textContent)).toEqual(["A", "B", "D"]);

@@ -30,6 +30,8 @@ export interface MapOptions {
   addAfter?: (from: string) => void;
   /** Insert between two: asks which to-do goes between `a` and `b` (the arrow a → b): from the + on an arrow (a click, or dropped on its "+ new here" box) and the arrow's menu. Left out: no box, no menu entry. */
   insertBetween?: (a: string, b: string) => void;
+  /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
+  newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -416,6 +418,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
   const wrap = box.createDiv({ cls: "vt-map" });
   const flagged = new Map<string, PlanIssue[]>();   // the problems of each to-do that has any: its ⚠
   for (const is of plan.issues) for (const p of is.paths) flagged.set(p, [...(flagged.get(p) ?? []), is]);
+  if (!map.cards.length && !map.unlinked.length && o.newTodo) {
+    const empty = wrap.createDiv({ cls: "vt-map-empty", text: "+ New to-do for this project", attr: { role: "button", tabindex: "0" } });
+    empty.addEventListener("click", () => { o.newTodo?.(); });
+    empty.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); o.newTodo?.(); } });
+  }
   if (map.cards.length) {
     const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
     const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);

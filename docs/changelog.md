@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Plan map always shows** (planning kit, plugin code; not seen in Obsidian): a project hub shows the map even with fewer than two to-dos. With no to-dos it shows one dashed box, the full width of the map and two cards tall, **+ New to-do for this project**; clicking it opens New to-do with the project filled in.
+
 ## v1.3.0 (2026-10-13)
 The plan map appears from two to-dos, you can insert a to-do between two by dragging an arrow, card titles are readable and the hover is gentler.
 
