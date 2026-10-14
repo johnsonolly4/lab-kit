@@ -11,6 +11,8 @@ import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
+import { ask, pick } from "./ask";
+import { PRIORITY_LABELS, readDueText, setCountdown, setDue, setMeeting, setPriority, setProject, todoChips, type Chip } from "./todo-bar";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -295,6 +297,7 @@ class BlockView extends MarkdownRenderChild {
         }
         return;
       }
+      case "todo-bar": this.todoBar(box); return;
       case "hub-bar": this.hubBar(box); return;
       case "meeting-bar": this.meetingBar(box); return;
       case "back-to-project": {   // on a note inside a project's folder: a link to that project's hub
@@ -434,7 +437,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 
@@ -464,6 +467,56 @@ class BlockView extends MarkdownRenderChild {
       if (series.interval === ONCE) button("New one-off meeting", c => void c.newOneOff());
       else { button("New meeting note", c => void c.newMeeting(series)); button("Extra meeting now", c => void c.newMeeting(series, true)); }
     } else box.createDiv({ cls: "vt-muted", text: "hub-bar belongs on a project, topic or meeting series hub." });
+  }
+
+  /** The chip bar of a to-do note: Project, Meeting, Due, Priority (and Countdown once there is a due date). A click picks the value and writes it to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
+  private todoBar(box: HTMLElement): void {
+    const file = this.app.vault.getFileByPath(this.sourcePath);
+    if (!file) return;
+    const fm = this.owner.rec(file).fm;
+    if (fm.kind !== "todo") { box.createDiv({ cls: "vt-muted", text: "todo-bar belongs on a to-do note." }); return; }
+    const bar = box.createDiv({ cls: "vt-todo-bar" });
+    const icons: Record<Chip["key"], string> = { project: "folder", meeting: "users", due: "calendar", priority: "flag", countdown: "hourglass" };
+    for (const chip of todoChips(fm)) {
+      const text = chip.key === "countdown" ? (chip.value ? "Countdown on" : "Countdown off") : chip.value || `+ ${chip.name}`;
+      const btn = bar.createEl("button", { cls: `vt-todo-chip ${chip.value ? "is-set" : "is-empty"}`, attr: { "aria-label": chip.name, title: chip.name } });
+      if (chip.value || chip.key === "countdown") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), icons[chip.key]);
+      btn.createSpan({ text });
+      for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
+      btn.addEventListener("click", () => { void this.editChip(file, chip, fm); });
+    }
+  }
+
+  /** Asks for the value of one chip and writes it; Esc changes nothing. */
+  private async editChip(file: TFile, chip: Chip, fm: Record<string, unknown>): Promise<void> {
+    const notes = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x));
+    const named = (kind: string): string[] => notes.filter(n => n.fm.kind === kind).map(n => n.name).sort((a, b) => a.localeCompare(b));
+    let write: ((f: Record<string, unknown>) => void) | null = null;
+    if (chip.key === "project") {
+      const hubs = named("project"), got = await pick<string>(this.app, ["(none)", ...hubs], ["", ...hubs], "Project?", true);
+      if (got !== null) write = f => setProject(f, got || null);
+    } else if (chip.key === "meeting") {
+      const series = named("meeting-series"), got = await pick<string>(this.app, ["(none)", ...series], ["", ...series], "Raise at which meeting?", true);
+      if (got !== null) write = f => setMeeting(f, got || null);
+    } else if (chip.key === "priority") {
+      const got = await pick<number | "">(this.app, ["No priority", ...PRIORITY_LABELS], ["", 1, 2, 3], "Priority? (1 = high, 3 = low)", true);
+      if (got !== null) write = f => setPriority(f, got === "" ? null : (got as 1 | 2 | 3));
+    } else if (chip.key === "countdown") {
+      write = f => setCountdown(f, fm.countdown !== true);
+    } else {
+      let prompt = "Due date? (fri, 15 nov, 15/11, in 3 days; empty clears)";
+      for (;;) {
+        const text = await ask(this.app, prompt, chip.value);
+        if (text === null) return;
+        const read = readDueText(text, new Date());
+        if (read) { write = f => setDue(f, read.date); break; }
+        prompt = `"${text}" is not a date. Try fri, 15 nov, 15/11, in 3 days or YYYY-MM-DD (empty clears)`;
+      }
+    }
+    if (!write) return;
+    const apply = write;
+    await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { apply(f); })
+      .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${chip.name.toLowerCase()}.`); });
   }
 
   /** A drop-down for a project's Status (no label), written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */

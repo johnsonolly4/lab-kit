@@ -410,3 +410,12 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }
 .vt-map-down .vt-map-handle { top: auto; bottom: -8px; right: calc(50% - 7px); margin-top: 0; }
+
+/* ---- To-do chip bar (show: todo-bar): a row of property chips at the top of a to-do note ---- */
+.vt-todo-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.vt-todo-chip { display: inline-flex; align-items: center; gap: 5px; height: auto; padding: 3px 10px; border-radius: 999px; font-size: var(--font-ui-small); line-height: 1.4; box-shadow: none; cursor: pointer; color: var(--text-normal); background: transparent; border: 1px solid var(--background-modifier-border); }
+.vt-todo-chip:hover { background: var(--background-modifier-hover); }
+.vt-todo-chip.is-empty { border-style: dashed; color: var(--text-muted); }
+.vt-todo-chip.is-set { border-color: var(--interactive-accent); color: var(--text-accent); }
+.vt-todo-chip-icon { display: inline-flex; }
+.vt-todo-chip-icon .svg-icon { width: 14px; height: 14px; }
