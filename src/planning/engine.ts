@@ -79,14 +79,24 @@ export class TodoEngine {
       }));
       plugin.registerEvent(app.vault.on("delete", f => { this.seen.delete(f.path); }));
 
-      // A to-do with nothing typed yet opens with the cursor under the chip bar, not above it
-      plugin.registerEvent(app.workspace.on("file-open", f => {
+      // A to-do with nothing typed yet opens with the cursor under the chip bar, not above it.
+      // A note made by the template is opened before Templater has written it, so look again for a moment
+      const placeCursor = (path: string): boolean => {   // true = nothing more to wait for
         const view = app.workspace.getActiveViewOfType(MarkdownView);
-        if (!f || !view || view.file?.path !== f.path || view.getMode() !== "source") return;
-        const line = emptyTodoCursorLine(view.editor.getValue());
-        if (line === null || view.editor.getCursor().line >= line) return;
-        view.editor.setCursor({ line, ch: 0 });
-        view.editor.focus();
+        if (!view || view.file?.path !== path || view.getMode() !== "source") return true;
+        const text = view.editor.getValue();
+        const line = emptyTodoCursorLine(text);
+        if (line === null) return text.trim() !== "";   // blank: the template has not written yet
+        if (view.editor.getCursor().line < line) { view.editor.setCursor({ line, ch: 0 }); view.editor.focus(); }
+        return true;
+      };
+      plugin.registerEvent(app.workspace.on("file-open", f => {
+        if (!f || placeCursor(f.path)) return;
+        let done = false;
+        for (const ms of [150, 400, 900, 1800]) {
+          const t = window.setTimeout(() => { if (!done) done = placeCursor(f.path); }, ms);
+          plugin.register(() => window.clearTimeout(t));
+        }
       }));
 
       // Clicking the done circle on a board card ticks / unticks done in that note (Bases cards are read-only)
