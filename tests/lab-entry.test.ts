@@ -34,8 +34,25 @@ describe("labEntryTitle", () => {
 describe("the Lab Book Template", () => {
   it("writes the Exp. Class handed over by the window (quoted), and clears it", () => {
     const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
-    expect(tpl).toContain('const expClass = String(window.labKitPresetClass ?? "").trim();');
+    expect(tpl).toContain('const expClass = String(presetClass ?? "").trim();');
     expect(tpl).toContain("delete window.labKitPresetClass;");
     expect(tpl).toContain('Exp. Class: <% expClass ? JSON.stringify(expClass) : "" %>');
+  });
+});
+
+describe("a note made in the lab folder by hand (the folder trigger)", () => {
+  const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  it("the template opens the plugin's window through window.vtEntryLab and trashes an empty note on Esc, only inside the lab folder", () => {
+    expect(tpl).toContain('title === undefined && typeof window.vtEntryLab === "function"');
+    expect(tpl).toContain("const got = await window.vtEntryLab();");
+    expect(tpl).toContain("if (!got) { await trashIfBlank(); throw new Error(\"Cancelled - no experiment title\"); }");
+    expect(tpl).toContain("f.path.startsWith(`${folder}/`) && (await app.vault.read(f)).trim() === \"\"");
+    expect(tpl).toContain("app.fileManager.trashFile(f)");
+  });
+  it("the plugin provides the hook and removes it when it unloads", () => {
+    const ui = readFileSync("src/kit/ui.ts", "utf8");
+    expect(ui).toContain("w.vtEntryLab = () => this.askLabEntry();");
+    expect(ui).toContain("plugin.register(() => { delete w.vtEntryLab; });");
+    expect(ui).toContain('labEntryFields(labNotes, false).filter(f => f.key === "expClass")');
   });
 });

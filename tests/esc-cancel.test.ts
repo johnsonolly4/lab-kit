@@ -24,7 +24,7 @@ describe("Esc cancels the creation", () => {
   it("Lab Book Template: takes the preset title, Esc in its own box throws, empty is Untitled", () => {
     const lab = read("kits/lab/Templates/Lab Book Template.md");
     expect(lab).toContain("window.labKitPresetTitle");
-    expect(lab).toContain('title === null) throw new Error("Cancelled');
+    expect(lab).toContain('title === null) { await trashIfBlank(); throw new Error("Cancelled');
     expect(lab).toContain('title = title || "Untitled"');
   });
 

@@ -27,13 +27,25 @@ const next = String(Math.max(0, ...nums) + 1).padStart(4, "0");
 // New lab entry asks first (Lab Kit's own box) and hands the title over; a note made in the folder by hand asks here:
 // vtAsk (same look as the vault's pickers) or Templater's box. Esc cancels, an empty title is "Untitled".
 let title = window.labKitPresetTitle;
+let presetClass = window.labKitPresetClass;
 delete window.labKitPresetTitle;
-if (title === undefined) title = await (tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title"));
-if (title === null) throw new Error("Cancelled - no experiment title");
-title = title || "Untitled";
-// New lab entry's window can set the Exp. Class (written as a quoted string so any text is safe in the properties)
-const expClass = String(window.labKitPresetClass ?? "").trim();
 delete window.labKitPresetClass;
+// Esc: a note the folder trigger just made with nothing in it goes to the trash, so no empty note is left (a note with any text is never touched)
+const trashIfBlank = async () => {
+  const f = tp.config.target_file;
+  if (f.path.startsWith(`${folder}/`) && (await app.vault.read(f)).trim() === "") { try { await app.fileManager.trashFile(f); } catch (e) { /* it stays */ } }
+};
+// A note made in the folder by hand: the plugin's window (title + Exp. Class), through window.vtEntryLab, if the plugin has it
+if (title === undefined && typeof window.vtEntryLab === "function") {
+  const got = await window.vtEntryLab();
+  if (!got) { await trashIfBlank(); throw new Error("Cancelled - no experiment title"); }
+  title = got.title; presetClass = got.expClass;
+}
+if (title === undefined) title = await (tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title"));
+if (title === null) { await trashIfBlank(); throw new Error("Cancelled - no experiment title"); }
+title = title || "Untitled";
+// The window can set the Exp. Class (written as a quoted string so any text is safe in the properties)
+const expClass = String(presetClass ?? "").trim();
 const name = `${initials}${next} - ${title}`.replace(/[\\/:*?"<>|]/g, "-");
 await tp.file.rename(name);
 -%>

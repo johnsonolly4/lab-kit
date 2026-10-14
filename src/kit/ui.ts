@@ -397,6 +397,10 @@ export class KitController {
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
+    // The Lab Book Template calls this when a note was made in the lab folder by hand (the folder trigger): the same window, so it looks the same
+    const w = window as unknown as { vtEntryLab?: () => Promise<{ title: string; expClass: string } | null> };
+    w.vtEntryLab = () => this.askLabEntry();
+    plugin.register(() => { delete w.vtEntryLab; });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
@@ -499,6 +503,14 @@ export class KitController {
       if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
     finally { delete w.labKitPresetTitle; delete w.labKitPresetClass; }
+  }
+
+  /** The window for a note made in the lab folder by hand: title and Exp. Class (no Copy of: the note already exists). The title as typed (empty = the template says Untitled) and the class, or null when Esc was pressed. */
+  async askLabEntry(): Promise<{ title: string; expClass: string } | null> {
+    const notes = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === this.kit.labFolder);
+    const labNotes: LabNote[] = notes.map(f => ({ basename: f.basename, path: f.path, classes: toList(prop(this.app.metadataCache.getFileCache(f)?.frontmatter, "Exp. Class")) }));
+    const answer = await openEntry(this.app, "New lab entry", labEntryFields(labNotes, false).filter(f => f.key === "expClass"));
+    return answer ? { title: answer.title, expClass: String(answer.values.expClass ?? "") } : null;
   }
 
   /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Templater. */
