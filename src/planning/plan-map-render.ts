@@ -27,9 +27,9 @@ export interface MapOptions {
   /** Opens or closes the problems list and draws the map again. */
   showProblems: (open: boolean) => void;
   /** "+ add after this": dropped on the box that shows while a node is dragged; asks which to-do comes after `from` (search the vault, or make a new one). Left out: no box. */
-  addAfter?: (from: string) => void;
+  addAfter?: (from: string, at?: { left: number; bottom: number }) => void;
   /** Insert between two: asks which to-do goes between `a` and `b` (the arrow a → b): from the + on an arrow (a click, or dropped on its "+ new here" box) and the arrow's menu. Left out: no box, no menu entry. */
-  insertBetween?: (a: string, b: string) => void;
+  insertBetween?: (a: string, b: string, at?: { left: number; bottom: number }) => void;
   /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
   newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
@@ -185,8 +185,10 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, handle: HTMLElem
       over?.removeClass("vt-map-drop");
       if (e) pointer = { x: e.clientX, y: e.clientY };
       const onBox = !!e && overBox();
+      const boxRect = addBox?.getBoundingClientRect();   // the window opens under the box, not dimmed (the window rule in docs/design-standard.md)
+      const where = boxRect ? { left: boxRect.left, bottom: boxRect.bottom } : undefined;
       addBox?.remove();
-      if (onBox) { svg.remove(); if (ins) o.insertBetween?.(from, ins.b); else o.addAfter?.(from); return; }
+      if (onBox) { svg.remove(); if (ins) o.insertBetween?.(from, ins.b, where); else o.addAfter?.(from, where); return; }
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
       if (!target || !to) {
         svg.remove();

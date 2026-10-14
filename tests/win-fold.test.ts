@@ -71,6 +71,7 @@ describe("add after this opens the entry window first", () => {
     const flow = src.slice(src.indexOf("export async function addAfterFlow"), src.indexOf("async function pickFlow"));
     expect(flow).toContain("openEntry(");
     expect(flow).toContain("alt:");
+    expect(flow).toContain("anchor: at");
     expect(flow).toContain("pickFlow(");
   });
 });

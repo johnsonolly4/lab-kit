@@ -42,9 +42,9 @@ export async function insertBetween(app: App, history: PlanHistory, plan: Plan, 
 }
 
 /** Asks which to-do comes after `from` (search, or type a new name) and writes it. With `before` (the to-do `from` → `before` is an arrow of) the chosen one goes between the two instead. Every link written and every new to-do goes in Undo / Redo (undoing a new to-do removes the note, if nobody has written in it since). */
-export async function addAfterFlow(env: AddAfterEnv, from: string, before?: string): Promise<void> {
+export async function addAfterFlow(env: AddAfterEnv, from: string, before?: string, at?: { left: number; bottom: number }): Promise<void> {
   const fromName = env.plan.rows.find(r => r.path === from)?.name ?? from;
-  const answer = await openEntry(env.app, "New to-do", entryFields(env), { requireTitle: true, alt: "Or pick an existing to-do…" });
+  const answer = await openEntry(env.app, "New to-do", entryFields(env), { requireTitle: true, alt: "Pick existing…", anchor: at ?? null });
   if (!answer) return;
   if (answer.alt) { await pickFlow(env, from, before); return; }
   await createFrom(env, from, fromName, answer, before);

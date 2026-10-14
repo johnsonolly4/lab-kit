@@ -4,7 +4,7 @@ import { Modal, Platform, setIcon, type App } from "obsidian";
 import { openFieldPopover } from "./entry-popover";
 import { chipView, entryResult, missingRequired, setEntryValue, visibleFields, type EntryField, type EntryValue, type EntryValues } from "./entry-fields";
 
-export interface EntryAnswer { title: string; values: EntryValues; /** The link under the chips was pressed instead of Enter (see `alt` of `openEntry`). */ alt?: boolean }
+export interface EntryAnswer { title: string; values: EntryValues; /** The `alt` chip was pressed instead of Enter (see `alt` of `openEntry`). */ alt?: boolean }
 /** Where to open the window: just under this point (screen pixels). */
 export interface EntryAnchor { left: number; bottom: number; /** The highlighted text as a DOM range, to underline while the window is open. */ range?: Range }
 
@@ -67,10 +67,6 @@ class EntryModal extends Modal {
       if (!this.titleShown() && document.activeElement?.tagName !== "BUTTON" && !e.isComposing) { this.submit(); return false; }
       return undefined;
     });
-    if (this.alt) {
-      const link = this.contentEl.createEl("button", { cls: "vt-entry-alt", text: this.alt });
-      link.addEventListener("click", () => { this.finish({ title: "", values: {}, alt: true }); this.close(); });
-    }
     this.drawChips();
     this.focusFirst();
     if (this.openField) {   // quick capture with an unknown `+name`: that chip's search opens, filled
@@ -103,6 +99,12 @@ class EntryModal extends Modal {
       if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
       btn.createSpan({ text: view.text });
       btn.addEventListener("click", () => { void this.edit(f, btn); });
+    }
+    if (this.alt) {   // a chip that answers with `alt` instead of a value
+      const btn = this.chips.createEl("button", { cls: "vt-todo-chip is-empty" });
+      setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), "search");
+      btn.createSpan({ text: this.alt });
+      btn.addEventListener("click", () => { this.finish({ title: "", values: {}, alt: true }); this.close(); });
     }
   }
 
@@ -144,6 +146,6 @@ export function buttonAnchor(): EntryAnchor | null {
   return r.width ? { left: r.left, bottom: r.bottom } : null;
 }
 
-/** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `alt` adds a link under the chips; pressing it answers `{ alt: true }` with nothing else. `initial` fills it in (quick capture). */
+/** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `alt` adds a chip at the end of the row; pressing it answers `{ alt: true }` with nothing else. `initial` fills it in (quick capture). */
 export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; alt?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null; /** Opens this chip's dropdown at once with its search filled. */ openField?: { key: string; search: string }; /** The title box shows only while this field has this value (a One-off meeting's title). */ titleWhen?: { key: string; value: EntryValue }; /** Called after a chip changed; returns the values to keep (the Date following the Series chip). */ onChange?: (values: EntryValues, changed: string) => EntryValues } = {}): Promise<EntryAnswer | null> =>
   new Promise(resolve => { const m = new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, initial.openField ?? null, initial.titleWhen ?? null, initial.onChange ?? null, resolve); m.alt = initial.alt; m.open(); });
