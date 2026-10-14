@@ -10,15 +10,21 @@ const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
 const raw = await app.vault.read(tp.config.target_file);
 const found = (raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1];
 const day = days.includes((found || "").trim()) ? found.trim() : "Backlog";
+// Esc: a note the board just made with nothing in it but its `day` goes to the trash, so no empty note is left (a note with any text is never touched)
+const trashIfBlank = async () => {
+  const f = tp.config.target_file;
+  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm) => fm.split(/\r?\n/).every(l => !l.trim() || /^day:/.test(l.trim())) ? "" : m);
+  if (f.path.startsWith(`${folder}/`) && rest.trim() === "") { try { await app.fileManager.trashFile(f); } catch (e) { /* it stays */ } }
+};
 let preset = window.vtTodo;
 delete window.vtTodo;
 if (!preset && typeof window.vtEntryTodo === "function") {
   preset = await window.vtEntryTodo(found ? day : undefined);
-  if (!preset) { throw new Error("Cancelled - no to-do"); }
+  if (!preset) { await trashIfBlank(); throw new Error("Cancelled - no to-do"); }
 }
 // Text box: same look as the project picker (Extras/scripts/templater/vault/vtAsk.js)
 const asked = preset ? preset.text : await tp.user.vtAsk(tp, "To-do? (Esc to cancel, Enter on empty = Untitled)");
-if (asked === null) { throw new Error("Cancelled - no to-do"); }
+if (asked === null) { await trashIfBlank(); throw new Error("Cancelled - no to-do"); }
 const text = (asked || "Untitled to-do").trim();
 const isHub = f => f && app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project";
 let project = preset ? (preset.project || "") : (window.vtPresetProject || "");
@@ -35,7 +41,7 @@ if (!project && !preset) {
 if (!project && !preset) {
   const hubs = app.vault.getMarkdownFiles().filter(isHub).map(f => f.basename).sort();
   const picked = await tp.system.suggester(["(no project)", ...hubs], ["", ...hubs], false, "Project? (Esc to cancel)");
-  if (picked === null || picked === undefined) { throw new Error("Cancelled - no project picked"); }
+  if (picked === null || picked === undefined) { await trashIfBlank(); throw new Error("Cancelled - no project picked"); }
   project = picked;
 }
 // Comes after?: only for a project that has open to-dos; one pick ("(nothing)" first). Esc picks nothing and does not cancel the to-do.
@@ -57,7 +63,7 @@ const series = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFil
 let meeting = preset ? (preset.meeting || "") : "";
 if (!preset && series.length > 1) {
   const chosen = await tp.system.suggester(["(none)", ...series], ["", ...series], false, "Raise at which meeting? (Esc to cancel)");
-  if (chosen === null || chosen === undefined) { throw new Error("Cancelled - no meeting picked"); }
+  if (chosen === null || chosen === undefined) { await trashIfBlank(); throw new Error("Cancelled - no meeting picked"); }
   meeting = chosen;
 }
 // Due date: optional (Enter on empty = none); a countdown badge is offered only when a date is set. Esc cancels.
@@ -67,7 +73,7 @@ const parseDue = tp.user.vtAsk.parseDue;   // words like "fri" or "next mon"; an
 let due = preset ? (preset.due || "") : "", prompt = "Due date? (YYYY-MM-DD, or today, tomorrow, fri, next mon; Enter = none, Esc to cancel)";
 while (!preset) {
   const d = await tp.user.vtAsk(tp, prompt);
-  if (d === null) { throw new Error("Cancelled - no due date"); }
+  if (d === null) { await trashIfBlank(); throw new Error("Cancelled - no due date"); }
   if (d === "") { break; }
   const words = parseDue ? parseDue(d, new Date()) : (/^\d{4}-\d{2}-\d{2}$/.test(d) && !isNaN(new Date(d + "T00:00:00")) ? d : null);
   if (words) { due = words; break; }
@@ -76,13 +82,13 @@ while (!preset) {
 let countdown = preset ? (!!due && preset.countdown === true) : false;
 if (due && !preset) {
   const c = await tp.system.suggester(["No countdown", "Show a countdown on the board"], [false, true], false, "Countdown on the board card? (Esc to cancel)");
-  if (c === null || c === undefined) { throw new Error("Cancelled - no countdown choice"); }
+  if (c === null || c === undefined) { await trashIfBlank(); throw new Error("Cancelled - no countdown choice"); }
   countdown = c;
 }
 // Priority: optional, a number property (1 = highest). Esc cancels.
 try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") { await app.metadataTypeManager?.setType?.("priority", "number"); } } catch (e) { /* older Obsidian: priority stays text */ }
 const pr = preset ? preset.priority : await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
-if (pr === null || pr === undefined) { throw new Error("Cancelled - no priority choice"); }
+if (pr === null || pr === undefined) { await trashIfBlank(); throw new Error("Cancelled - no priority choice"); }
 const priority = pr;
 // `day` (read at the top) keeps the board column the card was made in; anything else (the New to-do command, project cards) starts in Backlog.
 const base = text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80);

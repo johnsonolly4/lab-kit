@@ -44,7 +44,7 @@ _The user's idea (2026-10-14): when New to-do runs, one window shows the title b
 
 ### Phase 4: quick capture from selected text
 - Depends on: Phases 1 and 3.
-- Files: `src/planning/commands.ts` (`newTodo` reads `app.workspace.activeEditor?.editor?.getSelection()`, pattern at `sequence.ts:49`; with a selection: `parseQuickTodo` (Phase 1), open the window already filled in (so Enter confirms; the user sees what was read), no selection: the window empty), `kits/planning/07 How-tos/Obsidian/Hotkeys.md` and `src/kit/hotkey-check.ts` (suggested key row, none set), tests, docs.
+- Files: `src/planning/commands.ts` (`newTodo` reads `app.workspace.activeEditor?.editor?.getSelection()`, pattern at `sequence.ts:49`; with a selection: `parseQuickTodo` (Phase 1), open the window already filled in (so Enter confirms; the user sees what was read), no selection: the window empty), tests, docs. No hotkey row: the command already has `Alt+T` in the Hotkeys note.
 - Question for the phase: does the selection in the note get replaced by a `[[link]]` to the new to-do? Default: no.
 - Also in this phase (user, 2026-10-14, "yes, trash the empty note on Esc"): when the board's New runs the template and Esc is pressed in the window (or the template cancels), the template moves `tp.config.target_file` to the trash, only if it is in the to-dos folder and holds nothing but the `day` the board wrote (never a note with text). `kits/planning/Extras/Templates/To-do.md` (the `throw` paths; `tests/esc-cancel.test.ts` still needs the throw), a test of the emptiness check (pure helper in `src/planning/todo.ts`, called from the template through the plugin's `window.vtEntryTodo` hook or inline), BACKLOG "Esc in the board's New leaves an empty note".
 

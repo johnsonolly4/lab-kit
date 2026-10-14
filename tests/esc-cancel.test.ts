@@ -9,10 +9,10 @@ describe("Esc cancels the creation", () => {
   const todo = read("kits/planning/Extras/Templates/To-do.md");
 
   it("To-do: Esc (null) in the text box, the project picker and the meeting picker throws; empty text is Untitled", () => {
-    expect(todo).toContain('asked === null) { throw new Error("Cancelled');
+    expect(todo).toContain('asked === null) { await trashIfBlank(); throw new Error("Cancelled');
     expect(todo).toContain('(asked || "Untitled to-do")');
-    expect(todo).toContain('picked === null || picked === undefined) { throw');
-    expect(todo).toContain('chosen === null || chosen === undefined) { throw');
+    expect(todo).toContain('picked === null || picked === undefined) { await trashIfBlank(); throw');
+    expect(todo).toContain('chosen === null || chosen === undefined) { await trashIfBlank(); throw');
   });
 
   it("no box text says Esc skips or Esc = Untitled", () => {

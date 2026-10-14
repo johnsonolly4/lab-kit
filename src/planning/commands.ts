@@ -13,6 +13,7 @@ import { ask, pick } from "./ask";
 import type { EntryValues } from "./entry-fields";
 import { openEntry } from "./entry-window";
 import { todoFields as todoEntryFields } from "./todo-bar";
+import { parseQuickTodo } from "./quick-todo";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, everyWeeks, INTERVALS, nextDate, ONCE, parseSeries, sinceLast, templateRef, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
@@ -63,7 +64,7 @@ export class PlanningCommands {
     const add = (id: string, name: string, run: () => Promise<void>): void => {
       this.plugin.addCommand({ id, name, callback: () => { void run().catch(e => this.failed(name, e)); } });
     };
-    add("new-todo", "New to-do", () => this.newTodo());
+    add("new-todo", "New to-do", () => this.newTodo(undefined, this.selectionTodo()));
     add("quick-capture", "Quick capture", () => this.quickCapture());
     add("add-to-shopping", "Add to shopping list", () => this.addToShopping());
     add("add-result", "Add result", () => addResult(this.app));
@@ -104,6 +105,15 @@ export class PlanningCommands {
     if (!answer) return null;
     const v = answer.values;
     return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", countdown: v.countdown === true };
+  }
+
+  /** Highlighted text in the open note as a quick to-do: the title and the `@project`, `%date`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */
+  private selectionTodo(): { title?: string; values?: EntryValues } {
+    const text = this.app.workspace.activeEditor?.editor?.getSelection() ?? "";
+    if (!text.trim()) return {};
+    const projects = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => f.basename);
+    const q = parseQuickTodo(text, projects, new Date());
+    return { title: q.title, values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
   }
 
   /** New to-do: the entry window, then the To-do template makes the note from what was set. */

@@ -51,3 +51,27 @@ describe("parseQuickTodo", () => {
     expect(q("@Thesis !1").title).toBe("");
   });
 });
+
+import { readFileSync } from "node:fs";
+import { isBlankBoardNote } from "../src/planning/todo";
+
+describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () => {
+  it("empty, only a day, or only blank lines count as blank", () => {
+    expect(isBlankBoardNote("")).toBe(true);
+    expect(isBlankBoardNote("---\nday: Wed\n---\n")).toBe(true);
+    expect(isBlankBoardNote("---\r\nday: Backlog\r\n---\r\n\r\n")).toBe(true);
+    expect(isBlankBoardNote("---\nday: Wed\n---\n\n   \n")).toBe(true);
+  });
+  it("any text, or any other property, is kept", () => {
+    expect(isBlankBoardNote("---\nday: Wed\n---\nbuy tubing\n")).toBe(false);
+    expect(isBlankBoardNote("---\nday: Wed\nproject: \"[[A]]\"\n---\n")).toBe(false);
+    expect(isBlankBoardNote("just text")).toBe(false);
+    expect(isBlankBoardNote("---\nkind: todo\n---\n")).toBe(false);
+  });
+  it("the template carries the same rule and only trashes inside the to-dos folder", () => {
+    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^day:/.test(l.trim()))");
+    expect(tpl).toContain("f.path.startsWith(`${folder}/`) && rest.trim() === \"\"");
+    expect(tpl).toContain("app.fileManager.trashFile(f)");
+  });
+});
