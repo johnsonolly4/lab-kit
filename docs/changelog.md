@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Slide picture of the plan: 10 px corners** (plugin; not seen in Obsidian): cards and tiles in the exported picture use the same corner as the plan map on screen (they were 8).
 - **Theme snippet uses the same corner sizes** (Planning kit snippet `vault-theme.css` / `vault-colours.css`; not seen in Obsidian; **Review update…** to get it): buttons, badges, the kanban card due and tag labels and the status dots use the plugin's four corner sizes (the due and tag labels become fully round, they were 8 px); home / hub cards stay 14 px.
 - **Lab Kit windows share one outer corner** (plugin CSS; not seen in Obsidian): Check setup, Check hotkeys, Tidy up notes, Review update… / Manage kit files, the update report, install and merge windows use the same 14 px corner as the New to-do window. Moved folders and Clear backups are unchanged.
 - **One set of corner sizes in the plugin's styles** (plugin CSS; not seen in Obsidian): the plan map's pop-up menu, cards, tiles, boxes, subtask list and small buttons, the Kit files / Tidy boxes and the slide preview now use the same 10 px corner (some were 8); badges and bars stay fully round; the small code previews use 6 px. Inline marks in calc tables and the hazard header are unchanged for now.
