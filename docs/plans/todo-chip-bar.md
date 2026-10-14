@@ -8,7 +8,9 @@ Making a to-do takes one box (the title). Project, comes after, meeting, due, pr
 ## Decision taken
 - A plugin-drawn `vault-card` block, `show: todo-bar` (like `hub-bar`, `src/planning/blocks.ts:442`), not Meta Bind inputs: the lists of projects, meetings and open to-dos are live, it works on phone, and no new dependency. Rejected: Meta Bind inputs in the template (option lists go stale), and "Just the title / Set details" skip (no way to set things afterwards).
 - Quick capture is part of this plan (user): it reuses the same setters and parser.
-- Marks (to confirm in Phase 1, from the user's own examples): `@` project, `%` date, `!` priority 1-3. Dates use the due words (`fri`, `next mon`, `2026-11-03`). Anything unparsed stays in the title.
+- Marks (to confirm in Phase 1, from the user's own examples): `@` project, `%` date, `!` priority 1-3. Dates use the due words. Anything unparsed stays in the title.
+- Due words, today (`vtAsk.js:43-72`): `YYYY-MM-DD`, `today`, `tomorrow`, a weekday, `next <weekday>`. NOT today: months, `15/11`, `in 3 days`, `next week`. Added in Phase 1 (user asked 2026-10-14), day before month: `15 nov`, `nov 15`, `15th november`, `15/11`, `15/11/2026`, `in 3 days`, `in 2 weeks`, `next week` (Monday), `next month` (the 1st). A day-month with no year is the next one that is today or later. Both the TS and the template's JS get them (one table in the tests).
+- Project: inside a project (its hub, or any note in its folder) the to-do gets that project automatically, as today; outside one nothing is asked and the Project chip shows "+ Project" (user, 2026-10-14).
 
 ## Out of scope
 - Subtasks (`sub`), `experiment`, `result`: stay on the plan map.
@@ -21,6 +23,7 @@ Making a to-do takes one box (the title). Project, comes after, meeting, due, pr
 - Files: new `src/planning/quick-todo.ts` (parse `text` + known project names + `now` → `{ title, project?, due?, priority?, rest }`), a TS port of `parseDue` (new `src/planning/due-words.ts`; `vtAsk.js:43-72` stays for the template), `tests/quick-todo.test.ts`.
 - Done when: tests cover marks anywhere in the text, project names with spaces (match a known name, longest first, case-insensitive; `@"Long name"`), unknown project left in the title, bad date left in the title, and a test that the TS due words give the same answers as `tests/due-words.test.ts` cases for the JS (same table, both run).
 - New dependencies: none.
+- Also: extend `parseDue` in `vtAsk.js` with the new words (kit script: `npm run kit:manifest`), and add the words to the To-do template's date hint until Phase 3 removes the prompt.
 
 ### Phase 2: the chip bar block
 - Depends on: Phase 1 (due words).
@@ -31,7 +34,7 @@ Making a to-do takes one box (the title). Project, comes after, meeting, due, pr
 ### Phase 3: title-only creation and the bar in every to-do
 - Depends on: Phase 2.
 - Files: `kits/planning/Extras/Templates/To-do.md` (keep the title box and the automatic project from where you are; drop the project, comes after, meeting, due, countdown and priority prompts; add the `todo-bar` block to the body; keep the `due` / `priority` property types being set), `src/planning/todo-picker.ts` `newTodoText` (must match the template: `tests/todo-picker.test.ts:54`), `src/kit/tidy.ts` (add the block to existing to-dos: a new opt-in rule like `back-to-project` at `tidy.ts:349`, never touching a to-do that already has it), `npm run kit:manifest`, tests (`tests/due-words.test.ts`, `tests/todo-engine.test.ts`, `tests/esc-cancel.test.ts`, `tests/planning-commands.test.ts:84` need updating for the removed prompts; Tidy fixture test).
-- User-facing change (decided by the user): fewer prompts. The project picker still asks when you are not inside a project? To confirm in this phase: default = it asks nothing and the Project chip shows "+ Project" (fastest); alternative = keep the one project pick.
+- User-facing change (decided by the user): fewer prompts. Inside a project the project is set automatically (the template's existing `here` / preset logic stays); outside one nothing is asked and the Project chip shows "+ Project" (decided 2026-10-14).
 - Done when: tests pass; `npm run tidy-fixture` shows the bar rule; NOT seen in Obsidian.
 
 ### Phase 4: quick capture from selected text
