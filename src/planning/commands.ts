@@ -33,7 +33,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; countdown: boolean }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+interface Handoff { vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; countdown: boolean }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -57,6 +57,9 @@ export class PlanningCommands {
   }
 
   register(): void {
+    // The To-do template calls this when it runs without the window's answers (the board's New button, a folder template): the same window, naming the column
+    handoff().vtEntryTodo = day => this.askTodo(undefined, {}, day);
+    this.plugin.register(() => { delete handoff().vtEntryTodo; });
     const add = (id: string, name: string, run: () => Promise<void>): void => {
       this.plugin.addCommand({ id, name, callback: () => { void run().catch(e => this.failed(name, e)); } });
     };
@@ -93,14 +96,21 @@ export class PlanningCommands {
     new Notice(`${name} failed. See the developer console for details.`);
   }
 
-  /** New to-do: the entry window (title, then chips for project, meeting, due, priority and countdown; Enter creates), then the To-do template makes the note from what was set. `project` (a project hub's name) is already set in the window: for project cards and from inside a project. */
-  async newTodo(project?: string, initial: { title?: string; values?: EntryValues } = {}): Promise<void> {
+  /** The entry window for a new to-do (title, then chips for project, meeting, due, priority and countdown; Enter creates): what the To-do template reads as `window.vtTodo`, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in) is named in the heading. */
+  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues } = {}, day?: string): Promise<Handoff["vtTodo"] | null> {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const inside = project ?? this.hubOfActiveNote();
-    const answer = await openEntry(this.app, "New to-do", todoEntryFields(named("project"), named("meeting-series")), { title: initial.title, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
-    if (!answer) return;
+    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(named("project"), named("meeting-series")), { title: initial.title, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
+    if (!answer) return null;
     const v = answer.values;
-    handoff().vtTodo = { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", countdown: v.countdown === true };
+    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", countdown: v.countdown === true };
+  }
+
+  /** New to-do: the entry window, then the To-do template makes the note from what was set. */
+  async newTodo(project?: string, initial: { title?: string; values?: EntryValues } = {}): Promise<void> {
+    const todo = await this.askTodo(project, initial);
+    if (!todo) return;
+    handoff().vtTodo = todo;
     try { await this.fromTemplate(TPL.todo, this.folders.planning, todoFolder(this.folders), false); }   // not opened, as the old button
     finally { delete handoff().vtTodo; }   // the template deletes it when it runs; also gone when it didn't or failed
   }

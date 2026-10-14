@@ -61,6 +61,7 @@ export class PlanningBlocks {
 }
 
 class BlockView extends MarkdownRenderChild {
+  private chipBusy = false;   // the to-do chip bar has a list open
   private drawing = 0;
   private expanded = new Set<string>();   // plan map parents whose subtask list is open
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
@@ -497,7 +498,9 @@ class BlockView extends MarkdownRenderChild {
 
   /** Asks for the value of one chip and writes it; Esc changes nothing. */
   private async editChip(file: TFile, field: EntryField, current: EntryValue | undefined): Promise<void> {
-    const got = await editEntryField(this.app, field, current);
+    if (this.chipBusy) return;   // one list at a time: a click on another chip meanwhile does nothing
+    this.chipBusy = true;
+    const got = await editEntryField(this.app, field, current, false).finally(() => { this.chipBusy = false; });
     if (got === null) return;
     await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyTodoValue(f, field.key, got); })
       .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });

@@ -3,10 +3,19 @@
 // Project is filled in automatically when started from a project card or from inside a project;
 // otherwise it asks (Enter on "(no project)" = none). Esc in any box cancels the whole to-do.
 const folder = "00 Planning/To-dos";
-// New to-do from the plugin: its entry window (title + chips) hands everything over in window.vtTodo, and nothing is asked here.
-// Without it (the board's button, Templater run by hand) the boxes below ask one after the other, as before.
-const preset = window.vtTodo;
+// The plugin's entry window (title + chips) hands everything over in window.vtTodo, and nothing is asked here. Run without it (the board's New button,
+// a folder template) the template opens the same window itself through window.vtEntryTodo, naming the board column; with no plugin the boxes below ask one by one.
+// The board writes the column's `day` into the new note before this runs.
+const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
+const raw = await app.vault.read(tp.config.target_file);
+const found = (raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1];
+const day = days.includes((found || "").trim()) ? found.trim() : "Backlog";
+let preset = window.vtTodo;
 delete window.vtTodo;
+if (!preset && typeof window.vtEntryTodo === "function") {
+  preset = await window.vtEntryTodo(found ? day : undefined);
+  if (!preset) { throw new Error("Cancelled - no to-do"); }
+}
 // Text box: same look as the project picker (Extras/scripts/templater/vault/vtAsk.js)
 const asked = preset ? preset.text : await tp.user.vtAsk(tp, "To-do? (Esc to cancel, Enter on empty = Untitled)");
 if (asked === null) { throw new Error("Cancelled - no to-do"); }
@@ -75,12 +84,7 @@ try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") {
 const pr = preset ? preset.priority : await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
 if (pr === null || pr === undefined) { throw new Error("Cancelled - no priority choice"); }
 const priority = pr;
-// Keep the day of the board column it was made in (the board writes it before this runs);
-// anything else (the New to-do command, project cards) starts in Backlog.
-const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
-const raw = await app.vault.read(tp.config.target_file);
-const found = (raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1];
-const day = days.includes((found || "").trim()) ? found.trim() : "Backlog";
+// `day` (read at the top) keeps the board column the card was made in; anything else (the New to-do command, project cards) starts in Backlog.
 const base = text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80);
 let name = base, n = 2;
 while (await tp.file.exists(`${folder}/${name}.md`)) { name = `${base} ${n++}`; }
@@ -106,3 +110,4 @@ cssclasses:
 show: todo-bar
 ```
 
+<% tp.file.cursor() %>

@@ -30,7 +30,7 @@ const actions = buttons.buttonTemplates.flatMap(b => b.actions.map(a => ({ butto
 /** The command IDs a fake plugin is asked to register. */
 function registered(): string[] {
   const ids: string[] = [];
-  const plugin = { app: {}, addCommand: (c: { id: string }) => { ids.push(c.id); } };
+  const plugin = { app: {}, register: () => undefined, addCommand: (c: { id: string }) => { ids.push(c.id); } };
   new PlanningCommands(plugin as never, null as never, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} }).register();
   return ids;
 }

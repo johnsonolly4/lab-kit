@@ -8,11 +8,11 @@ import { readDueText } from "./todo-bar";
 export interface EntryAnswer { title: string; values: EntryValues }
 
 /** Asks for the value of one field; null when Esc was pressed (nothing changes). A toggle just flips. */
-export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined): Promise<EntryValue | null> {
+export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined, side = true): Promise<EntryValue | null> {
   if (field.kind === "toggle") return current !== true;
   if (field.kind === "pick") {
     const options = field.options ?? [];
-    return pick<EntryValue>(app, options.map(o => o.label), options.map(o => o.value), field.prompt, true);
+    return pick<EntryValue>(app, options.map(o => o.label), options.map(o => o.value), field.prompt, side);
   }
   let prompt = field.prompt;
   for (;;) {
@@ -29,6 +29,7 @@ class EntryModal extends Modal {
   private values: EntryValues;
   private input!: HTMLInputElement;
   private chips!: HTMLElement;
+  private busy = false;   // a list or the date box is open: a click on another chip waits (no stack of boxes)
 
   constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private done: (a: EntryAnswer | null) => void) {
     super(app);
@@ -54,7 +55,7 @@ class EntryModal extends Modal {
     this.chips.empty();
     for (const f of visibleFields(this.fields, this.values)) {
       const view = chipView(f, this.values[f.key]);
-      const btn = this.chips.createEl("button", { cls: `vt-todo-chip ${view.set ? "is-set" : "is-empty"}`, attr: { "aria-label": f.name, title: f.name } });
+      const btn = this.chips.createEl("button", { cls: `vt-todo-chip ${view.set ? "is-set" : "is-empty"}`, attr: { "aria-label": f.name } });
       if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
       btn.createSpan({ text: view.text });
       btn.addEventListener("click", () => { void this.edit(f); });
@@ -62,8 +63,12 @@ class EntryModal extends Modal {
   }
 
   private async edit(f: EntryField): Promise<void> {
-    const got = await editEntryField(this.app, f, this.values[f.key]);
-    if (got !== null) { this.values = setEntryValue(this.fields, this.values, f.key, got); this.drawChips(); }
+    if (this.busy) return;
+    this.busy = true;
+    try {
+      const got = await editEntryField(this.app, f, this.values[f.key], false);
+      if (got !== null) { this.values = setEntryValue(this.fields, this.values, f.key, got); this.drawChips(); }
+    } finally { this.busy = false; }
     this.input.focus();
   }
 
