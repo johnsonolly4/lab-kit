@@ -1,5 +1,7 @@
 // "+ add after this" on the plan map (planning kit): drop a dragged node on the box, search every open to-do of the vault, or type a name to make a new one.
 // The rules are in src/planning/todo-picker.ts (pure); the picker is the planning kit's own `pick`.
+import { openEntry } from "./entry-window";
+import { todoFields } from "./todo-bar";
 import { Notice, type App } from "obsidian";
 import { pick } from "./ask";
 import { linkText, namesOf, recordChange, recordCreate, runHistory, undoNotice } from "./after-write";
@@ -69,14 +71,18 @@ export async function addAfterFlow(env: AddAfterEnv, from: string, before?: stri
   undoNotice(it.same ? `"${it.name}" now comes after "${fromName}".` : `Moved "${it.name}" here; it comes after "${fromName}".`, () => runHistory(app, history, "undo", step));
 }
 
-/** Makes the to-do `typed` in the project of this map, coming after `from`. */
+/** Makes a to-do in the project of this map, coming after `from`: the entry window (the name typed in the search is the title; the project is this map's, so no Project chip) sets its meeting, due date and priority. */
 async function createAfter(env: AddAfterEnv, from: string, fromName: string, typed: string, before?: string): Promise<void> {
-  const base = todoFileName(typed);
+  const series = env.app.vault.getMarkdownFiles().filter(f => env.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
+  const answer = await openEntry(env.app, "New to-do", todoFields([], series).filter(f => f.key !== "project"), { title: typed, requireTitle: true });
+  if (!answer) return;
+  const base = todoFileName(answer.title);
   if (!base) return;
+  const v = answer.values;
   let name = base, n = 2;
   while (env.app.vault.getFileByPath(`${env.folder}/${name}.md`)) name = `${base} ${n++}`;
   const path = `${env.folder}/${name}.md`;
-  const text = newTodoText(env.hub.name, linkText(env.app, from, path), new Date());
+  const text = newTodoText(env.hub.name, linkText(env.app, from, path), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? "") });
   await env.app.vault.create(path, text);
   const g = ++group;
   const step = recordCreate(env.history, path, text, `Made "${name}"`, before ? g : undefined);

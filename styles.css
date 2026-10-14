@@ -425,7 +425,9 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 
 /* ---- Entry window (New to-do and the other New … flows): a title box with the chips under it ---- */
 .vt-entry { width: min(560px, 92vw); border-radius: var(--lk-radius-card); --modal-radius: var(--lk-radius-card); }
-.vt-entry-heading { margin: 0 0 8px; }
+.vt-entry { padding: var(--size-4-3) var(--size-4-4) var(--size-4-4); }
+.vt-entry .modal-content { margin: 0; padding: 0; }
+.vt-entry-heading { margin: 0 0 var(--size-4-2); padding: 0; line-height: 1.2; }
 .vt-entry-title { width: 100%; border-radius: var(--lk-radius-control); font-size: var(--font-ui-large, 1.1em); margin: 0 0 10px; }
 .vt-entry-chips { margin: 0 0 8px; }
 .vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }

@@ -109,6 +109,15 @@ class EntryModal extends Modal {
   }
 }
 
+/** The button the user just clicked (a plugin button, a Meta Bind button), as a place to open the window under; null when the focus is in a note or nowhere (a hotkey, the command palette). Rule: a window with something on screen to point at opens next to it with no dimmed background; one with nothing to point at is centred and dims. */
+export function buttonAnchor(): EntryAnchor | null {
+  if (!Platform.isDesktop) return null;
+  const el = document.activeElement;
+  if (!(el instanceof HTMLElement) || el.tagName !== "BUTTON" || !el.closest(".workspace-leaf-content")) return null;
+  const r = el.getBoundingClientRect();
+  return r.width ? { left: r.left, bottom: r.bottom } : null;
+}
+
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `initial` fills it in (quick capture). */
 export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean } = {}): Promise<EntryAnswer | null> =>
-  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? null, initial.requireTitle ?? false, resolve).open());
+  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, resolve).open());

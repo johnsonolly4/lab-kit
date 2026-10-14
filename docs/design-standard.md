@@ -18,6 +18,13 @@ Rules
 - Integrated plugins' own windows follow the user's theme; do not restyle them. Anything Lab Kit draws follows this table.
 - Before adding a size, ask: a fifth size needs the user's OK and a line here.
 
+## The window rule (dimming and place)
+A window the plugin opens either has something on screen to point at, or it does not.
+- Opened from highlighted text: just under the highlighted line, the line underlined, no dimmed background.
+- Opened by clicking a button (a plugin button, a Meta Bind button): just under that button, no dimmed background.
+- Opened with nothing to point at (a hotkey, the command palette): in the middle, background dimmed.
+Code: `buttonAnchor` and `selectionAnchor` in `src/planning/entry-window.ts`; `openEntry` applies the rule, so every window that uses it follows it.
+
 ## Where it applies today (checked 2026-10-14, read from the CSS, not measured on screen)
 - Already on the standard: home / hub cards (14), hub buttons (10), badges (pill), plan map cards, tiles and the new-to-do box (10), the entry window, its chips and its dropdown (built on it 2026-10-14).
 - Moves in the pass: plan map pop-up menu 8 to 10 and its rows 4 to 6; the 12 places with 3 px and other odd corners in `styles.css`; windows 12 to 14 (Check setup, Tidy, Manage files); the theme snippet's 10 px / 8 px literals. See `docs/plans/design-standard-pass.md`.
