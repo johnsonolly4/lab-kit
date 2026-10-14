@@ -6,12 +6,12 @@ Listed in the Obsidian community plugin store (since 2026-10-04); every release 
 
 ## Session routine (MANDATORY, no exceptions)
 **Start:** read `STATUS.md`. Say in one line which task you are taking. If unsure, ask one question.
-**Work:** one task per session. More than 2 files will change → plan mode first, wait for approval, work in phases.
+**Work:** one task per session. More than 2 files will change → plan mode first, wait for approval, work in phases. After each change, once `npm test` and `npm run lint` pass (0 errors), commit it locally on the feature branch with a message naming the behaviour (docs, BACKLOG and checklist edits for that change go in the same commit). Never commit on a red run. Local only: pushing still needs the user.
 **End** (you cannot run `/clear`; only the user can):
 1. `npm test` and `npm run lint` (0 errors). Nothing is done until they pass.
 2. Update docs per `docs/maintenance.md`.
 3. Update `STATUS.md` (≤ 40 lines; the Version line only changes at release). Anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) → `BACKLOG.md` as an unticked item with file:line pointers; STATUS just points to it.
-4. Commit on the feature branch.
+4. Commit on the feature branch (final commit; during the work, commit after each change as in **Work**).
 5. Run `/handoff`. Then **STOP**: don't start the next task, even if it is obvious or small. End your reply with exactly:
    > [!done] Task finished
    > Type `/clear`, then say **Read STATUS.md and continue**.
