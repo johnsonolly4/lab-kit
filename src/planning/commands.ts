@@ -14,6 +14,7 @@ import type { EntryField, EntryValues } from "./entry-fields";
 import { openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
 import { projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
+import { followSeries, meetingFields, meetingStart, ONE_OFF, readMeeting } from "./meeting-entry";
 import { parseQuickTodo } from "./quick-todo";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
@@ -154,58 +155,70 @@ export class PlanningCommands {
   }
 
   /** Asks which series when there are several; null when there is none (a notice says so) or Esc was pressed. */
-  private async pickSeries(regularOnly = false): Promise<Series | null> {
-    const all = this.seriesList().filter(s => !regularOnly || s.interval !== ONCE);
+  private async pickSeries(): Promise<Series | null> {
+    const all = this.seriesList();
     if (!all.length) { new Notice("No meeting series yet. Make one with the meeting series command first."); return null; }
     return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
   }
 
-  /** New meeting note in `given` (a series card's button), else in the series asked for:  dated from the series' interval, "since" the last meeting of the series. The template reads `vtMeeting`. */
+  /** New meeting note in `given` (a series card's button: no window), else from one window: Series (or One-off), Date, and for a One-off its title and Project. `extra` = an extra meeting now: regular series only, today by default, held in between. The template reads `vtMeeting`. */
   async newMeeting(given?: Series, extra = false): Promise<void> {
-    const series = given ?? await this.pickSeries(extra);
-    if (!series) return;
-    if (series.interval === ONCE) { await this.newOneOff(); return; }
-    // An extra meeting is held on a date you give (today by default), in between: it does not move the schedule
-    let date = nextDate(series, new Date());
-    if (extra) {
-      const asked = await this.askDate("Date of the extra meeting (YYYY-MM-DD)", ymd(new Date()));
-      if (!asked) return;
-      date = asked;
+    if (given) {
+      if (given.interval === ONCE) { await this.newOneOff(); return; }
+      await this.makeMeeting(given, ymd(nextDate(given, new Date())));
+      return;
     }
+    const root = this.folders.meetings;
+    if (!(await this.ready(root))) return;
+    const all = this.seriesList();
+    if (extra && !all.some(s => s.interval !== ONCE)) { new Notice("No meeting series yet. Make one with the meeting series command first."); return; }
+    const hubFiles = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project");
+    const projects = projectNames(hubFiles.map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })));
+    const today = new Date();
+    let touched = false;   // once the date is typed, picking another series leaves it alone
+    const answer = await openEntry(this.app, extra ? "New extra meeting" : "New meeting", meetingFields(all, extra, projects), {
+      values: meetingStart(all, extra, today, this.hubOfActiveNote()),
+      titleWhen: extra ? undefined : { key: "series", value: ONE_OFF },
+      onChange: (values, changed) => { if (changed === "date") touched = true; return touched ? values : followSeries(all, extra, values, changed, today); },
+    });
+    if (!answer) return;
+    const read = readMeeting(all, answer.title, answer.values);
+    if ("error" in read) { new Notice(read.error); return; }
+    if (read.oneOff) await this.makeOneOff(read.date, read.title, read.project);
+    else await this.makeMeeting(read.series, read.date);
+  }
+
+  /** Makes the meeting note of a regular series on `date`, "since" the last meeting of the series. */
+  private async makeMeeting(series: Series, date: string): Promise<void> {
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
-    handoff().vtMeeting = { series: series.name, folder: series.folder, date: ymd(date), since: ymd(sinceLast(series, date, held)) };
+    handoff().vtMeeting = { series: series.name, folder: series.folder, date, since: ymd(sinceLast(series, parseDay(date)!, held)) };
     try { await this.fromTemplateFile(this.seriesTemplate(series), this.folders.meetings, series.folder); }
     finally { delete handoff().vtMeeting; }
   }
 
-  /** Asks a date until it is a real YYYY-MM-DD day; null when cancelled. */
-  private async askDate(prompt: string, start: string): Promise<Date | null> {
-    for (let typed = await ask(this.app, prompt, start); ; typed = await ask(this.app, prompt, typed ?? "")) {
-      if (typed === null) return null;
-      const d = parseDay(typed.trim());
-      if (d) return d;
-      new Notice("Type the date with year, month and day, for example 2026-10-15.");
-    }
-  }
-
-  /**
-   * New one-off meeting: a meeting that belongs to no series. It goes in the One-off hub (made the first time), is named from what you type,
-   * dated (today unless you change it) and can belong to a project. The Meeting template reads `vtMeeting`.
-   */
+  /** New one-off meeting: the same window as New meeting with One-off chosen. */
   async newOneOff(): Promise<void> {
     const root = this.folders.meetings;
     if (!(await this.ready(root))) return;
+    const hubFiles = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project");
+    const projects = projectNames(hubFiles.map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })));
+    const answer = await openEntry(this.app, "New one-off meeting", meetingFields([], false, projects), {
+      values: { series: ONE_OFF, date: ymd(new Date()), ...(this.hubOfActiveNote() ? { project: this.hubOfActiveNote() } : {}) },
+      titleWhen: { key: "series", value: ONE_OFF },
+    });
+    if (!answer) return;
+    await this.makeOneOff(String(answer.values.date), answer.title, String(answer.values.project ?? ""));
+  }
+
+  /**
+   * A one-off meeting: it belongs to no series. It goes in the One-off hub (made the first time), is named from `title`, dated `date` and can belong to a project.
+   * The Meeting template reads `vtMeeting`.
+   */
+  private async makeOneOff(date: string, title: string, project: string): Promise<void> {
+    const root = this.folders.meetings;
     const NAME = "One-off";
     let hub = this.seriesList().find(s => s.interval === ONCE);
-    const hubFiles = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project");
-    const fields: EntryField[] = [
-      { key: "date", name: "Date", icon: "calendar", kind: "date", prompt: "Date of the meeting", required: true },
-      projectField(projectNames(hubFiles.map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })))),
-    ];
-    const answer = await openEntry(this.app, "New one-off meeting", fields, { values: { date: ymd(new Date()), ...(this.hubOfActiveNote() ? { project: this.hubOfActiveNote() } : {}) } });
-    if (!answer) return;
-    const title = answer.title, date = String(answer.values.date), project = String(answer.values.project ?? "");
     if (!hub) {
       const folder = kitJoin(root, NAME);
       handoff().vtSeries = { name: NAME, folder, interval: ONCE, day: "Mon", start: date, deckKey: "deck_windows", deck: "" };

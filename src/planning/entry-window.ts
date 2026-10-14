@@ -35,7 +35,7 @@ class EntryModal extends Modal {
   private hint!: HTMLElement;
   private busy = false;   // a list or the date box is open: a click on another chip waits (no stack of boxes)
 
-  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private validate: ((a: EntryAnswer) => string | null) | null, private openField: { key: string; search: string } | null, private done: (a: EntryAnswer | null) => void) {
+  constructor(app: App, private heading: string, private fields: EntryField[], private title: string, values: EntryValues, private anchor: EntryAnchor | null, private requireTitle: boolean, private validate: ((a: EntryAnswer) => string | null) | null, private openField: { key: string; search: string } | null, private titleWhen: { key: string; value: EntryValue } | null, private onChange: ((values: EntryValues, changed: string) => EntryValues) | null, private done: (a: EntryAnswer | null) => void) {
     super(app);
     this.values = { ...values };
   }
@@ -58,18 +58,15 @@ class EntryModal extends Modal {
     this.input.addEventListener("keydown", e => {
       if (e.key !== "Enter" || e.isComposing) return;
       e.preventDefault();
-      const missing = missingRequired(this.fields, this.values);
-      if (this.requireTitle && !this.input.value.trim()) { this.hint.setText("Type a title first."); this.hint.addClass("is-bad"); return; }
-      if (missing) { this.hint.setText(`Pick a ${missing.name.toLowerCase()} first.`); this.hint.addClass("is-bad"); return; }
-      const answer = { title: this.input.value.trim(), values: entryResult(this.fields, this.values) };
-      const problem = this.validate?.(answer);
-      if (problem) { this.hint.setText(problem); this.hint.addClass("is-bad"); return; }
-      this.finish(answer);
-      this.close();
+      this.submit();
+    });
+    this.modalEl.tabIndex = -1;
+    this.scope.register([], "Enter", e => {   // with no title box showing, Enter on the window (not on a chip) creates
+      if (!this.titleShown() && document.activeElement?.tagName !== "BUTTON" && !e.isComposing) { this.submit(); return false; }
+      return undefined;
     });
     this.drawChips();
-    this.input.focus();
-    this.input.select();
+    this.focusFirst();
     if (this.openField) {   // quick capture with an unknown `+name`: that chip's search opens, filled
       const i = visibleFields(this.fields, this.values).findIndex(f => f.key === this.openField?.key);
       const btn = this.chips.children[i] as HTMLElement | undefined;
@@ -77,8 +74,23 @@ class EntryModal extends Modal {
     }
   }
 
+  private titleShown(): boolean { return !this.titleWhen || this.values[this.titleWhen.key] === this.titleWhen.value; }
+  private focusFirst(): void { if (this.titleShown()) { this.input.focus(); this.input.select(); } else this.modalEl.focus(); }
+
+  private submit(): void {
+    const missing = missingRequired(this.fields, this.values);
+    if (this.requireTitle && this.titleShown() && !this.input.value.trim()) { this.hint.setText("Type a title first."); this.hint.addClass("is-bad"); return; }
+    if (missing) { this.hint.setText(`Pick a ${missing.name.toLowerCase()} first.`); this.hint.addClass("is-bad"); return; }
+    const answer = { title: this.titleShown() ? this.input.value.trim() : "", values: entryResult(this.fields, this.values) };
+    const problem = this.validate?.(answer);
+    if (problem) { this.hint.setText(problem); this.hint.addClass("is-bad"); return; }
+    this.finish(answer);
+    this.close();
+  }
+
   private drawChips(): void {
     this.chips.empty();
+    this.input.toggleClass("vt-hidden", !this.titleShown());
     for (const f of visibleFields(this.fields, this.values)) {
       const view = chipView(f, this.values[f.key]);
       const btn = this.chips.createEl("button", { cls: `vt-todo-chip ${view.set ? "is-set" : "is-empty"}`, attr: { "aria-label": f.name } });
@@ -93,9 +105,9 @@ class EntryModal extends Modal {
     this.busy = true;
     try {
       const got = await editEntryField(this.app, f, this.values[f.key], anchor, search);
-      if (got !== null) { this.values = setEntryValue(this.fields, this.values, f.key, got); this.drawChips(); }
+      if (got !== null) { this.values = setEntryValue(this.fields, this.values, f.key, got); if (this.onChange) this.values = this.onChange(this.values, f.key); this.drawChips(); }
     } finally { this.busy = false; }
-    this.input.focus();
+    if (this.titleShown()) this.input.focus(); else this.modalEl.focus();
   }
 
   private finish(a: EntryAnswer | null): void { if (!this.settled) { this.settled = true; this.done(a); } }
@@ -127,5 +139,5 @@ export function buttonAnchor(): EntryAnchor | null {
 }
 
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `initial` fills it in (quick capture). */
-export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null; /** Opens this chip's dropdown at once with its search filled. */ openField?: { key: string; search: string } } = {}): Promise<EntryAnswer | null> =>
-  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, initial.openField ?? null, resolve).open());
+export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null; /** Opens this chip's dropdown at once with its search filled. */ openField?: { key: string; search: string }; /** The title box shows only while this field has this value (a One-off meeting's title). */ titleWhen?: { key: string; value: EntryValue }; /** Called after a chip changed; returns the values to keep (the Date following the Series chip). */ onChange?: (values: EntryValues, changed: string) => EntryValues } = {}): Promise<EntryAnswer | null> =>
+  new Promise(resolve => new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, initial.openField ?? null, initial.titleWhen ?? null, initial.onChange ?? null, resolve).open());

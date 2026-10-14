@@ -15,6 +15,11 @@ describe("entry fields", () => {
     expect(visibleFields(extra, {}).map(f => f.key)).not.toContain("flag");
     expect(visibleFields(extra, { due: "2026-11-15" }).map(f => f.key)).toContain("flag");
   });
+  it("showValue: a field with showWhen and showValue is visible only while that field equals the value", () => {
+    const extra = [{ key: "a", name: "A", icon: "x", kind: "pick" as const, prompt: "" }, { key: "b", name: "B", icon: "x", kind: "text" as const, prompt: "", showWhen: "a", showValue: "yes" }];
+    expect(visibleFields(extra, { a: "no" }).map(f => f.key)).toEqual(["a"]);
+    expect(visibleFields(extra, { a: "yes" }).map(f => f.key)).toEqual(["a", "b"]);
+  });
   it("chips: empty ones say + name, set ones their label, the toggle on / off", () => {
     const f = (k: string) => fields.find(x => x.key === k)!;
     expect(chipView(f("project"), "")).toEqual({ text: "+ Project", set: false });

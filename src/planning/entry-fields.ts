@@ -18,6 +18,8 @@ export interface EntryField {
   prompt: string;
   /** Visible only once the field with this key has a value. */
   showWhen?: string;
+  /** With `showWhen`: visible only while that field equals this value (Project only for a One-off meeting). */
+  showValue?: EntryValue;
   /** Enter does not create until it has a value. */
   required?: boolean;
   /** A pick field: text typed in its search that is not in the list can be picked as a new value. */
@@ -27,7 +29,7 @@ export interface EntryField {
 const empty = (v: EntryValue | undefined): boolean => v === undefined || v === "" || v === false;
 
 /** The fields to show, given what is set. */
-export const visibleFields = (fields: EntryField[], values: EntryValues): EntryField[] => fields.filter(f => !f.showWhen || !empty(values[f.showWhen]));
+export const visibleFields = (fields: EntryField[], values: EntryValues): EntryField[] => fields.filter(f => !f.showWhen || (f.showValue !== undefined ? values[f.showWhen] === f.showValue : !empty(values[f.showWhen])));
 
 /** What a chip says, and whether it has a value. */
 export function chipView(f: EntryField, v: EntryValue | undefined): { text: string; set: boolean } {
