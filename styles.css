@@ -1,3 +1,6 @@
+/* ---- Shape standard (docs/design-standard.md): four corner sizes; new rules use these, not numbers ---- */
+body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; --lk-radius-pill: 999px; }
+
 /* Lab Calc 1.1: calculation tables */
 /* Flush with the text column: no padding or side margins from Obsidian or a theme (themes often indent or centre plain tables) */
 .lab-kit { margin: 0.6em 0; padding: 0; }
@@ -348,7 +351,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }
 .vt-map-drag.vt-map-pending { stroke-dasharray: none; }
 .vt-map-addbox { position: absolute; left: var(--vt-add-x); top: var(--vt-add-y); width: var(--vt-add-w); height: var(--vt-add-h); box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 6; border: 1.5px dashed var(--interactive-accent); border-radius: 10px; color: var(--interactive-accent); background: var(--background-primary); font-size: var(--font-ui-small); pointer-events: auto; }
-.vt-map-empty { box-sizing: border-box; width: 100%; height: calc(2 * 108px + 14px); display: flex; align-items: center; justify-content: center; border: 1.5px dashed var(--interactive-accent); border-radius: 10px; color: var(--interactive-accent); cursor: pointer; font-size: var(--font-ui-small); }
+.vt-map-empty { box-sizing: border-box; width: 100%; height: calc(2 * 108px + 14px); display: flex; align-items: center; justify-content: center; border: 1.5px dashed var(--interactive-accent); border-radius: var(--lk-radius-control); color: var(--interactive-accent); cursor: pointer; font-size: var(--font-ui-small); }
 .vt-map-empty:hover { background: var(--background-modifier-hover); }
 .vt-map-addbox.vt-map-drop { background: var(--background-modifier-hover); outline: 2px solid var(--interactive-accent); }
 .vt-map-card.vt-map-drop, .vt-map-tile.vt-map-drop { outline: 2px solid var(--interactive-accent); }
@@ -413,7 +416,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 
 /* ---- To-do chip bar (show: todo-bar): a row of property chips at the top of a to-do note ---- */
 .vt-todo-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.vt-todo-chip { display: inline-flex; align-items: center; gap: 5px; height: auto; padding: 3px 10px; border-radius: 999px; font-size: var(--font-ui-small); line-height: 1.4; box-shadow: none; cursor: pointer; color: var(--text-normal); background: transparent; border: 1px solid var(--background-modifier-border); }
+.vt-todo-chip { display: inline-flex; align-items: center; gap: 5px; height: auto; padding: 3px 10px; border-radius: var(--lk-radius-pill); font-size: var(--font-ui-small); line-height: 1.4; box-shadow: none; cursor: pointer; color: var(--text-normal); background: transparent; border: 1px solid var(--background-modifier-border); }
 .vt-todo-chip:hover { background: var(--background-modifier-hover); }
 .vt-todo-chip.is-empty { border-style: dashed; color: var(--text-muted); }
 .vt-todo-chip.is-set { border-color: var(--interactive-accent); color: var(--text-accent); }
@@ -421,17 +424,17 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-todo-chip-icon .svg-icon { width: 14px; height: 14px; }
 
 /* ---- Entry window (New to-do and the other New … flows): a title box with the chips under it ---- */
-.vt-entry { width: min(560px, 92vw); }
+.vt-entry { width: min(560px, 92vw); border-radius: var(--lk-radius-card); --modal-radius: var(--lk-radius-card); }
 .vt-entry-heading { margin: 0 0 8px; }
-.vt-entry-title { width: 100%; font-size: var(--font-ui-large, 1.1em); margin: 0 0 10px; }
+.vt-entry-title { width: 100%; border-radius: var(--lk-radius-control); font-size: var(--font-ui-large, 1.1em); margin: 0 0 10px; }
 .vt-entry-chips { margin: 0 0 8px; }
 .vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }
 
 /* ---- Dropdown under a chip (entry window, to-do chip bar) ---- */
-.vt-pop { position: fixed; left: var(--vt-pop-left, 0); top: var(--vt-pop-top, 0); z-index: 100; min-width: 220px; max-width: min(340px, 92vw); padding: 6px; border-radius: var(--radius-m, 8px); border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: var(--shadow-l); outline: none; }
+.vt-pop { position: fixed; left: var(--vt-pop-left, 0); top: var(--vt-pop-top, 0); z-index: 100; min-width: 220px; max-width: min(340px, 92vw); padding: 6px; border-radius: var(--lk-radius-control); border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: var(--shadow-l); outline: none; }
 .vt-pop-search { width: 100%; margin: 0 0 4px; }
 .vt-pop-list { max-height: 260px; overflow-y: auto; }
-.vt-pop-row { padding: 5px 10px; border-radius: var(--radius-s, 6px); cursor: pointer; font-size: var(--font-ui-small); }
+.vt-pop-row { padding: 5px 10px; border-radius: var(--lk-radius-row); cursor: pointer; font-size: var(--font-ui-small); }
 .vt-pop-row.is-active { background: var(--background-modifier-hover); }
 .vt-pop-row.is-current { color: var(--text-accent); }
 .vt-pop-empty, .vt-pop-hint { padding: 4px 10px; font-size: var(--font-ui-smaller); color: var(--text-muted); }

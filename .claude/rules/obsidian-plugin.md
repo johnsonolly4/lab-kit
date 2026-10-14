@@ -9,6 +9,7 @@ Source: docs/reference/plugin-guidelines.md. Check there before guessing.
 
 - `this.app`, never the global `app`. Log only errors.
 - No `innerHTML` / `outerHTML` / `insertAdjacentHTML`: use `createEl`, `createDiv`, `createSpan`, `el.empty()`.
+- Shapes: corner radii in `styles.css` use `--lk-radius-card | control | row | pill`, never a number (`docs/design-standard.md`).
 - No inline styles (`el.style.x = …`): CSS classes in `styles.css` using Obsidian CSS variables. Which rules go in `styles.css` and which in a vault snippet: `docs/architecture.md` → Where CSS goes.
 - No regex lookbehind (breaks on iOS).
 - Node/Electron APIs (`fs`, `path`, `crypto`, `electron`) only through `nodeModule()` in `src/node.ts`, the one place that calls `require()`. It returns `null` unless `hasNode()` (`src/platform.ts`; plain `Platform.isDesktopApp` stays true in mobile emulation). No `child_process`, no `Buffer` or `process` globals.

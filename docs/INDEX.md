@@ -6,6 +6,7 @@
 | Open bugs, ideas, untested features | `BACKLOG.md` |
 | Done backlog items (ticked, with date and source) | `docs/backlog-archive.md` |
 | Where code and files live | `docs/architecture.md` |
+| Corner sizes and shapes of anything the plugin draws | `docs/design-standard.md` |
 | Plugin code rules (store review) | `.claude/rules/obsidian-plugin.md`, `docs/reference/plugin-guidelines.md` |
 | Obsidian settings API | `docs/reference/settings-definitions.md` |
 | Why something was decided | `docs/decisions.md` |
