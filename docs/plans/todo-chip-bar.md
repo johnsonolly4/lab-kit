@@ -1,6 +1,6 @@
 # Plan: to-do chip bar and quick capture
 
-_Agreed: 2026-10-14 (user, chat + survey). Written by `/phase-plan`. Each phase = one session, Sonnet (fully specified)._
+_Agreed: 2026-10-14 (user, chat + survey). Written by `/phase-plan`. Each phase = one session, Sonnet (fully specified). Re-cut 2026-10-14: Phases 3-7 after the user asked for one entry window across the similar flows._
 
 ## Goal
 Making a to-do takes one box (the title). Project, meeting, due, priority and countdown are set afterwards by clicking chips in a bar at the top of the to-do note, instead of typing frontmatter or answering seven prompts. Highlighted text plus the New to-do hotkey makes a to-do from the selection, reading `@project`, `%date` and `!priority` marks in it.
@@ -13,6 +13,7 @@ Making a to-do takes one box (the title). Project, meeting, due, priority and co
 - Project: inside a project (its hub, or any note in its folder) the to-do gets that project automatically, as today; outside one nothing is asked and the Project chip shows "+ Project" (user, 2026-10-14).
 
 ## Out of scope
+- Snippet forms (Alt+S) already are forms; the shopping list, results, Name boxes and topic / chemical / rig single-name boxes keep their one box.
 - A Comes after chip (user, 2026-10-14: the plan map already sets it). The template's Comes after prompt goes in Phase 3; `after` is set on the plan map or by hand.
 - Subtasks (`sub`), `experiment`, `result`: stay on the plan map.
 - A chip bar on non-to-do notes. Changing the board, or Alt+S forms.
@@ -32,17 +33,31 @@ Making a to-do takes one box (the title). Project, meeting, due, priority and co
 - Chips: Project (pick from live hubs, plus none), Meeting (live meeting series, plus none), Due (date box that also accepts due words and a date picker), Priority (none / 1 / 2 / 3), Countdown (toggle). A chip shows its value or a muted "+ Project" etc. when empty. Reuse `pick` / `ask` (`src/planning/ask.ts:43,90`) for the lists and the text box.
 - Done when: tests pass; `npm run build`; NOT seen in Obsidian (checklist row, BACKLOG item).
 
-### Phase 3: title-only creation and the bar in every to-do
-- Depends on: Phase 2.
-- Files: `kits/planning/Extras/Templates/To-do.md` (keep the title box and the automatic project from where you are; drop the project (unless inside one), comes after, meeting, due, countdown and priority prompts; add the `todo-bar` block to the body; keep the `due` / `priority` property types being set), `src/planning/todo-picker.ts` `newTodoText` (must match the template: `tests/todo-picker.test.ts:54`), `src/kit/tidy.ts` (add the block to existing to-dos: a new opt-in rule like `back-to-project` at `tidy.ts:349`, never touching a to-do that already has it), `npm run kit:manifest`, tests (`tests/due-words.test.ts`, `tests/todo-engine.test.ts`, `tests/esc-cancel.test.ts`, `tests/planning-commands.test.ts:84` need updating for the removed prompts; Tidy fixture test).
-- User-facing change (decided by the user): fewer prompts. Inside a project the project is set automatically (the template's existing `here` / preset logic stays); outside one nothing is asked and the Project chip shows "+ Project" (decided 2026-10-14).
-- Done when: tests pass; `npm run tidy-fixture` shows the bar rule; NOT seen in Obsidian.
+### Phase 3: the entry window, used by New to-do (re-cut 2026-10-14)
+_The user's idea (2026-10-14): when New to-do runs, one window shows the title box with the chip row under it, so everything is set at once; Enter on just the title creates at once, chips optional. Then the same window for the other flows (Phases 5-7)._
+- Depends on: Phase 2 (the chip pick code and setters move out of `blocks.ts` into a shared piece).
+- Files: new `src/planning/entry-window.ts` (a modal: title input, a chip row built from a list of field descriptions `{ key, name, icon, pick | date | toggle, initial }`; Enter creates with what is set, Esc cancels; chips open the same pick lists / date box as the in-note bar; returns `{ title, values }`), `src/planning/todo-bar.ts` (field descriptions for a to-do, reused by the in-note bar), `src/planning/commands.ts` `newTodo` (open the window, then hand the values to the template through `handoff()`), `kits/planning/Extras/Templates/To-do.md` (reads the handoff values, asks nothing when they are there; the old prompts stay as the fallback when the template is run without the plugin), `src/planning/todo-picker.ts` `newTodoText` (must match), `.vt-entry-*` in `styles.css`, tests, `npm run kit:manifest`.
+- The window also carries the to-do template's automatic project (inside a project the Project chip is already set, from `here` or the preset). Comes after is not in the window (plan map sets it).
+- Also: the `todo-bar` block goes into the to-do body, and a Tidy rule adds it to existing to-dos (opt-in, like `back-to-project`, `src/kit/tidy.ts:349`).
+- Done when: tests (window logic is a pure state object: fields, values, Enter / Esc results); the template with a handoff asks nothing; NOT seen in Obsidian.
+- New dependencies: none.
 
 ### Phase 4: quick capture from selected text
 - Depends on: Phases 1 and 3.
-- Files: `src/planning/commands.ts` (`newTodo` reads `app.workspace.activeEditor?.editor?.getSelection()`, pattern at `sequence.ts:49`; with a selection: parse, make the note without asking, set the fields with the Phase 2 setters, show a Notice naming the to-do; no selection: today's flow), `kits/planning/07 How-tos/Obsidian/Hotkeys.md` and `src/kit/hotkey-check.ts` (suggested key row, none set), tests, docs.
-- Question for the phase: does the selection in the note get replaced by a `[[link]]` to the new to-do? Default: no, the note is left alone (user can say).
-- Done when: tests; NOT seen in Obsidian.
+- Files: `src/planning/commands.ts` (`newTodo` reads `app.workspace.activeEditor?.editor?.getSelection()`, pattern at `sequence.ts:49`; with a selection: `parseQuickTodo` (Phase 1), open the window already filled in (so Enter confirms; the user sees what was read), no selection: the window empty), `kits/planning/07 How-tos/Obsidian/Hotkeys.md` and `src/kit/hotkey-check.ts` (suggested key row, none set), tests, docs.
+- Question for the phase: does the selection in the note get replaced by a `[[link]]` to the new to-do? Default: no.
+
+### Phase 5: New meeting and New project note in the window
+- Depends on: Phase 3.
+- Files: `src/planning/commands.ts` (New meeting: title box at `:167`, project pick at `:175`, series first; New project note: `kits/planning/Extras/Templates/New project note.md:12-16`), field lists (Project, plus Series for a meeting), tests. Both ask a title and a project today: the window replaces the two boxes.
+
+### Phase 6: New lab entry and Clone experiment
+- Depends on: Phase 3.
+- Files: `kits/lab/Templates/Lab Book Template.md:31` (experiment title), `src/kit/ui.ts:475` (New lab entry title) and `:541-544` (Clone: source pick, then title). Needs a spike first: which properties of a lab entry are worth a chip (Project? date? class?). Without one, the window is a title box with the same look (a consistent look, little else).
+
+### Phase 7: New meeting series as a form
+- Depends on: Phase 3.
+- Files: `src/planning/commands.ts:207-240` (name, how often, every N weeks, first date, deck folder, template: six boxes). Fields here are not chips so much as a small form; the window gets a "field list" with text and pick fields. Own design in the phase (user to confirm the field order).
 
 ## Docs (every phase, per `docs/maintenance.md`)
 `docs/changelog.md` Unreleased, `docs/tutorial.md` (to-do section), Vault spec in `kits/planning/07 How-tos/Obsidian/` (then `npm run kit:manifest`), `docs/obsidian-test-checklist.md` row, BACKLOG "Not yet tested".
