@@ -34,6 +34,7 @@ export function chipView(f: EntryField, v: EntryValue | undefined): { text: stri
   if (f.kind === "toggle") return { text: `${f.name} ${v === true ? "on" : "off"}`, set: v === true };
   if (empty(v)) return { text: `+ ${f.name}`, set: false };
   if (f.kind === "pick") return { text: f.options?.find(o => o.value === v)?.label ?? String(v), set: true };
+  if (f.kind === "date" && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return { text: `${v.slice(8)}-${v.slice(5, 7)}-${v.slice(0, 4)}`, set: true };   // shown as DD-MM-YYYY; the property stays YYYY-MM-DD
   return { text: String(v), set: true };
 }
 

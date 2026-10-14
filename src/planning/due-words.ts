@@ -1,5 +1,5 @@
 /** A due date typed as words to YYYY-MM-DD, or null when it is not one. The same rules as `parseDue` in the planning kit's `vtAsk.js` (the To-do template runs that one): change both; `tests/due-words.test.ts` checks them against one table.
- *  YYYY-MM-DD, today, tomorrow, a weekday, "next <weekday>", "in 3 days" / "in 2 weeks", "next week" (that Monday), "next month" (the 1st),
+ *  YYYY-MM-DD, today, tomorrow, a weekday, "next <weekday>", "in 3 days" / "3 days" / "3d" / "2w", "next week" (that Monday), "next month" (the 1st),
  *  a day and month ("15 nov", "nov 15th"), and numbers day first ("15/11", "15/11/2026", "15/11/26").
  *  A day and month with no year is the next one that is today or later. Weeks start on Monday. */
 export function parseDue(text: string, now: Date): string | null {
@@ -20,7 +20,7 @@ export function parseDue(text: string, now: Date): string | null {
   const sinceMonday = (today.getDay() + 6) % 7;
   if (t === "next week") return fmt(shift(7 - sinceMonday));
   if (t === "next month") return fmt(new Date(today.getFullYear(), today.getMonth() + 1, 1));
-  m = /^in (\d+) (day|days|week|weeks)$/.exec(t);
+  m = /^(?:in )?(\d{1,3}) ?(d|day|days|w|week|weeks)$/.exec(t);   // "in 3 days", "3 days", "3d", "2w"
   if (m) return fmt(shift(+m[1] * (m[2].startsWith("w") ? 7 : 1)));
   m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}|\d{2}))?$/.exec(t);
   if (m) return dayMonth(+m[1], +m[2] - 1, m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : null);

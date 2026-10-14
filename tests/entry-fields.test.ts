@@ -21,7 +21,7 @@ describe("entry fields", () => {
     expect(chipView(f("project"), "Alpha")).toEqual({ text: "Alpha", set: true });
     expect(chipView(f("priority"), 1)).toEqual({ text: "1 high", set: true });
     expect(chipView(f("priority"), "")).toEqual({ text: "+ Priority", set: false });
-    expect(chipView(f("due"), "2026-11-15")).toEqual({ text: "2026-11-15", set: true });
+    expect(chipView(f("due"), "2026-11-15")).toEqual({ text: "15-11-2026", set: true });   // DD-MM-YYYY on the chip
     expect(chipView({ key: "t", name: "Countdown", icon: "x", kind: "toggle", prompt: "" }, true)).toEqual({ text: "Countdown on", set: true });
   });
   it("clearing a field clears the ones that need it; the result keeps only visible, set values", () => {

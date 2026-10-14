@@ -15,9 +15,9 @@ export function selectionAnchor(app: App): EntryAnchor | null {
   if (!editor?.somethingSelected()) return null;
   try {
     const cm = (editor as unknown as { cm?: { coordsAtPos(pos: number): { left: number; bottom: number } | null } }).cm;
-    const c = cm?.coordsAtPos(editor.posToOffset(editor.getCursor("to")));
+    const end = cm?.coordsAtPos(editor.posToOffset(editor.getCursor("to"))), start = cm?.coordsAtPos(editor.posToOffset(editor.getCursor("from")));
     const sel = window.getSelection();
-    return c ? { left: c.left, bottom: c.bottom, ...(sel && sel.rangeCount && !sel.isCollapsed ? { range: sel.getRangeAt(0).cloneRange() } : {}) } : null;
+    return end ? { left: start?.left ?? end.left, bottom: end.bottom, ...(sel && sel.rangeCount && !sel.isCollapsed ? { range: sel.getRangeAt(0).cloneRange() } : {}) } : null;
   } catch { return null; }
 }
 
@@ -116,7 +116,7 @@ class EntryModal extends Modal {
 export function buttonAnchor(): EntryAnchor | null {
   if (!Platform.isDesktop) return null;
   const el = document.activeElement;
-  if (!(el instanceof HTMLElement) || el.tagName !== "BUTTON" || !el.closest(".workspace-leaf-content")) return null;
+  if (!(el instanceof HTMLElement) || (el.tagName !== "BUTTON" && el.getAttribute("role") !== "button") || !el.closest(".workspace-leaf-content")) return null;   // a real button, or a box that acts as one (the empty-project box on the map)
   const r = el.getBoundingClientRect();
   return r.width ? { left: r.left, bottom: r.bottom } : null;
 }

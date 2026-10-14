@@ -17,10 +17,10 @@ import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { parseQuickTodo } from "./quick-todo";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
-import { firstDefaultDate, nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
+import { nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { addResult } from "./result";
 import { linkInOrder } from "./sequence";
-import { parseDay, ymd } from "./todo";
+import { dayOf, parseDay, ymd } from "./todo";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -237,7 +237,7 @@ export class PlanningCommands {
     let series: SeriesAnswer | null = null;
     const answer = await openEntry(this.app, "New meeting series", seriesFields(where), {
       requireTitle: true,
-      values: { interval: "weekly", date: ymd(firstDefaultDate(4, new Date())) },   // weekly, on the next Thursday
+      values: { interval: "weekly", date: ymd(dayOf(new Date(), 7)) },   // weekly, first one a week from today
       validate: a => { const r = readSeries(a.title, a.values, taken); if ("error" in r) return r.error; series = r; return null; },
     });
     if (!answer || !series) return;

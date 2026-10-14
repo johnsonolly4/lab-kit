@@ -56,3 +56,19 @@ describe("a note made in the lab folder by hand (the folder trigger)", () => {
     expect(ui).toContain('labEntryFields(labNotes, false).filter(f => f.key === "expClass")');
   });
 });
+
+describe("a lab note made from a board column keeps that column's Status", () => {
+  const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  it("reads the Status already in the new file and writes it once (Planned only when there is none)", () => {
+    expect(tpl).toContain('const foundStatus = ((rawNow.match(/^Status:[ \\t]*["\']?([^"\'\\r\\n]+)/m) || [])[1] || "").trim();');
+    expect(tpl).toContain('const status = foundStatus || "Planned";');
+    expect(tpl.match(/^Status:/gm)).toHaveLength(1);
+    expect(tpl).not.toMatch(/^Status: Planned$/m);
+  });
+  it("the regex finds a column's Status in a file the board made", () => {
+    const find = (raw: string): string => ((raw.match(/^Status:[ \t]*["']?([^"'\r\n]+)/m) || [])[1] || "").trim();
+    expect(find("---\nStatus: Started\n---\n")).toBe("Started");
+    expect(find('---\nStatus: "Processing results"\n---\n')).toBe("Processing results");
+    expect(find("")).toBe("");
+  });
+});

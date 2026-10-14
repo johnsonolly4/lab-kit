@@ -1,4 +1,5 @@
 <%*
+try {   // a cancel (Esc) is caught at the end of the file, so Templater does not log an error
 // To-do template - always files the new to-do in 00 Planning/To-dos (see Vault spec)
 // Project is filled in automatically when started from a project card or from inside a project;
 // otherwise it asks (Enter on "(no project)" = none). Esc in any box cancels the whole to-do.
@@ -14,7 +15,7 @@ const day = days.includes((found || "").trim()) ? found.trim() : "Backlog";
 const trashIfBlank = async () => {
   const f = tp.config.target_file;
   const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm) => fm.split(/\r?\n/).every(l => !l.trim() || /^day:/.test(l.trim())) ? "" : m);
-  if (f.path.startsWith(`${folder}/`) && rest.trim() === "") { try { await app.fileManager.trashFile(f); } catch (e) { /* it stays */ } }
+  if (f.path.startsWith(`${folder}/`) && rest.trim() === "") { window.setTimeout(() => { app.fileManager.trashFile(f).catch(() => { /* it stays */ }); }, 800); }   // after Templater has finished with the file
 };
 let preset = window.vtTodo;
 delete window.vtTodo;
@@ -111,4 +112,7 @@ cssclasses:
 ```vault-card
 show: todo-bar
 ```
-
+<%* } catch (e) {
+  // A cancel is not an error: nothing is written (the empty note is trashed a moment after Templater finishes); anything else is shown as usual
+  if (String(e && e.message).startsWith("Cancelled")) { tR = ""; } else { throw e; }
+} -%>

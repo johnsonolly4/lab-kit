@@ -480,10 +480,8 @@ class BlockView extends MarkdownRenderChild {
     const fields = this.todoEntryFields(), values = todoValues(fm);
     const bar = box.createDiv({ cls: "vt-todo-bar" });
     for (const f of visibleFields(fields, values)) {
-      const view = chipView(f, values[f.key]);
-      const btn = bar.createEl("button", { cls: `vt-todo-chip ${view.set ? "is-set" : "is-empty"}`, attr: { "aria-label": f.name, title: f.name } });
-      if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
-      btn.createSpan({ text: view.text });
+      const btn = bar.createEl("button", { cls: "vt-todo-chip", attr: { "aria-label": f.name, title: f.name } });
+      this.paintChip(btn, f, values[f.key]);
       for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
       btn.addEventListener("click", () => { void this.editChip(file, f, values[f.key], btn); });
     }
@@ -496,12 +494,23 @@ class BlockView extends MarkdownRenderChild {
     return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"));
   }
 
-  /** Asks for the value of one chip and writes it; Esc changes nothing. */
+  /** What a chip shows for `value`: its icon (when set) and text, and its set / empty look. */
+  private paintChip(btn: HTMLElement, f: EntryField, value: EntryValue | undefined): void {
+    const view = chipView(f, value);
+    btn.empty();
+    btn.toggleClass("is-set", view.set);
+    btn.toggleClass("is-empty", !view.set);
+    if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
+    btn.createSpan({ text: view.text });
+  }
+
+  /** Asks for the value of one chip and writes it; Esc changes nothing. The chip shows the new value at once (the write goes through the file and the block redraws a moment later). */
   private async editChip(file: TFile, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<void> {
     if (this.chipBusy) return;   // one list at a time: a click on another chip meanwhile does nothing
     this.chipBusy = true;
     const got = await editEntryField(this.app, field, current, anchor).finally(() => { this.chipBusy = false; });
     if (got === null) return;
+    this.paintChip(anchor, field, got);
     await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyTodoValue(f, field.key, got); })
       .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });
   }

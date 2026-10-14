@@ -37,3 +37,14 @@ describe("Esc cancels the creation", () => {
     expect(fn).toContain("delete w.labKitPresetTitle; delete w.labKitPresetClass;");
   });
 });
+
+describe("a cancel is not logged as an error (Templater would print 'Template parsing error, aborting')", () => {
+  for (const f of ["kits/planning/Extras/Templates/To-do.md", "kits/lab/Templates/Lab Book Template.md"]) it(`${f}: the script is a try, a cancel is caught at the end and writes nothing, the empty note is trashed later`, () => {
+    const t = read(f);
+    expect(t.startsWith("<%*\ntry {")).toBe(true);
+    expect(t).toContain('if (String(e && e.message).startsWith("Cancelled")) { tR = ""; } else { throw e; }');
+    expect(t.trimEnd().endsWith("} -%>")).toBe(true);
+    expect(t).toContain("window.setTimeout(() => { app.fileManager.trashFile(f)");
+    expect(t).not.toMatch(/await app\.fileManager\.trashFile/);   // not at once: Templater still writes to the file
+  });
+});

@@ -34,11 +34,11 @@ describe("seriesFields", () => {
     expect(f[0].allowNew).toBe(true);
     expect(f[2].prompt).toContain("this Mac");
   });
-  it("New meeting series opens the window with weekly and the next Thursday, and checks the answer before it closes", () => {
+  it("New meeting series opens the window with weekly and a week from today, and checks the answer before it closes", () => {
     const src = readFileSync("src/planning/commands.ts", "utf8");
     const fn = src.slice(src.indexOf("async newSeries"));
     expect(fn).toContain('openEntry(this.app, "New meeting series", seriesFields(where)');
-    expect(fn).toContain('values: { interval: "weekly", date: ymd(firstDefaultDate(4, new Date())) }');
+    expect(fn).toContain('values: { interval: "weekly", date: ymd(dayOf(new Date(), 7)) }');
     expect(fn).toContain("validate:");
   });
 });

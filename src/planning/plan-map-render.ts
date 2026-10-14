@@ -131,7 +131,8 @@ function addBoxSpot(wrap: HTMLElement, s: { left: number; right: number; top: nu
   wrap.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (el !== source) others.push(el.getBoundingClientRect()); });
   const right = { x: s.right + 16, y: s.top + (s.height - ADD_H) / 2 }, below = { x: s.left + (s.width - ADD_W) / 2, y: s.bottom + 16 };
   const edge = { x: w.right - ADD_W - 12, y: Math.min(Math.max(s.top, w.top), w.bottom - ADD_H) };
-  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom
+  const slack = 14;   // the box may stick out above / below the map a little: beside a lone Not linked tile the map is only as tall as the tile
+  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top - slack && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom + slack
     && !others.some(o => p.x < o.right + 6 && p.x + ADD_W > o.left - 6 && p.y < o.bottom + 6 && p.y + ADD_H > o.top - 6);
   return [direction === "down" ? below : right, direction === "down" ? right : below].find(free) ?? edge;
 }
