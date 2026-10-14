@@ -50,6 +50,13 @@ describe("plan map styles", () => {
   });
 });
 
+describe("theme snippet corners", () => {
+  it("vault-theme.css has no bare border-radius number (variables with a fallback only)", () => {
+    const bad = snippet.split("\n").filter(l => /border-radius:/.test(l) && !/var\(--(lk-radius-[a-z]+|vt-card-radius)/.test(l));
+    expect(bad).toEqual([]);
+  });
+});
+
 describe("lab-kit windows corner", () => {
   it("every contentEl class the kit windows use is covered by the card-corner rule", () => {
     const rule = css.split("\n").find(l => l.includes("--modal-radius: var(--lk-radius-card)") && l.startsWith(".modal:has("))!;

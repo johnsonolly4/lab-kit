@@ -107,7 +107,7 @@ body {
   line-height: 1.5;
   padding: 0 8px;
   margin-left: 6px;
-  border-radius: 999px;
+  border-radius: var(--lk-radius-pill, 999px);
   white-space: nowrap;
   vertical-align: 1px;
   color: rgb(var(--vt-badge-text));
@@ -183,7 +183,7 @@ body {
 }
 .vt .mb-button-group > .mb-button > .mb-button-inner,
 .vt .mb-button > .mb-button-inner {
-  border-radius: 10px !important;
+  border-radius: var(--lk-radius-control, 10px) !important;
   background: transparent !important;
   border: 1px solid var(--vt-card-border) !important;
   box-shadow: none !important;
@@ -272,7 +272,7 @@ body {
 .cm-embed-block:has(.vt-tile-toggle) .edit-block-button, .cm-embed-block:has(.vt-tile-toggle) + .edit-block-button { display: none; }
 .vt-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
 .vt-card-actions button, .vt-hub-bar button {
-  border-radius: 10px;
+  border-radius: var(--lk-radius-control, 10px);
   background: transparent;
   border: 1px solid var(--vt-card-border);
   box-shadow: none;
@@ -332,7 +332,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   width: 16px;
   height: 16px;
   border: 1.5px solid var(--vt-hint);
-  border-radius: 50%;
+  border-radius: var(--lk-radius-pill, 999px);
   font-size: 11px;
   line-height: 1;
 }
@@ -352,7 +352,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   inset-inline-end: 8px;
   bottom: 6px;
   padding: 0 6px;
-  border-radius: 8px;
+  border-radius: var(--lk-radius-pill, 999px);
   font-size: var(--font-ui-smaller);
   line-height: 1.5;
   color: var(--text-muted);
@@ -374,7 +374,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   white-space: nowrap;
   text-overflow: ellipsis;
   padding: 0 6px;
-  border-radius: 8px;
+  border-radius: var(--lk-radius-pill, 999px);
   font-size: var(--font-ui-smaller);
   line-height: 1.5;
   color: var(--text-muted);
@@ -456,7 +456,7 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   width: calc(8px * var(--vt-on, 0));
   height: 8px;
   margin-right: calc(-6px * (1 - var(--vt-on, 0))); /* no dot = no gap */
-  border-radius: 50%;
+  border-radius: var(--lk-radius-pill, 999px);
   background: rgb(var(--vt-col, 0, 0, 0));
 }
 
