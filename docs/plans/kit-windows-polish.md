@@ -24,7 +24,7 @@ Colours and corner sizes (`design-standard-pass.md`), the other `<details>` (ins
 - Fix: header text column wraps (or ellipsis with the full text in a `title` tooltip), count never overlaps; chevron box with explicit padding; body padding top so the first line does not touch the header. A test in `tests/managed-look.test.ts` for what is testable (class names, long title keeps the count in its own element).
 - Done when: tests, lint, row; screenshots from the user at two widths.
 
-### Phase 3: updates out of their kit (design choice, then build)
+### Phase 3: updates out of their kit (BUILT 2026-10-14: shape A, mock-up v2 approved, conflicts also in the top box)
 - After the user's answer to question 2. Files: `src/kit/managed-ui.ts` (`KitReviewSection` ~455-540: split drawing into "needs update" rows and "the rest"; `KitReviewModal` ~542-590: draw one top box from all sections, then the kit folds), `window-look.ts` if a tag chip is needed, `styles.css`, tests (`tests/managed-look.test.ts`, `kit-set.test.ts`: ticks still reach each kit's `select`; the foot's count still adds up across kits; the one-kit case looks right too).
 - Rule: ticking a row in the top box writes through the same `sec.select` as before (no change to what Apply / Update writes).
 - Done when: tests; the Apply/Update confirmation lists the same files as before; row.

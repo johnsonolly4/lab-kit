@@ -30,4 +30,16 @@ describe("Review update and Manage kit files folds", () => {
     expect(css).toMatch(/\.lab-kit-fold \{[^}]*border-radius: var\(--lk-radius-control\)/);
     expect(css).toContain(".lab-kit-fold.is-open > .lab-kit-fold-head .lab-kit-fold-chev");
   });
+  it("the review window has one 'To update' box across kits, with the kit named on each row; the kit folds keep the rest", () => {
+    const review = ui.slice(ui.indexOf("class KitReviewSection"), ui.indexOf("export class KitManagedModal"));
+    expect(ui).toContain('const TOP_ACTIONS: ManagedAction[] = ["fast-forward", "create", "merge", "needs-merge", "missing"]');
+    expect(review).toContain("if (TOP_ACTIONS.includes(g.action)) continue;");   // not listed twice
+    expect(ui).toContain('title: "To update"');
+    expect(ui).toContain('many ? kitName(sec.managed) : ""');   // the tag only with several kits
+    expect(ui).not.toMatch(/KitReviewSection[\s\S]*?Tick or untick all[\s\S]*?export class KitManagedModal/);   // the buttons moved to the top box
+  });
+  it("the boxes of the review rows are round and centred on the row", () => {
+    expect(css).toMatch(/\.lab-kit-win-tick \{[^}]*align-self: center/);
+    expect(css).toMatch(/\.lab-kit-win-tick input\[type=checkbox\] \{[^}]*--lk-radius-pill/);
+  });
 });

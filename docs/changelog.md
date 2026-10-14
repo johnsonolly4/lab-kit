@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Review update…: one "To update" box at the top** (plugin; not seen in Obsidian): every file that needs action (Updated, New files, merges, conflicts, deleted by you) is listed in one open box at the top, across kits, each row tagged with its kit name when both kits are on; Tick all / Untick all moved there. The kit folds below keep the rest (changed by you, up to date, kept). The tick boxes are round and centred on their row. "Nothing is written until you press Update." is said once at the top. What Update writes is unchanged.
 - **Fold headers no longer clip** (plugin CSS; not seen in Obsidian): in Review update… and Manage kit files a long group title wraps beside its count instead of running under it, the chevron has room, the body has a gap under the header, and the first row no longer draws a line right under it.
 - **Review update… says Update, not Apply** (plugin; not seen in Obsidian): in the Kit files window the button reads **Update (N files)**, the intro line says "press Update", and the confirmation asks "Update these files?" with an **Update** button. The merge and moved-folders windows still say Apply: they don't update kit files.
 - **Cursor under the chip bar in a new to-do** (plugin code; not seen in Obsidian): opening a to-do with nothing typed yet (properties and the chip bar only) puts the cursor on the empty line under the bar instead of above it. A to-do with text, or one opened in Reading view, is left alone.

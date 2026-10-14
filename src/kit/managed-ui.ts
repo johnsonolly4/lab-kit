@@ -452,6 +452,17 @@ const GROUPS: { action: ManagedAction; title: string; open?: boolean }[] = [
   { action: "off", title: "Switched off (not installed)" }
 ];
 
+/** The actions listed in the review window's top box (across kits); every other group stays in its kit's fold. */
+const TOP_ACTIONS: ManagedAction[] = ["fast-forward", "create", "merge", "needs-merge", "missing"];
+/** What each top-box row says it will do (the long group titles do not fit one row). */
+const TOP_LINES: Partial<Record<ManagedAction, string>> = {
+  "fast-forward": "Updated, the old copy is backed up first",
+  create: "New file",
+  merge: "Changed by you and by the kit, merges cleanly; your copy is backed up first",
+  "needs-merge": "Conflict: you and the kit changed the same lines. Left untouched; resolve in Manage kit files",
+  missing: "Deleted by you; tick to recreate"
+};
+
 /** One kit's part of the review window: what would happen to each of its files, with the boxes. Drawn into `root`; `changed` runs after every redraw so the window's Apply button follows the ticks. */
 class KitReviewSection {
   items: ManagedItem[] = [];
@@ -464,7 +475,7 @@ class KitReviewSection {
   /** Which groups the user opened or closed, so ticking a box does not fold them back. */
   private folds = new Map<string, boolean>();
 
-  constructor(readonly managed: KitManaged, private root: HTMLElement, private changed: () => void) {}
+  constructor(readonly managed: KitManaged, private root: HTMLElement, private changed: () => void, private ticked: () => void = () => {}) {}
 
   async load(): Promise<void> { this.items = await this.managed.plan(); this.retired = await this.managed.retired(); }
 
@@ -472,42 +483,20 @@ class KitReviewSection {
     const contentEl = this.root;
     contentEl.empty();
     const inst = this.managed.installedVersion;
-    winIntro(contentEl, inst ? `Installed: v${inst}. Nothing is written until you press Update.` : "Nothing installed by the built-in kit yet. Nothing is written until you press Update.");
+    winIntro(contentEl, inst ? `Installed: v${inst}.` : "Nothing installed by the built-in kit yet.");
     winSummary(contentEl, reviewSummary(this.items));
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
     contentEl.createDiv({ cls: "setting-item-description",
       text: `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date` });
 
-    // One click ticks every file with a box (recreate / merge); nothing is written until Apply
-    const boxed = this.items.filter(i => i.action === "missing" || i.action === "merge" || i.action === "create" || i.action === "fast-forward");
-    if (boxed.length) {
-      const bar = contentEl.createDiv({ cls: "lab-kit-win-bar" });
-      bar.createSpan({ text: `Tick or untick all ${boxed.length} files with a box` });
-      const buttons = bar.createDiv({ cls: "lab-kit-win-actions" });
-      buttons.createEl("button", { text: "Tick all", cls: "mod-cta" }).addEventListener("click", () => this.tick(boxed, true));
-      buttons.createEl("button", { text: "Untick all" }).addEventListener("click", () => this.tick(boxed, false));
-    }
-
     for (const g of GROUPS) {
+      if (TOP_ACTIONS.includes(g.action)) continue;   // listed in the window's top box
       const group = this.items.filter(i => i.action === g.action);
       if (!group.length) continue;
       const det = winFold(contentEl, { title: g.title, count: group.length, open: this.folds.get(g.action) ?? !!g.open, onToggle: open => this.folds.set(g.action, open) }).body;
       for (const it of group) {
-        const note = [it.untracked && g.action === "user-modified" ? "Not installed by the kit, no original to compare with." : "",
-          g.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : "",
-          g.action === "merge" && it.file.kind === "script" ? "Merged code: please test it." : ""].filter(Boolean);
-        const { row } = winRow(det, { state: actionWinState(g.action), title: it.dest, detail: [it.file.desc, ...note].filter(Boolean).join(" · ") });
-        // the files with a box: what ticking it does, at the row's right end
-        const tick = (word: string, on: boolean, set: (on: boolean) => void): void => {
-          const label = row.createEl("label", { cls: "lab-kit-win-tick" });
-          const cb = label.createEl("input", { attr: { type: "checkbox" } });
-          cb.checked = on;
-          cb.addEventListener("change", () => { set(cb.checked); this.render(); });
-          label.appendText(word);
-        };
-        if (g.action === "missing") tick("recreate", this.recreate.has(it.file.id), on => { if (on) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); });
-        if (g.action === "merge") tick("merge", !this.noMerge.has(it.file.id), on => { if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); });
-        if (g.action === "create" || g.action === "fast-forward") tick(g.action === "create" ? "add" : "update", !this.skip.has(it.file.id), on => { if (on) this.skip.delete(it.file.id); else this.skip.add(it.file.id); });
+        const note = [it.untracked && g.action === "user-modified" ? "Not installed by the kit, no original to compare with." : ""].filter(Boolean);
+        winRow(det, { state: actionWinState(g.action), title: it.dest, detail: [it.file.desc, ...note].filter(Boolean).join(" · ") });
       }
     }
 
@@ -518,15 +507,37 @@ class KitReviewSection {
     this.changed();
   }
 
-  /** Ticks or unticks every recreate / merge box at once. */
-  private tick(items: ManagedItem[], on: boolean): void {
-    for (const it of items) {
+  /** The files in the top box (updated, new, merges, conflicts, deleted), in the order of GROUPS. */
+  topItems(): ManagedItem[] { return GROUPS.flatMap(g => TOP_ACTIONS.includes(g.action) ? this.items.filter(i => i.action === g.action) : []); }
+
+  /** Draws one top-box row for `it`: the same boxes as before (recreate / merge / add / update), at the row's right end, centred. `tag` is the kit's name when there are several kits. */
+  drawTopRow(parent: HTMLElement, it: ManagedItem, tag: string): void {
+    const note = it.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it." : "";
+    const { row, text } = winRow(parent, { state: actionWinState(it.action), title: it.dest, detail: [TOP_LINES[it.action], it.file.desc, note].filter(Boolean).join(" · ") });
+    if (tag) text.querySelector(".lab-kit-win-title")?.createSpan({ cls: "lab-kit-badge", text: tag });
+    const box = (word: string, on: boolean, set: (on: boolean) => void): void => {
+      const label = row.createEl("label", { cls: "lab-kit-win-tick" });
+      const cb = label.createEl("input", { attr: { type: "checkbox" } });
+      cb.checked = on;
+      cb.addEventListener("change", () => { set(cb.checked); this.ticked(); });
+      label.appendText(word);
+    };
+    const id = it.file.id;
+    if (it.action === "missing") box("recreate", this.recreate.has(id), on => { if (on) this.recreate.add(id); else this.recreate.delete(id); });
+    if (it.action === "merge") box("merge", !this.noMerge.has(id), on => { if (on) this.noMerge.delete(id); else this.noMerge.add(id); });
+    if (it.action === "create" || it.action === "fast-forward") box(it.action === "create" ? "add" : "update", !this.skip.has(id), on => { if (on) this.skip.delete(id); else this.skip.add(id); });
+  }
+
+  /** Ticks or unticks every recreate / merge / add / update box at once (the top box's buttons). */
+  tickAll(on: boolean): void {
+    for (const it of this.items) {
       if (it.action === "missing") { if (on) this.recreate.add(it.file.id); else this.recreate.delete(it.file.id); }
       else if (it.action === "create" || it.action === "fast-forward") { if (on) this.skip.delete(it.file.id); else this.skip.add(it.file.id); }
-      else if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id);
+      else if (it.action === "merge") { if (on) this.noMerge.delete(it.file.id); else this.noMerge.add(it.file.id); }
     }
-    this.render();
   }
+  /** How many files have a box. */
+  boxed(): number { return this.items.filter(i => i.action === "missing" || i.action === "merge" || i.action === "create" || i.action === "fast-forward").length; }
 
   select = (it: ManagedItem): boolean => (SAFE_ACTIONS.includes(it.action) && !this.skip.has(it.file.id))
     || (it.action === "missing" && this.recreate.has(it.file.id))
@@ -543,6 +554,8 @@ class KitReviewSection {
 export class KitManagedModal extends Modal {
   private sections: KitReviewSection[] = [];
   private foot: HTMLElement | null = null;
+  private top: HTMLElement | null = null;
+  private topOpen = true;
   /** `applyMany`: writes the ticked files of several kits with one confirmation (src/kit/kit-set-ui.ts); needed when there is more than one kit. */
   constructor(app: App, private kits: KitManaged[], private applyMany?: (picks: { kit: KitManaged; items: ManagedItem[]; select: (it: ManagedItem) => boolean }[], scripts: Set<string>) => Promise<void>) { super(app); }
 
@@ -552,11 +565,14 @@ export class KitManagedModal extends Modal {
     const many = this.kits.length > 1;
     this.titleEl.setText(many ? "Kit files" : `Kit files, v${this.kits[0].version}`);
     const holders = this.kits.map(() => createDiv());
-    const loaded = this.kits.map((k, n) => new KitReviewSection(k, holders[n], () => this.drawFoot()));
+    const loaded = this.kits.map((k, n) => new KitReviewSection(k, holders[n], () => this.drawFoot(), () => { this.drawTop(); this.drawFoot(); }));
     try { await Promise.all(loaded.map(sec => sec.load())); }
     catch (e) { contentEl.createEl("p", { text: "Couldn't read your vault: " + (e as Error).message, cls: "mod-warning" }); return; }
     const order = many ? orderKits(loaded.map(sec => ({ id: sec.managed.bundle.manifest.id, name: kitName(sec.managed), installed: sec.managed.installedVersion !== null, items: sec.items, sec }))) : loaded.map(sec => ({ sec, waiting: 0, open: true, name: "" }));
     this.sections = order.map(o => o.sec);
+    winIntro(contentEl, "Nothing is written until you press Update.");
+    this.top = contentEl.createDiv();
+    this.drawTop();
     for (const o of order) {
       if (!many) { contentEl.appendChild(holders[loaded.indexOf(o.sec)]); continue; }
       const fold = winFold(contentEl, { title: o.name, sub: kitStatusLine({ bundled: o.sec.managed.version, installed: o.sec.managed.installedVersion, tracked: Object.keys(o.sec.managed.slot.managed?.files ?? {}).length, waiting: o.waiting }), count: o.waiting ? `${o.waiting} waiting` : "up to date", open: o.open });
@@ -564,6 +580,26 @@ export class KitManagedModal extends Modal {
     }
     this.foot = contentEl.createDiv();
     for (const sec of this.sections) sec.render();
+  }
+
+  /** One box at the top with every file that needs an update, across kits (each row tagged with its kit when there are several), and the Tick all / Untick all buttons. */
+  private drawTop(): void {
+    if (!this.top) return;
+    this.top.empty();
+    const many = this.sections.length > 1;
+    const rows = this.sections.flatMap(sec => sec.topItems().map(it => ({ sec, it })));
+    if (!rows.length) return;
+    const boxed = this.sections.reduce((n, sec) => n + sec.boxed(), 0);
+    const body = winFold(this.top, { title: "To update", count: rows.length, open: this.topOpen, onToggle: open => { this.topOpen = open; } }).body;
+    if (boxed) {
+      const bar = body.createDiv({ cls: "lab-kit-win-bar" });
+      bar.createSpan({ text: `Tick or untick all ${boxed} files with a box` });
+      const buttons = bar.createDiv({ cls: "lab-kit-win-actions" });
+      const all = (on: boolean): void => { for (const sec of this.sections) sec.tickAll(on); this.drawTop(); this.drawFoot(); };
+      buttons.createEl("button", { text: "Tick all", cls: "mod-cta" }).addEventListener("click", () => all(true));
+      buttons.createEl("button", { text: "Untick all" }).addEventListener("click", () => all(false));
+    }
+    for (const g of GROUPS) for (const { sec, it } of rows) if (it.action === g.action) sec.drawTopRow(body, it, many ? kitName(sec.managed) : "");
   }
 
   private drawFoot(): void {
