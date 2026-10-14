@@ -408,8 +408,8 @@
       "src": "Extras/scripts/templater/vault/vtAsk.js",
       "role": "userScripts",
       "path": "vtAsk.js",
-      "version": "1.0.1",
-      "sha256": "fcde42bca775ad4899a1eca7cc65c89ea552da4bc5f2832ca76a098cea555d55",
+      "version": "1.3.0",
+      "sha256": "8f6f5a1fd33c558b502cb992700d5143b16beb9cd5b8d80be1d00d15de3f2db4",
       "renamedFrom": [],
       "desc": "The text box every planning template asks with"
     }

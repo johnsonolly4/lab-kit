@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **More due-date words** (planning kit script `vtAsk.js`, plus the plugin's own copy for what comes next; not seen in Obsidian): the New to-do date box also reads `15 nov`, `nov 15th`, `15th november`, `15/11`, `15/11/2026` (day first), `in 3 days`, `in 2 weeks`, `next week` (Monday) and `next month` (the 1st). A day and month with no year is the next one that is today or later. Review update… for the scripts.
 - **Plan map always shows** (planning kit, plugin code; not seen in Obsidian): a project hub shows the map even with fewer than two to-dos. With no to-dos it shows one dashed box, the full width of the map and two cards tall, **+ New to-do for this project**; clicking it opens New to-do with the project filled in.
 
 ## v1.3.0 (2026-10-13)

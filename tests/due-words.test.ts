@@ -2,6 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
+import { parseDue as parseDueTs } from "../src/planning/due-words";
 
 const vtAsk = createRequire(import.meta.url)("../kits/planning/Extras/scripts/templater/vault/vtAsk.js") as { parseDue(t: string, now: Date): string | null };
 const WED = new Date(2026, 9, 7, 15, 30);   // Wed 2026-10-07, mid-afternoon
@@ -42,7 +43,27 @@ describe("parseDue", () => {
   it("keeps a real YYYY-MM-DD and refuses anything else", () => {
     expect(at("2026-11-02")).toBe("2026-11-02");
     expect(at("2026-02-30")).toBeNull();
-    for (const bad of ["", "soon", "next", "fri next", "next week", "2026-1-2", "monday morning"]) expect(at(bad)).toBeNull();
+    for (const bad of ["", "soon", "next", "fri next", "next weeks", "2026-1-2", "monday morning"]) expect(at(bad)).toBeNull();
+  });
+});
+
+// One table for both copies (the script the template runs, and the plugin's TypeScript): WED = Wed 2026-10-07.
+const TABLE: [string, string | null][] = [
+  ["15 nov", "2026-11-15"], ["nov 15", "2026-11-15"], ["15th november", "2026-11-15"], ["Nov 15th", "2026-11-15"], ["15 nov 2027", "2027-11-15"], ["sept 3", "2027-09-03"],
+  ["7 oct", "2026-10-07"], ["6 oct", "2027-10-06"], ["29 feb", "2028-02-29"], ["31 apr", null], ["15 foo", null], ["15 ma", null],
+  ["3/11", "2026-11-03"], ["15/11", "2026-11-15"], ["15/11/2026", "2026-11-15"], ["15/11/26", "2026-11-15"], ["11/15", null], ["30/02", null], ["1/1", "2027-01-01"],
+  ["in 3 days", "2026-10-10"], ["in 1 day", "2026-10-08"], ["in 2 weeks", "2026-10-21"], ["in days", null],
+  ["next week", "2026-10-12"], ["next month", "2026-11-01"],
+  ["today", "2026-10-07"], ["fri", "2026-10-09"], ["next fri", "2026-10-16"], ["2026-11-02", "2026-11-02"], ["2026-02-30", null], ["soon", null], ["", null],
+];
+describe("due words: the script and the plugin's copy agree", () => {
+  for (const [text, want] of TABLE) it(`"${text}" → ${want}`, () => {
+    expect(at(text)).toBe(want);
+    expect(parseDueTs(text, WED)).toBe(want);
+  });
+  it("next month from December goes to January", () => {
+    expect(at("next month", new Date(2026, 11, 20))).toBe("2027-01-01");
+    expect(parseDueTs("next month", new Date(2026, 11, 20))).toBe("2027-01-01");
   });
 });
 
