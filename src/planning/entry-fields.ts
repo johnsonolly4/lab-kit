@@ -20,6 +20,8 @@ export interface EntryField {
   showWhen?: string;
   /** Enter does not create until it has a value. */
   required?: boolean;
+  /** A pick field: text typed in its search that is not in the list can be picked as a new value. */
+  allowNew?: boolean;
 }
 
 const empty = (v: EntryValue | undefined): boolean => v === undefined || v === "" || v === false;

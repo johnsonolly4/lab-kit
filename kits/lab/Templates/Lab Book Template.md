@@ -31,13 +31,16 @@ delete window.labKitPresetTitle;
 if (title === undefined) title = await (tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title"));
 if (title === null) throw new Error("Cancelled - no experiment title");
 title = title || "Untitled";
+// New lab entry's window can set the Exp. Class (written as a quoted string so any text is safe in the properties)
+const expClass = String(window.labKitPresetClass ?? "").trim();
+delete window.labKitPresetClass;
 const name = `${initials}${next} - ${title}`.replace(/[\\/:*?"<>|]/g, "-");
 await tp.file.rename(name);
 -%>
 ---
 Type:
 Status: Planned
-Exp. Class:
+Exp. Class: <% expClass ? JSON.stringify(expClass) : "" %>
 Plan date: <% tp.date.now("YYYY-MM-DD") %>
 Exp. Start:
 Exp. End:

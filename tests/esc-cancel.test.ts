@@ -28,12 +28,12 @@ describe("Esc cancels the creation", () => {
     expect(lab).toContain('title = title || "Untitled"');
   });
 
-  it("New lab entry asks with the plugin box before it makes the note, and clears the preset", () => {
+  it("New lab entry asks in the entry window before it makes the note (Esc makes nothing), and clears the presets", () => {
     const ui = read("src/kit/ui.ts");
     const fn = ui.slice(ui.indexOf("async newLabEntry"));
-    expect(fn.indexOf("await ask(")).toBeGreaterThan(0);
-    expect(fn.indexOf("await ask(")).toBeLessThan(fn.indexOf("templaterCreateNote("));
-    expect(fn).toContain("if (title === null) return;");
-    expect(fn).toContain("delete w.labKitPresetTitle");
+    expect(fn.indexOf("await openEntry(")).toBeGreaterThan(0);
+    expect(fn.indexOf("await openEntry(")).toBeLessThan(fn.indexOf("templaterCreateNote("));
+    expect(fn).toContain("if (!answer) return;");
+    expect(fn).toContain("delete w.labKitPresetTitle; delete w.labKitPresetClass;");
   });
 });

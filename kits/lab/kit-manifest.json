@@ -179,8 +179,8 @@
       "src": "Templates/Lab Book Template.md",
       "role": "templates",
       "path": "Lab Book Template.md",
-      "version": "1.0.1",
-      "sha256": "dfeea800a7672cf3997f574a94d10d890e6ef3e563766ae9a7e60c42413a4845",
+      "version": "1.3.0",
+      "sha256": "6c13c6f7e211549266fe6cfeeb87f87cb348963a0067bc0ba742a7fff7d414bd",
       "renamedFrom": [],
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },

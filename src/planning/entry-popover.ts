@@ -32,7 +32,7 @@ export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryFiel
 
     if (field.kind === "pick") {
       const options = field.options ?? [];
-      const search = options.length >= SEARCH_FROM ? pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: field.prompt } }) : null;
+      const search = options.length >= SEARCH_FROM || field.allowNew ? pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: field.prompt } }) : null;
       const list = pop.createDiv({ cls: "vt-pop-list" });
       let shown = options, active = Math.max(0, options.findIndex(o => o.value === current));
       const draw = (): void => {
@@ -50,7 +50,12 @@ export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryFiel
         else if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); if (shown[active]) close(shown[active].value); }
       };
       if (search) {
-        search.addEventListener("input", () => { const q = search.value.trim().toLowerCase(); shown = options.filter(o => o.label.toLowerCase().includes(q)); active = 0; draw(); });
+        search.addEventListener("input", () => {
+          const typed = search.value.trim(), q = typed.toLowerCase();
+          shown = options.filter(o => o.label.toLowerCase().includes(q));
+          if (field.allowNew && typed && !options.some(o => o.label.toLowerCase() === q)) shown = [...shown, { label: `+ New: ${typed}`, value: typed }];   // typed text that is not in the list
+          active = 0; draw();
+        });
         search.addEventListener("keydown", key);
         window.setTimeout(() => search.focus(), 0);
       } else {
