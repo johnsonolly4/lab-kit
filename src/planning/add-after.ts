@@ -1,6 +1,6 @@
 // "+ add after this" on the plan map (planning kit): drop a dragged node on the box, search every open to-do of the vault, or type a name to make a new one.
 // The rules are in src/planning/todo-picker.ts (pure); the picker is the planning kit's own `pick`.
-import { openEntry } from "./entry-window";
+import { openEntry, type EntryAnswer } from "./entry-window";
 import { todoFields } from "./todo-bar";
 import { Notice, type App } from "obsidian";
 import { pick } from "./ask";
@@ -93,7 +93,7 @@ function entryFields(env: AddAfterEnv): ReturnType<typeof todoFields> {
   return todoFields([], series).filter(f => f.key !== "project");
 }
 
-async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: { title: string; values: Record<string, unknown> }, before?: string): Promise<void> {
+async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: EntryAnswer, before?: string): Promise<void> {
   const base = todoFileName(answer.title);
   if (!base) return;
   const v = answer.values;

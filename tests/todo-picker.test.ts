@@ -18,9 +18,10 @@ vi.mock("../src/planning/ask", () => ({
     return values[next.index ?? 0];
   },
 }));
-const entry = vi.hoisted(() => ({ answers: [] as ({ title: string; values: Record<string, unknown> } | null)[], calls: [] as { heading: string; keys: string[]; title?: string }[] }));
+const entry = vi.hoisted(() => ({ first: [] as ({ title: string; values: Record<string, unknown>; alt?: boolean } | null)[], answers: [] as ({ title: string; values: Record<string, unknown> } | null)[], calls: [] as { heading: string; keys: string[]; title?: string }[] }));
 vi.mock("../src/planning/entry-window", () => ({
-  openEntry: async (_app: unknown, heading: string, fields: { key: string }[], initial: { title?: string } = {}) => {
+  openEntry: async (_app: unknown, heading: string, fields: { key: string }[], initial: { title?: string; alt?: string } = {}) => {
+    if (initial.alt) return entry.first.length ? entry.first.shift() : { title: "", values: {}, alt: true };   // the window the drop opens: by default press its "pick an existing to-do" link
     entry.calls.push({ heading, keys: fields.map(f => f.key), title: initial.title });
     return entry.answers.length ? entry.answers.shift() : { title: initial.title ?? "", values: {} };   // no answer queued: Enter on what was typed
   },
@@ -75,7 +76,7 @@ describe("a new to-do", () => {
 
 describe("addAfterFlow", () => {
   const messages = (): string[] => (Notice as unknown as { messages: string[] }).messages;
-  beforeEach(() => { messages().length = 0; picked.queue.length = 0; picked.calls.length = 0; });
+  beforeEach(() => { messages().length = 0; picked.queue.length = 0; picked.calls.length = 0; entry.first.length = 0; });
   const setup = (fms: Record<string, Record<string, unknown>>) => {
     const created: Record<string, string> = {};
     const app = {
@@ -154,6 +155,20 @@ describe("addAfterFlow", () => {
     picked.queue.push({ typed: "Other" });
     await addAfterFlow(env, P("A"));
     expect(Object.keys(created)).toHaveLength(1);
+  });
+  it("the drop opens the entry window first: Enter makes the to-do without the search list; its link goes to the list; Esc does nothing", async () => {
+    const { env, created } = setup(fms());
+    entry.calls.length = 0; entry.answers.length = 0;
+    entry.first.push({ title: "Straight away", values: { priority: 2 } });
+    await addAfterFlow(env, P("A"));
+    expect(picked.calls).toHaveLength(0);
+    expect(Object.keys(created)).toEqual(["00 Planning/To-dos/Straight away.md"]);
+    entry.first.push(null);
+    await addAfterFlow(env, P("A"));
+    expect(picked.calls).toHaveLength(0);
+    expect(Object.keys(created)).toHaveLength(1);
+    await addAfterFlow(env, P("A"));   // no answer queued: the link is pressed
+    expect(picked.calls).toHaveLength(1);
   });
   it("newTodoText writes the meeting, due date and priority it is given", () => {
     const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13), { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
