@@ -1,6 +1,6 @@
 # Design standard (shapes)
 
-_Agreed 2026-10-14 (user: "the update is fine"; renders compared now / standard). Only corner shapes are written down so far; colours live in `kits/planning/.obsidian/snippets/vault-colours.css`, where CSS goes is in `docs/architecture.md`. Not audited yet: Alt+S snippet forms, calc tables, the rig diagram (`docs/plans/design-standard-pass.md`, Phase 4)._
+_Agreed 2026-10-14 (user: "the update is fine"; renders compared now / standard). Only corner shapes are written down so far; colours live in `kits/planning/.obsidian/snippets/vault-colours.css`, where CSS goes is in `docs/architecture.md`. Audited 2026-10-14 (read-only, BACKLOG "Shape pass Phase 4 AUDIT"): Alt+S snippet forms, calc tables, the rig diagram; the user decides what to change._
 
 Screenshots of looks the user approved are in `docs/reference/visual/` (read its README before changing a window or a chip).
 
