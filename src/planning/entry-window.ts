@@ -6,7 +6,7 @@ import { chipView, entryResult, setEntryValue, visibleFields, type EntryField, t
 
 export interface EntryAnswer { title: string; values: EntryValues }
 /** Where to open the window: just under this point (screen pixels). */
-export interface EntryAnchor { left: number; bottom: number }
+export interface EntryAnchor { left: number; bottom: number; /** The highlighted text as a DOM range, to underline while the window is open. */ range?: Range }
 
 /** The screen position just under the end of the selection in the open note (desktop only), else null: the window opens in the middle. Uses the editor's CodeMirror view, which Obsidian does not document, so it is read defensively here and nowhere else. */
 export function selectionAnchor(app: App): EntryAnchor | null {
@@ -16,7 +16,8 @@ export function selectionAnchor(app: App): EntryAnchor | null {
   try {
     const cm = (editor as unknown as { cm?: { coordsAtPos(pos: number): { left: number; bottom: number } | null } }).cm;
     const c = cm?.coordsAtPos(editor.posToOffset(editor.getCursor("to")));
-    return c ? { left: c.left, bottom: c.bottom } : null;
+    const sel = window.getSelection();
+    return c ? { left: c.left, bottom: c.bottom, ...(sel && sel.rangeCount && !sel.isCollapsed ? { range: sel.getRangeAt(0).cloneRange() } : {}) } : null;
   } catch { return null; }
 }
 
@@ -41,7 +42,10 @@ class EntryModal extends Modal {
   onOpen(): void {
     this.modalEl.addClass("vt-entry");   // styles.css
     if (this.anchor) {   // under the highlighted line, kept inside the window
-      this.containerEl.addClass("vt-entry-anchored");
+      this.containerEl.addClass("vt-entry-anchored");   // no dimmed background; a click outside closes it
+      this.containerEl.querySelector(".modal-bg")?.addClass("vt-entry-nobg");
+      document.addEventListener("mousedown", this.outside, true);
+      this.underline(true);
       const w = Math.min(560, window.innerWidth * 0.92);
       this.modalEl.setCssProps({ "--vt-entry-x": `${Math.max(8, Math.min(this.anchor.left, window.innerWidth - w - 8))}px`, "--vt-entry-y": `${Math.min(this.anchor.bottom + 8, Math.max(8, window.innerHeight - 260))}px` });
     }
@@ -80,7 +84,22 @@ class EntryModal extends Modal {
   }
 
   private finish(a: EntryAnswer | null): void { if (!this.settled) { this.settled = true; this.done(a); } }
-  onClose(): void { this.contentEl.empty(); window.setTimeout(() => this.finish(null), 0); }
+  private outside = (e: MouseEvent): void => { if (!this.modalEl.contains(e.target as Node) && !(e.target as HTMLElement).closest?.(".vt-pop")) this.close(); };
+
+  /** Underlines the highlighted text while the window is open (the CSS Custom Highlight API: nothing is written to the note). Skipped where the browser has none. */
+  private underline(on: boolean): void {
+    const css = (window as unknown as { CSS?: { highlights?: { set(n: string, h: unknown): void; delete(n: string): void } } }).CSS;
+    const Hl = (window as unknown as { Highlight?: new (...r: Range[]) => unknown }).Highlight;
+    if (!css?.highlights || !Hl) return;
+    if (on && this.anchor?.range) css.highlights.set("vt-quick-todo", new Hl(this.anchor.range)); else css.highlights.delete("vt-quick-todo");
+  }
+
+  onClose(): void {
+    document.removeEventListener("mousedown", this.outside, true);
+    this.underline(false);
+    this.contentEl.empty();
+    window.setTimeout(() => this.finish(null), 0);
+  }
 }
 
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `initial` fills it in (quick capture). */

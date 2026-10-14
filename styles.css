@@ -439,5 +439,8 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-pop-date { width: 100%; margin-top: 4px; }
 
 /* The window opened from highlighted text: just under the highlighted line (the plain command keeps it in the middle) */
-.vt-entry-anchored.modal-container { align-items: flex-start; justify-content: flex-start; }
+.vt-entry-anchored.modal-container { align-items: flex-start; justify-content: flex-start; pointer-events: none; }
+.vt-entry-anchored .vt-entry-nobg { display: none; }
+.vt-entry-anchored .vt-entry { pointer-events: auto; }
+::highlight(vt-quick-todo) { text-decoration: underline; text-decoration-color: var(--interactive-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; background-color: transparent; }
 .vt-entry-anchored .vt-entry { position: absolute; left: var(--vt-entry-x); top: var(--vt-entry-y); margin: 0; }
