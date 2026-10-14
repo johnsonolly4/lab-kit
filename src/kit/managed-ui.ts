@@ -841,9 +841,7 @@ export class KitInstallModal extends Modal {
     // One row per file or folder, like the Check setup list: its name, what it is for, then where it goes
     const group = (heading: string, paths: string[], text?: string, state: "todo" | "info" = "todo"): void => {
       if (!paths.length) return;
-      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
-      det.open = paths.length <= 8;
-      det.createEl("summary", { text: `${heading} (${paths.length})` });
+      const { body: det } = winFold(contentEl, { title: heading, count: paths.length, open: paths.length <= 8 });
       if (text) det.createEl("p", { cls: "setting-item-description", text });
       for (const p of paths) {
         const { text: body } = winRow(det, { state, title: p.slice(p.lastIndexOf("/") + 1), detail: preview.about?.[p] });

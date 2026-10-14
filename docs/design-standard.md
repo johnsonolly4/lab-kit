@@ -21,7 +21,7 @@ Rules
 - Before adding a size, ask: a fifth size needs the user's OK and a line here.
 
 ## Groups that fold
-A group that opens and closes is a box with a header row: chevron, title, a count at the right (and a muted line under the title when it helps), as in the Tidy up notes window. Use `winFold` in `src/kit/window-look.ts`, not the browser's `<details>` triangles. Chosen by the user 2026-10-14 (option B of three renders). Done so far: Review update, Manage kit files and the Kit update report. Still `<details>`: the install confirmation, the merge preview, Tidy up notes' "Notes" and "New page" lines (`docs/plans/design-standard-pass.md`).
+A group that opens and closes is a box with a header row: chevron, title, a count at the right (and a muted line under the title when it helps), as in the Tidy up notes window. Use `winFold` in `src/kit/window-look.ts`, not the browser's `<details>` triangles. Chosen by the user 2026-10-14 (option B of three renders). Done everywhere in `src/kit/` (2026-10-14, not seen); a test fails on a new `createEl("details"`.
 
 ## The window rule (dimming and place)
 A window the plugin opens either has something on screen to point at, or it does not.

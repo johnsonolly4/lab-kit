@@ -11,7 +11,7 @@ import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, se
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
-import { WIN_MARK, winFoot, winIntro, winSummary } from "./window-look";
+import { WIN_MARK, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
@@ -196,8 +196,7 @@ export class TidyNotesModal extends Modal {
         batchBoxes.push(sync);
         all.addEventListener("change", () => setNotes(indices, all.checked));
         this.change(block, line, c);
-        const notes = block.createEl("details", { cls: "lab-kit-tidy-notes" });
-        notes.createEl("summary", { text: `Notes (${indices.length})` });
+        const { body: notes } = winFold(block, { title: "Notes", count: indices.length, open: false });
         for (const i of indices) {
           const row = notes.createDiv({ cls: "lab-kit-tidy-path" });
           single(row, i);
@@ -258,8 +257,7 @@ export class TidyNotesModal extends Modal {
         : "The page is replaced by the kit's template. Nothing of yours is removed." });
       for (const l of s.lost) box.createDiv({ cls: "lab-kit-tidy-line is-removed", text: l });
       const page = c.after.replace(/\r\n/g, "\n").trim();
-      const more = box.createEl("details", { cls: "lab-kit-tidy-notes" });
-      more.createEl("summary", { text: `New page (${page.split("\n").length} lines)` });
+      const { body: more } = winFold(box, { title: "New page", count: `${page.split("\n").length} lines`, open: false });
       more.createEl("pre", { cls: "lab-kit-tidy-newpage", text: page });
       return;
     }

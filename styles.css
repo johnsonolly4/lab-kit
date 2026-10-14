@@ -102,12 +102,6 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 .lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; z-index: 2; margin-top: var(--lk-block-gap); padding-bottom: var(--size-4-2); background: var(--background-primary); }
 .lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
 .lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
-.lab-kit-group { margin: 4px 0; font-size: 0.88em; }
-.lab-kit-group summary { cursor: pointer; font-weight: 600; }
-.lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }
-.lab-kit-group code { font-size: 0.85em; word-break: break-all; }
-.lab-kit-group.is-label { font-size: var(--font-ui-small); }
-.lab-kit-group.is-label > summary { padding: var(--size-4-2) 0; color: var(--text-muted); font-weight: var(--font-semibold); }
 .lab-kit-win-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--size-4-2); margin: var(--lk-block-gap) 0; }
 /* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
 .lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: var(--lk-radius-pill); font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
@@ -259,8 +253,6 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 .lab-kit-tidy-fold { grid-column: 1 / -1; height: auto; padding: 1px 4px; justify-content: flex-start; font: inherit; color: var(--text-faint); background: var(--background-secondary); border: none; border-radius: 0; box-shadow: none; cursor: var(--cursor); }
 .lab-kit-tidy-fold:hover, .lab-kit-tidy-fold:focus-visible { color: var(--text-normal); background: var(--background-modifier-hover); box-shadow: none; }
 .lab-kit-tidy-line.is-folded { display: none; }
-.lab-kit-tidy-notes { margin: 6px 0 0 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
-.lab-kit-tidy-notes > .lab-kit-tidy-path { margin-top: 4px; }
 .lab-kit-tidy-weeks { width: 4.5em; }
 .lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }

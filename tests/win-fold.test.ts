@@ -56,3 +56,11 @@ describe("Review update and Manage kit files folds", () => {
     expect(css).toMatch(/\.lab-kit-modal \.setting-item \+ \.lab-kit-win-summary \{ margin-top: 0;/);
   });
 });
+
+describe("no browser folds left in src/kit", () => {
+  it("no createEl(\"details\" in any window of src/kit", async () => {
+    const { readdirSync, readFileSync } = await import("fs");
+    const bad = readdirSync("src/kit").filter(f => f.endsWith(".ts") && /createEl\("details"/.test(readFileSync(`src/kit/${f}`, "utf8")));
+    expect(bad).toEqual([]);
+  });
+});
