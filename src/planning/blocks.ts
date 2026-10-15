@@ -11,6 +11,7 @@ import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
+import { parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
 import { applyTodoValue, projectNames, todoFields, todoValues } from "./todo-bar";
@@ -301,6 +302,7 @@ class BlockView extends MarkdownRenderChild {
       }
       case "todo-bar": this.todoBar(box); return;
       case "hub-bar": this.hubBar(box); return;
+      case "button-bar": this.buttonBar(box); return;
       case "meeting-bar": this.meetingBar(box); return;
       case "back-to-project": {   // on a note inside a project's folder: a link to that project's hub
         const up = folderHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
@@ -439,7 +441,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 
@@ -469,6 +471,33 @@ class BlockView extends MarkdownRenderChild {
       if (series.interval === ONCE) button("New one-off meeting", c => void c.newOneOff());
       else { button("New meeting note", c => void c.newMeeting(series)); button("Extra meeting now", c => void c.newMeeting(series, true)); }
     } else box.createDiv({ cls: "vt-muted", text: "hub-bar belongs on a project, topic or meeting series hub." });
+  }
+
+  /** A row of the planning kit's buttons, named by id in the block (`ids: new-meeting, go-deck`); the label, icon and action come from the plugin's table, never from the note. */
+  private buttonBar(box: HTMLElement): void {
+    const { buttons, problems } = resolveBar(parseIds(this.source));
+    if (!buttons.length && !problems.length) { box.createDiv({ cls: "vt-muted", text: "button-bar needs a line like ids: new-meeting, go-deck." }); return; }
+    const bar = box.createDiv({ cls: "vt-button-bar" });
+    for (const b of buttons) {
+      const btn = bar.createEl("button", { cls: ["vt-bar-button", b.plain ? "is-plain" : "", b.cls ?? ""].filter(Boolean).join(" "), attr: b.tooltip ? { "aria-label": b.tooltip } : {} });
+      if (b.icon) setIcon(btn.createSpan({ cls: "vt-bar-button-icon" }), b.icon);
+      btn.createSpan({ text: b.label });
+      // Live Preview opens a code block for editing on a click inside it
+      btn.addEventListener("mousedown", e => e.stopPropagation());
+      btn.addEventListener("click", e => { e.stopPropagation(); btn.focus(); this.pressButton(b); });
+    }
+    for (const text of problems) box.createDiv({ cls: "vt-muted", text });
+  }
+
+  /** The button has focus, so a window opens under it (`buttonAnchor`): Safari does not focus a button on click, hence the `focus()` above. */
+  private pressButton(b: BarButton): void {
+    if (b.kind === "command") {
+      if (!runCommand(this.app, b.target)) new Notice(`"${b.label}" needs the command ${b.target}: its plugin may be off.`);
+      return;
+    }
+    const file = this.app.metadataCache.getFirstLinkpathDest(b.target, this.sourcePath);
+    if (file) void this.app.workspace.getLeaf(false).openFile(file);
+    else new Notice(`No note called "${b.target}" in this vault.`);
   }
 
   /** The chip bar of a to-do note: Project, Meeting, Due, Priority (and Countdown once there is a due date). A click picks the value and writes it to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */

@@ -24,7 +24,7 @@ Every button bar in the planning kit is drawn by the plugin, so windows open und
 
 ## Phases
 
-### Phase 1 — Button table and `button-bar` block (commands and open-note only)
+### Phase 1 — Button table and `button-bar` block (commands and open-note only) — BUILT 2026-10-15 (tests 1147, lint 0 errors; NOT seen: checklist 6i "Button bar block"; the block's own look is `.vt-bar-button` in `styles.css`, not `.vt-hub-bar`)
 - Files: new `src/planning/button-bar.ts` (pure table: id → label, icon, kind, target; id-list parser), `src/planning/blocks.ts` (new `case "button-bar"`, add the name to the unknown-show list at `:442`, capture the clicked button so `captureAnchor` / `buttonAnchor` in `src/planning/entry-window.ts` and `commands.ts` sees it), `styles.css` (`.vt-button-bar`, shape-standard corners, reuse `.vt-hub-bar` look), new `tests/button-bar.test.ts`.
 - Done when: a test checks every id in `meta-bind-buttons.json` is either in the table or listed as Phase 2's; ids parse (spaces, commas, bad id); open-note targets resolve with default and renamed planning folders; a click on a command button passes its element as the window anchor (test with a fake command). Tests + lint 0 errors; commit.
 - Depends on: nothing. New dependencies: none.

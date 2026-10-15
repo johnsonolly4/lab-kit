@@ -468,3 +468,11 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-fold-body { display: none; padding: var(--size-4-2) var(--size-4-3); }
 .lab-kit-fold-body > .lab-kit-win-row:first-child { border-top: none; }
 .lab-kit-fold.is-open > .lab-kit-fold-body { display: block; }
+
+/* The planning kit's button bar (show: button-bar): one row of buttons named by id */
+.vt-button-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.vt-bar-button { display: inline-flex; align-items: center; gap: 6px; height: auto; padding: 6px 14px; border-radius: var(--lk-radius-control); background: transparent; border: 1px solid var(--background-modifier-border); box-shadow: none; color: var(--text-normal); cursor: pointer; }
+.vt-bar-button:hover { background: var(--background-modifier-hover); }
+.vt-bar-button.is-plain { border-color: transparent; color: var(--text-muted); }
+.vt-bar-button-icon { display: inline-flex; }
+.vt-bar-button-icon .svg-icon { width: 16px; height: 16px; }
