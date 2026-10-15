@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
-## Unreleased
+## v1.4.1 (2026-10-15)
+Plan map + before / + after buttons, subtasks in the slide picture and an Experiment chip on the to-do bar; the plugin CSS no longer uses `:has` (store review). Most of it is built and tested but not yet seen in Obsidian.
 - **Experiment chip on the to-do chip bar** (plugin + planning kit To-do template: Review update… to get the template; not seen in Obsidian): a to-do's chip bar, the New to-do window and the plan map's + windows get an **Experiment** chip that lists your lab notes (Started, Processing results, the rest, Closed last; the Status is in the name) and writes `experiment: "[[note]]"`; "(none)" removes it. The plan map card shows it as before. Only when the Lab notes folder is set.
 - **Slide picture shows subtasks** (plugin; not seen in Obsidian): a card with subtasks gets a strip under it listing them (finished ones ticked and struck through); over five, the last line says "+N more". The picture makes room for the strips.
 - **Plan map: subtask lists start open** (plugin; not seen in Obsidian): every card with subtasks shows its list the first time the map is drawn; the **▸ n/m** button still closes one (kept while the note stays open). The rows below an open list move down to make room, so a list no longer covers the card under it.
