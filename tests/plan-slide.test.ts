@@ -107,4 +107,19 @@ describe("slideSvg", () => {
     expect(few.tooSmall).toBe(false);
     expect(lots.tooSmall).toBe(true);
   });
+  it("subtasks: strips under the card (done ones struck), over five the last line says +N more, and the picture grows to fit", () => {
+    const subs = (p: string, n: number, done = 0) => Array.from({ length: n }, (_, i) => td(`${p}Sub${i + 1}`, { sub: `[[${p}]]`, ...(i < done ? { done: true } : {}) }));
+    const todos = [td("Two"), td("Eight", { after: "[[Two]]" }), ...subs("Two", 2, 1), ...subs("Eight", 8)];
+    const model = slideModel(map(todos), { kind: "whole" });
+    const svg = slideSvg(model, { title: "Alpha" }).svg;
+    expect(count(svg, "○ TwoSub")).toBe(1);
+    expect(count(svg, "✓ TwoSub1")).toBe(1);
+    expect(count(svg, 'text-decoration="line-through"')).toBe(1);
+    expect(count(svg, "○ EightSub")).toBe(4);   // four lines and "+4 more"
+    expect(svg).toContain("+4 more");
+    expect(svg).not.toContain("EightSub5");
+    const plain = slideSvg(slideModel(map([td("Two"), td("Eight", { after: "[[Two]]" })]), { kind: "whole" }), { title: "Alpha" });
+    const withSubs = slideSvg(model, { title: "Alpha" });
+    expect(withSubs.minText).toBeLessThanOrEqual(plain.minText);   // the strips are scaled with the cards, so the reported smallest text still counts them
+  });
 });

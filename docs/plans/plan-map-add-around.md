@@ -40,7 +40,7 @@ On a dense plan map you can add a to-do before, after or between cards from the 
 - Done when: fixtures: B with parents P1, P2 → X after P1 and P2, B after X, P→B links gone; B with no parents → B after X only; Undo / Redo as one step; circle refusal.
 - Depends on: Phase 2 (shared button CSS and wiring).
 
-### Phase 4 — Subtasks in the slide picture
+### Phase 4 — Subtasks in the slide picture — BUILT 2026-10-15 (tests 1185, lint 0 errors; NOT seen: checklist 6i "Slide picture subtasks"; no change to `slideModel` was needed: `row.subs` is already on each card; `subLines` / `subsSvg` in `plan-slide.ts`, up to 5 lines, the 5th "+N more" when over; room via `mapGeometry`'s `room`)
 - Files: `src/planning/plan-slide.ts` (`slideModel` carries each card's subtasks: `plan-map.ts:42` drops them today; `slideSvg` draws strips under the card, text measured with the existing char-count estimate `CHAR_W` / `wrap` / `cut`, the rest as a last line "+N more" at the bottom of the card), `tests/plan-slide.test.ts`, `tests/plan-slide-ui.test.ts` (readable-size note `MIN_READABLE` must still hold or warn).
 - Done when: a fixture with a card of 2 and one of 8 subtasks gives strips for the first and strips + "+N more" for the second; done subtasks shown as done; the smallest text size reported still includes the strips; the picture itself is looked at by the user (not seen until then).
 - Depends on: nothing.
