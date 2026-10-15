@@ -89,7 +89,7 @@ function cardSvg(c: MapCard, x: number, y: number): string {
   const stroke = r.done ? LINE : next ? ACCENT : LINE;
   const fill = r.done ? TILE : "#ffffff";
   const ink = r.done ? MUTED : INK;
-  const rect = `<rect x="${x}" y="${y}" width="${CARD_W}" height="${CARD_H}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${next ? 3 : 1.5}"${r.blocked ? ' stroke-dasharray="6 4"' : ""}/>`;
+  const rect = `<rect x="${x}" y="${y}" width="${CARD_W}" height="${CARD_H}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="${next ? 3 : 1.5}"${r.blocked ? ' stroke-dasharray="6 4"' : ""}/>`;
   const per = Math.floor((CARD_W - 20) / (CARD_TITLE * CHAR_W));
   const title = wrap((r.done ? "✓ " : "") + r.name, per, 2);
   const text = (ty: number, size: number, fill2: string, s: string, bold = false): string =>
@@ -113,7 +113,7 @@ function tilesSvg(rows: PlanRow[], left: number, top: number, cols: number, maxR
   return texts.map((t, i) => {
     const x = left + (i % cols) * (TILE_W + TILE_GAP), y = top + Math.floor(i / cols) * (TILE_H + TILE_GAP);
     const more = rows.length > room && i === room - 1;
-    return `<rect x="${x}" y="${y}" width="${TILE_W}" height="${TILE_H}" rx="8" fill="${TILE}"/>`
+    return `<rect x="${x}" y="${y}" width="${TILE_W}" height="${TILE_H}" rx="10" fill="${TILE}"/>`
       + `<text x="${x + 12}" y="${y + TILE_H / 2 + 8}" font-size="${TILE_FONT}" fill="${more ? MUTED : INK}">${esc(cut(t, per))}</text>`;
   }).join("");
 }

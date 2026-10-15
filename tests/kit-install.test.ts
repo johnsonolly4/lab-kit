@@ -319,7 +319,8 @@ describe("lab kit completion (Phase 2)", () => {
 
   it("Lab Book Template: Status is text (issue #32) and the title box uses vtAsk with Templater's prompt as fallback", () => {
     const text = real.contents["tpl-lab-book-template-md"];
-    expect(text).toMatch(/^Status: Planned$/m);
+    expect(text).toMatch(/^Status: <% .*status.* %>$/m);   // plain text, written once; Planned unless the board's column gave one
+    expect(text).toContain('const status = foundStatus || "Planned";');
     expect(text).toContain('tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title")');
   });
 

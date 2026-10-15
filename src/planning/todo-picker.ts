@@ -43,7 +43,7 @@ export function offeredTodos(all: NoteRec[], plan: Plan, hubName: string, from: 
 export const todoFileName = (typed: string): string => typed.trim().replace(/[\\/:*?"<>|#^[\]]/g, "-").slice(0, 80).trim();
 
 /** The text of a new to-do, with the same properties as the To-do template makes with nothing asked: in Backlog, no due date or priority, in `project`, coming after `after` (a link like `[[Name]]`). */
-export function newTodoText(project: string, after: string, today: Date): string {
+export function newTodoText(project: string, after: string, today: Date, set: { due?: string; priority?: number | ""; meeting?: string } = {}): string {
   return `---
 kind: todo
 day: Backlog
@@ -51,14 +51,18 @@ planned: ${ymd(today)}
 done: false
 rolled: false
 project: ${project ? `"[[${project}]]"` : ""}
-due: 
+due: ${set.due ?? ""}
 countdown: false
-priority: 
+priority: ${set.priority ?? ""}
 after: "${after}"
-meeting: false
+meeting: ${set.meeting ? `"[[${set.meeting}]]"` : "false"}
 cssclasses:
   - vt
 ---
+
+\`\`\`vault-card
+show: todo-bar
+\`\`\`
 
 `;
 }

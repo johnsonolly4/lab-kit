@@ -72,7 +72,7 @@ body {
   --vt-line-tint: 0.10;         /* the line the cursor is on (0 to 1) */
   --vt-band-a: 3%;              /* to-do board weekday bands: two alternating shades */
   --vt-band-b: 6%;
-  --vt-card-radius: 14px;
+  --vt-card-radius: var(--lk-radius-card, 14px);   /* the shape standard: docs/design-standard.md in the plugin repo */
 
   --vt-card-title: var(--text-normal);   /* card headings (was muted grey) */
   --vt-card-icon-opacity: 1;             /* card heading icons (was 0.7) */

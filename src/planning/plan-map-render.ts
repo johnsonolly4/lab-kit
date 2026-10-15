@@ -27,9 +27,11 @@ export interface MapOptions {
   /** Opens or closes the problems list and draws the map again. */
   showProblems: (open: boolean) => void;
   /** "+ add after this": dropped on the box that shows while a node is dragged; asks which to-do comes after `from` (search the vault, or make a new one). Left out: no box. */
-  addAfter?: (from: string) => void;
+  addAfter?: (from: string, at?: { left: number; bottom: number }) => void;
   /** Insert between two: asks which to-do goes between `a` and `b` (the arrow a → b): from the + on an arrow (a click, or dropped on its "+ new here" box) and the arrow's menu. Left out: no box, no menu entry. */
-  insertBetween?: (a: string, b: string) => void;
+  insertBetween?: (a: string, b: string, at?: { left: number; bottom: number }) => void;
+  /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
+  newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
@@ -122,16 +124,29 @@ const ADD_W = 130, ADD_H = 54;
 /** How long the pointer rests on a card before the rest of the map dims, and how long the dimming stays after it leaves (ms). */
 const HOVER_DELAY = 175, HOVER_CLEAR = 150;
 
-/** Where the "+ add after this" box goes while `source` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. In client coordinates. */
-function addBoxSpot(wrap: HTMLElement, s: { left: number; right: number; top: number; bottom: number; width: number; height: number }, source: HTMLElement | null, direction: Direction): { x: number; y: number } {
-  const w = wrap.getBoundingClientRect();
+export interface Box { left: number; right: number; top: number; bottom: number; width: number; height: number }
+
+/** Where the "+ add after this" box goes while `s` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. For the "+ new here" box `s` is the point grabbed on an arrow (zero size): right, below, left, above that point, else the point itself, kept inside the map (never the far edge). Pure; client coordinates. */
+export function chooseBoxSpot(w: Box, others: Box[], s: Box, direction: Direction): { x: number; y: number } {
+  const grab = s.width === 0 && s.height === 0;
+  const right = { x: s.right + 16, y: s.top + (s.height - ADD_H) / 2 }, below = { x: s.left + (s.width - ADD_W) / 2, y: s.bottom + 16 };
+  const slack = 14;   // the box may stick out above / below the map a little: beside a lone Not linked tile the map is only as tall as the tile
+  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top - slack && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom + slack
+    && !others.some(o => p.x < o.right + 6 && p.x + ADD_W > o.left - 6 && p.y < o.bottom + 6 && p.y + ADD_H > o.top - 6);
+  if (grab) {
+    const left = { x: s.left - 16 - ADD_W, y: right.y }, above = { x: below.x, y: s.top - 16 - ADD_H };
+    const near = [direction === "down" ? below : right, direction === "down" ? right : below, left, above].find(free);
+    if (near) return near;
+    return { x: Math.min(Math.max(right.x, w.left), w.right - ADD_W), y: Math.min(Math.max(right.y, w.top), w.bottom - ADD_H) };
+  }
+  const edge = { x: w.right - ADD_W - 12, y: Math.min(Math.max(s.top, w.top), w.bottom - ADD_H) };
+  return [direction === "down" ? below : right, direction === "down" ? right : below].find(free) ?? edge;
+}
+
+function addBoxSpot(wrap: HTMLElement, s: Box, source: HTMLElement | null, direction: Direction): { x: number; y: number } {
   const others: DOMRect[] = [];
   wrap.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (el !== source) others.push(el.getBoundingClientRect()); });
-  const right = { x: s.right + 16, y: s.top + (s.height - ADD_H) / 2 }, below = { x: s.left + (s.width - ADD_W) / 2, y: s.bottom + 16 };
-  const edge = { x: w.right - ADD_W - 12, y: Math.min(Math.max(s.top, w.top), w.bottom - ADD_H) };
-  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom
-    && !others.some(o => p.x < o.right + 6 && p.x + ADD_W > o.left - 6 && p.y < o.bottom + 6 && p.y + ADD_H > o.top - 6);
-  return [direction === "down" ? below : right, direction === "down" ? right : below].find(free) ?? edge;
+  return chooseBoxSpot(wrap.getBoundingClientRect(), others, s, direction);
 }
 
 /** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`; onto the "+ add after this" box that shows meanwhile asks for one (or a new one). A line follows the pointer; Esc cancels. */
@@ -182,8 +197,10 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, handle: HTMLElem
       over?.removeClass("vt-map-drop");
       if (e) pointer = { x: e.clientX, y: e.clientY };
       const onBox = !!e && overBox();
+      const boxRect = addBox?.getBoundingClientRect();   // the window opens under the box, not dimmed (the window rule in docs/design-standard.md)
+      const where = boxRect ? { left: boxRect.left, bottom: boxRect.bottom } : undefined;
       addBox?.remove();
-      if (onBox) { svg.remove(); if (ins) o.insertBetween?.(from, ins.b); else o.addAfter?.(from); return; }
+      if (onBox) { svg.remove(); if (ins) o.insertBetween?.(from, ins.b, where); else o.addAfter?.(from, where); return; }
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
       if (!target || !to) {
         svg.remove();
@@ -416,6 +433,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
   const wrap = box.createDiv({ cls: "vt-map" });
   const flagged = new Map<string, PlanIssue[]>();   // the problems of each to-do that has any: its ⚠
   for (const is of plan.issues) for (const p of is.paths) flagged.set(p, [...(flagged.get(p) ?? []), is]);
+  if (!map.cards.length && !map.unlinked.length && o.newTodo) {
+    const empty = wrap.createDiv({ cls: "vt-map-empty", text: "+ New to-do for this project", attr: { role: "button", tabindex: "0" } });
+    empty.addEventListener("click", () => { o.newTodo?.(); });
+    empty.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); o.newTodo?.(); } });
+  }
   if (map.cards.length) {
     const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
     const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);
@@ -433,7 +455,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       const hit = svg.createSvg("path", { cls: "vt-map-arrow-hit", attr: { d: c.d } });   // a wide invisible stroke to click and drag on
       const menu = (e: MouseEvent): void => {
         const m = new Menu();
-        if (o.insertBetween) m.addItem(i => i.setTitle("Insert a to-do here…").setIcon("plus").onClick(() => o.insertBetween?.(c.from, c.to)));
+        if (o.insertBetween) m.addItem(i => i.setTitle("Insert a to-do here…").setIcon("plus").onClick(() => o.insertBetween?.(c.from, c.to, { left: e.clientX, bottom: e.clientY + 4 })));
         m.addItem(i => i.setTitle("Remove link").setIcon("unlink").onClick(() => {
           visible.addClass("vt-map-hidden"); hit.addClass("vt-map-hidden");
           unlink(o, c.from, c.to).catch(() => { visible.removeClass("vt-map-hidden"); hit.removeClass("vt-map-hidden"); new Notice("Could not remove that link."); });

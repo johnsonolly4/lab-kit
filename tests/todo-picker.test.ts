@@ -18,6 +18,15 @@ vi.mock("../src/planning/ask", () => ({
     return values[next.index ?? 0];
   },
 }));
+const entry = vi.hoisted(() => ({ first: [] as ({ title: string; values: Record<string, unknown>; alt?: boolean } | null)[], answers: [] as ({ title: string; values: Record<string, unknown> } | null)[], calls: [] as { heading: string; keys: string[]; title?: string }[] }));
+vi.mock("../src/planning/entry-window", () => ({
+  openEntry: async (_app: unknown, heading: string, fields: { key: string }[], initial: { title?: string; alt?: string } = {}) => {
+    if (initial.alt && initial.title === undefined) return entry.first.length ? entry.first.shift() : { title: "", values: {}, alt: true };   // the window the drop opens: by default press its "pick an existing to-do" link
+    entry.calls.push({ heading, keys: fields.map(f => f.key), title: initial.title });
+    return entry.answers.length ? entry.answers.shift() : { title: initial.title ?? "", values: {} };   // no answer queued: Enter on what was typed
+  },
+  pointerAnchor: () => null,
+}));
 const { addAfterFlow } = await import("../src/planning/add-after");
 
 const T = "00 Planning/To-dos/";
@@ -68,11 +77,11 @@ describe("a new to-do", () => {
 
 describe("addAfterFlow", () => {
   const messages = (): string[] => (Notice as unknown as { messages: string[] }).messages;
-  beforeEach(() => { messages().length = 0; picked.queue.length = 0; picked.calls.length = 0; });
+  beforeEach(() => { messages().length = 0; picked.queue.length = 0; picked.calls.length = 0; entry.first.length = 0; });
   const setup = (fms: Record<string, Record<string, unknown>>) => {
     const created: Record<string, string> = {};
     const app = {
-      vault: { getFileByPath: (p: string) => (p in fms || p in created ? { path: p } : null), create: async (p: string, t: string) => { created[p] = t; }, read: async (f: { path: string }) => created[f.path] },
+      vault: { getMarkdownFiles: () => [], getFileByPath: (p: string) => (p in fms || p in created ? { path: p } : null), create: async (p: string, t: string) => { created[p] = t; }, read: async (f: { path: string }) => created[f.path] },
       fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); }, trashFile: async (f: { path: string }) => { delete created[f.path]; } },
       metadataCache: { fileToLinktext: (f: { path: string }) => f.path.replace(/^.*\//, "").replace(/\.md$/, "") },
     } as never;
@@ -131,6 +140,52 @@ describe("addAfterFlow", () => {
     picked.queue.push(null);
     await addAfterFlow(env, P("A"));
     expect(Object.keys(created)).toHaveLength(1);
+  });
+  it("a new to-do from the map opens the entry window (no Project chip), with what was typed as the title; its answers are written; Esc in the window makes nothing", async () => {
+    const { env, created } = setup(fms());
+    entry.calls.length = 0; entry.answers.length = 0;
+    entry.answers.push({ title: "Book pump service", values: { due: "2026-11-15", priority: 1 } });
+    picked.queue.push({ typed: "book pump" });
+    await addAfterFlow(env, P("A"));
+    expect(entry.calls[0]).toEqual({ heading: "New to-do", keys: ["meeting", "due", "priority"], title: "book pump" });
+    const text = Object.values(created)[0];
+    expect(Object.keys(created)[0]).toBe("00 Planning/To-dos/Book pump service.md");
+    expect(text).toContain("due: 2026-11-15");
+    expect(text).toContain("priority: 1");
+    entry.answers.push(null);
+    picked.queue.push({ typed: "Other" });
+    await addAfterFlow(env, P("A"));
+    expect(Object.keys(created)).toHaveLength(1);
+  });
+  it("the drop opens the entry window first: Enter makes the to-do without the search list; its link goes to the list; Esc does nothing", async () => {
+    const { env, created } = setup(fms());
+    entry.calls.length = 0; entry.answers.length = 0;
+    entry.first.push({ title: "Straight away", values: { priority: 2 } });
+    await addAfterFlow(env, P("A"));
+    expect(picked.calls).toHaveLength(0);
+    expect(Object.keys(created)).toEqual(["00 Planning/To-dos/Straight away.md"]);
+    entry.first.push(null);
+    await addAfterFlow(env, P("A"));
+    expect(picked.calls).toHaveLength(0);
+    expect(Object.keys(created)).toHaveLength(1);
+    await addAfterFlow(env, P("A"));   // no answer queued: the link is pressed
+    expect(picked.calls).toHaveLength(1);
+  });
+  it("the window after a typed name has the Pick existing chip: pressing it goes back to the search list", async () => {
+    const { env, created } = setup(fms());
+    entry.calls.length = 0; entry.answers.length = 0;
+    entry.answers.push({ title: "", values: {}, alt: true } as never);
+    picked.queue.push({ typed: "brand new" }, { index: 0 });   // the typed name, then (after the chip) the first to-do of the list
+    await addAfterFlow(env, P("A"));
+    expect(picked.calls).toHaveLength(2);
+    expect(Object.keys(created)).toHaveLength(0);
+  });
+  it("newTodoText writes the meeting, due date and priority it is given", () => {
+    const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13), { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
+    expect(text).toContain("due: 2026-11-15\n");
+    expect(text).toContain("priority: 2\n");
+    expect(text).toContain('meeting: "[[Group meeting]]"');
+    expect(newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13))).toContain("meeting: false");
   });
   it("Undo removes a made to-do, Redo makes it again; one written in since is left alone", async () => {
     const { env, created, history } = setup(fms());

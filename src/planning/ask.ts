@@ -28,7 +28,7 @@ class AskModal extends SuggestModal<never> {
 
   onOpen(): void {
     void super.onOpen();
-    this.modalEl.addClass("lab-kit-ask");   // styles.css hides the empty list
+    this.modalEl.addClass("lab-kit-ask", "lab-kit-prompt");   // styles.css: hides the empty list; the shared prompt corners
     if (this.value) { this.inputEl.value = this.value; this.inputEl.select(); }
     // As vtAsk.js: catch Enter on the box first, so the (empty) list's own Enter handler can't swallow it
     this.inputEl.addEventListener("keydown", e => {
@@ -72,6 +72,7 @@ class PickModal<T> extends FuzzySuggestModal<Choice<T>> {
 
   onOpen(): void {
     void super.onOpen();
+    this.modalEl.addClass("lab-kit-prompt");   // styles.css: the shared prompt corners
     if (this.side) { this.containerEl.addClass("lab-kit-pick-side"); this.modalEl.addClass("lab-kit-pick-side"); }   // styles.css
   }
 

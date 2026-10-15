@@ -18,7 +18,7 @@ export class KitSet {
 
   /** The review window's Apply for both kits: the ticked files of each, one confirmation, one report. */
   applyReviewed(picks: { kit: KitManaged; items: ManagedItem[]; select: (it: ManagedItem) => boolean }[], scripts: Set<string>): Promise<void> {
-    return this.run(picks.map(p => p.kit.asSafeKit({ items: p.items, select: p.select })), () => ({ title: "Apply these changes?", yes: "Apply" }), scripts);
+    return this.run(picks.map(p => p.kit.asSafeKit({ items: p.items, select: p.select })), () => ({ title: "Update these files?", yes: "Update" }), scripts);
   }
 
   /** Review update… for both kits. */
