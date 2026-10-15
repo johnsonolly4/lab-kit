@@ -28,6 +28,7 @@ A window the plugin opens either has something on screen to point at, or it does
 - Opened from highlighted text: just under the highlighted line, the line underlined, no dimmed background.
 - Opened by clicking a button (a plugin button, a Meta Bind button): just under that button, no dimmed background.
 - Opened with nothing to point at (a hotkey, the command palette): in the middle, background dimmed.
+A command remembers the clicked button when it starts (`captureAnchor`, in the planning `add` wrapper), because the focus can move while it waits for a folder; a window with no spot to point at but a mouse (the search list's typed name) opens at the cursor (`pointerAnchor`).
 Code: `buttonAnchor` and `selectionAnchor` in `src/planning/entry-window.ts`; `openEntry` applies the rule, so every window that uses it follows it.
 
 ## Where it applies today (checked 2026-10-14, read from the CSS, not measured on screen)
