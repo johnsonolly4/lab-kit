@@ -29,7 +29,7 @@ Every button bar in the planning kit is drawn by the plugin, so windows open und
 - Done when: a test checks every id in `meta-bind-buttons.json` is either in the table or listed as Phase 2's; ids parse (spaces, commas, bad id); open-note targets resolve with default and renamed planning folders; a click on a command button passes its element as the window anchor (test with a fake command). Tests + lint 0 errors; commit.
 - Depends on: nothing. New dependencies: none.
 
-### Phase 2 — The two buttons with their own edits
+### Phase 2 — The two buttons with their own edits — BUILT 2026-10-15 (tests 1150, lint 0 errors; NOT seen: checklist 6i "Button bar block"; no new file: `toEdit` / `applyReplace` in `button-bar.ts`, `editNote` in `blocks.ts`)
 - Files: `src/planning/button-bar.ts`, new small `src/planning/review-reset.ts` (or inside the table), tests.
 - Do: `shop-clear` (remove the ticked lines of the shopping list note, same result as the Meta Bind regexp; read it from the JSON) and `clear-review` (the six property updates in the JSON). Both on the note the block is in.
 - Done when: tests against fixture notes give the same result as the JSON's actions (compare to the JSON's regexp / values); a failed write shows a notice and changes nothing; commit.

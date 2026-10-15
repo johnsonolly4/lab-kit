@@ -1,20 +1,12 @@
 // The button-bar block: ids → buttons from the one table (src/planning/button-bar.ts), read from the Meta Bind template file.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { BAR_BUTTONS, openName, parseIds, resolveBar } from "../src/planning/button-bar";
+import { BAR_BUTTONS, applyReplace, openName, parseIds, resolveBar, type BarEdit } from "../src/planning/button-bar";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
 
-/** Buttons whose edit the plugin must do itself: Phase 2 of docs/plans/button-bar-block.md. */
-const PHASE_2 = ["clear-review", "shop-clear"];
-
 describe("the button table", () => {
-  it("has every Meta Bind template id, or lists it as an own edit for Phase 2", () => {
-    for (const t of PLANNING_BUTTONS) {
-      const b = BAR_BUTTONS.get(t.id);
-      expect(b, t.id).toBeDefined();
-      if (b?.kind === "own") expect(PHASE_2, t.id).toContain(t.id); else expect(PHASE_2).not.toContain(t.id);
-    }
-    expect([...BAR_BUTTONS.values()].filter(b => b.kind === "own").map(b => b.id).sort()).toEqual(PHASE_2);
+  it("has every Meta Bind template id, each as a command, an open link or an edit (none left unknown)", () => {
+    for (const t of PLANNING_BUTTONS) expect(BAR_BUTTONS.get(t.id)?.kind, t.id).toMatch(/^(command|open|edit)$/);
   });
   it("takes label, icon and action from the template", () => {
     expect(BAR_BUTTONS.get("new-meeting")).toMatchObject({ label: "New meeting note", icon: "calendar-plus", kind: "command", target: "lab-kit:new-meeting" });
@@ -40,10 +32,26 @@ describe("parseIds", () => {
 });
 
 describe("resolveBar", () => {
-  it("keeps good ids in order and reports a wrong id and one not built yet in plain words", () => {
+  it("keeps good ids in order and reports a wrong id in plain words", () => {
     const r = resolveBar(["todo", "nope", "shop-clear", "go-deck"]);
-    expect(r.buttons.map(b => b.id)).toEqual(["todo", "go-deck"]);
-    expect(r.problems).toEqual(['"nope" is not a button', '"shop-clear" is not available in a button bar yet']);
+    expect(r.buttons.map(b => b.id)).toEqual(["todo", "shop-clear", "go-deck"]);
+    expect(r.problems).toEqual(['"nope" is not a button']);
+  });
+});
+
+describe("edit buttons (same result as the Meta Bind actions in the JSON)", () => {
+  const clear = BAR_BUTTONS.get("shop-clear")?.edit as Extract<BarEdit, { type: "replace" }>;
+  it("Clear ticked removes ticked lines only, with their line break, indented ones too", () => {
+    const note = "---\nkind: list\n---\n\n- [ ] milk\n- [x] DCM 2.5 L\n  - [X] nested\n- [ ] gloves\n- [x] last, no newline";
+    expect(applyReplace(note, clear)).toBe("---\nkind: list\n---\n\n- [ ] milk\n- [ ] gloves\n");
+    expect(applyReplace("a\r\n- [x] b\r\nc", clear)).toBe("a\r\nc");
+  });
+  it("Clear ticked leaves a note with nothing ticked unchanged, and prose that mentions [x] alone", () => {
+    const note = "- [ ] a\ntext - [x] not a task\n";
+    expect(applyReplace(note, clear)).toBe(note);
+  });
+  it("Start a new review sets r1 to r6 to the boolean false", () => {
+    expect(BAR_BUTTONS.get("clear-review")?.edit).toEqual({ type: "properties", values: { r1: false, r2: false, r3: false, r4: false, r5: false, r6: false } });
   });
 });
 
@@ -52,5 +60,7 @@ describe("the block's code", () => {
     const src = readFileSync("src/planning/blocks.ts", "utf8");
     expect(src).toMatch(/btn\.focus\(\); this\.pressButton\(b\)/);
     expect(src).toContain('case "button-bar"');
+    expect(src).toMatch(/vault\.process\(file, text => applyReplace\(text, e\)\)/);   // one atomic write
+    expect(src).toMatch(/processFrontMatter\(file, fm => \{ Object\.assign\(fm, e\.values\)/);
   });
 });

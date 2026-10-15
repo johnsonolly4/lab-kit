@@ -10,19 +10,41 @@ export interface BarButton {
   cls?: string;
   /** Meta Bind's "plain" style: no border. */
   plain: boolean;
-  /** `command`: run a command by id; `open`: open the note named in `target`; `own`: an edit the plugin must do itself (not built yet). */
-  kind: "command" | "open" | "own";
+  /** `command`: run a command by id; `open`: open the note named in `target`; `edit`: change the note the block is in (`edit`); `own`: an action the plugin does not know. */
+  kind: "command" | "open" | "edit" | "own";
   /** The command id, or the note name of an `open` link (the text inside `[[ ]]`). */
   target: string;
+  edit?: BarEdit;
 }
 
-interface RawButton { id: string; label?: string; icon?: string; tooltip?: string; class?: string; style?: string; actions?: { type?: string; command?: string; link?: string }[] }
+/** An edit of the note the button is in: remove text that matches, or set properties. Read from Meta Bind's `regexpReplaceInNote` and `updateMetadata` actions. */
+export type BarEdit =
+  | { type: "replace"; regexp: string; flags: string; replacement: string }
+  | { type: "properties"; values: Record<string, unknown> };
+
+interface RawAction { type?: string; command?: string; link?: string; regexp?: string; regexpFlags?: string; replacement?: string; bindTarget?: string; evaluate?: boolean; value?: string }
+interface RawButton { id: string; label?: string; icon?: string; tooltip?: string; class?: string; style?: string; actions?: RawAction[] }
+
+/** `updateMetadata` values are written as text and evaluated (`"false"` → false, `"3"` → 3, other text stays text). */
+function evaluated(v: string | undefined, evaluate: boolean | undefined): unknown {
+  if (!evaluate) return v ?? "";
+  try { return JSON.parse(v ?? ""); } catch { return v ?? ""; }
+}
+
+function toEdit(actions: RawAction[]): BarEdit | null {
+  const first = actions[0];
+  if (actions.length === 1 && first.type === "regexpReplaceInNote" && first.regexp !== undefined) return { type: "replace", regexp: first.regexp, flags: first.regexpFlags ?? "", replacement: first.replacement ?? "" };
+  if (actions.every(a => a.type === "updateMetadata" && a.bindTarget)) return { type: "properties", values: Object.fromEntries(actions.map(a => [a.bindTarget as string, evaluated(a.value, a.evaluate)])) };
+  return null;
+}
 
 function toButton(b: RawButton): BarButton {
   const a = b.actions?.[0];
   const base = { id: b.id, label: b.label ?? b.id, icon: b.icon || undefined, tooltip: b.tooltip || undefined, cls: b.class || undefined, plain: b.style === "plain" };
   if (b.actions?.length === 1 && a?.type === "command" && a.command) return { ...base, kind: "command", target: a.command };
   if (b.actions?.length === 1 && a?.type === "open" && a.link) return { ...base, kind: "open", target: openName(a.link) };
+  const edit = b.actions?.length ? toEdit(b.actions) : null;
+  if (edit) return { ...base, kind: "edit", target: "", edit };
   return { ...base, kind: "own", target: "" };
 }
 
@@ -57,4 +79,9 @@ export function resolveBar(ids: string[]): { buttons: BarButton[]; problems: str
     else buttons.push(b);
   }
   return { buttons, problems };
+}
+
+/** The note text with a `replace` edit applied (the text unchanged when nothing matches). */
+export function applyReplace(text: string, e: Extract<BarEdit, { type: "replace" }>): string {
+  return text.replace(new RegExp(e.regexp, e.flags), e.replacement);
 }

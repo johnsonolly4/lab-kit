@@ -11,7 +11,7 @@ import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
-import { parseIds, resolveBar, type BarButton } from "./button-bar";
+import { applyReplace, parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
 import { applyTodoValue, projectNames, todoFields, todoValues } from "./todo-bar";
@@ -495,9 +495,20 @@ class BlockView extends MarkdownRenderChild {
       if (!runCommand(this.app, b.target)) new Notice(`"${b.label}" needs the command ${b.target}: its plugin may be off.`);
       return;
     }
+    if (b.kind === "edit" && b.edit) { void this.editNote(b); return; }
     const file = this.app.metadataCache.getFirstLinkpathDest(b.target, this.sourcePath);
     if (file) void this.app.workspace.getLeaf(false).openFile(file);
     else new Notice(`No note called "${b.target}" in this vault.`);
+  }
+
+  /** An edit button changes the note the block is in: removes the lines that match (Clear ticked) or sets properties (Start a new review). A failed write says so and leaves the note as it was. */
+  private async editNote(b: BarButton): Promise<void> {
+    const file = this.app.vault.getFileByPath(this.sourcePath), e = b.edit;
+    if (!file || !e) return;
+    try {
+      if (e.type === "replace") await this.app.vault.process(file, text => applyReplace(text, e));
+      else await this.app.fileManager.processFrontMatter(file, fm => { Object.assign(fm, e.values); });
+    } catch (err) { new Notice(`"${b.label}" did not change the note: ${err instanceof Error ? err.message : String(err)}`); }
   }
 
   /** The chip bar of a to-do note: Project, Meeting, Due, Priority (and Countdown once there is a due date). A click picks the value and writes it to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
