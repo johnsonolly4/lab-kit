@@ -2,7 +2,7 @@
 // Nothing is written until Apply; the file never gets conflict markers (the preview marks undecided hunks, the file does not).
 import { ButtonComponent, Modal, Setting, type App } from "obsidian";
 import { mergeRegions, resolveRegions, type HunkChoice, type Region } from "./merge";
-import { winFold, winFoot, winIntro, winSummary } from "./window-look";
+import { cardWindow, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
 export interface MergeInputs {
   dest: string;
@@ -47,6 +47,7 @@ export class KitMergeModal extends Modal {
     const { contentEl, input } = this;
     this.titleEl.setText("Resolve conflict");
     contentEl.addClass("lab-kit-modal");
+    cardWindow(this);
     contentEl.createEl("p", { cls: "setting-item-description" }).createEl("code", { text: input.dest });
     if (input.isScript) contentEl.createEl("p", { text: "This is code. After merging, please test it. Taking the kit's version is the safe choice.", cls: "mod-warning" });
 

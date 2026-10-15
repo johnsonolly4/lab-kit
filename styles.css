@@ -92,8 +92,8 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 }
 
 /* Lab Kit windows (review, manage, merge, what's new) */
-/* Lab Kit windows (Check setup, hotkeys, Tidy, Manage / Review update / report / install, merge) use the card corner: the .modal is the parent of the content element that carries our class */
-.modal:has(> .modal-content.lab-kit-modal, > .modal-content.lab-kit-win, > .modal-content.lab-kit-tidy) { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
+/* Lab Kit windows (Check setup, hotkeys, Tidy, Manage / Review update / report / install, merge) use the card corner: `cardWindow()` (src/kit/window-look.ts) puts the class on the .modal */
+.modal.lab-kit-window { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
 .lab-kit-modal { --lk-block-gap: var(--size-4-3); max-height: 70vh; overflow-y: auto; }   /* the one gap between blocks (folds, bars, the footer) in the kit windows */
 .lab-kit-modal .setting-item { padding: var(--size-4-2) 0; }   /* a Setting row (CSS snippet) takes its gap from the block around it, not its own */
 .lab-kit-modal .setting-item:first-child { padding-top: 0; border-top: none; }
@@ -318,7 +318,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-exp-missing { cursor: default; color: var(--text-faint); }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
+.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle):not(.vt-map-plus) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
 .vt-map-done .vt-map-title { text-decoration: line-through; }
 .vt-map-ready { border: 2px solid var(--interactive-accent); }
 .vt-map-blocked { border: 2px dashed var(--text-muted); }
@@ -348,6 +348,15 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map { position: relative; }
 .vt-map-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: var(--lk-radius-pill); border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
 .vt-map-card:hover .vt-map-handle, .vt-map-tile:hover .vt-map-handle { opacity: 1; }
+/* The + after button on a card: a to-do between the card and what follows it (shown on hover; always on a phone) */
+.vt-map-plus { position: absolute; width: 18px; height: 18px; padding: 0; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: var(--lk-radius-pill); border: 1.5px solid var(--interactive-accent); background: var(--background-primary); color: var(--interactive-accent); box-shadow: none; font-size: var(--font-ui-small); line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.12s; z-index: 4; }
+.vt-map-plus-after { right: -9px; top: calc(50% + 14px); }
+.vt-map-plus-before { left: -9px; top: calc(50% + 14px); }
+.vt-map-card:hover .vt-map-plus, .vt-map-plus:focus-visible { opacity: 1; }
+.vt-map-plus:hover { background: var(--interactive-accent); color: var(--text-on-accent); }
+.vt-map-down .vt-map-plus-after { top: auto; bottom: -9px; right: calc(50% - 32px); }
+.vt-map-down .vt-map-plus-before { top: -9px; left: auto; right: calc(50% - 32px); }
+@media (hover: none) { .vt-map-plus { opacity: 1; } }
 @media (hover: none) { .vt-map-handle { opacity: 1; } }   /* a phone has no hover: the node is always shown */
 .vt-map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
 .vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }

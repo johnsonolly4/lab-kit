@@ -7,7 +7,7 @@ import {
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
-import { winFold, winFoot, winIntro, winRow, winSummary } from "./window-look";
+import { cardWindow, winFold, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
@@ -562,6 +562,7 @@ export class KitManagedModal extends Modal {
   async onOpen(): Promise<void> {
     const { contentEl } = this;
     contentEl.addClass("lab-kit-modal");
+    cardWindow(this);
     const many = this.kits.length > 1;
     this.titleEl.setText(many ? "Kit files" : `Kit files, v${this.kits[0].version}`);
     const holders = this.kits.map(() => createDiv());
@@ -766,6 +767,7 @@ export class KitFilesModal extends Modal {
   async onOpen(): Promise<void> {
     const { contentEl } = this;
     contentEl.addClass("lab-kit-modal");
+    cardWindow(this);
     const many = this.kits.length > 1;
     this.titleEl.setText(many ? "Manage kit files" : `Manage kit files, v${this.kits[0].version}`);
     const holders = this.kits.map(() => createDiv());
@@ -797,6 +799,7 @@ export class KitReportModal extends Modal {
     const { contentEl, results } = this;
     this.titleEl.setText("Kit update report");
     contentEl.addClass("lab-kit-modal");
+    cardWindow(this);
     const n = (o: ManagedResult["outcome"]): number => results.filter(r => r.outcome === o).length;
     winSummary(contentEl, reportSummary(results));
     contentEl.createDiv({ cls: "setting-item-description", text: `${n("created")} created · ${n("updated")} updated · ${n("merged")} merged · ${n("moved")} renamed · ${n("adopted")} already up to date · ${n("skipped")} left alone` });
@@ -836,6 +839,7 @@ export class KitInstallModal extends Modal {
     const { contentEl, preview } = this;
     this.titleEl.setText(this.title);
     contentEl.addClass("lab-kit-modal");
+    cardWindow(this);
     winIntro(contentEl, `Nothing is written until you press ${this.yes}. A file that is already there is never overwritten.`);
     winSummary(contentEl, installSummary(preview, this.settings.length));
     // One row per file or folder, like the Check setup list: its name, what it is for, then where it goes

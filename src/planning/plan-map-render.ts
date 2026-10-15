@@ -14,8 +14,8 @@ export interface MapOptions {
   app: App;
   /** The note the map is drawn in (to resolve links). */
   sourcePath: string;
-  /** Parents whose subtask list is open, kept by the block across redraws. */
-  expanded: Set<string>;
+  /** Parents whose subtask list the user closed, kept by the block across redraws (every list starts open). */
+  collapsed: Set<string>;
   /** Which way the map runs (the setting, or what the toggle on the map was last set to for this note). */
   direction: Direction;
   /** How big the map is drawn: 1 = normal (for the open note, not saved). Left out = 1. */
@@ -30,15 +30,29 @@ export interface MapOptions {
   addAfter?: (from: string, at?: { left: number; bottom: number }) => void;
   /** Insert between two: asks which to-do goes between `a` and `b` (the arrow a → b): from the + on an arrow (a click, or dropped on its "+ new here" box) and the arrow's menu. Left out: no box, no menu entry. */
   insertBetween?: (a: string, b: string, at?: { left: number; bottom: number }) => void;
+  /** The + after button on a card: asks for a to-do to go between the card and everything that comes after it (just after it when nothing does). `at`: under the button. Left out: no button. */
+  insertAfter?: (from: string, at?: { left: number; bottom: number }) => void;
+  /** The + before button on a card: asks for a to-do to go between the card's predecessors and the card (the card's first step when nothing is before it). `at`: under the button. Left out: no button. */
+  insertBefore?: (b: string, at?: { left: number; bottom: number }) => void;
   /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
   newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
 
+/** The small + on a card: on its right side (below the dot) when something comes after it, a new to-do goes between the card and everything after it; on its left side, a new to-do goes between the card's predecessors and the card. The button takes the focus first, so the window opens under it. */
+function plusButton(card: HTMLElement, path: string, o: MapOptions, side: "before" | "after"): void {
+  const label = side === "after" ? "Add a to-do between this one and the ones after it" : "Add a to-do before this one";
+  const b = card.createEl("button", { cls: side === "after" ? "vt-map-plus vt-map-plus-after" : "vt-map-plus vt-map-plus-before", text: "+", attr: { "aria-label": label } });   // one tooltip: Obsidian shows the aria-label, a title as well shows twice
+  b.addEventListener("mousedown", stopEvent);
+  b.addEventListener("click", e => { stopEvent(e); b.focus(); const r = b.getBoundingClientRect(); (side === "after" ? o.insertAfter : o.insertBefore)?.(path, { left: r.left, bottom: r.bottom }); });
+}
+
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
 /** Height of one subtask line, for the room under the map. */
 const SUB_LINE_H = 26;
+/** Room an open list of `n` subtasks needs under its card, on top of the usual gap to the next row. */
+const listRoom = (n: number): number => n * SUB_LINE_H + 12;
 const stopEvent = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
 const open = (o: MapOptions, path: string, newTab: PaneType | boolean): void => { void o.app.workspace.openLinkText(path, o.sourcePath, newTab); };
 
@@ -312,10 +326,10 @@ function dragNest(wrap: HTMLElement, plan: Plan, o: MapOptions, grip: HTMLElemen
 function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
   const { text, allDone } = subsLabel(row);
   if (!text) return;
-  const open = o.expanded.has(row.path);
+  const open = !o.collapsed.has(row.path);
   const b = parent.createEl("button", { cls: allDone ? "vt-map-subs-toggle vt-map-subsdone" : row.done ? "vt-map-subs-toggle vt-map-subsopen" : "vt-map-subs-toggle", text: `${open ? "\u25be" : "\u25b8"} ${allDone ? "\u2713 " : ""}${text}`, attr: { "aria-label": "Subtasks", title: allDone ? "All subtasks done" : "Subtasks" } });
   b.addEventListener("mousedown", stopEvent);
-  b.addEventListener("click", e => { stopEvent(e); if (open) o.expanded.delete(row.path); else o.expanded.add(row.path); o.redraw(); });
+  b.addEventListener("click", e => { stopEvent(e); if (open) o.collapsed.add(row.path); else o.collapsed.delete(row.path); o.redraw(); });
 }
 
 /** The open list of a parent's subtasks: each with a tick circle (ticks and unticks) and its name (click opens). */
@@ -439,8 +453,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
     empty.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); o.newTodo?.(); } });
   }
   if (map.cards.length) {
-    const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
-    const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);
+    const room = new Map(map.cards.filter(c => !o.collapsed.has(c.path) && c.row.subs.length).map(c => [c.path, listRoom(c.row.subs.length)] as const));   // an open list floats under its card: the rows below make way
+    const g = mapGeometry(map, 0, o.direction, room);
     if (o.direction === "down") wrap.addClass("vt-map-down");
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
@@ -477,6 +491,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.dataset.planPath = c.path;
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
+      if (o.insertBefore) plusButton(el, c.path, o, "before");
+      if (o.insertAfter && plan.rows.some(x => x.parent === null && x.afterPaths.includes(c.path))) plusButton(el, c.path, o, "after");   // only a card with something after it: with nothing after, the dot's "+ add after this" is the way
       tickButton(el, r, o, true);
       warnMark(box, wrap, el, plan, o, flagged.get(c.path));
       el.createDiv({ cls: "vt-map-title", text: r.name, attr: { title: r.name } });
@@ -494,7 +510,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}`, attr: { title: r.result } });   // cut with an ellipsis (clear of the subtask toggle); the whole text on hover
       if (r.subs.length) el.addClass("vt-map-has-subs");
       subsToggle(el, r, o);
-      if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs", { wrap, plan });
+      if (!o.collapsed.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs", { wrap, plan });
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));
       el.addEventListener("mouseenter", () => {   // the card and everything before and after it; the rest is dimmed (desktop only: a phone has no hover)
@@ -523,8 +539,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
   }
   if (map.unlinked.length) {   // small tiles in a wrapping grid: the strip (subtask drag) on the left, the node ("comes after" drag) on the right, the full name on hover
     const side = wrap.createDiv({ cls: "vt-map-unlinked" });
-    const room = Math.max(0, ...map.unlinked.filter(r => o.expanded.has(r.path)).map(r => r.subs.length));
-    if (room) side.setCssProps({ "--vt-map-tile-room": `${room * SUB_LINE_H + 12}px` });   // a subtask list floats under its tile: keep clear of what comes after
+    const tileRoom = Math.max(0, ...map.unlinked.filter(r => !o.collapsed.has(r.path)).map(r => r.subs.length));
+    if (tileRoom) side.setCssProps({ "--vt-map-tile-room": `${listRoom(tileRoom)}px` });   // a subtask list floats under its tile: keep clear of what comes after
     side.createDiv({ cls: "vt-map-unlinked-title", text: "Not linked" });
     const grid = side.createDiv({ cls: "vt-map-tiles" });
     for (const r of map.unlinked) {
@@ -536,7 +552,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       warnMark(box, wrap, tile, plan, o, flagged.get(r.path));
       subsToggle(tile, r, o);
       tickButton(tile, r, o, false);
-      if (o.expanded.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });
+      if (!o.collapsed.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });
       tile.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       tile.addEventListener("contextmenu", e => menu(o, e, r, plan));
     }

@@ -10,12 +10,12 @@ import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
-import { addAfterFlow } from "./add-after";
+import { addAfterFlow, insertAfterFlow, insertBeforeFlow } from "./add-after";
 import { applyProjectValue, projectBarFields, projectBarValues } from "./project-bar";
 import { applyReplace, parseAlignEnd, parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
-import { applyTodoValue, projectNames, todoFields, todoValues } from "./todo-bar";
+import { applyTodoValue, experimentOptions, projectNames, todoFields, todoValues } from "./todo-bar";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -65,7 +65,7 @@ export class PlanningBlocks {
 class BlockView extends MarkdownRenderChild {
   private chipBusy = false;   // the to-do chip bar has a list open
   private drawing = 0;
-  private expanded = new Set<string>();   // plan map parents whose subtask list is open
+  private collapsed = new Set<string>();   // plan map parents whose subtask list was closed (every list starts open)
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
@@ -331,7 +331,7 @@ class BlockView extends MarkdownRenderChild {
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
         if (!hasPlan(plan)) return;
-        if (kit.planView === "map" && this.hubHasMap()) return;   // the map replaces the list (Settings → Lab Kit → Project plan view)
+        if (this.hubHasMap()) return;   // the map replaces the list (a hub without the map block keeps the list)
         const { lines, finished } = planLines(plan);
         const open = lines.slice(0, lines.length - finished), shown = this.showAll ? lines : open.slice(0, PROJECT_TILE_ROWS);
         box.addClass("vt-plan");
@@ -384,9 +384,11 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan };
-        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
+        const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan, experiments: this.experimentChoices() };
+        const mapOptions = { app: this.app, sourcePath: this.sourcePath, collapsed: this.collapsed, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
           addAfter: (from: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, from, undefined, at).catch(() => { new Notice("Could not make that link."); }); },
+          insertAfter: (from: string, at?: { left: number; bottom: number }) => { insertAfterFlow(addEnv, from, at).catch(() => { new Notice("Could not insert that to-do."); }); },
+          insertBefore: (b: string, at?: { left: number; bottom: number }) => { insertBeforeFlow(addEnv, b, at).catch(() => { new Notice("Could not insert that to-do."); }); },
           newTodo: () => { void this.commands()?.newTodo(hubFile.basename); },
           insertBetween: (a: string, b: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, a, b, at).catch(() => { new Notice("Could not insert that to-do."); }); } };
         drawPlanMap(box, plan, map, mapOptions);
@@ -532,7 +534,13 @@ class BlockView extends MarkdownRenderChild {
   private todoEntryFields(): EntryField[] {
     const notes = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x));
     const named = (kind: string): string[] => notes.filter(n => n.fm.kind === kind).map(n => n.name).sort((a, b) => a.localeCompare(b));
-    return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"));
+    return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"), this.experimentChoices());
+  }
+
+  /** The lab notes as the Experiment chip's list; none (no chip) when the lab folder is not set. */
+  private experimentChoices(): { label: string; value: string }[] | undefined {
+    const lab = this.labNotes();
+    return lab ? experimentOptions(lab) : undefined;
   }
 
   /** What a chip shows for `value`: its icon (when set) and text, and its set / empty look. */

@@ -24,9 +24,9 @@ const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
   ({ path, name: path.slice(path.lastIndexOf("/") + 1).replace(/\.md$/, ""), folder: path.slice(0, path.lastIndexOf("/")), fm, ctime: 0, mtime: 0 });
 const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
 const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
-const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void; newTodo?: () => void } = {}) => {
+const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void; insertAfter?: (from: string, at?: { left: number; bottom: number }) => void; insertBefore?: (b: string, at?: { left: number; bottom: number }) => void; newTodo?: () => void } = {}) => {
   const plan = readPlan(todos, hub), box = new El("div");
-  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ }, ...extra });
+  drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, collapsed: new Set<string>(), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ }, ...extra });
   return box;
 };
 // A, B after A, C (a subtask of A) with D after C, a lone to-do with its own subtask.
@@ -72,6 +72,16 @@ describe("drawPlanMap", () => {
     expect(open.querySelectorAll(".vt-map-subsopen")).toHaveLength(0);
   });
 
+  it("every parent's subtask list starts open; a closed one stays closed after a redraw", () => {
+    const todos = [td("P"), td("S1", { sub: "[[P]]" }), td("Q"), td("T1", { sub: "[[Q]]" })];
+    expect(draw(todos, "across").querySelectorAll(".vt-map-subs")).toHaveLength(2);
+    const plan = readPlan(todos, hub), collapsed = new Set<string>([T + "P.md"]);
+    const o = { app: {} as never, sourcePath: hub.path, collapsed, direction: "across" as const, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ } };
+    const box = new El("div");
+    drawPlanMap(box, plan, layoutPlan(plan), o);
+    expect(box.querySelectorAll(".vt-map-subs")).toHaveLength(1);
+  });
+
   it("problems: a ⚠ on the to-do, the list behind one row until opened, outlines both ways, a fix says what it does and is a history step", async () => {
     const { drawProblems } = await import("../src/planning/plan-map-render");
     const fms: Record<string, Record<string, unknown>> = { [T + "A.md"]: { kind: "todo", project: "[[Alpha]]", after: ["[[Ghost]]", "[[B]]"] }, [T + "B.md"]: { kind: "todo", project: "[[Alpha]]" }, [T + "L.md"]: { kind: "todo", project: "[[Alpha]]", sub: "[[Ghost]]" } };
@@ -79,7 +89,7 @@ describe("drawPlanMap", () => {
     const history = new PlanHistory();
     const app = { vault: { getFileByPath: (p: string) => (p in fms ? { path: p } : null) }, fileManager: { processFrontMatter: async (f: { path: string }, fn: (fm: Record<string, unknown>) => void) => { fn(fms[f.path]); } } } as never;
     let opened = false;
-    const o = { app, sourcePath: hub.path, expanded: new Set<string>(), direction: "across" as const, zoom: 1, history, get problemsOpen() { return opened; }, showProblems: (v: boolean) => { opened = v; }, redraw() { /* nothing */ } };
+    const o = { app, sourcePath: hub.path, collapsed: new Set<string>(), direction: "across" as const, zoom: 1, history, get problemsOpen() { return opened; }, showProblems: (v: boolean) => { opened = v; }, redraw() { /* nothing */ } };
     const build = () => { const b = new El("div"); drawPlanMap(b, plan, layoutPlan(plan), o); drawProblems(b, plan, o); return b; };
     type E = { hasClass(c: string): boolean; dispatch(t: string): void; getAttribute(k: string): string | undefined; querySelectorAll(s: string): E[]; parent: E; textContent: string };
     let box = build() as unknown as E;
@@ -129,5 +139,48 @@ describe("arrows with insert between two wired", () => {
     const box = draw(chain, "across", { insertBetween: () => undefined });
     expect(box.querySelectorAll(".vt-map-arrow-hit").length).toBe(2);
     expect(box.querySelectorAll(".vt-map-insert").length).toBe(0);
+  });
+});
+
+describe("the + after button on a card", () => {
+  const chain = [td("A"), td("B", { after: "[[A]]" })];
+  it("only a card with something after it has one when insertAfter is wired, and a click hands over that card", () => {
+    const insertAfter = vi.fn();
+    const box = draw(chain, "across", { insertAfter });
+    const plus = box.querySelectorAll(".vt-map-card .vt-map-plus");
+    expect(plus).toHaveLength(1);   // A has B after it; B has nothing
+    plus[0].dispatch("click");
+    expect(insertAfter).toHaveBeenCalledTimes(1);
+    expect(insertAfter.mock.calls[0][0]).toBe(T + "A.md");
+  });
+  it("has a single tooltip (an aria-label, no title: both show as two overlapping tooltips)", () => {
+    const plus = draw(chain, "across", { insertAfter: () => undefined }).querySelectorAll(".vt-map-plus")[0];
+    expect(plus.getAttribute("aria-label")).toBeTruthy();
+    expect(plus.getAttribute("title")).toBeFalsy();
+  });
+  it("none without the option, and none on the tiles of unlinked to-dos", () => {
+    expect(draw(chain, "across").querySelectorAll(".vt-map-plus")).toHaveLength(0);
+    expect(draw([...chain, td("Lone")], "across", { insertAfter: () => undefined }).querySelectorAll(".vt-map-tile .vt-map-plus")).toHaveLength(0);
+  });
+});
+
+describe("the + before button on a card", () => {
+  const chain = [td("A"), td("B", { after: "[[A]]" })];
+  it("every card has one when insertBefore is wired (the first card too), and a click hands over that card", () => {
+    const insertBefore = vi.fn();
+    const box = draw(chain, "across", { insertBefore });
+    const plus = box.querySelectorAll(".vt-map-card .vt-map-plus-before");
+    expect(plus).toHaveLength(2);
+    plus[1].dispatch("click");
+    expect(insertBefore).toHaveBeenCalledTimes(1);
+    expect(insertBefore.mock.calls[0][0]).toBe(T + "B.md");
+    expect(plus[0].getAttribute("title")).toBeFalsy();   // one tooltip
+  });
+  it("before and after buttons are different elements; none on tiles or without the option", () => {
+    const box = draw(chain, "across", { insertBefore: () => undefined, insertAfter: () => undefined });
+    expect(box.querySelectorAll(".vt-map-plus-before")).toHaveLength(2);
+    expect(box.querySelectorAll(".vt-map-plus-after")).toHaveLength(1);   // only A has something after it
+    expect(draw(chain, "across").querySelectorAll(".vt-map-plus")).toHaveLength(0);
+    expect(draw([...chain, td("Lone")], "across", { insertBefore: () => undefined }).querySelectorAll(".vt-map-tile .vt-map-plus")).toHaveLength(0);
   });
 });

@@ -42,8 +42,13 @@ export function offeredTodos(all: NoteRec[], plan: Plan, hubName: string, from: 
 /** A name safe for a file: the characters notes cannot have become "-", at most 80 long (as the To-do template does). */
 export const todoFileName = (typed: string): string => typed.trim().replace(/[\\/:*?"<>|#^[\]]/g, "-").slice(0, 80).trim();
 
-/** The text of a new to-do, with the same properties as the To-do template makes with nothing asked: in Backlog, no due date or priority, in `project`, coming after `after` (a link like `[[Name]]`). */
-export function newTodoText(project: string, after: string, today: Date, set: { due?: string; priority?: number | ""; meeting?: string } = {}): string {
+const afterLines = (after: string | string[]): string => {
+  const links = (Array.isArray(after) ? after : [after]).filter(Boolean);
+  return links.length === 0 ? "" : links.length === 1 ? `after: "${links[0]}"\n` : `after:\n${links.map(l => `  - "${l}"`).join("\n")}\n`;
+};
+
+/** The text of a new to-do, with the same properties as the To-do template makes with nothing asked: in Backlog, no due date or priority, in `project`, coming after `after` (a link like `[[Name]]`; several make a list, none leaves the line out like the To-do template does). */
+export function newTodoText(project: string, after: string | string[], today: Date, set: { due?: string; priority?: number | ""; meeting?: string; experiment?: string } = {}): string {
   return `---
 kind: todo
 day: Backlog
@@ -54,9 +59,8 @@ project: ${project ? `"[[${project}]]"` : ""}
 due: ${set.due ?? ""}
 countdown: false
 priority: ${set.priority ?? ""}
-after: "${after}"
-meeting: ${set.meeting ? `"[[${set.meeting}]]"` : "false"}
-cssclasses:
+${afterLines(after)}meeting: ${set.meeting ? `"[[${set.meeting}]]"` : "false"}
+${set.experiment ? `experiment: "[[${set.experiment}]]"\n` : ""}cssclasses:
   - vt
 ---
 

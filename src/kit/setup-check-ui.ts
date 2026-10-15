@@ -13,7 +13,7 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
-import { winFoot, winIntro, winRow, winSummary } from "./window-look";
+import { cardWindow, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
@@ -144,6 +144,7 @@ export class SetupCheckModal extends Modal {
     const el = this.contentEl;
     el.empty();
     el.addClass("lab-kit-win");
+    cardWindow(this);
     this.setTitle("Check setup");
     const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit });
     winIntro(el, "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one.");

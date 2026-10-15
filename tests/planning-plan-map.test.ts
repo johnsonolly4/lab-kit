@@ -171,6 +171,23 @@ describe("subtasks on the map", () => {
     const m = map([td("A"), td("B", { after: "[[A]]" })]);
     expect(mapGeometry(m, 50).height - mapGeometry(m).height).toBe(50);
   });
+  it("an open subtask list pushes the rows below it down, so no list covers a card (3 parents of 4 subtasks)", () => {
+    const m = map([td("R"), ...["A", "B", "C"].map(p => td(p, { after: "[[R]]" })), ...["A", "B", "C"].flatMap(p => [1, 2, 3, 4].map(i => td(p + i, { sub: `[[${p}]]` })))]);
+    const rowOf = (c: { place: number }) => c.place;
+    expect(new Set(m.cards.map(rowOf)).size).toBe(3);   // the three parents sit in three rows of one step (R beside A)
+    const parents = m.cards.filter(c => c.path !== T + "R.md");
+    const room = new Map(parents.map(c => [c.path, 4 * 26 + 12] as const));
+    const g = mapGeometry(m, 0, "across", room), flat = mapGeometry(m);
+    const ys = parents.sort((a, b) => a.place - b.place).map(c => g.pos.get(c.path)!.y);
+    for (let i = 1; i < ys.length; i++) expect(ys[i] - ys[i - 1]).toBe(CARD_H + GAP_Y + 4 * 26 + 12);   // list (margin 4 + 4 lines + padding) ends above the next card
+    expect(g.height - flat.height).toBe(3 * (4 * 26 + 12));
+  });
+  it("the room is the most any card of a row needs; down moves the steps instead", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]" })]);
+    const [a, b] = ["A", "B"].map(n => T + n + ".md");
+    const g = mapGeometry(m, 0, "down", new Map([[a, 60]]));
+    expect(g.pos.get(b)!.y - g.pos.get(a)!.y).toBe(CARD_H + GAP_X + 60);
+  });
 });
 
 describe("arrows routed around cards", () => {

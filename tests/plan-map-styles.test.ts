@@ -1,6 +1,7 @@
 // The plan map's look lives in the plugin's styles.css, not in the theme snippet (docs/plans/plan-map-styles-in-plugin.md).
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
 
 const css = readFileSync("styles.css", "utf8");
 const snippet = readFileSync("kits/planning/.obsidian/snippets/vault-theme.css", "utf8");
@@ -66,10 +67,32 @@ describe("theme snippet corners", () => {
   });
 });
 
+describe("plan map buttons shown on hover", () => {
+  it("the finished-card fade does not reach the dot or the + (its :not() chain would out-rank their opacity: 0 and show them on every finished card)", () => {
+    const rule = css.split("\n").find(l => l.startsWith(".vt-map-done > :not("))!;
+    expect(rule).toContain(":not(.vt-map-handle)");
+    expect(rule).toContain(":not(.vt-map-plus)");
+  });
+});
+
 describe("lab-kit windows corner", () => {
-  it("every contentEl class the kit windows use is covered by the card-corner rule", () => {
-    const rule = css.split("\n").find(l => l.includes("--modal-radius: var(--lk-radius-card)") && l.startsWith(".modal:has("))!;
-    expect(rule).toBeTruthy();
-    for (const c of ["lab-kit-modal", "lab-kit-win", "lab-kit-tidy"]) expect(rule).toContain(`.modal-content.${c}`);
+  it("styles.css has no :has() selector (the store's CSS lint warns about it); only comments may name it", () => {
+    const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(code).not.toMatch(/:has\(/);
+  });
+  it("the card corner is one class rule on the outer .modal", () => {
+    expect(css).toMatch(/^\.modal\.lab-kit-window \{[^}]*--modal-radius: var\(--lk-radius-card\)[^}]*border-radius: var\(--lk-radius-card\)/m);
+  });
+  it("every window that carries lab-kit-modal, lab-kit-win or lab-kit-tidy calls cardWindow() as often as it adds a class", () => {
+    const walk = (d: string): string[] => readdirSync(d).flatMap(n => statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : n.endsWith(".ts") ? [join(d, n)] : []);
+    let windows = 0;
+    for (const f of walk("src")) {
+      const text = readFileSync(f, "utf8");
+      const classes = text.match(/addClass\("lab-kit-(modal|win|tidy)"\)/g)?.length ?? 0;
+      if (!classes) continue;
+      windows += classes;
+      expect(text.match(/\bcardWindow\(this\)/g)?.length ?? 0, f).toBe(classes);
+    }
+    expect(windows).toBe(9);   // five in managed / merge, three Check setup / hotkeys, Tidy
   });
 });

@@ -223,11 +223,6 @@ class KitSettingTab extends PluginSettingTab {
             this.ctl.dueCountdownChanged?.();
           }));
       } };
-    const planView: SettingGroupItem = { name: "Project plan view", desc: "What a project hub shows for its plan: the card map only, or the card map with the plan list above it. A hub without the card map keeps the list.",
-      render: b => {
-        b.addDropdown(d => d.addOption("map", "Card map only").addOption("both", "Card map and plan list")
-          .setValue(this.ctl.kit.planView).onChange(async v => { this.ctl.kit.planView = v === "both" ? "both" : "map"; await this.ctl.save(); }));
-      } };
     const planDirection: SettingGroupItem = { name: "Project plan map direction", desc: "Which way the plan map in a project hub runs: steps from left to right, or from top to bottom (no sideways scrolling). The button next to the map's title flips it for the open note.",
       render: b => {
         b.addDropdown(d => d.addOption("across", "Left to right").addOption("down", "Top to bottom")
@@ -236,7 +231,7 @@ class KitSettingTab extends PluginSettingTab {
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
     const changed = changedPlanningFolders(pf);
-    return { options: [countdown, planView, planDirection], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    return { options: [countdown, planDirection], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
