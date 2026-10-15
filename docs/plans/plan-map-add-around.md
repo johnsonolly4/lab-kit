@@ -23,7 +23,7 @@ On a dense plan map you can add a to-do before, after or between cards from the 
 
 ## Phases
 
-### Phase 1 — Remove the "Project plan view" setting (list option)
+### Phase 1 — Remove the "Project plan view" setting (list option) — BUILT 2026-10-15 (tests 1168, lint 0 errors; NOT seen: checklist 6i "No plan list option"; also README, tutorial and the Vault spec note (a kit file: Review update…))
 - Files: `src/kit/ui.ts:226-229`, `src/kit/paths.ts:40`, `:107` (default and loader), `src/planning/blocks.ts:334` (always treat as map), `docs/tutorial.md:351`, README if it names it, `tests/planning-hub-blocks.test.ts:120-135`, `tests/kit-*` that read `planView`.
 - Do: remove it (confirmed by the user); a saved `planView` in data.json is ignored. The `project-plan` block code stays (an old hub with no map still gets nothing, as now).
 - Done when: no `planView` left in `src/` (a test), settings tab has no such row, tests and lint pass, changelog line.

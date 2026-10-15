@@ -348,7 +348,7 @@ The planning kit turns the vault around the lab book into a planner: a homepage,
 - **Add result** (command, on an open to-do) sets its one-line `result`, shown as `→ result` on its card. **Link to-dos in order**: select a list of `[[to-do]]` links in a note and each to-do comes after the one before it (a preview first, Undo afterwards).
 - A to-do with `sub: "[[Parent to-do]]"` (typed by hand) is a subtask: the parent's card shows a count (`▸ 1/2`) that opens the list. The parent is never ticked for you.
 - A to-do with `experiment: "[[ABC0014-A]]"` (typed by hand, a link to a lab note) shows that lab note's Status on its card, and the hub's **Experiments** tile lists those lab notes. Needs the Lab notes folder set.
-- Settings → Lab Kit → Planning: **Project plan view** (the card map only, or the map with the plan list above it) and **Project plan map direction** (left to right, or top to bottom).
+- Settings → Lab Kit → Planning: **Project plan map direction** (left to right, or top to bottom).
 - An older hub gets the map and the Experiments tile from Review update… (Project hub template, theme) and **Tidy up notes** → *Hubs: bring the page up to the current template*.
 - **New project note** opens a window with a title box and a **Project** chip (already set when you start from a project, its hub or a card; pick one otherwise): type the title, Enter files the note in that project's folder with a link to the hub and a back link at the top.
 - **Projects overview** shows one card per project: goal, next to-dos, counts, and New note / New to-do / Open.

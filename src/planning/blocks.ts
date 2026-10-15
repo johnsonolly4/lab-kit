@@ -331,7 +331,7 @@ class BlockView extends MarkdownRenderChild {
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
         if (!hasPlan(plan)) return;
-        if (kit.planView === "map" && this.hubHasMap()) return;   // the map replaces the list (Settings → Lab Kit → Project plan view)
+        if (this.hubHasMap()) return;   // the map replaces the list (a hub without the map block keeps the list)
         const { lines, finished } = planLines(plan);
         const open = lines.slice(0, lines.length - finished), shown = this.showAll ? lines : open.slice(0, PROJECT_TILE_ROWS);
         box.addClass("vt-plan");

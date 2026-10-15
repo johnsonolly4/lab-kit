@@ -36,8 +36,6 @@ export interface KitData {
   chemClassOnly: boolean;
   /** Board countdown to a to-do's due date: off, only to-dos with `countdown: true`, or every to-do with a due date. */
   dueCountdown: "off" | "marked" | "all";
-  /** A project hub's plan: the card map only (the Plan list tile stays hidden), or the map and the list. */
-  planView: "map" | "both";
   /** The plan map's direction: steps left to right (across) or top to bottom (down). A toggle on the map flips it for the open note. */
   planDirection: "across" | "down";
   /** Write `progress: 3/7` (ticked / all check boxes) into lab notes and the Shopping list, for the kanban cards. Off by default. */
@@ -104,7 +102,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
 /** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
 export const RIGS_DEFAULT = "03 Lab Book/Rigs";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planView: "map", planDirection: "across", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {

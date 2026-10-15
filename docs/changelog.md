@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **The plan list option is gone** (plugin + Vault spec; not seen in Obsidian; Review update… for the Vault spec note): Settings → Lab Kit → Planning no longer has **Project plan view**. A project hub with the card map shows the map only; a hub without the map block still shows the list.
 - **Store review fix: no `:has` in the plugin's CSS** (plugin CSS; the look should not change; not seen in Obsidian): the 14 px corner of the Lab Kit windows (Check setup, hotkeys, Tidy, Manage / Review update / report / install, merge) comes from a class on the window (`cardWindow()`), not a `:has` rule.
 
 ## v1.4.0 (2026-10-15)

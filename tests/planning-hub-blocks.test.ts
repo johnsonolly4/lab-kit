@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { folderHub, parentHub, topicIndex, type NoteRec } from "../src/planning/lists";
 import { KIT_DEFAULTS } from "../src/kit/paths";
 import { seriesOfNote } from "../src/planning/meetings";
@@ -128,11 +129,19 @@ describe("Project hub template: the Plan tile", () => {
     expect(tile).toBeGreaterThan(t.indexOf("show: project-notes"));
     expect(tile).toBeLessThan(t.indexOf("> [!question] Meetings"));
   });
-  it("has the card map under the Plan tile; the setting defaults to the map only", () => {
+  it("has the card map under the Plan tile; there is no plan view setting any more", () => {
     const t = kit("Extras/Templates/Project hub.md");
     expect(t.indexOf("```vault-card\nshow: project-map\n```")).toBeGreaterThan(t.indexOf("show: project-plan"));
     expect(t.indexOf("show: project-map")).toBeLessThan(t.indexOf("> [!focus] Goal"));
-    expect(KIT_DEFAULTS.planView).toBe("map");
+    expect("planView" in KIT_DEFAULTS).toBe(false);
     expect(KIT_DEFAULTS.planDirection).toBe("across");
+  });
+});
+
+describe("no plan list option", () => {
+  it("no source file mentions planView, and the project-plan block yields to a hub's map", () => {
+    const walk = (d: string): string[] => readdirSync(d).flatMap(n => statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : n.endsWith(".ts") ? [join(d, n)] : []);
+    for (const f of walk("src")) expect(readFileSync(f, "utf8"), f).not.toContain("planView");
+    expect(readFileSync("src/planning/blocks.ts", "utf8")).toMatch(/if \(this\.hubHasMap\(\)\) return;/);
   });
 });
