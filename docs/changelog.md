@@ -1,7 +1,5 @@
 # Lab notebook kit: changelog
 
-## Unreleased
-
 ## v1.4.0 (2026-10-15)
 Entry window, button bars and look pass: one window for new to-dos, meetings and notes with chips; plugin-drawn button bars and project hub chips; one set of corner sizes across the windows. Most of it is built and tested but not yet seen in Obsidian: Review update… for the planning kit notes, then try the windows (BACKLOG and the test checklist list what to look at).
 - **Tidy up notes: use the Lab Kit button bar** (plugin; not seen in Obsidian; opt-in, not ticked): a line that holds only Meta Bind buttons (`BUTTON[new-meeting, go-deck]`) in the homepage, the planning notes, project, meeting and daily folders becomes a button-bar block, so the window a button opens appears under it. Lines with other text (the Weekly review's task lines), buttons Lab Kit does not know (named in "Left as they are"), code fences, `Extras` and hub pages are left alone; each note is backed up first.
