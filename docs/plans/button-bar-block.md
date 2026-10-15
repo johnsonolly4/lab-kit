@@ -46,7 +46,7 @@ Every button bar in the planning kit is drawn by the plugin, so windows open und
 - Done when: tests for chip text, writing `Status` / `deadline`, clearing, Done hides the badge; look matches the approved chip images; commit. Tell the user the look is not seen.
 - Depends on: Phase 1 (shared button chips).
 
-### Phase 5 — Tidy rule, Check setup row, docs
+### Phase 5 — Tidy rule, Check setup row, docs — BUILT 2026-10-15 (tests 1165, lint 0 errors; NOT seen: checklist 6i "Tidy up notes: button bar rule"). Tidy rule `button-bar` in `src/kit/tidy.ts` (`buttonFolders` in `TidyContext`, set in `tidyContext`). Check setup rows LEFT AS THEY ARE: the Weekly review and the ZotLit template still use Meta Bind buttons, so the button templates stay needed; revisit with BACKLOG "Weekly review rethink"
 - Files: `src/kit/tidy.ts` (opt-in rule: `BUTTON[a, b]` line → `vault-card` block with `show: button-bar` and `ids`; leave non-planning ids and `INPUT[` alone, report them), `src/kit/setup-check.ts:317-329` and `:389-397` (the "Meta Bind buttons" rows only matter for notes that still hold `BUTTON[`: show them only then, or reword; ask the user which if unclear), `docs/architecture.md`, `docs/changelog.md`, `docs/INDEX.md`, README / tutorial lines that mention Meta Bind buttons, checklist 6i.
 - Done when: fixture notes (BUTTON line in a bar, mixed with INPUT, unknown id) give the expected output and a second run changes nothing (idempotent); Check setup test updated; docs match the code; commit.
 - Depends on: Phase 3.
