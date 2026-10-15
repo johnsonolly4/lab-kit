@@ -67,6 +67,14 @@ describe("theme snippet corners", () => {
   });
 });
 
+describe("plan map buttons shown on hover", () => {
+  it("the finished-card fade does not reach the dot or the + (its :not() chain would out-rank their opacity: 0 and show them on every finished card)", () => {
+    const rule = css.split("\n").find(l => l.startsWith(".vt-map-done > :not("))!;
+    expect(rule).toContain(":not(.vt-map-handle)");
+    expect(rule).toContain(":not(.vt-map-plus)");
+  });
+});
+
 describe("lab-kit windows corner", () => {
   it("styles.css has no :has() selector (the store's CSS lint warns about it); only comments may name it", () => {
     const code = css.replace(/\/\*[\s\S]*?\*\//g, "");

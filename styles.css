@@ -318,7 +318,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-exp-missing { cursor: default; color: var(--text-faint); }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
+.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle):not(.vt-map-plus) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
 .vt-map-done .vt-map-title { text-decoration: line-through; }
 .vt-map-ready { border: 2px solid var(--interactive-accent); }
 .vt-map-blocked { border: 2px dashed var(--text-muted); }
