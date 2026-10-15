@@ -1,6 +1,7 @@
 // To-do engine (planning kit): stamps dragged / ticked cards, rolls unfinished cards over, and tags the board for vault-theme.css.
 // Replaces the planning suite's To-do roll-over startup template. Rules: src/planning/todo.ts. Plan: docs/plans/phase-4a-todo-engine.md.
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
+import { trackPointer } from "./entry-window";
 import { MarkdownView, Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
 import { applyPatch, cardTag, changePatch, emptyTodoCursorLine, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
@@ -52,6 +53,7 @@ export class TodoEngine {
 
   start(): void {
     const plugin = this.plugin, app = this.app;
+    trackPointer(plugin);   // windows can open where the cursor is
     app.workspace.onLayoutReady(() => {
       // Wait until Obsidian has read every note's properties (at most 15 s), then remember every card as it is
       let begun = false;

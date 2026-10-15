@@ -146,6 +146,19 @@ export function buttonAnchor(): EntryAnchor | null {
   return r.width ? { left: r.left, bottom: r.bottom } : null;
 }
 
+let captured: { anchor: EntryAnchor | null; at: number } | null = null;
+/** Remembers the button the user just clicked, at the very start of a command (before any await: the focus can move while a command waits for a folder). The next `openEntry` within 2 s uses it. */
+export function captureAnchor(): void { captured = { anchor: buttonAnchor(), at: Date.now() }; }
+function takeCaptured(): EntryAnchor | null { const c = captured; captured = null; return c && Date.now() - c.at < 2000 ? c.anchor : null; }
+
+let pointer: { x: number; y: number } | null = null;
+/** Follows the mouse, so a window can open where the cursor is (the caller removes the listener with the plugin). */
+export function trackPointer(plugin: { registerDomEvent: (el: Document, type: "mousemove", cb: (e: MouseEvent) => void) => void }): void {
+  plugin.registerDomEvent(document, "mousemove", e => { pointer = { x: e.clientX, y: e.clientY }; });
+}
+/** The last mouse position as a place to open the window under (a little below the cursor), or null if the mouse has not moved. */
+export function pointerAnchor(): EntryAnchor | null { return pointer ? { left: pointer.x, bottom: pointer.y + 4 } : null; }
+
 /** Opens the entry window; the title and the values set (only visible, non-empty ones), or null when Esc was pressed. `alt` adds a chip at the end of the row; pressing it answers `{ alt: true }` with nothing else. `initial` fills it in (quick capture). */
 export const openEntry = (app: App, heading: string, fields: EntryField[], initial: { title?: string; alt?: string; values?: EntryValues; anchor?: EntryAnchor | null; requireTitle?: boolean; validate?: (a: EntryAnswer) => string | null; /** Opens this chip's dropdown at once with its search filled. */ openField?: { key: string; search: string }; /** The title box shows only while this field has this value (a One-off meeting's title). */ titleWhen?: { key: string; value: EntryValue }; /** Called after a chip changed; returns the values to keep (the Date following the Series chip). */ onChange?: (values: EntryValues, changed: string) => EntryValues } = {}): Promise<EntryAnswer | null> =>
-  new Promise(resolve => { const m = new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, initial.openField ?? null, initial.titleWhen ?? null, initial.onChange ?? null, resolve); m.alt = initial.alt; m.open(); });
+  new Promise(resolve => { const m = new EntryModal(app, heading, fields, initial.title ?? "", initial.values ?? {}, initial.anchor ?? takeCaptured() ?? buttonAnchor(), initial.requireTitle ?? false, initial.validate ?? null, initial.openField ?? null, initial.titleWhen ?? null, initial.onChange ?? null, resolve); m.alt = initial.alt; m.open(); });

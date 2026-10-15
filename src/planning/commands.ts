@@ -11,7 +11,7 @@ import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
 import type { EntryField, EntryValues } from "./entry-fields";
-import { openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
+import { captureAnchor, openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
 import { projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { followSeries, meetingFields, meetingStart, ONE_OFF, readMeeting } from "./meeting-entry";
@@ -64,7 +64,7 @@ export class PlanningCommands {
     handoff().vtEntryTodo = day => this.askTodo(undefined, {}, day);
     this.plugin.register(() => { delete handoff().vtEntryTodo; });
     const add = (id: string, name: string, run: () => Promise<void>): void => {
-      this.plugin.addCommand({ id, name, callback: () => { void run().catch(e => this.failed(name, e)); } });
+      this.plugin.addCommand({ id, name, callback: () => { captureAnchor(); void run().catch(e => this.failed(name, e)); } });
     };
     add("new-todo", "New to-do", () => this.newTodo(undefined, this.selectionTodo()));
     add("quick-capture", "Quick capture", () => this.quickCapture());
