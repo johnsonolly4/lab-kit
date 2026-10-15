@@ -1,6 +1,6 @@
 // "+ add after this" on the plan map (planning kit): drop a dragged node on the box, search every open to-do of the vault, or type a name to make a new one.
 // The rules are in src/planning/todo-picker.ts (pure); the picker is the planning kit's own `pick`.
-import { openEntry, type EntryAnswer } from "./entry-window";
+import { openEntry, pointerAnchor, type EntryAnswer } from "./entry-window";
 import { todoFields } from "./todo-bar";
 import { Notice, type App } from "obsidian";
 import { pick } from "./ask";
@@ -82,8 +82,9 @@ async function pickFlow(env: AddAfterEnv, from: string, before?: string): Promis
 
 /** Makes a to-do in the project of this map, coming after `from`: the entry window (the name typed in the search is the title; the project is this map's, so no Project chip) sets its meeting, due date and priority. */
 async function createAfter(env: AddAfterEnv, from: string, fromName: string, typed: string, before?: string): Promise<void> {
-  const answer = await openEntry(env.app, "New to-do", entryFields(env), { title: typed, requireTitle: true });
+  const answer = await openEntry(env.app, "New to-do", entryFields(env), { title: typed, requireTitle: true, alt: "Pick existing…", anchor: pointerAnchor() });   // where the cursor is: the search list had no spot to point at
   if (!answer) return;
+  if (answer.alt) { await pickFlow(env, from, before); return; }
   await createFrom(env, from, fromName, answer, before);
 }
 

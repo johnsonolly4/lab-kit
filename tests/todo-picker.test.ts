@@ -21,10 +21,11 @@ vi.mock("../src/planning/ask", () => ({
 const entry = vi.hoisted(() => ({ first: [] as ({ title: string; values: Record<string, unknown>; alt?: boolean } | null)[], answers: [] as ({ title: string; values: Record<string, unknown> } | null)[], calls: [] as { heading: string; keys: string[]; title?: string }[] }));
 vi.mock("../src/planning/entry-window", () => ({
   openEntry: async (_app: unknown, heading: string, fields: { key: string }[], initial: { title?: string; alt?: string } = {}) => {
-    if (initial.alt) return entry.first.length ? entry.first.shift() : { title: "", values: {}, alt: true };   // the window the drop opens: by default press its "pick an existing to-do" link
+    if (initial.alt && initial.title === undefined) return entry.first.length ? entry.first.shift() : { title: "", values: {}, alt: true };   // the window the drop opens: by default press its "pick an existing to-do" link
     entry.calls.push({ heading, keys: fields.map(f => f.key), title: initial.title });
     return entry.answers.length ? entry.answers.shift() : { title: initial.title ?? "", values: {} };   // no answer queued: Enter on what was typed
   },
+  pointerAnchor: () => null,
 }));
 const { addAfterFlow } = await import("../src/planning/add-after");
 
@@ -169,6 +170,15 @@ describe("addAfterFlow", () => {
     expect(Object.keys(created)).toHaveLength(1);
     await addAfterFlow(env, P("A"));   // no answer queued: the link is pressed
     expect(picked.calls).toHaveLength(1);
+  });
+  it("the window after a typed name has the Pick existing chip: pressing it goes back to the search list", async () => {
+    const { env, created } = setup(fms());
+    entry.calls.length = 0; entry.answers.length = 0;
+    entry.answers.push({ title: "", values: {}, alt: true } as never);
+    picked.queue.push({ typed: "brand new" }, { index: 0 });   // the typed name, then (after the chip) the first to-do of the list
+    await addAfterFlow(env, P("A"));
+    expect(picked.calls).toHaveLength(2);
+    expect(Object.keys(created)).toHaveLength(0);
   });
   it("newTodoText writes the meeting, due date and priority it is given", () => {
     const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13), { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
