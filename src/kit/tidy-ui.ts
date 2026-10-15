@@ -11,7 +11,7 @@ import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, se
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
-import { WIN_MARK, winFold, winFoot, winIntro, winSummary } from "./window-look";
+import { WIN_MARK, cardWindow, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
@@ -106,6 +106,7 @@ export class TidyNotesModal extends Modal {
   onOpen(): void {
     this.modalEl.addClass("mod-wide");
     this.contentEl.addClass("lab-kit-tidy");
+    cardWindow(this);
     this.setTitle("Tidy up notes");
     this.contentEl.createEl("p", { text: "Reading your notes…" });
     void this.load().then(() => {

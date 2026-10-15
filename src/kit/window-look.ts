@@ -5,6 +5,11 @@ export type WinState = "missing" | "todo" | "info" | "ok";
 /** The mark inside a row's round badge. */
 export const WIN_MARK: Record<WinState, string> = { missing: "✗", todo: "!", info: "i", ok: "✓" };
 
+/** The card corner for a Lab Kit window: the class goes on the outer `.modal` element (styles.css `.modal.lab-kit-window`), so no `:has` is needed to find it from the content element. Every window that carries `lab-kit-modal`, `lab-kit-win` or `lab-kit-tidy` calls this once. */
+export function cardWindow(m: { modalEl: HTMLElement }): void {
+  m.modalEl.addClass("lab-kit-window");
+}
+
 export function winIntro(el: HTMLElement, text: string): HTMLElement {
   return el.createEl("p", { cls: "lab-kit-win-intro", text });
 }

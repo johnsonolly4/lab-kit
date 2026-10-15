@@ -2,7 +2,7 @@
 // It sets a key only from Set the suggested keys: a list with tick boxes and a confirmation, for commands that have no key and whose suggested key is free.
 import { Modal, Notice, type App } from "obsidian";
 import { checkHotkeys, hotkeyReportMarkdown, hotkeyRowState, hotkeySummary, settableHotkeys, type HotkeyRow } from "./hotkey-check";
-import { winFoot, winIntro, winRow, winSummary } from "./window-look";
+import { cardWindow, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { commandNames, hotkeysInUse, hotkeysSupported, hotkeysWritable, setHotkeys } from "./obsidian-private";
 
 export class HotkeyCheckModal extends Modal {
@@ -19,6 +19,7 @@ export class HotkeyCheckModal extends Modal {
     const el = this.contentEl;
     el.empty();
     el.addClass("lab-kit-win");
+    cardWindow(this);
     this.setTitle("Check hotkeys");
     const rows = this.rows(), free = hotkeysWritable(this.app) ? settableHotkeys(rows) : [];
     winIntro(el, "The recommended keys, and what you have now. A key is only set when you use the button below and confirm; a key you have is never changed.");
@@ -47,6 +48,7 @@ class SetHotkeysModal extends Modal {
   onOpen(): void {
     const el = this.contentEl;
     el.addClass("lab-kit-win");
+    cardWindow(this);
     this.setTitle("Set the suggested keys?");
     winIntro(el, "These commands have no key, and their suggested key is free. Untick any you don't want. You can change or remove a key later in the hotkey settings.");
     winSummary(el, `${this.free.length} ${this.free.length === 1 ? "key" : "keys"} can be set.`);
