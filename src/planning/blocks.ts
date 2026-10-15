@@ -65,7 +65,7 @@ export class PlanningBlocks {
 class BlockView extends MarkdownRenderChild {
   private chipBusy = false;   // the to-do chip bar has a list open
   private drawing = 0;
-  private expanded = new Set<string>();   // plan map parents whose subtask list is open
+  private collapsed = new Set<string>();   // plan map parents whose subtask list was closed (every list starts open)
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
@@ -385,7 +385,7 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
         const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan };
-        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
+        const mapOptions = { app: this.app, sourcePath: this.sourcePath, collapsed: this.collapsed, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
           addAfter: (from: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, from, undefined, at).catch(() => { new Notice("Could not make that link."); }); },
           insertAfter: (from: string, at?: { left: number; bottom: number }) => { insertAfterFlow(addEnv, from, at).catch(() => { new Notice("Could not insert that to-do."); }); },
           insertBefore: (b: string, at?: { left: number; bottom: number }) => { insertBeforeFlow(addEnv, b, at).catch(() => { new Notice("Could not insert that to-do."); }); },
