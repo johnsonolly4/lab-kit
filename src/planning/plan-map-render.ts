@@ -38,9 +38,9 @@ export interface MapOptions {
   redraw: () => void;
 }
 
-/** The small + on a card's right side (below the dot): a new to-do goes between the card and everything after it. The button takes the focus first, so the window opens under it. */
+/** The small + on the right side of a card that has something after it (below the dot): a new to-do goes between the card and everything after it. The button takes the focus first, so the window opens under it. */
 function plusButton(card: HTMLElement, path: string, o: MapOptions): void {
-  const b = card.createEl("button", { cls: "vt-map-plus vt-map-plus-after", text: "+", attr: { "aria-label": "Add a to-do after this one, before the ones that follow it", title: "Add a to-do after this one" } });
+  const b = card.createEl("button", { cls: "vt-map-plus vt-map-plus-after", text: "+", attr: { "aria-label": "Add a to-do between this one and the ones after it" } });   // one tooltip: Obsidian shows the aria-label, a title as well shows twice
   b.addEventListener("mousedown", stopEvent);
   b.addEventListener("click", e => { stopEvent(e); b.focus(); const r = b.getBoundingClientRect(); o.insertAfter?.(path, { left: r.left, bottom: r.bottom }); });
 }
@@ -486,7 +486,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.dataset.planPath = c.path;
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
-      if (o.insertAfter) plusButton(el, c.path, o);
+      if (o.insertAfter && plan.rows.some(x => x.parent === null && x.afterPaths.includes(c.path))) plusButton(el, c.path, o);   // only a card with something after it: with nothing after, the dot's "+ add after this" is the way
       tickButton(el, r, o, true);
       warnMark(box, wrap, el, plan, o, flagged.get(c.path));
       el.createDiv({ cls: "vt-map-title", text: r.name, attr: { title: r.name } });

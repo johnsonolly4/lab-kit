@@ -14,6 +14,8 @@ On a dense plan map you can add a to-do before, after or between cards from the 
 - **Both ways stay (user, 2026-10-15, asked how the + after button differs from dragging the right-edge dot):** the **+ after** button on a card with followers inserts X between the card and all its followers (A→X, X→B, X→C); dragging the dot into "+ add after this" keeps making X a third branch (A→X, A→B and A→C stay). With no followers both give the same result.
 - **Subtasks open by default on the map (user, 2026-10-15)**: Phase 5.
 
+- **The + after button shows only on a card that has something after it (user, 2026-10-15, after seeing it on every card).** A card with nothing after it has no +: its dot and "+ add after this" are the way. One tooltip (aria-label only).
+
 ## Claude's choices (the user can overrule)
 - **+ before** on B: X is inserted between all of B's predecessors and B (X after each of B's parents, B after X, the parents' links to B removed); a card with no parents gets X as its new first step.
 - A subtask has no + buttons (it has no place of its own on the map).

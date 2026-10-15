@@ -134,14 +134,19 @@ describe("arrows with insert between two wired", () => {
 
 describe("the + after button on a card", () => {
   const chain = [td("A"), td("B", { after: "[[A]]" })];
-  it("every card has one when insertAfter is wired, and a click hands over the card (not the note)", () => {
+  it("only a card with something after it has one when insertAfter is wired, and a click hands over that card", () => {
     const insertAfter = vi.fn();
     const box = draw(chain, "across", { insertAfter });
     const plus = box.querySelectorAll(".vt-map-card .vt-map-plus");
-    expect(plus).toHaveLength(2);
+    expect(plus).toHaveLength(1);   // A has B after it; B has nothing
     plus[0].dispatch("click");
     expect(insertAfter).toHaveBeenCalledTimes(1);
     expect(insertAfter.mock.calls[0][0]).toBe(T + "A.md");
+  });
+  it("has a single tooltip (an aria-label, no title: both show as two overlapping tooltips)", () => {
+    const plus = draw(chain, "across", { insertAfter: () => undefined }).querySelectorAll(".vt-map-plus")[0];
+    expect(plus.getAttribute("aria-label")).toBeTruthy();
+    expect(plus.getAttribute("title")).toBeFalsy();
   });
   it("none without the option, and none on the tiles of unlinked to-dos", () => {
     expect(draw(chain, "across").querySelectorAll(".vt-map-plus")).toHaveLength(0);
