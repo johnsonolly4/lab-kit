@@ -15,7 +15,7 @@ Making a to-do takes one box (the title). Project, meeting, due, priority and co
 ## Out of scope
 - Snippet forms (Alt+S) already are forms; the shopping list, results, Name boxes and topic / chemical / rig single-name boxes keep their one box.
 - A Comes after chip (user, 2026-10-14: the plan map already sets it). The template's Comes after prompt goes in Phase 3; `after` is set on the plan map or by hand.
-- Subtasks (`sub`), `experiment`, `result`: stay on the plan map.
+- Subtasks (`sub`), `result`: stay on the plan map. (`experiment` got its own chip 2026-10-15: the chip bar, the New to-do window and the map's + windows; Lab notes folder set.)
 - A chip bar on non-to-do notes. Changing the board, or Alt+S forms.
 - A default hotkey (Lab Kit sets none; the Hotkeys note gets a suggested row only).
 

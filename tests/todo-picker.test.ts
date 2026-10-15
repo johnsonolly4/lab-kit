@@ -180,6 +180,11 @@ describe("addAfterFlow", () => {
     expect(picked.calls).toHaveLength(2);
     expect(Object.keys(created)).toHaveLength(0);
   });
+  it("newTodoText writes an experiment link only when given", () => {
+    expect(newTodoText("Alpha", "", new Date(2026, 9, 13))).not.toContain("experiment");
+    const text = newTodoText("Alpha", "", new Date(2026, 9, 13), { experiment: "ABC0014-A" });
+    expect(text).toContain('experiment: "[[ABC0014-A]]"\ncssclasses:');
+  });
   it("newTodoText writes the meeting, due date and priority it is given", () => {
     const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13), { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
     expect(text).toContain("due: 2026-11-15\n");

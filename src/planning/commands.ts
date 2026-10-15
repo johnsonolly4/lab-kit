@@ -12,7 +12,7 @@ import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitIte
 import { ask, pick } from "./ask";
 import type { EntryField, EntryValues } from "./entry-fields";
 import { captureAnchor, openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
-import { projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
+import { experimentOptions, projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { followSeries, meetingFields, meetingStart, ONE_OFF, readMeeting } from "./meeting-entry";
 import { parseQuickTodo } from "./quick-todo";
@@ -36,7 +36,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | "" }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -104,10 +104,18 @@ export class PlanningCommands {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => ({ name: f.basename, fm: (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) }));
     const inside = project ?? this.hubOfActiveNote();
-    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(projectNames(hubs), named("meeting-series")), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
+    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
     if (!answer) return null;
     const v = answer.values;
-    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "" };
+    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", experiment: String(v.experiment ?? "") };
+  }
+
+  /** The lab notes as the Experiment chip's list; none (no chip) when the lab folder is not set. */
+  private experimentChoices(): { label: string; value: string }[] | undefined {
+    const lab = this.kit().labFolder.trim();
+    if (!lab) return undefined;
+    const prefix = kitJoin(lab) + "/";
+    return experimentOptions(this.app.vault.getMarkdownFiles().filter(f => f.path.startsWith(prefix)).map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })));
   }
 
   /** Highlighted text in the open note as a quick to-do: the title and the `@project`, `%date`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */

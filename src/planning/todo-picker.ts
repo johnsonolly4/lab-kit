@@ -48,7 +48,7 @@ const afterLines = (after: string | string[]): string => {
 };
 
 /** The text of a new to-do, with the same properties as the To-do template makes with nothing asked: in Backlog, no due date or priority, in `project`, coming after `after` (a link like `[[Name]]`; several make a list, none leaves the line out like the To-do template does). */
-export function newTodoText(project: string, after: string | string[], today: Date, set: { due?: string; priority?: number | ""; meeting?: string } = {}): string {
+export function newTodoText(project: string, after: string | string[], today: Date, set: { due?: string; priority?: number | ""; meeting?: string; experiment?: string } = {}): string {
   return `---
 kind: todo
 day: Backlog
@@ -60,7 +60,7 @@ due: ${set.due ?? ""}
 countdown: false
 priority: ${set.priority ?? ""}
 ${afterLines(after)}meeting: ${set.meeting ? `"[[${set.meeting}]]"` : "false"}
-cssclasses:
+${set.experiment ? `experiment: "[[${set.experiment}]]"\n` : ""}cssclasses:
   - vt
 ---
 

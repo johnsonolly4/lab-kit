@@ -15,7 +15,7 @@ import { applyProjectValue, projectBarFields, projectBarValues } from "./project
 import { applyReplace, parseAlignEnd, parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
-import { applyTodoValue, projectNames, todoFields, todoValues } from "./todo-bar";
+import { applyTodoValue, experimentOptions, projectNames, todoFields, todoValues } from "./todo-bar";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
@@ -384,7 +384,7 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan };
+        const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan, experiments: this.experimentChoices() };
         const mapOptions = { app: this.app, sourcePath: this.sourcePath, collapsed: this.collapsed, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
           addAfter: (from: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, from, undefined, at).catch(() => { new Notice("Could not make that link."); }); },
           insertAfter: (from: string, at?: { left: number; bottom: number }) => { insertAfterFlow(addEnv, from, at).catch(() => { new Notice("Could not insert that to-do."); }); },
@@ -534,7 +534,13 @@ class BlockView extends MarkdownRenderChild {
   private todoEntryFields(): EntryField[] {
     const notes = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x));
     const named = (kind: string): string[] => notes.filter(n => n.fm.kind === kind).map(n => n.name).sort((a, b) => a.localeCompare(b));
-    return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"));
+    return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"), this.experimentChoices());
+  }
+
+  /** The lab notes as the Experiment chip's list; none (no chip) when the lab folder is not set. */
+  private experimentChoices(): { label: string; value: string }[] | undefined {
+    const lab = this.labNotes();
+    return lab ? experimentOptions(lab) : undefined;
   }
 
   /** What a chip shows for `value`: its icon (when set) and text, and its set / empty look. */
