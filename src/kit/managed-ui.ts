@@ -484,7 +484,7 @@ class KitReviewSection {
     contentEl.empty();
     const inst = this.managed.installedVersion;
     if (!inst) winIntro(contentEl, "Nothing installed by the built-in kit yet.");   // the version is in the fold's subtitle already
-    winSummary(contentEl, reviewSummary(this.items));
+    winSummary(contentEl, reviewSummary(this.items, i => kitHasNewer(i, this.managed.stateOf(i.file.id))));
     const count = (a: ManagedAction): number => this.items.filter(i => i.action === a).length;
     contentEl.createDiv({ cls: "setting-item-description",
       text: `${count("create")} new · ${count("fast-forward")} updated · ${count("merge")} to merge · ${count("needs-merge")} conflicts · ${count("user-modified")} changed by you · ${count("missing")} missing · ${count("up-to-date")} up to date` });
@@ -676,7 +676,7 @@ class KitFilesSection {
     const contentEl = this.root;
     contentEl.empty();
     this.snippetSwitch(contentEl);
-    winSummary(contentEl, reviewSummary(this.items));
+    winSummary(contentEl, reviewSummary(this.items, i => kitHasNewer(i, this.managed.stateOf(i.file.id))));
     const ordered = sortByAttention(this.items, (id) => this.managed.stateOf(id));
     // Two folds, what needs an update first and open; the rest folded away behind it (when nothing needs one, the rest is open)
     const needs = (i: ManagedItem): boolean => ["create", "fast-forward", "missing", "merge", "needs-merge"].includes(i.action) || kitHasNewer(i, this.managed.stateOf(i.file.id));
