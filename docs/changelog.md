@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Plan map: a + after button on every card** (plugin; not seen in Obsidian): hover a card (always shown on a phone) and press the small **+** under its right-hand dot: a to-do window opens under it, and the new to-do goes **between the card and everything that comes after it** (card → new → each of the followers; the card's old links to them are replaced, one Undo step). A card with nothing after it just gets the new to-do after it. Dragging the dot into "+ add after this" still adds one more branch and leaves the followers on the card. "Pick existing…" in that window also puts the picked to-do between.
 - **The plan list option is gone** (plugin + Vault spec; not seen in Obsidian; Review update… for the Vault spec note): Settings → Lab Kit → Planning no longer has **Project plan view**. A project hub with the card map shows the map only; a hub without the map block still shows the list.
 - **Store review fix: no `:has` in the plugin's CSS** (plugin CSS; the look should not change; not seen in Obsidian): the 14 px corner of the Lab Kit windows (Check setup, hotkeys, Tidy, Manage / Review update / report / install, merge) comes from a class on the window (`cardWindow()`), not a `:has` rule.
 

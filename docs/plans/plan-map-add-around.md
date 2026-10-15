@@ -28,7 +28,7 @@ On a dense plan map you can add a to-do before, after or between cards from the 
 - Do: remove it (confirmed by the user); a saved `planView` in data.json is ignored. The `project-plan` block code stays (an old hub with no map still gets nothing, as now).
 - Done when: no `planView` left in `src/` (a test), settings tab has no such row, tests and lint pass, changelog line.
 
-### Phase 2 — Insert between a card and all its followers; the + after button
+### Phase 2 — Insert between a card and all its followers; the + after button — BUILT 2026-10-15 (tests 1174, lint 0 errors; NOT seen: checklist 6i "Plan map + after button"; `insertBetweenMany`, `followersOf`, `insertAfterFlow` in `add-after.ts`, `plusButton` in `plan-map-render.ts`, `.vt-map-plus` in `styles.css`; the arrow's own menu / drag still insert on one arrow)
 - Files: `src/planning/plan-link.ts` (`planInsert` for several followers: check `canLink` for every new link), `src/planning/add-after.ts` (`insertBetween` loop, one history group; `createFrom` for the + after case), `src/planning/plan-map-render.ts` (the + after button next to the handle, `:479`), `src/planning/blocks.ts:389-391` (wiring), `styles.css` (`.vt-map-plus`, hover and `@media (hover: none)` like `:350-351`), tests `planning-plan-link.test.ts`, `planning-after-write.test.ts`, `plan-map-render.test.ts`, `plan-map-styles.test.ts`.
 - Done when: tests on fixtures: A with followers B, C → X after A, B and C after X, A→B / A→C links gone, one Undo restores all, Redo repeats; refusal when a link would make a circle; a card with no followers gets a plain after-link. Not seen in Obsidian until the user tries (checklist 6i row).
 - Depends on: nothing (Phase 1 independent).
