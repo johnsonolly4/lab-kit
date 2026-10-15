@@ -10,7 +10,7 @@ import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
-import { addAfterFlow, insertAfterFlow } from "./add-after";
+import { addAfterFlow, insertAfterFlow, insertBeforeFlow } from "./add-after";
 import { applyProjectValue, projectBarFields, projectBarValues } from "./project-bar";
 import { applyReplace, parseAlignEnd, parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
@@ -388,6 +388,7 @@ class BlockView extends MarkdownRenderChild {
         const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
           addAfter: (from: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, from, undefined, at).catch(() => { new Notice("Could not make that link."); }); },
           insertAfter: (from: string, at?: { left: number; bottom: number }) => { insertAfterFlow(addEnv, from, at).catch(() => { new Notice("Could not insert that to-do."); }); },
+          insertBefore: (b: string, at?: { left: number; bottom: number }) => { insertBeforeFlow(addEnv, b, at).catch(() => { new Notice("Could not insert that to-do."); }); },
           newTodo: () => { void this.commands()?.newTodo(hubFile.basename); },
           insertBetween: (a: string, b: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, a, b, at).catch(() => { new Notice("Could not insert that to-do."); }); } };
         drawPlanMap(box, plan, map, mapOptions);

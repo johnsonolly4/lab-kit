@@ -35,7 +35,7 @@ On a dense plan map you can add a to-do before, after or between cards from the 
 - Done when: tests on fixtures: A with followers B, C → X after A, B and C after X, A→B / A→C links gone, one Undo restores all, Redo repeats; refusal when a link would make a circle; a card with no followers gets a plain after-link. Not seen in Obsidian until the user tries (checklist 6i row).
 - Depends on: nothing (Phase 1 independent).
 
-### Phase 3 — The + before button
+### Phase 3 — The + before button — BUILT 2026-10-15 (tests 1181, lint 0 errors; NOT seen: checklist 6i "Plan map + before button"; `insertBeforeFlow`, `makeTodo` in `add-after.ts`, `plusButton(…, side)` in `plan-map-render.ts`, `.vt-map-plus-before` in `styles.css`; `newTodoText` takes a list of links; a new to-do only, no "Pick existing…" in this window (Claude's choice: picking an existing to-do needs its own loop rules); the + shows on every card, the first card too)
 - Files: `src/planning/plan-link.ts` (`planInsertBefore`: predecessors of B), `src/planning/add-after.ts` (`insertBefore`, one history group, created note undoable like `recordCreate`), `plan-map-render.ts` (+ on the card's left), `blocks.ts`, `styles.css`, tests as Phase 2.
 - Done when: fixtures: B with parents P1, P2 → X after P1 and P2, B after X, P→B links gone; B with no parents → B after X only; Undo / Redo as one step; circle refusal.
 - Depends on: Phase 2 (shared button CSS and wiring).

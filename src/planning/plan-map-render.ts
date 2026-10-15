@@ -32,17 +32,20 @@ export interface MapOptions {
   insertBetween?: (a: string, b: string, at?: { left: number; bottom: number }) => void;
   /** The + after button on a card: asks for a to-do to go between the card and everything that comes after it (just after it when nothing does). `at`: under the button. Left out: no button. */
   insertAfter?: (from: string, at?: { left: number; bottom: number }) => void;
+  /** The + before button on a card: asks for a to-do to go between the card's predecessors and the card (the card's first step when nothing is before it). `at`: under the button. Left out: no button. */
+  insertBefore?: (b: string, at?: { left: number; bottom: number }) => void;
   /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
   newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
 }
 
-/** The small + on the right side of a card that has something after it (below the dot): a new to-do goes between the card and everything after it. The button takes the focus first, so the window opens under it. */
-function plusButton(card: HTMLElement, path: string, o: MapOptions): void {
-  const b = card.createEl("button", { cls: "vt-map-plus vt-map-plus-after", text: "+", attr: { "aria-label": "Add a to-do between this one and the ones after it" } });   // one tooltip: Obsidian shows the aria-label, a title as well shows twice
+/** The small + on a card: on its right side (below the dot) when something comes after it, a new to-do goes between the card and everything after it; on its left side, a new to-do goes between the card's predecessors and the card. The button takes the focus first, so the window opens under it. */
+function plusButton(card: HTMLElement, path: string, o: MapOptions, side: "before" | "after"): void {
+  const label = side === "after" ? "Add a to-do between this one and the ones after it" : "Add a to-do before this one";
+  const b = card.createEl("button", { cls: side === "after" ? "vt-map-plus vt-map-plus-after" : "vt-map-plus vt-map-plus-before", text: "+", attr: { "aria-label": label } });   // one tooltip: Obsidian shows the aria-label, a title as well shows twice
   b.addEventListener("mousedown", stopEvent);
-  b.addEventListener("click", e => { stopEvent(e); b.focus(); const r = b.getBoundingClientRect(); o.insertAfter?.(path, { left: r.left, bottom: r.bottom }); });
+  b.addEventListener("click", e => { stopEvent(e); b.focus(); const r = b.getBoundingClientRect(); (side === "after" ? o.insertAfter : o.insertBefore)?.(path, { left: r.left, bottom: r.bottom }); });
 }
 
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
@@ -486,7 +489,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.dataset.planPath = c.path;
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
-      if (o.insertAfter && plan.rows.some(x => x.parent === null && x.afterPaths.includes(c.path))) plusButton(el, c.path, o);   // only a card with something after it: with nothing after, the dot's "+ add after this" is the way
+      if (o.insertBefore) plusButton(el, c.path, o, "before");
+      if (o.insertAfter && plan.rows.some(x => x.parent === null && x.afterPaths.includes(c.path))) plusButton(el, c.path, o, "after");   // only a card with something after it: with nothing after, the dot's "+ add after this" is the way
       tickButton(el, r, o, true);
       warnMark(box, wrap, el, plan, o, flagged.get(c.path));
       el.createDiv({ cls: "vt-map-title", text: r.name, attr: { title: r.name } });

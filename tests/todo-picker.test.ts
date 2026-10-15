@@ -27,7 +27,7 @@ vi.mock("../src/planning/entry-window", () => ({
   },
   pointerAnchor: () => null,
 }));
-const { addAfterFlow, insertAfterFlow } = await import("../src/planning/add-after");
+const { addAfterFlow, insertAfterFlow, insertBeforeFlow } = await import("../src/planning/add-after");
 
 const T = "00 Planning/To-dos/";
 const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
@@ -227,5 +227,47 @@ describe("addAfterFlow", () => {
     await insertAfterFlow(plain.env, P("A"));
     expect(Object.keys(plain.created)).toEqual(["00 Planning/To-dos/Plain.md"]);
     expect(plain.history.size("undo")).toBe(1);
+  });
+  it("the + before button: a new to-do goes between the card's predecessors and the card, as one Undo step", async () => {
+    const f = { ...fms(), [P("B")]: { kind: "todo", project: "[[Alpha]]", after: ["[[A]]", "[[C]]"] } };
+    const { env, created, history } = setup(f);
+    const { runHistory } = await import("../src/planning/after-write");
+    entry.calls.length = 0; entry.answers.length = 0;
+    entry.answers.push({ title: "Before B", values: { priority: 2 } });
+    await insertBeforeFlow(env, P("B"));
+    const path = "00 Planning/To-dos/Before B.md", text = created[path];
+    expect(text).toContain('after:\n  - "[[A]]"\n  - "[[C]]"');   // after both of B's predecessors
+    expect(text).toContain("priority: 2");
+    expect(f[P("B")].after).toBe("[[Before B]]");   // B comes after the new to-do instead of A and C
+    expect(history.withGroup("undo", history.peek("undo")!)).toHaveLength(2);   // the note and B: one step
+    expect(entry.calls[0].keys).toEqual(["meeting", "due", "priority"]);
+    await runHistory(env.app, history, "undo");
+    expect(path in created).toBe(false);
+    expect(f[P("B")].after).toEqual(["[[A]]", "[[C]]"]);
+    await runHistory(env.app, history, "redo");
+    expect(created[path]).toBe(text);
+    expect(f[P("B")].after).toBe("[[Before B]]");
+  });
+  it("+ before on a card with nothing before it makes the new to-do its first step (no after line); Esc and an empty title make nothing", async () => {
+    const f = fms();
+    const { env, created } = setup(f);
+    entry.answers.length = 0;
+    entry.answers.push({ title: "First step", values: {} });
+    await insertBeforeFlow(env, P("A"));
+    expect(created["00 Planning/To-dos/First step.md"]).not.toContain("after:");
+    expect(f[P("A")].after).toBe("[[First step]]");
+    entry.answers.push(null);
+    await insertBeforeFlow(env, P("C"));
+    entry.answers.push({ title: "  ", values: {} });
+    await insertBeforeFlow(env, P("C"));
+    expect(Object.keys(created)).toHaveLength(1);
+    expect(f[P("C")].after).toBeUndefined();
+  });
+  it("newTodoText: no after leaves the line out, several make a list, one stays a single link", () => {
+    const d = new Date(2026, 9, 13);
+    expect(newTodoText("Alpha", [], d)).not.toContain("after:");
+    expect(newTodoText("Alpha", "", d)).not.toContain("after:");
+    expect(newTodoText("Alpha", ["[[A]]"], d)).toContain('after: "[[A]]"\nmeeting:');
+    expect(newTodoText("Alpha", ["[[A]]", "[[C]]"], d)).toContain('after:\n  - "[[A]]"\n  - "[[C]]"\nmeeting:');
   });
 });

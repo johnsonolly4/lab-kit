@@ -24,7 +24,7 @@ const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
   ({ path, name: path.slice(path.lastIndexOf("/") + 1).replace(/\.md$/, ""), folder: path.slice(0, path.lastIndexOf("/")), fm, ctime: 0, mtime: 0 });
 const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project" });
 const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
-const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void; insertAfter?: (from: string, at?: { left: number; bottom: number }) => void; newTodo?: () => void } = {}) => {
+const draw = (todos: NoteRec[], direction: "across" | "down", extra: { insertBetween?: (a: string, b: string) => void; insertAfter?: (from: string, at?: { left: number; bottom: number }) => void; insertBefore?: (b: string, at?: { left: number; bottom: number }) => void; newTodo?: () => void } = {}) => {
   const plan = readPlan(todos, hub), box = new El("div");
   drawPlanMap(box, plan, layoutPlan(plan), { app: {} as never, sourcePath: hub.path, expanded: new Set(todos.map(t => t.path)), direction, zoom: 1, history: new PlanHistory(), problemsOpen: false, showProblems() { /* nothing */ }, redraw() { /* nothing */ }, ...extra });
   return box;
@@ -151,5 +151,26 @@ describe("the + after button on a card", () => {
   it("none without the option, and none on the tiles of unlinked to-dos", () => {
     expect(draw(chain, "across").querySelectorAll(".vt-map-plus")).toHaveLength(0);
     expect(draw([...chain, td("Lone")], "across", { insertAfter: () => undefined }).querySelectorAll(".vt-map-tile .vt-map-plus")).toHaveLength(0);
+  });
+});
+
+describe("the + before button on a card", () => {
+  const chain = [td("A"), td("B", { after: "[[A]]" })];
+  it("every card has one when insertBefore is wired (the first card too), and a click hands over that card", () => {
+    const insertBefore = vi.fn();
+    const box = draw(chain, "across", { insertBefore });
+    const plus = box.querySelectorAll(".vt-map-card .vt-map-plus-before");
+    expect(plus).toHaveLength(2);
+    plus[1].dispatch("click");
+    expect(insertBefore).toHaveBeenCalledTimes(1);
+    expect(insertBefore.mock.calls[0][0]).toBe(T + "B.md");
+    expect(plus[0].getAttribute("title")).toBeFalsy();   // one tooltip
+  });
+  it("before and after buttons are different elements; none on tiles or without the option", () => {
+    const box = draw(chain, "across", { insertBefore: () => undefined, insertAfter: () => undefined });
+    expect(box.querySelectorAll(".vt-map-plus-before")).toHaveLength(2);
+    expect(box.querySelectorAll(".vt-map-plus-after")).toHaveLength(1);   // only A has something after it
+    expect(draw(chain, "across").querySelectorAll(".vt-map-plus")).toHaveLength(0);
+    expect(draw([...chain, td("Lone")], "across", { insertBefore: () => undefined }).querySelectorAll(".vt-map-tile .vt-map-plus")).toHaveLength(0);
   });
 });

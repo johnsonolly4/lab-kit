@@ -117,15 +117,37 @@ function entryFields(env: AddAfterEnv): ReturnType<typeof todoFields> {
   return todoFields([], series).filter(f => f.key !== "project");
 }
 
-async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: EntryAnswer, befores: string[]): Promise<void> {
+/** Makes the note of a new to-do in this map's project from the window's answer: its file name (a number added when taken) and text, coming after the to-dos `after` (paths). Null when the title is empty. */
+async function makeTodo(env: AddAfterEnv, answer: EntryAnswer, after: string[]): Promise<{ name: string; path: string; text: string } | null> {
   const base = todoFileName(answer.title);
-  if (!base) return;
+  if (!base) return null;
   const v = answer.values;
   let name = base, n = 2;
   while (env.app.vault.getFileByPath(`${env.folder}/${name}.md`)) name = `${base} ${n++}`;
   const path = `${env.folder}/${name}.md`;
-  const text = newTodoText(env.hub.name, linkText(env.app, from, path), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? "") });
+  const text = newTodoText(env.hub.name, after.map(a => linkText(env.app, a, path)), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? "") });
   await env.app.vault.create(path, text);
+  return { name, path, text };
+}
+
+/** The + before button on a card: a new to-do goes between the card's predecessors and the card (the card with nothing before it gets the new to-do as its first step). Window under the +; every link and the new note is one Undo step. */
+export async function insertBeforeFlow(env: AddAfterEnv, b: string, at?: { left: number; bottom: number }): Promise<void> {
+  const answer = await openEntry(env.app, "New to-do", entryFields(env), { requireTitle: true, anchor: at ?? null });
+  if (!answer) return;
+  const parents = env.plan.rows.find(r => r.path === b)?.afterPaths ?? [];
+  const made = await makeTodo(env, answer, parents);
+  if (!made) return;
+  const nameOf = (p: string): string => env.plan.rows.find(r => r.path === p)?.name ?? p;
+  const g = ++group;
+  const step = recordCreate(env.history, made.path, made.text, `Made "${made.name}"`, g);
+  await recordChange(env.app, env.history, b, "after", `Inserted "${made.name}" before "${nameOf(b)}"`, v => addAfter(removeAfter(v, parents.flatMap(namesOf)), linkText(env.app, made.path, b)), g);
+  undoNotice(parents.length ? `Made the to-do "${made.name}" between ${quoted(parents.map(nameOf))} and "${nameOf(b)}".` : `Made the to-do "${made.name}", now the step before "${nameOf(b)}".`, () => runHistory(env.app, env.history, "undo", step));
+}
+
+async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: EntryAnswer, befores: string[]): Promise<void> {
+  const made = await makeTodo(env, answer, [from]);
+  if (!made) return;
+  const { name, path, text } = made;
   const g = ++group;
   const step = recordCreate(env.history, path, text, `Made "${name}"`, befores.length ? g : undefined);
   if (befores.length) {   // the new to-do already comes after `from`; each of `befores` now comes after it instead of after `from`
