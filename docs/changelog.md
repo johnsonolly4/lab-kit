@@ -1,6 +1,9 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+
+## v1.4.0 (2026-10-15)
+Entry window, button bars and look pass: one window for new to-dos, meetings and notes with chips; plugin-drawn button bars and project hub chips; one set of corner sizes across the windows. Most of it is built and tested but not yet seen in Obsidian: Review update… for the planning kit notes, then try the windows (BACKLOG and the test checklist list what to look at).
 - **Tidy up notes: use the Lab Kit button bar** (plugin; not seen in Obsidian; opt-in, not ticked): a line that holds only Meta Bind buttons (`BUTTON[new-meeting, go-deck]`) in the homepage, the planning notes, project, meeting and daily folders becomes a button-bar block, so the window a button opens appears under it. Lines with other text (the Weekly review's task lines), buttons Lab Kit does not know (named in "Left as they are"), code fences, `Extras` and hub pages are left alone; each note is backed up first.
 - **Project hub bar: Status and Deadline are chips** (plugin; not seen in Obsidian; no Review update… needed, the bar is a block): the drop-down and the date box became chips like the to-do bar's (a click opens a list or a date box under the chip; an empty Deadline reads "+ Deadline", a set one DD-MM-YYYY); New to-do / New note and the other hub buttons use the button bar's look. The countdown badge is unchanged.
 - **Manage kit files: the summary agrees with the list** (plugin; not seen in Obsidian): a kept note the kit has a newer version of is counted in the big line ("N files to update") as well as listed under "Needs an update"; it said "Everything is up to date." above that list. **Go to** buttons on Home look like the button bar's (outlined, 10 px corner) and tint on hover.

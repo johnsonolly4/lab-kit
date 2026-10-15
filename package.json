@@ -1,6 +1,6 @@
 {
   "name": "lab-kit",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Live calculation tables, lab snippet forms and a hazard header for a chemistry lab notebook.",
   "main": "main.js",
   "scripts": {
