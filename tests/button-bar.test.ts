@@ -1,7 +1,7 @@
 // The button-bar block: ids → buttons from the one table (src/planning/button-bar.ts), read from the Meta Bind template file.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { BAR_BUTTONS, applyReplace, openName, parseIds, resolveBar, type BarEdit } from "../src/planning/button-bar";
+import { BAR_BUTTONS, applyReplace, openName, parseAlignEnd, parseIds, resolveBar, type BarEdit } from "../src/planning/button-bar";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
 
 describe("the button table", () => {
@@ -28,6 +28,14 @@ describe("parseIds", () => {
   it("the key may repeat; no ids line gives none", () => {
     expect(parseIds("ids: a\nIDS: b, c")).toEqual(["a", "b", "c"]);
     expect(parseIds("show: button-bar")).toEqual([]);
+  });
+});
+
+describe("parseAlignEnd", () => {
+  it("is true only for an align: end line", () => {
+    expect(parseAlignEnd("show: button-bar\nids: help\nalign: end\n")).toBe(true);
+    expect(parseAlignEnd("ids: help")).toBe(false);
+    expect(parseAlignEnd("align: start")).toBe(false);
   });
 });
 

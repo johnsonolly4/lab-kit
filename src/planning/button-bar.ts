@@ -69,6 +69,11 @@ export function parseIds(source: string): string[] {
   return out;
 }
 
+/** `align: end` puts the row at the right-hand end of the line (Home's help button). */
+export function parseAlignEnd(source: string): boolean {
+  return /^\s*align\s*:\s*end\s*$/im.test(source);
+}
+
 /** The buttons to draw, and the ids that name no button (or one whose edit is not built yet) for a plain line under the bar. */
 export function resolveBar(ids: string[]): { buttons: BarButton[]; problems: string[] } {
   const buttons: BarButton[] = [], problems: string[] = [];

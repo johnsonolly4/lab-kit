@@ -5,9 +5,18 @@ cssclasses:
   - vt
 ---
 
-# `= dateformat(date(today), "cccc d LLLL")` `BUTTON[help]`
+# `= dateformat(date(today), "cccc d LLLL")`
 
-`BUTTON[today, todo, lab, capture, shop-add, search]`
+```vault-card
+show: button-bar
+ids: help
+align: end
+```
+
+```vault-card
+show: button-bar
+ids: today, todo, lab, capture, shop-add, search
+```
 
 > [!goto] Go to
 > ```vault-goto

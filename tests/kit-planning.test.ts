@@ -226,7 +226,8 @@ describe("planning kit files (Phase 3)", () => {
     const home = planning.contents[planning.manifest.files.find(f => f.src === "00 Home.md")!.id];
     // the supplied original still has the focus properties and callout: the kit dropped them on purpose (hub plan Phase 1), so only the head is compared
     const supplied = readFileSync("docs/plans/kit-files/planning/00 Home.md", "utf8").replace(/\r\n/g, "\n").replace(/focus\d(_done)?: .*\n/g, "");
-    const head = (t: string) => t.slice(0, t.indexOf("> [!goto]"));
+    // the buttons are plugin blocks now (button-bar plan Phase 3): compare without them
+    const head = (t: string) => t.slice(0, t.indexOf("> [!goto]")).replace(/`BUTTON\[[^\]]*\]`/g, "").replace(/```vault-card\nshow: button-bar\n[\s\S]*?```/g, "").replace(/[ \t]+$/gm, "").replace(/\n{3,}/g, "\n\n");
     expect(head(home)).toBe(head(supplied));
     expect(home).toContain("> ```vault-goto");
     for (const show of ["this-week", "inbox", "experiments", "projects", "recently-read"]) expect(home).toContain(`show: ${show}`);

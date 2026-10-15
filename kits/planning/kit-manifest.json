@@ -91,7 +91,7 @@
       "role": "cssSnippets",
       "path": "vault-theme.css",
       "version": "1.3.0",
-      "sha256": "c69caeab913590a2c9e2759501c6984f90b0eb683f4c77e500b829b7bdbcee35",
+      "sha256": "e1a488432f2b107896be6b455ee29379cb83afc9f0d239a43dc0a935e708e61e",
       "renamedFrom": [],
       "desc": "Planning theme: homepage layout, callouts, to-do board cards"
     },
@@ -101,8 +101,8 @@
       "src": "00 Home.md",
       "role": "home",
       "path": "00 Home.md",
-      "version": "1.0.0",
-      "sha256": "5bfc73383815063a90a2f4750fe9556dd2343a386c82af55e9878add6aac6ddc",
+      "version": "1.3.0",
+      "sha256": "8fb14d7a8160222d46d795f355c78bec4ed8857ffc05d48b94add885c30fbfc1",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -172,7 +172,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.3.0",
-      "sha256": "083c0033b2151c099782cf4288740393e74692d70cf0e6ad379b365722333b8f",
+      "sha256": "d89fec61474d256af928c9bfdec1802df96d98a2f1b8347134fff6653842febc",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -208,8 +208,8 @@
       "src": "08 Meetings/Meetings.md",
       "role": "meetings",
       "path": "Meetings.md",
-      "version": "1.0.1",
-      "sha256": "bcecc4ab05bb215a47f93319f1e24cd3b1ed20e7604fff9f2c9acfe00a9b9cfc",
+      "version": "1.3.0",
+      "sha256": "499e6aafe25a2f715a1a7a400966c45d7c4830a837d044753361a508a9a0b31e",
       "renamedFrom": [],
       "desc": "Meetings hub: next meeting of each series",
       "policy": "keep"
@@ -220,8 +220,8 @@
       "src": "00 Planning/Shopping list.md",
       "role": "planning",
       "path": "Shopping list.md",
-      "version": "1.0.0",
-      "sha256": "9ab76f6baf27793dd40d0ec445d786a5e3c9eb346a90b9efd2e4a8b577606fce",
+      "version": "1.3.0",
+      "sha256": "9fe07de4066d4a8ff20b00130c83c85d39f37b4077356279c6c6cc8d0366d7c1",
       "renamedFrom": [],
       "desc": "Lab shopping list",
       "policy": "keep"
@@ -256,8 +256,8 @@
       "src": "02 Projects/Projects overview.md",
       "role": "projects",
       "path": "Projects overview.md",
-      "version": "1.0.0",
-      "sha256": "1e170c8e8b5473c1081eac9e6c79a083cc4d49275f148701863d52ad48218e38",
+      "version": "1.3.0",
+      "sha256": "65c601a79dcbc91b12fe772dc59440e822e87dcd96103eb4b1d8d269cf71d207",
       "renamedFrom": [],
       "desc": "All projects with their status",
       "policy": "keep"
@@ -268,8 +268,8 @@
       "src": "Extras/Templates/Daily note.md",
       "role": "templates",
       "path": "Daily note.md",
-      "version": "1.0.0",
-      "sha256": "ae1a5157ef89d217621a505098678613a0404bb814cb1db9259fb64ac3ac8722",
+      "version": "1.3.0",
+      "sha256": "d2f7040f0d73ea9779f3fb8c2bb60367abc838dc96247df64c3ebb2005fd6479",
       "renamedFrom": [],
       "desc": "Daily note (folder template for 01 Daily Notes)"
     },

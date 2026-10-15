@@ -11,7 +11,7 @@ import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
-import { applyReplace, parseIds, resolveBar, type BarButton } from "./button-bar";
+import { applyReplace, parseAlignEnd, parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
 import { applyTodoValue, projectNames, todoFields, todoValues } from "./todo-bar";
@@ -477,7 +477,7 @@ class BlockView extends MarkdownRenderChild {
   private buttonBar(box: HTMLElement): void {
     const { buttons, problems } = resolveBar(parseIds(this.source));
     if (!buttons.length && !problems.length) { box.createDiv({ cls: "vt-muted", text: "button-bar needs a line like ids: new-meeting, go-deck." }); return; }
-    const bar = box.createDiv({ cls: "vt-button-bar" });
+    const bar = box.createDiv({ cls: parseAlignEnd(this.source) ? "vt-button-bar is-end" : "vt-button-bar" });
     for (const b of buttons) {
       const btn = bar.createEl("button", { cls: ["vt-bar-button", b.plain ? "is-plain" : "", b.cls ?? ""].filter(Boolean).join(" "), attr: b.tooltip ? { "aria-label": b.tooltip } : {} });
       if (b.icon) setIcon(btn.createSpan({ cls: "vt-bar-button-icon" }), b.icon);

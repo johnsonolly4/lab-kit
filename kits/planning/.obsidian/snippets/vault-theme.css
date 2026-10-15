@@ -205,22 +205,6 @@ body {
 }
 
 /* ---- 9. Homepage (cssclasses: home) ---- */
-/* "How it works" button sits at the right-hand end of the date heading */
-.home .markdown-rendered h1:has(.vt-help),
-.home h1:has(.vt-help) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.home .vt-help .mb-button-inner {
-  font-size: var(--font-ui-small) !important;
-  font-weight: 400 !important;
-  color: var(--text-muted) !important;
-  border: none !important;
-}
-.home .vt-help .mb-button-inner:hover { color: var(--text-normal) !important; }
-
 .home {
   --file-line-width: 1150px;
   --line-width: 1150px;
