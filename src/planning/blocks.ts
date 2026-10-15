@@ -11,6 +11,7 @@ import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
 import { addAfterFlow } from "./add-after";
+import { applyProjectValue, projectBarFields, projectBarValues } from "./project-bar";
 import { applyReplace, parseAlignEnd, parseIds, resolveBar, type BarButton } from "./button-bar";
 import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
 import { editEntryField } from "./entry-window";
@@ -19,7 +20,7 @@ import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
-import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -454,12 +455,12 @@ class BlockView extends MarkdownRenderChild {
     const up = parentHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
     if (up) this.link(bar, up.path, `\u2190 ${up.name}`, "vt-back");
     const button = (text: string, run: (c: PlanningCommands) => void): void => {
-      bar.createEl("button", { text }).addEventListener("click", () => { const c = this.commands(); if (c) run(c); });
+      const b = bar.createEl("button", { text, cls: "vt-bar-button" });
+      b.addEventListener("click", () => { b.focus(); const c = this.commands(); if (c) run(c); });
     };
     if (kind === "project") {
       button("New to-do", c => void c.newTodo(file.basename)); button("New note", c => void c.newProjectNote(file.parent?.path));
-      this.statusSelect(bar, file);
-      this.deadlineInput(bar, file);
+      this.projectChips(bar, file);
       const badge = deadlineBadge(this.owner.rec(file).fm, this.owner.kit().dueCountdown, new Date());   // none once the project is Done
       if (badge) bar.createSpan({ cls: badge.cls, text: badge.text });
     }
@@ -555,29 +556,25 @@ class BlockView extends MarkdownRenderChild {
       .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });
   }
 
-  /** A drop-down for a project's Status (no label), written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
-  private statusSelect(bar: HTMLElement, file: TFile): void {
-    const status = this.owner.rec(file).fm.Status, now = typeof status === "string" ? status : "";
-    const select = bar.createEl("select", { cls: "vt-status-select dropdown", attr: { "aria-label": "Status" } });
-    for (const s of PROJECT_STATUSES.includes(now) || !now ? PROJECT_STATUSES : [...PROJECT_STATUSES, now]) select.createEl("option", { text: s, value: s });
-    select.value = now || PROJECT_STATUSES[0];
-    for (const ev of ["mousedown", "click"]) select.addEventListener(ev, e => e.stopPropagation());
-    select.addEventListener("change", () => {
-      void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.Status = select.value; })
-        .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the status."); });
-    });
+  /** Status and Deadline of a project as chips, written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
+  private projectChips(bar: HTMLElement, file: TFile): void {
+    const values = projectBarValues(this.owner.rec(file).fm);
+    for (const f of projectBarFields(String(values.Status))) {
+      const btn = bar.createEl("button", { cls: "vt-todo-chip", attr: { "aria-label": f.name, title: f.name } });
+      this.paintChip(btn, f, values[f.key]);
+      for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
+      btn.addEventListener("click", () => { void this.editProjectChip(file, f, values[f.key], btn); });
+    }
   }
 
-  /** The project's `deadline` date, a date box in the bar (emptying it clears the date). */
-  private deadlineInput(bar: HTMLElement, file: TFile): void {
-    const deadline = this.owner.rec(file).fm.deadline;
-    const input = bar.createEl("input", { cls: "vt-deadline-input", type: "date", attr: { "aria-label": "Deadline" } });
-    input.value = typeof deadline === "string" ? deadline.slice(0, 10) : "";
-    for (const ev of ["mousedown", "click"]) input.addEventListener(ev, e => e.stopPropagation());
-    input.addEventListener("change", () => {
-      void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.deadline = input.value; })
-        .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the deadline."); });
-    });
+  private async editProjectChip(file: TFile, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<void> {
+    if (this.chipBusy) return;
+    this.chipBusy = true;
+    const got = await editEntryField(this.app, field, current, anchor).finally(() => { this.chipBusy = false; });
+    if (got === null) return;
+    this.paintChip(anchor, field, got);
+    await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyProjectValue(f, field.key, got); })
+      .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });
   }
 
   /** The top row of a meeting note: the link to its series hub (the One-off hub for a one-off) and Meeting deck for that series. */
