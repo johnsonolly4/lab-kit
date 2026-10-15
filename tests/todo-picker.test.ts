@@ -27,7 +27,7 @@ vi.mock("../src/planning/entry-window", () => ({
   },
   pointerAnchor: () => null,
 }));
-const { addAfterFlow } = await import("../src/planning/add-after");
+const { addAfterFlow, insertAfterFlow } = await import("../src/planning/add-after");
 
 const T = "00 Planning/To-dos/";
 const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
@@ -207,5 +207,25 @@ describe("addAfterFlow", () => {
     picked.queue.push({ typed: "New" });
     await addAfterFlow(env, P("A"));
     expect(Object.keys(created)).toEqual(["00 Planning/To-dos/New 2.md"]);
+  });
+  it("the + after button: a new to-do goes between the card and all its followers; the drop box keeps them on the card; with no followers it is a plain add", async () => {
+    const f = { ...fms(), [P("B")]: { kind: "todo", project: "[[Alpha]]", after: "[[A]]" }, [P("D")]: { kind: "todo", project: "[[Alpha]]", after: "[[A]]" } };
+    const { env, created, history } = setup(f);
+    entry.calls.length = 0; entry.answers.length = 0; entry.first.length = 0;
+    entry.first.push({ title: "Middle", values: {} });
+    await insertAfterFlow(env, P("A"));
+    expect(created["00 Planning/To-dos/Middle.md"]).toContain('after: "[[A]]"');
+    expect(f[P("B")].after).toBe("[[Middle]]");
+    expect(f[P("D")].after).toBe("[[Middle]]");
+    expect(history.withGroup("undo", history.peek("undo")!)).toHaveLength(3);   // the note and both followers: one Undo step
+    const drop = setup(f);
+    entry.first.push({ title: "Branch", values: {} });
+    await addAfterFlow(drop.env, P("A"));   // the drop: no followers handed over, B and D stay on A
+    expect(f[P("B")].after).toBe("[[Middle]]");   // (already moved above, untouched now)
+    const plain = setup(fms());
+    entry.first.push({ title: "Plain", values: {} });
+    await insertAfterFlow(plain.env, P("A"));
+    expect(Object.keys(plain.created)).toEqual(["00 Planning/To-dos/Plain.md"]);
+    expect(plain.history.size("undo")).toBe(1);
   });
 });

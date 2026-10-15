@@ -30,10 +30,19 @@ export interface MapOptions {
   addAfter?: (from: string, at?: { left: number; bottom: number }) => void;
   /** Insert between two: asks which to-do goes between `a` and `b` (the arrow a → b): from the + on an arrow (a click, or dropped on its "+ new here" box) and the arrow's menu. Left out: no box, no menu entry. */
   insertBetween?: (a: string, b: string, at?: { left: number; bottom: number }) => void;
+  /** The + after button on a card: asks for a to-do to go between the card and everything that comes after it (just after it when nothing does). `at`: under the button. Left out: no button. */
+  insertAfter?: (from: string, at?: { left: number; bottom: number }) => void;
   /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
   newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
+}
+
+/** The small + on a card's right side (below the dot): a new to-do goes between the card and everything after it. The button takes the focus first, so the window opens under it. */
+function plusButton(card: HTMLElement, path: string, o: MapOptions): void {
+  const b = card.createEl("button", { cls: "vt-map-plus vt-map-plus-after", text: "+", attr: { "aria-label": "Add a to-do after this one, before the ones that follow it", title: "Add a to-do after this one" } });
+  b.addEventListener("mousedown", stopEvent);
+  b.addEventListener("click", e => { stopEvent(e); b.focus(); const r = b.getBoundingClientRect(); o.insertAfter?.(path, { left: r.left, bottom: r.bottom }); });
 }
 
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
@@ -477,6 +486,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.dataset.planPath = c.path;
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
+      if (o.insertAfter) plusButton(el, c.path, o);
       tickButton(el, r, o, true);
       warnMark(box, wrap, el, plan, o, flagged.get(c.path));
       el.createDiv({ cls: "vt-map-title", text: r.name, attr: { title: r.name } });

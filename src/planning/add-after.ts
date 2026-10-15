@@ -31,35 +31,58 @@ export const nextGroup = (): number => ++group;
 const NO_LOOP = "That would make a loop: the other to-do already comes before this one.";
 
 /** Puts the to-do `n` between `a` and `b` (the arrow a → b): `n` comes after `a`, `b` comes after `n` instead of `a`. One Undo step for both writes; returns its first step. */
-export async function insertBetween(app: App, history: PlanHistory, plan: Plan, a: string, b: string, n: string, group: number): Promise<HistoryStep | null> {
-  const ins = planInsert(plan, a, b, n);
-  if (ins.verdict !== "ok") { new Notice(ins.verdict === "loop" ? NO_LOOP : ins.verdict === "self" ? "Pick a to-do other than the two it goes between." : "Those two are not linked any more."); return null; }
-  const nameOf = (p: string): string => plan.rows.find(r => r.path === p)?.name ?? p;
-  const label = `Inserted "${nameOf(n)}" between "${nameOf(a)}" and "${nameOf(b)}"`;
-  const first = ins.nAfterA ? await recordChange(app, history, n, "after", label, v => addAfter(v, linkText(app, a, n)), group) : null;
-  const last = await recordChange(app, history, b, "after", label, v => { const rest = removeAfter(v, namesOf(a)); return ins.bAfterN ? addAfter(rest, linkText(app, n, b)) : rest; }, group);
-  return first ?? last;
+export function insertBetween(app: App, history: PlanHistory, plan: Plan, a: string, b: string, n: string, group: number): Promise<HistoryStep | null> {
+  return insertBetweenMany(app, history, plan, a, [b], n, group);
 }
 
+/** The to-dos that come directly after `a` on the map (a subtask's link is drawn to its parent card, so subtasks are not followers here). */
+export const followersOf = (plan: Plan, a: string): string[] => plan.rows.filter(r => r.parent === null && r.afterPaths.includes(a)).map(r => r.path);
+
+/** Puts the to-do `n` between `a` and all of `bs` (each an arrow a → b): `n` comes after `a`, every `b` comes after `n` instead of `a`. Nothing is written unless every one is allowed. One Undo step for all the writes; returns its first step. */
+export async function insertBetweenMany(app: App, history: PlanHistory, plan: Plan, a: string, bs: string[], n: string, group: number): Promise<HistoryStep | null> {
+  const checks = bs.map(b => planInsert(plan, a, b, n));
+  const bad = checks.find(c => c.verdict !== "ok");
+  if (bad || !bs.length) { new Notice(bad?.verdict === "loop" ? NO_LOOP : bad?.verdict === "self" ? "Pick a to-do other than the ones it goes between." : "Those to-dos are not linked any more."); return null; }
+  const nameOf = (p: string): string => plan.rows.find(r => r.path === p)?.name ?? p;
+  const label = `Inserted "${nameOf(n)}" between "${nameOf(a)}" and ${quoted(bs.map(nameOf))}`;
+  const first = checks[0].nAfterA ? await recordChange(app, history, n, "after", label, v => addAfter(v, linkText(app, a, n)), group) : null;
+  let firstB: HistoryStep | null = null;
+  for (const [i, b] of bs.entries()) {
+    const step = await recordChange(app, history, b, "after", label, v => { const rest = removeAfter(v, namesOf(a)); return checks[i].bAfterN ? addAfter(rest, linkText(app, n, b)) : rest; }, group);
+    firstB ??= step;
+  }
+  return first ?? firstB;
+}
+
+/** `"B"`, `"B" and "C"`, `"B", "C" and "D"`. */
+const quoted = (names: string[]): string => names.length < 2 ? names.map(n => `"${n}"`).join("") : `${names.slice(0, -1).map(n => `"${n}"`).join(", ")} and "${names[names.length - 1]}"`;
+
 /** Asks which to-do comes after `from` (search, or type a new name) and writes it. With `before` (the to-do `from` → `before` is an arrow of) the chosen one goes between the two instead. Every link written and every new to-do goes in Undo / Redo (undoing a new to-do removes the note, if nobody has written in it since). */
-export async function addAfterFlow(env: AddAfterEnv, from: string, before?: string, at?: { left: number; bottom: number }): Promise<void> {
+export async function addAfterFlow(env: AddAfterEnv, from: string, before?: string | string[], at?: { left: number; bottom: number }): Promise<void> {
   const fromName = env.plan.rows.find(r => r.path === from)?.name ?? from;
+  const befores = before === undefined ? [] : Array.isArray(before) ? before : [before];
   const answer = await openEntry(env.app, "New to-do", entryFields(env), { requireTitle: true, alt: "Pick existing…", anchor: at ?? null });
   if (!answer) return;
-  if (answer.alt) { await pickFlow(env, from, before); return; }
-  await createFrom(env, from, fromName, answer, before);
+  if (answer.alt) { await pickFlow(env, from, befores); return; }
+  await createFrom(env, from, fromName, answer, befores);
+}
+
+/** The + after button on a card: a new to-do goes between the card and everything that comes after it (or just after it, when nothing does). Dragging the card's dot into "+ add after this" keeps the old meaning: the new to-do is one more branch, the followers stay linked to the card. */
+export async function insertAfterFlow(env: AddAfterEnv, from: string, at?: { left: number; bottom: number }): Promise<void> {
+  const followers = followersOf(env.plan, from);
+  await addAfterFlow(env, from, followers.length ? followers : undefined, at);
 }
 
 /** The search list: an existing to-do of the vault (moved here if it is in another project), or a typed name that makes a new one. */
-async function pickFlow(env: AddAfterEnv, from: string, before?: string): Promise<void> {
+async function pickFlow(env: AddAfterEnv, from: string, befores: string[]): Promise<void> {
   const { app, history, hub } = env;
   const fromName = env.plan.rows.find(r => r.path === from)?.name ?? from;
   const offered = offeredTodos(env.todos, env.plan, hub.name, from);
-  const beforeName = before ? env.plan.rows.find(r => r.path === before)?.name ?? before : "";
-  const picked = await pick<Choice>(app, offered.map(o => o.label), offered.map((item): Choice => ({ kind: "todo", item })), before ? `Between "${fromName}" and "${beforeName}": search a to-do, or type a name to make a new one` : `Comes after "${fromName}": search a to-do, or type a name to make a new one`, false,
+  const beforeName = quoted(befores.map(b => env.plan.rows.find(r => r.path === b)?.name ?? b));
+  const picked = await pick<Choice>(app, offered.map(o => o.label), offered.map((item): Choice => ({ kind: "todo", item })), befores.length ? `Between "${fromName}" and ${beforeName}: search a to-do, or type a name to make a new one` : `Comes after "${fromName}": search a to-do, or type a name to make a new one`, false,
     { prefix: "Create new to-do: ", make: (text): Choice => ({ kind: "new", text }) });
   if (!picked) return;
-  if (picked.kind === "new") { await createAfter(env, from, fromName, picked.text, before); return; }
+  if (picked.kind === "new") { await createAfter(env, from, fromName, picked.text, befores); return; }
   const it = picked.item;
   if (it.blocked) { new Notice(`"${it.name}" can't be moved to this project: ${it.blocked}. Open it and clear those links first.`, 10000); return; }
   if (!it.same) {
@@ -67,11 +90,11 @@ async function pickFlow(env: AddAfterEnv, from: string, before?: string): Promis
     if (!ok) return;
   }
   const g = ++group;
-  if (before) {
-    if (planInsert(env.plan, from, before, it.path).verdict !== "ok") { await insertBetween(app, history, env.plan, from, before, it.path, g); return; }   // says why in a notice, before anything is moved
+  if (befores.length) {
+    if (befores.some(b => planInsert(env.plan, from, b, it.path).verdict !== "ok")) { await insertBetweenMany(app, history, env.plan, from, befores, it.path, g); return; }   // says why in a notice, before anything is moved
     if (!it.same) await recordChange(app, history, it.path, "project", `Moved "${it.name}" here`, () => `[[${hub.name}]]`, g);
-    const done = await insertBetween(app, history, env.plan, from, before, it.path, g);
-    if (done) undoNotice(`"${it.name}" now sits between "${fromName}" and "${beforeName}".`, () => runHistory(app, history, "undo", done));
+    const done = await insertBetweenMany(app, history, env.plan, from, befores, it.path, g);
+    if (done) undoNotice(`"${it.name}" now sits between "${fromName}" and ${beforeName}.`, () => runHistory(app, history, "undo", done));
     return;
   }
   const text = linkText(app, from, it.path);
@@ -81,11 +104,11 @@ async function pickFlow(env: AddAfterEnv, from: string, before?: string): Promis
 }
 
 /** Makes a to-do in the project of this map, coming after `from`: the entry window (the name typed in the search is the title; the project is this map's, so no Project chip) sets its meeting, due date and priority. */
-async function createAfter(env: AddAfterEnv, from: string, fromName: string, typed: string, before?: string): Promise<void> {
+async function createAfter(env: AddAfterEnv, from: string, fromName: string, typed: string, befores: string[]): Promise<void> {
   const answer = await openEntry(env.app, "New to-do", entryFields(env), { title: typed, requireTitle: true, alt: "Pick existing…", anchor: pointerAnchor() });   // where the cursor is: the search list had no spot to point at
   if (!answer) return;
-  if (answer.alt) { await pickFlow(env, from, before); return; }
-  await createFrom(env, from, fromName, answer, before);
+  if (answer.alt) { await pickFlow(env, from, befores); return; }
+  await createFrom(env, from, fromName, answer, befores);
 }
 
 /** The chips of the window: a to-do's, without Project (this map's project is the project). */
@@ -94,7 +117,7 @@ function entryFields(env: AddAfterEnv): ReturnType<typeof todoFields> {
   return todoFields([], series).filter(f => f.key !== "project");
 }
 
-async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: EntryAnswer, before?: string): Promise<void> {
+async function createFrom(env: AddAfterEnv, from: string, fromName: string, answer: EntryAnswer, befores: string[]): Promise<void> {
   const base = todoFileName(answer.title);
   if (!base) return;
   const v = answer.values;
@@ -104,11 +127,11 @@ async function createFrom(env: AddAfterEnv, from: string, fromName: string, answ
   const text = newTodoText(env.hub.name, linkText(env.app, from, path), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? "") });
   await env.app.vault.create(path, text);
   const g = ++group;
-  const step = recordCreate(env.history, path, text, `Made "${name}"`, before ? g : undefined);
-  if (before) {   // the new to-do already comes after `from`; `before` now comes after it instead of after `from`
-    const beforeName = env.plan.rows.find(r => r.path === before)?.name ?? before;
-    await recordChange(env.app, env.history, before, "after", `Inserted "${name}" before "${beforeName}"`, v => addAfter(removeAfter(v, namesOf(from)), linkText(env.app, path, before)), g);
-    undoNotice(`Made the to-do "${name}" between "${fromName}" and "${beforeName}".`, () => runHistory(env.app, env.history, "undo", step));
+  const step = recordCreate(env.history, path, text, `Made "${name}"`, befores.length ? g : undefined);
+  if (befores.length) {   // the new to-do already comes after `from`; each of `befores` now comes after it instead of after `from`
+    const beforeName = quoted(befores.map(b => env.plan.rows.find(r => r.path === b)?.name ?? b));
+    for (const before of befores) await recordChange(env.app, env.history, before, "after", `Inserted "${name}" before ${quoted([env.plan.rows.find(r => r.path === before)?.name ?? before])}`, v => addAfter(removeAfter(v, namesOf(from)), linkText(env.app, path, before)), g);
+    undoNotice(`Made the to-do "${name}" between "${fromName}" and ${beforeName}.`, () => runHistory(env.app, env.history, "undo", step));
     return;
   }
   undoNotice(`Made the to-do "${name}", coming after "${fromName}".`, () => runHistory(env.app, env.history, "undo", step));
