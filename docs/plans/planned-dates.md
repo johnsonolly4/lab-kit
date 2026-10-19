@@ -114,13 +114,13 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - **BUILT 2026-10-19 (N2).** `todo.ts`: `WEEKDAYS`, `weekdayOf`, `dateOf`, `isFinishedTodo`, `isCarried`, `dropPatch`, `tickPatch`, `normalisePatch`, `undoPatch`; `board-card.ts`: `WeekCard`, `weekCardOf`, `datePill`, `buildWeek`. Tests `todo-dates` (33), `board-week` (21), `i2-slim` (7); 1352 in all. Fixture result: on Wed, Sat and Mon every one of the 35 cards is where the earlier measured model put it, except the two Sat / Sun cards, which now get their date (Q17 a). Normalising all 35 on Wed leaves the board unchanged on Wed and Sat; on the next Monday exactly the 4 cards of "Existing vaults" section 2 differ (3 carried over, 1 finished card with no `done_on` hidden). Found while testing: an open card dated this week was drawn in next week's column when next week was shown (fixed, test added). Nothing in the view or engine uses the new functions yet.
 
 ### Phase 2: The board and engine on dates
-- Depends on: Phase 1. Needs I2-S1 answered.
+- Depends on: Phase 1. I2-S1 answered 2026-10-19: (a) the roll-over notice, command and per-device switch go.
 - Files: `src/planning/board-view.ts` (draw `buildWeek`, drops write `dropPatch`, past columns not drop zones + notice, `Mon 19` headers, tray pill, amber from `carried`), `src/planning/board-drag.ts` (zones keyed by date), `src/planning/engine.ts` (`tickPatch` on tick, normalise on arrival, roll-over per I2-S1, old `changePatch` / `rollOverPatch` / `buildBoard` removed), `styles.css` (`.lk-board-date`, `.lk-board-pill.is-later`, `.lk-board-col.is-past`), checklist row.
 - Checks: tests; obsidian-check on the fixture vault (Wednesday clock): a card dragged to Mon writes `scheduled: 2026-10-26` and shows in the tray with `Mon 26 Oct`; a Tue card of last week shows amber in Wed; last week's finished cards gone; a note copied into the folder through the file system is normalised once; errors `[]`; cropped screenshots light and dark.
 - Size: L (split 2a board / 2b engine if it runs long)
 
 ### Phase 3: The other readers of `day`
-- Depends on: Phase 2. Needs I2-S2 answered (countdown setting).
+- Depends on: Phase 2. I2-S2 answered 2026-10-19: (a) the countdown setting is Off / All, Marked reads as All.
 - Files: `lists.ts`, `actions.ts`, `plan.ts`, `todo-picker.ts`, `plan-map.ts`, `after-write.ts`, `meetings.ts`, `kit/tidy.ts` (`todo-properties`), `todo-bar.ts`, settings (countdown options), tests.
 - Checks: Home "This week" and project tiles from `scheduled`; plan rows done from `isFinished`; undo snapshot restores `scheduled`; a new to-do from the board / actions has no `day`.
 - Size: M
