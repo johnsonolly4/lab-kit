@@ -23,8 +23,8 @@ import { addResult } from "./result";
 import { previousMeeting } from "./freeze";
 import { freezeFile, recOf } from "./freeze-note";
 import { linkInOrder } from "./sequence";
-import { dayOf, parseDay, weekdayOf, ymd } from "./todo";
-import { startDate } from "./todo-note";
+import { dayOf, parseDay, ymd } from "./todo";
+import { columnEntry } from "./todo-note";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -107,10 +107,8 @@ export class PlanningCommands {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => ({ name: f.basename, fm: (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) }));
     const inside = project ?? this.hubOfActiveNote();
-    const column = day ? startDate(day, new Date()) : "";   // the column's date (a weekday name from an older template: its next such day)
-    const past = !!column && column < ymd(new Date());
-    const heading = column ? `New to-do \u00b7 ${weekdayOf(parseDay(column)!)}` : "New to-do";
-    const answer = await openEntry(this.app, heading, todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...(column && !past ? { scheduled: column } : {}), ...initial.values } });
+    const column = columnEntry(day, new Date());
+    const answer = await openEntry(this.app, column.heading, todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...(column.scheduled ? { scheduled: column.scheduled } : {}), ...initial.values } });
     if (!answer) return null;
     const v = answer.values;
     return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", experiment: String(v.experiment ?? ""), waiting: String(v.waiting ?? ""), scheduled: String(v.scheduled ?? "") };

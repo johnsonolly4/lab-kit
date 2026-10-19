@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, it, vi } from "vitest";
 import assert from "node:assert";
-import { TODO_TEMPLATE, createTodoNote, isoDay, startDate, todoNoteText, type TodoAnswer } from "../src/planning/todo-note";
+import { TODO_TEMPLATE, columnEntry, createTodoNote, isoDay, startDate, todoNoteText, type TodoAnswer } from "../src/planning/todo-note";
 
 const TODAY = new Date(2026, 9, 19);   // Mon 2026-10-19, local
 const F = "```";
@@ -88,6 +88,20 @@ describe("todo-note: the template's own date lines give startDate's date", () =>
       assert.equal(run("---\nscheduled: 2026-02-30\n---\n").scheduled, "");
       assert.equal(run("").scheduled, "");
     }
+  });
+});
+
+describe("todo-note: the board column's New opens the window on that day (I2 Phase 5, Mon 19 Oct)", () => {
+  it("Thu's column: the Day chip opens on 2026-10-22 and the heading names Thu", () => {
+    assert.deepEqual(columnEntry("2026-10-22", TODAY), { scheduled: "2026-10-22", heading: "New to-do \u00b7 Thu" });
+  });
+  it("today's column counts; a past column opens with no day but still names it", () => {
+    assert.deepEqual(columnEntry("2026-10-19", TODAY), { scheduled: "2026-10-19", heading: "New to-do \u00b7 Mon" });
+    assert.deepEqual(columnEntry("2026-10-14", TODAY), { scheduled: "", heading: "New to-do \u00b7 Wed" });
+  });
+  it("an old template's weekday name is the next such day; no column or the Backlog opens plain", () => {
+    assert.deepEqual(columnEntry("Thu", TODAY), { scheduled: "2026-10-22", heading: "New to-do \u00b7 Thu" });
+    for (const v of [undefined, "", "Backlog", "Done"]) assert.deepEqual(columnEntry(v, TODAY), { scheduled: "", heading: "New to-do" }, String(v));
   });
 });
 

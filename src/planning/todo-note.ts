@@ -3,7 +3,7 @@
 import type { TFile, Vault } from "obsidian";
 import { fillTemplate, type TemplateEnv } from "../kit/snippet-template";
 import { todoFileName } from "./quick-todo";
-import { dateOf, ymd } from "./todo";
+import { dateOf, weekdayOf, ymd } from "./todo";
 
 /** What the entry window hands over (`window.vtTodo` in commands.ts). */
 export interface TodoAnswer { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string; scheduled?: string }
@@ -62,6 +62,12 @@ export function startDate(day: string | undefined, today: Date): string {
   const col = (day ?? "").trim();
   const d = /^\d{4}-\d{2}-\d{2}$/.test(col) ? dateOf({ scheduled: col }, today) : dateOf({ day: col, planned: isoDay(today) }, today);
   return d ? ymd(d) : "";
+}
+
+/** What the entry window does with the board column a to-do was made in (`day`: its date, or an old weekday name): the date its Day chip opens with (only today or later; "" otherwise) and the heading that names the weekday. */
+export function columnEntry(day: string | undefined, now: Date): { scheduled: string; heading: string } {
+  const column = startDate(day, now), d = column ? dateOf({ scheduled: column }, now) : null;
+  return { scheduled: column && column >= ymd(now) ? column : "", heading: d ? `New to-do \u00b7 ${weekdayOf(d)}` : "New to-do" };
 }
 
 /** The new to-do's text. `day` is what the note held before the template ran: a `scheduled` date or a board column's weekday (see `startDate`); `after` the to-do it comes after (the template's boxes ask it; the entry window has no chip for it). */
