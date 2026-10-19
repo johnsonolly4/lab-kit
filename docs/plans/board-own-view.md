@@ -105,11 +105,20 @@ Costs of B: touch drag becomes ours to write and test on a phone; `minAppVersion
 
 ## Phases (option B)
 
-### Phase 1 — View and card at parity
-- Files: `src/planning/board-view.ts` (new), `src/planning/board-card.ts` (pure card model, new), `src/main.ts`, `styles.css`, `tests/board-card.test.ts`
-- Columns from the base's `groupOrder`, empty columns added; card pieces from `todo.ts`; done circle; click opens (Mod = new tab); today class
-- Done when: tests for the card model; obsidian-check shows the 50-card seed as in section 3
-- Size: M
+### Phase 1 — Layout, features, view (Board-B Phase 1; rewritten 2026-10-19 after the owner's choice)
+Decided by the owner 2026-10-19 (two feedback pages, `docs/decisions.md`): option B; days across the top, Backlog tray at the bottom; keep F2 meeting marker, F2b deadline marker, F5 Backlog filter, F6 busy-day warning; no weekend column unless the setting says so.
+- Files: `src/planning/board-card.ts` (new, pure), `src/planning/board-view.ts` (new), `src/main.ts` (register), `src/kit/paths.ts` + `src/kit/ui.ts` (two settings), `styles.css` (`.lk-board-*`), `tests/board-card.test.ts`, `tests/board-view-styles.test.ts` is not needed (`plan-map-styles.test.ts` already checks bare radii)
+- Not changed: `engine.ts` keeps its DOM tagging, so the built-in kanban still works.
+- Columns: Mon-Fri (plus Sat, Sun with "Show weekend"), always visible, five equal columns at 1200 px. Today's header blue (the weekend: no column is today, as in `todayMark`). Cards: the done circle (round), title, pill (`cardTag`), countdown (`dueCountdown`), carried over = amber left edge (`rolled`), waiting = grey (`waitingOf`).
+- Finished cards collapse to one line "N done" per day. Cards whose `day` is not a shown column (Backlog, or Sat / Sun with the weekend off) go to the tray, so none is hidden.
+- Day header: name, open count (amber over the threshold), then marker lines: meeting `Group meeting · 3 flagged` (flagged count = open to-dos flagged for that series, `flaggedFor`; no count when 0: `Group meeting`), deadline `Polymers: deadline` (project hub `deadline`, hub not Done) and `Due: Book NMR time` (a to-do's `due` that day while it sits on another day or in the Backlog; more than 2 collapse to `3 due`).
+- Tray: header `Backlog (9)`, chips `All`, `Ready`, each project, `No project`, then `Fold`; folded it is one bar `Backlog (9)` with `Unfold`; fold state is kept per device (local storage `lk-board-tray-folded`). Cards scroll sideways. `Ready` = to-do has a project, is open, not waiting, and `plan.ts` says `blocked` is false.
+- Done circle ticks `done`; a click on a card opens the note (Mod = new tab); desktop HTML5 drag, day to day and tray to day, writes `day` through `processFrontMatter` (the engine stamps `planned` as for a kanban drag). A drop on the tray writes `Backlog`.
+- Settings (Planning): `Show weekend` (toggle, off) and `Busy day from` (number, 6; the count is amber when open cards on a day are at least this).
+- Exact new strings: view name `Lab Kit board`; `Backlog (N)`, `All`, `Ready`, `No project`, `Fold`, `Unfold`, `N done`, `Group meeting · N flagged`, `X: deadline`, `Due: X`, `N due`; settings `Show weekend` ("Adds Saturday and Sunday columns to the to-do board.") and `Busy day from` ("The board shows a day's count in amber from this many open to-dos.").
+- Left out on purpose: touch drag and the phone layout (Phase 2); `+ New` per column (old Phase 3); week arrows F1 and close the week F4 (after planned dates I2; the top row stays free for them); rolled-over count F3 (undecided); placing to-dos by dependencies (parked, needs durations).
+- Checks: `tests/board-card.test.ts` per piece; obsidian-check on a seeded vault (50 to-dos, a series meeting this week, a hub with a deadline): 5 columns and the tray at 1200 px, markers on the right days, a chip filters, a drop from the tray on Wed writes `day: Wed`, weekend on shows Sat / Sun, errors `[]`, cropped screenshots light and dark.
+- Size: L (split into: model, view, kit file, docs)
 
 ### Phase 2 — Drag on desktop and touch
 - Depends on: Phase 1
@@ -137,4 +146,4 @@ Costs of B: touch drag becomes ours to write and test on a phone; `minAppVersion
 
 Then I2, I3, I9, W1 build on this view.
 
-Waiting for the owner's choice.
+Owner chose B on 2026-10-19. Phase 1 above is being built; Phases 2-5 are unchanged except where Phase 1 now covers them.
