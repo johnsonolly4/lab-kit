@@ -1,6 +1,6 @@
 # Plan: planned dates on to-dos (I2)
 
-_Written 2026-10-19 (plan step I2-PLAN, side session, Opus). Not agreed yet: every behaviour change is a question in BACKLOG "Questions for the owner" (I2 Q1-Q11); the recommended answers are written in below and marked **(Q n)**. Each phase = one session, Sonnet. Builds on Board B (`docs/plans/board-own-view.md`, Phases 1-2 on `overnight/2026-10-19`)._
+_Written 2026-10-19 (plan step I2-PLAN, side session, Opus). Not agreed yet: every behaviour change is a question in BACKLOG "Questions for the owner" (I2 Q1-Q12); the recommended answers are written in below and marked **(Q n)**. Each phase = one session, Sonnet. Builds on Board B (`docs/plans/board-own-view.md`, Phases 1-2 on `overnight/2026-10-19`)._
 
 ## Goal
 A to-do knows the date it is planned for, so the board can show this week, next week and any other week, a card dragged to Monday on a Wednesday means next Monday (not this Monday, beside last Monday's finished cards), and the week can be closed.
@@ -8,7 +8,7 @@ A to-do knows the date it is planned for, so the board can show this week, next 
 ## Why
 `day: Mon` cannot say which Monday. Today `cardDate()` (`src/planning/todo.ts:58`) guesses it from `planned` (the first such weekday on or after the day the card was moved), and the board puts every `Mon` card in one Mon column (`buildBoard`, `src/planning/board-card.ts:127`): next Monday's card sits beside this Monday's finished ones, and ticked cards stay on the board until the roll-over clears them the next week (BACKLOG "Ticked to-dos stay on the board"). Every task tool compared stores a date. A date also unblocks week arrows (F1), Close the week (F4), the week clean (I3) and "assign to next Tuesday" (BACKLOG "To-do day").
 
-## Decision taken (to confirm, Q1-Q11)
+## Decision taken (to confirm, Q1-Q12)
 - **`scheduled: YYYY-MM-DD` is the truth.** No value (absent or empty) = Backlog. The board places every card from `scheduled`, `done`, `done_on` and today; it writes nothing when it draws.
 - **`day` stays, as a mirror** (Q10): the weekday name of `scheduled` (`Mon` … `Sun`), `Backlog` when there is none, `Done` when the roll-over clears a finished card (as now). It keeps the base's filter (`day != "Done"`), the built-in kanban fallback in `To-do board.base`, the To-do template and any Dataview query of the owner working. It is a pure function of `scheduled` (not of today), so two devices always agree on it (see Sync).
 - **`planned` is no longer needed** for new writes: it only told `cardDate()` which week a weekday meant. Old values stay and are read once, by the fallback below and the Tidy rule.
@@ -67,7 +67,7 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - The day headers get the date: `Mon 19` (Q5). Today's header blue only in this week.
 - The board always opens on this week; the shown week is not saved (Q6). Past weeks can be viewed (finished cards and their `N done` lines) but take no drops (Q1); future weeks take drops onto any day.
 - The tray is the same in every week: no date, or a date after the shown week (with its pill).
-- `3 carried over` opens **Review late cards** (window title `Late cards (3)`): one row per carried-over card, its title and `planned Mon 12 Oct`, and buttons `Today`, `Tomorrow`, `Next week` (that Monday), `Backlog`, `Done`. Each button writes as a drag would.
+- `3 carried over` (Q12) opens **Review late cards** (window title `Late cards (3)`): one row per carried-over card, its title and `planned Mon 12 Oct`, and buttons `Today`, `Tomorrow`, `Next week` (that Monday), `Backlog`, `Done`. Each button writes as a drag would.
 - `Close the week…` (Q7: always shown; the default choice is next Monday) opens window title `Close the week of 19 Oct`: line `4 open to-dos are left this week.`, three choices `Move them to Mon 26 Oct` (default), `Move them to the Backlog`, `Leave them (they carry over)`, a list of the cards with a box each (all ticked), line `Finished cards leave the board on Monday.`, buttons `Move 4` / `Cancel`. Notice `Moved 4 to-dos to Mon 26 Oct` or `Moved 4 to-dos to the Backlog`. Moving writes as a drag. Nothing else (notes are never moved or archived).
 
 ## Phone tabs (Board B Phase 2 layout)
