@@ -5,7 +5,7 @@ When an item is chosen, move it to `STATUS.md` → Next.
 
 ## Questions for the owner (open until answered; rule in CLAUDE.md)
 Anything that changes a visual or existing behaviour is asked here first, never decided by a session. When answered: tick it with the date and the answer, and put a decision line in `docs/decisions.md`.
-- [ ] **Board F3 (2026-10-19, feature page):** keep the rolled-over count "×3" with "To Backlog?" for a later phase, or drop it (the amber edge is enough)?
+- [x] **Board F3 (2026-10-19, feature page):** ANSWERED 2026-10-19 (owner, chat): keep the rolled-over count "×3" with "To Backlog?" for a later phase, after planned dates (worked out from `scheduled`, no new property).
 - [ ] **Plan map look (2026-10-19, obsidian-check P5-map):** (a) does the Reset icon look too much like Undo? (b) are the lanes in the top-to-bottom map too close to the cards? (c) are cards with no experiment, subtask or result too tall? Screenshots: side-session notes `p5-map-shots/`.
 - [ ] **Kit windows (2026-10-19, obsidian-check P5-bar):** (a) fold headers and spacing (screenshots `p5-bar-shape-shots/`); (b) Update with only files to recreate skips the "Update these files?" box: keep, or always confirm?
 - [ ] **New to-do without Templater (2026-10-19, obsidian-check):** the window closes on Enter and makes nothing. Say "Templater is needed" in the window and add a Check setup row? (behaviour)
@@ -115,7 +115,7 @@ Anything that changes a visual or existing behaviour is asked here first, never 
       - L3 approved as a principle: keep what is stored in the note as plain text as possible and let the plugin do the processing.
       - L2, the live block with steps, looks good; saved as `my_work/reference_visual/solution-live-block.png`.
       - The block must not pick up the owner's own vault table styling: give it its own scoped classes, and the owner may adjust their snippets.
-      - Not marked yet: L1 (set-up window at the cursor), L4 (frozen record on close), L5 (chemical note fields), L6 (all snippet forms at the cursor, behind a setting to try).
+      - ANSWERED 2026-10-19 (owner, chat): L1 is built and then adjusted once the owner has tried it; L4 and L5 are fine as shown; L6 goes ahead behind a setting, and calc-table snippets stay plain-text calc blocks as now ("keeping as much plain text as we can is better; the calc blocks already do that").
       - SDS script: the owner will copy it into `my_work/private/` for review (not there yet on 2026-10-19).
 - [ ] **Templater dependency: evaluate removing it (owner, 2026-10-19, from I23 d).** Today Templater carries:
   - Alt+S (the Insert snippet.md hotkey) and 4 user scripts (labSnippets, labForm, labPick, labMethods, plus vtAsk.js);
