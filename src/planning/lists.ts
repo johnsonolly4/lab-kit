@@ -1,7 +1,7 @@
 // Homepage and Projects overview lists (Phase 5a): which notes each block shows, in which order, with which badge.
 // Pure (no Obsidian runtime). Each rule is ported from the Dataview / DataviewJS query it replaced in kits/planning/00 Home.md and
 // 02 Projects/Projects overview.md (kit 0.5.2); docs/plans/phase-5-homepage-meetings.md.
-import { DAYS, dueCountdown, isoWeekday, parseDay, ymd, type CountdownMode } from "./todo";
+import { DAYS, dueCountdown, isoWeekday, parseDay, waitingOf, ymd, type CountdownMode } from "./todo";
 
 /** A note as the lists see it. `links`: paths of the notes it links to (resolved). Times in ms. */
 export interface NoteRec { path: string; name: string; folder: string; fm: Record<string, unknown>; ctime: number; mtime: number; links?: string[] }
@@ -25,6 +25,8 @@ function overdue(fm: Record<string, unknown>, today: Date): Date | null {
   const due = parseDay(str(fm.due).slice(0, 10));
   return due && ymd(due) < ymd(today) ? due : null;
 }
+/** The "waiting: <text>" badge of a to-do that waits on something; none otherwise. */
+const waitingBadge = (fm: Record<string, unknown>): Badge[] => { const w = waitingOf(fm); return w ? [{ text: `waiting: ${w}`, cls: "vt-badge vt-waiting" }] : []; };
 const isOpenTodo = (n: NoteRec): boolean => n.fm.kind === "todo" && n.fm.done !== true && str(n.fm.day) !== "Done";
 
 /** This week: open to-dos planned Mon–Fri or overdue. Overdue first, then Mon → Fri. Badge: overdue (date) / today / the day; carried over. */
@@ -39,6 +41,7 @@ export function thisWeek(todos: NoteRec[], today: Date): ListLine[] {
       const badges: Badge[] = [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" }
         : day === todayName ? { text: "today", cls: "vt-badge vt-today" } : { text: `· ${day}`, cls: "vt-muted" }];
       if (n.fm.rolled === true) badges.push({ text: "carried over", cls: "vt-badge vt-rolled" });
+      badges.push(...waitingBadge(n.fm));
       return { path: n.path, text: n.name, badges };
     });
 }
@@ -181,7 +184,7 @@ function openProjectTodos(todos: NoteRec[], hub: NoteRec, today: Date): { t: Not
 /** A project hub's To-dos tile: all its open to-dos, with the overdue date or the planned day. */
 export function projectTodos(todos: NoteRec[], hub: NoteRec, today: Date): ListLine[] {
   return openProjectTodos(todos, hub, today).map(({ t, late }) => ({ path: t.path, text: t.name,
-    badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }] }));
+    badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] }));
 }
 
 /** A project hub's Notes tile: every other note in the project's folder (sub-folders too), newest first, with its last-changed date. */
@@ -221,7 +224,7 @@ export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[
     return {
       hub: projects([h], Infinity, mode, today)[0], goal: goals[h.path] ?? "", folder: h.folder,
       todos: mine.slice(0, 3).map(({ t, late }) => ({ path: t.path, text: t.name,
-        badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }] })),
+        badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] })),
       more: Math.max(0, mine.length - 3), open: mine.length, papers: nPapers,
       notes: notes.filter(n => n.path !== h.path && inFolder(n.path, h.folder)).length,
     };

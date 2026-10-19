@@ -1,7 +1,7 @@
 // The plan of one project (planning kit): its to-dos with `after` (links to the to-dos that come first), `result` (one line) and `order` (a number).
 // Pure (no Obsidian runtime). Gives the rows in plan order, which are blocked, and what is wrong (missing links, cycles).
 import { isFinished } from "./actions";
-import { parseDay } from "./todo";
+import { parseDay, waitingOf } from "./todo";
 import { linkTarget, pointsTo, type Badge, type ListLine, type NoteRec } from "./lists";
 
 export interface PlanRow {
@@ -19,7 +19,7 @@ export interface PlanRow {
   order: number | null;
   /** `priority` 1, 2 or 3 (1 = highest); none otherwise. */
   priority: number | null;
-  /** Open, and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
+  /** Open, not waiting on something outside the plan (`waiting`), and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
   blocked: boolean;
   /** The to-do this one is a subtask of (`sub`; its path), or null. One level only. */
   parent: string | null;
@@ -140,7 +140,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       if (!lab) issue([t.path], `"${t.name}" links to the experiment "${target}", which wasn't found.`, [{ path: t.path, key: "experiment", label: "Remove the experiment link", does: `Removes the experiment link from "${t.name}".`, done: `Removed the experiment link from "${t.name}".` }]);
     }
     return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subOf: wanted.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
-      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
+      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && !waitingOf(t.fm) && openBefore(t) };
   });
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
   for (const r of rows) {   // ticked on the board, in the note or on the map without ticking the subtasks

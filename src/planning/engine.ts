@@ -4,7 +4,7 @@
 import { trackPointer } from "./entry-window";
 import { MarkdownView, Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
-import { applyPatch, cardTag, changePatch, emptyTodoCursorLine, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
+import { applyPatch, cardTag, changePatch, emptyTodoCursorLine, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, waitingOf, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
 
 /** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
 export const ROLL_KEY = "vt-rollover";
@@ -192,7 +192,7 @@ export class TodoEngine {
     window.requestAnimationFrame(() => this.tag());
   }
 
-  /** Every kanban column gets data-vt-group="<its name>" (the hidden measuring column has none); carried-over cards get vt-rolled; cards with a countdown get data-vt-due. */
+  /** Every kanban column gets data-vt-group="<its name>" (the hidden measuring column has none); carried-over cards get vt-rolled; open cards that wait on something get data-vt-waiting="<what>"; cards with a countdown get data-vt-due. */
   private tag(): void {
     this.tagQueued = false;
     const root = this.app.workspace.containerEl;
@@ -210,6 +210,8 @@ export class TodoEngine {
         const el = card as HTMLElement;
         if (cd) { el.dataset.vtDue = cd.text; el.dataset.vtDueLevel = cd.level; }
         else { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
+        const waiting = fm && fm.done !== true ? waitingOf(fm) : "";
+        if (waiting) el.dataset.vtWaiting = waiting; else delete el.dataset.vtWaiting;
         const tag = fm ? cardTag(fm) : null;
         if (tag) { el.dataset.vtTag = tag.text; el.dataset.vtPrio = tag.level; }
         else { delete el.dataset.vtTag; delete el.dataset.vtPrio; }
@@ -223,6 +225,7 @@ export class TodoEngine {
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-group]"))) delete el.dataset.vtGroup;
     for (const el of Array.from(root.querySelectorAll(".vt-rolled"))) el.classList.remove("vt-rolled");
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-due]"))) { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
+    for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-waiting]"))) delete el.dataset.vtWaiting;
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-tag]"))) { delete el.dataset.vtTag; delete el.dataset.vtPrio; }
   }
 }

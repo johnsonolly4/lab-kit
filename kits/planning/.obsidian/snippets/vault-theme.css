@@ -114,7 +114,7 @@ body {
   background: rgba(var(--vt-badge), var(--vt-tint));
 }
 .vt-badge:is(.vt-active, .vt-closed, .vt-done)          { --vt-badge: var(--vt-done);    --vt-badge-text: var(--vt-done-text); }
-.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
+.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled, .vt-waiting) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
 .vt-badge:is(.vt-started, .vt-today)                    { --vt-badge: var(--vt-doing);   --vt-badge-text: var(--vt-doing-text); }
 .vt-badge:is(.vt-planned, .vt-backlog)                  { --vt-badge: var(--vt-neutral); --vt-badge-text: var(--vt-neutral-text); }
 .vt-badge.vt-overdue                                    { --vt-badge: var(--vt-overdue); --vt-badge-text: var(--vt-overdue-text); }
@@ -303,6 +303,12 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   background-color: rgba(var(--vt-waiting), var(--vt-tint));
   border-left: 3px solid rgb(var(--vt-waiting));
 }
+/* Waiting (the plugin sets data-vt-waiting="<what>" on an open card whose to-do has a waiting property): greyed text and the waiting colour as a left bar. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-waiting] {
+  border-left: 3px solid rgb(var(--vt-waiting));
+  color: var(--text-faint);
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-waiting] .mod-title .bases-kanban-card-line { color: var(--text-muted); }
 
 /* The done property becomes a small round tick box (clickable - the roll-over
    script handles the click). The label and the "-" for empty are hidden. */
