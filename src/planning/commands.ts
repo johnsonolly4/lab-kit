@@ -133,8 +133,8 @@ export class PlanningCommands {
   }
 
   /** New to-do: the entry window, then the To-do template makes the note from what was set. */
-  async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}): Promise<void> {
-    const todo = await this.askTodo(project, initial);
+  async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<void> {
+    const todo = await this.askTodo(project, initial, day);
     if (!todo) return;
     handoff().vtTodo = todo;
     // Made under its final name: a rename after something links to the note makes Obsidian ask "Update links" (with Automatically update internal links off)
@@ -142,6 +142,12 @@ export class PlanningCommands {
     const name = todoFileName(todo.text, n => !!this.app.vault.getAbstractFileByPath(`${folder}/${n}.md`));
     try { await this.fromTemplate(TPL.todo, this.folders.planning, folder, false, name); }   // not opened, as the old button
     finally { delete handoff().vtTodo; }   // the template deletes it when it runs; also gone when it didn't or failed
+  }
+
+  /** A day header's `+` on the board: New to-do with that day (`YYYY-MM-DD`) in the Day chip, the window under the clicked button. */
+  newTodoOn(day: string): void {
+    captureAnchor();
+    void this.newTodo(undefined, {}, day).catch(e => this.failed("New to-do", e));
   }
 
   /** The project hub the open note is, or is inside (as the To-do template works it out), else "". */

@@ -11,6 +11,7 @@ import { buildWeek, datePill, filterTray, readyPaths, trayProjects, weekCardOf, 
 import { applyPatch, dropPatch, parseDay, ymd } from "./todo";
 import { toggleDoneWithUndo } from "./undo-notice";
 import { drawDone } from "./board-done";
+import { drawHeadAdd } from "./board-head";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
@@ -21,7 +22,7 @@ export const NARROW_PX = 600;
 const TRAY_KEY = "Backlog";
 
 /** What the view needs from the plugin. */
-export interface BoardEnv { kit: () => KitData; series: () => Series[] }
+export interface BoardEnv { kit: () => KitData; series: () => Series[]; /** Opens the New to-do window with `day` (YYYY-MM-DD) in its Day chip. */ newTodo: (day: string) => void }
 
 const open = new Set<BoardView>();
 /** Draw every open board again (Show weekend or Busy day from changed). */
@@ -94,6 +95,7 @@ class BoardView extends BasesView {
       const head = col.createDiv({ cls: "lk-board-head" });
       this.dayName(head, d.day, d.date);
       head.createSpan({ cls: d.busy ? "lk-board-count is-busy" : "lk-board-count", text: String(d.count) });
+      drawHeadAdd(head, d, b => { b.focus(); this.env.newTodo(ymd(d.date)); });   // focused first: the window opens under the button (Safari does not focus on click)
       for (const m of d.markers) col.createDiv({ cls: `lk-board-mark is-${m.kind}`, text: m.text });
       const list = col.createDiv({ cls: "lk-board-list" });
       for (const c of d.open) this.card(list, c);
