@@ -133,6 +133,7 @@ describe("figureSvg", () => {
     expect(back[3][0]).not.toBe(feedX);
     expect(get('data-from="PA" data-to="R1"').some(p => p[0] === feedX)).toBe(true);
     expect(back[4]).toEqual([r1.x + coil.in.x, r1.y + coil.in.y]);
+    expect(r.svg).toMatch(new RegExp(`<text x="${v.x + 12}" y="${v.y + 24}"[^>]*>V<tspan`));   // the valve's label is beside the return line, not on it
   });
   it("a join dot appears where two streams meet a part that is not a tee, and not on a single line", () => {
     const joined = draw("PA | Pump | | R1", "PB | Pump | | R1", "R1 | Reactor | coil |");

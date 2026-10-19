@@ -59,7 +59,7 @@ function symbolSvg(p: Placed, n: number): string {
   return `<g ${symAttr(p.sym.name, n)} data-part="${esc(p.node.id)}" transform="translate(${n1(p.node.x)} ${n1(p.node.y)})">${p.sym.body}</g>`;
 }
 
-function labelSvg(p: Placed, above: boolean, half = p.sym.h / 2): string {
+function labelSvg(p: Placed, above: boolean, half = p.sym.h / 2, returns = false): string {
   const { node, sym } = p;
   const detail = node.detail && node.detail !== node.kind ? cut(node.detail, DETAIL_CHARS) : "";
   if (node.host && sym.name !== "oven") {   // an attached part keeps its label to the right, so the dashed line down the middle stays clear
@@ -67,7 +67,7 @@ function labelSvg(p: Placed, above: boolean, half = p.sym.h / 2): string {
     return `<text x="${x}" y="${n1(node.y + (detail ? 0 : 5))}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 17)}" font-size="13">${esc(detail)}</text>` : "");
   }
-  if (node.kind === "Mixer") {   // streams run into the tee from above and below, so its label sits to the lower right
+  if (node.kind === "Mixer" || returns) {   // streams run into a tee from above and below, and a return line leaves a part's underside, so the label sits to the lower right
     const x = n1(node.x + 12);
     return `<text x="${x}" y="${n1(node.y + 24)}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 41)}" font-size="13">${esc(detail)}</text>` : "");
@@ -141,6 +141,7 @@ function computerSvg(fig: Figure): string {
 export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const placed = new Map<string, Placed>(fig.nodes.map(node => [node.id, { node, sym: symbolFor(node.kind, node.detail) }]));
   const missing = fig.nodes.filter(n => !n.kind).map(n => n.id);
+  const returnFrom = new Set(fig.edges.filter(e => e.back).map(e => e.from));
   const hosts = new Set(fig.nodes.map(n => n.host).filter(Boolean));
   const bottom = fig.height - 14;
   // An attached part is drawn touching its host: a plate directly under it (or under the part attached before it), an oven or jacket around it.
@@ -190,6 +191,6 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
     + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
     + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
-    + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id))).join("")}</g></svg>`;
+    + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id), returnFrom.has(p.node.id))).join("")}</g></svg>`;
   return { svg, missing };
 }
