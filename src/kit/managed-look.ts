@@ -13,6 +13,9 @@ export function actionWinState(action: ManagedAction): WinState {
 }
 
 const files = (n: number): string => `${n} ${n === 1 ? "file" : "files"}`;
+/** The Kit files window's "Tick or untick all N files with a box" line and "Update (N files)" button text. */
+export const tickAllLine = (n: number): string => `Tick or untick all ${files(n)} with a box`;
+export const updateLabel = (n: number): string => n ? `Update (${files(n)})` : "Update";
 
 /** The big line: files waiting for an update (new, updated, to merge, deleted by you, and kept files the kit has a newer version of: `newer`), plus conflicts; or that everything is up to date. */
 export function reviewSummary(items: ManagedItem[], newer: (i: ManagedItem) => boolean = () => false): string {

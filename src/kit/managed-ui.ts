@@ -6,7 +6,7 @@ import {
   kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
+import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary, tickAllLine, updateLabel } from "./managed-look";
 import { cardWindow, winFold, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
 import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
@@ -594,7 +594,7 @@ export class KitManagedModal extends Modal {
     const body = winFold(this.top, { title: "To update", count: rows.length, open: this.topOpen, onToggle: open => { this.topOpen = open; } }).body;
     if (boxed) {
       const bar = body.createDiv({ cls: "lab-kit-win-bar" });
-      bar.createSpan({ text: `Tick or untick all ${boxed} files with a box` });
+      bar.createSpan({ text: tickAllLine(boxed) });
       const buttons = bar.createDiv({ cls: "lab-kit-win-actions" });
       const all = (on: boolean): void => { for (const sec of this.sections) sec.tickAll(on); this.drawTop(); this.drawFoot(); };
       buttons.createEl("button", { text: "Tick all", cls: "mod-cta" }).addEventListener("click", () => all(true));
@@ -610,7 +610,7 @@ export class KitManagedModal extends Modal {
     this.foot.addClass("lab-kit-sticky-foot");   // the wrapper sticks, not the row inside it (a sticky child cannot leave a wrapper that is only as tall as itself)
     const foot = winFoot(this.foot);
     foot.createEl("button", { text: "Close" }).addEventListener("click", () => this.close());
-    const apply = foot.createEl("button", { text: todo ? `Update (${todo} files)` : "Update", cls: "mod-cta" });
+    const apply = foot.createEl("button", { text: updateLabel(todo), cls: "mod-cta" });
     apply.disabled = !todo && !any;
     apply.addEventListener("click", () => void this.apply());
   }
