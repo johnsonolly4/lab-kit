@@ -69,3 +69,11 @@ export function parseQuickTodo(text: string, projects: string[], now: Date): Qui
   out.title = rest;
   return out;
 }
+
+/** The file name (no folder, no ".md") the To-do template gives a to-do titled `text`: forbidden characters become "-", 80 characters at most, " 2", " 3"... when `taken` says the name is used. The template makes the same name, so a note created under it is not renamed. */
+export function todoFileName(text: string, taken: (name: string) => boolean): string {
+  const base = (text.trim() || "Untitled to-do").replace(/[\\/:*?"<>|#^[\]]/g, "-").slice(0, 80);
+  let name = base, n = 2;
+  while (taken(name)) name = `${base} ${n++}`;
+  return name;
+}

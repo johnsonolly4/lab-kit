@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 // Quick capture: highlighted text → a title and the fields its @ % ! marks set (src/planning/quick-todo.ts).
 import { describe, it, expect } from "vitest";
-import { parseQuickTodo } from "../src/planning/quick-todo";
+import { parseQuickTodo, todoFileName } from "../src/planning/quick-todo";
 
 const NOW = new Date(2026, 9, 7, 15, 30);   // Wed 2026-10-07
 const projects = ["Polymer A", "Polymer", "Flow reactor", "Thesis"];
@@ -111,5 +111,24 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(parseQuickTodo("Book +Nobody", pr, NOW)).toEqual({ title: "Book +Nobody", projectGuess: "Nobody" });
     expect(parseQuickTodo('Book +"No body"', pr, NOW)).toEqual({ title: 'Book +"No body"', projectGuess: "No body" });
     expect(parseQuickTodo("Book + ", pr, NOW).projectGuess).toBeUndefined();
+  });
+});
+
+describe("todoFileName (I12: the to-do is made under its final name)", () => {
+  const none = () => false;
+  it("forbidden characters become -, 80 characters at most, empty = Untitled to-do", () => {
+    expect(todoFileName("  Run a/b: c?  ", none)).toBe("Run a-b- c-");
+    expect(todoFileName("x".repeat(100), none)).toHaveLength(80);
+    expect(todoFileName("   ", none)).toBe("Untitled to-do");
+  });
+  it("a used name gets 2, 3...", () => {
+    const used = new Set(["Plan", "Plan 2"]);
+    expect(todoFileName("Plan", n => used.has(n))).toBe("Plan 3");
+  });
+  it("the To-do template builds the same name and does not move a note that already has it", () => {
+    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    expect(tpl).toContain(String.raw`text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80)`);
+    expect(tpl).toContain("if (here !== `${folder}/${name}.md`) { await tp.file.move(");
+    expect(todoFileName("a#b[c]^d|e", none)).toBe("a-b-c--d-e");
   });
 });

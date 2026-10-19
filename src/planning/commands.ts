@@ -15,7 +15,7 @@ import { captureAnchor, openEntry, selectionAnchor, type EntryAnchor } from "./e
 import { experimentOptions, projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { followSeries, meetingFields, meetingStart, ONE_OFF, readMeeting } from "./meeting-entry";
-import { parseQuickTodo } from "./quick-todo";
+import { parseQuickTodo, todoFileName } from "./quick-todo";
 import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
@@ -132,7 +132,10 @@ export class PlanningCommands {
     const todo = await this.askTodo(project, initial);
     if (!todo) return;
     handoff().vtTodo = todo;
-    try { await this.fromTemplate(TPL.todo, this.folders.planning, todoFolder(this.folders), false); }   // not opened, as the old button
+    // Made under its final name: a rename after something links to the note makes Obsidian ask "Update links" (with Automatically update internal links off)
+    const folder = todoFolder(this.folders);
+    const name = todoFileName(todo.text, n => !!this.app.vault.getAbstractFileByPath(`${folder}/${n}.md`));
+    try { await this.fromTemplate(TPL.todo, this.folders.planning, folder, false, name); }   // not opened, as the old button
     finally { delete handoff().vtTodo; }   // the template deletes it when it runs; also gone when it didn't or failed
   }
 
@@ -336,19 +339,19 @@ export class PlanningCommands {
   }
 
   /** Creates a note from a kit template with Templater in `folderPath` (inside the setting folder `root`; the template then files it where it belongs). */
-  private async fromTemplate(tpl: { id: string; dest: string }, root: string, folderPath = root, open = true): Promise<void> {
+  private async fromTemplate(tpl: { id: string; dest: string }, root: string, folderPath = root, open = true, filename?: string): Promise<void> {
     const template = this.templateFile(tpl);
     if (!template && hasTemplater(this.app)) { new Notice(`Template not found: ${tpl.dest}`); return; }
-    await this.fromTemplateFile(template, root, folderPath, open);
+    await this.fromTemplateFile(template, root, folderPath, open, filename);
   }
 
-  private async fromTemplateFile(template: TFile | null, root: string, folderPath = root, open = true): Promise<void> {
+  private async fromTemplateFile(template: TFile | null, root: string, folderPath = root, open = true, filename?: string): Promise<void> {
     if (!hasTemplater(this.app)) { new Notice("Templater is needed for this: install and enable it, then try again."); return; }
     if (!template) { new Notice("Meeting template not found."); return; }
     if (!(await this.ready(root, folderPath))) return;
     const folder = this.app.vault.getFolderByPath(folderPath);
     if (!folder) { new Notice(`Could not use the folder ${folderPath}.`); return; }
-    if (!(await templaterCreateNote(this.app, template, folder, open))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+    if (!(await templaterCreateNote(this.app, template, folder, open, filename))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
   }
 
   /** An empty note in the inbox, opened. */

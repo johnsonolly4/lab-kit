@@ -90,9 +90,11 @@ if (pr === null || pr === undefined) { await trashIfBlank(); throw new Error("Ca
 const priority = pr;
 // `day` (read at the top) keeps the board column the card was made in; anything else (the New to-do command, project cards) starts in Backlog.
 const base = text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80);
+// The plugin's New to-do makes the note under this name already (todoFileName in src/planning/quick-todo.ts): then nothing is renamed, which would ask "Update links" with Automatically update internal links off
+const here = tp.config.target_file.path;
 let name = base, n = 2;
-while (await tp.file.exists(`${folder}/${name}.md`)) { name = `${base} ${n++}`; }
-await tp.file.move(`${folder}/${name}`);
+while (await tp.file.exists(`${folder}/${name}.md`) && `${folder}/${name}.md` !== here) { name = `${base} ${n++}`; }
+if (here !== `${folder}/${name}.md`) { await tp.file.move(`${folder}/${name}`); }
 -%>
 ---
 kind: todo
