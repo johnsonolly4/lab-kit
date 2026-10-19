@@ -42,7 +42,8 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Make claims (docs, UI text, reports) only from measured results. Say what was not verified (e.g. "not seen in Obsidian").
 - If the user's short reply could answer more than one open question, say which one you think it answers before acting.
 - Multi-line edits: use the Edit tool, not escaped shell scripts.
-- Anything that changes how a window, chip, menu, tile or button looks: read `docs/design-standard.md` (corner sizes) and `docs/reference/visual/README.md` (screenshots the user approved; kept on this machine only, gitignored, so it may be missing: then say so), open the matching image, and match it. New approved looks are saved there when the user says a screen is right.
+- Anything that changes how a window, chip, menu, tile or button looks: read `docs/design-standard.md` (corner sizes) and `my_work/reference_visual/README.md` (screenshots the user approved, indexed; private, so it may be missing on another machine: then say so), open the matching image, and match it. When the user says a screen or mock-up is right, save the image there and add its row to the README in the same session.
+- Visuals or existing behaviour: never change them on your own judgement. Ask the user first, as a multiple-choice question (a feedback page with `my_work/agent_kit/render_check.py feedback` when it is visual), and record the question in BACKLOG "Questions for the owner" so it is not lost; tick it there with the answer and put a decision line in `docs/decisions.md`.
 
 ## Shell on this Mac (zsh, BSD tools)
 - No `sed -i` for edits (BSD `sed` needs `-i ''`): use the Edit tool, or a short `python3 -` script.

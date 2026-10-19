@@ -8,7 +8,8 @@
 | Where code and files live | `docs/architecture.md` |
 | Corner sizes and shapes of anything the plugin draws | `docs/design-standard.md` |
 | A standalone (Python) dashboard that matches the vault's look | `docs/reference/dashboard/SPEC.md`, `lab-kit-dashboard.css` |
-| What a screen should look like (screenshots the user approved) | `docs/reference/visual/README.md` |
+| What a screen should look like (screenshots the user approved) | `my_work/reference_visual/README.md` (private) |
+| Questions waiting for the owner (visuals, behaviour) | `BACKLOG.md` → Questions for the owner |
 | Plugin code rules (store review) | `.claude/rules/obsidian-plugin.md`, `docs/reference/plugin-guidelines.md` |
 | Obsidian settings API | `docs/reference/settings-definitions.md` |
 | Why something was decided | `docs/decisions.md` |

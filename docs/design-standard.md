@@ -2,7 +2,7 @@
 
 _Agreed 2026-10-14 (user: "the update is fine"; renders compared now / standard). Only corner shapes are written down so far; colours live in `kits/planning/.obsidian/snippets/vault-colours.css`, where CSS goes is in `docs/architecture.md`. Audited 2026-10-14 (read-only, BACKLOG "Shape pass Phase 4 AUDIT"): Alt+S snippet forms, calc tables, the rig diagram; the user decides what to change._
 
-Screenshots of looks the user approved are in `docs/reference/visual/` (read its README before changing a window or a chip).
+Screenshots of looks the user approved are in `my_work/reference_visual/` (private; read its README before changing a window or a chip).
 
 ## The four sizes
 Defined once in `styles.css` (`body { --lk-radius-card … }`). New rules use the variable, never a number.
