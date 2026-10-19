@@ -27,7 +27,7 @@ function overdue(fm: Record<string, unknown>, today: Date): Date | null {
 }
 /** The "waiting: <text>" badge of a to-do that waits on something; none otherwise. */
 const waitingBadge = (fm: Record<string, unknown>): Badge[] => { const w = waitingOf(fm); return w ? [{ text: `waiting: ${w}`, cls: "vt-badge vt-waiting" }] : []; };
-const isOpenTodo = (n: NoteRec): boolean => n.fm.kind === "todo" && n.fm.done !== true && str(n.fm.day) !== "Done";
+export const isOpenTodo = (n: NoteRec): boolean => n.fm.kind === "todo" && n.fm.done !== true && str(n.fm.day) !== "Done";
 
 /** This week: open to-dos planned Mon–Fri or overdue. Overdue first, then Mon → Fri. Badge: overdue (date) / today / the day; carried over. */
 export function thisWeek(todos: NoteRec[], today: Date): ListLine[] {
