@@ -24,7 +24,7 @@ Do plan step <id> only (<what is already done>; work from <branch>; ask before a
 1. <piece>: <what to build or decide>; check: <the test or numbers that show it passes>.
 2. ...
 N. Report the result of every check as numbers or PASS/PARTIAL/FAIL.
-One commit per piece in the main repo; fixtures and docs in my_work. At the end: add an entry to my_work/notes/LOG.md, tick the answered BACKLOG questions, add any new decision to docs/decisions.md, update STATUS.md with the next prompt in the same form (template in my_work/agent_kit/CLAUDE_TEMPLATE.md), commit in my_work. Stop.
+One commit per piece in the main repo; fixtures and docs in my_work. At the end: add an entry to my_work/notes/LOG.md, tick the answered BACKLOG questions, add any new decision to docs/decisions.md, update STATUS.md with the next prompt in the same form (template in my_work/agent_kit/CLAUDE_TEMPLATE.md), commit in my_work. Then show me that next prompt in a code block, with the model to pick on the line under it, in a message written before any closing box (the box ends the turn). Stop.
 ```
 Model: <Haiku / Sonnet / Opus / Fable> (<why, from the CLAUDE.md Models line>).
 
