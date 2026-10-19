@@ -1,11 +1,12 @@
 // The to-do board as a Bases view the plugin draws itself (Board-B Phase 1): days across the top, the Backlog tray along the bottom.
 // Bases filters and sorts (the .base file); this draws and writes `done` / `day`. Public API only (registerBasesView, since 1.10.0).
-// Pure part: board-card.ts. Plan: docs/plans/board-own-view.md. Touch drag and the phone layout are Phase 2.
-import { BasesView, Keymap, Platform, TFile, type Plugin, type QueryController } from "obsidian";
+// Pure parts: board-card.ts, board-drag.ts (pointer drag for mouse, pen and touch). Plan: docs/plans/board-own-view.md.
+import { BasesView, Keymap, TFile, type Plugin, type QueryController } from "obsidian";
 import type { KitData } from "../kit/paths";
 import { todoFolder } from "../kit/paths";
 import { inFolder, type NoteRec } from "./lists";
 import type { Series } from "./meetings";
+import { attachCardDrag, dragJustEnded } from "./board-drag";
 import { buildBoard, cardOf, filterTray, readyPaths, trayProjects, type BoardCard, type TrayFilter } from "./board-card";
 
 export const BOARD_VIEW = "lab-kit-board";
@@ -22,7 +23,9 @@ export const refreshBoards = (): void => { for (const v of open) v.draw(); };
 class BoardView extends BasesView {
   type = BOARD_VIEW;
   private filter: TrayFilter = { kind: "all" };
-  private dragPath = "";
+  private root!: HTMLElement;
+  private dragging = false;
+  private late = false;
 
   constructor(controller: QueryController, private el: HTMLElement, private env: BoardEnv) {
     super(controller);
@@ -40,6 +43,7 @@ class BoardView extends BasesView {
   private setFolded(v: boolean): void { try { this.app.saveLocalStorage(TRAY_FOLDED_KEY, v ? "1" : null); } catch { /* no local storage: the fold is not kept */ } }
 
   draw(): void {
+    if (this.dragging) { this.late = true; return; }
     const kit = this.env.kit(), now = new Date();
     const keep = this.el.querySelector<HTMLElement>(".lk-board-trayrow")?.scrollLeft ?? 0;
     this.el.empty();
@@ -50,11 +54,12 @@ class BoardView extends BasesView {
       .filter(n => n.fm.kind === "project" || n.fm.kind === "meeting-series");
     const board = buildBoard(cards, { series: this.env.series(), todos, hubs }, { weekend: kit.boardWeekend, busyFrom: kit.boardBusyFrom, countdown: kit.dueCountdown, now });
 
-    const root = this.el.createDiv({ cls: "lk-board" });
+    const root = this.root = this.el.createDiv({ cls: "lk-board" });
     const days = root.createDiv({ cls: board.days.length > 5 ? "lk-board-days has-weekend" : "lk-board-days" });
     for (const d of board.days) {
       const col = days.createEl("section", { cls: "lk-board-col" });
       col.dataset.day = d.day;
+      col.dataset.drop = d.day;
       if (d.today) col.addClass("is-today");
       const head = col.createDiv({ cls: "lk-board-head" });
       head.createSpan({ cls: "lk-board-name", text: d.day });
@@ -63,10 +68,10 @@ class BoardView extends BasesView {
       const list = col.createDiv({ cls: "lk-board-list" });
       for (const c of d.open) this.card(list, c);
       if (d.done) col.createDiv({ cls: "lk-board-donecount", text: `${d.done} done` });
-      this.dropZone(col, d.day);
     }
 
     const tray = root.createDiv({ cls: "lk-board-tray" });
+    tray.dataset.drop = "Backlog";
     const folded = this.folded();
     if (folded) tray.addClass("is-folded");
     const thead = tray.createDiv({ cls: "lk-board-trayhead" });
@@ -80,7 +85,6 @@ class BoardView extends BasesView {
       for (const c of filterTray(board.tray, this.filter, ready)) this.card(row, c);
       row.scrollLeft = keep;
     }
-    this.dropZone(tray, "Backlog");
   }
 
   private chips(parent: HTMLElement, tray: BoardCard[]): void {
@@ -113,20 +117,11 @@ class BoardView extends BasesView {
       if (c.waiting) foot.createSpan({ cls: "lk-board-wait", text: `Waiting: ${c.waiting}` });
       if (c.countdown) { const d = foot.createSpan({ cls: "lk-board-due", text: c.countdown.text }); d.dataset.level = c.countdown.level; }
     }
-    el.addEventListener("click", ev => { const f = this.app.vault.getFileByPath(c.path); if (f) void this.app.workspace.getLeaf(Keymap.isModEvent(ev)).openFile(f); });
-    if (Platform.isDesktop) {
-      el.draggable = true;
-      el.addEventListener("dragstart", ev => { this.dragPath = c.path; ev.dataTransfer?.setData("text/plain", c.path); });
-    }
-  }
-
-  private dropZone(zone: HTMLElement, day: string): void {
-    zone.addEventListener("dragover", ev => { ev.preventDefault(); zone.addClass("is-over"); });
-    zone.addEventListener("dragleave", ev => { if (!zone.contains(ev.relatedTarget as Node | null)) zone.removeClass("is-over"); });
-    zone.addEventListener("drop", ev => {
-      ev.preventDefault();
-      zone.removeClass("is-over");
-      void this.write(ev.dataTransfer?.getData("text/plain") || this.dragPath, x => { if (x.day !== day) x.day = day; });
+    el.addEventListener("click", ev => { if (dragJustEnded()) return; const f = this.app.vault.getFileByPath(c.path); if (f) void this.app.workspace.getLeaf(Keymap.isModEvent(ev)).openFile(f); });
+    attachCardDrag(el, c.path, c.title, {
+      root: this.root,
+      onDrop: (path, day) => { void this.write(path, x => { if (x.day !== day) x.day = day; }); },
+      onState: on => { this.dragging = on; if (!on && this.late) { this.late = false; this.draw(); } },
     });
   }
 
