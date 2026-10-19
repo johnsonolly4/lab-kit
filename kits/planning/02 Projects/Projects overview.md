@@ -5,7 +5,10 @@ cssclasses:
   - vt
 ---
 
-`BUTTON[new-project]`
+```vault-card
+show: button-bar
+ids: new-project
+```
 
 ```vault-projects
 ```

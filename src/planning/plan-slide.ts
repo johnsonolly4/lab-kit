@@ -59,6 +59,7 @@ const CHAR_W = 0.56;   // average character width in em: text is never measured,
 const MARGIN = 48, TITLE_H = 72, GAP = 16;
 const TILE_W = 340, TILE_H = 48, TILE_GAP = 12, TILE_FONT = 22, LABEL_FONT = 24, LABEL_H = 36;
 const CARD_TITLE = 17, CARD_META = 15, MAX_ZOOM = 1.7;
+const SUB_LINE = 22, SUB_MAX = 5, SUB_PAD = 4;   // subtask strips under a card: line height, most lines (the last one says "+N more" when there are more), padding
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
@@ -83,13 +84,32 @@ const shortDate = (d: string): string => {
 };
 const PRIORITY = ["", "↑", "–", "↓"];
 
+/** The lines under a card: its subtasks, finished ones struck through; over `SUB_MAX` the last line says how many more. */
+function subLines(r: PlanRow): { text: string; done: boolean; more: boolean }[] {
+  const shown = r.subs.length > SUB_MAX ? r.subs.slice(0, SUB_MAX - 1) : r.subs;
+  const lines = shown.map(s => ({ text: (s.done ? "✓ " : "○ ") + s.name, done: s.done, more: false }));
+  if (r.subs.length > shown.length) lines.push({ text: `+${r.subs.length - shown.length} more`, done: false, more: true });
+  return lines;
+}
+/** Height the strip under a card takes (0 for a card with no subtasks). */
+const subRoom = (r: PlanRow): number => (r.subs.length ? subLines(r).length * SUB_LINE + 2 * SUB_PAD + SUB_PAD : 0);
+
+function subsSvg(r: PlanRow, x: number, y: number): string {
+  const lines = subLines(r);
+  if (!lines.length) return "";
+  const n = Math.floor((CARD_W - 20) / (CARD_META * CHAR_W));
+  const top = y + CARD_H + SUB_PAD;
+  return `<rect x="${x}" y="${top}" width="${CARD_W}" height="${lines.length * SUB_LINE + 2 * SUB_PAD}" rx="8" fill="${TILE}"/>`
+    + lines.map((l, i) => `<text x="${x + 10}" y="${top + SUB_PAD + i * SUB_LINE + 16}" font-size="${CARD_META}" fill="${l.done || l.more ? MUTED : INK}"${l.done ? ' text-decoration="line-through"' : ""}>${esc(cut(l.text, n))}</text>`).join("");
+}
+
 function cardSvg(c: MapCard, x: number, y: number): string {
   const r = c.row;
   const next = !r.done && !r.blocked;
   const stroke = r.done ? LINE : next ? ACCENT : LINE;
   const fill = r.done ? TILE : "#ffffff";
   const ink = r.done ? MUTED : INK;
-  const rect = `<rect x="${x}" y="${y}" width="${CARD_W}" height="${CARD_H}" rx="8" fill="${fill}" stroke="${stroke}" stroke-width="${next ? 3 : 1.5}"${r.blocked ? ' stroke-dasharray="6 4"' : ""}/>`;
+  const rect = `<rect x="${x}" y="${y}" width="${CARD_W}" height="${CARD_H}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="${next ? 3 : 1.5}"${r.blocked ? ' stroke-dasharray="6 4"' : ""}/>`;
   const per = Math.floor((CARD_W - 20) / (CARD_TITLE * CHAR_W));
   const title = wrap((r.done ? "✓ " : "") + r.name, per, 2);
   const text = (ty: number, size: number, fill2: string, s: string, bold = false): string =>
@@ -101,6 +121,7 @@ function cardSvg(c: MapCard, x: number, y: number): string {
   if (line1) out.push(text(64, CARD_META, r.due && !r.done && r.blocked ? WARN : MUTED, cut(line1, metaN)));
   if (r.result) out.push(text(82, CARD_META, MUTED, cut("→ " + r.result, metaN)));
   if (r.experiment) out.push(text(100, CARD_META, MUTED, cut(r.experiment.status ? `${r.experiment.name} · ${r.experiment.status}` : r.experiment.name, metaN)));
+  out.push(subsSvg(r, x, y));
   return out.join("");
 }
 
@@ -113,7 +134,7 @@ function tilesSvg(rows: PlanRow[], left: number, top: number, cols: number, maxR
   return texts.map((t, i) => {
     const x = left + (i % cols) * (TILE_W + TILE_GAP), y = top + Math.floor(i / cols) * (TILE_H + TILE_GAP);
     const more = rows.length > room && i === room - 1;
-    return `<rect x="${x}" y="${y}" width="${TILE_W}" height="${TILE_H}" rx="8" fill="${TILE}"/>`
+    return `<rect x="${x}" y="${y}" width="${TILE_W}" height="${TILE_H}" rx="10" fill="${TILE}"/>`
       + `<text x="${x + 12}" y="${y + TILE_H / 2 + 8}" font-size="${TILE_FONT}" fill="${more ? MUTED : INK}">${esc(cut(t, per))}</text>`;
   }).join("");
 }
@@ -146,7 +167,7 @@ export function slideSvg(model: SlideModel, opts: SlideOptions): SlidePicture {
     return at + LABEL_H + rows * (TILE_H + TILE_GAP) - TILE_GAP;
   };
   const middle = (): void => {
-    const geo = mapGeometry(model.map, 0, "across");
+    const geo = mapGeometry(model.map, 0, "across", new Map(model.map.cards.map(c => [c.path, subRoom(c.row)] as const)));
     const top = y + GAP, areaH = H - MARGIN - top - heightOf(after, maxRows);
     const s = Math.min(inner / geo.width, areaH / geo.height, MAX_ZOOM);
     note(CARD_META * s);

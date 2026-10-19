@@ -1,3 +1,6 @@
+/* ---- Shape standard (docs/design-standard.md): four corner sizes; new rules use these, not numbers ---- */
+body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; --lk-radius-pill: 999px; }
+
 /* Lab Calc 1.1: calculation tables */
 /* Flush with the text column: no padding or side margins from Obsidian or a theme (themes often indent or centre plain tables) */
 .lab-kit { margin: 0.6em 0; padding: 0; }
@@ -61,7 +64,7 @@
 .cm-lab-kit-cell-5 { background-color: rgba(var(--lab-kit-ref-5), 0.22); border-radius: 3px; }
 /* The cell input over a copy of its text: the copy shows the colours, the input's own text is hidden while a formula is typed */
 .lab-kit-input-wrap { position: relative; }
-.lab-kit-input-hl { position: absolute; top: 0; bottom: 0; left: var(--lab-kit-hl-l, 9px); right: var(--lab-kit-hl-r, 9px); padding: 2px 0; border: solid transparent; border-width: var(--input-border-width, 1px) 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
+.lab-kit-input-hl { position: absolute; top: 0; bottom: 0; left: var(--lab-kit-hl-l, 9px); right: var(--lab-kit-hl-r, 9px); padding: 2px 0; border: solid transparent; border-width: var(--input-border-width, 1px) 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; white-space: pre; overflow: hidden; pointer-events: none; color: var(--text-normal); }
 /* The copy is clipped to the input's content box (--lab-kit-hl-l / -r, measured in src/calc/render.ts copyBox) and its text shifted by the input's scroll: Obsidian's own input padding beats .lab-kit-input, and a scrolled div stops short of a scrolled input, so the caret drifted */
 .lab-kit-input-hl-text { display: inline-block; transform: translateX(calc(-1 * var(--lab-kit-hl-x, 0px))); }
 .lab-kit-input-wrap:not(.is-hl) .lab-kit-input-hl { display: none; }
@@ -77,7 +80,7 @@
   width: max(var(--lab-kit-cell-w, 6em), 4em); min-width: max(var(--lab-kit-cell-w, 6em), 4em); max-width: max(var(--lab-kit-cell-w, 6em), 4em);
 }
 .lab-kit-input-wrap .lab-kit-input, .lab-kit-input-wrap .lab-kit-input-hl { font: inherit; font-size: inherit; line-height: inherit; letter-spacing: normal; }
-.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; text-indent: 0; padding: 2px 4px; }
+.lab-kit-input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; letter-spacing: normal; text-align: left; padding: 2px 4px; }
 /* Chemical suggestions: the matched alias, after the note name */
 .lab-kit-suggest-alias { margin-left: 0.6em; color: var(--text-muted); font-size: 0.85em; }
 
@@ -89,28 +92,30 @@
 }
 
 /* Lab Kit windows (review, manage, merge, what's new) */
-.lab-kit-modal { max-height: 70vh; overflow-y: auto; }
+/* Lab Kit windows (Check setup, hotkeys, Tidy, Manage / Review update / report / install, merge) use the card corner: `cardWindow()` (src/kit/window-look.ts) puts the class on the .modal */
+.modal.lab-kit-window { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
+.lab-kit-modal { --lk-block-gap: var(--size-4-3); max-height: 70vh; overflow-y: auto; }   /* the one gap between blocks (folds, bars, the footer) in the kit windows */
+.lab-kit-modal .setting-item { padding: var(--size-4-2) 0; }   /* a Setting row (CSS snippet) takes its gap from the block around it, not its own */
+.lab-kit-modal .setting-item:first-child { padding-top: 0; border-top: none; }
+.lab-kit-modal .setting-item + .lab-kit-win-summary { margin-top: 0; }   /* the row's own padding is the gap */
 /* Review window: the Apply row stays in view while the list scrolls */
-.lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; background: var(--background-primary); }
+.lab-kit-modal .lab-kit-sticky-foot { position: sticky; bottom: 0; z-index: 2; margin-top: var(--lk-block-gap); padding-bottom: var(--size-4-2); background: var(--background-primary); }
 .lab-kit-whatsnew-body { max-height: 60vh; overflow-y: auto; }
 .lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
-.lab-kit-group { margin: 4px 0; font-size: 0.88em; }
-.lab-kit-group summary { cursor: pointer; font-weight: 600; }
-.lab-kit-group ul { margin: 4px 0 8px; padding-left: 1.2em; }
-.lab-kit-group code { font-size: 0.85em; word-break: break-all; }
+.lab-kit-win-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--size-4-2); margin: var(--lk-block-gap) 0; }
 /* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
-.lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: 10px; font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
+.lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: var(--lk-radius-pill); font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
 .lab-kit-badge.is-ok { color: var(--text-success); }
 .lab-kit-badge.is-info { color: var(--text-accent); }
 .lab-kit-badge.is-warn { color: var(--text-warning); }
 /* What Apply does with a file (src/kit/managed.ts actionLook): green add, orange change, red conflict, grey leave / same */
 /* Merge window: one card per conflict, Yours / Kit / Original side by side (stacked on narrow screens) */
-.lab-kit-hunk { margin: 8px 0; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); }
+.lab-kit-hunk { margin: 8px 0; padding: 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); }
 .lab-kit-hunk.is-undecided { border-color: var(--text-warning); }
 .lab-kit-hunk-title { font-weight: 600; margin-bottom: 4px; }
 .lab-kit-hunk-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .lab-kit-hunk-label { font-size: var(--font-ui-smaller); color: var(--text-muted); }
-.lab-kit-hunk pre, .lab-kit-preview { margin: 0; padding: 4px 6px; max-height: 12em; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.85em; background: var(--background-secondary); border-radius: var(--radius-s); }
+.lab-kit-hunk pre, .lab-kit-preview { margin: 0; padding: 4px 6px; max-height: 12em; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 0.85em; background: var(--background-secondary); border-radius: var(--lk-radius-row); }
 .lab-kit-hunk pre.is-empty { color: var(--text-faint); font-style: italic; }
 .lab-kit-hunk-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .lab-kit-hunk-edit { width: 100%; margin-top: 8px; font-family: var(--font-monospace); font-size: 0.85em; }
@@ -141,7 +146,7 @@
 .lab-header-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; }
 .lab-header-muted { color: var(--text-muted); }
 .lab-header-back { text-decoration: none; }
-.lab-hazards > summary { cursor: pointer; }
+.lab-hazards > summary { cursor: grab; }
 
 /* Severity colours (same as the Dataview version). Chips and shaded name cells read data-level. */
 .lab-header .lab-hazard-chip { --lab-level: #CACFD9A6; }
@@ -174,17 +179,21 @@
 
 /* Planning kit text box (src/planning/ask.ts): a picker with no list underneath */
 .lab-kit-ask .prompt-results { display: none; }
+/* Plain prompts (name boxes and pick lists) use the shape standard: window card, box control, list rows row */
+.modal.lab-kit-prompt { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
+.lab-kit-prompt .prompt-input { border-radius: var(--lk-radius-control); }
+.lab-kit-prompt .suggestion-item { border-radius: var(--lk-radius-row); }
 
 /* Sort inbox picker (src/planning/ask.ts `pick` with side): a short bar docked at the bottom edge, the choices as chips in rows, no backdrop, so the note above stays readable. At every window width: a narrow Obsidian window also gets the bar (the old rule only applied above 700px, so a narrower window still showed the centred list) */
 .modal-container.lab-kit-pick-side { pointer-events: none; }
 .modal-container.lab-kit-pick-side .modal-bg { display: none; }
 .modal-container.lab-kit-pick-side > .lab-kit-pick-side { position: fixed; top: auto; bottom: 12px; left: 50%; right: auto; width: min(760px, 94vw); max-width: 94vw; max-height: none; transform: translateX(-50%); pointer-events: auto; padding: 8px 12px; }
 .modal-container.lab-kit-pick-side > .lab-kit-pick-side .prompt-results { display: flex; flex-wrap: wrap; gap: 4px 6px; max-height: none; overflow: visible; padding: 6px 0 0; }
-.modal-container.lab-kit-pick-side > .lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: 999px; }
+.modal-container.lab-kit-pick-side > .lab-kit-pick-side .suggestion-item { width: auto; padding: 3px 10px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-pill); }
 
 /* Check setup window (src/kit/setup-check-ui.ts) */
 /* A settings row that only does one thing (src/kit/settings-box.ts actionRow): its name is a link in the accent colour, the whole row is the button */
-.lab-kit-action { cursor: pointer; border-radius: var(--radius-m); }
+.lab-kit-action { cursor: pointer; border-radius: var(--lk-radius-control); }
 .lab-kit-action .setting-item-name { color: var(--interactive-accent); }
 .lab-kit-action .setting-item-control { display: none; }
 .lab-kit-action:hover { background: var(--background-modifier-hover); }
@@ -197,17 +206,18 @@
 .lab-kit-win-title { font-size: var(--font-ui-medium); font-weight: var(--font-semibold); }
 .lab-kit-win-group { margin-top: 4px; font-size: var(--font-ui-smaller); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-faint); }
 /* The round mark: tinted from Lab Kit's colours (vault-colours.css) when they are there, else Obsidian's own */
-.lab-kit-win-mark { flex: none; width: 24px; height: 24px; margin-top: 2px; border-radius: 999px; text-align: center; line-height: 24px; font-size: var(--font-ui-small); font-weight: var(--font-semibold);
+.lab-kit-win-mark { flex: none; width: 24px; height: 24px; margin-top: 2px; border-radius: var(--lk-radius-pill); text-align: center; line-height: 24px; font-size: var(--font-ui-small); font-weight: var(--font-semibold);
   color: rgb(var(--vt-neutral-text, 148, 163, 184)); background: rgba(var(--vt-neutral, 100, 116, 139), var(--vt-tint, 0.2)); }
 :is(.lab-kit-win-row, .lab-kit-tidy-rule).is-ok .lab-kit-win-mark { color: rgb(var(--vt-done-text, 110, 231, 183)); background: rgba(var(--vt-done, 16, 185, 129), var(--vt-tint, 0.2)); }
 :is(.lab-kit-win-row, .lab-kit-tidy-rule):is(.is-todo, .is-warn) .lab-kit-win-mark { color: rgb(var(--vt-waiting-text, 252, 211, 77)); background: rgba(var(--vt-waiting, 245, 158, 11), var(--vt-tint, 0.2)); }
 :is(.lab-kit-win-row, .lab-kit-tidy-rule).is-missing .lab-kit-win-mark { color: rgb(var(--vt-overdue-text, 252, 165, 165)); background: rgba(var(--vt-overdue, 239, 68, 68), var(--vt-tint, 0.2)); }
 .lab-kit-win-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
-.lab-kit-win-tick { display: inline-flex; align-items: center; gap: 6px; flex: none; margin-left: auto; white-space: nowrap; color: var(--text-muted); font-size: var(--font-ui-small); }
+.lab-kit-win-tick { display: inline-flex; align-items: center; align-self: center; gap: 6px; flex: none; margin-left: auto; white-space: nowrap; color: var(--text-muted); font-size: var(--font-ui-small); }
 .lab-kit-win-actions > .lab-kit-win-tick { margin-left: 0; }
+.lab-kit-win-tick input[type=checkbox] { margin: 0; border-radius: var(--lk-radius-pill); }
 .lab-kit-win-path { display: block; font-size: var(--font-ui-smaller); color: var(--text-faint); overflow-wrap: anywhere; }
 .lab-kit-win-row .lab-kit-badge { margin-left: 8px; }
-.lab-kit-win-foot { display: flex; justify-content: flex-end; padding-top: var(--size-4-3); border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
+.lab-kit-win-foot { display: flex; justify-content: flex-end; gap: var(--size-4-2); padding-top: var(--size-4-3); border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); }
 
 /* Both kits in one window (Review update… / Manage files… with the planning kit on): a section per kit, the one with something waiting first and open */
 .lab-kit-kit-section { margin: 0 0 10px; padding-top: 6px; border-top: 1px solid var(--background-modifier-border); }
@@ -224,14 +234,14 @@
 
 /* Tidy up notes window (src/kit/tidy-ui.ts): before (left) / after (right); red removed, green added, amber changed */
 .lab-kit-tidy-banner { padding: 8px 12px; margin-bottom: 8px; border-left: 3px solid var(--text-warning); background: var(--background-secondary); }
-.lab-kit-tidy-group { margin-top: 16px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); overflow: hidden; }
+.lab-kit-tidy-group { margin-top: 16px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); overflow: hidden; }
 .lab-kit-tidy-rule { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: var(--background-secondary); border-bottom: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-note { margin: 12px 10px 14px 12px; padding-left: 10px; border-left: 2px solid var(--background-modifier-border-hover); }
 .lab-kit-tidy-name { color: var(--text-normal); font-weight: 600; }
 .lab-kit-tidy-count { margin-left: auto; color: var(--text-faint); white-space: nowrap; }
 .lab-kit-tidy-page { margin-top: 4px; }
 .lab-kit-tidy-page > .lab-kit-tidy-line { margin-top: 1px; font-family: var(--font-monospace); font-size: var(--font-ui-smaller); }
-.lab-kit-tidy-newpage { margin: 4px 0 0; padding: 6px 8px; max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--font-ui-smaller); background: var(--background-secondary); border-radius: var(--radius-s); }
+.lab-kit-tidy-newpage { margin: 4px 0 0; padding: 6px 8px; max-height: 320px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--font-ui-smaller); background: var(--background-secondary); border-radius: var(--lk-radius-row); }
 .lab-kit-tidy-reported { margin: 8px 10px; }
 .lab-kit-tidy-path { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
 .lab-kit-tidy-diff { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1px; margin-top: 6px; font-family: var(--font-monospace); font-size: var(--font-smallest); }
@@ -242,10 +252,7 @@
 .lab-kit-tidy-line.is-changed { background: rgba(var(--color-orange-rgb), 0.25); }
 .lab-kit-tidy-fold { grid-column: 1 / -1; height: auto; padding: 1px 4px; justify-content: flex-start; font: inherit; color: var(--text-faint); background: var(--background-secondary); border: none; border-radius: 0; box-shadow: none; cursor: var(--cursor); }
 .lab-kit-tidy-fold:hover, .lab-kit-tidy-fold:focus-visible { color: var(--text-normal); background: var(--background-modifier-hover); box-shadow: none; }
-.lab-kit-tidy-more { display: none; }
-.lab-kit-tidy-more.is-open { display: contents; }
-.lab-kit-tidy-notes { margin: 6px 0 0 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
-.lab-kit-tidy-notes > .lab-kit-tidy-path { margin-top: 4px; }
+.lab-kit-tidy-line.is-folded { display: none; }
 .lab-kit-tidy-weeks { width: 4.5em; }
 .lab-kit-tidy-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--background-modifier-border); }
 .lab-kit-tidy-backup { display: inline-flex; align-items: center; gap: 6px; }
@@ -266,10 +273,10 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 /* Lab book cards: the progress property (3/7) gets a bar that fills from the left as boxes are ticked (src/kit/board-colours.ts); an empty one is hidden */
 .bases-kanban-card [data-property="note.progress"] .bases-kanban-card-label { display: none; }
 .bases-kanban-card [data-property="note.progress"].lab-kit-no-progress { display: none; }
-.bases-kanban-card progress.lab-kit-card-bar { display: block; appearance: none; -webkit-appearance: none; width: 100%; height: 6px; margin-top: 4px; border: 0; border-radius: 3px; background: var(--background-modifier-border); overflow: hidden; }
-.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-bar { background: var(--background-modifier-border); border-radius: 3px; }
-.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-value { background: var(--interactive-accent); border-radius: 3px; transition: width 0.2s; }
-.bases-kanban-card progress.lab-kit-card-bar::-moz-progress-bar { background: var(--interactive-accent); border-radius: 3px; }
+.bases-kanban-card progress.lab-kit-card-bar { display: block; appearance: none; -webkit-appearance: none; width: 100%; height: 6px; margin-top: 4px; border: 0; border-radius: var(--lk-radius-pill); background: var(--background-modifier-border); overflow: hidden; }
+.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-bar { background: var(--background-modifier-border); border-radius: var(--lk-radius-pill); }
+.bases-kanban-card progress.lab-kit-card-bar::-webkit-progress-value { background: var(--interactive-accent); border-radius: var(--lk-radius-pill); transition: width 0.2s; }
+.bases-kanban-card progress.lab-kit-card-bar::-moz-progress-bar { background: var(--interactive-accent); border-radius: var(--lk-radius-pill); }
 
 /* Snippet icons: the preview beside each box and the icon picker (src/kit/icon-picker-ui.ts) */
 .lab-kit-icon-preview { display: inline-flex; align-items: center; color: var(--interactive-accent); margin-right: 6px; }
@@ -285,7 +292,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-rig-diagram, .lab-kit-rig-diagram .mermaid { overflow-x: auto; }
 
 /* Picture for a slide window (src/planning/plan-slide-ui.ts): the preview is always on white, like the picture */
-.lab-kit-slide-preview { display: block; width: 100%; height: auto; border: 1px solid var(--background-modifier-border); border-radius: 8px; background: #fff; margin: 8px 0; }
+.lab-kit-slide-preview { display: block; width: 100%; height: auto; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: #fff; margin: 8px 0; }
 .lab-kit-hidden { display: none; }
 
 /* ---- Plan map (src/planning/plan-map-render.ts, blocks.ts, plan-slide-ui.ts) ----
@@ -298,25 +305,26 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-arrows { position: absolute; top: 0; left: 0; pointer-events: none; overflow: visible; }
 .vt-map-arrow { fill: none; stroke: var(--text-faint); stroke-width: 1.5; }
 .vt-map-card { position: absolute; left: var(--vt-map-x); top: var(--vt-map-y); width: var(--vt-map-card-w); height: var(--vt-map-card-h); box-sizing: border-box; padding: 8px 10px 8px 18px; cursor: pointer;   /* the left 14px is the drag strip (.vt-map-grip), reserved so the text does not move on hover */
-  background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 10px; }
+  background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: var(--lk-radius-control); }
 .vt-map-card:hover { border-color: var(--interactive-accent); }
-.vt-map-tick { z-index: 2; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: pointer; }
+.vt-map-tick { z-index: 2; position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; padding: 0; background: transparent; border: none; box-shadow: none; color: var(--text-muted); cursor: grab; }
 .vt-map-tick:hover { color: var(--interactive-accent); }
 .vt-map-done .vt-map-tick { color: var(--interactive-accent); }
 .vt-map-tick svg { width: 20px; height: 20px; }
-.vt-map-title { padding-right: 22px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vt-map-title { padding-right: 22px; font-weight: 600; line-height: 1.3; max-height: 2.6em; overflow: hidden; overflow-wrap: anywhere; }   /* up to two lines; the full name is the hover text */
 .vt-map-meta { display: flex; flex-wrap: wrap; gap: 4px 6px; align-items: center; font-size: var(--font-ui-smaller); }
-.vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: pointer; }
+.vt-map-exp { display: flex; gap: 6px; align-items: center; font-size: var(--font-ui-smaller); cursor: grab; }
 .vt-map-exp:hover .vt-map-exp-name { text-decoration: underline; }
 .vt-map-exp-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-exp-missing { cursor: default; color: var(--text-faint); }
 .vt-map-result { font-size: var(--font-ui-smaller); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
+.vt-map-done > :not(.vt-map-subs):not(.vt-map-subsopen):not(.vt-map-handle):not(.vt-map-plus) { opacity: 0.65; }   /* a finished card fades, but not its subtask list: open subtasks stay readable (amber below) */
 .vt-map-done .vt-map-title { text-decoration: line-through; }
 .vt-map-ready { border: 2px solid var(--interactive-accent); }
 .vt-map-blocked { border: 2px dashed var(--text-muted); }
 .vt-map-cyclic { border-color: var(--text-error); }
-.vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.25; }
+.vt-map-card, .vt-map-arrow { transition: opacity 0.2s ease; }
+.vt-map-card.vt-map-dim, .vt-map-arrow.vt-map-dim { opacity: 0.5; }   /* softer than before (0.25): the highlighted chain stands out without the rest vanishing */
 .vt-map-arrow-via { stroke-dasharray: 5 4; }
 .vt-map-arrow.vt-map-hl { stroke: var(--interactive-accent); stroke-width: 2.5; }
 .vt-map-unlinked { border-top: 1px solid var(--vt-divider, var(--background-modifier-border)); padding: 8px 0 var(--vt-map-tile-room, 0px); }
@@ -324,35 +332,46 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 /* Not linked: small tiles in a wrapping grid (src/planning/plan-map-render.ts) */
 .vt-map-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
 .vt-map-tile { position: relative; display: flex; align-items: center; gap: 6px; height: 34px; box-sizing: border-box; padding: 0 30px 0 18px; cursor: pointer; font-size: var(--font-ui-small);
-  background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 8px; }
+  background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: var(--lk-radius-control); }
 .vt-map-tile:hover { border-color: var(--interactive-accent); }
 .vt-map-tile-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vt-map-tile .vt-map-tick { top: 50%; right: 5px; width: 20px; height: 20px; margin-top: -10px; }
 .vt-map-tile .vt-map-tick svg { width: 18px; height: 18px; }
 .vt-map-tile .vt-map-subs-toggle { position: static; flex: none; height: 18px; }
 .vt-map-tile .vt-map-subs { z-index: 8; }
-.vt-map-tile .vt-map-grip { width: 12px; border-radius: 7px 0 0 7px; }
+.vt-map-tile .vt-map-grip { width: 12px; border-radius: calc(var(--lk-radius-control) - 1px) 0 0 calc(var(--lk-radius-control) - 1px); }
 .vt-map-tile .vt-map-grip::before { height: calc(100% - 10px); width: 3px; }
 .vt-map-tile .vt-map-handle { width: 12px; height: 12px; margin-top: -6px; right: -7px; }
 .vt-map-down .vt-map-tile .vt-map-handle { top: 50%; bottom: auto; right: -7px; margin-top: -6px; }   /* the tiles do not follow the map's direction */
 
 /* Plan map: linking by dragging a card's dot (src/planning/plan-map-render.ts) */
 .vt-map { position: relative; }
-.vt-map-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
+.vt-map-handle { position: absolute; right: -8px; top: 50%; width: 14px; height: 14px; margin-top: -7px; box-sizing: border-box; border-radius: var(--lk-radius-pill); border: 2px solid var(--interactive-accent); background: var(--background-primary); opacity: 0; cursor: crosshair; touch-action: none; }
 .vt-map-card:hover .vt-map-handle, .vt-map-tile:hover .vt-map-handle { opacity: 1; }
+/* The + after button on a card: a to-do between the card and what follows it (shown on hover; always on a phone) */
+.vt-map-plus { position: absolute; width: 18px; height: 18px; padding: 0; display: flex; align-items: center; justify-content: center; box-sizing: border-box; border-radius: var(--lk-radius-pill); border: 1.5px solid var(--interactive-accent); background: var(--background-primary); color: var(--interactive-accent); box-shadow: none; font-size: var(--font-ui-small); line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.12s; z-index: 4; }
+.vt-map-plus-after { right: -9px; top: calc(50% + 14px); }
+.vt-map-plus-before { left: -9px; top: calc(50% + 14px); }
+.vt-map-card:hover .vt-map-plus, .vt-map-plus:focus-visible { opacity: 1; }
+.vt-map-plus:hover { background: var(--interactive-accent); color: var(--text-on-accent); }
+.vt-map-down .vt-map-plus-after { top: auto; bottom: -9px; right: calc(50% - 32px); }
+.vt-map-down .vt-map-plus-before { top: -9px; left: auto; right: calc(50% - 32px); }
+@media (hover: none) { .vt-map-plus { opacity: 1; } }
 @media (hover: none) { .vt-map-handle { opacity: 1; } }   /* a phone has no hover: the node is always shown */
 .vt-map-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; z-index: 5; }
 .vt-map-drag { stroke: var(--interactive-accent); stroke-width: 2; stroke-dasharray: 4 3; }
 .vt-map-drag.vt-map-pending { stroke-dasharray: none; }
-.vt-map-addbox { position: absolute; left: var(--vt-add-x); top: var(--vt-add-y); width: var(--vt-add-w); height: var(--vt-add-h); box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 6; border: 1.5px dashed var(--interactive-accent); border-radius: 10px; color: var(--interactive-accent); background: var(--background-primary); font-size: var(--font-ui-small); pointer-events: auto; }
+.vt-map-addbox { position: absolute; left: var(--vt-add-x); top: var(--vt-add-y); width: var(--vt-add-w); height: var(--vt-add-h); box-sizing: border-box; display: flex; align-items: center; justify-content: center; z-index: 6; border: 1.5px dashed var(--interactive-accent); border-radius: var(--lk-radius-control); color: var(--interactive-accent); background: var(--background-primary); font-size: var(--font-ui-small); pointer-events: auto; }
+.vt-map-empty { box-sizing: border-box; width: 100%; height: calc(2 * 108px + 14px); display: flex; align-items: center; justify-content: center; border: 1.5px dashed var(--interactive-accent); border-radius: var(--lk-radius-control); color: var(--interactive-accent); cursor: pointer; font-size: var(--font-ui-small); }
+.vt-map-empty:hover { background: var(--background-modifier-hover); }
 .vt-map-addbox.vt-map-drop { background: var(--background-modifier-hover); outline: 2px solid var(--interactive-accent); }
 .vt-map-card.vt-map-drop, .vt-map-tile.vt-map-drop { outline: 2px solid var(--interactive-accent); }
-.vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+.vt-map-arrow-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: grab; }
 .vt-map-hidden { display: none; }
 
 /* Plan map: dragging a whole card by its left strip to make it a subtask (src/planning/plan-map-render.ts, dragNest) */
-.vt-map-grip { position: absolute; left: 0; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center; border-radius: 9px 0 0 9px; cursor: grab; touch-action: none; z-index: 1; }
-.vt-map-grip::before { content: ""; width: 4px; height: calc(100% - 16px); border-radius: 2px; background: var(--vt-card-border, var(--background-modifier-border)); }   /* the bar at rest */
+.vt-map-grip { position: absolute; left: 0; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center; border-radius: calc(var(--lk-radius-control) - 1px) 0 0 calc(var(--lk-radius-control) - 1px); cursor: grab; touch-action: none; z-index: 1; }
+.vt-map-grip::before { content: ""; width: 4px; height: calc(100% - 16px); border-radius: var(--lk-radius-pill); background: var(--vt-card-border, var(--background-modifier-border)); }   /* the bar at rest */
 .vt-map-grip::after { content: ""; display: none; width: 10px; height: 15px; background: radial-gradient(circle, var(--vt-grip, var(--interactive-accent)) 1.3px, transparent 1.7px) 0 0 / 5px 5px; }   /* the grip: two columns of three dots */
 .vt-map-grip:hover { background: var(--background-modifier-hover); }
 .vt-map-grip:hover::before { display: none; }
@@ -364,14 +383,14 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-sub-grip:hover { --vt-grip: var(--interactive-accent); }
 .vt-map-sub-grip::after { display: block; }
 .vt-map-lifted { opacity: 0.4; }
-.vt-map-ghost { position: absolute; left: var(--vt-ghost-x); top: var(--vt-ghost-y); width: var(--vt-ghost-w); box-sizing: border-box; padding: 6px 10px; transform: translate(-16px, -12px); background: var(--background-primary); border: 1px solid var(--interactive-accent); border-radius: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-s); pointer-events: none; z-index: 7; }
+.vt-map-ghost { position: absolute; left: var(--vt-ghost-x); top: var(--vt-ghost-y); width: var(--vt-ghost-w); box-sizing: border-box; padding: 6px 10px; transform: translate(-16px, -12px); background: var(--background-primary); border: 1px solid var(--interactive-accent); border-radius: var(--lk-radius-control); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; box-shadow: var(--shadow-s); pointer-events: none; z-index: 7; }
 .vt-map-card.vt-map-nest-drop, .vt-map-tile.vt-map-nest-drop { outline: 2px dashed var(--interactive-accent); outline-offset: 2px; }
 
 /* Plan map: subtasks (src/planning/plan-map-render.ts) */
-.vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 10px; color: var(--text-muted); cursor: pointer; }
+.vt-map-subs-toggle { position: absolute; right: 8px; bottom: 6px; padding: 0 6px; height: 20px; font-size: var(--font-ui-smaller); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: var(--lk-radius-control); color: var(--text-muted); cursor: grab; }
 .vt-map-subs-toggle:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-subs-toggle.vt-map-subsdone { color: var(--interactive-accent); border-color: var(--interactive-accent); }
-.vt-map-subs { position: absolute; left: 0; top: 100%; margin-top: 4px; width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 8px; z-index: 6; cursor: default; }
+.vt-map-subs { position: absolute; left: 0; top: 100%; margin-top: 4px; width: 100%; box-sizing: border-box; padding: 4px 6px; background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: var(--lk-radius-control); z-index: 6; cursor: default; }
 .vt-map-sub { display: flex; gap: 6px; align-items: center; height: 26px; font-size: var(--font-ui-smaller); }
 .vt-map-sub .vt-map-sub-tick { position: static; width: 20px; height: 20px; flex: none; }
 .vt-map-sub a.internal-link { color: var(--text-normal); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -381,27 +400,89 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-map-has-subs .vt-map-result { padding-right: 70px; }   /* the result stops before the subtask toggle at the bottom right */
 
 /* Plan map: top-to-bottom direction and the button that flips it (src/planning/plan-map-render.ts, blocks.ts) */
-.vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-dir { margin-left: 10px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: var(--lk-radius-control); color: var(--text-muted); cursor: grab; }
 .vt-map-dir:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
-.vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: 8px; color: var(--text-muted); cursor: pointer; }
+.vt-map-zoom { margin-left: 4px; padding: 0 8px; height: 22px; font-size: var(--font-ui-small); background: transparent; border: 1px solid var(--vt-card-border, var(--background-modifier-border)); box-shadow: none; border-radius: var(--lk-radius-control); color: var(--text-muted); cursor: grab; }
 .vt-map-zoom:hover { color: var(--text-normal); border-color: var(--interactive-accent); }
 .vt-map-slide { display: inline-flex; align-items: center; }
-.vt-plan-title:has(> .vt-map-dir) { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
+.vt-plan-title.is-bar { display: flex; align-items: center; }   /* Plan and its five buttons on one centred line (the picture button is inline-flex, the rest are not) */
 .vt-map-slide svg { width: 14px; height: 14px; }
 .vt-map-warnmark { flex: none; display: inline-flex; color: var(--color-orange); }
 .vt-map-warnmark svg { width: 15px; height: 15px; }
 .vt-map-card .vt-map-warnmark { position: absolute; left: 20px; bottom: 7px; }
 .vt-map + .vt-map-issue { margin-top: 10px; }
 .vt-map-flag { outline: 2px solid var(--color-orange); outline-offset: 2px; }   /* the card or tile a hovered problem line is about */
-.vt-map-warnmark { cursor: pointer; }
-.vt-map-pop { position: absolute; left: var(--vt-pop-x); top: var(--vt-pop-y); z-index: 9; max-width: 460px; box-sizing: border-box; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: 8px; box-shadow: var(--shadow-s); cursor: default; }
+.vt-map-warnmark { cursor: grab; }
+.vt-map-pop { position: absolute; left: var(--vt-pop-x); top: var(--vt-pop-y); z-index: 9; max-width: 460px; box-sizing: border-box; padding: 6px 10px; background: var(--background-primary); border: 1px solid var(--vt-card-border, var(--background-modifier-border)); border-radius: var(--lk-radius-control); box-shadow: var(--shadow-s); cursor: default; }
 .vt-map + .vt-map-issues-head { margin-top: 10px; }
 .vt-map-issues-head .vt-map-warnmark { cursor: default; }
 .vt-map-issues-head { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
-.vt-map-issue { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 3px 0; width: fit-content; max-width: 100%; border-radius: 8px; }   /* as wide as its text and buttons, so the outline fits them and has rounded corners */
+.vt-map-issue { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 0; margin: 3px 0; width: fit-content; max-width: 100%; border-radius: var(--lk-radius-control); }   /* as wide as its text and buttons, so the outline fits them and has rounded corners */
 .vt-map-issue-btns { display: inline-flex; flex-wrap: wrap; }
 .vt-map-fix { margin-left: 8px; }
 .vt-map-history.vt-map-off { opacity: 0.35; cursor: default; }   /* nothing to undo / redo: still there, so the row does not move */
 .vt-map-down .vt-map-scroll { flex-direction: column; max-height: 560px; overflow-y: auto; }
 .vt-map-down .vt-map-canvas { flex: none; }
 .vt-map-down .vt-map-handle { top: auto; bottom: -8px; right: calc(50% - 7px); margin-top: 0; }
+
+/* ---- To-do chip bar (show: todo-bar): a row of property chips at the top of a to-do note ---- */
+.vt-todo-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.vt-todo-chip { display: inline-flex; align-items: center; gap: 5px; height: auto; padding: 3px 10px; border-radius: var(--lk-radius-pill); font-size: var(--font-ui-small); line-height: 1.4; box-shadow: none; cursor: pointer; color: var(--text-normal); background: transparent; border: 1px solid var(--background-modifier-border); }
+.vt-todo-chip:hover { background: var(--background-modifier-hover); }
+.vt-todo-chip.is-empty { border-style: dashed; color: var(--text-muted); }
+.vt-todo-chip.is-set { border-color: var(--interactive-accent); color: var(--text-accent); }
+.vt-todo-chip-icon { display: inline-flex; }
+.vt-todo-chip-icon .svg-icon { width: 14px; height: 14px; }
+
+/* ---- Entry window (New to-do and the other New … flows): a title box with the chips under it ---- */
+.vt-entry { width: min(560px, 92vw); border-radius: var(--lk-radius-card); --modal-radius: var(--lk-radius-card); }
+.vt-entry { padding: var(--size-4-3) var(--size-4-4) var(--size-4-4); }
+.vt-entry .modal-content { margin: 0; padding: 0; }
+.vt-entry-heading { margin: 0 0 var(--size-4-2); padding: 0; line-height: 1.2; }
+.vt-entry-title { width: 100%; border-radius: var(--lk-radius-control); font-size: var(--font-ui-large, 1.1em); margin: 0 0 10px; }
+.vt-entry-title.vt-hidden { display: none; }
+.vt-entry-chips { margin: 0 0 8px; }
+.vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.vt-entry-hint.is-bad { color: var(--text-error); }
+
+/* ---- Dropdown under a chip (entry window, to-do chip bar) ---- */
+.vt-pop { position: fixed; left: var(--vt-pop-left, 0); top: var(--vt-pop-top, 0); z-index: 100; min-width: 220px; max-width: min(340px, 92vw); padding: 6px; border-radius: var(--lk-radius-control); border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: var(--shadow-l); outline: none; }
+.vt-pop-search { width: 100%; margin: 0 0 4px; }
+.vt-pop-list { max-height: 260px; overflow-y: auto; }
+.vt-pop-row { padding: 5px 10px; border-radius: var(--lk-radius-row); cursor: pointer; font-size: var(--font-ui-small); }
+.vt-pop-row.is-active { background: var(--background-modifier-hover); }
+.vt-pop-row.is-current { color: var(--text-accent); }
+.vt-pop-empty, .vt-pop-hint { padding: 4px 10px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.vt-pop-hint.is-bad { color: var(--text-error); }
+.vt-pop-date { width: 100%; margin-top: 4px; }
+
+/* The window opened from highlighted text: just under the highlighted line (the plain command keeps it in the middle) */
+.vt-entry-anchored.modal-container { align-items: flex-start; justify-content: flex-start; pointer-events: none; }
+.vt-entry-anchored .vt-entry-nobg { display: none; }
+.vt-entry-anchored .vt-entry { pointer-events: auto; }
+::highlight(vt-quick-todo) { text-decoration: underline; text-decoration-color: var(--interactive-accent); text-decoration-thickness: 2px; text-underline-offset: 3px; background-color: transparent; }
+.vt-entry-anchored .vt-entry { position: absolute; left: var(--vt-entry-x); top: var(--vt-entry-y); margin: 0; }
+
+/* ---- Folding groups in the Review update and Manage kit files windows (winFold in src/kit/window-look.ts): a box with a header row, as in Tidy up notes ---- */
+.lab-kit-fold { margin: var(--lk-block-gap) 0; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); overflow: hidden; }
+.lab-kit-fold-head { display: flex; align-items: center; gap: var(--size-4-2); width: 100%; height: auto; padding: var(--size-4-2) var(--size-4-3); border: none; border-radius: 0; box-shadow: none; text-align: left; white-space: normal; background: var(--background-secondary); color: var(--text-normal); cursor: pointer; }
+.lab-kit-fold-head:hover { background: var(--background-modifier-hover); }
+.lab-kit-fold-head:is(:focus, :active) { box-shadow: none; }   /* Obsidian's button focus ring sticks out of the header and shows as a thick line under it (light theme, seen 2026-10-14) */
+.lab-kit-fold-head:focus-visible { box-shadow: inset 0 0 0 2px var(--background-modifier-border-focus); }
+.lab-kit-fold-chev { flex: none; width: 7px; height: 7px; margin: 0 var(--size-4-2) 0 var(--size-4-1); border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(-45deg); transition: transform 0.12s; }
+.lab-kit-fold.is-open > .lab-kit-fold-head .lab-kit-fold-chev { transform: rotate(45deg); }
+.lab-kit-fold-text { flex: 1; min-width: 0; padding-right: var(--size-4-2); }
+.lab-kit-fold-title { font-weight: var(--font-semibold); overflow-wrap: anywhere; }
+.lab-kit-fold-count { flex: none; margin-left: auto; padding: 0 var(--size-4-2); border-radius: var(--lk-radius-pill); background: var(--background-modifier-border); color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.lab-kit-fold-body { display: none; padding: var(--size-4-2) var(--size-4-3); }
+.lab-kit-fold-body > .lab-kit-win-row:first-child { border-top: none; }
+.lab-kit-fold.is-open > .lab-kit-fold-body { display: block; }
+
+/* The planning kit's button bar (show: button-bar): one row of buttons named by id */
+.vt-button-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.vt-button-bar.is-end { justify-content: flex-end; }
+.vt-bar-button, .lab-kit-goto .lab-kit-goto-button { display: inline-flex; align-items: center; gap: 6px; height: auto; padding: 6px 14px; border-radius: var(--lk-radius-control); background: transparent; border: 1px solid var(--background-modifier-border); box-shadow: none; color: var(--text-normal); cursor: pointer; }
+.vt-button-bar .vt-bar-button:hover, .lab-kit-goto .lab-kit-goto-button:hover { background: var(--background-modifier-hover); }
+.vt-bar-button.is-plain { border-color: transparent; color: var(--text-muted); }
+.vt-bar-button-icon { display: inline-flex; }
+.vt-bar-button-icon .svg-icon { width: 16px; height: 16px; }

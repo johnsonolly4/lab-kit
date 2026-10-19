@@ -6,15 +6,16 @@ import { CARD_H, CARD_W, chainOf, mapGeometry, openSubs, subsLabel, type Directi
 import { linkText, namesOf, recordChange, recordTick, runHistory, undoNotice } from "./after-write";
 import type { HistoryStep, PlanHistory } from "./plan-history";
 import { askTickSubs, type TickChoice } from "./tick-subs-ui";
-import { addAfter, canLink, nestAction, removeAfter, removeItem, type NestVerdict } from "./plan-link";
+import { addAfter, canLink, nestAction, planInsert, removeAfter, removeItem, type NestVerdict } from "./plan-link";
+import { insertBetween, nextGroup } from "./add-after";
 import { rememberText } from "./after-bridge";
 
 export interface MapOptions {
   app: App;
   /** The note the map is drawn in (to resolve links). */
   sourcePath: string;
-  /** Parents whose subtask list is open, kept by the block across redraws. */
-  expanded: Set<string>;
+  /** Parents whose subtask list the user closed, kept by the block across redraws (every list starts open). */
+  collapsed: Set<string>;
   /** Which way the map runs (the setting, or what the toggle on the map was last set to for this note). */
   direction: Direction;
   /** How big the map is drawn: 1 = normal (for the open note, not saved). Left out = 1. */
@@ -26,14 +27,32 @@ export interface MapOptions {
   /** Opens or closes the problems list and draws the map again. */
   showProblems: (open: boolean) => void;
   /** "+ add after this": dropped on the box that shows while a node is dragged; asks which to-do comes after `from` (search the vault, or make a new one). Left out: no box. */
-  addAfter?: (from: string) => void;
+  addAfter?: (from: string, at?: { left: number; bottom: number }) => void;
+  /** Insert between two: asks which to-do goes between `a` and `b` (the arrow a → b): from the + on an arrow (a click, or dropped on its "+ new here" box) and the arrow's menu. Left out: no box, no menu entry. */
+  insertBetween?: (a: string, b: string, at?: { left: number; bottom: number }) => void;
+  /** The + after button on a card: asks for a to-do to go between the card and everything that comes after it (just after it when nothing does). `at`: under the button. Left out: no button. */
+  insertAfter?: (from: string, at?: { left: number; bottom: number }) => void;
+  /** The + before button on a card: asks for a to-do to go between the card's predecessors and the card (the card's first step when nothing is before it). `at`: under the button. Left out: no button. */
+  insertBefore?: (b: string, at?: { left: number; bottom: number }) => void;
+  /** The box shown when the project has no to-dos: makes a to-do in this project. Left out: no box. */
+  newTodo?: () => void;
   /** Draws the map again (after a list was opened or closed). */
   redraw: () => void;
+}
+
+/** The small + on a card: on its right side (below the dot) when something comes after it, a new to-do goes between the card and everything after it; on its left side, a new to-do goes between the card's predecessors and the card. The button takes the focus first, so the window opens under it. */
+function plusButton(card: HTMLElement, path: string, o: MapOptions, side: "before" | "after"): void {
+  const label = side === "after" ? "Add a to-do between this one and the ones after it" : "Add a to-do before this one";
+  const b = card.createEl("button", { cls: side === "after" ? "vt-map-plus vt-map-plus-after" : "vt-map-plus vt-map-plus-before", text: "+", attr: { "aria-label": label } });   // one tooltip: Obsidian shows the aria-label, a title as well shows twice
+  b.addEventListener("mousedown", stopEvent);
+  b.addEventListener("click", e => { stopEvent(e); b.focus(); const r = b.getBoundingClientRect(); (side === "after" ? o.insertAfter : o.insertBefore)?.(path, { left: r.left, bottom: r.bottom }); });
 }
 
 /** Opens a to-do: a click, Ctrl / Cmd-click for a new tab. */
 /** Height of one subtask line, for the room under the map. */
 const SUB_LINE_H = 26;
+/** Room an open list of `n` subtasks needs under its card, on top of the usual gap to the next row. */
+const listRoom = (n: number): number => n * SUB_LINE_H + 12;
 const stopEvent = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
 const open = (o: MapOptions, path: string, newTab: PaneType | boolean): void => { void o.app.workspace.openLinkText(path, o.sourcePath, newTab); };
 
@@ -87,6 +106,14 @@ async function link(o: MapOptions, from: string, to: string): Promise<void> {
   undoNotice("Linked.", () => runHistory(o.app, o.history, "undo", step));
 }
 
+/** Puts the to-do `n` between `a` and `b` (their arrow) and offers Undo. */
+async function insertTodo(o: MapOptions, plan: Plan, a: string, b: string, n: string): Promise<void> {
+  const step = await insertBetween(o.app, o.history, plan, a, b, n, nextGroup());
+  if (!step) return;
+  const name = (p: string): string => plan.rows.find(r => r.path === p)?.name ?? p;
+  undoNotice(`"${name(n)}" now sits between "${name(a)}" and "${name(b)}".`, () => runHistory(o.app, o.history, "undo", step));
+}
+
 /** Removes the link "`to` comes after `from`" and offers Undo. */
 async function unlink(o: MapOptions, from: string, to: string): Promise<void> {
   const step = await recordChange(o.app, o.history, to, "after", "Link removed", v => removeAfter(v, namesOf(from)));
@@ -108,21 +135,37 @@ function autoScroll(scroller: HTMLElement | null, pointer: () => { x: number; y:
 }
 
 const ADD_W = 130, ADD_H = 54;
+/** How long the pointer rests on a card before the rest of the map dims, and how long the dimming stays after it leaves (ms). */
+const HOVER_DELAY = 175, HOVER_CLEAR = 150;
 
-/** Where the "+ add after this" box goes while `source` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. In client coordinates. */
-function addBoxSpot(wrap: HTMLElement, source: HTMLElement, direction: Direction): { x: number; y: number } {
-  const w = wrap.getBoundingClientRect(), s = source.getBoundingClientRect();
-  const others: DOMRect[] = [];
-  wrap.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (el !== source) others.push(el.getBoundingClientRect()); });
+export interface Box { left: number; right: number; top: number; bottom: number; width: number; height: number }
+
+/** Where the "+ add after this" box goes while `s` (the card or tile being dragged from) is dragged: right of it (below it in the top-to-bottom layout) when that spot is free, else the other side, else the right edge of the map. For the "+ new here" box `s` is the point grabbed on an arrow (zero size): right, below, left, above that point, else the point itself, kept inside the map (never the far edge). Pure; client coordinates. */
+export function chooseBoxSpot(w: Box, others: Box[], s: Box, direction: Direction): { x: number; y: number } {
+  const grab = s.width === 0 && s.height === 0;
   const right = { x: s.right + 16, y: s.top + (s.height - ADD_H) / 2 }, below = { x: s.left + (s.width - ADD_W) / 2, y: s.bottom + 16 };
-  const edge = { x: w.right - ADD_W - 12, y: Math.min(Math.max(s.top, w.top), w.bottom - ADD_H) };
-  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom
+  const slack = 14;   // the box may stick out above / below the map a little: beside a lone Not linked tile the map is only as tall as the tile
+  const free = (p: { x: number; y: number }): boolean => p.x >= w.left && p.y >= w.top - slack && p.x + ADD_W <= w.right && p.y + ADD_H <= w.bottom + slack
     && !others.some(o => p.x < o.right + 6 && p.x + ADD_W > o.left - 6 && p.y < o.bottom + 6 && p.y + ADD_H > o.top - 6);
+  if (grab) {
+    const left = { x: s.left - 16 - ADD_W, y: right.y }, above = { x: below.x, y: s.top - 16 - ADD_H };
+    const near = [direction === "down" ? below : right, direction === "down" ? right : below, left, above].find(free);
+    if (near) return near;
+    return { x: Math.min(Math.max(right.x, w.left), w.right - ADD_W), y: Math.min(Math.max(right.y, w.top), w.bottom - ADD_H) };
+  }
+  const edge = { x: w.right - ADD_W - 12, y: Math.min(Math.max(s.top, w.top), w.bottom - ADD_H) };
   return [direction === "down" ? below : right, direction === "down" ? right : below].find(free) ?? edge;
 }
 
+function addBoxSpot(wrap: HTMLElement, s: Box, source: HTMLElement | null, direction: Direction): { x: number; y: number } {
+  const others: DOMRect[] = [];
+  wrap.querySelectorAll<HTMLElement>("[data-plan-path]").forEach(el => { if (el !== source) others.push(el.getBoundingClientRect()); });
+  return chooseBoxSpot(wrap.getBoundingClientRect(), others, s, direction);
+}
+
 /** Makes `dot` a handle: dragging from it onto another card or Not linked row makes that to-do come after `from`; onto the "+ add after this" box that shows meanwhile asks for one (or a new one). A line follows the pointer; Esc cancels. */
-function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement, from: string): void {
+function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, handle: HTMLElement | SVGElement, from: string, ins?: { b: string; onClick: (e: MouseEvent) => void }): void {
+  const dot = handle as HTMLElement;   // an SVG arrow takes the same pointer events
   const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
   dot.addEventListener("click", stop);
   dot.addEventListener("mousedown", stop);   // Live Preview opens a code block for editing on a click inside it
@@ -137,22 +180,26 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
     let pointer = { x: down.clientX, y: down.clientY };
     let over: HTMLElement | null = null;
     let addBox: HTMLElement | null = null;
-    if (o.addAfter && dot.parentElement) {
-      const spot = addBoxSpot(wrap, dot.parentElement, o.direction), p0 = at(spot.x, spot.y);
-      addBox = wrap.createDiv({ cls: "vt-map-addbox", text: "+ add after this" });
+    const source = ins ? null : dot.parentElement;   // a card's dot is dragged from the card; an arrow is grabbed where the pointer went down
+    const scroller = wrap.querySelector<HTMLElement>(".vt-map-scroll");
+    const scroll0 = { x: scroller?.scrollLeft ?? 0, y: scroller?.scrollTop ?? 0 };
+    if ((ins ? o.insertBetween : o.addAfter) && (ins || source)) {
+      const grab = { left: down.clientX, right: down.clientX, top: down.clientY, bottom: down.clientY, width: 0, height: 0 };
+      const spot = addBoxSpot(wrap, ins ? grab : source!.getBoundingClientRect(), source, o.direction), p0 = at(spot.x, spot.y);
+      addBox = wrap.createDiv({ cls: "vt-map-addbox", text: ins ? "+ new here" : "+ add after this" });
       addBox.setCssProps({ "--vt-add-x": `${p0.x}px`, "--vt-add-y": `${p0.y}px`, "--vt-add-w": `${ADD_W}px`, "--vt-add-h": `${ADD_H}px` });
     }
     const overBox = (): boolean => !!addBox && dot.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest(".vt-map-addbox") === addBox;
     const targetAt = (e: PointerEvent): HTMLElement | null => {
       const t = dot.ownerDocument.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-plan-path]") ?? null;
-      return t && t.dataset.planPath !== from ? t : null;
+      return t && t.dataset.planPath !== from && t.dataset.planPath !== ins?.b ? t : null;
     };
-    const scroller = wrap.querySelector<HTMLElement>(".vt-map-scroll");
-    const place = (): void => {   // the line runs from the dot (it moves when the map scrolls) to the pointer
-      const d = dot.getBoundingClientRect(), s = at(d.left + d.width / 2, d.top + d.height / 2), p = at(pointer.x, pointer.y);
+    const place = (): void => {   // the line runs from the dot (it moves when the map scrolls; a grabbed arrow's point moves with the scroll) to the pointer
+      const d = dot.getBoundingClientRect();
+      const s = ins ? at(down.clientX - ((scroller?.scrollLeft ?? 0) - scroll0.x), down.clientY - ((scroller?.scrollTop ?? 0) - scroll0.y)) : at(d.left + d.width / 2, d.top + d.height / 2), p = at(pointer.x, pointer.y);
       line.setAttr("x1", String(s.x)); line.setAttr("y1", String(s.y)); line.setAttr("x2", String(p.x)); line.setAttr("y2", String(p.y));
       const t = dot.ownerDocument.elementFromPoint(pointer.x, pointer.y)?.closest<HTMLElement>("[data-plan-path]") ?? null;
-      const target = t && t.dataset.planPath !== from ? t : null;
+      const target = t && t.dataset.planPath !== from && t.dataset.planPath !== ins?.b ? t : null;
       if (target !== over) { over?.removeClass("vt-map-drop"); over = target; over?.addClass("vt-map-drop"); }
       addBox?.toggleClass("vt-map-drop", overBox());
     };
@@ -164,10 +211,23 @@ function dragLink(wrap: HTMLElement, plan: Plan, o: MapOptions, dot: HTMLElement
       over?.removeClass("vt-map-drop");
       if (e) pointer = { x: e.clientX, y: e.clientY };
       const onBox = !!e && overBox();
+      const boxRect = addBox?.getBoundingClientRect();   // the window opens under the box, not dimmed (the window rule in docs/design-standard.md)
+      const where = boxRect ? { left: boxRect.left, bottom: boxRect.bottom } : undefined;
       addBox?.remove();
-      if (onBox) { svg.remove(); o.addAfter?.(from); return; }
+      if (onBox) { svg.remove(); if (ins) o.insertBetween?.(from, ins.b, where); else o.addAfter?.(from, where); return; }
       const target = e ? targetAt(e) : null, to = target?.dataset.planPath;
-      if (!target || !to) { svg.remove(); return; }
+      if (!target || !to) {
+        svg.remove();
+        if (e && ins && Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) < 4) ins.onClick(e);   // a click on the arrow, not a drag: its menu
+        return;
+      }
+      if (ins) {
+        const v = planInsert(plan, from, ins.b, to).verdict;
+        if (v !== "ok") { svg.remove(); new Notice(v === "loop" ? "That would make a loop: the other to-do already comes before this one." : v === "self" ? "Drop it on a to-do other than the two it goes between." : "Those two are not linked any more."); return; }
+        svg.remove();
+        insertTodo(o, plan, from, ins.b, to).catch(() => { new Notice("Could not insert that to-do."); });
+        return;
+      }
       const verdict = canLink(plan, from, to);
       if (verdict !== "ok") {
         svg.remove();
@@ -266,10 +326,10 @@ function dragNest(wrap: HTMLElement, plan: Plan, o: MapOptions, grip: HTMLElemen
 function subsToggle(parent: HTMLElement, row: PlanRow, o: MapOptions): void {
   const { text, allDone } = subsLabel(row);
   if (!text) return;
-  const open = o.expanded.has(row.path);
+  const open = !o.collapsed.has(row.path);
   const b = parent.createEl("button", { cls: allDone ? "vt-map-subs-toggle vt-map-subsdone" : row.done ? "vt-map-subs-toggle vt-map-subsopen" : "vt-map-subs-toggle", text: `${open ? "\u25be" : "\u25b8"} ${allDone ? "\u2713 " : ""}${text}`, attr: { "aria-label": "Subtasks", title: allDone ? "All subtasks done" : "Subtasks" } });
   b.addEventListener("mousedown", stopEvent);
-  b.addEventListener("click", e => { stopEvent(e); if (open) o.expanded.delete(row.path); else o.expanded.add(row.path); o.redraw(); });
+  b.addEventListener("click", e => { stopEvent(e); if (open) o.collapsed.add(row.path); else o.collapsed.delete(row.path); o.redraw(); });
 }
 
 /** The open list of a parent's subtasks: each with a tick circle (ticks and unticks) and its name (click opens). */
@@ -387,9 +447,14 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
   const wrap = box.createDiv({ cls: "vt-map" });
   const flagged = new Map<string, PlanIssue[]>();   // the problems of each to-do that has any: its ⚠
   for (const is of plan.issues) for (const p of is.paths) flagged.set(p, [...(flagged.get(p) ?? []), is]);
+  if (!map.cards.length && !map.unlinked.length && o.newTodo) {
+    const empty = wrap.createDiv({ cls: "vt-map-empty", text: "+ New to-do for this project", attr: { role: "button", tabindex: "0" } });
+    empty.addEventListener("click", () => { o.newTodo?.(); });
+    empty.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); o.newTodo?.(); } });
+  }
   if (map.cards.length) {
-    const openLists = map.cards.filter(c => o.expanded.has(c.path) && c.row.subs.length);
-    const g = mapGeometry(map, openLists.length ? Math.max(...openLists.map(c => c.row.subs.length)) * SUB_LINE_H + 12 : 0, o.direction);
+    const room = new Map(map.cards.filter(c => !o.collapsed.has(c.path) && c.row.subs.length).map(c => [c.path, listRoom(c.row.subs.length)] as const));   // an open list floats under its card: the rows below make way
+    const g = mapGeometry(map, 0, o.direction, room);
     if (o.direction === "down") wrap.addClass("vt-map-down");
     const scroller = wrap.createDiv({ cls: "vt-map-scroll" });
     const canvas = scroller.createDiv({ cls: "vt-map-canvas" });
@@ -401,19 +466,24 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (c.via) visible.addClass("vt-map-arrow-via");   // one class in `cls`: createSvg may refuse a class with a space, and a throw empties the whole block
       arrows.set(visible, c);
       if (c.via) continue;   // drawn to the parent card for a subtask's link: not a link of its own, so nothing to remove here
-      const hit = svg.createSvg("path", { cls: "vt-map-arrow-hit", attr: { d: c.d } });   // a wide invisible stroke to click on
-      hit.addEventListener("click", e => {
-        stopEvent(e);
+      const hit = svg.createSvg("path", { cls: "vt-map-arrow-hit", attr: { d: c.d } });   // a wide invisible stroke to click and drag on
+      const menu = (e: MouseEvent): void => {
         const m = new Menu();
+        if (o.insertBetween) m.addItem(i => i.setTitle("Insert a to-do here…").setIcon("plus").onClick(() => o.insertBetween?.(c.from, c.to, { left: e.clientX, bottom: e.clientY + 4 })));
         m.addItem(i => i.setTitle("Remove link").setIcon("unlink").onClick(() => {
           visible.addClass("vt-map-hidden"); hit.addClass("vt-map-hidden");
           unlink(o, c.from, c.to).catch(() => { visible.removeClass("vt-map-hidden"); hit.removeClass("vt-map-hidden"); new Notice("Could not remove that link."); });
         }));
         m.showAtMouseEvent(e);
-      });
+      };
+      hit.addEventListener("mouseenter", () => visible.addClass("vt-map-hl"));   // which arrow the pointer is on, when many cross
+      hit.addEventListener("mouseleave", () => visible.removeClass("vt-map-hl"));
       hit.addEventListener("mousedown", stopEvent);
+      if (o.insertBetween) dragLink(wrap, plan, o, hit, c.from, { b: c.to, onClick: menu });   // drag from anywhere on the arrow onto a to-do to put it between the two; a click opens the menu
+      else hit.addEventListener("click", e => { stopEvent(e); menu(e); });
     }
     const cards = new Map<string, HTMLElement>();
+    const hover = { apply: 0, clear: 0 };   // the pending timers of the highlight under the pointer
     for (const c of map.cards) {
       const r = c.row, p = g.pos.get(c.path)!;
       const el = canvas.createDiv({ cls: ["vt-map-card", r.blocked ? "vt-map-blocked" : "", map.cyclic.has(c.path) ? "vt-map-cyclic" : ""].filter(Boolean).join(" ") });
@@ -421,9 +491,11 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       el.dataset.planPath = c.path;
       dragNest(wrap, plan, o, el.createDiv({ cls: "vt-map-grip", attr: { "aria-label": "Drag onto a to-do to make a subtask" } }), c.path, el);
       dragLink(wrap, plan, o, el.createDiv({ cls: "vt-map-handle", attr: { "aria-label": "Drag onto another to-do to link it after this one" } }), c.path);
+      if (o.insertBefore) plusButton(el, c.path, o, "before");
+      if (o.insertAfter && plan.rows.some(x => x.parent === null && x.afterPaths.includes(c.path))) plusButton(el, c.path, o, "after");   // only a card with something after it: with nothing after, the dot's "+ add after this" is the way
       tickButton(el, r, o, true);
       warnMark(box, wrap, el, plan, o, flagged.get(c.path));
-      el.createDiv({ cls: "vt-map-title", text: r.name });
+      el.createDiv({ cls: "vt-map-title", text: r.name, attr: { title: r.name } });
       const meta = el.createDiv({ cls: "vt-map-meta" });
       if (r.priority) meta.createSpan({ cls: "vt-badge vt-planned", text: `P${r.priority}` });
       if (r.due) meta.createSpan({ cls: "vt-muted", text: r.due });
@@ -438,17 +510,25 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       if (r.result) el.createDiv({ cls: "vt-muted vt-map-result", text: `→ ${r.result}`, attr: { title: r.result } });   // cut with an ellipsis (clear of the subtask toggle); the whole text on hover
       if (r.subs.length) el.addClass("vt-map-has-subs");
       subsToggle(el, r, o);
-      if (o.expanded.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs", { wrap, plan });
+      if (!o.collapsed.has(c.path) && r.subs.length) subsList(el, r, o, "vt-map-subs", { wrap, plan });
       el.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       el.addEventListener("contextmenu", e => menu(o, e, r));
       el.addEventListener("mouseenter", () => {   // the card and everything before and after it; the rest is dimmed (desktop only: a phone has no hover)
-        const chain = chainOf(plan, c.path);
-        for (const [path, other] of cards) { const on = path === c.path || chain.has(path); other.toggleClass("vt-map-hl", on); other.toggleClass("vt-map-dim", !on); }
-        for (const [a, link] of arrows) { const on = (link.from === c.path || chain.has(link.from)) && (link.to === c.path || chain.has(link.to)); a.classList.toggle("vt-map-hl", on); a.classList.toggle("vt-map-dim", !on); }
+        window.clearTimeout(hover.clear);   // only after the pointer has rested on the card: sweeping across the map does not flash
+        window.clearTimeout(hover.apply);
+        hover.apply = window.setTimeout(() => {
+          const chain = chainOf(plan, c.path);
+          for (const [path, other] of cards) { const on = path === c.path || chain.has(path); other.toggleClass("vt-map-hl", on); other.toggleClass("vt-map-dim", !on); }
+          for (const [a, link] of arrows) { const on = (link.from === c.path || chain.has(link.from)) && (link.to === c.path || chain.has(link.to)); a.classList.toggle("vt-map-hl", on); a.classList.toggle("vt-map-dim", !on); }
+        }, HOVER_DELAY);
       });
       el.addEventListener("mouseleave", () => {
-        for (const other of cards.values()) { other.removeClass("vt-map-hl"); other.removeClass("vt-map-dim"); }
-        for (const a of arrows.keys()) { a.classList.remove("vt-map-hl", "vt-map-dim"); }
+        window.clearTimeout(hover.apply);
+        window.clearTimeout(hover.clear);
+        hover.clear = window.setTimeout(() => {   // a short grace: moving on to the next card keeps the highlight until the new one is drawn
+          for (const other of cards.values()) { other.removeClass("vt-map-hl"); other.removeClass("vt-map-dim"); }
+          for (const a of arrows.keys()) { a.classList.remove("vt-map-hl", "vt-map-dim"); }
+        }, HOVER_CLEAR);
       });
       cards.set(c.path, el);
     }
@@ -459,8 +539,8 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
   }
   if (map.unlinked.length) {   // small tiles in a wrapping grid: the strip (subtask drag) on the left, the node ("comes after" drag) on the right, the full name on hover
     const side = wrap.createDiv({ cls: "vt-map-unlinked" });
-    const room = Math.max(0, ...map.unlinked.filter(r => o.expanded.has(r.path)).map(r => r.subs.length));
-    if (room) side.setCssProps({ "--vt-map-tile-room": `${room * SUB_LINE_H + 12}px` });   // a subtask list floats under its tile: keep clear of what comes after
+    const tileRoom = Math.max(0, ...map.unlinked.filter(r => !o.collapsed.has(r.path)).map(r => r.subs.length));
+    if (tileRoom) side.setCssProps({ "--vt-map-tile-room": `${listRoom(tileRoom)}px` });   // a subtask list floats under its tile: keep clear of what comes after
     side.createDiv({ cls: "vt-map-unlinked-title", text: "Not linked" });
     const grid = side.createDiv({ cls: "vt-map-tiles" });
     for (const r of map.unlinked) {
@@ -472,7 +552,7 @@ export function drawPlanMap(box: HTMLElement, plan: Plan, map: PlanMap, o: MapOp
       warnMark(box, wrap, tile, plan, o, flagged.get(r.path));
       subsToggle(tile, r, o);
       tickButton(tile, r, o, false);
-      if (o.expanded.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });
+      if (!o.collapsed.has(r.path) && r.subs.length) subsList(tile, r, o, "vt-map-subs", { wrap, plan });
       tile.addEventListener("click", e => { e.preventDefault(); open(o, r.path, Keymap.isModEvent(e)); });
       tile.addEventListener("contextmenu", e => menu(o, e, r, plan));
     }

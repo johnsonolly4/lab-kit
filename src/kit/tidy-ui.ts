@@ -11,7 +11,7 @@ import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, se
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
 import { ymd } from "../planning/todo";
-import { WIN_MARK, winFoot, winIntro, winSummary } from "./window-look";
+import { WIN_MARK, cardWindow, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
 /** What the Tidy up notes window needs from the plugin. */
 export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
@@ -73,6 +73,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     migrations,
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
     projectsFolder: planningOn ? pf.projects : undefined,
+    buttonFolders: planningOn ? [pf.planning, pf.projects, pf.meetings, pf.daily] : undefined,
     hubTemplates: planningOn ? hubTemplates(host) : undefined,
     projectHubText: planningOn ? (host.planning?.bundle.contents?.["tpl-project-hub-md"] ?? "").replace(/\r\n/g, "\n").split("-%>\n")[1] : undefined,
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
@@ -105,6 +106,7 @@ export class TidyNotesModal extends Modal {
   onOpen(): void {
     this.modalEl.addClass("mod-wide");
     this.contentEl.addClass("lab-kit-tidy");
+    cardWindow(this);
     this.setTitle("Tidy up notes");
     this.contentEl.createEl("p", { text: "Reading your notes…" });
     void this.load().then(() => {
@@ -196,8 +198,7 @@ export class TidyNotesModal extends Modal {
         batchBoxes.push(sync);
         all.addEventListener("change", () => setNotes(indices, all.checked));
         this.change(block, line, c);
-        const notes = block.createEl("details", { cls: "lab-kit-tidy-notes" });
-        notes.createEl("summary", { text: `Notes (${indices.length})` });
+        const { body: notes } = winFold(block, { title: "Notes", count: indices.length, open: false });
         for (const i of indices) {
           const row = notes.createDiv({ cls: "lab-kit-tidy-path" });
           single(row, i);
@@ -258,8 +259,7 @@ export class TidyNotesModal extends Modal {
         : "The page is replaced by the kit's template. Nothing of yours is removed." });
       for (const l of s.lost) box.createDiv({ cls: "lab-kit-tidy-line is-removed", text: l });
       const page = c.after.replace(/\r\n/g, "\n").trim();
-      const more = box.createEl("details", { cls: "lab-kit-tidy-notes" });
-      more.createEl("summary", { text: `New page (${page.split("\n").length} lines)` });
+      const { body: more } = winFold(box, { title: "New page", count: `${page.split("\n").length} lines`, open: false });
       more.createEl("pre", { cls: "lab-kit-tidy-newpage", text: page });
       return;
     }
@@ -274,18 +274,21 @@ export class TidyNotesModal extends Modal {
     const grid = el.createDiv({ cls: "lab-kit-tidy-diff" });
     grid.createDiv({ cls: "lab-kit-tidy-head", text: "Before" });
     grid.createDiv({ cls: "lab-kit-tidy-head", text: "After" });
-    const draw = (into: HTMLElement, row: DiffRow): void => {
+    const draw = (into: HTMLElement, row: DiffRow, folded?: HTMLElement[]): void => {
       const cls = row.kind === "changed" ? "is-changed" : row.kind === "same" ? "is-same" : null;
-      const cell = (text: string | null, side: "removed" | "added"): void => { into.createDiv({ cls: `lab-kit-tidy-line ${text === null ? "is-empty" : cls ?? `is-${side}`}`, text: text ?? "" }); };
+      const cell = (text: string | null, side: "removed" | "added"): void => {
+        const el = into.createDiv({ cls: `lab-kit-tidy-line ${text === null ? "is-empty" : cls ?? `is-${side}`}`, text: text ?? "" });
+        if (folded) { el.addClass("is-folded"); folded.push(el); }
+      };
       cell(row.left, "removed");
       cell(row.right, "added");
     };
     for (const row of foldRows(diffRows(c.before, c.after))) {
       if (row.kind !== "fold") { draw(grid, row); continue; }
       const open = grid.createEl("button", { cls: "lab-kit-tidy-fold", text: `… ${row.rows.length} unchanged lines` });
-      const more = grid.createDiv({ cls: "lab-kit-tidy-more" });
-      for (const r of row.rows) draw(more, r);
-      open.addEventListener("click", () => { more.addClass("is-open"); open.remove(); });
+      const folded: HTMLElement[] = [];
+      for (const r of row.rows) draw(grid, r, folded);
+      open.addEventListener("click", () => { for (const el of folded) el.removeClass("is-folded"); open.remove(); });
     }
   }
 

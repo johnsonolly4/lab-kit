@@ -7,7 +7,10 @@ cssclasses:
   - vt
 ---
 
-`BUTTON[todo, go-todo]`
+```vault-card
+show: button-bar
+ids: todo, go-todo
+```
 
 > [!planning] Planned for today
 > ```dataview

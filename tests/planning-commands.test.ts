@@ -12,6 +12,14 @@ import { embeddedKit } from "../scripts/embed-kit.mjs";
 // The text box, the picker and Templater are Obsidian's: the tests answer the boxes and record what the template is handed.
 const answers: unknown[] = [];
 vi.mock("../src/planning/ask", () => ({ ask: async () => answers.shift() ?? null, pick: async () => answers.shift() ?? null }));
+// The entry window: the tests queue what was typed; a failed check (a taken name) moves on to the next answer, as the user typing again would.
+type Answer = { title: string; values: Record<string, unknown> } | null;
+const windows: Answer[] = [];
+vi.mock("../src/planning/entry-window", () => ({
+  openEntry: async (_app: unknown, _heading: string, _fields: unknown, initial: { validate?: (a: NonNullable<Answer>) => string | null } = {}) => {
+    for (;;) { const a = windows.shift() ?? null; if (!a || !initial.validate?.(a)) return a; }
+  },
+}));
 const created: { template: string; folder: string; handoff: unknown }[] = [];
 vi.mock("../src/kit/obsidian-private", () => ({
   hasTemplater: () => true,
@@ -30,7 +38,7 @@ const actions = buttons.buttonTemplates.flatMap(b => b.actions.map(a => ({ butto
 /** The command IDs a fake plugin is asked to register. */
 function registered(): string[] {
   const ids: string[] = [];
-  const plugin = { app: {}, addCommand: (c: { id: string }) => { ids.push(c.id); } };
+  const plugin = { app: {}, register: () => undefined, addCommand: (c: { id: string }) => { ids.push(c.id); } };
   new PlanningCommands(plugin as never, null as never, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} }).register();
   return ids;
 }
@@ -102,10 +110,10 @@ describe("New meeting series command", () => {
     const plugin = { app, addCommand: () => undefined };
     return new PlanningCommands(plugin as never, () => null, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} });
   };
-  beforeEach(() => { answers.length = 0; created.length = 0; });
+  beforeEach(() => { answers.length = 0; windows.length = 0; created.length = 0; });
 
-  it("asks name, interval, day, first date, deck path and hands them to the Meeting series template", async () => {
-    answers.push("Group: meeting", "fortnightly", 4, "2026-10-15", '"C:\\Decks\\group.pptx"', "[[My meeting]]");
+  it("the window's name, interval, first date, deck and template go to the Meeting series template; the day is the first date's weekday", async () => {
+    windows.push({ title: "Group: meeting", values: { interval: "fortnightly", date: "2026-10-15", deck: '"C:\\Decks\\group.pptx"', template: "[[My meeting]]" } });
     await makeCommands().newSeries();
     expect(created).toHaveLength(1);
     expect(created[0].template).toBe(tpl.path);
@@ -114,21 +122,15 @@ describe("New meeting series command", () => {
     expect(window).not.toHaveProperty("vtSeries");   // the hand-over is gone afterwards
   });
 
-  it("Esc at any box makes nothing", async () => {
-    answers.push("Group meeting", "weekly", null);
+  it("Esc in the window makes nothing", async () => {
+    windows.push(null);
     await makeCommands().newSeries();
     expect(created).toEqual([]);
   });
 
-  it("a name already used (series or folder) is asked again; the wrong weekday is asked again", async () => {
-    answers.push("weekly meetings", "Journal club", "monthly", 3, "2026-10-15", "2026-10-14", "", "");
+  it("a name already used (series or folder) is refused and the window asks again; a typed number of weeks is that many weeks", async () => {
+    windows.push({ title: "weekly meetings", values: { interval: "weekly", date: "2026-10-14" } }, { title: "Journal club", values: { interval: "5", date: "2026-10-14" } });
     await makeCommands(["08 Meetings/Weekly meetings/Weekly meetings.md"]).newSeries();
-    expect(created[0].handoff).toMatchObject({ name: "Journal club", interval: "monthly", day: "Wed", start: "2026-10-14", deck: "", template: "" });
-  });
-
-  it("Esc at the template box makes nothing", async () => {
-    answers.push("Group meeting", "weekly", 4, "2026-10-15", "", null);
-    await makeCommands().newSeries();
-    expect(created).toEqual([]);
+    expect(created[0].handoff).toMatchObject({ name: "Journal club", interval: "every 5 weeks", day: "Wed", start: "2026-10-14", deck: "", template: "" });
   });
 });

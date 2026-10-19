@@ -2,7 +2,7 @@
 // Nothing is written until Apply; the file never gets conflict markers (the preview marks undecided hunks, the file does not).
 import { ButtonComponent, Modal, Setting, type App } from "obsidian";
 import { mergeRegions, resolveRegions, type HunkChoice, type Region } from "./merge";
-import { winFoot, winIntro, winSummary } from "./window-look";
+import { cardWindow, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
 export interface MergeInputs {
   dest: string;
@@ -47,6 +47,7 @@ export class KitMergeModal extends Modal {
     const { contentEl, input } = this;
     this.titleEl.setText("Resolve conflict");
     contentEl.addClass("lab-kit-modal");
+    cardWindow(this);
     contentEl.createEl("p", { cls: "setting-item-description" }).createEl("code", { text: input.dest });
     if (input.isScript) contentEl.createEl("p", { text: "This is code. After merging, please test it. Taking the kit's version is the safe choice.", cls: "mod-warning" });
 
@@ -59,10 +60,8 @@ export class KitMergeModal extends Modal {
       winSummary(contentEl, `${this.conflicts.length} ${this.conflicts.length === 1 ? "place" : "places"} to decide.`);
       winIntro(contentEl, "You and the kit changed the same lines in each of these. Decide each one, then Apply.");
       this.conflicts.forEach((c, i) => this.renderHunk(contentEl.createDiv({ cls: "lab-kit-hunk" }), i, c));
-      const det = contentEl.createEl("details", { cls: "lab-kit-group" });
-      det.open = true;
-      det.createEl("summary", { text: "Preview of the file" });
-      this.previewEl = det.createEl("pre", { cls: "lab-kit-preview" });
+      const { body } = winFold(contentEl, { title: "Preview of the file", open: true });
+      this.previewEl = body.createEl("pre", { cls: "lab-kit-preview" });
     }
 
     new Setting(contentEl).setName("Keep all mine").setDesc("Your file stays exactly as it is, and counts as based on the new kit version.")

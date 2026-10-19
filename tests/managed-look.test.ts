@@ -23,6 +23,10 @@ describe("kit file windows: marks and summary", () => {
     expect(reviewSummary([item("create"), item("fast-forward"), item("merge")])).toBe("3 files to update.");
     expect(reviewSummary([item("fast-forward"), item("needs-merge")])).toBe("1 file to update, 1 conflict.");
     expect(reviewSummary([item("needs-merge"), item("needs-merge")])).toBe("2 conflicts.");
+    // kept notes the kit has a newer version of count as waiting (the window lists them under "Needs an update")
+    const newer = (i: ManagedItem): boolean => i.action === "keep";
+    expect(reviewSummary([item("keep"), item("keep"), item("up-to-date")], newer)).toBe("2 files to update.");
+    expect(reviewSummary([item("keep"), item("up-to-date")], () => false)).toBe("Everything is up to date.");
   });
 
   it("the report: written files count, left-alone and already-right do not", () => {

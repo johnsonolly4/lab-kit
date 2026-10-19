@@ -162,12 +162,18 @@ const cubic = (p: Pt, q: Pt, r: Pt, s: Pt, t: number): Pt => {
 const line = (p: Pt, q: Pt, n: number): Pt[] => Array.from({ length: n + 1 }, (_, i) => ({ x: p.x + (q.x - p.x) * i / n, y: p.y + (q.y - p.y) * i / n }));
 
 /** Pixels for a layout. `across`: steps left to right, places top to bottom. `down`: steps top to bottom, places left to right.
- *  An arrow that skips steps and would run behind a card in between is sent through a lane between rows (columns in `down`). `extraHeight`: room under the lowest card. */
-export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction = "across"): MapGeometry {
+ *  An arrow that skips steps and would run behind a card in between is sent through a lane between rows (columns in `down`). `extraHeight`: room under the lowest card.
+ *  `room`: pixels an open subtask list needs under a card; the rows below move down by the most any card of the row above needs (rows run top to bottom in `across`, steps in `down`). */
+export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction = "across", room?: ReadonlyMap<string, number>): MapGeometry {
   const across = direction === "across";
+  const rows = map.cards.length ? Math.max(...map.cards.map(c => (across ? c.place : c.step))) + 1 : 0;
+  const rowRoom = Array.from({ length: rows + 1 }, () => 0);
+  for (const c of map.cards) { const r = across ? c.place : c.step; rowRoom[r] = Math.max(rowRoom[r], room?.get(c.path) ?? 0); }
+  const off = [0];   // off[k]: room taken by the rows above row k
+  for (let k = 0; k < rows; k++) off.push(off[k] + rowRoom[k]);
   const pos = new Map<string, Pt>();
   for (const c of map.cards) {
-    pos.set(c.path, across ? { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) } : { x: PAD + c.place * (CARD_W + GAP_Y), y: PAD + c.step * (CARD_H + GAP_X) });
+    pos.set(c.path, across ? { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) + off[c.place] } : { x: PAD + c.place * (CARD_W + GAP_Y), y: PAD + c.step * (CARD_H + GAP_X) + off[c.step] });
   }
   const steps = map.cards.length ? Math.max(...map.cards.map(c => c.step)) + 1 : 0;
   const places = map.cards.length ? Math.max(...map.cards.map(c => c.place)) + 1 : 0;
@@ -176,7 +182,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
   const crossOf = (p: Pt): number => (across ? p.y : p.x);
   const at = (a: number, c: number): Pt => (across ? { x: a, y: c } : { x: c, y: a });
   const crossSize = across ? CARD_H : CARD_W;
-  const lane = (k: number): number => PAD + k * (crossSize + GAP_Y) - GAP_Y / 2;   // between rows (columns); k = 0 above the first, `places` below the last
+  const lane = (k: number): number => PAD + k * (crossSize + GAP_Y) - GAP_Y / 2 + (across ? off[k] : 0);   // between rows (columns); k = 0 above the first, `places` below the last
 
   const hitsCard = (pts: Pt[], f: string, t: string): boolean => {
     const lo = Math.min(stepOf.get(f)!, stepOf.get(t)!), hi = Math.max(stepOf.get(f)!, stepOf.get(t)!);
@@ -214,7 +220,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
   });
   return {
     width: steps ? (across ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 2 * PAD + places * CARD_W + (places - 1) * GAP_Y) : 0,
-    height: steps ? (across ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y : 2 * PAD + steps * CARD_H + (steps - 1) * GAP_X) + extraHeight : 0,
+    height: steps ? (across ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y : 2 * PAD + steps * CARD_H + (steps - 1) * GAP_X) + off[rows] + extraHeight : 0,
     pos, curves,
     scrollLeft: across ? Math.max(0, map.startStep * (CARD_W + GAP_X)) : 0,
     scrollTop: across ? 0 : Math.max(0, map.startStep * (CARD_H + GAP_X)),

@@ -10,12 +10,17 @@ import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
-import { addAfterFlow } from "./add-after";
+import { addAfterFlow, insertAfterFlow, insertBeforeFlow } from "./add-after";
+import { applyProjectValue, projectBarFields, projectBarValues } from "./project-bar";
+import { applyReplace, parseAlignEnd, parseIds, resolveBar, type BarButton } from "./button-bar";
+import { chipView, visibleFields, type EntryField, type EntryValue } from "./entry-fields";
+import { editEntryField } from "./entry-window";
+import { applyTodoValue, experimentOptions, projectNames, todoFields, todoValues } from "./todo-bar";
 import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
-import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_STATUSES, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -58,8 +63,9 @@ export class PlanningBlocks {
 }
 
 class BlockView extends MarkdownRenderChild {
+  private chipBusy = false;   // the to-do chip bar has a list open
   private drawing = 0;
-  private expanded = new Set<string>();   // plan map parents whose subtask list is open
+  private collapsed = new Set<string>();   // plan map parents whose subtask list was closed (every list starts open)
   private mapScroll: { left: number; top: number } | null = null;   // where the user scrolled the plan map, null = not by hand
   private direction: Direction | null = null;   // the toggle on the plan map: null = the setting
   private slideChoice: SlideChoice = { whole: false, ahead: DEFAULT_AHEAD };   // the slide picture window's choices, for this session
@@ -295,7 +301,9 @@ class BlockView extends MarkdownRenderChild {
         }
         return;
       }
+      case "todo-bar": this.todoBar(box); return;
       case "hub-bar": this.hubBar(box); return;
+      case "button-bar": this.buttonBar(box); return;
       case "meeting-bar": this.meetingBar(box); return;
       case "back-to-project": {   // on a note inside a project's folder: a link to that project's hub
         const up = folderHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
@@ -323,7 +331,7 @@ class BlockView extends MarkdownRenderChild {
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
         if (!hasPlan(plan)) return;
-        if (kit.planView === "map" && this.hubHasMap()) return;   // the map replaces the list (Settings → Lab Kit → Project plan view)
+        if (this.hubHasMap()) return;   // the map replaces the list (a hub without the map block keeps the list)
         const { lines, finished } = planLines(plan);
         const open = lines.slice(0, lines.length - finished), shown = this.showAll ? lines : open.slice(0, PROJECT_TILE_ROWS);
         box.addClass("vt-plan");
@@ -333,14 +341,13 @@ class BlockView extends MarkdownRenderChild {
         for (const p of plan.problems) box.createDiv({ cls: "vt-muted", text: p });
         return;
       }
-      case "project-map": {   // on a project hub: the plan as cards joined by arrows; nothing when the project has no plan
+      case "project-map": {   // on a project hub: the plan as cards joined by arrows; with no to-dos, a box that makes one
         const hubFile = this.app.vault.getFileByPath(this.sourcePath);
         if (!hubFile || !this.app.vault.getFolderByPath(todoFolder(f))) return;
         const plan = readPlan(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), this.labNotes());
-        if (!hasPlan(plan)) return;
         box.addClass("vt-plan");
         const direction = this.direction ?? kit.planDirection;
-        const title = box.createDiv({ cls: "vt-plan-title", text: "Plan" });
+        const title = box.createDiv({ cls: "vt-plan-title is-bar", text: "Plan" });
         const flip = title.createEl("button", { cls: "vt-map-dir", text: direction === "down" ? "\u21c5" : "\u21c4", attr: { "aria-label": "Flip the map direction", title: direction === "down" ? "Top to bottom: click for left to right" : "Left to right: click for top to bottom" } });
         const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
         flip.addEventListener("mousedown", stop);
@@ -377,8 +384,13 @@ class BlockView extends MarkdownRenderChild {
           shot.addEventListener("mousedown", stop);
           shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
-        const mapOptions = { app: this.app, sourcePath: this.sourcePath, expanded: this.expanded, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
-          addAfter: (from: string) => { addAfterFlow({ app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan }, from).catch(() => { new Notice("Could not make that link."); }); } };
+        const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan, experiments: this.experimentChoices() };
+        const mapOptions = { app: this.app, sourcePath: this.sourcePath, collapsed: this.collapsed, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
+          addAfter: (from: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, from, undefined, at).catch(() => { new Notice("Could not make that link."); }); },
+          insertAfter: (from: string, at?: { left: number; bottom: number }) => { insertAfterFlow(addEnv, from, at).catch(() => { new Notice("Could not insert that to-do."); }); },
+          insertBefore: (b: string, at?: { left: number; bottom: number }) => { insertBeforeFlow(addEnv, b, at).catch(() => { new Notice("Could not insert that to-do."); }); },
+          newTodo: () => { void this.commands()?.newTodo(hubFile.basename); },
+          insertBetween: (a: string, b: string, at?: { left: number; bottom: number }) => { addAfterFlow(addEnv, a, b, at).catch(() => { new Notice("Could not insert that to-do."); }); } };
         drawPlanMap(box, plan, map, mapOptions);
         drawProblems(box, plan, mapOptions);
         return;
@@ -432,7 +444,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 
@@ -445,12 +457,12 @@ class BlockView extends MarkdownRenderChild {
     const up = parentHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
     if (up) this.link(bar, up.path, `\u2190 ${up.name}`, "vt-back");
     const button = (text: string, run: (c: PlanningCommands) => void): void => {
-      bar.createEl("button", { text }).addEventListener("click", () => { const c = this.commands(); if (c) run(c); });
+      const b = bar.createEl("button", { text, cls: "vt-bar-button" });
+      b.addEventListener("click", () => { b.focus(); const c = this.commands(); if (c) run(c); });
     };
     if (kind === "project") {
       button("New to-do", c => void c.newTodo(file.basename)); button("New note", c => void c.newProjectNote(file.parent?.path));
-      this.statusSelect(bar, file);
-      this.deadlineInput(bar, file);
+      this.projectChips(bar, file);
       const badge = deadlineBadge(this.owner.rec(file).fm, this.owner.kit().dueCountdown, new Date());   // none once the project is Done
       if (badge) bar.createSpan({ cls: badge.cls, text: badge.text });
     }
@@ -464,29 +476,113 @@ class BlockView extends MarkdownRenderChild {
     } else box.createDiv({ cls: "vt-muted", text: "hub-bar belongs on a project, topic or meeting series hub." });
   }
 
-  /** A drop-down for a project's Status (no label), written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
-  private statusSelect(bar: HTMLElement, file: TFile): void {
-    const status = this.owner.rec(file).fm.Status, now = typeof status === "string" ? status : "";
-    const select = bar.createEl("select", { cls: "vt-status-select dropdown", attr: { "aria-label": "Status" } });
-    for (const s of PROJECT_STATUSES.includes(now) || !now ? PROJECT_STATUSES : [...PROJECT_STATUSES, now]) select.createEl("option", { text: s, value: s });
-    select.value = now || PROJECT_STATUSES[0];
-    for (const ev of ["mousedown", "click"]) select.addEventListener(ev, e => e.stopPropagation());
-    select.addEventListener("change", () => {
-      void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.Status = select.value; })
-        .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the status."); });
-    });
+  /** A row of the planning kit's buttons, named by id in the block (`ids: new-meeting, go-deck`); the label, icon and action come from the plugin's table, never from the note. */
+  private buttonBar(box: HTMLElement): void {
+    const { buttons, problems } = resolveBar(parseIds(this.source));
+    if (!buttons.length && !problems.length) { box.createDiv({ cls: "vt-muted", text: "button-bar needs a line like ids: new-meeting, go-deck." }); return; }
+    const bar = box.createDiv({ cls: parseAlignEnd(this.source) ? "vt-button-bar is-end" : "vt-button-bar" });
+    for (const b of buttons) {
+      const btn = bar.createEl("button", { cls: ["vt-bar-button", b.plain ? "is-plain" : "", b.cls ?? ""].filter(Boolean).join(" "), attr: b.tooltip ? { "aria-label": b.tooltip } : {} });
+      if (b.icon) setIcon(btn.createSpan({ cls: "vt-bar-button-icon" }), b.icon);
+      btn.createSpan({ text: b.label });
+      // Live Preview opens a code block for editing on a click inside it
+      btn.addEventListener("mousedown", e => e.stopPropagation());
+      btn.addEventListener("click", e => { e.stopPropagation(); btn.focus(); this.pressButton(b); });
+    }
+    for (const text of problems) box.createDiv({ cls: "vt-muted", text });
   }
 
-  /** The project's `deadline` date, a date box in the bar (emptying it clears the date). */
-  private deadlineInput(bar: HTMLElement, file: TFile): void {
-    const deadline = this.owner.rec(file).fm.deadline;
-    const input = bar.createEl("input", { cls: "vt-deadline-input", type: "date", attr: { "aria-label": "Deadline" } });
-    input.value = typeof deadline === "string" ? deadline.slice(0, 10) : "";
-    for (const ev of ["mousedown", "click"]) input.addEventListener(ev, e => e.stopPropagation());
-    input.addEventListener("change", () => {
-      void this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm.deadline = input.value; })
-        .then(() => this.draw(), e => { console.error(e); new Notice("Could not change the deadline."); });
-    });
+  /** The button has focus, so a window opens under it (`buttonAnchor`): Safari does not focus a button on click, hence the `focus()` above. */
+  private pressButton(b: BarButton): void {
+    if (b.kind === "command") {
+      if (!runCommand(this.app, b.target)) new Notice(`"${b.label}" needs the command ${b.target}: its plugin may be off.`);
+      return;
+    }
+    if (b.kind === "edit" && b.edit) { void this.editNote(b); return; }
+    const file = this.app.metadataCache.getFirstLinkpathDest(b.target, this.sourcePath);
+    if (file) void this.app.workspace.getLeaf(false).openFile(file);
+    else new Notice(`No note called "${b.target}" in this vault.`);
+  }
+
+  /** An edit button changes the note the block is in: removes the lines that match (Clear ticked) or sets properties (Start a new review). A failed write says so and leaves the note as it was. */
+  private async editNote(b: BarButton): Promise<void> {
+    const file = this.app.vault.getFileByPath(this.sourcePath), e = b.edit;
+    if (!file || !e) return;
+    try {
+      if (e.type === "replace") await this.app.vault.process(file, text => applyReplace(text, e));
+      else await this.app.fileManager.processFrontMatter(file, fm => { Object.assign(fm, e.values); });
+    } catch (err) { new Notice(`"${b.label}" did not change the note: ${err instanceof Error ? err.message : String(err)}`); }
+  }
+
+  /** The chip bar of a to-do note: Project, Meeting, Due, Priority (and Countdown once there is a due date). A click picks the value and writes it to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
+  private todoBar(box: HTMLElement): void {
+    const file = this.app.vault.getFileByPath(this.sourcePath);
+    if (!file) return;
+    const fm = this.owner.rec(file).fm;
+    if (fm.kind !== "todo") { box.createDiv({ cls: "vt-muted", text: "todo-bar belongs on a to-do note." }); return; }
+    const fields = this.todoEntryFields(), values = todoValues(fm);
+    const bar = box.createDiv({ cls: "vt-todo-bar" });
+    for (const f of visibleFields(fields, values)) {
+      const btn = bar.createEl("button", { cls: "vt-todo-chip", attr: { "aria-label": f.name, title: f.name } });
+      this.paintChip(btn, f, values[f.key]);
+      for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
+      btn.addEventListener("click", () => { void this.editChip(file, f, values[f.key], btn); });
+    }
+  }
+
+  /** The to-do fields with the live lists of projects and meeting series. */
+  private todoEntryFields(): EntryField[] {
+    const notes = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x));
+    const named = (kind: string): string[] => notes.filter(n => n.fm.kind === kind).map(n => n.name).sort((a, b) => a.localeCompare(b));
+    return todoFields(projectNames(notes.filter(n => n.fm.kind === "project")), named("meeting-series"), this.experimentChoices());
+  }
+
+  /** The lab notes as the Experiment chip's list; none (no chip) when the lab folder is not set. */
+  private experimentChoices(): { label: string; value: string }[] | undefined {
+    const lab = this.labNotes();
+    return lab ? experimentOptions(lab) : undefined;
+  }
+
+  /** What a chip shows for `value`: its icon (when set) and text, and its set / empty look. */
+  private paintChip(btn: HTMLElement, f: EntryField, value: EntryValue | undefined): void {
+    const view = chipView(f, value);
+    btn.empty();
+    btn.toggleClass("is-set", view.set);
+    btn.toggleClass("is-empty", !view.set);
+    if (view.set || f.kind === "toggle") setIcon(btn.createSpan({ cls: "vt-todo-chip-icon" }), f.icon);
+    btn.createSpan({ text: view.text });
+  }
+
+  /** Asks for the value of one chip and writes it; Esc changes nothing. The chip shows the new value at once (the write goes through the file and the block redraws a moment later). */
+  private async editChip(file: TFile, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<void> {
+    if (this.chipBusy) return;   // one list at a time: a click on another chip meanwhile does nothing
+    this.chipBusy = true;
+    const got = await editEntryField(this.app, field, current, anchor).finally(() => { this.chipBusy = false; });
+    if (got === null) return;
+    this.paintChip(anchor, field, got);
+    await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyTodoValue(f, field.key, got); })
+      .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });
+  }
+
+  /** Status and Deadline of a project as chips, written to the note's properties. Live Preview opens a code block for editing on a click inside it: the events stop here. */
+  private projectChips(bar: HTMLElement, file: TFile): void {
+    const values = projectBarValues(this.owner.rec(file).fm);
+    for (const f of projectBarFields(String(values.Status))) {
+      const btn = bar.createEl("button", { cls: "vt-todo-chip", attr: { "aria-label": f.name, title: f.name } });
+      this.paintChip(btn, f, values[f.key]);
+      for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
+      btn.addEventListener("click", () => { void this.editProjectChip(file, f, values[f.key], btn); });
+    }
+  }
+
+  private async editProjectChip(file: TFile, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement): Promise<void> {
+    if (this.chipBusy) return;
+    this.chipBusy = true;
+    const got = await editEntryField(this.app, field, current, anchor).finally(() => { this.chipBusy = false; });
+    if (got === null) return;
+    this.paintChip(anchor, field, got);
+    await this.app.fileManager.processFrontMatter(file, (f: Record<string, unknown>) => { applyProjectValue(f, field.key, got); })
+      .then(() => this.draw(), e => { console.error(e); new Notice(`Could not change ${field.name.toLowerCase()}.`); });
   }
 
   /** The top row of a meeting note: the link to its series hub (the One-off hub for a one-off) and Meeting deck for that series. */

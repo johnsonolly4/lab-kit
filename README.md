@@ -5,7 +5,7 @@ Live calculation tables, lab snippet forms and a hazard header for a chemistry l
 Lab Kit turns a plain note into an experiment page: a hazard table built from your chemical notes, tables that calculate like a spreadsheet, and pop-up forms that write the tables you use every day (solutions, recipes, RAFT, sampling timetables, NMR / GPC / DLS sample tables). It started as a PhD lab notebook; the vocabulary is a chemistry lab's, but nothing stops you using it for anything that needs small calculations in a note.
 
 > [!note] Beta
-> Version 1.0.1 is a beta: the planning kit and the multi-kit system are new and not yet tested by many people. Report problems on GitHub.
+> Lab Kit is a beta: the planning kit and the multi-kit system are new and not yet tested by many people. Report problems on GitHub.
 
 ## Contents
 - [Features](#features)
@@ -166,7 +166,7 @@ Settings → Lab Kit is searchable and grouped. A name in bold with several sett
 | **Setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, **Find moved folders…**, **Kit folders** (Templates folder, Scripts folder, Snippets folder), console log |
 | **Lab notebook** | Initials; Lab notes folder, Chemical folder, Methods folder, Rigs folder; Data folder root (one for Windows, one for macOS / Linux); Molecular weight property; Only suggest chemicals of the asked class; **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default); **Board colours** (**Colour board columns**: kanban columns coloured by status, Planned, Started, Processing results, Closed, with a colour for each); **Snippet icons** (one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name; empty keeps the snippet's own icon) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
-| **Planning** (planning kit on) | **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Project plan view** (a project hub shows the card map only, or the map with the plan list above it), **Project plan map direction** (left to right, or top to bottom), **Planning folders** (Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive; empty = the default, e.g. `02 Projects`; the row says how many are changed, for example "2 of 9 changed") |
+| **Planning** (planning kit on) | **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Project plan map direction** (left to right, or top to bottom), **Planning folders** (Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive; empty = the default, e.g. `02 Projects`; the row says how many are changed, for example "2 of 9 changed") |
 
 Folder settings left empty are detected; the data folder roots are empty until you set them. Rename or move folders **inside Obsidian** and the folder settings follow; a folder moved outside Obsidian (Finder, File Explorer, a sync tool) is found again with **Find moved folders**. Settings changed on another device (Obsidian Sync, iCloud, Dropbox, Syncthing, Git) are read again when they arrive.
 

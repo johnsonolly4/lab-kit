@@ -1,9 +1,10 @@
 // To-do engine (planning kit): stamps dragged / ticked cards, rolls unfinished cards over, and tags the board for vault-theme.css.
 // Replaces the planning suite's To-do roll-over startup template. Rules: src/planning/todo.ts. Plan: docs/plans/phase-4a-todo-engine.md.
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
-import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
+import { trackPointer } from "./entry-window";
+import { MarkdownView, Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
-import { applyPatch, cardTag, changePatch, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
+import { applyPatch, cardTag, changePatch, emptyTodoCursorLine, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
 
 /** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
 export const ROLL_KEY = "vt-rollover";
@@ -52,6 +53,7 @@ export class TodoEngine {
 
   start(): void {
     const plugin = this.plugin, app = this.app;
+    trackPointer(plugin);   // windows can open where the cursor is
     app.workspace.onLayoutReady(() => {
       // Wait until Obsidian has read every note's properties (at most 15 s), then remember every card as it is
       let begun = false;
@@ -78,6 +80,26 @@ export class TodoEngine {
         if (s && this.isTodo(f)) this.seen.set(f.path, s);
       }));
       plugin.registerEvent(app.vault.on("delete", f => { this.seen.delete(f.path); }));
+
+      // A to-do with nothing typed yet opens with the cursor under the chip bar, not above it.
+      // A note made by the template is opened before Templater has written it, so look again for a moment
+      const placeCursor = (path: string): boolean => {   // true = nothing more to wait for
+        const view = app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view || view.file?.path !== path || view.getMode() !== "source") return true;
+        const text = view.editor.getValue();
+        const line = emptyTodoCursorLine(text);
+        if (line === null) return text.trim() !== "";   // blank: the template has not written yet
+        if (view.editor.getCursor().line < line) { view.editor.setCursor({ line, ch: 0 }); view.editor.focus(); }
+        return true;
+      };
+      plugin.registerEvent(app.workspace.on("file-open", f => {
+        if (!f || placeCursor(f.path)) return;
+        let done = false;
+        for (const ms of [150, 400, 900, 1800]) {
+          const t = window.setTimeout(() => { if (!done) done = placeCursor(f.path); }, ms);
+          plugin.register(() => window.clearTimeout(t));
+        }
+      }));
 
       // Clicking the done circle on a board card ticks / unticks done in that note (Bases cards are read-only)
       plugin.registerDomEvent(window, "click", e => this.onCardClick(e), { capture: true });

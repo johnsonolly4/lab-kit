@@ -120,7 +120,7 @@ describe("Tidy up notes: to-dos without a kind", () => {
 });
 
 describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
-  const all = (c: TidyContext, m: Map<string, string>) => { const s = scan(files(m, c), c); return selectChanges(s, new Set(s.groups.map(g => g.id))); };
+  const all = (c: TidyContext, m: Map<string, string>) => { const s = scan(files(m, c), c); return selectChanges(s, new Set(s.groups.filter(g => !g.optIn).map(g => g.id))); };   // as the window ticks them: not the opt-in ones
 
   it("Cancel (nothing applied) writes nothing; an unticked rule is untouched", async () => {
     const m = vault(), old = new Map(m), c = ctx(), s = scan(files(m, c), c);
@@ -153,7 +153,7 @@ describe("Change notes: meetings and new hubs (Phase 7c-1)", () => {
     const m = vault(), c = ctx();
     await applyTidy(io(m), all(c, m));
     const s = scan(files(m, c), c);
-    expect(s.groups.map(g => g.id)).toEqual([]);
+    expect(s.groups.filter(g => !g.optIn).map(g => g.id)).toEqual([]);
   });
 });
 
@@ -268,3 +268,16 @@ describe("Tidy up notes: chemical notes", () => {
   });
 });
 
+
+describe("Tidy: the to-do chip bar", () => {
+  it("adds the bar to every to-do without it, opt-in, and leaves the others alone", () => {
+    const m = new Map<string, string>();
+    m.set("00 Planning/To-dos/Plain.md", "---\nkind: todo\n---\n\nnotes\n");
+    m.set("00 Planning/To-dos/Has.md", "---\nkind: todo\n---\n\n```vault-card\nshow: todo-bar\n```\n");
+    m.set("00 Planning/To-dos/Quick.md", "---\ncssclasses:\n  - vt\n---\n");
+    const g = group(ctx(), m, "todo-bar")!;
+    expect(g.optIn).toBe(true);
+    expect(g.changes.map(x => x.path)).toEqual(["00 Planning/To-dos/Plain.md", "00 Planning/To-dos/Quick.md"]);   // Quick gets its kind from the other rule in the same scan
+    expect(g.changes[0].after).toBe("\n\n```vault-card\nshow: todo-bar\n```\n\nnotes\n");
+  });
+});

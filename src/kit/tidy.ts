@@ -1,6 +1,7 @@
 // Tidy up notes (Phase 7a, plan docs/plans/phase-7-tidy-notes.md): scans a vault's notes against the kit layout and lists what would change, as
 // before / after text, plus what is only reported. Pure and read-only: the caller reads the vault into `files`; nothing here writes.
 // Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, meetings, leftovers, note bodies) are code.
+import { BAR_BUTTONS } from "../planning/button-bar";
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
@@ -40,6 +41,8 @@ export interface TidyContext {
   hubFolders?: string[];
   /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
   meetings?: { folder: string; todos: string; today: string; interval: string; day: string };
+  /** Folders whose notes (directly in them) and the root notes are read for old `BUTTON[...]` lines. Missing = the button rule has nothing to read. */
+  buttonFolders?: string[];
   /** The Projects folder (project hubs). Missing = the project rule is off. */
   projectsFolder?: string;
   /** The Project hub template's note text (after its Templater header): a missing hub is made from it. Without it a missing hub is only its properties. */
@@ -213,7 +216,8 @@ export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boo
   return readAll || inFolder(path, ctx.labFolder) || (!!ctx.chemicalFolder && inFolder(path, ctx.chemicalFolder)) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
     || (!!ctx.meetings && (inFolder(path, ctx.meetings.folder) || inFolder(path, ctx.meetings.todos)))
     || (!!ctx.projectsFolder && inFolder(path, ctx.projectsFolder))
-    || (ctx.hubFolders ?? []).some(f => parentOf(path) === f);
+    || (ctx.hubFolders ?? []).some(f => parentOf(path) === f)
+    || ctx.rootNotes.includes(path) || (ctx.buttonFolders ?? []).some(f => parentOf(path) === f);
 }
 
 const topFolder = (p: string): string => p.includes("/") ? p.slice(0, p.indexOf("/")) : "";
@@ -226,6 +230,15 @@ const BUTTON_COMMANDS: Record<string, string> = {
 
 /** The block a project note starts with: a link to its project's hub (the New project note template writes the same). */
 const BACK_TO_PROJECT = "```vault-card\nshow: back-to-project\n```";
+
+/** A line that is only Meta Bind buttons (`BUTTON[a, b]` in backticks). */
+const BUTTON_LINE = /^`BUTTON\[([^\]]*)\]`[ \t]*$/;
+
+/** The plugin's button bar for these ids (the planning kit's notes write the same). */
+const buttonBlock = (ids: string[]): string => `\`\`\`vault-card\nshow: button-bar\nids: ${ids.join(", ")}\n\`\`\``;
+
+/** The chip bar a to-do starts with (the To-do template writes the same). */
+const TODO_BAR = "```vault-card\nshow: todo-bar\n```";
 
 export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   const groups: TidyGroup[] = [];
@@ -396,6 +409,38 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       put(n.path, full.join("\n"));
     }
     if (g.changes.length) groups.push(g);
+
+    // The chip bar at the top of each to-do (show: todo-bar): opt-in, because it touches every to-do
+    const bar: TidyGroup = { id: "todo-bar", title: "To-dos: add the chip bar", detail: "Every to-do (kind: todo) gets the bar of chips (project, meeting, due, priority) at the top of the page, like the To-do template writes now. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes.filter(x => inFolder(x.path, mt.todos) && kindOf(x.path) === "todo")) {
+      const body = split(effective.get(n.path) ?? "")?.body;
+      if (body !== undefined && !body.includes("show: todo-bar")) bar.changes.push({ path: n.path, before: body, after: `\n\n${TODO_BAR}\n${body.replace(/^\n+/, "\n")}`, body: true });
+    }
+    if (bar.changes.length) groups.push(bar);
+  }
+
+  // Buttons: a line that is only Meta Bind buttons becomes the plugin's button bar (the window a button opens then appears under it). Opt-in: it replaces text in many notes. Off with the planning kit.
+  if (ctx.buttonFolders) {
+    const bar: TidyGroup = { id: "button-bar", title: "Buttons: use the Lab Kit button bar", detail: "A line that holds only Meta Bind buttons (like `BUTTON[new-meeting, go-deck]`) becomes a button-bar block, so the window a button opens appears under it. Lines with other text, buttons Lab Kit does not know, notes in Extras and hub pages (the hub rule rewrites those) are left as they are. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    const hubPages = new Set((groups.find(g => g.id === "hub-body")?.changes ?? []).map(c => c.path));
+    for (const n of notes) {
+      if (inFolder(n.path, "Extras") || hubPages.has(n.path)) continue;
+      const text = effective.get(n.path) ?? "", s = split(text);
+      const body = s ? s.body : text.replace(/\r\n/g, "\n");
+      if (!body.includes("BUTTON[")) continue;
+      let fence = false;
+      const out = body.split("\n").map(l => {
+        if (/^\s*(```|~~~)/.test(l)) fence = !fence;
+        const m = fence ? null : BUTTON_LINE.exec(l);
+        if (!m) return l;
+        const ids = m[1].split(",").map(x => x.trim()).filter(Boolean);
+        const bad = ids.filter(id => !BAR_BUTTONS.has(id));
+        if (!ids.length || bad.length) { skipped.items.push({ path: n.path, note: `button line with ${bad.length ? `${bad.join(", ")}: not a Lab Kit button` : "no buttons"}: left as it is` }); return l; }
+        return buttonBlock(ids);
+      }).join("\n");
+      if (out !== body && s) bar.changes.push({ path: n.path, before: body, after: out, body: true });
+    }
+    if (bar.changes.length) groups.push(bar);
   }
 
   // Hubs: index / hub notes without `kind`

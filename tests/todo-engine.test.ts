@@ -1,6 +1,6 @@
 // Phase 4a: the to-do board rules (src/planning/todo.ts), including the 2026-10-07 Obsidian Sync scenarios.
 import { describe, it, expect } from "vitest";
-import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, emptyTodoCursorLine, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
 
 const day = (s: string): Date => parseDay(s)!;
 const WED = day("2026-10-07");   // a Wednesday
@@ -169,15 +169,14 @@ describe("due-date countdown", () => {
 });
 
 describe("To-do template due date and countdown", () => {
-  it("asks for a due date (Esc cancels), offers the countdown only with a date, writes a boolean, sets due to a date property", async () => {
+  it("asks for a due date (Esc cancels), no countdown question (one setting for all), sets due to a date property", async () => {
     const { readFileSync } = await import("fs");
     const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
-    expect(tpl).toContain('d === null) { throw new Error("Cancelled');
-    expect(tpl).toMatch(/if \(due\) \{[^}]*suggester/s);
-    expect(tpl).toContain('c === null || c === undefined) { throw');
+    expect(tpl).toContain('d === null) { await trashIfBlank(); throw new Error("Cancelled');
+    expect(tpl).not.toContain("Countdown on the board card?");
+    expect(tpl).toContain("const countdown = false;");
     expect(tpl).toMatch(/^due: <% due %>$/m);
     expect(tpl).toMatch(/^countdown: <% countdown %>$/m);
-    expect(tpl).toContain("let countdown = false;");
     expect(tpl).toContain('setType?.("due", "date")');
   });
 });
@@ -199,5 +198,21 @@ describe("cardTag (priority and project on a board card)", () => {
     expect(cardTag({ priority: "high" })).toBeNull();
     expect(cardTag({ priority: "", project: "" })).toBeNull();
     expect(cardTag({})).toBeNull();
+  });
+});
+
+describe("cursor under the chip bar", () => {
+  const head = "---\nkind: todo\nday: Mon\n---\n\n```vault-card\nshow: todo-bar\n```\n";
+  it("is the last line of an empty to-do", () => {
+    expect(emptyTodoCursorLine(head)).toBe(8);
+    expect(emptyTodoCursorLine(head + "\n")).toBe(9);
+    expect(emptyTodoCursorLine(head.replace(/\n/g, "\r\n"))).toBe(8);
+  });
+  it("leaves every other note alone", () => {
+    expect(emptyTodoCursorLine(head + "Buy tubes\n")).toBeNull();
+    expect(emptyTodoCursorLine(head.replace("kind: todo", "kind: lab"))).toBeNull();
+    expect(emptyTodoCursorLine(head.replace("show: todo-bar", "show: inbox"))).toBeNull();
+    expect(emptyTodoCursorLine(head.slice(0, -1))).toBeNull();
+    expect(emptyTodoCursorLine("no properties\n")).toBeNull();
   });
 });

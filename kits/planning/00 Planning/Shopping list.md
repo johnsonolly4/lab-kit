@@ -4,4 +4,7 @@ cssclasses:
   - vt
 ---
 
-`BUTTON[shop-add, shop-clear]`
+```vault-card
+show: button-bar
+ids: shop-add, shop-clear
+```

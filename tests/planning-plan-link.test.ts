@@ -1,6 +1,6 @@
 // Making and removing `after` links on the plan map (src/planning/plan-link.ts).
 import { describe, it, expect } from "vitest";
-import { addAfter, bridgeAfter, canLink, canNest, nestAction, removeAfter, removeItem } from "../src/planning/plan-link";
+import { addAfter, bridgeAfter, canLink, canNest, nestAction, planInsert, removeAfter, removeItem } from "../src/planning/plan-link";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -154,5 +154,26 @@ describe("removeItem", () => {
     expect(removeItem("[[Ghost|alias]]", "Ghost")).toBeUndefined();
     expect(removeItem("[[B]]", "Ghost")).toBe("[[B]]");
     expect(removeItem(undefined, "Ghost")).toBeUndefined();
+  });
+});
+
+describe("planInsert (a to-do between the two ends of an arrow)", () => {
+  const plan = readPlan([td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("X"), td("Y", { after: "[[X]]" }), td("Z", { after: "[[A]]" })], hub);
+  const p = (n: string) => T + n + ".md";
+  it("an unrelated to-do goes between: both links are to be written", () => {
+    expect(planInsert(plan, p("A"), p("B"), p("X"))).toEqual({ verdict: "ok", nAfterA: true, bAfterN: true });
+  });
+  it("the arrow must exist, and the to-do is neither end", () => {
+    expect(planInsert(plan, p("A"), p("C"), p("X")).verdict).toBe("not-linked");   // C comes after B, not after A
+    expect(planInsert(plan, p("A"), p("B"), p("A")).verdict).toBe("self");
+    expect(planInsert(plan, p("A"), p("B"), p("B")).verdict).toBe("self");
+  });
+  it("a loop is refused: the to-do already comes after the end or before the start", () => {
+    expect(planInsert(plan, p("A"), p("B"), p("C")).verdict).toBe("loop");   // C comes after B: B would come after C
+    expect(planInsert(plan, p("B"), p("C"), p("A")).verdict).toBe("loop");   // A comes before B: A would come after B
+  });
+  it("a link that is already there is not written again", () => {
+    expect(planInsert(plan, p("A"), p("B"), p("Z"))).toEqual({ verdict: "ok", nAfterA: false, bAfterN: true });   // Z already comes after A
+    expect(planInsert(plan, p("X"), p("Y"), p("Z"))).toEqual({ verdict: "ok", nAfterA: true, bAfterN: true });
   });
 });

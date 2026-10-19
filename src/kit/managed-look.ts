@@ -14,9 +14,9 @@ export function actionWinState(action: ManagedAction): WinState {
 
 const files = (n: number): string => `${n} ${n === 1 ? "file" : "files"}`;
 
-/** The big line: files waiting for an update (new, updated, to merge, deleted by you), plus conflicts; or that everything is up to date. */
-export function reviewSummary(items: ManagedItem[]): string {
-  const waiting = items.filter(i => actionWinState(i.action) === "todo").length, conflicts = items.filter(i => i.action === "needs-merge").length;
+/** The big line: files waiting for an update (new, updated, to merge, deleted by you, and kept files the kit has a newer version of: `newer`), plus conflicts; or that everything is up to date. */
+export function reviewSummary(items: ManagedItem[], newer: (i: ManagedItem) => boolean = () => false): string {
+  const waiting = items.filter(i => actionWinState(i.action) === "todo" || newer(i)).length, conflicts = items.filter(i => i.action === "needs-merge").length;
   if (!waiting && !conflicts) return "Everything is up to date.";
   return [waiting ? `${files(waiting)} to update` : "", conflicts ? `${conflicts} ${conflicts === 1 ? "conflict" : "conflicts"}` : ""].filter(Boolean).join(", ") + ".";
 }

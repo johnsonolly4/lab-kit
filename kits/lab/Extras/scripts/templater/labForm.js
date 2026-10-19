@@ -72,7 +72,7 @@ function labForm(tp, title, fields, opts = {}) {
         this.values = {};
         const inputs = [];
         const popups = [];
-        const rows = {};   // mandatory text rows, to show "Needs an answer" under them
+        const rows = this.rows = {};   // mandatory text rows, to show "Needs an answer" under them (submit() reads them too)
 
         for (const f of fields) {
           if (f.type === "heading") { new Setting(contentEl).setName(f.label).setHeading(); continue; }
@@ -121,6 +121,7 @@ function labForm(tp, title, fields, opts = {}) {
         setTimeout(() => { inputs[0]?.focus(); inputs[0]?.select?.(); }, 30);
       }
       submit() {
+        const rows = this.rows;
         const missing = missingRequired(fields, this.values);
         for (const f of fields) {
           const r = rows[f.key];

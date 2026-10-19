@@ -6,16 +6,16 @@ import type { WinState } from "./window-look";
 
 /** The Hotkeys note's table (`07 How-tos/Obsidian/Hotkeys.md`), one entry per function; `key` is empty for the "no key suggested" commands. tests/hotkeys-note.test.ts keeps both in step. */
 export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: string; kit: "lab" | "planning" }[] = [
-  { key: { modifiers: ["Alt"], key: "H" }, does: "Homepage", command: "Notebook Navigator: open the homepage", kit: "planning" },
+  { key: { modifiers: ["Alt"], key: "H" }, does: "Homepage", command: "Notebook Navigator: Open homepage", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "D" }, does: "Today's note", command: "Daily notes: Open today's daily note", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "F" }, does: "Search", command: "Omnisearch: Vault search", kit: "planning" },
-  { key: { modifiers: ["Alt"], key: "Z" }, does: "Open a paper's note", command: "ZotLit: open the literature note", kit: "planning" },
+  { key: { modifiers: ["Alt"], key: "Z" }, does: "Open a paper's note", command: "ZotLit: Open literature note quick switcher", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "N" }, does: "Quick note into the inbox", command: "Lab Kit: Quick capture", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "T" }, does: "New to-do", command: "Lab Kit: New to-do", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "L" }, does: "New lab entry", command: "Lab Kit: New lab entry", kit: "lab" },
   { key: { modifiers: ["Alt"], key: "U" }, does: "Update this paper's highlights", command: "ZotLit: Update literature note", kit: "planning" },
-  { key: { modifiers: ["Alt"], key: "C" }, does: "Insert a citation", command: "ZotLit: insert citation", kit: "planning" },
-  { key: { modifiers: ["Alt"], key: "S" }, does: "Insert a lab snippet", command: "Templater: Insert snippet.md", kit: "lab" },
+  { key: { modifiers: ["Alt"], key: "C" }, does: "Insert a citation", command: "ZotLit: Insert Markdown citation", kit: "planning" },
+  { key: { modifiers: ["Alt"], key: "S" }, does: "Insert a lab snippet", command: "Templater: Insert snippet", kit: "lab" },
   { key: { modifiers: ["Alt"], key: "M" }, does: "New meeting note", command: "Lab Kit: New meeting", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "P" }, does: "New note in a project", command: "Lab Kit: New project note", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "K" }, does: "New knowledge note", command: "Lab Kit: New concept", kit: "planning" },
@@ -42,7 +42,7 @@ export interface HotkeyRow { does: string; command: string; recommended: string;
   /** The command's id when it was found, and the suggested key: what Set the suggested keys writes. */
   id?: string; key?: KitHotkey }
 
-/** The command id whose name is `name`; else one with the same plugin prefix whose name contains the part after the colon (Templater names a template command after its path). */
+/** The command id whose name is `name`; else one with the same plugin prefix whose name ends with the part after the colon (Templater names a template command after its path, with or without `.md`), else one that contains it. */
 function findCommand(commands: Record<string, string>, name: string): string | undefined {
   const want = name.toLowerCase(), entries = Object.entries(commands);
   const exact = entries.find(([, n]) => n.toLowerCase() === want);
@@ -50,7 +50,8 @@ function findCommand(commands: Record<string, string>, name: string): string | u
   const i = want.indexOf(": ");
   if (i < 0) return undefined;
   const prefix = want.slice(0, i + 2), tail = want.slice(i + 2);
-  return entries.find(([, n]) => { const l = n.toLowerCase(); return l.startsWith(prefix) && l.includes(tail); })?.[0];
+  const same = entries.filter(([, n]) => n.toLowerCase().startsWith(prefix));
+  return (same.find(([, n]) => { const l = n.toLowerCase(); return l.endsWith(tail) || l.endsWith(tail + ".md"); }) ?? same.find(([, n]) => n.toLowerCase().includes(tail)))?.[0];
 }
 
 /** One row per kit function for the kits that are on, in the Hotkeys note's order. */

@@ -3,7 +3,10 @@ cssclasses:
   - vt
 ---
 
-`BUTTON[new-meeting-series, new-meeting, new-one-off-meeting, go-deck]`
+```vault-card
+show: button-bar
+ids: new-meeting-series, new-meeting, new-one-off-meeting, go-deck
+```
 
 > [!note]- How meetings work
 > - Each meeting you hold regularly is a **series**: a folder here with a hub note (interval, day, first date, deck location).

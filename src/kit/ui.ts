@@ -2,7 +2,9 @@
 import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
-import { cloneLabNote, labNoteName, labPrefix, labTitle, localDate, nextLabNumber } from "./clone";
+import { openEntry } from "../planning/entry-window";
+import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
+import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
@@ -221,11 +223,6 @@ class KitSettingTab extends PluginSettingTab {
             this.ctl.dueCountdownChanged?.();
           }));
       } };
-    const planView: SettingGroupItem = { name: "Project plan view", desc: "What a project hub shows for its plan: the card map only, or the card map with the plan list above it. A hub without the card map keeps the list.",
-      render: b => {
-        b.addDropdown(d => d.addOption("map", "Card map only").addOption("both", "Card map and plan list")
-          .setValue(this.ctl.kit.planView).onChange(async v => { this.ctl.kit.planView = v === "both" ? "both" : "map"; await this.ctl.save(); }));
-      } };
     const planDirection: SettingGroupItem = { name: "Project plan map direction", desc: "Which way the plan map in a project hub runs: steps from left to right, or from top to bottom (no sideways scrolling). The button next to the map's title flips it for the open note.",
       render: b => {
         b.addDropdown(d => d.addOption("across", "Left to right").addOption("down", "Top to bottom")
@@ -234,7 +231,7 @@ class KitSettingTab extends PluginSettingTab {
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
     const changed = changedPlanningFolders(pf);
-    return { options: [countdown, planView, planDirection], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    return { options: [countdown, planDirection], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
@@ -395,6 +392,10 @@ export class KitController {
     plugin.addCommand({ id: "check-setup", name: "Check setup", callback: () => this.checkSetup() });
     plugin.addCommand({ id: "check-hotkeys", name: "Check hotkeys", callback: () => this.checkHotkeys() });
     plugin.addCommand({ id: "new-lab-entry", name: "New lab entry", callback: () => void this.newLabEntry() });
+    // The Lab Book Template calls this when a note was made in the lab folder by hand (the folder trigger): the same window, so it looks the same
+    const w = window as unknown as { vtEntryLab?: () => Promise<{ title: string; expClass: string } | null> };
+    w.vtEntryLab = () => this.askLabEntry();
+    plugin.register(() => { delete w.vtEntryLab; });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
@@ -465,24 +466,46 @@ export class KitController {
     } catch (e) { console.error(e); new Notice("Could not update the kit files to the new folders. See the developer console for details."); }
   }
 
-  /** New lab entry: a note from the Lab Book Template in the Lab notes folder (created if missing), made and opened by Templater. */
-  async newLabEntry(): Promise<void> {
+  /**
+   * New lab entry: the entry window (title, an Exp. Class chip, and a Copy of chip), then a note from the Lab Book Template in the Lab notes folder (created if
+   * missing), made and opened by Templater. With a note chosen in Copy of it is a clone of that note instead (`cloneLabNote`). `clone`: Clone experiment, which needs
+   * a note to copy and starts with the open lab note chosen.
+   */
+  async newLabEntry(options: { clone?: boolean } = {}): Promise<void> {
     const tracked = this.managed.stateOf(LAB_TEMPLATE_ID)?.path;
     const template = [tracked, kitJoin(this.managed.templatesFolder(), "Lab Book Template.md")]
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
     const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder, initials: this.kit.initials });
     if ("error" in target) { new Notice(target.error); return; }
-    const title = await ask(this.app, "Experiment title (Esc to cancel, Enter on empty = Untitled)");
-    if (title === null) return;
-    const w = window as unknown as { labKitPresetTitle?: string };
+    const notes = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === target.folder);
+    if (options.clone && !notes.some(f => labPrefix(f.basename))) { new Notice(`No lab notes with a number found in ${target.folder}.`); return; }
+    const labNotes: LabNote[] = notes.map(f => ({ basename: f.basename, path: f.path, classes: toList(prop(this.app.metadataCache.getFileCache(f)?.frontmatter, "Exp. Class")) }));
+    const active = this.app.workspace.getActiveFile();
+    const open = options.clone && active && notes.some(f => f.path === active.path) && labPrefix(active.basename) ? active : null;
+    const answer = await openEntry(this.app, options.clone ? "Clone experiment" : "New lab entry", labEntryFields(labNotes, !!options.clone), { values: open ? { copyOf: open.path } : {} });
+    if (!answer) return;
+    const expClass = String(answer.values.expClass ?? "");
+    const source = notes.find(f => f.path === answer.values.copyOf) ?? null;
+    const title = labEntryTitle(answer.title, source ? { basename: source.basename, path: source.path, classes: [] } : null);
+    if (source) { await this.cloneInto(source, notes, title, expClass); return; }
+    const w = window as unknown as { labKitPresetTitle?: string; labKitPresetClass?: string };
     try {
       await ensureFolder(this.app.vault, target.folder);
       const folder = this.app.vault.getFolderByPath(target.folder);
       if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
       w.labKitPresetTitle = title;   // the template reads and clears it (as the to-do template does for projects)
+      w.labKitPresetClass = expClass;
       if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
-    finally { delete w.labKitPresetTitle; }
+    finally { delete w.labKitPresetTitle; delete w.labKitPresetClass; }
+  }
+
+  /** The window for a note made in the lab folder by hand: title and Exp. Class (no Copy of: the note already exists). The title as typed (empty = the template says Untitled) and the class, or null when Esc was pressed. */
+  async askLabEntry(): Promise<{ title: string; expClass: string } | null> {
+    const notes = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === this.kit.labFolder);
+    const labNotes: LabNote[] = notes.map(f => ({ basename: f.basename, path: f.path, classes: toList(prop(this.app.metadataCache.getFileCache(f)?.frontmatter, "Exp. Class")) }));
+    const answer = await openEntry(this.app, "New lab entry", labEntryFields(labNotes, false).filter(f => f.key === "expClass"));
+    return answer ? { title: answer.title, expClass: String(answer.values.expClass ?? "") } : null;
   }
 
   /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Templater. */
@@ -527,27 +550,20 @@ export class KitController {
     } catch (e) { console.error(e); new Notice("New rig failed. See the developer console for details."); }
   }
 
-  /** Clone experiment: a new lab note from an old one (the open lab note, else a pick) with the set-up kept and the run started again (rules in `clone.ts`). No Templater; the old note is not changed. To remove: docs/decisions.md, "Removing experimental features". */
-  async cloneExperiment(): Promise<void> {
+  /** Clone experiment: a new lab note from an old one with the set-up kept and the run started again (rules in `clone.ts`): the New lab entry window with Copy of required and the open lab note chosen. No Templater; the old note is not changed. To remove: docs/decisions.md, "Removing experimental features". */
+  async cloneExperiment(): Promise<void> { await this.newLabEntry({ clone: true }); }
+
+  /** Copies `source` into a new numbered lab note named `title`, renumbering its sample codes; `expClass` (when not empty) replaces its Exp. Class. Opens it. */
+  private async cloneInto(source: TFile, notes: TFile[], title: string, expClass: string): Promise<void> {
     const target = cloneExperimentTarget({ labFolder: this.kit.labFolder, initials: this.kit.initials });
     if ("error" in target) { new Notice(target.error); return; }
     try {
-      const notes = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === target.folder);
-      const active = this.app.workspace.getActiveFile();
-      let source: TFile | null = active && notes.some(f => f.path === active.path) && labPrefix(active.basename) ? active : null;
-      if (!source) {
-        const numbered = notes.filter(f => labPrefix(f.basename)).sort((a, b) => b.basename.localeCompare(a.basename));
-        if (!numbered.length) { new Notice(`No lab notes with a number found in ${target.folder}.`); return; }
-        source = await pick<TFile>(this.app, numbered.map(f => f.basename), numbered, "Clone which experiment? (Esc cancels)", false);
-        if (!source) return;
-      }
-      const title = await ask(this.app, `Title of the new experiment, a copy of ${source.basename} (Esc to cancel)`, labTitle(source.basename));
-      if (title === null) return;
       const number = nextLabNumber(notes.map(f => f.basename), target.initials);
       const path = `${target.folder}/${labNoteName(target.initials, number, title)}.md`;
       if (this.app.vault.getAbstractFileByPath(path)) { new Notice(`${path} already exists.`); return; }
       const made = cloneLabNote(await this.app.vault.read(source), { oldPrefix: labPrefix(source.basename)!, newPrefix: `${target.initials}${number}-`, today: localDate(new Date()), clonedFrom: source.basename });
       const file = await this.app.vault.create(path, made.text);
+      if (expClass) await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm["Exp. Class"] = expClass; });
       await this.app.workspace.getLeaf(false).openFile(file);
       new Notice(`Cloned ${source.basename}: ${made.recoded} sample code${made.recoded === 1 ? "" : "s"} renumbered. Check the tables before you start.`);
     } catch (e) { console.error(e); new Notice("Clone experiment failed. See the developer console for details."); }

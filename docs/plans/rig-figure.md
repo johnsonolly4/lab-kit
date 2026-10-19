@@ -14,7 +14,7 @@ User, 2026-10-13 (chat, ten example figures looked at, survey):
 - **Colour:** process lines (monomer and tubing) stay black. Control and feedback lines from the computer are coloured and dashed: one colour for control (computer to part), one for data back (part to computer); both settable. Parts tables get two optional columns for this (names below, for the user to check at Phase 3).
 - Rejected: Mermaid for the figure (cannot take coordinates: the figure is drawn as SVG like `src/planning/plan-slide.ts`); a zip library; saving positions in a separate file; colour per stream.
 
-## What the user's example figures show (ten published flow-chemistry figures, pasted in chat 2026-10-13; not stored; no names)
+## What the user's example figures show (ten published flow-chemistry figures, pasted in chat 2026-10-13; kept only in the owner's private `my_work/private/rig-examples/`, never committed; no names)
 Black line art on white, bold sans-serif labels with subscripts and units. Symbols: pump (circle with a triangle), tee / mixer (a small filled dot where lines meet), valve (bowtie), multiport valve (circle with arrows or ports), coil reactor (ribbed cylinder), CSTR (rounded box with a fan), tubular and column reactors (plain boxes), back-pressure regulator (box or valve labelled BPR), flask / vial, laptop or monitor for the controller, photo-like pictures for instruments (NMR magnet, light-scattering cell, GPC stack, small spectrum thumbnails). Dashed or dotted control and feedback lines in red, green and blue, labelled ("Flow rate", "Temperature", "Data output"); red-outlined frames that group analysis modules, panel letters (a) (b) (c); a reaction scheme with structures beside the rig; "Waste" arrows, a "Product collection" fan of arrows; a stage repeated n times in brackets. Use these to choose what to draw, never to copy a figure.
 
 ## Phase 2 result (2026-10-13)
@@ -75,4 +75,4 @@ Optional columns on a parts row: `Control` (what the computer sets, becomes the 
 1 → 2 → 3 are pure and testable without Obsidian; 4 needs 2; 5 needs 4; 6 needs the symbol interface from 2 and the window from 5 (to show packs); 7 last. Phase 3 can swap with 4 if the user wants a first picture sooner.
 
 ## Verification
-The look is the user's to judge, against their own field's figures (ten examples were shown in chat, not stored). Each of 2, 4, 5, 6 ends with a picture the user opens. A poster check at the end: the SVG placed at A0 width in a drawing tool, no pixelation, text still crisp.
+The look is the user's to judge, against their own field's figures (ten examples were shown in chat; kept only in `my_work/private/rig-examples/`, never committed). Each of 2, 4, 5, 6 ends with a picture the user opens. A poster check at the end: the SVG placed at A0 width in a drawing tool, no pixelation, text still crisp.

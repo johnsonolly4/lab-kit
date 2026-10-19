@@ -162,6 +162,9 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
 /** The project has a plan: some to-do comes after another, has an `order` or has subtasks, or a link is wrong (so the message shows). */
 export const hasPlan = (plan: Plan): boolean => plan.rows.some(r => r.after.length > 0 || r.order !== null || r.subs.length > 0) || plan.problems.length > 0;
 
+/** The plan map shows once the project has two to-dos (linked or not: the unlinked ones sit in the map's "Not linked" tiles, where the links are made), or as soon as `hasPlan`. The Plan list keeps `hasPlan`: with nothing linked it would only repeat the to-do list. */
+export const hasMap = (plan: Plan): boolean => hasPlan(plan) || plan.rows.length >= 2;
+
 /** The badge class of a lab note status: `vt-` plus the status in lower case with hyphens (Planned, Started, Processing results, Closed have colours in the theme); anything else is neutral. */
 export function statusClass(status: string): string {
   const slug = status.trim().toLowerCase().replace(/\s+/g, "-");
