@@ -36,12 +36,11 @@ function shownOn(fm: Record<string, unknown>, today: Date): { on: string; carrie
   if (!d) return { on: "", carried: false };
   return ymd(d) < iso ? { on: iso, carried: true } : { on: ymd(d), carried: false };
 }
-/** The planned day of a list line: `Mon` in this week, `Tue 27 Oct` in another week, `Backlog` with no date (an unknown `day` value as it is written). */
+/** The planned day of a list line: always the full date `Thu 22 Oct` (owner, option b), `Backlog` with no date (an unknown `day` value as it is written). */
 function dayLabel(fm: Record<string, unknown>, today: Date): string {
   const d = dateOf(fm, today), day = str(fm.day).trim();
   if (!d) return day && day !== "Backlog" && !str(fm.scheduled).trim() ? day : "Backlog";
-  const monday = weekStart(today);
-  return d >= monday && d <= dayOf(monday, 6) ? weekdayOf(d) : `${weekdayOf(d)} ${dayMonth(d)}`;
+  return `${weekdayOf(d)} ${dayMonth(d)}`;
 }
 
 /** This week: open to-dos the board shows in this week's Mon–Fri columns (carried over ones in today's), or overdue. Overdue first, then by day. Badge: overdue (date) / today / the day; carried over. */

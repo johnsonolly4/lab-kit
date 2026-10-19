@@ -31,13 +31,13 @@ describe("This week (00 Home, Dataview LIST over the to-dos)", () => {
     const b = Object.fromEntries(thisWeek(todos, WED).map(l => [l.text, l.badges.map(x => x.text)]));
     expect(b["Late backlog"]).toEqual(["overdue 5 Oct"]);
     expect(b["Wed task"]).toEqual(["today"]);
-    expect(b["Fri task"]).toEqual(["· Fri"]);
+    expect(b["Fri task"]).toEqual(["· Fri 9 Oct"]);
     expect(b["Mon task"]).toEqual(["today", "carried over"]);
   });
 
   it("at the weekend no to-do is 'today'; carried cards stay listed with their own day", () => {
     expect(thisWeek(todos, SAT).flatMap(l => l.badges.map(x => x.text))).not.toContain("today");
-    expect(thisWeek(todos, SAT).find(l => l.text === "Fri task")!.badges.map(x => x.text)).toEqual(["· Fri", "carried over"]);
+    expect(thisWeek(todos, SAT).find(l => l.text === "Fri task")!.badges.map(x => x.text)).toEqual(["· Fri 9 Oct", "carried over"]);
   });
 
   it("reads `scheduled` as the board does: this week's Mon–Fri listed, Sat / Sun, next week and the Backlog not; old `day` read through dateOf", () => {
@@ -53,7 +53,7 @@ describe("This week (00 Home, Dataview LIST over the to-dos)", () => {
     const b = Object.fromEntries(thisWeek(s, WED).map(l => [l.text, l.badges.map(x => x.text)]));
     expect(Object.keys(b)).toEqual(["Last week", "Old Thu", "Thu date"]);
     expect(b["Last week"]).toEqual(["today", "carried over"]);
-    expect(b["Thu date"]).toEqual(["· Thu"]);
+    expect(b["Thu date"]).toEqual(["· Thu 8 Oct"]);
   });
 });
 
@@ -220,13 +220,13 @@ describe("Project hub tiles (To-dos and Notes, show all / collapse at 10)", () =
     const lines = projectTodos(todos, hub, WED);
     expect(lines.map(l => l.text)).toEqual(["Late one", "Mon one", "Backlog one"]);
     expect(lines[0].badges[0].text).toBe("overdue 1 Oct");
-    expect(lines[1].badges[0].text).toBe("· Mon");
+    expect(lines[1].badges[0].text).toBe("· Mon 5 Oct");
     expect(lines[2].badges[0].text).toBe("· Backlog");
   });
-  it("To-dos: the day badge is the weekday in this week, the date in another week", () => {
+  it("To-dos: the day badge is the full date, in this week too (owner, option b)", () => {
     const t = (name: string, scheduled: string) => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", scheduled });
     const lines = projectTodos([t("Next", "2026-10-13"), t("Thu", "2026-10-08"), t("Before", "2026-09-29")], hub, WED);
-    expect(lines.map(l => `${l.text} ${l.badges[0].text}`)).toEqual(["Before · Tue 29 Sep", "Thu · Thu", "Next · Tue 13 Oct"]);
+    expect(lines.map(l => `${l.text} ${l.badges[0].text}`)).toEqual(["Before · Tue 29 Sep", "Thu · Thu 8 Oct", "Next · Tue 13 Oct"]);
   });
   it("To-dos: overdue, then day, then priority (1 → 2 → 3 → none), then name", () => {
     const p = (name: string, fm: Record<string, unknown>) => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });
