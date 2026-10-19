@@ -17,9 +17,17 @@ export class Plugin extends Component {
 }
 export class Notice {
   static messages: string[] = [];
-  constructor(m: unknown) { Notice.messages.push(String(m)); }
-  messageEl = { createSpan: () => ({}), createEl: () => ({ addEventListener(): void { /* ignored */ } }) };
-  hide(): void { /* ignored */ }
+  static all: Notice[] = [];
+  constructor(m: unknown) { Notice.messages.push(String(m)); Notice.all.push(this); }
+  /** Text of the spans and buttons, and the buttons' click handlers (tests click them). */
+  texts: string[] = [];
+  clicks: (() => void)[] = [];
+  messageEl = {
+    createSpan: (o?: { text?: string }) => { this.texts.push(o?.text ?? ""); return {}; },
+    createEl: (_t: string, o?: { text?: string }) => { this.texts.push(o?.text ?? ""); return { addEventListener: (_e: string, fn: () => void): void => { this.clicks.push(fn); } }; },
+  };
+  hidden = false;
+  hide(): void { this.hidden = true; }
 }
 export class Menu { addItem(): this { return this; } showAtMouseEvent(): void { /* ignored */ } }
 export class Modal { constructor(public app: any) {} open(): void { /* ignored */ } close(): void { /* ignored */ } }
