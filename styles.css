@@ -180,7 +180,7 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 /* Planning kit text box (src/planning/ask.ts): a picker with no list underneath */
 .lab-kit-ask .prompt-results { display: none; }
 /* Plain prompts (name boxes and pick lists) use the shape standard: window card, box control, list rows row */
-.modal.lab-kit-prompt { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
+.modal.lab-kit-prompt, .prompt.lab-kit-prompt { --modal-radius: var(--lk-radius-card); border-radius: var(--lk-radius-card); }
 .lab-kit-prompt .prompt-input { border-radius: var(--lk-radius-control); }
 .lab-kit-prompt .suggestion-item { border-radius: var(--lk-radius-row); }
 

@@ -55,7 +55,7 @@ describe("plain prompt corners", () => {
   it("ask and pick add the lab-kit-prompt class and styles.css styles it", () => {
     const ask = readFileSync("src/planning/ask.ts", "utf8");
     expect((ask.match(/lab-kit-prompt/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect(css).toMatch(/\.modal\.lab-kit-prompt \{[^}]*--lk-radius-card/);
+    expect(css).toMatch(/\.modal\.lab-kit-prompt, \.prompt\.lab-kit-prompt \{[^}]*--lk-radius-card/);   // a SuggestModal's box has the class "prompt", not "modal"
     expect(css).toMatch(/\.lab-kit-prompt \.prompt-input \{[^}]*--lk-radius-control/);
   });
 });
