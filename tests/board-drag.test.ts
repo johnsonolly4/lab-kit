@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { DRAG_START_PX, LONG_PRESS_MS, MOVE_SLOP_PX, dropDay, edgeStep, pressState, targetAt, type Zone } from "../src/planning/board-drag";
+import { DRAG_START_PX, LONG_PRESS_MS, MOVE_SLOP_PX, dropDay, edgeStep, pressState, stepDay, swipeDir, targetAt, type Zone } from "../src/planning/board-drag";
 
 describe("press state", () => {
   it("mouse and pen lift after a few pixels, at once", () => {
@@ -58,5 +58,23 @@ describe("what a drop writes", () => {
   it("nothing outside a zone or on the card's own zone", () => {
     expect(dropDay("Mon", null, false)).toBeNull();
     expect(dropDay("Mon", "Mon", false)).toBeNull();
+  });
+});
+
+describe("phone swipe between days", () => {
+  it("a long sideways move is a swipe: left = next, right = previous", () => {
+    expect(swipeDir(-80, 5)).toBe(1);
+    expect(swipeDir(80, -10)).toBe(-1);
+  });
+  it("too short, or more down than across, is not a swipe", () => {
+    expect(swipeDir(-59, 0)).toBe(0);
+    expect(swipeDir(-80, 70)).toBe(0);
+  });
+  it("stepping stays on the first and last day", () => {
+    const d = ["Mon", "Tue", "Wed"];
+    expect(stepDay(d, "Mon", 1)).toBe("Tue");
+    expect(stepDay(d, "Mon", -1)).toBe("Mon");
+    expect(stepDay(d, "Wed", 1)).toBe("Wed");
+    expect(stepDay(d, "Sat", 1)).toBe("Sat");
   });
 });

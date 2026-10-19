@@ -1,17 +1,19 @@
 // The to-do board as a Bases view the plugin draws itself (Board-B Phase 1): days across the top, the Backlog tray along the bottom.
 // Bases filters and sorts (the .base file); this draws and writes `done` / `day`. Public API only (registerBasesView, since 1.10.0).
 // Pure parts: board-card.ts, board-drag.ts (pointer drag for mouse, pen and touch). Plan: docs/plans/board-own-view.md.
-import { BasesView, Keymap, TFile, type Plugin, type QueryController } from "obsidian";
+import { BasesView, Keymap, Platform, TFile, type Plugin, type QueryController } from "obsidian";
 import type { KitData } from "../kit/paths";
 import { todoFolder } from "../kit/paths";
 import { inFolder, type NoteRec } from "./lists";
 import type { Series } from "./meetings";
-import { attachCardDrag, dragJustEnded } from "./board-drag";
+import { attachCardDrag, dragJustEnded, stepDay, swipeDir } from "./board-drag";
 import { buildBoard, cardOf, filterTray, readyPaths, trayProjects, type BoardCard, type TrayFilter } from "./board-card";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
 export const TRAY_FOLDED_KEY = "lk-board-tray-folded";
+/** Phone layout (one day at a time with tabs) below this width of the board's own area, or on a phone (px). */
+export const NARROW_PX = 600;
 
 /** What the view needs from the plugin. */
 export interface BoardEnv { kit: () => KitData; series: () => Series[] }
@@ -26,21 +28,27 @@ class BoardView extends BasesView {
   private root!: HTMLElement;
   private dragging = false;
   private late = false;
+  private pick = "";
+  private sizer: ResizeObserver;
 
   constructor(controller: QueryController, private el: HTMLElement, private env: BoardEnv) {
     super(controller);
     open.add(this);
+    this.sizer = new ResizeObserver(() => this.root?.toggleClass("is-narrow", this.narrow()));
+    this.sizer.observe(el);
   }
 
-  onunload(): void { open.delete(this); }
+  onunload(): void { open.delete(this); this.sizer.disconnect(); }
+  private narrow(): boolean { return Platform.isPhone || (this.el.clientWidth > 0 && this.el.clientWidth < NARROW_PX); }
   onDataUpdated(): void { this.draw(); }
 
   private rec(f: TFile): NoteRec {
     return { path: f.path, name: f.basename, folder: f.parent?.path ?? "", fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}, ctime: f.stat.ctime, mtime: f.stat.mtime };
   }
 
-  private folded(): boolean { try { return this.app.loadLocalStorage(TRAY_FOLDED_KEY) === "1"; } catch { return false; } }
-  private setFolded(v: boolean): void { try { this.app.saveLocalStorage(TRAY_FOLDED_KEY, v ? "1" : null); } catch { /* no local storage: the fold is not kept */ } }
+  /** The saved choice; with none saved the tray starts folded in the phone layout. */
+  private folded(): boolean { try { const v: unknown = this.app.loadLocalStorage(TRAY_FOLDED_KEY); return v === null ? this.narrow() : v === "1"; } catch { return this.narrow(); } }
+  private setFolded(v: boolean): void { try { this.app.saveLocalStorage(TRAY_FOLDED_KEY, v ? "1" : "0"); } catch { /* no local storage: the fold is not kept */ } }
 
   draw(): void {
     if (this.dragging) { this.late = true; return; }
@@ -55,12 +63,27 @@ class BoardView extends BasesView {
     const board = buildBoard(cards, { series: this.env.series(), todos, hubs }, { weekend: kit.boardWeekend, busyFrom: kit.boardBusyFrom, countdown: kit.dueCountdown, now });
 
     const root = this.root = this.el.createDiv({ cls: "lk-board" });
+    root.toggleClass("is-narrow", this.narrow());
+    const names = board.days.map(d => d.day);
+    if (!names.includes(this.pick)) this.pick = board.days.find(d => d.today)?.day ?? names[0] ?? "";
+    const tabs = root.createDiv({ cls: "lk-board-tabs", attr: { role: "tablist", "aria-label": "Days" } });
+    for (const d of board.days) {
+      const tab = tabs.createEl("button", { cls: "lk-board-tab", attr: { type: "button", role: "tab", "aria-selected": String(d.day === this.pick) } });
+      tab.dataset.drop = d.day;
+      if (d.day === this.pick) tab.addClass("is-on");
+      if (d.today) tab.addClass("is-today");
+      tab.createSpan({ cls: "lk-board-name", text: d.day });
+      tab.createSpan({ cls: d.busy ? "lk-board-count is-busy" : "lk-board-count", text: String(d.count) });
+      tab.addEventListener("click", () => { this.pick = d.day; this.draw(); });
+    }
     const days = root.createDiv({ cls: board.days.length > 5 ? "lk-board-days has-weekend" : "lk-board-days" });
+    this.swipe(days, names);
     for (const d of board.days) {
       const col = days.createEl("section", { cls: "lk-board-col" });
       col.dataset.day = d.day;
       col.dataset.drop = d.day;
       if (d.today) col.addClass("is-today");
+      if (d.day === this.pick) col.addClass("is-picked");
       const head = col.createDiv({ cls: "lk-board-head" });
       head.createSpan({ cls: "lk-board-name", text: d.day });
       head.createSpan({ cls: d.busy ? "lk-board-count is-busy" : "lk-board-count", text: String(d.count) });
@@ -85,6 +108,19 @@ class BoardView extends BasesView {
       for (const c of filterTray(board.tray, this.filter, ready)) this.card(row, c);
       row.scrollLeft = keep;
     }
+  }
+
+  /** Phone layout: a touch swipe sideways on the days moves to the next / previous day. */
+  private swipe(days: HTMLElement, names: string[]): void {
+    let start: { x: number; y: number } | null = null;
+    days.addEventListener("pointerdown", e => { start = e.pointerType === "touch" ? { x: e.clientX, y: e.clientY } : null; });
+    days.addEventListener("pointerup", e => {
+      const s = start; start = null;
+      if (!s || this.dragging || !this.root.hasClass("is-narrow")) return;
+      const dir = swipeDir(e.clientX - s.x, e.clientY - s.y);
+      const next = dir ? stepDay(names, this.pick, dir) : this.pick;
+      if (next !== this.pick) { this.pick = next; this.draw(); }
+    });
   }
 
   private chips(parent: HTMLElement, tray: BoardCard[]): void {

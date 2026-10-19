@@ -39,6 +39,21 @@ export function dropDay(fromKey: string, toKey: string | null, cancelled: boolea
   return cancelled || !toKey || toKey === fromKey ? null : toKey;
 }
 
+/** Phone layout: a swipe of this many px, clearly more sideways than down, changes the day. */
+export const SWIPE_PX = 60;
+
+/** 1 for a swipe left (next day), -1 for a swipe right (previous day), 0 when it was not a sideways swipe. */
+export function swipeDir(dx: number, dy: number): -1 | 0 | 1 {
+  if (Math.abs(dx) < SWIPE_PX || Math.abs(dx) < 1.5 * Math.abs(dy)) return 0;
+  return dx < 0 ? 1 : -1;
+}
+
+/** The day `dir` steps from `cur` in `days`; stays put at either end (no wrap-around). */
+export function stepDay(days: string[], cur: string, dir: -1 | 1): string {
+  const i = days.indexOf(cur);
+  return i < 0 ? cur : days[Math.min(days.length - 1, Math.max(0, i + dir))];
+}
+
 let lastEnd = 0;
 /** True for a moment after a drag, so the click that follows it does not open the note. */
 export const dragJustEnded = (): boolean => Date.now() - lastEnd < 400;
