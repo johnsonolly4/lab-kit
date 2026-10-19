@@ -22,7 +22,7 @@
     ],
     "deny": [
       "Read(./node_modules/**)",
-      "Read(./test-vault/.obsidian/plugins/**)",
+      "Read(./test-vault/.obsidian/plugins/lab-kit/main.js)",
       "Bash(git push --force:*)",
       "Bash(git push -f:*)",
       "Bash(git reset --hard:*)",

@@ -28,7 +28,7 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Old-style notes to try Tidy up notes on: `npm run tidy-fixture` (writes `test-vault-tidy/`, gitignored; open it as its own vault)
 
 ## Hard rules
-- `test-vault/` is fine to read and write; never read or write the user's real vault. `test-vault/.obsidian/plugins/` (where `npm run dev` writes) is blocked by a Read deny in `.claude/settings.json` (about 55 failed calls in past chats): don't try it; check the plugin in a throwaway Obsidian with the `obsidian-check` skill, or ask the user.
+- `test-vault/` is fine to read and write; never read or write the user's real vault. In `test-vault/.obsidian/plugins/lab-kit/` (where `npm run dev` writes) `data.json`, `kit-base/` and `backups/` may be read for bug hunts; `main.js` there is the bundle and is denied in `.claude/settings.json`: read `src/` instead, or `grep -c` the repo-root `main.js` after `npm run build`.
 - Never push, merge to `main`, tag, release or delete without asking.
 - Plugin code follows `.claude/rules/obsidian-plugin.md` (loads automatically for `src/`); it must work on desktop (Windows, macOS, Linux) and mobile (`hasNode()`).
 - Engine changes need a test against fixtures. Known answers: 0005 RAFT Mn = 19990.14; 0011 reactor volume = 1.7591 mL.
