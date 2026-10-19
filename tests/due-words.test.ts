@@ -71,7 +71,7 @@ describe("To-do template", () => {
   const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
   it("asks nothing when the plugin's entry window handed the values over (window.vtTodo), and writes the chip bar block", () => {
     expect(tpl).toContain("let preset = window.vtTodo;");
-    expect(tpl).toContain("window.vtEntryTodo(found ? day : undefined)");
+    expect(tpl).toContain("window.vtEntryTodo(column)");
     expect(tpl).not.toContain("tp.file.cursor");   // Templater leaves it as visible text in a note that is not opened
     expect(tpl).toContain("preset ? preset.text : await tp.user.vtAsk");
     expect(tpl).toContain("if (!project && !preset) {");
@@ -84,11 +84,11 @@ describe("To-do template", () => {
     expect(tpl).toContain("today, tomorrow, fri, next mon");
     expect(tpl).toMatch(/parseDue \? parseDue\(d, new Date\(\)\) : /);
   });
-  it("asks the priority with a text hint (Esc cancels), sets a number property, writes it after countdown", () => {
+  it("asks the priority with a text hint (Esc cancels), sets a number property, writes it only when set, after due", () => {
     expect(tpl).toContain('["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3]');
     expect(tpl).toContain('setType?.("priority", "number")');
     expect(tpl).toContain("Cancelled - no priority choice");
-    expect(tpl).toMatch(/^countdown: <% countdown %>\npriority: <% priority %>\n/m);
+    expect(tpl).toMatch(/^<% due \? `due: \$\{due\}\\n` : "" -%>\n<% priority \? `priority: \$\{priority\}\\n` : "" -%>\n/m);
   });
   it("asks Comes after? only for a project with open to-dos (Esc = nothing) and writes after only when picked", () => {
     expect(tpl).toContain('["(nothing)", ...open], ["", ...open]');
@@ -96,7 +96,7 @@ describe("To-do template", () => {
     expect(tpl).toContain("if (project && !preset) {");
     expect(tpl).toContain("if (open.length) {");
     expect(tpl).toContain("after = before || \"\";");
-    expect(tpl).toMatch(/^priority: <% priority %>\n<% after \? `after: "\[\[\$\{after\}\]\]"\\n` : "" -%>\n/m);
+    expect(tpl).toMatch(/^<% priority \? `priority: \$\{priority\}\\n` : "" -%>\n<% after \? `after: "\[\[\$\{after\}\]\]"\\n` : "" -%>\n/m);
   });
   it("reads a project link written as [[Name]], [[Folder/Name|alias]] or [[Name#h]]", () => {
     const src = tpl.match(/const linkName = (.+);\n/)![1];

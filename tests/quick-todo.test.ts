@@ -80,7 +80,8 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(isBlankBoardNote("---\nday: Wed\n---\n")).toBe(true);
     expect(isBlankBoardNote("---\r\nday: Backlog\r\n---\r\n\r\n")).toBe(true);
     expect(isBlankBoardNote("---\nday: Wed\n---\n\n   \n")).toBe(true);
-    expect(isBlankBoardNote("---\ndone:\nday: Backlog\n---\n")).toBe(true);   // what the board's New writes (Obsidian 1.14.4)
+    expect(isBlankBoardNote("---\ndone:\nday: Backlog\n---\n")).toBe(true);
+    expect(isBlankBoardNote("---\nscheduled: 2026-10-21\ndone:\n---\n")).toBe(true);   // a board that writes the column as a date (I2)   // what the board's New writes (Obsidian 1.14.4)
   });
   it("any text, or any other property, is kept", () => {
     expect(isBlankBoardNote("---\nday: Wed\n---\nbuy tubing\n")).toBe(false);
@@ -92,7 +93,7 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
   });
   it("the template carries the same rule and only trashes inside the to-dos folder", () => {
     const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
-    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^(?:day:|[\\w .-]+:\\s*$)/.test(l.trim()))");
+    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^(?:day:|scheduled:|[\\w .-]+:\\s*$)/.test(l.trim()))");
     expect(tpl).toContain("f.path.startsWith(`${folder}/`) && rest.trim() === \"\"");
     expect(tpl).toContain("app.fileManager.trashFile(f)");
   });

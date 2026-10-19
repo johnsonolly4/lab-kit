@@ -3,27 +3,33 @@
 import type { TFile, Vault } from "obsidian";
 import { fillTemplate, type TemplateEnv } from "../kit/snippet-template";
 import { todoFileName } from "./quick-todo";
+import { dateOf, ymd } from "./todo";
 
 /** What the entry window hands over (`window.vtTodo` in commands.ts). */
 export interface TodoAnswer { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string }
 
-export const TODO_DAYS = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
-
-/** The note, line for line as To-do.md writes it (today's properties). `waiting` arrives as `waiting_json` because the engine has no JSON-escape token; an optional line is a `{{#if}}` block alone on its line, which takes its line break with it. */
+/** The note, line for line as To-do.md writes it (I2 slim model: only set values). `waiting` arrives as `waiting_json` because the engine has no JSON-escape token; an optional line is a `{{#if}}` block alone on its line, which takes its line break with it. */
 export const TODO_TEMPLATE = `---
 kind: todo
-day: {{day}}
-planned: {{today}}
+{{#if scheduled}}
+scheduled: {{scheduled}}
+{{/if}}
 done: false
-rolled: false
-project: {{#if project}}"[[{{project}}]]"{{/if}}
+{{#if project}}
+project: "[[{{project}}]]"
+{{/if}}
+{{#if due}}
 due: {{due}}
-countdown: false
+{{/if}}
+{{#if priority}}
 priority: {{priority}}
+{{/if}}
 {{#if after}}
 after: "[[{{after}}]]"
 {{/if}}
-meeting: {{#if meeting}}"[[{{meeting}}]]"{{else}}false{{/if}}
+{{#if meeting}}
+meeting: "[[{{meeting}}]]"
+{{/if}}
 {{#if experiment}}
 experiment: "[[{{experiment}}]]"
 {{/if}}
@@ -51,13 +57,18 @@ export function isoDay(d: Date): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-/** The new to-do's text. `day` is the board column the card was made in (anything not a column: Backlog); `after` the to-do it comes after (the template's boxes ask it; the entry window has no chip for it). */
-export function todoNoteText(a: TodoAnswer, day: string | undefined, today: Date, after = ""): string {
+/** The planned date a new note starts with: a `scheduled` date already in it, or an old weekday `day` (a board column) as the next such day from today (today counts); "" for anything else (the Backlog). */
+export function startDate(day: string | undefined, today: Date): string {
   const col = (day ?? "").trim();
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(col) ? dateOf({ scheduled: col }, today) : dateOf({ day: col, planned: isoDay(today) }, today);
+  return d ? ymd(d) : "";
+}
+
+/** The new to-do's text. `day` is what the note held before the template ran: a `scheduled` date or a board column's weekday (see `startDate`); `after` the to-do it comes after (the template's boxes ask it; the entry window has no chip for it). */
+export function todoNoteText(a: TodoAnswer, day: string | undefined, today: Date, after = ""): string {
   const waiting = String(a.waiting ?? "").trim();
   return fillTemplate(TODO_TEMPLATE, {
-    day: TODO_DAYS.includes(col) ? col : "Backlog",
-    today: isoDay(today),
+    scheduled: startDate(day, today),
     project: a.project || "",
     due: a.due || "",
     priority: String(a.priority),

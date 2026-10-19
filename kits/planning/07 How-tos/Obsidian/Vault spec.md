@@ -138,25 +138,23 @@ Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue 
 > Meta Bind buttons can't be generated per project, so Lab Kit draws the cards (a `vault-projects` block, styled by `vault-theme.css`). Their buttons call Lab Kit's New project note and New to-do. With a `deadline` and the countdown on, a card shows the days left.
 
 ### To-do (`00 Planning/To-dos`)
-Created with the **New to-do** button or command (`Alt+T`): an entry window (title box, chips for Project, Meeting, Due, Priority; Enter creates; the countdown badge is a setting for all to-dos), then the template `Extras/Templates/To-do.md` makes the note from what was set (it writes a `todo-bar` block, the chip bar, under the properties; Tidy up notes can add it to old to-dos). **New** in a column on the board runs the same template, which opens the same window through the plugin (its title names the column; without the plugin the template asks the questions one by one). A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).
+Created with the **New to-do** button or command (`Alt+T`): an entry window (title box, chips for Project, Meeting, Due, Priority; Enter creates; the countdown badge is a setting for all to-dos), then the template `Extras/Templates/To-do.md` makes the note from what was set (it writes a `todo-bar` block, the chip bar, under the properties; Tidy up notes can add it to old to-dos). **New** in a column on the board runs the same template, which opens the same window through the plugin (its title names the column; without the plugin the template asks the questions one by one). A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's date as `scheduled` (anything else starts in the Backlog). The template writes only the properties that have a value.
 
 | Property | Values | Set by |
 |---|---|---|
 | `kind` | `todo` | template |
-| `day` | `Backlog`, `Mon`, `Tue`, `Wed`, `Thu`, `Fri` (`Done` = finished in an earlier week, off the board) | dragging the card |
+| `scheduled` | date (`YYYY-MM-DD`) the to-do is planned for; none = the Backlog. Before today and not done = carried over (orange card, worked out, never stored) | dragging the card |
 | `done` | tick box - finished | me |
-| `planned` | date the card was put on its day | Lab Kit |
-| `rolled` | tick box - carried over from an earlier day (orange card) | Lab Kit |
 | `done_on` | date `done` was ticked | Lab Kit |
-| `project` | link to a project hub, e.g. `"[[Flow rig]]"`, or empty | template / me |
+| `project` | link to a project hub, e.g. `"[[Flow rig]]"`; none when not in a project | template / me |
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
 | `priority` / `project` on the board | the board card shows a small tag at the bottom left, `↑ Polymers` (an arrow for priority 1, 2 or 3: ↑, –, ↓, and the project's name); read from the note, so the property row need not be shown on the card | plugin |
-| `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
-| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none; the board sorts each column the same way, after putting done cards last (`sort:` in `To-do board.base`) | template (New to-do asks it) / me |
+| `priority` | `1`, `2` or `3` (1 = highest, a number property); none when not set - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none; the board sorts each column the same way, after putting done cards last (`sort:` in `To-do board.base`) | template (New to-do asks it) / me |
 | `sub` | optional, by hand: one link to the to-do this one is a subtask of (`"[[Parent to-do]]"`); the parent's card on the plan map shows a count (`1/2`) that opens the list; the parent is never ticked for you; one level only; the subtask stays an ordinary to-do (board, `after`) | me |
 | `experiment` | optional, by hand: one link to the lab note this to-do runs (`"[[ABC0014-A]]"`); the project plan shows that note's `Status` as a badge on the to-do's card. Display only; needs the Lab folder set | me |
 | `after`, `result`, `order` | for a to-do in a project: `after` = link(s) to the to-dos that come first (New to-do's *Comes after?* writes one; dragging on the plan map and Link to-dos in order write it too; a second one by hand, as a list), `result` = one line (the Add result command, or by hand), `order` = a number, by hand; read by the project hub's plan map and Plan list | template / plugin / me |
-| `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; `false` = not flagged | template / me |
+| `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; none = not flagged | template / me |
+| `day`, `planned`, `rolled`, `countdown` | old properties from an older To-do template: still read (a weekday `day` as its date this week), removed when a note arrives in the to-dos folder or by Tidy up notes → To-dos: give each card a date | old template |
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); *Comes after?* (only for a project with other open to-dos: one pick, "(nothing)" first); which meeting to raise it at (only when there are several series); a due date (Enter = none; `YYYY-MM-DD`, or `today`, `tomorrow`, a weekday such as `fri`, `next mon`) and, with a date, whether to show a countdown; the priority (none, 1, 2, 3). Esc at any box cancels the to-do, except at *Comes after?*, where it picks nothing. New to-dos get `cssclasses: [vt]`.
 

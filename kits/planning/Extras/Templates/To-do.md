@@ -6,21 +6,31 @@ try {   // a cancel (Esc) is caught at the end of the file, so Templater does no
 const folder = "00 Planning/To-dos";
 // The plugin's entry window (title + chips) hands everything over in window.vtTodo, and nothing is asked here. Run without it (the board's New button,
 // a folder template) the template opens the same window itself through window.vtEntryTodo, naming the board column; with no plugin the boxes below ask one by one.
-// The board writes the column's `day` into the new note before this runs.
-const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
+// A board writes the column into the new note before this runs: a `scheduled` date, or (the Bases kanban, an old board) a weekday `day`,
+// read as the next such day from today (today counts). Anything else starts in the Backlog (no `scheduled`). Same rule as startDate in src/planning/todo-note.ts.
+const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const raw = await app.vault.read(tp.config.target_file);
-const found = (raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1];
-const day = days.includes((found || "").trim()) ? found.trim() : "Backlog";
-// Esc: a note the board just made with nothing in it but its `day` and empty properties (the board's New writes `done:`) goes to the trash, so no empty note is left (a note with any text is never touched)
+const pad = n => String(n).padStart(2, "0");
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const now = new Date(), today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const wd = d => (d.getDay() + 6) % 7;   // 0 = Mon
+const setDate = (raw.match(/^scheduled:\s*["']?(\d{4}-\d{2}-\d{2})/m) || [])[1];
+const oldDay = ((raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1] || "").trim();
+let at = null;
+if (setDate) { const [y, m, d] = setDate.split("-").map(Number), x = new Date(y, m - 1, d); if (iso(x) === setDate) { at = x; } }
+else if (days.includes(oldDay)) { at = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (days.indexOf(oldDay) - wd(today) + 7) % 7); }
+const scheduled = at ? iso(at) : "";
+const column = at ? days[wd(at)] : undefined;   // names the column in the entry window's title
+// Esc: a note the board just made with nothing in it but its day and empty properties (the board's New writes `done:`) goes to the trash, so no empty note is left (a note with any text is never touched)
 const trashIfBlank = async () => {
   const f = tp.config.target_file;
-  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm) => fm.split(/\r?\n/).every(l => !l.trim() || /^(?:day:|[\w .-]+:\s*$)/.test(l.trim())) ? "" : m);
+  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm) => fm.split(/\r?\n/).every(l => !l.trim() || /^(?:day:|scheduled:|[\w .-]+:\s*$)/.test(l.trim())) ? "" : m);
   if (f.path.startsWith(`${folder}/`) && rest.trim() === "") { window.setTimeout(() => { app.fileManager.trashFile(f).catch(() => { /* it stays */ }); }, 800); }   // after Templater has finished with the file
 };
 let preset = window.vtTodo;
 delete window.vtTodo;
 if (!preset && typeof window.vtEntryTodo === "function") {
-  preset = await window.vtEntryTodo(found ? day : undefined);
+  preset = await window.vtEntryTodo(column);
   if (!preset) { await trashIfBlank(); throw new Error("Cancelled - no to-do"); }
 }
 // Text box: same look as the project picker (Extras/scripts/templater/vault/vtAsk.js)
@@ -69,7 +79,7 @@ if (!preset && series.length > 1) {
   if (chosen === null || chosen === undefined) { await trashIfBlank(); throw new Error("Cancelled - no meeting picked"); }
   meeting = chosen;
 }
-// Due date: optional (Enter on empty = none); a countdown badge is offered only when a date is set. Esc cancels.
+// Due date: optional (Enter on empty = none). Esc cancels.
 // `due` is a date property in this vault (set once here, Obsidian keeps it in .obsidian/types.json).
 try { if (app.metadataTypeManager?.getAssignedType?.("due") !== "date") { await app.metadataTypeManager?.setType?.("due", "date"); } } catch (e) { /* older Obsidian: due stays text */ }
 const parseDue = tp.user.vtAsk.parseDue;   // words like "fri" or "next mon"; an older vtAsk.js has none (then only YYYY-MM-DD)
@@ -82,14 +92,12 @@ while (!preset) {
   if (words) { due = words; break; }
   prompt = `"${d}" is not a date. Use YYYY-MM-DD, or today, tomorrow, fri, next mon (Enter = none, Esc to cancel)`;
 }
-// The countdown badge on the board is one setting for all to-dos (Settings > Lab Kit > Due-date countdown); `countdown` stays false here (mode "marked" reads a `countdown: true` typed by hand).
-const countdown = false;
 // Priority: optional, a number property (1 = highest). Esc cancels.
 try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") { await app.metadataTypeManager?.setType?.("priority", "number"); } } catch (e) { /* older Obsidian: priority stays text */ }
 const pr = preset ? preset.priority : await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
 if (pr === null || pr === undefined) { await trashIfBlank(); throw new Error("Cancelled - no priority choice"); }
 const priority = pr;
-// `day` (read at the top) keeps the board column the card was made in; anything else (the New to-do command, project cards) starts in Backlog.
+// `scheduled` (read at the top) keeps the board column the card was made in; anything else (the New to-do command, project cards) starts in the Backlog.
 const base = text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80);
 // The plugin's New to-do makes the note under this name already (todoFileName in src/planning/quick-todo.ts): then nothing is renamed, which would ask "Update links" with Automatically update internal links off
 const here = tp.config.target_file.path;
@@ -99,16 +107,13 @@ if (here !== `${folder}/${name}.md`) { await tp.file.move(`${folder}/${name}`); 
 -%>
 ---
 kind: todo
-day: <% day %>
-planned: <% tp.date.now("YYYY-MM-DD") %>
+<% scheduled ? `scheduled: ${scheduled}\n` : "" -%>
 done: false
-rolled: false
-project: <% project ? `"[[${project}]]"` : "" %>
-due: <% due %>
-countdown: <% countdown %>
-priority: <% priority %>
+<% project ? `project: "[[${project}]]"\n` : "" -%>
+<% due ? `due: ${due}\n` : "" -%>
+<% priority ? `priority: ${priority}\n` : "" -%>
 <% after ? `after: "[[${after}]]"\n` : "" -%>
-meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
+<% meeting ? `meeting: "[[${meeting}]]"\n` : "" -%>
 <% experiment ? `experiment: "[[${experiment}]]"\n` : "" -%>
 <% waiting ? `waiting: ${JSON.stringify(waiting)}\n` : "" -%>
 cssclasses:
