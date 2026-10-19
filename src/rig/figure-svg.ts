@@ -55,8 +55,11 @@ function attachedPoints(above: Placed, part: Placed): Point[] {
   return [at(above, above.sym.bottom), at(part, part.sym.top)];
 }
 
-function symbolSvg(p: Placed): string {
-  return `<g data-part="${esc(p.node.id)}" transform="translate(${n1(p.node.x)} ${n1(p.node.y)})">${p.sym.body}</g>`;
+/** `<g id="sym-<name>-<n>" data-symbol="<name>">`: which symbols.ts entry a mark is, numbered per name in drawing order, so feedback on a picture maps back to the table. */
+const symAttr = (name: string, n: number): string => `id="sym-${esc(name)}-${n}" data-symbol="${esc(name)}"`;
+
+function symbolSvg(p: Placed, n: number): string {
+  return `<g ${symAttr(p.sym.name, n)} data-part="${esc(p.node.id)}" transform="translate(${n1(p.node.x)} ${n1(p.node.y)})">${p.sym.body}</g>`;
 }
 
 function labelSvg(p: Placed, above: boolean): string {
@@ -131,7 +134,7 @@ function controlSvg(fig: Figure, placed: Map<string, Placed>, colours: { control
 function computerSvg(fig: Figure): string {
   const c = fig.computer;
   if (!c) return "";
-  return `<g data-computer="1" transform="translate(${n1(c.x)} ${n1(c.y)})">${COMPUTER.body}</g>`
+  return `<g ${symAttr(COMPUTER.name, 1)} data-computer="1" transform="translate(${n1(c.x)} ${n1(c.y)})">${COMPUTER.body}</g>`
     + `<text x="${n1(c.x + COMPUTER.w / 2 + 10)}" y="${n1(c.y + 5)}" font-size="16" font-weight="700" stroke="none">${esc(c.label)}</text>`;
 }
 
@@ -164,12 +167,14 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   }
 
   const parts = fig.nodes.map(node => placed.get(node.id)!);
+  const seen = new Map<string, number>();
+  const numbered = parts.map(p => { const n = (seen.get(p.sym.name) ?? 0) + 1; seen.set(p.sym.name, n); return symbolSvg(p, n); });
   const title = opts.title ? `<text x="20" y="28" font-size="20" font-weight="700">${esc(opts.title)}</text>` : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${fig.height}" width="${fig.width}" height="${fig.height}" font-family="${FONT}" fill="${INK}">`
     + `<style>.fill{fill:${INK}}</style>`
     + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
-    + `<g fill="none">${lines.join("")}</g>${dots.join("")}${parts.map(symbolSvg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
+    + `<g fill="none">${lines.join("")}</g>${dots.join("")}${numbered.join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
     + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id))).join("")}</g></svg>`;
   return { svg, missing };
 }

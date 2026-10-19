@@ -41,6 +41,13 @@ describe("symbols", () => {
 });
 
 describe("figureSvg", () => {
+  it("wraps each symbol in a group named for its symbols.ts entry, numbered per name", () => {
+    const r = draw(...tee, "X1 | Gizmo | | ");
+    const groups = [...r.svg.matchAll(/<g id="sym-([a-z]+)-(\d+)" data-symbol="([a-z]+)" data-part="([^"]+)"/g)].map(m => [m[1] + "-" + m[2], m[3], m[4]]);
+    expect(groups.map(g => g.join(" ")).sort()).toEqual(["analysis-1 analysis A1", "box-1 box X1", "coil-1 coil C1", "pump-1 pump PA", "pump-2 pump PB", "tee-1 tee T1", "vial-1 vial COL"]);
+    for (const [, name] of groups) expect([...SYMBOL_NAMES, "box"]).toContain(name);
+    expect(new Set(groups.map(g => g[0])).size).toBe(groups.length);
+  });
   it("gives every part one symbol and one label, and lists unknown kinds as missing", () => {
     const r = draw(...tee, "X1 | Gizmo | | ");
     for (const id of ["PA", "PB", "T1", "C1", "A1", "COL", "X1"]) expect(r.svg).toContain(`data-part="${id}"`);
@@ -109,6 +116,7 @@ describe("computer and control lines", () => {
   it("draws the computer with its escaped label, and a dashed coloured line per control and data cell", () => {
     const { svg, f } = ctl();
     expect(svg).toContain('data-computer="1"');
+    expect(svg).toContain('<g id="sym-computer-1" data-symbol="computer" data-computer="1"');
     expect(svg).toContain("PC &amp; co");
     expect((svg.match(/data-control="/g) ?? [])).toHaveLength(3);
     expect((svg.match(/data-data="/g) ?? [])).toHaveLength(1);
