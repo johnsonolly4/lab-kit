@@ -28,7 +28,7 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Old-style notes to try Tidy up notes on: `npm run tidy-fixture` (writes `test-vault-tidy/`, gitignored; open it as its own vault)
 
 ## Hard rules
-- `test-vault/` is fine to read and write; never read or write the user's real vault. Allowed read path for the built plugin: `test-vault/.obsidian/plugins/` (`npm run dev` writes there).
+- `test-vault/` is fine to read and write; never read or write the user's real vault. `test-vault/.obsidian/plugins/` (where `npm run dev` writes) is blocked by a Read deny in `.claude/settings.json` (about 55 failed calls in past chats): don't try it; check the plugin in a throwaway Obsidian with the `obsidian-check` skill, or ask the user.
 - Never push, merge to `main`, tag, release or delete without asking.
 - Plugin code follows `.claude/rules/obsidian-plugin.md` (loads automatically for `src/`); it must work on desktop (Windows, macOS, Linux) and mobile (`hasNode()`).
 - Engine changes need a test against fixtures. Known answers: 0005 RAFT Mn = 19990.14; 0011 reactor volume = 1.7591 mL.
@@ -50,6 +50,10 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Quote every path. No command in a variable (`Z="python3 x.py"; $Z` fails in zsh).
 - No `sleep` to wait: run long jobs in the background.
 - `git commit -a` takes no paths: `git add PATHS` first, then `git commit`.
+- Read files with the Read tool (offset and limit), not `sed -n`, `cat` or `head` (past chats: 792 `sed -n` and 261 `cat` reads).
+- `grep`, `diff` and `cmp` exit 1 on "no match" / "differs": add `|| true` when that is an expected answer, so the call is not a failure.
+- `python3 -` edit scripts with `assert old in s` fail when the old text is not exact: read those lines first; for one file use the Edit tool.
+- `rm -rf` is denied: use `rm -r` on scratch or temp paths only.
 
 ## Terse commands
 - "continue" → top item in `STATUS.md` → Next
