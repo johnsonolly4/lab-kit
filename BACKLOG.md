@@ -64,6 +64,16 @@ Anything that changes a visual or existing behaviour is asked here first, never 
     - (d): remove the Templater dependency if it can be done and is a good thing, but evaluate the risk first (see the next item).
     - (f) Solution prep form: not answered. The owner asked to see the different ways a solution is made up ("properly" and less so) to pick the closest to theirs; page `solution-methods.html` opened (methods A to G and a Method chip).
     - Open: (b), (e), (g), (h), and the old NMR/GPC/DLS files.
+    - **How the owner makes up solutions (solution-methods feedback page, 2026-10-19; for Solution prep, I23 f):**
+      - A, volumetric flask: almost never.
+      - B, weigh then add solvent: common, but with a target mass of solid to aim for first; the liquid is not adjusted unless the solid is very off. Around 20 % concentrations are normal.
+      - Everything is in flow, so the volume concentration should matter more than the mass concentration, but the owner and the field mostly ignore it, "unless there is an easy solution". Solvent evaporation affects it anyway.
+      - C, liquid by volume: not usually, because evaporation makes syringes misbehave.
+      - D, everything by mass (gravimetric): "very close to what we do".
+      - F, several solutes by ratio: still used, but with the solvent made up by mass, not volume.
+      - E, dilution from a stock: for acid solutions (e.g. from glacial acetic acid) to fine-tune pH. Some PISA needs pH 4, so a diluted acid is made first and then added to the main solution in place of part of the water; neat acid would overshoot.
+      - G, dilution series: not used by the owner, though common practice.
+      - GPC and NMR samples are made up as you go with rough concentrations and are not recorded; concentration matters little there.
 - [ ] **Templater dependency: evaluate removing it (owner, 2026-10-19, from I23 d).** Today Templater carries:
   - Alt+S (the Insert snippet.md hotkey) and 4 user scripts (labSnippets, labForm, labPick, labMethods, plus vtAsk.js);
   - 18 kit template files with about 52 Templater tag lines (To-do, Lab Book Template, Meeting, Meeting series, One-off meeting, Project hub, New project note, New concept, New topic hub, the 7 code snippets, Insert snippet);
