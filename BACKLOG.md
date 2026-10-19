@@ -140,6 +140,19 @@ Anything that changes a visual or existing behaviour is asked here first, never 
     - (h) Footer: yes.
     - (d) Reopen: not answered; with no freeze it only clears the closed mark.
     - DECIDED 2026-10-19 (owner, chat): no freeze. Closing = the PDF(s) to the destination folders + `closed_on` + the hash footer; the note stays live; Reopen clears the mark; hazards left out of the PDF; smaller text, landscape pages only for tables too wide.
+- [ ] **Last group, OWNER ANSWERS 2026-10-19 (feedback page with screenshots):**
+  - Overnight plans: I12 confirmed; I7 + I13 confirmed. I19 + I20: asked whether a meeting note can freeze the day after its meeting date, instead of when the next one is made. Answered in chat: yes, the daily check can do that, and it only rewrites the generated lists, never the owner's notes. Waiting for confirmation.
+  - I12 wording: keep. I7 / I13 wording: "leave it in for now" (keep).
+  - New to-do without Templater: no message needed; the owner plans to finish the Templater replacement tonight.
+  - Kit files Update with only re-creates: always show the confirmation (yes).
+  - Plan map looks: feedback mode yes. First a research agent surveys card / dependency maps across tools and related fields; then the owner, Claude and the findings make the plan (research started 2026-10-19).
+  - Kit windows: the owner found three look faults in the screenshots:
+    - (a) the "Planning kit" chip line wraps in the narrow window (`p5-bar-shape-shots/review-dark-narrow.png`);
+    - (b) in Manage kit files the bottom border is wider than the side borders (`manage-light.png`);
+    - (c) in the narrow Kit files window the gap between "1 file to update" and the lighter card heading above it is taller than the side gap (`review-dark-narrow.png`).
+  - Phone: "always going to be awkward; we might have to disable certain features to make it work". To discuss: which features become read-only or hidden on a phone (e.g. plan map editing).
+  - Rig hand layout (R5): the owner was not sure what it meant; explained again in chat.
+  - Callouts outside kit notes: asked whether other plugins do this. Side question: do Obsidian themes restyle core settings and menus? Both answered in chat.
 - [ ] **Try on your own setup (behaviour not yet seen by the owner):** Board B Phases 1-2 in a test vault and drag on a real phone; a saved rig SVG opened in PowerPoint / Illustrator / Inkscape; New meeting with Templater freezes the earlier note; Sort inbox opens the next note after a delete; the hub bar chips and the Add to shopping prompt corners on real elements.
 
 ## NEXT TASK (user, 2026-10-12, chat, asked mid-session)
