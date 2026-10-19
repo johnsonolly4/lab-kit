@@ -210,6 +210,7 @@ Old plugin = 1.4.x (`changePatch`, `rollOverPatch` as in `src/planning/todo.ts`)
   - Mon 26 Oct and Tue 27 Oct cards: the old roll-over **moves them to Wed (today)** and writes `rolled: true`; the repair then rewrites `scheduled` to today. The planned future date is lost.
   - Wed, Thu, Fri 28-30 Oct cards: the old roll-over leaves them, and the old board draws them in **this** week's column.
   - So while one device runs 1.4.x, every forward-dated card is exposed. Q10 b (no `day` written) does not help: the old plugin keeps the card's old `day`.
+  - **Measured protection:** if a drag also writes `planned` = the card's `scheduled` date (the key an older plugin reads), the old roll-over **leaves all five** next-week cards alone (Mon to Fri 26-30 Oct). An old plugin's own drag sets `planned` to today, and its `cardDate` then reads the first such weekday on or after today, which is the right date for anything within the next 7 days. Not covered: a card dated more than a week ahead, which an old board draws at the nearest such weekday. Cost: `planned` stays a key to write (it is a compatibility copy of `scheduled`; the plan's "no longer written" changes). Question Q16.
 
 ### 6. Readers of `day`, and what each shows if `day` is kept as a mirror (Q10 a) or dropped (Q10 b)
 Mirror = `day` is the weekday name of `scheduled` (as in this plan); dropped = I2 writes only `scheduled`, an old `day` is left where it is, a new card has none.

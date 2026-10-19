@@ -1273,6 +1273,13 @@
     "Thu 2026-10-29: old roll-over leaves it; the old board draws it in this week's Thu column",
     "Fri 2026-10-30: old roll-over leaves it; the old board draws it in this week's Fri column"
   ],
+  "futureMeetsOldRollWithPlannedShim": [
+    "Mon 2026-10-26: old roll-over leaves it; the old board draws it in this week's Mon column",
+    "Tue 2026-10-27: old roll-over leaves it; the old board draws it in this week's Tue column",
+    "Wed 2026-10-28: old roll-over leaves it; the old board draws it in this week's Wed column",
+    "Thu 2026-10-29: old roll-over leaves it; the old board draws it in this week's Thu column",
+    "Fri 2026-10-30: old roll-over leaves it; the old board draws it in this week's Fri column"
+  ],
   "readers": {
     "Weekly review: Backlog list (day = Backlog, open)": {
       "today": 6,

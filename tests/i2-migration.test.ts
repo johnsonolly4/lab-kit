@@ -114,11 +114,12 @@ function oldPlugin() {
   return out;
 }
 
-/** A card the I2 board put in NEXT week (day mirrors the weekday, `scheduled` is next week's date, no `planned` written) meets an older plugin's roll-over on Wed 21 Oct. */
-function futureMeetsOldRoll() {
+/** A card the I2 board put in NEXT week (day mirrors the weekday, `scheduled` is next week's date) meets an older plugin's roll-over on Wed 21 Oct.
+ *  `shim`: the card also carries `planned` = its `scheduled` date (the key an older plugin reads); without it `planned` is missing (a new card) or old. */
+function futureMeetsOldRoll(shim: boolean) {
   return (["Mon", "Tue", "Wed", "Thu", "Fri"] as const).map(w => {
     const next = nextWeekday(w, new Date(2026, 9, 26));   // that weekday of next week
-    const fm: Fm = { kind: "todo", day: w, scheduled: ymd(next), done: false, rolled: false };
+    const fm: Fm = { kind: "todo", day: w, scheduled: ymd(next), ...(shim ? { planned: ymd(next) } : {}), done: false, rolled: false };
     const rolled = afterRoll(fm, MTIME, WED);
     return `${w} ${ymd(next)}: old roll-over ${rolled.day !== fm.day || rolled.rolled === true ? `moves it to ${String(rolled.day)} (today)` : "leaves it"}; the old board draws it in this week's ${w} column`;
   });
@@ -171,7 +172,7 @@ function readers() {
   return out;
 }
 
-const findings = { caseCounts: cards.reduce<Record<string, number>>((m, c) => ((m[c.kase] = (m[c.kase] ?? 0) + 1), m), {}), views: views(), doneFlips: doneFlips(), devices: devicePairs(), oldPlugin: oldPlugin(), futureMeetsOldRoll: futureMeetsOldRoll(), readers: readers() };
+const findings = { caseCounts: cards.reduce<Record<string, number>>((m, c) => ((m[c.kase] = (m[c.kase] ?? 0) + 1), m), {}), views: views(), doneFlips: doneFlips(), devices: devicePairs(), oldPlugin: oldPlugin(), futureMeetsOldRoll: futureMeetsOldRoll(false), futureMeetsOldRollWithPlannedShim: futureMeetsOldRoll(true), readers: readers() };
 
 describe("I2 on old-style vaults: findings (simulated, helper only)", () => {
   if (process.env.UPDATE_GOLDEN === "1" || !existsSync(GOLDEN)) writeFileSync(GOLDEN, JSON.stringify(findings, null, 2) + "\n");
