@@ -1,5 +1,12 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+Waiting status and projects with no next step (plan `docs/plans/waiting-and-next-step.md`). Built and tested; the board look was seen in a throwaway Obsidian only, not by the user.
+- **Waiting chip** (plugin + To-do template, Review update… to get the template): a to-do's chip bar and the New to-do window get a **Waiting** chip; type who or what the to-do waits on (an instrument booking, samples, a person) and it writes `waiting: <text>`; an empty answer removes the property.
+- **Waiting shows** (plugin + planning kit theme snippet, Review update…): a waiting card on the board gets greyed text and an amber bar on its left; This week, a project hub's To-dos tile and the project cards show a `waiting: <text>` badge; the plan map no longer counts a waiting to-do as blocked.
+- **Waiting on list** (plugin + Meeting and Project hub templates, Review update…): a `show: waiting` block lists open waiting to-dos grouped by what they wait on; in a meeting note it covers all projects (under Flagged for this meeting), on a project hub only that project. Old project hubs get it through Tidy up notes' hub rule (opt-in); old meeting notes keep their page.
+- **No next step** (plugin): an Active project (Status not Done or Paused) with no open to-do shows a **no next step** badge on Home's Projects tile and in the project hub bar.
+
 ## v1.4.1 (2026-10-15)
 Plan map + before / + after buttons, subtasks in the slide picture and an Experiment chip on the to-do bar; the plugin CSS no longer uses `:has` (store review). Most of it is built and tested but not yet seen in Obsidian.
 - **Experiment chip on the to-do chip bar** (plugin + planning kit To-do template: Review update… to get the template; not seen in Obsidian): a to-do's chip bar, the New to-do window and the plan map's + windows get an **Experiment** chip that lists your lab notes (Started, Processing results, the rest, Closed last; the Status is in the name) and writes `experiment: "[[note]]"`; "(none)" removes it. The plan map card shows it as before. Only when the Lab notes folder is set.
