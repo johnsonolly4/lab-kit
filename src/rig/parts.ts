@@ -143,3 +143,10 @@ export function readRig(text: string): Rig {
   }
   return { tables, parts, links, problems, mermaid: toMermaid(parts, links) };
 }
+
+/** The computer's label for the figure: the note's `Control:` property (front matter), "" when it is missing or empty. */
+export function controlLabel(text: string): string {
+  const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+  const line = front && front[1].split(/\r?\n/).find(l => /^control\s*:/i.test(l));
+  return line ? line.replace(/^[^:]*:/, "").trim().replace(/^(["'])(.*)\1$/, "$2").trim() : "";
+}

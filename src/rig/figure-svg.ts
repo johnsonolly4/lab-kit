@@ -187,7 +187,6 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const isOven = (d: { p: Placed }): boolean => d.p.sym.name === "oven" && ovens.has(d.p.node.host);
   const title = opts.title ? `<text x="20" y="28" font-size="20" font-weight="700">${esc(opts.title)}</text>` : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${fig.height}" width="${fig.width}" height="${fig.height}" font-family="${FONT}" fill="${INK}">`
-    + `<style>.fill{fill:${INK}}</style>`
     + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
     + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`

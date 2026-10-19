@@ -21,7 +21,7 @@ const SYMBOLS: Record<string, RigSymbol> = {
   box,
   pump: make("pump", 52, 52, `<circle r="26"/><path d="M-13 -22.5 L26 0 L-13 22.5"/>`),
   syringe: make("syringe", 72, 22, `<rect x="-22" y="-10" width="36" height="20" rx="2"/><path d="M-36 -9 L-36 9 M-36 0 L-22 0 M14 0 L36 0 M-14 -10 L-14 10" fill="none"/>`),
-  tee: make("tee", 14, 14, `<circle r="7" class="fill"/>`, { in: { x: 0, y: 0 }, out: { x: 0, y: 0 } }),
+  tee: make("tee", 14, 14, `<circle r="7" fill="#000000"/>`, { in: { x: 0, y: 0 }, out: { x: 0, y: 0 } }),
   valve: make("valve", 40, 32, `<path d="M-20 -16 L20 16 L20 -16 L-20 16 Z"/>`),
   regulator: make("regulator", 60, 44, `<rect x="-30" y="-22" width="60" height="44" rx="6"/><path d="M-16 -12 L16 12 L16 -12 L-16 12 Z"/>`),
   column: make("column", 96, 22, `<rect x="-48" y="-11" width="96" height="22" rx="8"/>`),
@@ -30,7 +30,7 @@ const SYMBOLS: Record<string, RigSymbol> = {
   hotplate: make("hotplate", 68, 22, `<rect x="-34" y="-5" width="68" height="16" rx="3"/><path d="M-20 -11 L-20 -5 M20 -11 L20 -5"/>`, { in: { x: -34, y: 3 }, out: { x: 34, y: 3 }, top: { x: 0, y: -11 }, bottom: { x: 0, y: 11 } }),
   oven: make("oven", 124, 50, `<rect x="-62" y="-25" width="124" height="50" rx="8"/>`),
   analysis: make("analysis", 72, 44, `<rect x="-36" y="-22" width="72" height="44" rx="6"/><path d="M-24 9 L-12 9 L-6 -9 L0 9 L7 9 L12 -3 L24 9" fill="none"/>`),
-  waste: make("waste", 64, 24, `<path d="M-32 0 L16 0" fill="none"/><path d="M12 -9 L32 0 L12 9 Z" class="fill"/>`),
+  waste: make("waste", 64, 24, `<path d="M-32 0 L16 0" fill="none"/><path d="M12 -9 L32 0 L12 9 Z" fill="#000000"/>`),
   // The line level (y 0) is above the vial's mouth, so a line can run level and drop straight in. The box is therefore taller than the glass, centred on the line level.
   vial: make("vial", 30, 136, `<path d="M-15 16 L-15 60 Q-15 68 -7 68 L7 68 Q15 68 15 60 L15 16 M-19 16 L19 16" fill="none"/>`, { in: { x: 0, y: 16 }, out: { x: 15, y: 42 }, top: { x: 0, y: 16 }, bottom: { x: 0, y: 68 } }, "top"),
   tubing: make("tubing", 64, 10, `<rect x="-32" y="-5" width="64" height="10" rx="5"/>`),

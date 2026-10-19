@@ -1,6 +1,6 @@
 // Rig figure Phase 2: symbols and the SVG writer (src/rig/symbols.ts, src/rig/figure-svg.ts). Fictional rigs only.
 import { describe, it, expect } from "vitest";
-import { readRig, PART_KINDS } from "../src/rig/parts";
+import { readRig, controlLabel, PART_KINDS } from "../src/rig/parts";
 import { buildFigure } from "../src/rig/figure";
 import { figureSvg } from "../src/rig/figure-svg";
 import { COMPUTER, symbolFor, SYMBOL_NAMES } from "../src/rig/symbols";
@@ -254,5 +254,30 @@ describe("computer and control lines", () => {
     const { svg } = { svg: draw(...tee).svg };
     expect(svg).not.toContain("data-computer");
     expect(svg).not.toContain("#1f4fd8");
+  });
+});
+
+describe("an SVG other tools can read (Phase 4)", () => {
+  it("has no <style> rule and no class: fills are attributes, the tee dot and the outlet arrow are black", () => {
+    const { svg } = draw(...tee, "W1 | Outlet | waste |");
+    expect(svg).not.toContain("<style");
+    expect(svg).not.toContain("class=");
+    expect(svg).toMatch(/<circle r="7" fill="#000000"\/>/);
+    expect(svg).toMatch(/<path d="M12 -9 L32 0 L12 9 Z" fill="#000000"\/>/);
+  });
+  it("keeps one <g> per part", () => {
+    const f = fig(...tee);
+    const { svg } = figureSvg(f);
+    expect([...svg.matchAll(/<g id="sym-[a-z]+-\d+" data-symbol="[a-z]+" data-part="/g)].length).toBe(f.nodes.length);
+  });
+  it("reads the Control: property as the computer's label", () => {
+    expect(controlLabel("---\nTubing: PFA\nControl: Lab PC 2\n---\n```rig\n```")).toBe("Lab PC 2");
+    expect(controlLabel('---\ncontrol: "Pump PC"\n---\n')).toBe("Pump PC");
+    expect(controlLabel("---\nControl:\n---\n")).toBe("");
+    expect(controlLabel("no front matter\nControl: x")).toBe("");
+    const r = readRig([ "| ID | Part | Feeds | Control |", "|---|---|---|---|", "| PA | Pump | | Flow rate |"].join("\n"));
+    const f = buildFigure(r.parts, r.links, { computer: controlLabel("---\nControl: Lab PC 2\n---\n") || undefined });
+    expect(f.computer?.label).toBe("Lab PC 2");
+    expect(figureSvg(f).svg).toContain(">Lab PC 2</text>");
   });
 });
