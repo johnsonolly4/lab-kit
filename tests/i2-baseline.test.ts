@@ -9,10 +9,9 @@ import { buildBoard, cardOf, type HeaderSrc } from "../src/planning/board-card";
 import { projectTodos, thisWeek, type NoteRec } from "../src/planning/lists";
 import { parseSeries } from "../src/planning/meetings";
 import { applyPatch, rollOverPatch, ymd } from "../src/planning/todo";
+import { DATES, MTIME } from "./helpers/i2-model";
 import { I2_ROOT, boardNotes, loadVault, todoNotes } from "./helpers/i2-vault";
 
-export const DATES = { wed: new Date(2026, 9, 21), sat: new Date(2026, 9, 24), mon: new Date(2026, 9, 26) };
-const MTIME = new Date(2026, 9, 16);   // the notes' last change: a Friday before the test week
 const GOLDEN = join(I2_ROOT, "golden", "baseline.json");
 
 const headOf = (all: NoteRec[], todos: NoteRec[]): HeaderSrc => {
