@@ -4,6 +4,7 @@ Source: Lab Kit Feedback page (v0.3 round, 2026-10-03) plus later sessions. Open
 When an item is chosen, move it to `STATUS.md` → Next.
 
 ## Questions for the owner (open until answered; rule in CLAUDE.md)
+- [ ] **I2 past-day look (2026-10-19, N2b leftover):** past days of this week take no drop but look like the other days. Should they look different? The feedback page with options comes in N2c step 5; answer there.
 Anything that changes a visual or existing behaviour is asked here first, never decided by a session. When answered: tick it with the date and the answer, and put a decision line in `docs/decisions.md`.
 - [x] **Board F3 (2026-10-19, feature page):** ANSWERED 2026-10-19 (owner, chat): keep the rolled-over count "×3" with "To Backlog?" for a later phase, after planned dates (worked out from `scheduled`, no new property).
 - [ ] **Plan map look (2026-10-19, obsidian-check P5-map):** (a) does the Reset icon look too much like Undo? (b) are the lanes in the top-to-bottom map too close to the cards? (c) are cards with no experiment, subtask or result too tall? Screenshots: side-session notes `p5-map-shots/`.
