@@ -37,9 +37,9 @@ export const todayColumn = (d: Date): string => { const wd = isoWeekday(d); retu
 /** Today's column for the CSS (`body[data-vt-today]`): empty at the weekend. */
 export const todayMark = (d: Date): string => { const wd = isoWeekday(d); return wd <= 5 ? DAYS[wd - 1] : ""; };
 
-/** A note the board just made and nothing was typed in: no text, and no properties but `day`. The To-do template's `trashIfBlank` does the same on Esc (change both). */
+/** A note the board just made and nothing was typed in: no text, and no properties but `day` and empty ones (the board's New also writes `done:`). The To-do template's `trashIfBlank` does the same on Esc (change both). */
 export function isBlankBoardNote(raw: string): boolean {
-  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm: string) => fm.split(/\r?\n/).every(l => !l.trim() || /^day:/.test(l.trim())) ? "" : m);
+  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm: string) => fm.split(/\r?\n/).every(l => !l.trim() || /^(?:day:|[\w .-]+:\s*$)/.test(l.trim())) ? "" : m);
   return rest.trim() === "";
 }
 

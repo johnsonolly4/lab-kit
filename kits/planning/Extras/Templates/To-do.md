@@ -11,10 +11,10 @@ const days = ["Backlog", "Mon", "Tue", "Wed", "Thu", "Fri"];
 const raw = await app.vault.read(tp.config.target_file);
 const found = (raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1];
 const day = days.includes((found || "").trim()) ? found.trim() : "Backlog";
-// Esc: a note the board just made with nothing in it but its `day` goes to the trash, so no empty note is left (a note with any text is never touched)
+// Esc: a note the board just made with nothing in it but its `day` and empty properties (the board's New writes `done:`) goes to the trash, so no empty note is left (a note with any text is never touched)
 const trashIfBlank = async () => {
   const f = tp.config.target_file;
-  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm) => fm.split(/\r?\n/).every(l => !l.trim() || /^day:/.test(l.trim())) ? "" : m);
+  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm) => fm.split(/\r?\n/).every(l => !l.trim() || /^(?:day:|[\w .-]+:\s*$)/.test(l.trim())) ? "" : m);
   if (f.path.startsWith(`${folder}/`) && rest.trim() === "") { window.setTimeout(() => { app.fileManager.trashFile(f).catch(() => { /* it stays */ }); }, 800); }   // after Templater has finished with the file
 };
 let preset = window.vtTodo;

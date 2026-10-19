@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 // Quick capture: highlighted text → a title and the fields its @ % ! marks set (src/planning/quick-todo.ts).
 import { describe, it, expect } from "vitest";
 import { parseQuickTodo } from "../src/planning/quick-todo";
@@ -79,16 +80,19 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(isBlankBoardNote("---\nday: Wed\n---\n")).toBe(true);
     expect(isBlankBoardNote("---\r\nday: Backlog\r\n---\r\n\r\n")).toBe(true);
     expect(isBlankBoardNote("---\nday: Wed\n---\n\n   \n")).toBe(true);
+    expect(isBlankBoardNote("---\ndone:\nday: Backlog\n---\n")).toBe(true);   // what the board's New writes (Obsidian 1.14.4)
   });
   it("any text, or any other property, is kept", () => {
     expect(isBlankBoardNote("---\nday: Wed\n---\nbuy tubing\n")).toBe(false);
     expect(isBlankBoardNote("---\nday: Wed\nproject: \"[[A]]\"\n---\n")).toBe(false);
     expect(isBlankBoardNote("just text")).toBe(false);
+    expect(isBlankBoardNote("---\ndone:\nday: Backlog\n---\nbuy tubing\n")).toBe(false);
+    expect(isBlankBoardNote("---\ndone: true\nday: Backlog\n---\n")).toBe(false);
     expect(isBlankBoardNote("---\nkind: todo\n---\n")).toBe(false);
   });
   it("the template carries the same rule and only trashes inside the to-dos folder", () => {
     const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
-    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^day:/.test(l.trim()))");
+    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^(?:day:|[\\w .-]+:\\s*$)/.test(l.trim()))");
     expect(tpl).toContain("f.path.startsWith(`${folder}/`) && rest.trim() === \"\"");
     expect(tpl).toContain("app.fileManager.trashFile(f)");
   });
