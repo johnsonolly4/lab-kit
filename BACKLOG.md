@@ -14,6 +14,19 @@ Anything that changes a visual or existing behaviour is asked here first, never 
 - [ ] **Plans approved by the orchestrator while the owner slept (2026-10-19/20):** I12, I7 + I13, I19 + I20 (meeting notes freeze when the next one is made; `docs/decisions.md` line marked pending). Confirm or reject each.
 - [ ] **Rig figure R5 (2026-10-19):** hand layout in Obsidian (Phase 5 as planned) or in the drawing tool (SVG with one group per part)?
 - [ ] **Phone pass questions (2026-10-19, obsidian-check --mobile; details under "Phone pass" items 3, 5, 6):** (a) the plan map + buttons are 18 px on touch (finger size is about 44 px): make the tap target bigger? (b) Fit stops at 40 %, so a wide plan still scrolls sideways on a phone: allow smaller? (c) the rig diagram is 720 px wide and scrolls sideways on a phone: fit it to the width instead?
+- [ ] **I2 planned dates (2026-10-19, `docs/plans/planned-dates.md`; feedback page `i2-board-weeks.html` in the side-session notes folder). Answer with the letter; (rec) is the recommendation:**
+  - Q1 Drag onto a past day of this week (Mon, on a Wednesday): (a, rec) not a drop target, notice "Mon 19 Oct has passed: drop on today or a later day."; (b) writes that date, so the card shows at once as carried over in today; (c) means next week's Monday (what it does today).
+  - Q2 Finished cards from earlier weeks: (a, rec) leave the board on Monday by themselves (the board shows only this week's dates); (b) stay until Close the week; (c) stay as "N done" under Mon.
+  - Q3 Backlog cards with a date in a later week: (a, rec) in the tray with a date pill "Tue 27 Oct"; (b) in the tray, no hint; (c) not in the tray, only seen with the week arrows.
+  - Q4 A finished card's "N done" line counts under: (a, rec) the day it was ticked (`done_on`); (b) the day it was planned for.
+  - Q5 Day headers: (a, rec) name and date "Mon 19"; (b) the name only, as now.
+  - Q6 The board opens on: (a, rec) this week every time (past weeks viewable, no drops; future weeks take drops); (b) the last week viewed on this device.
+  - Q7 Close the week: (a, rec) button always shown, open cards go to next Monday by default; (b) shown Thu-Sun only; (c) default is the same weekday next week; (d) default is the Backlog.
+  - Q8 Quick-capture mark for the day: (a, rec) `@` ("Book NMR +Polymers @next tue"); (b) `>`; (c) no mark, the word "on tue".
+  - Q9 Tidy rule "To-dos: give each card a date": (a, rec) not ticked until you tick it (the board reads old cards anyway); (b) ticked by default.
+  - Q10 Keep `day` as a mirror (weekday of the date) for the built-in kanban fallback and Dataview: (a, rec) keep; (b) stop writing `day` (the fallback kanban then groups nothing).
+  - Q11 Setting Due also fills an empty Day: (a, rec) no, they stay separate (a deadline is not a plan); (b) yes, the Day becomes the due date.
+  - Q12 Late cards: (a, rec) a "3 carried over" chip in the top row opens a "Late cards (3)" window with Today / Tomorrow / Next week / Backlog / Done per card; (b) only Close the week, no chip.
 - [ ] **Try on your own setup (behaviour not yet seen by the owner):** Board B Phases 1-2 in a test vault and drag on a real phone; a saved rig SVG opened in PowerPoint / Illustrator / Inkscape; New meeting with Templater freezes the earlier note; Sort inbox opens the next note after a delete; the hub bar chips and the Add to shopping prompt corners on real elements.
 
 ## NEXT TASK (user, 2026-10-12, chat, asked mid-session)
