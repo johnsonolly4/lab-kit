@@ -255,7 +255,7 @@ body {
 /* In Live Preview Obsidian's "Edit this block" icon sits in the same corner: hidden on blocks that hold the button */
 .cm-embed-block:has(.vt-tile-toggle) .edit-block-button, .cm-embed-block:has(.vt-tile-toggle) + .edit-block-button { display: none; }
 .vt-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
-.vt-card-actions button, .vt-hub-bar button {
+.vt-card-actions button, .vt-hub-bar button:not(.vt-todo-chip) {  /* the hub bar's Status / Deadline chips keep the plugin's pill look (styles.css .vt-todo-chip) */
   border-radius: var(--lk-radius-control, 10px);
   background: transparent;
   border: 1px solid var(--vt-card-border);
@@ -265,7 +265,7 @@ body {
   height: auto;
   cursor: pointer;
 }
-.vt-card-actions button:hover, .vt-hub-bar button:hover { background: var(--background-modifier-hover); }
+.vt-card-actions button:hover, .vt-hub-bar button:not(.vt-todo-chip):hover { background: var(--background-modifier-hover); }
 /* The top row of a hub: back link and the hub's buttons on one line (show: hub-bar / meeting-bar) */
 .vt-hub-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 

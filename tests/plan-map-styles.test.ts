@@ -60,6 +60,17 @@ describe("plain prompt corners", () => {
   });
 });
 
+describe("project hub bar chips", () => {
+  it("the Status / Deadline chips are pills and the snippet's button look skips them", () => {
+    expect(css).toMatch(/\.vt-todo-chip \{[^}]*border-radius: var\(--lk-radius-pill\)/);
+    expect(css).toMatch(/\.vt-todo-chip\.is-empty \{[^}]*dashed/);
+    // every snippet rule that styles ".vt-hub-bar button" must exclude the chips (it would out-rank .vt-todo-chip)
+    const rules = snippet.split("\n").filter(l => /\.vt-hub-bar button/.test(l));
+    expect(rules.length).toBeGreaterThan(0);
+    for (const l of rules) expect(l).toContain(".vt-hub-bar button:not(.vt-todo-chip)");
+  });
+});
+
 describe("theme snippet corners", () => {
   it("vault-theme.css has no bare border-radius number (variables with a fallback only)", () => {
     const bad = snippet.split("\n").filter(l => /border-radius:/.test(l) && !/var\(--(lk-radius-[a-z]+|vt-card-radius)/.test(l));
