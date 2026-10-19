@@ -7,6 +7,7 @@ import { KitController } from "./kit/ui";
 import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
+import { refreshBoards, registerBoardView } from "./planning/board-view";
 import { bridgeOnDelete } from "./planning/after-bridge";
 import { PlanningBlocks } from "./planning/blocks";
 import { ProgressWriter } from "./planning/progress";
@@ -87,5 +88,7 @@ export default class LabKitPlugin extends Plugin {
     bridgeOnDelete(this, () => todoFolder(this.kit.kit.planningFolders));
     this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine, () => this.kit.kit, this.kit.folderGuard);
     this.planning.register();
+    registerBoardView(this, { kit: () => this.kit.kit, series: () => this.planning?.seriesList() ?? [] });
+    this.kit.boardChanged = refreshBoards;
   }
 }

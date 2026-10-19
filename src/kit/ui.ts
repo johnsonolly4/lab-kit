@@ -228,10 +228,14 @@ class KitSettingTab extends PluginSettingTab {
         b.addDropdown(d => d.addOption("across", "Left to right").addOption("down", "Top to bottom")
           .setValue(this.ctl.kit.planDirection).onChange(async v => { this.ctl.kit.planDirection = v === "down" ? "down" : "across"; await this.ctl.save(); }));
       } };
+    const boardWeekend: SettingGroupItem = { name: "Show weekend", desc: "Adds Saturday and Sunday columns to the to-do board.",
+      render: b => { b.addToggle(t => t.setValue(this.ctl.kit.boardWeekend).onChange(async v => { this.ctl.kit.boardWeekend = v; await this.ctl.save(); this.ctl.boardChanged?.(); })); } };
+    const boardBusy: SettingGroupItem = { name: "Busy day from", desc: "The board shows a day's count in amber from this many open to-dos.",
+      render: b => { b.addText(t => { t.inputEl.type = "number"; t.inputEl.min = "1"; t.setValue(String(this.ctl.kit.boardBusyFrom)).onChange(async v => { const n = Math.floor(Number(v)); this.ctl.kit.boardBusyFrom = Number.isFinite(n) && n >= 1 ? n : 6; await this.ctl.save(); this.ctl.boardChanged?.(); }); }); } };
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
     const changed = changedPlanningFolders(pf);
-    return { options: [countdown, planDirection], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    return { options: [countdown, planDirection, boardWeekend, boardBusy], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);
@@ -354,6 +358,8 @@ export class KitController {
   /** Set by the plugin when the to-do engine runs: redraws the board's countdown badges. */
   dueCountdownChanged: (() => void) | null = null;
   boardColoursChanged: (() => void) | null = null;
+  /** Set by the plugin's board view: redraws open boards (Show weekend or Busy day from changed). */
+  boardChanged: (() => void) | null = null;
 
   /** Set by the settings tab: redraws it (after settings changed on disk). */
   redrawSettings: (() => void) | null = null;

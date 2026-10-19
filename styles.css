@@ -486,3 +486,41 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-bar-button.is-plain { border-color: transparent; color: var(--text-muted); }
 .vt-bar-button-icon { display: inline-flex; }
 .vt-bar-button-icon .svg-icon { width: 16px; height: 16px; }
+
+/* To-do board, our own Bases view (src/planning/board-view.ts; docs/plans/board-own-view.md). Days across the top, the Backlog tray along the bottom. */
+.lk-board { display: flex; flex-direction: column; gap: 16px; padding: 12px; }
+.lk-board-days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.lk-board-days.has-weekend { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.lk-board-col, .lk-board-tray { background: var(--background-secondary); border-radius: var(--lk-radius-card); padding: 10px; }
+.lk-board-col { display: flex; flex-direction: column; gap: 8px; min-height: 200px; min-width: 0; }
+.lk-board-col.is-over, .lk-board-tray.is-over { outline: 2px dashed var(--interactive-accent); outline-offset: -2px; }
+.lk-board-head, .lk-board-trayhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 600; }
+.lk-board-count { color: var(--text-muted); font-weight: 400; }
+.lk-board-count.is-busy { color: var(--color-orange); font-weight: 600; }
+.lk-board-col.is-today .lk-board-name { color: var(--interactive-accent); }
+.lk-board-mark { font-size: var(--font-ui-smaller); border-radius: var(--lk-radius-control); padding: 2px 8px; color: var(--interactive-accent); background: rgba(var(--color-blue-rgb), 0.12); }
+.lk-board-mark.is-deadline { color: var(--color-orange); background: rgba(var(--color-orange-rgb), 0.12); }
+.lk-board-list { display: flex; flex-direction: column; gap: 8px; }
+.lk-board-card { display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: var(--background-primary); border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); cursor: pointer; }
+.lk-board-card:hover { border-color: var(--background-modifier-border-hover); }
+.lk-board-card.is-rolled { border-left: 3px solid var(--color-orange); border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.lk-board-card.is-waiting { opacity: 0.55; }
+.lk-board-top { display: flex; align-items: flex-start; gap: 8px; }
+.lk-board-title { min-width: 0; overflow-wrap: anywhere; }
+.lk-board-done { flex: none; box-sizing: border-box; width: 16px; height: 16px; min-height: 0; margin-top: 2px; padding: 0; border: 1.5px solid var(--text-muted); border-radius: var(--lk-radius-pill); background: none; box-shadow: none; }
+.lk-board-done:hover { border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
+.lk-board-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: var(--font-ui-smaller); }
+.lk-board-tag { padding: 0 8px; border-radius: var(--lk-radius-pill); color: var(--text-accent); background: rgba(var(--color-purple-rgb), 0.15); }
+.lk-board-tag[data-prio="1"] { color: var(--color-red); }
+.lk-board-wait, .lk-board-due { color: var(--text-muted); }
+.lk-board-due[data-level="soon"] { color: var(--color-orange); }
+.lk-board-due[data-level="late"] { color: var(--color-red); }
+.lk-board-donecount { margin-top: auto; padding: 2px 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.lk-board-trayhead { justify-content: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
+.lk-board-tray.is-folded .lk-board-trayhead { margin-bottom: 0; }
+.lk-board-chips { display: flex; flex-wrap: wrap; gap: 6px; font-weight: 400; }
+.lk-board-chip, .lk-board-fold { height: auto; padding: 0 8px; font-size: var(--font-ui-smaller); color: var(--text-muted); background: none; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-pill); box-shadow: none; }
+.lk-board-chip.is-on { color: var(--text-accent); background: rgba(var(--color-purple-rgb), 0.15); border-color: transparent; }
+.lk-board-fold { margin-left: auto; }
+.lk-board-trayrow { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+.lk-board-trayrow .lk-board-card { flex: 0 0 170px; }
