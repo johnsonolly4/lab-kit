@@ -1,6 +1,6 @@
 // The to-do board's own view, pure part (Board-B Phase 1): card pieces, the day / tray split, day headers, filters.
 // No Obsidian runtime. The view that draws it is board-view.ts. Plan: docs/plans/board-own-view.md.
-import { cardTag, dayOf, dueCountdown, isoWeekday, parseDay, waitingOf, weekStart, ymd, DAYS, type CountdownMode, type TodoFm } from "./todo";
+import { cardTag, dateOf, dayOf, dueCountdown, isFinishedTodo, isoWeekday, parseDay, waitingOf, weekdayOf, weekStart, ymd, DAYS, type CountdownMode, type TodoFm } from "./todo";
 import { flaggedFor, nextDate, ONCE, firstSeries, type Series } from "./meetings";
 import { linkTarget, pointsTo, type NoteRec } from "./lists";
 import { readPlan } from "./plan";
@@ -139,6 +139,79 @@ export function buildBoard(cards: BoardCard[], head: HeaderSrc, o: BoardOptions)
   });
   const tray = cards.filter(c => !names.includes(c.day) && !c.done);
   return { days, tray };
+}
+
+// ---- The board on planned dates (I2 Phase 1, pure; the view switches over in Phase 2). Plan: docs/plans/planned-dates.md "Where a card shows".
+
+/** One card with its dates. */
+export interface WeekCard extends BoardCard {
+  /** The planned date (`dateOf`) as YYYY-MM-DD, "" for the Backlog. */
+  date: string;
+  /** `done_on` as YYYY-MM-DD, "" when none. */
+  doneOn: string;
+  /** Open and planned for a day before today. */
+  carried: boolean;
+  /** In the tray with a date (after the shown week, or Sat / Sun with the weekend off): `Tue 27 Oct`; else "". */
+  pill: string;
+}
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/** `Tue 27 Oct`. */
+export const datePill = (d: Date): string => `${weekdayOf(d)} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+
+/** One card's pieces and dates. `done` is true for old `day: Done` cards too. */
+export function weekCardOf(src: CardSrc, mode: CountdownMode, now: Date): WeekCard {
+  const fm = src.fm, d = dateOf(fm, now), done = isFinishedTodo(fm), on = parseDay(fm.done_on);
+  return {
+    ...cardOf(src, mode, now), done, rolled: false,
+    date: d ? ymd(d) : "", doneOn: on ? ymd(on) : "",
+    carried: !done && !!d && d < dayOf(now), pill: "",
+  };
+}
+
+export interface WeekColumn extends DayColumn {
+  /** Before today: not a drop target. */
+  past: boolean;
+  /** The finished cards behind the "N done" line. */
+  finished: WeekCard[];
+  open: WeekCard[];
+}
+export interface WeekBoard { days: WeekColumn[]; tray: WeekCard[]; monday: Date }
+export interface WeekOptions extends BoardOptions { /** Any day of the week to show; default this week. */ week?: Date }
+
+/** Splits the cards into the shown week's columns and the tray by date (the table in the plan). Writes nothing. */
+export function buildWeek(cards: WeekCard[], head: HeaderSrc, o: WeekOptions): WeekBoard {
+  const names = shownDays(o.weekend);
+  const today = dayOf(o.now), monday = weekStart(o.week ?? o.now), sunday = dayOf(monday, 6);
+  const thisWeek = ymd(monday) === ymd(weekStart(today));
+  const iso = ymd(today), first = ymd(monday), last = ymd(sunday);
+  /** The column of a date of the shown week; Sat / Sun with the weekend off: none. */
+  const colOf = (d: string): number => { const i = isoWeekday(parseDay(d)!) - 1; return i < names.length ? i : -1; };
+  const todayCol = Math.max(0, colOf(iso));   // the weekend with it off: Mon
+  const open: WeekCard[][] = names.map(() => []), finished: WeekCard[][] = names.map(() => []);
+  const tray: WeekCard[] = [];
+  for (const c of cards) {
+    if (c.done) {
+      const when = c.doneOn || c.date;
+      if (when && when >= first && when <= last) finished[Math.max(0, colOf(when))].push(c);
+    } else if (!c.date) tray.push(c);
+    else if (c.date < iso) { if (thisWeek) open[todayCol].push(c); }
+    else if (c.date < first) continue;   // a week before the shown one, not late yet
+    else if (c.date > last || colOf(c.date) < 0) tray.push({ ...c, pill: datePill(parseDay(c.date)!) });
+    else open[colOf(c.date)].push(c);
+  }
+  // Due marks look at where a card is drawn, not at its old `day`
+  const placed: BoardCard[] = [...names.flatMap((day, i) => open[i].map(c => ({ ...c, day }))), ...tray.map(c => ({ ...c, day: "Backlog" }))];
+  const days = names.map((day, i): WeekColumn => {
+    const date = dayOf(monday, i);
+    return {
+      day, date, today: thisWeek && isToday(i, o.now, o.weekend), past: ymd(date) < iso,
+      open: open[i], finished: finished[i], done: finished[i].length, count: open[i].length,
+      busy: o.busyFrom > 0 && open[i].length >= o.busyFrom,
+      markers: [...meetingMarkers(head, date), ...deadlineMarkers(head, placed, day, date)],
+    };
+  });
+  return { days, tray, monday };
 }
 
 /** A tray filter: all, ready to start, a project's name, or no project. */

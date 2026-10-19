@@ -25,7 +25,7 @@ A to-do knows the date it is planned for, so the board can show this week, next 
 - **The base filter** `day != "Done"` (`To-do board.base`) no longer hides anything for new cards; the board itself hides finished cards of earlier weeks (Q2 a). The base keeps the filter for old notes and gets `kind == "todo"` (Phase 4).
 - **The built-in kanban fallback view** groups by a weekday formula of `scheduled` (decided: view-only, unstyled, R4 a). A drag in it writes nothing useful (Bases can't write a formula); the base's description says so (Phase 4).
 - **The countdown setting** (`Due-date countdown`: Off / Marked / All) loses "Marked" (it read `countdown: true`). **(new Q, I2-S2)** recommended (a) Off / All, a vault set to Marked reads as All; (b) as Off.
-- **Unknown values are left alone.** A typo `day: Teusday`, lower case `mon` or empty `day` is never read as a date and never removed by normalising (no text the owner typed is lost); such a card sits in the tray, as today.
+- **Unknown values are left alone.** A typo `day: Teusday` or lower case `mon` is never read as a date and never removed by normalising (no text the owner typed is lost); such a card sits in the tray, as today. An empty `day` is an empty value and is removed.
 
 ## Reading old notes (fallback, for ever)
 `dateOf(fm, now)` gives the card's planned date:
@@ -68,7 +68,7 @@ A to-do knows the date it is planned for, so the board can show this week, next 
 - `kind` missing → `kind: todo`; `done` missing or not true / false → `done: false`.
 - Old `day`: a weekday (`Mon` … `Sun`) with no `scheduled` → `scheduled` from `dateOf`; `Backlog` → nothing to add. `Done` → `done: true` (with `done_on` kept; none added). In every one of these `day` is removed. Unknown `day` values stay (above).
 - `planned`, `rolled`, `countdown` removed. `done_on` on an open card removed.
-- Empty values removed: `scheduled`, `project`, `due`, `waiting`, `priority` that are empty (`""`, null, `[]`), and `meeting: false`.
+- Empty values removed: `day`, `scheduled`, `project`, `due`, `waiting`, `priority` that are empty (`""`, blank, null, `[]`), and `meeting: false`.
 - Runs on the first metadata change after a create or a rename into the folder (so Templater has written the note first); a blank note the board just made (`isBlankBoardNote`) is skipped until something is typed.
 - Q18 a: the first time a run gives old cards a date, a notice `Gave N to-dos a planned date` once (per vault, saved in settings), plus a What's new line `Update Lab Kit on every device first; wait for Sync to finish before running Tidy up notes on a second device.`
 
@@ -111,6 +111,7 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - Not changed: the view, the engine, kits, styles, user-facing text.
 - Checks: every row of "Where a card shows" and "What writes what"; the re-tick case (untick on `day: Done` removes `day`, `isFinished` is then false); a past drop refused (Wed 21 Oct: Mon 19 refused, Mon 26 → `2026-10-26`, today allowed); `dateOf` the same for two `now`s when `scheduled` is set; Sunday 23:59 / Monday 00:01; fallback `day: Thu` + `planned: 2026-10-14` → `2026-10-15`; Sat / Sun `day` dated (Q17); `normalisePatch` twice = null the second time; unknown `day` kept; fixture: on Wed, Sat and Mon the board matches the expected table (carried cards in Mon at the weekend with no write).
 - Size: M
+- **BUILT 2026-10-19 (N2).** `todo.ts`: `WEEKDAYS`, `weekdayOf`, `dateOf`, `isFinishedTodo`, `isCarried`, `dropPatch`, `tickPatch`, `normalisePatch`, `undoPatch`; `board-card.ts`: `WeekCard`, `weekCardOf`, `datePill`, `buildWeek`. Tests `todo-dates` (37), `board-week` (19), `i2-slim` (7); 1352 in all. Fixture result: on Wed, Sat and Mon every one of the 35 cards is where the earlier measured model put it, except the two Sat / Sun cards, which now get their date (Q17 a). Normalising all 35 on Wed leaves the board unchanged on Wed and Sat; on the next Monday exactly the 4 cards of "Existing vaults" section 2 differ (3 carried over, 1 finished card with no `done_on` hidden). Found while testing: an open card dated this week was drawn in next week's column when next week was shown (fixed, test added). Nothing in the view or engine uses the new functions yet.
 
 ### Phase 2: The board and engine on dates
 - Depends on: Phase 1. Needs I2-S1 answered.
