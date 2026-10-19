@@ -13,7 +13,7 @@ const T = "00 Planning/To-dos/";
 describe("This week (00 Home, Dataview LIST over the to-dos)", () => {
   const todos = [
     note(T + "Fri task.md", { kind: "todo", day: "Fri" }),
-    note(T + "Mon task.md", { kind: "todo", day: "Mon", rolled: true }),
+    note(T + "Mon task.md", { kind: "todo", scheduled: "2026-10-05" }),   // carried over: planned before today, open
     note(T + "Wed task.md", { kind: "todo", day: "Wed" }),
     note(T + "Late backlog.md", { kind: "todo", day: "Backlog", due: "2026-10-05" }),
     note(T + "Due today.md", { kind: "todo", day: "Backlog", due: "2026-10-07" }),   // not overdue: due < today only
@@ -32,11 +32,28 @@ describe("This week (00 Home, Dataview LIST over the to-dos)", () => {
     expect(b["Late backlog"]).toEqual(["overdue 5 Oct"]);
     expect(b["Wed task"]).toEqual(["today"]);
     expect(b["Fri task"]).toEqual(["· Fri"]);
-    expect(b["Mon task"]).toEqual(["· Mon", "carried over"]);
+    expect(b["Mon task"]).toEqual(["today", "carried over"]);
   });
 
-  it("at the weekend no to-do is 'today'", () => {
+  it("at the weekend no to-do is 'today'; carried cards stay listed with their own day", () => {
     expect(thisWeek(todos, SAT).flatMap(l => l.badges.map(x => x.text))).not.toContain("today");
+    expect(thisWeek(todos, SAT).find(l => l.text === "Fri task")!.badges.map(x => x.text)).toEqual(["· Fri", "carried over"]);
+  });
+
+  it("reads `scheduled` as the board does: this week's Mon–Fri listed, Sat / Sun, next week and the Backlog not; old `day` read through dateOf", () => {
+    const s = [
+      note(T + "Thu date.md", { kind: "todo", scheduled: "2026-10-08" }),
+      note(T + "Sat date.md", { kind: "todo", scheduled: "2026-10-10" }),
+      note(T + "Next Mon.md", { kind: "todo", scheduled: "2026-10-12" }),
+      note(T + "Last week.md", { kind: "todo", scheduled: "2026-09-30" }),
+      note(T + "Old Thu.md", { kind: "todo", day: "Thu", planned: "2026-10-05" }),
+      note(T + "Typo.md", { kind: "todo", scheduled: "next tue" }),
+      note(T + "Ticked dated.md", { kind: "todo", scheduled: "2026-10-08", done: true }),
+    ];
+    const b = Object.fromEntries(thisWeek(s, WED).map(l => [l.text, l.badges.map(x => x.text)]));
+    expect(Object.keys(b)).toEqual(["Last week", "Old Thu", "Thu date"]);
+    expect(b["Last week"]).toEqual(["today", "carried over"]);
+    expect(b["Thu date"]).toEqual(["· Thu"]);
   });
 });
 
@@ -86,16 +103,16 @@ describe("Project cards (Projects overview, DataviewJS)", () => {
   const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project", Status: "Active" });
   const todos = [
     note(T + "t1.md", { kind: "todo", day: "Backlog", project: "[[Alpha]]" }),
-    note(T + "t2.md", { kind: "todo", day: "Tue", project: "[[Alpha]]" }),
+    note(T + "t2.md", { kind: "todo", scheduled: "2026-10-08", project: "[[Alpha]]" }),
     note(T + "t3.md", { kind: "todo", day: "Fri", project: ["[[02 Projects/Alpha/Alpha|A]]"], due: "2026-10-01" }),
-    note(T + "t4.md", { kind: "todo", day: "Mon", project: "[[Alpha]]" }),
+    note(T + "t4.md", { kind: "todo", scheduled: "2026-10-07", project: "[[Alpha]]" }),
     note(T + "t5.md", { kind: "todo", day: "Mon", project: "[[Alpha2]]" }),   // a different project
     note(T + "t6.md", { kind: "todo", day: "Mon", project: "[[Alpha]]", done: true }),
   ];
   const papers = [note("L/p1.md", { kind: "literature", Collections: ["Projects/Alpha"] }), note("L/p2.md", { kind: "literature" }, { links: [hub.path] }), note("L/p3.md", { kind: "literature" })];
   const notes = [hub, note("02 Projects/Alpha/Notes 1.md"), note("02 Projects/Alpha/Sub/Notes 2.md"), note("02 Projects/Other.md")];
 
-  it("top 3 open to-dos (overdue, then Mon → Fri → Backlog), counts, goal", () => {
+  it("top 3 open to-dos (overdue, then by planned day, then Backlog), counts, goal", () => {
     const [c] = projectCards([hub], todos, papers, notes, { [hub.path]: "Make polymers" }, WED);
     expect(c.todos.map(t => t.text)).toEqual(["t3", "t4", "t2"]);
     expect(c.todos[0].badges[0].text).toBe("overdue 1 Oct");
@@ -205,6 +222,12 @@ describe("Project hub tiles (To-dos and Notes, show all / collapse at 10)", () =
     expect(lines.map(l => l.text)).toEqual(["Late one", "Mon one", "Backlog one"]);
     expect(lines[0].badges[0].text).toBe("overdue 1 Oct");
     expect(lines[1].badges[0].text).toBe("· Mon");
+    expect(lines[2].badges[0].text).toBe("· Backlog");
+  });
+  it("To-dos: the day badge is the weekday in this week, the date in another week", () => {
+    const t = (name: string, scheduled: string) => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", scheduled });
+    const lines = projectTodos([t("Next", "2026-10-13"), t("Thu", "2026-10-08"), t("Before", "2026-09-29")], hub, WED);
+    expect(lines.map(l => `${l.text} ${l.badges[0].text}`)).toEqual(["Before · Tue 29 Sep", "Thu · Thu", "Next · Tue 13 Oct"]);
   });
   it("To-dos: overdue, then day, then priority (1 → 2 → 3 → none), then name", () => {
     const p = (name: string, fm: Record<string, unknown>) => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", ...fm });

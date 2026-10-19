@@ -227,8 +227,8 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
   };
 }
 
-/** Ticks or unticks a to-do's properties. A to-do on the Done column goes back to Backlog when unticked (else the roll-over would tick it again); the to-do engine stamps or clears `done_on`. */
+/** Ticks or unticks a to-do's properties. An old card on `day: Done` loses `day` when unticked (else it would still read as finished); `scheduled` is kept, so it goes back to its day. The to-do engine stamps or clears `done_on`. */
 export function setDone(fm: Record<string, unknown>, done: boolean): void {
   fm.done = done;
-  if (!done && fm.day === "Done") fm.day = "Backlog";
+  if (!done && fm.day === "Done") delete fm.day;
 }

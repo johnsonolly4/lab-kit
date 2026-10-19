@@ -1,6 +1,7 @@
 // The 1.4.x to-do rules on `day` / `planned` / `rolled`, frozen when I2 Phase 2 removed them from src (2026-10-19).
 // Kept only so the old-vault tests can model what an older plugin wrote and drew. Do not use in src.
-import { DAYS, dayOf, isoWeekday, parseDay, weekStart, ymd, type TodoFm, type TodoPatch } from "../../src/planning/todo";
+import { DAYS, dayOf, isoWeekday, parseDay, waitingOf, weekStart, ymd, type TodoFm, type TodoPatch } from "../../src/planning/todo";
+import { pointsTo, type Badge, type ListLine, type NoteRec } from "../../src/planning/lists";
 import { deadlineMarkers, meetingMarkers, shownDays, type BoardCard, type BoardOptions, type DayColumn, type HeaderSrc } from "../../src/planning/board-card";
 
 const str = (v: unknown): string => typeof v === "string" ? v : typeof v === "number" || typeof v === "boolean" ? String(v) : "";
@@ -100,3 +101,39 @@ export function buildBoard(cards: BoardCard[], head: HeaderSrc, o: BoardOptions)
   return { days, tray };
 }
 
+
+// The 1.4.x Home "This week" and project hub To-dos lists on `day`, frozen when I2 Phase 3 moved them to dates (2026-10-19).
+const OLD_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const dm = (d: Date): string => `${d.getDate()} ${OLD_MONTHS[d.getMonth()]}`;
+const lstr = (v: unknown): string => (Array.isArray(v) ? lstr(v[0]) : typeof v === "string" ? v : typeof v === "number" ? String(v) : "");
+const dayRank = (day: string): number => { const i = (DAYS as readonly string[]).indexOf(day); return i < 0 ? 6 : i + 1; };
+const late = (fm: Record<string, unknown>, today: Date): Date | null => { const due = parseDay(lstr(fm.due).slice(0, 10)); return due && ymd(due) < ymd(today) ? due : null; };
+const waitBadge = (fm: Record<string, unknown>): Badge[] => { const w = waitingOf(fm); return w ? [{ text: `waiting: ${w}`, cls: "vt-badge vt-waiting" }] : []; };
+const openOld = (n: NoteRec): boolean => n.fm.kind === "todo" && n.fm.done !== true && lstr(n.fm.day) !== "Done";
+const prio = (p: unknown): number => { const n = Number(typeof p === "string" ? p.trim() || NaN : p); return n === 1 || n === 2 || n === 3 ? n : 4; };
+
+export function oldThisWeek(todos: NoteRec[], today: Date): ListLine[] {
+  const todayName = isoWeekday(today) <= 5 ? DAYS[isoWeekday(today) - 1] : "";
+  return todos
+    .filter(n => openOld(n) && ((DAYS as readonly string[]).includes(lstr(n.fm.day)) || late(n.fm, today)))
+    .map(n => ({ n, l: late(n.fm, today) }))
+    .sort((a, b) => (a.l ? 0 : 1) - (b.l ? 0 : 1) || dayRank(lstr(a.n.fm.day)) - dayRank(lstr(b.n.fm.day)) || a.n.path.localeCompare(b.n.path))
+    .map(({ n, l }) => {
+      const day = lstr(n.fm.day);
+      const badges: Badge[] = [l ? { text: `overdue ${dm(l)}`, cls: "vt-badge vt-overdue" }
+        : day === todayName ? { text: "today", cls: "vt-badge vt-today" } : { text: `· ${day}`, cls: "vt-muted" }];
+      if (n.fm.rolled === true) badges.push({ text: "carried over", cls: "vt-badge vt-rolled" });
+      badges.push(...waitBadge(n.fm));
+      return { path: n.path, text: n.name, badges };
+    });
+}
+
+export function oldProjectTodos(todos: NoteRec[], hub: NoteRec, today: Date): ListLine[] {
+  const rank = (d: string): number => { const r = dayRank(d); return d === "Backlog" ? 6 : r === 6 ? 8 : r; };
+  return todos.filter(t => openOld(t) && pointsTo(t.fm.project, hub))
+    .map(t => ({ t, l: late(t.fm, today) }))
+    .sort((a, b) => ((a.l ? 0 : 1) * 10 + rank(lstr(a.t.fm.day))) - ((b.l ? 0 : 1) * 10 + rank(lstr(b.t.fm.day)))
+      || prio(a.t.fm.priority) - prio(b.t.fm.priority) || a.t.path.localeCompare(b.t.path))
+    .map(({ t, l }) => ({ path: t.path, text: t.name,
+      badges: [l ? { text: `overdue ${dm(l)}`, cls: "vt-badge vt-overdue" } : { text: `· ${lstr(t.fm.day)}`, cls: "vt-muted" }, ...waitBadge(t.fm)] }));
+}

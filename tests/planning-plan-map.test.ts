@@ -115,15 +115,15 @@ describe("mapGeometry", () => {
 });
 
 describe("setDone", () => {
-  it("ticks; unticks; a to-do on the Done column goes back to Backlog", () => {
+  it("ticks; unticks; an old card on day: Done loses day, keeps scheduled", () => {
     const a: Record<string, unknown> = { day: "Mon", done: false };
     setDone(a, true);
     expect(a).toEqual({ day: "Mon", done: true });
     setDone(a, false);
     expect(a).toEqual({ day: "Mon", done: false });
-    const b: Record<string, unknown> = { day: "Done", done: true };
+    const b: Record<string, unknown> = { day: "Done", done: true, scheduled: "2026-10-21" };
     setDone(b, false);
-    expect(b).toEqual({ day: "Backlog", done: false });
+    expect(b).toEqual({ done: false, scheduled: "2026-10-21" });
   });
 });
 

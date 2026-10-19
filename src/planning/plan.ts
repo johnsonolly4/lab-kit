@@ -1,7 +1,6 @@
 // The plan of one project (planning kit): its to-dos with `after` (links to the to-dos that come first), `result` (one line) and `order` (a number).
 // Pure (no Obsidian runtime). Gives the rows in plan order, which are blocked, and what is wrong (missing links, cycles).
-import { isFinished } from "./actions";
-import { parseDay, waitingOf } from "./todo";
+import { isFinishedTodo, parseDay, waitingOf } from "./todo";
 import { linkTarget, pointsTo, type Badge, type ListLine, type NoteRec } from "./lists";
 
 export interface PlanRow {
@@ -116,7 +115,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     issue(left.map(t => t.path), `These wait on each other, so none can start: ${left.map(t => `"${t.name}"`).join(", ")}. Remove one "comes after" link.`);
     placed.push(...left);
   }
-  const finished = (n: NoteRec): boolean => isFinished({ done: n.fm.done, day: n.fm.day });
+  const finished = (n: NoteRec): boolean => isFinishedTodo(n.fm);
   /** Some to-do before `t`, through any number of links, is not finished. */
   const openBefore = (t: NoteRec): boolean => {
     const seen = new Set<NoteRec>(), todo = [...parents.get(t.path)!];
@@ -131,7 +130,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
   };
   const rows = placed.map((t): PlanRow => {
     const ps = parents.get(t.path)!;
-    const done = isFinished({ done: t.fm.done, day: t.fm.day });
+    const done = isFinishedTodo(t.fm);
     let experiment: PlanRow["experiment"] = null;
     const target = labNotes ? afterItems(t.fm.experiment)[0] : undefined;
     if (target) {

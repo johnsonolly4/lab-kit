@@ -10,7 +10,7 @@ const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
 const T = "00 Planning/To-dos/";
 const WED = new Date(2026, 9, 7);
 const hub = note("02 Projects/Alpha/Alpha.md", { kind: "project", Status: "Active" });
-const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", day: "Mon", ...fm });
+const td = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(T + name + ".md", { kind: "todo", project: "[[Alpha]]", scheduled: "2026-10-08", ...fm });
 const texts = (badges: { text: string }[]): string[] => badges.map(b => b.text);
 
 describe("waitingOf", () => {
@@ -24,10 +24,10 @@ describe("the waiting badge", () => {
   it("This week and the hub To-dos tile show 'waiting: <text>' after the day; a to-do not waiting has none", () => {
     const todos = [td("Run NMR", { waiting: "NMR booking" }), td("Plain")];
     const week = Object.fromEntries(thisWeek(todos, WED).map(l => [l.text, texts(l.badges)]));
-    expect(week["Run NMR"]).toEqual(["· Mon", "waiting: NMR booking"]);
-    expect(week["Plain"]).toEqual(["· Mon"]);
+    expect(week["Run NMR"]).toEqual(["· Thu", "waiting: NMR booking"]);
+    expect(week["Plain"]).toEqual(["· Thu"]);
     const tile = projectTodos(todos, hub, WED).find(l => l.text === "Run NMR")!;
-    expect(tile.badges.map(b => b.text)).toEqual(["· Mon", "waiting: NMR booking"]);
+    expect(tile.badges.map(b => b.text)).toEqual(["· Thu", "waiting: NMR booking"]);
     expect(tile.badges[1].cls).toBe("vt-badge vt-waiting");
   });
   it("the project card's to-do rows show it too", () => {
@@ -75,7 +75,7 @@ describe("the Waiting on list", () => {
     expect(g[0].lines.map(l => l.text)).toEqual(["NMR prep", "NMR run"]);
     expect(g[1].lines.map(l => l.text)).toEqual(["Beta job", "Order solvent"]);
     expect(texts(g[1].lines[0].badges)).toEqual(["overdue 1 Oct"]);
-    expect(texts(g[0].lines[0].badges)).toEqual(["· Mon"]);
+    expect(texts(g[0].lines[0].badges)).toEqual(["· Thu"]);
   });
   it("on a project hub: only that project's to-dos", () => {
     expect(waitingOn(todos, WED, hub).flatMap(x => x.lines.map(l => l.text)).sort()).toEqual(["NMR prep", "NMR run", "Order solvent"]);

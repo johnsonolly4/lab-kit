@@ -1,7 +1,7 @@
 // Homepage and Projects overview lists (Phase 5a): which notes each block shows, in which order, with which badge.
 // Pure (no Obsidian runtime). Each rule is ported from the Dataview / DataviewJS query it replaced in kits/planning/00 Home.md and
 // 02 Projects/Projects overview.md (kit 0.5.2); docs/plans/phase-5-homepage-meetings.md.
-import { DAYS, dueCountdown, isoWeekday, parseDay, waitingOf, ymd, type CountdownMode } from "./todo";
+import { dateOf, dayOf, dueCountdown, isFinishedTodo, isoWeekday, parseDay, waitingOf, weekdayOf, weekStart, ymd, type CountdownMode } from "./todo";
 
 /** A note as the lists see it. `links`: paths of the notes it links to (resolved). Times in ms. */
 export interface NoteRec { path: string; name: string; folder: string; fm: Record<string, unknown>; ctime: number; mtime: number; links?: string[] }
@@ -18,7 +18,6 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 export const dayMonth = (d: Date): string => `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 /** A CSS class part from a status: lower case, spaces to dashes ("Processing results" → "processing-results"). */
 const slug = (s: string): string => s.toLowerCase().replace(/ /g, "-");
-const dayRank = (day: string): number => { const i = (DAYS as readonly string[]).indexOf(day); return i < 0 ? 6 : i + 1; };
 
 /** The due date of a to-do when it is before today (a YYYY-MM-DD `due`, or the date part of a date-time). */
 function overdue(fm: Record<string, unknown>, today: Date): Date | null {
@@ -27,20 +26,35 @@ function overdue(fm: Record<string, unknown>, today: Date): Date | null {
 }
 /** The "waiting: <text>" badge of a to-do that waits on something; none otherwise. */
 const waitingBadge = (fm: Record<string, unknown>): Badge[] => { const w = waitingOf(fm); return w ? [{ text: `waiting: ${w}`, cls: "vt-badge vt-waiting" }] : []; };
-export const isOpenTodo = (n: NoteRec): boolean => n.fm.kind === "todo" && n.fm.done !== true && str(n.fm.day) !== "Done";
+export const isOpenTodo = (n: NoteRec): boolean => n.fm.kind === "todo" && !isFinishedTodo(n.fm);
 
-/** This week: open to-dos planned Mon–Fri or overdue. Overdue first, then Mon → Fri. Badge: overdue (date) / today / the day; carried over. */
+/** Plain text order (code points: "~" after digits, unlike localeCompare). */
+const cmp = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+/** Where an open to-do sits on the board, as YYYY-MM-DD: its planned date (`dateOf`), today when that is past (carried over); "" for the Backlog. */
+function shownOn(fm: Record<string, unknown>, today: Date): { on: string; carried: boolean } {
+  const d = dateOf(fm, today), iso = ymd(dayOf(today));
+  if (!d) return { on: "", carried: false };
+  return ymd(d) < iso ? { on: iso, carried: true } : { on: ymd(d), carried: false };
+}
+/** The planned day of a list line: `Mon` in this week, `Tue 27 Oct` in another week, `Backlog` with no date (an unknown `day` value as it is written). */
+function dayLabel(fm: Record<string, unknown>, today: Date): string {
+  const d = dateOf(fm, today), day = str(fm.day).trim();
+  if (!d) return day && day !== "Backlog" && !str(fm.scheduled).trim() ? day : "Backlog";
+  const monday = weekStart(today);
+  return d >= monday && d <= dayOf(monday, 6) ? weekdayOf(d) : `${weekdayOf(d)} ${dayMonth(d)}`;
+}
+
+/** This week: open to-dos the board shows in this week's Mon–Fri columns (carried over ones in today's), or overdue. Overdue first, then by day. Badge: overdue (date) / today / the day; carried over. */
 export function thisWeek(todos: NoteRec[], today: Date): ListLine[] {
-  const todayName = isoWeekday(today) <= 5 ? DAYS[isoWeekday(today) - 1] : "";
-  return todos
-    .filter(n => isOpenTodo(n) && ((DAYS as readonly string[]).includes(str(n.fm.day)) || overdue(n.fm, today)))
-    .map(n => ({ n, late: overdue(n.fm, today) }))
-    .sort((a, b) => (a.late ? 0 : 1) - (b.late ? 0 : 1) || dayRank(str(a.n.fm.day)) - dayRank(str(b.n.fm.day)) || a.n.path.localeCompare(b.n.path))
-    .map(({ n, late }) => {
-      const day = str(n.fm.day);
+  const iso = ymd(dayOf(today)), friday = ymd(dayOf(weekStart(today), 4));
+  return todos.filter(isOpenTodo)
+    .map(n => ({ n, late: overdue(n.fm, today), ...shownOn(n.fm, today) }))
+    .filter(x => x.carried || (x.on && x.on <= friday) || x.late)
+    .sort((a, b) => (a.late ? 0 : 1) - (b.late ? 0 : 1) || cmp(a.on || "~", b.on || "~") || a.n.path.localeCompare(b.n.path))
+    .map(({ n, late, on, carried }) => {
       const badges: Badge[] = [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" }
-        : day === todayName ? { text: "today", cls: "vt-badge vt-today" } : { text: `· ${day}`, cls: "vt-muted" }];
-      if (n.fm.rolled === true) badges.push({ text: "carried over", cls: "vt-badge vt-rolled" });
+        : on === iso && isoWeekday(today) <= 5 ? { text: "today", cls: "vt-badge vt-today" } : { text: `· ${dayLabel(n.fm, today)}`, cls: "vt-muted" }];
+      if (carried) badges.push({ text: "carried over", cls: "vt-badge vt-rolled" });
       badges.push(...waitingBadge(n.fm));
       return { path: n.path, text: n.name, badges };
     });
@@ -179,19 +193,20 @@ export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; m
 /** Priority 1 (highest), 2 or 3, as a number or text; empty or anything else last. */
 const priorityRank = (p: unknown): number => { const n = Number(typeof p === "string" ? p.trim() || NaN : p); return n === 1 || n === 2 || n === 3 ? n : 4; };
 
-/** The open to-dos of one project hub: overdue first, then Mon → Fri → Backlog → other; within a day priority 1 → 2 → 3 → none, then by name. */
+/** The open to-dos of one project hub: overdue first, then by planned day (carried over as today), then the Backlog, then unknown `day` values; within a day priority 1 → 2 → 3 → none, then by name. */
 function openProjectTodos(todos: NoteRec[], hub: NoteRec, today: Date): { t: NoteRec; late: Date | null }[] {
-  const rank = (d: string): number => { const r = dayRank(d); return d === "Backlog" ? 6 : r === 6 ? 8 : r; };
+  /** Dated cards by date; "~" sorts the Backlog after every date, "~~" an unknown `day` after it. */
+  const key = (t: NoteRec): string => shownOn(t.fm, today).on || (dayLabel(t.fm, today) === "Backlog" ? "~" : "~~");
   return todos.filter(t => isOpenTodo(t) && pointsTo(t.fm.project, hub))
-    .map(t => ({ t, late: overdue(t.fm, today) }))
-    .sort((a, b) => ((a.late ? 0 : 1) * 10 + rank(str(a.t.fm.day))) - ((b.late ? 0 : 1) * 10 + rank(str(b.t.fm.day)))
+    .map(t => ({ t, late: overdue(t.fm, today), key: key(t) }))
+    .sort((a, b) => (a.late ? 0 : 1) - (b.late ? 0 : 1) || cmp(a.key, b.key)
       || priorityRank(a.t.fm.priority) - priorityRank(b.t.fm.priority) || a.t.path.localeCompare(b.t.path));
 }
 
 /** A project hub's To-dos tile: all its open to-dos, with the overdue date or the planned day. */
 export function projectTodos(todos: NoteRec[], hub: NoteRec, today: Date): ListLine[] {
   return openProjectTodos(todos, hub, today).map(({ t, late }) => ({ path: t.path, text: t.name,
-    badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] }));
+    badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${dayLabel(t.fm, today)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] }));
 }
 
 export interface WaitingGroup { who: string; lines: ListLine[] }
@@ -210,7 +225,7 @@ export function waitingOn(todos: NoteRec[], today: Date, hub?: NoteRec): Waiting
     who: g.who,
     lines: g.items.sort((a, b) => priorityRank(a.fm.priority) - priorityRank(b.fm.priority) || a.name.localeCompare(b.name)).map(t => {
       const late = overdue(t.fm, today);
-      return { path: t.path, text: t.name, badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }] };
+      return { path: t.path, text: t.name, badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${dayLabel(t.fm, today)}`, cls: "vt-muted" }] };
     }),
   }));
 }
@@ -240,7 +255,7 @@ export function topicIndex(notes: NoteRec[], knowledge: string): TopicLine[] {
 export const PROJECT_TILE_ROWS = 10;
 
 /**
- * One card per project hub, in the projects order. Up to 3 open to-dos of the project (overdue first, then Mon → Fri → Backlog → other),
+ * One card per project hub, in the projects order. Up to 3 open to-dos of the project (overdue first, then by planned day, then the Backlog),
  * counts of open to-dos, papers (ZotLit collection `Projects/<name>`, or a link to the hub) and other notes in the project's folder.
  */
 export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[], notes: NoteRec[], goals: Record<string, string>, today: Date, mode: CountdownMode = "off"): ProjectCard[] {
@@ -252,7 +267,7 @@ export function projectCards(hubs: NoteRec[], todos: NoteRec[], papers: NoteRec[
     return {
       hub: projects([h], Infinity, mode, today)[0], goal: goals[h.path] ?? "", folder: h.folder,
       todos: mine.slice(0, 3).map(({ t, late }) => ({ path: t.path, text: t.name,
-        badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] })),
+        badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${dayLabel(t.fm, today)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] })),
       more: Math.max(0, mine.length - 3), open: mine.length, papers: nPapers,
       notes: notes.filter(n => n.path !== h.path && inFolder(n.path, h.folder)).length,
     };

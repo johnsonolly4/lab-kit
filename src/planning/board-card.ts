@@ -94,7 +94,7 @@ export function meetingMarkers(h: HeaderSrc, d: Date): Marker[] {
   for (const s of [...real].sort((a, b) => a.name.localeCompare(b.name))) {
     if (ymd(nextDate(s, d)) !== ymd(d)) continue;
     const hub = hubs.find(n => n.path === s.path);
-    const open = hub ? flaggedFor(h.todos, hub, first === s).filter(t => t.fm.done !== true && t.fm.day !== "Done").length : 0;
+    const open = hub ? flaggedFor(h.todos, hub, first === s).filter(t => !isFinishedTodo(t.fm)).length : 0;
     out.push({ kind: "meeting", text: open ? `${s.name} · ${open} flagged` : s.name });
   }
   return out;

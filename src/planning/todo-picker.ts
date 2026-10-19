@@ -1,10 +1,9 @@
 // "+ add after this" on the plan map (planning kit): which to-dos the search offers, and the text of a new to-do.
 // Pure (no Obsidian runtime). Used by src/planning/add-after.ts.
-import { isFinished } from "./actions";
 import { linkTarget, type NoteRec } from "./lists";
 import { canLink } from "./plan-link";
 import type { Plan } from "./plan";
-import { ymd } from "./todo";
+import { isFinishedTodo, ymd } from "./todo";
 
 export interface Offered {
   path: string; name: string;
@@ -23,7 +22,7 @@ const has = (v: unknown): boolean => Array.isArray(v) ? v.some(i => linkTarget(i
 
 /** The open to-dos of the vault the search offers for "comes after `from`": this project's first (not itself, not already after it, not making a loop), then other projects' and the ones with no project, with the project named. A to-do of another project that has its own `after`, `sub` or subtasks is listed but cannot be moved here. */
 export function offeredTodos(all: NoteRec[], plan: Plan, hubName: string, from: string): Offered[] {
-  const todos = all.filter(t => t.fm.kind === "todo" && !isFinished({ done: t.fm.done, day: t.fm.day }) && t.path !== from);
+  const todos = all.filter(t => t.fm.kind === "todo" && !isFinishedTodo(t.fm) && t.path !== from);
   const subtasksOf = new Set(todos.map(t => linkTarget(t.fm.sub).split("/").pop() ?? "").filter(Boolean));   // names that some to-do names as its parent
   const out: Offered[] = [];
   for (const t of todos) {

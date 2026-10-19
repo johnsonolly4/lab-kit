@@ -2,7 +2,9 @@
 // plan's earlier measured model (tests/helpers/i2-model.ts placeI2), and normalising every note leaves the board as it was.
 import { describe, it, expect } from "vitest";
 import { buildWeek, weekCardOf, type WeekBoard } from "../src/planning/board-card";
-import { applyPatch, normalisePatch, WEEKDAYS } from "../src/planning/todo";
+import { applyPatch, isFinishedTodo, normalisePatch, WEEKDAYS } from "../src/planning/todo";
+import { thisWeek } from "../src/planning/lists";
+import { readPlan } from "../src/planning/plan";
 import { loadVault, todoNotes } from "./helpers/i2-vault";
 import { DATES, placeI2, placeText } from "./helpers/i2-model";
 import type { NoteRec } from "../src/planning/lists";
@@ -72,5 +74,30 @@ describe("I2 slim model on the old-style fixture vault", () => {
     const typo = notes.find(n => n.name === "Day typo")!;
     const fm = { ...typo.fm }; applyPatch(fm, normalisePatch(fm, run) ?? { set: {}, remove: [] });
     expect(fm.day).toBe(typo.fm.day);
+  });
+});
+
+// I2 Phase 3: Home "This week" and the project plan read the same dates as the board.
+describe("I2 Phase 3: Home This week lists what buildWeek puts in this week's columns; plan rows done = isFinishedTodo", () => {
+  const all = loadVault("vault");
+  const normalised = notes.map(n => { const fm = { ...n.fm }; const p = normalisePatch(fm, DATES.wed); if (p) applyPatch(fm, p); return { ...n, fm }; });
+  for (const [label, now] of Object.entries(DATES)) {
+    for (const [state, ns] of [["old", notes], ["normalised", normalised]] as const) {
+      it(`${label}, ${state} notes`, () => {
+        const b = board(ns, now);
+        const kinded = new Set(ns.filter(n => n.fm.kind === "todo").map(n => n.name));
+        const inColumns = b.days.flatMap(d => d.open.map(c => c.title)).filter(t => kinded.has(t)).sort();
+        const lines = thisWeek(ns, now);
+        const overdueOnly = lines.filter(l => !inColumns.includes(l.text));
+        expect(lines.map(l => l.text).filter(t => inColumns.includes(t)).sort()).toEqual(inColumns);
+        expect(overdueOnly.every(l => l.badges[0].text.startsWith("overdue"))).toBe(true);
+      });
+    }
+  }
+  it("plan rows of the fixture's Alpha hub are done exactly when isFinishedTodo", () => {
+    const hub = all.find(n => n.name === "Alpha")!;
+    const rows = readPlan(notes, hub).rows;
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) expect(r.done).toBe(isFinishedTodo(notes.find(n => n.path === r.path)!.fm));
   });
 });
