@@ -13,9 +13,6 @@ const series = vt.series;
 const d = moment(vt.date);
 const date = d.format("YYYY-MM-DD");
 const since = vt.since;
-// The old "meeting: true" flag counts for the first series (by name) only
-const names = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
-const first = !names.length || names[0] === series;
 // A one-off meeting (New one-off meeting) has a title and may belong to a project
 const label = vt && vt.title ? vt.title : series;
 let name = `${date} ${label}`, n = 2;
@@ -56,10 +53,8 @@ show: meeting-bar
 > > ```
 >
 > > [!question] Flagged for this meeting
-> > ```dataview
-> > LIST WITHOUT ID file.link
-> > FROM "00 Planning/To-dos"
-> > WHERE kind = "todo" AND (meeting = link("<% series %>")<% first ? " OR meeting = true" : "" %>) AND !done AND day != "Done"
+> > ```vault-card
+> > show: meeting-flagged
 > > ```
 > >
 > > **Waiting on**

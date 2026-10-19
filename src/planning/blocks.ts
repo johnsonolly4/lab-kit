@@ -6,7 +6,7 @@ import { runCommand, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
-import { ONCE, WEEKDAYS, nextMeetingLines, nextMeetings } from "./meetings";
+import { ONCE, WEEKDAYS, firstSeries, nextMeetingLines, nextMeetings } from "./meetings";
 import { hasPlan, planLines, projectExperiments, readPlan } from "./plan";
 import { ZOOM_STEP, clampZoom, fitZoom, layoutPlan, type Direction, type PlaceMemory } from "./plan-map";
 import { drawPlanMap, drawProblems } from "./plan-map-render";
@@ -20,7 +20,8 @@ import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
-import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { flaggedLines, FLAGGED_EMPTY, RAISED } from "./freeze";
+import { blockOptions, linkTarget, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -216,6 +217,29 @@ class BlockView extends MarkdownRenderChild {
           const { lines, hidden } = meetingDone(this.owner.notesIn(todoFolder(f)), w);   // only to-dos with a priority: the small ones would crowd the meeting
           this.capped(box, lines, o.limit ?? PROJECT_TILE_ROWS, hidden ? "No prioritised to-dos finished since the last meeting." : "No to-dos finished since the last meeting.");
           if (hidden) box.createDiv({ cls: "vt-muted", text: `${hidden} finished ${hidden === 1 ? "to-do" : "to-dos"} without a priority ${hidden === 1 ? "isn't" : "aren't"} listed. Give a to-do a priority (1 to 3) to list it here.` });
+        }
+        return;
+      }
+      case "meeting-flagged": {   // on a meeting note: the open to-dos flagged for its series, with when each was first raised and an Unflag button
+        const w = this.window(box);
+        if (!w || !this.need(box, todoFolder(f))) return;
+        const here = this.app.vault.getFileByPath(this.sourcePath), series = linkTarget(here ? this.owner.rec(here).fm.series : "");
+        const hubFile = series ? this.app.metadataCache.getFirstLinkpathDest(series, this.sourcePath) : null;
+        if (!hubFile) { box.createDiv({ cls: "vt-muted", text: "This note has no series link." }); return; }
+        const hubs = this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)).filter(n => n.fm.kind === "meeting-series");
+        const lines = flaggedLines(this.owner.notesIn(todoFolder(f)), this.owner.rec(hubFile), firstSeries(hubs)?.name === hubFile.basename, w.date);
+        if (!lines.length) { box.createDiv({ cls: "vt-muted", text: FLAGGED_EMPTY }); return; }
+        const ul = box.createEl("ul");
+        for (const l of lines) {
+          const li = ul.createEl("li");
+          this.link(li, l.path, l.text);
+          for (const b of l.badges) { li.appendText(" "); li.createSpan({ cls: b.cls, text: b.text }); }
+          li.appendText(" ");
+          li.createEl("button", { text: "Unflag", cls: "vt-unflag" }).addEventListener("click", () => {
+            const todo = this.app.vault.getFileByPath(l.path);
+            if (todo) void this.app.fileManager.processFrontMatter(todo, (fm: Record<string, unknown>) => { fm.meeting = null; delete fm[RAISED]; })
+              .then(() => this.draw(), e => { console.error(e); new Notice("Could not unflag the to-do."); });
+          });
         }
         return;
       }
@@ -453,7 +477,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, meeting-flagged, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

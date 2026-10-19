@@ -178,3 +178,12 @@ describe("Tidy rule: Meetings: freeze old meeting notes", () => {
     expect(run(m, make(() => flagged()))).toBeUndefined();
   });
 });
+
+describe("Meeting template (I20)", () => {
+  it("shows the Flagged list as a block, which Freeze and Unflag work on, not as a Dataview query", () => {
+    const t = readFileSync("kits/planning/Extras/Templates/Meeting.md", "utf8");
+    expect(t).toContain("show: meeting-flagged");
+    expect(t).not.toContain("dataview");
+    expect(freezeBody("> > ```vault-card\n> > show: meeting-flagged\n> > ```", { "meeting-flagged": ["- [[A]]"] })).toBe("> > - [[A]]");
+  });
+});
