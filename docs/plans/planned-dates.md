@@ -1,140 +1,193 @@
 # Plan: planned dates on to-dos (I2)
 
-_Written 2026-10-19 (plan step I2-PLAN, side session, Opus). Not agreed yet: every behaviour change is a question in BACKLOG "Questions for the owner" (I2 Q1-Q12); the recommended answers are written in below and marked **(Q n)**. Each phase = one session, Sonnet. Builds on Board B (`docs/plans/board-own-view.md`, Phases 1-2 on `overnight/2026-10-19`)._
+_Written 2026-10-19 (plan step I2-PLAN, side session, Opus). Rewritten 2026-10-19 (N2, Opus) to the **slim model** the owner decided (BACKLOG "Questions for the owner" → I2, rounds 1-3; `docs/decisions.md` 2026-10-19 I2 lines). Each phase = one session, Sonnet. Builds on Board B (`docs/plans/board-own-view.md`, Phases 1-2 on `overnight/2026-10-19`). Rows marked **(new Q)** follow from the decisions but change something the owner sees: they are asked in BACKLOG ("I2 slim model: follow-up questions") before the phase that needs them._
 
 ## Goal
-A to-do knows the date it is planned for, so the board can show this week, next week and any other week, a card dragged to Monday on a Wednesday means next Monday (not this Monday, beside last Monday's finished cards), and the week can be closed.
+A to-do knows the date it is planned for, so the board can show this week, next week and any other week, a card dragged to Monday on a Wednesday means next Monday (not this Monday, beside last Monday's finished cards), and the week can be closed. A to-do carries as few properties as it can (the owner wants a short property list in the split-pane view).
 
 ## Why
-`day: Mon` cannot say which Monday. Today `cardDate()` (`src/planning/todo.ts:58`) guesses it from `planned` (the first such weekday on or after the day the card was moved), and the board puts every `Mon` card in one Mon column (`buildBoard`, `src/planning/board-card.ts:127`): next Monday's card sits beside this Monday's finished ones, and ticked cards stay on the board until the roll-over clears them the next week (BACKLOG "Ticked to-dos stay on the board"). Every task tool compared stores a date. A date also unblocks week arrows (F1), Close the week (F4), the week clean (I3) and "assign to next Tuesday" (BACKLOG "To-do day").
+`day: Mon` cannot say which Monday. Today `cardDate()` (`src/planning/todo.ts:59`) guesses it from `planned`, and the board puts every `Mon` card in one Mon column (`buildBoard`, `src/planning/board-card.ts:127`): next Monday's card sits beside this Monday's finished ones, and ticked cards stay on the board until the roll-over clears them. Every task tool compared stores a date (Things: When + Deadline; Obsidian Tasks: scheduled + due; Todoist: date + deadline). A date also unblocks week arrows (F1), Close the week (F4), the week clean (I3) and "assign to next Tuesday".
 
-## Decision taken (to confirm, Q1-Q12)
-- **`scheduled: YYYY-MM-DD` is the truth.** No value (absent or empty) = Backlog. The board places every card from `scheduled`, `done`, `done_on` and today; it writes nothing when it draws.
-- **`day` stays, as a mirror** (Q10): the weekday name of `scheduled` (`Mon` … `Sun`), `Backlog` when there is none, `Done` when the roll-over clears a finished card (as now). It keeps the base's filter (`day != "Done"`), the built-in kanban fallback in `To-do board.base`, the To-do template and any Dataview query of the owner working. It is a pure function of `scheduled` (not of today), so two devices always agree on it (see Sync).
-- **`planned` is no longer needed** for new writes: it only told `cardDate()` which week a weekday meant. Old values stay and are read once, by the fallback below and the Tidy rule.
-- **Read fallback, for ever:** a to-do with a weekday `day` and no `scheduled` is placed at `cardDate(fm)` (today's rule, with `planned`, else this week's Monday as the roll-over does now). So an old vault draws right before any migration, and a note edited by hand or by an older plugin on another device still lands somewhere sensible.
-- Rejected: a date-only model that drops `day` (the kanban fallback and the template would group nothing); a week number next to `day` (two fields to keep in step, no help for "next Tuesday"); writing a date into `day` itself (breaks the fallback kanban's columns and every `day === "Mon"` reader).
+## The slim model (decided 2026-10-19: Q9, Q10, Q14, Q16, Q19)
+- **`scheduled: YYYY-MM-DD` is the one planned-day property.** It replaces `day` and `planned`. No `scheduled` = the Backlog.
+- **`rolled` and `countdown` are dropped.** Carried over is worked out, never stored: open and `scheduled` before today.
+- **Done** is `done: true` plus `done_on: YYYY-MM-DD`, stamped on tick and removed on untick. `scheduled` is kept on tick and untick, so an unticked card goes back to its day (Q19).
+- **Write only set values.** No empty `project` / `due` / `waiting` / `priority`, no `meeting: false`. A new to-do has `kind: todo`, `done: false`, `cssclasses`, plus `scheduled` only when planned and `priority` only when set.
+- **Due and scheduled stay separate** (Q11): setting Due never fills the day.
+- **The board writes nothing when it draws.** Only a user action writes (drag, tick, a window button), and every write is one `processFrontMatter` call per card.
+- **Old notes are read, not rewritten** (Q9: the Tidy rule that dates old cards is off by default). A note with a weekday `day` and no `scheduled` is read through the old rule for ever (see "Reading old notes"), so an old vault draws right before anything is written.
+- **Notes arriving in the To-dos folder are normalised** (Q14): created there, moved in (an Inbox capture) or renamed into it, from any source (a template error, the file explorer, a kept old template). See "Normalise on arrival".
+- **No compatibility copy for older plugins** (Q16 b): the changelog says to update Lab Kit on every device first.
+- Rejected: keeping `day` as a mirror (the earlier draft): two keys to keep in step, a repair rule in the engine, and 11 properties on a note; the owner chose the slim model after seeing that list.
+
+## What follows from the slim model (not asked separately)
+- **The roll-over stops writing.** With `rolled` gone, carried over is drawn from the date; if the roll-over still moved `scheduled` to today, the card would stop looking carried over the moment it was moved. So the daily roll-over has nothing left to write on new-model cards, and none at the weekend either (Q15 a holds by construction). The old roll-over's other jobs: ticking pre-tick-box `day: Done` cards and clearing last week's finished cards (`day: Done`) are done by reading instead (see "Where a card shows"). **(new Q, I2-S1)** what happens to the `Moved N unfinished to-dos to Wed` notice, the `Roll over to-dos now` command and the per-device roll-over switch: recommended (a) all three go, the board draws carried cards on every device.
+- **The base filter** `day != "Done"` (`To-do board.base`) no longer hides anything for new cards; the board itself hides finished cards of earlier weeks (Q2 a). The base keeps the filter for old notes and gets `kind == "todo"` (Phase 4).
+- **The built-in kanban fallback view** groups by a weekday formula of `scheduled` (decided: view-only, unstyled, R4 a). A drag in it writes nothing useful (Bases can't write a formula); the base's description says so (Phase 4).
+- **The countdown setting** (`Due-date countdown`: Off / Marked / All) loses "Marked" (it read `countdown: true`). **(new Q, I2-S2)** recommended (a) Off / All, a vault set to Marked reads as All; (b) as Off.
+- **Unknown values are left alone.** A typo `day: Teusday`, lower case `mon` or empty `day` is never read as a date and never removed by normalising (no text the owner typed is lost); such a card sits in the tray, as today.
+
+## Reading old notes (fallback, for ever)
+`dateOf(fm, now)` gives the card's planned date:
+1. `scheduled` a valid date → it. `scheduled` present but not a date (typo) → none (tray).
+2. Else `day` one of `Mon` … `Sun` → the first such weekday on or after `planned`; with no valid `planned`, on or after this week's Monday (what the old roll-over read). This is `cardDate` widened to Sat / Sun (Q17 a).
+3. Else none: Backlog.
+
+`isFinished(fm)` = `done: true`, or `day: Done` (a card finished before the tick box existed; today's roll-over ticked those, now they are read as finished). Its finished day is `done_on`, else none (shown nowhere: it is an old card).
 
 ## Where a card shows (the shown week = Monday W … Sunday W+6; this week unless the week arrows moved it)
+"Today's column" = today's weekday; at the weekend Sat / Sun when Show weekend is on, else Mon (`todayColumn`).
+
 | Card | Shows |
 |---|---|
-| open, `scheduled` in the shown week, today or later (or any day of a future week) | that date's column |
-| open, `scheduled` before today (this or an earlier week), shown week = this week | **carried over**: today's column (Mon at the weekend, as `todayColumn`), amber edge; the view does this from the date, so a phone that never rolls over still shows it right |
-| open, `scheduled` before today, shown week ≠ this week | not shown (it is carried over into this week) |
-| open, no `scheduled` | the tray (Backlog) |
-| open, `scheduled` after the shown week | the tray, with a small date pill `Tue 27 Oct` (Q3) |
-| open, `scheduled` on Sat / Sun with Show weekend off | the tray, with its date pill |
-| done, `done_on` in the shown week | the `N done` line of the column of `done_on` (Q4) |
-| done, `done_on` before the shown week | not shown: **finished cards of earlier weeks leave the board on Monday by themselves** (Q2) |
-| done, no `done_on` | the column of `scheduled`, else not shown |
-
-`rolled: true` keeps meaning "carried over" for the plan map and the fallback kanban; the board's amber edge is `rolled || (open && scheduled < today)`.
+| open, date in the shown week, today or later (or any day of a future week) | that date's column; Sat / Sun with Show weekend off → the tray with its date pill |
+| open, date before today, shown week = this week | **carried over**: today's column, amber edge (on every device: nothing is written) |
+| open, date before today, shown week ≠ this week | not shown (it is carried into this week) |
+| open, no date | the tray (Backlog) |
+| open, date after the shown week | the tray, with a small date pill `Tue 27 Oct` (Q3) |
+| finished, `done_on` in the shown week | the `N done` list of `done_on`'s column (Q4); Sat / Sun with the weekend off → Mon (where the card sat when it was ticked). Stays all week, so it can be unticked there (Q19) |
+| finished, `done_on` before the shown week | not shown: finished cards of earlier weeks leave the board on Monday by themselves (Q2) |
+| finished, no `done_on` | its date's `N done` list when that date is in the shown week, else not shown |
 
 ## What writes what
-All writes go through `fileManager.processFrontMatter`, in one call per card, so `scheduled`, `day` and `rolled` never disagree in a synced file.
-
-| Action | Writes |
+| Action | Writes (one call; keys removed only when present) |
 |---|---|
-| Drag onto a day column of the shown week (today or later) | `scheduled: <that date>`, `day: <its weekday>`, `rolled: false` |
-| Drag onto a past day of this week, or any day of a past week | nothing: past columns are not drop targets (no dashed outline); a drop there shows the notice `Mon 19 Oct has passed: drop on today or a later day.` (Q1) |
-| Drag onto the tray | `scheduled` removed, `day: Backlog`, `rolled: false` |
-| Drag within the same column | nothing (as now, `dropDay`) |
-| Tick the done circle | `done: true`, `done_on: today` (if none), `rolled: false` (as now). `scheduled` is kept (it says when it was planned) |
-| Untick a card | as now: `done_on` removed; a card whose `day` is `Done` goes back to `day: Backlog`, and now also loses `scheduled` (**the re-tick fix kept**: the roll-over must never see `Done` + not done and tick it again; `tests/` case kept and extended) |
-| `+ New` in a column (Board B Phase 3) | the entry window opens with that column's date; the note gets `scheduled` + `day` |
-| `day` changed by hand or by the fallback kanban (no `scheduled` change) | the engine sets `scheduled` to the next such weekday on or after today (the old kanban drag meaning), `rolled: false`; `day: Backlog` removes `scheduled` |
-| `scheduled` changed by hand | the engine sets `day` to its weekday (or `Backlog`) when it differs |
-| Roll-over (computers only, `rollsOnDevice`, unchanged) | open card with `scheduled` before today: `scheduled: today`, `day: <today's weekday, Mon at the weekend>`, `rolled: true`. Notice unchanged: `Moved N unfinished to-dos to Wed`. Finished card with `done_on` before this Monday: `day: Done` (as now; keeps the base small). `planned` is no longer written |
+| Drag onto a column of the shown week, today or later | `scheduled: <that date>`; removes the old keys `day`, `planned`, `rolled` |
+| Drag onto a past day of this week, or any day of a past week | nothing: past columns are not drop targets; a drop there shows `Mon 19 Oct has passed: drop on today or a later day.` (Q1 a) |
+| Drag onto the tray | removes `scheduled`, `day`, `planned`, `rolled` |
+| Drag to where the card already is | nothing |
+| Tick (board circle, chip bar) | `done: true`, `done_on: today` (when none); removes `rolled`. `scheduled` kept. Notice `Ticked "<name>". Undo` for about 8 s (Q19); Undo writes the note back as it was |
+| Untick | removes `done_on`; a card on the old `day: Done` also loses `day` (**the re-tick fix kept**: Done + not done must never be read as finished again). `scheduled` kept: the card goes back to its day |
+| `+ New` in a day column | the entry window opens with that column's date (today or later only); the note gets `scheduled` |
+| A note arrives in the To-dos folder | the normalising patch below (once; a second run writes nothing) |
+| Roll-over | nothing (see "What follows") |
+| Tidy rule `To-dos: give each card a date` (off by default, Q9) | the normalising patch on every old note, with preview and backup |
 
-## Roll-over, what it becomes
-`rollOverPatch` (`src/planning/todo.ts:89`) keeps its four kinds; `"planned"` (stamping `planned` on cards from before the engine) becomes `"dated"`: a weekday card with no `scheduled` gets `scheduled: cardDate(fm)`, written only on a rolling device. The "ticked" (old `Done` with no tick) and "cleared" kinds stay. The board no longer depends on the roll-over to look right: it is the durable write for other readers (Home "This week" list, plan map, fallback kanban), not the drawing rule.
+## Normalise on arrival (Q14)
+`normalisePatch(fm, today)` → a patch or null; the same function is the Tidy rule's per-note step. Only notes whose `kind` is `todo` or missing (a note of another kind in the folder is left alone).
+- `kind` missing → `kind: todo`; `done` missing or not true / false → `done: false`.
+- Old `day`: a weekday (`Mon` … `Sun`) with no `scheduled` → `scheduled` from `dateOf`; `Backlog` → nothing to add. `Done` → `done: true` (with `done_on` kept; none added). In every one of these `day` is removed. Unknown `day` values stay (above).
+- `planned`, `rolled`, `countdown` removed. `done_on` on an open card removed.
+- Empty values removed: `scheduled`, `project`, `due`, `waiting`, `priority` that are empty (`""`, null, `[]`), and `meeting: false`.
+- Runs on the first metadata change after a create or a rename into the folder (so Templater has written the note first); a blank note the board just made (`isBlankBoardNote`) is skipped until something is typed.
+- Q18 a: the first time a run gives old cards a date, a notice `Gave N to-dos a planned date` once (per vault, saved in settings), plus a What's new line `Update Lab Kit on every device first; wait for Sync to finish before running Tidy up notes on a second device.`
 
-## Migration of old to-dos (Tidy rule)
-- New Tidy group in `src/kit/tidy.ts`, next to `todo-bar`: id `todo-dates`, title `To-dos: give each card a date`, detail `Cards on a weekday get scheduled: the date they are planned for (read from day and planned), so the board can tell this Monday from next Monday. Backlog and Done cards get none. Each note is backed up first.` Opt-in like `todo-bar` (Q9): the board reads old cards through the fallback anyway.
-- Per note (`kind: todo`, no `scheduled`, `day` a weekday): `scheduled: ymd(cardDate(fm))` with `planned` read as the roll-over reads it. Front matter only; `planned` is left in place (the user may delete it; not touched).
-- A to-do that is open and lands before today is carried over by the board the moment it has a date, exactly as the roll-over would do today; the Tidy list says so in its detail line: no other change.
+## Readers of `day` that change (from "Existing vaults" section 6)
+In our code (Phase 3): `todo.ts` (`snapOf`, `changePatch`, `rollOverPatch`), `board-card.ts`, `board-view.ts`, `lists.ts` (`isOpenTodo`, `thisWeek`, badges), `actions.ts` (`isFinished`, new to-do `day: Backlog`), `plan.ts`, `todo-picker.ts`, `plan-map.ts` (untick), `after-write.ts` (undo snapshot holds `scheduled`), `meetings` flagged counts (`day !== "Done"`), `kit/tidy.ts` `todo-properties` (no `day: Backlog` any more). In the kit (Phase 4): the To-do template, `To-do board.base`, the Weekly review (`day = "Backlog"`), Daily note (`day = ccc(date)`), One-off meeting (`day != "Done"`) and Project hub (`day = "Done"`) queries: new versions through Review update…, and for kept copies a Tidy rule that shows the query before / after. The owner's own queries on `day`: the Tidy view lists the notes that hold one (it does not rewrite them).
 
 ## Date words ("next tue")
-- One parser: `parseDue` (`src/planning/due-words.ts`, twin in `vtAsk.js`): the same words for Due and for Day (`tue`, `next tue`, `27 oct`, `in 3 days`, `next week` = that Monday). A bare weekday is today or the next one (`parseDue` already does this). One new word for Day only: `backlog` (clears).
-- **Quick capture:** new mark `@` (Q8): `Book NMR time +Polymers @next tue !1` → title `Book NMR time`, `scheduled` next Tuesday. Same rules as `%` (spaces and words allowed up to the next mark). `parseQuickTodo` (`src/planning/quick-todo.ts:24`) gets a `scheduled` field.
-- **Entry window and the in-note chip bar:** a `Day` chip after Due (`todoFields`, `src/planning/todo-bar.ts:75`): empty `+ Day`, set `Tue 27 Oct`; box placeholder `Which day? (tue, next tue, 27 oct; backlog clears)`; the hint line reuses `Reads as …`. Writes `scheduled` + `day`.
-- **Due does not fill Day** (Q11): they stay separate; a due date is a deadline, a day is a plan.
-- To-do template (`kits/planning/Extras/Templates/To-do.md:102`): `scheduled: <% scheduled %>` from the handoff (`window.vtTodo` / `vtEntryTodo` preset), `day:` from it; the board column handoff passes a date. Needs Review update… for existing vaults.
+- One parser: `parseDue` (`src/planning/due-words.ts`, twin in `vtAsk.js`): the same words for Due and for the day (`tue`, `next tue`, `27 oct`, `in 3 days`, `next week` = that Monday). One word for the day only: `backlog` (clears).
+- **Quick capture:** the day mark is `>` (Q8; tested 2026-10-19: no pop-up in the middle of a line, a leading `>` is stripped): `Book NMR time +Polymers >next tue !1` → title `Book NMR time`, `scheduled` next Tuesday. Same rules as `%` (words allowed up to the next mark).
+- **Entry window and the in-note chip bar:** a `Day` chip after Due: empty `+ Day`, set `Tue 27 Oct`; placeholder `Which day? (tue, next tue, 27 oct; backlog clears)`; hint `Reads as …`. Writes `scheduled` only. A past date is refused with the Q1 notice.
+- To-do template (`kits/planning/Extras/Templates/To-do.md`): writes `scheduled` from the handoff only when set, and no empty keys. Needs Review update… in existing vaults (until then normalising cleans what the kept template writes).
 
 ## Week arrows (F1) and Close the week (F4), on top
 Top row of the board (free since Board B Phase 1, must not be cramped), left to right:
 `‹` (aria-label `Previous week`) · `Week of 19 Oct` · `›` (aria-label `Next week`) · `This week` (only when another week is shown) · gap · `3 carried over` (chip, only when N > 0, this week only) · `Close the week…`.
-- The day headers get the date: `Mon 19` (Q5). Today's header blue only in this week.
-- The board always opens on this week; the shown week is not saved (Q6). Past weeks can be viewed (finished cards and their `N done` lines) but take no drops (Q1); future weeks take drops onto any day.
-- The tray is the same in every week: no date, or a date after the shown week (with its pill).
-- `3 carried over` (Q12) opens **Review late cards** (window title `Late cards (3)`): one row per carried-over card, its title and `planned Mon 12 Oct`, and buttons `Today`, `Tomorrow`, `Next week` (that Monday), `Backlog`, `Done`. Each button writes as a drag would.
-- `Close the week…` (Q7: always shown; the default choice is next Monday) opens window title `Close the week of 19 Oct`: line `4 open to-dos are left this week.`, three choices `Move them to Mon 26 Oct` (default), `Move them to the Backlog`, `Leave them (they carry over)`, a list of the cards with a box each (all ticked), line `Finished cards leave the board on Monday.`, buttons `Move 4` / `Cancel`. Notice `Moved 4 to-dos to Mon 26 Oct` or `Moved 4 to-dos to the Backlog`. Moving writes as a drag. Nothing else (notes are never moved or archived).
+- Day headers `Mon 19` (Q5); today's header blue only in this week. The board always opens on this week; the shown week is not saved (Q6). Past weeks can be viewed and take no drops (Q1); future weeks take drops on any day.
+- `3 carried over` (Q12 a) opens `Late cards (3)`: per card its title and `planned Mon 12 Oct`, buttons `Today`, `Tomorrow`, `Next week` (that Monday), `Backlog`, `Done`; each writes as a drag (or a tick) would.
+- `Close the week…` (Q7 a: always shown, default Next Monday) opens `Close the week of 19 Oct`: `4 open to-dos are left this week.`, choices `Move them to Mon 26 Oct` (default), `Move them to the Backlog`, `Leave them (they carry over)`, a list with a box per card (all ticked), `Finished cards leave the board on Monday.`, buttons `Move 4` / `Cancel`. Pressed before the week's end it lists only cards of days already past (Q7b a), as the late-cards window does. Notes are never moved or archived.
 
 ## Phone tabs (Board B Phase 2 layout)
-- The day tabs read `Mon 19 3` (name, date, open count); the week row sits above the tabs in one line: `‹ Week of 19 Oct ›`, with `This week` and the F4 buttons in a second row only on a phone (`is-narrow`).
-- A tab of a past day takes no drop (as columns). Swipe left past Fri (or Sun) does not change the week (no surprise jumps); the arrows do.
-- Phones do not roll over (`rollsOnDevice`), and need not: the view draws carried-over cards from the date.
+- Tabs `Mon 19 3` (name, date, open count); the week row above them: `‹ Week of 19 Oct ›`, with `This week` and the F4 buttons in a second row only on a phone (`is-narrow`). A past day's tab takes no drop. Swiping past Fri (or Sun) does not change the week; the arrows do.
+- Nothing needs the phone to write: carried-over cards and last week's finished cards come from the dates.
 
 ## Obsidian Sync with two devices
-1. The board never writes on draw; only a user action writes (drag, tick, a window button). So two open boards cannot answer each other.
-2. `day` is a pure function of `scheduled` (weekday name), never of today, so devices on different dates (midnight, time zones, a laptop asleep since Friday) compute the same `day` and never flip it back and forth. The rule that would need today (Backlog for later weeks) is drawn by the view, not written.
-3. The engine's `onChanged` writes only to repair a mismatch: `scheduled` and `day` disagree (a hand edit, the fallback kanban, an old plugin on the other device). A change from the other device arrives consistent, so it is left alone (same guard idea as `changePatch` today: `src/planning/todo.ts:63-66`).
-4. The roll-over runs only on computers (per-device switch unchanged) and 90 s after start (`START_DELAY`), so a phone's drag reaches the computer before it rolls. Its writes are idempotent: a card already `scheduled: today` + `rolled: true` is skipped.
-5. Two devices drag the same card before syncing: the last write wins, all three keys come from one write, so the note is never half old and half new. Same as today.
-6. An older plugin (1.4.x) on the other device: it ignores `scheduled`, stamps `planned` on a drag and writes `day` only. Rule 3 then sets `scheduled` from `day` on the next computer that sees the change (the next such weekday): right for a drag; noted as a known limit in the changelog.
+1. The board never writes on draw; only a user action writes. Two open boards cannot answer each other.
+2. Nothing is written because the date changed (no roll-over writes, no `day` mirror), so devices on different dates (midnight, time zones, a laptop asleep since Friday) never write against each other.
+3. Normalising is idempotent (a normalised note gives null) and only runs on arrival, so a synced change from the other device, already normal, writes nothing.
+4. Two devices change the same card before syncing: the last write wins; every write is one call, so a note is never half old and half new.
+5. An older plugin (1.4.x) on another device writes `day` / `planned` / `rolled` again: the new board still reads `scheduled` first; the old keys are removed on the next drag. Not covered, by decision (Q16 b): the changelog says update every device.
 
 ## Out of scope
-- Moving or archiving notes (Archive old to-dos is unchanged).
-- Time of day, durations, placing by dependencies (parked, BACKLOG).
-- F3 rolled-over count on a card (undecided, separate question).
-- A per-device "remember the last week" (Q6 says no).
-- Recurring to-dos.
+- Card chip icons and their hover menu (Q13): a design feedback page comes first (BACKLOG); no card change in this plan beyond the date pill and the amber edge.
+- Moving or archiving notes (Archive old to-dos is unchanged); time of day, durations, placing by dependencies (parked); F3 rolled-over count (undecided); a remembered last week (Q6 no); recurring to-dos.
+- Dropping `cssclasses: vt` by styling notes by `kind` (owner: optional, later).
 
 ## Phases
 
-### Phase 1 — Date model (pure, tests only)
-- Files: `src/planning/todo.ts` (`TodoFm.scheduled`, `dateOf(fm)` = `scheduled` else `cardDate(fm)`, `weekdayOf(date)`, `changePatch` and `rollOverPatch` on dates, `"dated"` kind), `src/planning/board-card.ts` (`buildBoard(cards, head, { …, week })` places by date per the table; `BoardCard.date`, `hint`), `src/planning/board-drag.ts` (`dropDay` → `dropPatch(card, target, today)`: a patch, or `{ refused: "past" }`), `tests/todo-engine.test.ts`, `tests/board-card.test.ts`, `tests/board-drag.test.ts`.
-- Not changed: the view, the engine wiring, kits, styles.
-- Checks: the placement table row by row; the re-tick test (`Done` + untick → `Backlog`, no `scheduled`, roll-over does not tick again); Sync table: a consistent synced change → `null` patch; `day` from `scheduled` independent of `now` (two `now`s, same result); Sunday 23:59 / Monday 00:01 boundary; a Wed drop on Mon of this week refused, on Mon of next week → `2026-10-26`; fallback: `day: Mon` + `planned: 2026-10-12`, no `scheduled` → `2026-10-12`.
+### Phase 1: Date model (pure, tests only, no behaviour change)
+- Files: `src/planning/todo.ts` (new, beside the old functions, which stay until Phase 2: `TodoFm.scheduled`, `WEEKDAYS` (7 names), `dateOf`, `isFinished`, `isCarried`, `dropPatch`, `tickPatch`, `normalisePatch`, `undoPatch`), `src/planning/board-card.ts` (new `buildWeek(cards, head, { …, week })` placing by date per the table; `WeekCard` with `date`, `carried`, `pill`; the old `buildBoard` stays until Phase 2), tests `tests/todo-dates.test.ts`, `tests/board-week.test.ts`, `tests/i2-slim.test.ts` (the fixture vault through `buildWeek` and `normalisePatch`).
+- Not changed: the view, the engine, kits, styles, user-facing text.
+- Checks: every row of "Where a card shows" and "What writes what"; the re-tick case (untick on `day: Done` removes `day`, `isFinished` is then false); a past drop refused (Wed 21 Oct: Mon 19 refused, Mon 26 → `2026-10-26`, today allowed); `dateOf` the same for two `now`s when `scheduled` is set; Sunday 23:59 / Monday 00:01; fallback `day: Thu` + `planned: 2026-10-14` → `2026-10-15`; Sat / Sun `day` dated (Q17); `normalisePatch` twice = null the second time; unknown `day` kept; fixture: on Wed, Sat and Mon the board matches the expected table (carried cards in Mon at the weekend with no write).
 - Size: M
 
-### Phase 2 — The board on dates
-- Depends on: Phase 1
-- Files: `src/planning/board-view.ts` (drop writes `scheduled` / `day` / `rolled`; past columns not drop zones; tray pill; `Mon 19` headers; done by `done_on`), `src/planning/engine.ts` (`onChanged` mirror repair, roll-over on dates), `src/planning/lists.ts` (`thisWeek` from `scheduled`), `src/planning/after-write.ts` (undo snapshot includes `scheduled`), `styles.css` (`.lk-board-date`, `.lk-board-pill.is-later`, `.lk-board-col.is-past`), `docs/obsidian-test-checklist.md` row.
-- Checks: unit tests as Phase 1 plus `thisWeek`; obsidian-check on a seeded vault (Wednesday clock): a card dragged to Mon writes `scheduled` = next Monday and appears in the tray with `Mon 26 Oct`; a Tue card from last week shows amber in Wed; last week's finished cards are gone; the fallback kanban still groups by `day`; errors `[]`; cropped screenshots light and dark.
+### Phase 2: The board and engine on dates
+- Depends on: Phase 1. Needs I2-S1 answered.
+- Files: `src/planning/board-view.ts` (draw `buildWeek`, drops write `dropPatch`, past columns not drop zones + notice, `Mon 19` headers, tray pill, amber from `carried`), `src/planning/board-drag.ts` (zones keyed by date), `src/planning/engine.ts` (`tickPatch` on tick, normalise on arrival, roll-over per I2-S1, old `changePatch` / `rollOverPatch` / `buildBoard` removed), `styles.css` (`.lk-board-date`, `.lk-board-pill.is-later`, `.lk-board-col.is-past`), checklist row.
+- Checks: tests; obsidian-check on the fixture vault (Wednesday clock): a card dragged to Mon writes `scheduled: 2026-10-26` and shows in the tray with `Mon 26 Oct`; a Tue card of last week shows amber in Wed; last week's finished cards gone; a note copied into the folder through the file system is normalised once; errors `[]`; cropped screenshots light and dark.
+- Size: L (split 2a board / 2b engine if it runs long)
+
+### Phase 3: The other readers of `day`
+- Depends on: Phase 2. Needs I2-S2 answered (countdown setting).
+- Files: `lists.ts`, `actions.ts`, `plan.ts`, `todo-picker.ts`, `plan-map.ts`, `after-write.ts`, `meetings.ts`, `kit/tidy.ts` (`todo-properties`), `todo-bar.ts`, settings (countdown options), tests.
+- Checks: Home "This week" and project tiles from `scheduled`; plan rows done from `isFinished`; undo snapshot restores `scheduled`; a new to-do from the board / actions has no `day`.
 - Size: M
 
-### Phase 3 — Migration (Tidy rule)
-- Depends on: Phase 1
-- Files: `src/kit/tidy.ts` (group `todo-dates`), `tests/tidy.test.ts`, `tests/tidy-planning-fixture.test.ts` and the `npm run tidy-fixture` data (old weekday cards with and without `planned`).
-- Checks: the fixture lists N cards; after Apply each has the `cardDate` date; Backlog / Done cards untouched; a second scan lists 0; obsidian-check on `test-vault-tidy/`.
+### Phase 4: The kit (template, base, kept queries, Tidy rules)
+- Depends on: Phase 3.
+- Files: `kits/planning/Extras/Templates/To-do.md`, `To-do board.base` (filter, weekday formula for the fallback kanban), Weekly review, Daily note, One-off meeting, Project hub queries; `src/kit/tidy.ts` (`todo-dates`: `To-dos: give each card a date`, off by default, using `normalisePatch`; a rule for kept kit queries with before / after; a list of own notes that query `day`); the one-off notice and What's new line (Q18); `npm run kit:manifest`; tests; `npm run tidy-fixture` data.
+- Checks: the fixture lists N cards; after Apply each has its `dateOf` date and no old keys; a second scan lists 0; obsidian-check on `test-vault-tidy/` (Dataview results if Dataview can be installed there, else NOT seen).
+- Size: M
+
+### Phase 5: Date words (quick capture `>`, Day chip, board New)
+- Depends on: Phase 2.
+- Files: `quick-todo.ts` (`>`), `due-words.ts`, `todo-bar.ts` / `entry-fields.ts` (Day chip), `commands.ts` (board New passes a date), `vtAsk.js` only if the template's prompt path needs it, tests.
+- Checks: `>next tue` on Mon 19 Oct → `2026-10-27`; `>tue` on Tue → today; `>backlog` → none; marks in any order with `+` `%` `!`; the Day chip writes `scheduled` only; a past day refused.
+- Size: M
+
+### Phase 6: Undo notice on ticks (Q19)
+- Depends on: Phase 2.
+- Files: `board-view.ts`, `todo-bar.ts` (chip bar tick), a small `undo-notice.ts` (Notice with a button, about 8 s, `undoPatch`), `styles.css` if the button needs it, tests.
+- Checks: tick then Undo leaves the front matter byte-equal to before; a second tick replaces the first notice; obsidian-check screenshot of the notice.
 - Size: S
 
-### Phase 4 — Date words: quick capture, Day chip, template
-- Depends on: Phase 1
-- Files: `src/planning/quick-todo.ts` (`@`), `src/planning/due-words.ts` (`backlog` handled by the Day field, not `parseDue`), `src/planning/todo-bar.ts` / `entry-fields.ts` (Day chip), `src/planning/commands.ts` (board New passes a date), `kits/planning/Extras/Templates/To-do.md`, `kits/planning/Extras/scripts/templater/vault/vtAsk.js` (only if the template's prompt path needs it), `npm run kit:manifest`, tests `quick-todo`, `todo-bar`, `due-words`.
-- Checks: `@next tue` on Mon 19 Oct → `2026-10-27`; `@tue` on Tue → today; `@backlog` → none; marks in any order with `+` `%` `!`; Day chip writes both keys; template writes `scheduled` from the handoff (obsidian-check with Templater if available, else NOT seen).
+### Phase 7: Week arrows (F1), desktop and phone
+- Depends on: Phase 2.
+- Files: `board-view.ts` (top row, shown-week offset, phone row), `board-card.ts` (`weekTitle`), `styles.css`, tests.
+- Checks: `›` shows Week of 26 Oct with next week's cards; `This week` returns; a drop on Tue of next week writes `2026-10-27`; a past week shows `N done` and takes no drop; at 390 px the week row fits in one line; screenshots.
 - Size: M
 
-### Phase 5 — Week arrows (F1), desktop and phone
-- Depends on: Phase 2
-- Files: `src/planning/board-view.ts` (top row, shown-week offset, phone row), `src/planning/board-card.ts` (`weekTitle`), `styles.css`, tests.
-- Checks: `›` shows Week of 26 Oct with next week's cards in their columns and this week's absent; `This week` returns; a drop on Tue of next week writes `2026-10-27`; past week shows `N done` and takes no drop; at 390 px the week row fits in one line with the tabs under it; screenshots.
+### Phase 8: Close the week (F4) and Late cards
+- Depends on: Phase 7.
+- Files: `src/planning/board-close.ts` (new: pure `closeWeekPlan(cards, today, choice)` → patches; windows), `board-view.ts`, `styles.css`, `tests/board-close.test.ts`.
+- Checks: 4 open cards → `Move 4` writes `2026-10-26` to each ticked one; unticked rows untouched; Backlog choice; Leave writes nothing; pressed on a Wednesday it lists only Mon / Tue cards; late-cards buttons write as drags; obsidian-check of both windows (design standard corners); screenshots.
 - Size: M
 
-### Phase 6 — Close the week (F4) and Review late cards
-- Depends on: Phase 5
-- Files: `src/planning/board-close.ts` (new: pure `closeWeekPlan(cards, today, choice)` → patches; window), `src/planning/board-view.ts` (two buttons), `styles.css`, `tests/board-close.test.ts`.
-- Checks: 4 open this-week cards → `Move 4` writes `2026-10-26` to each ticked one; unticked rows untouched; Backlog choice; Leave = no writes; late-cards window buttons write as drags; obsidian-check of both windows (design standard corners); screenshots.
-- Size: M
-
-### Phase 7 — Docs
-- Files: `docs/architecture.md`, `kits/planning/07 How-tos/Obsidian/Vault spec.md` (the `scheduled` key, `day` as a mirror), `docs/changelog.md` (the older-plugin limit, Sync rule 6), `docs/obsidian-test-checklist.md` 6i rows, `docs/decisions.md` (the owner's answers).
+### Phase 9: Docs
+- Files: `docs/architecture.md`, `kits/planning/07 How-tos/Obsidian/Vault spec.md` (`scheduled`; `day`, `planned`, `rolled`, `countdown` gone), `docs/changelog.md` (update every device first), `docs/obsidian-test-checklist.md` 6i rows, `docs/decisions.md`.
 - Done when: the owner tries the board on two devices with Sync (checklist row).
 - Size: S
 
+## Where each decision lives (check for N2 step 1)
+| Decision (BACKLOG I2 / decisions.md) | Section |
+|---|---|
+| Q1 a no drop on a past day, notice | What writes what; Phase 1, 2 |
+| Q2 a finished cards of earlier weeks leave on Monday | Where a card shows |
+| Q3 tray date pill | Where a card shows |
+| Q4 a `N done` by `done_on` | Where a card shows |
+| Q5 a `Mon 19` headers | Week arrows; Phase 2 |
+| Q6 a opens on this week | Week arrows |
+| Q7 a / Q7b a Close the week | Week arrows; Phase 8 |
+| Q8 `>` mark | Date words; Phase 5 |
+| Q9 Tidy rule off by default | Slim model; What writes what; Phase 4 |
+| Q10 slim model (`scheduled`, no `rolled` / `countdown`, only set values, new to-do keys, `+ New` sets the date, `done_on` stamp / remove, readers of `day`, fallback kanban by formula) | Slim model; What follows; Readers of `day`; Phases 3-4 |
+| Q11 a due and scheduled separate | Slim model |
+| Q12 a late cards chip and window | Week arrows; Phase 8 |
+| Q13 icons need a design page first | Out of scope |
+| Q14 normalise any note arriving | Normalise on arrival; Phase 2 |
+| Q15 a no weekend roll-over writes | What follows (no roll-over writes at all) |
+| Q16 b no `planned` copy, changelog | Slim model; Sync 5; Phase 9 |
+| Q17 a Sat / Sun cards dated | Reading old notes |
+| Q18 a one-off notice + What's new | Normalise on arrival; Phase 4 |
+| Q19 Undo notice on ticks, done list all week, untick keeps `scheduled` | What writes what; Where a card shows; Phase 6 |
+| decisions.md 149: day-header markers, Backlog filter, busy count, Show weekend, F1 / F4 later | already built (Board B); Week arrows |
+| Optional later: drop `cssclasses: vt` | Out of scope |
+
 ## Verification
-Known answers in tests (Wed 21 Oct 2026 as today): a drop on Mon = 2026-10-26 (this Monday is refused); `next tue` = 2026-10-27; old `day: Thu` + `planned: 2026-10-14` = 2026-10-15. The Sync rules are tested as patch tables (a consistent change → no write; two `now`s → the same `day`). Real two-device Sync is the owner's (not checkable by Claude).
+Known answers in tests (Wed 21 Oct 2026 as today): a drop on Mon = `2026-10-26` (this Monday refused); `next tue` = `2026-10-27`; old `day: Thu` + `planned: 2026-10-14` = `2026-10-15`; old `day: Sat` + `planned: 2026-10-14` = `2026-10-17`. Sync rules are tested as patch tables (a normal note → no write; two `now`s → the same date). Real two-device Sync is the owner's (not checkable by Claude).
+
+_The section below is the measured test of the earlier draft (with `day` kept as a mirror). Its numbers informed the decisions; where it names `rolled`, the `day` mirror, the mirror repair or a `planned` copy, the slim model above replaces it._
 
 ## Existing vaults (I2-TEST, 2026-10-19: measured before any I2 code exists)
 Questions answered: Q9 (does the Tidy rule default on?), Q10 (keep `day` as a mirror?). Nothing here is `src/` code: the I2 rules of this plan (the "Where a card shows" table, the Tidy rule, the roll-over, the mirror repair) are written once as a test helper (`tests/helpers/i2-model.ts`) and run on old-style notes.
