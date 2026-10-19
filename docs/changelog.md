@@ -1,5 +1,8 @@
 # Lab notebook kit: changelog
 
+## Unreleased
+- **Rig figure window** (plugin; not seen on a real screen, only checked in a throwaway Obsidian): a rig block has a **Figure…** button. It opens a window with a preview of the rig drawn as a figure (symbols, lines, the computer and its dashed control / data lines), a width in mm and a resolution in dpi with the pixel size shown, **Save SVG** (every device) and **Save PNG** (desktop only). Files are saved as `<rig note> figure.svg` / `.png` (then ` figure 2`, ` figure 3` while the name is taken) into the new **Figures folder** setting; empty means the rig note's own folder. The PNG is limited to 16,000 px a side and 150 million pixels (A0 at 300 dpi fits); a bigger size is made smaller in the same shape and the notice says the size you got. The SVG has no style rules, so PowerPoint, Illustrator and Inkscape read it; the computer's label comes from the rig note's `Control:` property.
+
 ## v1.4.1 (2026-10-15)
 Plan map + before / + after buttons, subtasks in the slide picture and an Experiment chip on the to-do bar; the plugin CSS no longer uses `:has` (store review). Most of it is built and tested but not yet seen in Obsidian.
 - **Experiment chip on the to-do chip bar** (plugin + planning kit To-do template: Review update… to get the template; not seen in Obsidian): a to-do's chip bar, the New to-do window and the plan map's + windows get an **Experiment** chip that lists your lab notes (Started, Processing results, the rest, Closed last; the Status is in the name) and writes `experiment: "[[note]]"`; "(none)" removes it. The plan map card shows it as before. Only when the Lab notes folder is set.

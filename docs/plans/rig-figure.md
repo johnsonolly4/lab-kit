@@ -80,6 +80,10 @@ Decided: marks 7-8 need no code (the figure draws the Control / Data lines the t
 - **Cap used by the window: 16,000 px a side and 150 million pixels in all.** A0 at 300 dpi (139.5 M) fits. Above the cap the window lowers the pixel count to fit (same shape) and says so, with the size it got, in the notice. A `null` blob or a thrown error is also a notice ("could not make the PNG"), never a silent empty file.
 - Not measured: the real Windows and Linux builds, memory use during the draw, mobile (the PNG is desktop only).
 
+#### Phase 4 built (2026-10-19; tests plus a throwaway Obsidian; not seen by the user)
+- SVG: fills as attributes, no `<style>`, one `<g>` per part; the computer's label is the note's `Control:` property (default "Control"). Figures folder setting (empty = the rig note's folder). Window `src/rig/figure-ui.ts`, button **Figure…** on the rig block, numbers and names in `src/rig/figure-export.ts`.
+- Checked with obsidian-check (a made-up rig): the button opened the window; width 841 mm at 300 dpi showed 9,933 x 4,212 px; Save SVG, Save PNG and a second Save SVG wrote `figure.svg`, `figure.png`, `figure 2.svg` next to the note; the PNG's header read 9933x4212; the SVG had no `<style>` and the label "Lab PC". Under-the-button placement was checked with a faked button position (a hidden test window gives the button none): no dim, left 200 px as given. Not seen: a real window on screen, the PNG opened in another tool, Windows / Linux, a phone.
+
 ### Phase 5: hand layout
 - Depends on: Phase 4
 - Files: `src/rig/figure-ui.ts` (drag a symbol, bend or move a line, snap to a grid, Reset to automatic), a `rig-layout` block read and written in the rig note (`src/rig/layout.ts`: parse, write, merge with the automatic layout when parts are added or removed), tests for the block's round trip and for a part removed or added.
