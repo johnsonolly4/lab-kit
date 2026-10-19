@@ -1,0 +1,13 @@
+---
+kind: todo
+day: Thu
+planned: 2026-10-19
+done: false
+rolled: false
+project: 
+due: 
+countdown: 
+priority: 
+meeting: false
+---
+Thu planned this week.
