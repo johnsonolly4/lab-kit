@@ -70,12 +70,24 @@ export async function toggleDoneWithUndo(app: App, file: TFile): Promise<void> {
   });
 }
 
-/** The round tick at the start of a to-do's chip bar: open circle, ticked = accent fill + check. A click ticks (with the Undo notice) or unticks (none). */
+/** The round tick at the start of a to-do's chip bar: open circle, ticked = accent fill + check. A click ticks (with the Undo notice) or unticks (none); it flips at once, the block redraws when the note's properties are read again. */
 export function tickButton(parent: HTMLElement, app: App, file: TFile, done: boolean): HTMLElement {
-  const btn = parent.createEl("button", { cls: done ? "vt-todo-tick is-done" : "vt-todo-tick", attr: { type: "button", "aria-label": done ? "Mark not done" : "Mark done", title: done ? "Mark not done" : "Mark done" } });
-  if (done) setIcon(btn, "check");
+  const btn = parent.createEl("button", { attr: { type: "button" } });
+  const paint = (): void => {
+    const label = done ? "Mark not done" : "Mark done";
+    btn.className = done ? "vt-todo-tick is-done" : "vt-todo-tick";
+    btn.setAttribute("aria-label", label);
+    btn.setAttribute("title", label);
+    btn.empty();
+    if (done) setIcon(btn, "check");
+  };
+  paint();
   // Live Preview opens a code block for editing on a click inside it: the events stop here
   for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
-  btn.addEventListener("click", () => { toggleDoneWithUndo(app, file).catch(e => console.error("Lab Kit tick", e)); });
+  btn.addEventListener("click", () => {
+    done = !done;
+    paint();
+    toggleDoneWithUndo(app, file).catch(e => console.error("Lab Kit tick", e));
+  });
   return btn;
 }

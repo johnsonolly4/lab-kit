@@ -97,34 +97,44 @@ const lastNotice = (): Seen => created[created.length - 1];
 
 /** A parent that records the button it is asked for (no DOM in the tests). */
 function fakeParent() {
-  const btn = { opts: {} as { cls?: string; attr?: Record<string, string> }, dataset: {} as Record<string, string>, on: {} as Record<string, (e: unknown) => void>, addEventListener(ev: string, fn: (e: unknown) => void) { this.on[ev] = fn; } };
-  return { btn, parent: { createEl: (_tag: string, o: typeof btn.opts) => { btn.opts = o; return btn; } } };
+  const btn = {
+    className: "", attrs: {} as Record<string, string>, dataset: {} as Record<string, string>, on: {} as Record<string, (e: unknown) => void>,
+    setAttribute(k: string, v: string) { this.attrs[k] = v; }, empty() { this.dataset = {}; },
+    addEventListener(ev: string, fn: (e: unknown) => void) { this.on[ev] = fn; },
+  };
+  return { btn, parent: { createEl: () => btn } };
 }
+const click = { stopPropagation() { /* ignored */ } };
 
 describe("tickButton (the chip bar's round tick)", () => {
-  it("an open tick says Mark done; a click writes done: true and shows the notice", async () => {
+  it("an open tick says Mark done; a click writes done: true, shows the notice, and the circle fills at once", async () => {
     const { app, file, text } = fakeApp(NOTE);
     const { btn, parent } = fakeParent();
     tickButton(parent as never, app as never, file as never, false);
-    expect(btn.opts.attr?.["aria-label"]).toBe("Mark done");
-    expect(btn.opts.cls).toBe("vt-todo-tick");
+    expect(btn.attrs["aria-label"]).toBe("Mark done");
+    expect(btn.className).toBe("vt-todo-tick");
     const count = created.length;
-    btn.on.click({ stopPropagation() { /* ignored */ } });
+    btn.on.click(click);
+    expect(btn.className).toBe("vt-todo-tick is-done");
+    expect(btn.attrs["aria-label"]).toBe("Mark not done");
+    expect(btn.dataset.icon).toBe("check");
     await new Promise(r => setTimeout(r, 0));
     expect(text()).toContain("done: true");
     expect(created.length).toBe(count + 1);
     expect(lastNotice().texts).toEqual(['Ticked "Book NMR". ', "Undo"]);
   });
 
-  it("a ticked tick says Mark not done and shows a check; a click writes done: false with no notice", async () => {
+  it("a ticked tick says Mark not done and shows a check; a click writes done: false, no notice, and the circle opens", async () => {
     const { app, file, text } = fakeApp(NOTE.replace("done: false", "done: true"));
     const { btn, parent } = fakeParent();
     tickButton(parent as never, app as never, file as never, true);
-    expect(btn.opts.attr?.["aria-label"]).toBe("Mark not done");
-    expect(btn.opts.cls).toBe("vt-todo-tick is-done");
+    expect(btn.attrs["aria-label"]).toBe("Mark not done");
+    expect(btn.className).toBe("vt-todo-tick is-done");
     expect(btn.dataset.icon).toBe("check");
     const count = created.length;
-    btn.on.click({ stopPropagation() { /* ignored */ } });
+    btn.on.click(click);
+    expect(btn.className).toBe("vt-todo-tick");
+    expect(btn.dataset.icon).toBeUndefined();
     await new Promise(r => setTimeout(r, 0));
     expect(text()).toContain("done: false");
     expect(created.length).toBe(count);
