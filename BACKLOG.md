@@ -111,6 +111,12 @@ Anything that changes a visual or existing behaviour is asked here first, never 
       - The reagent fields (purity wt%, density, pKa, acid / base kind) must be held in the chemical database, so concentrated reagents are just chemical notes.
       - The owner has a PDF-to-SDS Python script that might fill chemical notes from safety data sheets: review it (location to be given by the owner; never read the real vault).
       - Proposal given in chat: insert a live block (like calc tables) whose inputs and actual masses are stored in the block itself, so nothing is lost when you leave and come back; to be shown as a feedback page.
+    - **Live solution block (solution-live-block feedback page, owner 2026-10-19):**
+      - L3 approved as a principle: keep what is stored in the note as plain text as possible and let the plugin do the processing.
+      - L2, the live block with steps, looks good; saved as `my_work/reference_visual/solution-live-block.png`.
+      - The block must not pick up the owner's own vault table styling: give it its own scoped classes, and the owner may adjust their snippets.
+      - Not marked yet: L1 (set-up window at the cursor), L4 (frozen record on close), L5 (chemical note fields), L6 (all snippet forms at the cursor, behind a setting to try).
+      - SDS script: the owner will copy it into `my_work/private/` for review (not there yet on 2026-10-19).
 - [ ] **Templater dependency: evaluate removing it (owner, 2026-10-19, from I23 d).** Today Templater carries:
   - Alt+S (the Insert snippet.md hotkey) and 4 user scripts (labSnippets, labForm, labPick, labMethods, plus vtAsk.js);
   - 18 kit template files with about 52 Templater tag lines (To-do, Lab Book Template, Meeting, Meeting series, One-off meeting, Project hub, New project note, New concept, New topic hub, the 7 code snippets, Insert snippet);
