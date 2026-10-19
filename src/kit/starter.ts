@@ -37,7 +37,7 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
 
   const files: Record<string, string> = {
     [`${CONFIG}/community-plugins.json`]: json(starterPlugins()),
-    [`${CONFIG}/app.json`]: json({ propertiesInDocument: "hidden" }),
+    [`${CONFIG}/app.json`]: json({ propertiesInDocument: "hidden", alwaysUpdateLinks: true }),
     [`${CONFIG}/appearance.json`]: json({ enabledCssSnippets: snippets }),
     [`${CONFIG}/plugins/templater-obsidian/data.json`]: json({
       templates_folder: templates,

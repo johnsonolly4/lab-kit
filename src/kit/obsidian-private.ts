@@ -401,6 +401,19 @@ export function propertiesInDocument(app: App): string | undefined {
   const v = (app.vault as unknown as VaultConfig).getConfig?.("propertiesInDocument");
   return typeof v === "string" ? v : undefined;
 }
+/** Settings → Files & links → Automatically update internal links (`alwaysUpdateLinks`, `app.vault.getConfig`, private). Obsidian leaves the key out until it is switched on, so a missing key means off. undefined when Obsidian has no getConfig. */
+export function alwaysUpdateLinks(app: App): boolean | undefined {
+  const vault = app.vault as unknown as VaultConfig;
+  if (typeof vault.getConfig !== "function") return undefined;
+  return vault.getConfig("alwaysUpdateLinks") === true;
+}
+/** Switches Automatically update internal links on. False when Obsidian has no setConfig. */
+export function setAlwaysUpdateLinks(app: App): boolean {
+  const vault = app.vault as unknown as VaultConfig;
+  if (!vault.setConfig) return false;
+  vault.setConfig("alwaysUpdateLinks", true);
+  return true;
+}
 /** Sets Properties in document to Hidden. False when Obsidian has no setConfig. */
 export function hidePropertiesInDocument(app: App): boolean {
   const vault = app.vault as unknown as VaultConfig;

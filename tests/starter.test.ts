@@ -59,6 +59,7 @@ describe("new-vault starter (Phase 8)", () => {
       lab: { initials: "ABC", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: KIT_DEFAULTS.labFolder, chemicalFolder: KIT_DEFAULTS.chemicalFolder },
       metaBind: null, zotlitGuide: null,   // Meta Bind buttons are added by the plugin's Fix, not by a settings file
       propertiesView: read(".obsidian/app.json").propertiesInDocument,
+      updateLinks: read(".obsidian/app.json").alwaysUpdateLinks === true,
       plugins: new Set(read(".obsidian/community-plugins.json") as string[]),
       planning: true,
       templater: { templatesFolder: tpl.templates_folder, userScriptsFolder: tpl.user_scripts_folder, menuHotkey: tpl.enabled_templates_hotkeys.includes(menu),

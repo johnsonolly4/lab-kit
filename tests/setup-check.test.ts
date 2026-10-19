@@ -339,6 +339,13 @@ describe("check setup: kit files, core plugins, Daily notes, Dataview and proper
     expect(byId(state({ dailyNotes: null }))["core:daily-notes-settings"]).toBeUndefined();   // planning kit off
   });
 
+  it("Links follow renames: planning kit only; off gets a Fix, unreadable is a warning", () => {
+    expect(byId(state({ ...plan, updateLinks: true }))["obsidian:update-links"]).toMatchObject({ ok: true });
+    expect(byId(state({ ...plan, updateLinks: false }))["obsidian:update-links"]).toMatchObject({ ok: false, fix: { kind: "update-links" } });
+    expect(byId(state({ ...plan, updateLinks: undefined }))["obsidian:update-links"]).toMatchObject({ ok: false, warn: true, fix: undefined });
+    expect(byId(state({ updateLinks: false }))["obsidian:update-links"]).toBeUndefined();
+  });
+
   it("Dataview inline queries: only with Dataview loaded and the planning kit on", () => {
     expect(byId(state({ ...plan, dataviewInline: true }))["dataview:inline"].ok).toBe(true);
     expect(byId(state({ ...plan, dataviewInline: false }))["dataview:inline"]).toMatchObject({ ok: false, warn: true });

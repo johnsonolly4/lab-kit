@@ -3,7 +3,7 @@ import { Modal, Notice, Platform, type App } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
 import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
-import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
+import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, alwaysUpdateLinks, setAlwaysUpdateLinks, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData,
   corePluginsOn, dailyNotesOptions, dataviewInlineQueries, propertyTypes, setPropertyType } from "./obsidian-private";
@@ -57,6 +57,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length, names: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).map(b => b.id) } : null,
     zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
+    updateLinks: alwaysUpdateLinks(app),
     corePlugins: corePluginsOn(app, CORE_PLUGINS.map(c => c.id)),
     dailyNotes: planningOn ? (d => d ? { ...d, want: pf.daily } : null)(dailyNotesOptions(app)) : undefined,
     dataviewInline: planningOn ? dataviewInlineQueries(app) : undefined,
@@ -173,6 +174,8 @@ export class SetupCheckModal extends Modal {
         apply: () => setNavigatorHomepage(this.app, fix.path) }); break;
       case "hide-properties": await confirm({ name: "Set Properties in document to Hidden", desc: "Settings → Editor. Properties stay in the note; open them from the note's menu.",
         apply: async () => { if (!hidePropertiesInDocument(this.app)) new Notice("Couldn't change it here. Set it in the editor settings."); } }); break;
+      case "update-links": await confirm({ name: "Switch on Automatically update internal links", desc: "Settings → Files & links. Obsidian then rewrites the after, sub and project links when you rename a to-do or hub, without asking.",
+        apply: async () => { if (!setAlwaysUpdateLinks(this.app)) new Notice("Couldn't change it here. Set it in the files and links settings."); } }); break;
       case "settings": this.close(); if (!openPluginSettings(this.app, this.host.pluginId)) new Notice("Couldn't open the settings: open them from the gear icon."); return;
       case "manage": this.after(this.host.manage()); return;
       case "open-note": this.close(); void this.app.workspace.openLinkText(fix.path, "", false); return;

@@ -69,6 +69,8 @@ export interface SetupState {
   zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
   propertiesView?: string;
+  /** Obsidian's Automatically update internal links; undefined when it can't be read (no row when the planning kit is off). */
+  updateLinks?: boolean;
   /** Notebook Navigator's homepage (null without the plugin) and the planning kit's homepage note. */
   navigator?: { homepage: { source: string; file: string | null } | null; home: string };
   /** Loaded plugin ids (plus kit names such as `zotlit`). */
@@ -118,6 +120,7 @@ export type SetupFix =
   | { kind: "methods-folder"; path: string }
   | { kind: "rigs-folder"; path: string }
   | { kind: "hide-properties" }
+  | { kind: "update-links" }
   | { kind: "navigator-home"; path: string }
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
@@ -193,6 +196,16 @@ export function checkSetup(s: SetupState): SetupItem[] {
       ? "Can't read it in this Obsidian version: set Settings → Editor → Properties in document to Hidden."
       : `Set to ${pv}. The kit's notes keep their details in properties, which fill the top of every note.`,
     fix: pv && pv !== "hidden" ? { kind: "hide-properties" } : undefined });
+
+  if (s.planning) {
+    // After, sub, project and experiment links between to-dos are wikilinks matched by name: a rename only keeps them when Obsidian rewrites links itself
+    const u = s.updateLinks;
+    out.push({ id: "obsidian:update-links", group: "Obsidian", label: "Links follow renames", ok: u === true, warn: u === undefined || undefined,
+      detail: u === true ? "On (Automatically update internal links). Renaming a to-do or hub keeps the after, sub and project links." : u === undefined
+        ? "Can't read it in this Obsidian version: switch on Settings → Files & links → Automatically update internal links."
+        : "Off. Renaming a to-do or hub breaks the after, sub and project links that point to it. Fix switches on Automatically update internal links (Settings → Files & links).",
+      fix: u === false ? { kind: "update-links" } : undefined });
+  }
 
   if (s.corePlugins !== undefined) for (const c of CORE_PLUGINS.filter(c => kitOn(c.kit))) {
     const on = s.corePlugins?.[c.id];
