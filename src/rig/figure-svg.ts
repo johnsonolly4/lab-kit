@@ -90,8 +90,8 @@ function arrowhead(pts: Point[], colour: string): string {
 }
 
 /**
- * The dashed coloured lines between the computer and the parts. Each starts on the computer's lower edge, runs along a lane under it, then
- * drops to the top of its part. Starts are spread in the order of the parts' x, and the line with the longest run takes the highest lane, so lines nest instead of crossing.
+ * The dashed coloured lines between the computer and the parts. Lines that go the same way share one run: the control lines leave the computer on one
+ * trunk and run along one bus under it, the data lines likewise on a second, and each line drops from its bus to the top of its part.
  */
 function controlSvg(fig: Figure, placed: Map<string, Placed>, colours: { control: string; data: string }): string {
   const comp = fig.computer;
@@ -108,20 +108,22 @@ function controlSvg(fig: Figure, placed: Map<string, Placed>, colours: { control
     const left = Math.min(...column.map(m => m.x - placed.get(m.id)!.sym.w / 2));
     return [{ c, tx: left - 24 - (c.dir === "data" ? 8 : 0), ty: p.node.y, side: true, endX: p.node.x - p.sym.w / 2, sideY: p.node.y + (shift || -12) }];
   }).sort((a, b) => a.tx - b.tx);
-  const n = lines.length, bottom = comp.y + COMPUTER.h / 2;
-  const gap = n > 1 ? Math.min(10, 56 / (n - 1)) : 0;
-  const starts = lines.map((_, i) => comp.x + (i - (n - 1) / 2) * gap);
-  const rank = new Map(lines.map((l, i) => [l, i] as const));
-  const order = [...lines].sort((a, b) => (Math.abs(b.tx - starts[rank.get(b)!]) - Math.abs(a.tx - starts[rank.get(a)!])) || (rank.get(a)! - rank.get(b)!));
+  const bottom = comp.y + COMPUTER.h / 2;
+  const dirs = (["control", "data"] as const).filter(d => lines.some(l => l.c.dir === d));
+  const laneOf = (d: "control" | "data"): number => bottom + 16 + dirs.indexOf(d) * LANE;
+  const trunkOf = (d: "control" | "data"): number => comp.x + (dirs.length > 1 ? (d === "control" ? -8 : 8) : 0);
   const out: string[] = [];
-  lines.forEach((l, i) => {
-    const lane = bottom + 16 + order.indexOf(l) * LANE;
+  lines.forEach(l => {
+    const lane = laneOf(l.c.dir), trunk = trunkOf(l.c.dir);
     const toPart = tidy(l.side
-      ? [{ x: starts[i], y: bottom }, { x: starts[i], y: lane }, { x: l.tx, y: lane }, { x: l.tx, y: l.sideY }, { x: l.endX, y: l.sideY }]
-      : [{ x: starts[i], y: bottom }, { x: starts[i], y: lane }, { x: l.tx, y: lane }, { x: l.tx, y: l.ty }]);
+      ? [{ x: trunk, y: bottom }, { x: trunk, y: lane }, { x: l.tx, y: lane }, { x: l.tx, y: l.sideY }, { x: l.endX, y: l.sideY }]
+      : [{ x: trunk, y: bottom }, { x: trunk, y: lane }, { x: l.tx, y: lane }, { x: l.tx, y: l.ty }]);
     const colour = l.c.dir === "control" ? colours.control : colours.data;
     const pts = l.c.dir === "control" ? toPart : [...toPart].reverse();
-    out.push(`<path data-${l.c.dir}="${esc(l.c.part)}" d="M ${pts.map(pt).join(" L ")}" stroke="${colour}" stroke-dasharray="7 5" fill="none"/>`
+    // The lines of one direction share their first stretch, so the dashes must line up there: a data line is written from the part to the computer, so its dash pattern is shifted to read the same from the computer's end.
+    const len = toPart.reduce((sum, q, k) => sum + (k ? Math.hypot(q.x - toPart[k - 1].x, q.y - toPart[k - 1].y) : 0), 0);
+    const offset = l.c.dir === "data" ? ` stroke-dashoffset="${n1(((7 - len) % 12 + 12) % 12)}"` : "";
+    out.push(`<path data-${l.c.dir}="${esc(l.c.part)}" d="M ${pts.map(pt).join(" L ")}" stroke="${colour}" stroke-dasharray="7 5"${offset} fill="none"/>`
       + arrowhead(pts, colour)
       + `<text x="${n1(l.tx + (l.side || l.c.dir === "control" ? -8 : 8))}" y="${n1(l.side ? l.sideY - 6 : l.ty - 10)}" font-size="13" font-weight="700" fill="${colour}" stroke="none" text-anchor="${l.side || l.c.dir === "control" ? "end" : "start"}">${esc(l.c.label)}</text>`);
   });
@@ -132,7 +134,7 @@ function computerSvg(fig: Figure): string {
   const c = fig.computer;
   if (!c) return "";
   return `<g ${symAttr(COMPUTER.name, 1)} data-computer="1" transform="translate(${n1(c.x)} ${n1(c.y)})">${COMPUTER.body}</g>`
-    + `<text x="${n1(c.x + COMPUTER.w / 2 + 10)}" y="${n1(c.y + 5)}" font-size="16" font-weight="700" stroke="none">${esc(c.label)}</text>`;
+    + `<text x="${n1(c.x + COMPUTER.w / 2 + 10)}" y="${n1(c.y + 5)}" font-size="16" font-weight="700" fill="${INK}" stroke="none">${esc(c.label)}</text>`;
 }
 
 /** The SVG of a figure: black line art on white, one symbol and label per part, lines ending on the symbols' connection points. */

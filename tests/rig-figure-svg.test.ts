@@ -228,6 +228,21 @@ describe("computer and control lines", () => {
     expect(data[data.length - 1][1]).toBe(bottom);
     expect(Math.abs(data[0][0] - part("C1").x)).toBeLessThanOrEqual(10);
   });
+  it("lines going the same way share one run: the same trunk and bus under the computer, one lane per direction", () => {
+    const { svg, f } = ctl();
+    const pts = (attr: string) => path(svg, attr)[1].split(" L ").map(p => p.split(" ").map(Number));
+    const control = ["PA", "PB", "C1"].map(id => pts(`control="${id}"`));
+    for (const c of control) { expect(c[0]).toEqual(control[0][0]); expect(c[1]).toEqual(control[0][1]); }   // one trunk start, one bus lane
+    const data = pts('data="C1"'), lanes = new Set([control[0][1][1], data[data.length - 2][1]]);
+    expect(lanes.size).toBe(2);                                          // control and data each have one lane
+    const bottom = f.computer!.y + COMPUTER.h / 2;
+    expect(data[data.length - 1][1]).toBe(bottom);
+    expect(data[data.length - 1][0]).not.toBe(control[0][0][0]);          // the data trunk is apart from the control trunk
+    expect(Math.max(...lanes)).toBeLessThan(Math.min(...f.nodes.map(n => n.y - 30)));   // both buses run above the flow
+  });
+  it("the computer's label is drawn with a fill, so it shows on the white symbol group", () => {
+    expect(ctl().svg).toMatch(/<text [^>]*fill="#000000"[^>]*>PC &amp; co<\/text>/);
+  });
   it("process lines stay black and solid, and the colours can be set", () => {
     const { svg } = ctl({ controlColor: "#00aa00", dataColor: "#aa00aa" });
     expect(path(svg, 'control="PA"')[2]).toBe("#00aa00");

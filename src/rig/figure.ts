@@ -26,7 +26,7 @@ export interface FigControl { part: string; dir: "control" | "data"; label: stri
 export interface Figure { nodes: FigNode[]; edges: FigEdge[]; width: number; height: number; computer: FigComputer | null; controls: FigControl[] }
 export interface FigureOptions { /** The computer's label (the rig note's `Control:` property). */ computer?: string }
 
-/** Room above the flow for the computer (its height, a gap) and one lane per control line. */
+/** Room above the flow for the computer (its height, a gap) and one lane per direction: the control lines share one run, the data lines another. */
 export const COMPUTER_BAND = 110;
 export const LANE = 14;
 
@@ -135,7 +135,7 @@ export function buildFigure(parts: RigPart[], links: RigLink[], opts: FigureOpti
   }
   let computer: FigComputer | null = null;
   if (controls.length) {
-    const band = COMPUTER_BAND + controls.length * LANE;
+    const band = COMPUTER_BAND + new Set(controls.map(c => c.dir)).size * LANE;
     for (const n of nodes) n.y += band;
     height += band;
     computer = { x: width / 2, y: MARGIN + 35, label: opts.computer ?? "Control" };

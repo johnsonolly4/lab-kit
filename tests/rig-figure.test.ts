@@ -113,7 +113,7 @@ describe("computer and control lines", () => {
     const f = withControl(...rows), base = figure(...twoPumpTee.slice(0, 5));
     expect(f.controls.map(c => `${c.part}:${c.dir}:${c.label}`)).toEqual(["PA:control:Flow rate", "PB:control:Flow rate", "C1:control:Temperature", "A1:data:Conversion"]);
     expect(f.computer).toEqual({ x: f.width / 2, y: MARGIN + 35, label: "PC" });
-    const band = COMPUTER_BAND + 4 * LANE;
+    const band = COMPUTER_BAND + 2 * LANE;   // one lane for the control run, one for the data run
     expect(f.height).toBe(base.height + band);
     for (const n of base.nodes) expect(f.nodes.find(m => m.id === n.id)!.y).toBe(n.y + band);   // the flow is as straight as before, only lower
     expect(f.nodes.find(n => n.id === "C1")!.y).toBe(f.nodes.find(n => n.id === "T1")!.y);
