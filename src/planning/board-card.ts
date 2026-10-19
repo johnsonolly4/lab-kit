@@ -220,7 +220,7 @@ export type TrayFilter = { kind: "all" } | { kind: "ready" } | { kind: "none" } 
 /** The project chips: every project named by a tray card, by name. */
 export const trayProjects = (tray: BoardCard[]): string[] => [...new Set(tray.map(c => c.project).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-export function filterTray(tray: BoardCard[], f: TrayFilter, ready: ReadonlySet<string>): BoardCard[] {
+export function filterTray<T extends BoardCard>(tray: T[], f: TrayFilter, ready: ReadonlySet<string>): T[] {
   switch (f.kind) {
     case "all": return tray;
     case "ready": return tray.filter(c => ready.has(c.path));

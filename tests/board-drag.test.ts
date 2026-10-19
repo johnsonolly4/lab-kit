@@ -54,6 +54,11 @@ describe("auto-scroll at the edges", () => {
 
 describe("what a drop writes", () => {
   it("the target day", () => expect(dropDay("Mon", "Wed", false)).toBe("Wed"));
+  it("zones keyed by date (I2): the target date, the tray, the same date is nothing", () => {
+    expect(dropDay("2026-10-21", "2026-10-26", false)).toBe("2026-10-26");
+    expect(dropDay("2026-10-21", "Backlog", false)).toBe("Backlog");
+    expect(dropDay("2026-10-21", "2026-10-21", false)).toBeNull();
+  });
   it("nothing when cancelled (Escape)", () => expect(dropDay("Mon", "Wed", true)).toBeNull());
   it("nothing outside a zone or on the card's own zone", () => {
     expect(dropDay("Mon", null, false)).toBeNull();

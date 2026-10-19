@@ -1,19 +1,22 @@
 // The to-do board as a Bases view the plugin draws itself (Board-B Phase 1): days across the top, the Backlog tray along the bottom.
-// Bases filters and sorts (the .base file); this draws and writes `done` / `day`. Public API only (registerBasesView, since 1.10.0).
+// Bases filters and sorts (the .base file); this draws by planned date (`scheduled`, docs/plans/planned-dates.md) and writes `done` / `scheduled`. Public API only (registerBasesView, since 1.10.0).
 // Pure parts: board-card.ts, board-drag.ts (pointer drag for mouse, pen and touch). Plan: docs/plans/board-own-view.md.
-import { BasesView, Keymap, Platform, TFile, type Plugin, type QueryController } from "obsidian";
+import { BasesView, Keymap, Notice, Platform, TFile, type Plugin, type QueryController } from "obsidian";
 import type { KitData } from "../kit/paths";
 import { todoFolder } from "../kit/paths";
 import { inFolder, type NoteRec } from "./lists";
 import type { Series } from "./meetings";
 import { attachCardDrag, dragJustEnded, stepDay, swipeDir } from "./board-drag";
-import { buildBoard, cardOf, filterTray, readyPaths, trayProjects, type BoardCard, type TrayFilter } from "./board-card";
+import { buildWeek, datePill, filterTray, readyPaths, trayProjects, weekCardOf, type BoardCard, type TrayFilter, type WeekCard } from "./board-card";
+import { applyPatch, dropPatch, parseDay, ymd } from "./todo";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
 export const TRAY_FOLDED_KEY = "lk-board-tray-folded";
 /** Phone layout (one day at a time with tabs) below this width of the board's own area, or on a phone (px). */
 export const NARROW_PX = 600;
+/** The tray's drop key (a column's key is its date). */
+const TRAY_KEY = "Backlog";
 
 /** What the view needs from the plugin. */
 export interface BoardEnv { kit: () => KitData; series: () => Series[] }
@@ -55,12 +58,12 @@ class BoardView extends BasesView {
     const kit = this.env.kit(), now = new Date();
     const keep = this.el.querySelector<HTMLElement>(".lk-board-trayrow")?.scrollLeft ?? 0;
     this.el.empty();
-    const cards: BoardCard[] = this.data.data.map(e => cardOf({ path: e.file.path, title: e.file.basename, fm: this.app.metadataCache.getFileCache(e.file)?.frontmatter ?? {} }, kit.dueCountdown, now));
+    const cards: WeekCard[] = this.data.data.map(e => weekCardOf({ path: e.file.path, title: e.file.basename, fm: this.app.metadataCache.getFileCache(e.file)?.frontmatter ?? {} }, kit.dueCountdown, now));
     const files = this.app.vault.getMarkdownFiles();
     const todos = files.filter(f => inFolder(f.path, todoFolder(kit.planningFolders))).map(f => this.rec(f));
     const hubs = files.filter(f => inFolder(f.path, kit.planningFolders.projects) || inFolder(f.path, kit.planningFolders.meetings)).map(f => this.rec(f))
       .filter(n => n.fm.kind === "project" || n.fm.kind === "meeting-series");
-    const board = buildBoard(cards, { series: this.env.series(), todos, hubs }, { weekend: kit.boardWeekend, busyFrom: kit.boardBusyFrom, countdown: kit.dueCountdown, now });
+    const board = buildWeek(cards, { series: this.env.series(), todos, hubs }, { weekend: kit.boardWeekend, busyFrom: kit.boardBusyFrom, countdown: kit.dueCountdown, now });
 
     const root = this.root = this.el.createDiv({ cls: "lk-board" });
     root.toggleClass("is-narrow", this.narrow());
@@ -69,10 +72,10 @@ class BoardView extends BasesView {
     const tabs = root.createDiv({ cls: "lk-board-tabs", attr: { role: "tablist", "aria-label": "Days" } });
     for (const d of board.days) {
       const tab = tabs.createEl("button", { cls: "lk-board-tab", attr: { type: "button", role: "tab", "aria-selected": String(d.day === this.pick) } });
-      tab.dataset.drop = d.day;
+      this.zone(tab, d.date, d.past);
       if (d.day === this.pick) tab.addClass("is-on");
       if (d.today) tab.addClass("is-today");
-      tab.createSpan({ cls: "lk-board-name", text: d.day });
+      this.dayName(tab, d.day, d.date);
       tab.createSpan({ cls: d.busy ? "lk-board-count is-busy" : "lk-board-count", text: String(d.count) });
       tab.addEventListener("click", () => { this.pick = d.day; this.draw(); });
     }
@@ -81,11 +84,11 @@ class BoardView extends BasesView {
     for (const d of board.days) {
       const col = days.createEl("section", { cls: "lk-board-col" });
       col.dataset.day = d.day;
-      col.dataset.drop = d.day;
+      this.zone(col, d.date, d.past);
       if (d.today) col.addClass("is-today");
       if (d.day === this.pick) col.addClass("is-picked");
       const head = col.createDiv({ cls: "lk-board-head" });
-      head.createSpan({ cls: "lk-board-name", text: d.day });
+      this.dayName(head, d.day, d.date);
       head.createSpan({ cls: d.busy ? "lk-board-count is-busy" : "lk-board-count", text: String(d.count) });
       for (const m of d.markers) col.createDiv({ cls: `lk-board-mark is-${m.kind}`, text: m.text });
       const list = col.createDiv({ cls: "lk-board-list" });
@@ -94,7 +97,7 @@ class BoardView extends BasesView {
     }
 
     const tray = root.createDiv({ cls: "lk-board-tray" });
-    tray.dataset.drop = "Backlog";
+    tray.dataset.drop = TRAY_KEY;
     const folded = this.folded();
     if (folded) tray.addClass("is-folded");
     const thead = tray.createDiv({ cls: "lk-board-trayhead" });
@@ -108,6 +111,18 @@ class BoardView extends BasesView {
       for (const c of filterTray(board.tray, this.filter, ready)) this.card(row, c);
       row.scrollLeft = keep;
     }
+  }
+
+  /** A column or day tab as a drop zone, keyed by its date. A past day stays a zone (a drop there gets the notice) but is never highlighted. */
+  private zone(el: HTMLElement, date: Date, past: boolean): void {
+    el.dataset.drop = ymd(date);
+    if (past) { el.dataset.past = ""; el.addClass("is-past"); }
+  }
+
+  /** `Mon 19`. */
+  private dayName(parent: HTMLElement, day: string, date: Date): void {
+    const name = parent.createSpan({ cls: "lk-board-name", text: `${day} ` });
+    name.createSpan({ cls: "lk-board-date", text: String(date.getDate()) });
   }
 
   /** Phone layout: a touch swipe sideways on the days moves to the next / previous day. */
@@ -138,17 +153,18 @@ class BoardView extends BasesView {
     if (tray.some(c => !c.project)) chip("No project", { kind: "none" });
   }
 
-  private card(parent: HTMLElement, c: BoardCard): void {
+  private card(parent: HTMLElement, c: WeekCard): void {
     const el = parent.createDiv({ cls: "lk-board-card" });
     el.dataset.path = c.path;
-    if (c.rolled) el.addClass("is-rolled");
+    if (c.carried) el.addClass("is-rolled");
     if (c.waiting) el.addClass("is-waiting");
     const top = el.createDiv({ cls: "lk-board-top" });
     const done = top.createEl("button", { cls: "lk-board-done", attr: { type: "button", "aria-label": "Mark done" } });
     done.addEventListener("click", ev => { ev.stopPropagation(); this.toggleDone(c.path); });
     top.createSpan({ cls: "lk-board-title", text: c.title });
-    const foot = c.tag || c.waiting || c.countdown ? el.createDiv({ cls: "lk-board-foot" }) : null;
+    const foot = c.tag || c.waiting || c.countdown || c.pill ? el.createDiv({ cls: "lk-board-foot" }) : null;
     if (foot) {
+      if (c.pill) foot.createSpan({ cls: "lk-board-pill is-later", text: c.pill });
       if (c.tag) { const t = foot.createSpan({ cls: "lk-board-tag", text: c.tag.text }); t.dataset.prio = c.tag.level; }
       if (c.waiting) foot.createSpan({ cls: "lk-board-wait", text: `Waiting: ${c.waiting}` });
       if (c.countdown) { const d = foot.createSpan({ cls: "lk-board-due", text: c.countdown.text }); d.dataset.level = c.countdown.level; }
@@ -156,11 +172,24 @@ class BoardView extends BasesView {
     el.addEventListener("click", ev => { if (dragJustEnded()) return; const f = this.app.vault.getFileByPath(c.path); if (f) void this.app.workspace.getLeaf(Keymap.isModEvent(ev)).openFile(f); });
     attachCardDrag(el, c.path, c.title, {
       root: this.root,
-      onDrop: (path, day) => { void this.write(path, x => { if (x.day !== day) x.day = day; }); },
+      onDrop: (path, key) => this.drop(path, key),
       onState: on => { this.dragging = on; if (!on && this.late) { this.late = false; this.draw(); } },
     });
   }
 
+  /** A drop on a column (its date) or the tray: `dropPatch`, or the notice for a past day. The to-do engine stamps nothing on a drop. */
+  private drop(path: string, key: string): void {
+    const target = key === TRAY_KEY ? null : parseDay(key);
+    if (key !== TRAY_KEY && !target) return;
+    const f = this.app.vault.getFileByPath(path);
+    if (!f) return;
+    const r = dropPatch(this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}, target, new Date());
+    if (!r) return;
+    if ("refused" in r) { new Notice(`${datePill(target!)} has passed: drop on today or a later day.`); return; }
+    void this.write(path, x => applyPatch(x, r.patch));
+  }
+
+  /** The to-do engine stamps `done_on` (tickPatch). */
   private toggleDone(path: string): void { void this.write(path, x => { x.done = x.done !== true; }); }
 
   private async write(path: string, change: (x: Record<string, unknown>) => void): Promise<void> {

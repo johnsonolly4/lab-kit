@@ -34,7 +34,7 @@ export function edgeStep(r: { left: number; top: number; right: number; bottom: 
   return { dx, dy };
 }
 
-/** The day to write when a drag ends: null when cancelled, dropped outside every zone, or dropped where the card already is. */
+/** The zone key (a column's date, YYYY-MM-DD, or "Backlog") a drag ends on: null when cancelled, dropped outside every zone, or dropped where the card already is. */
 export function dropDay(fromKey: string, toKey: string | null, cancelled: boolean): string | null {
   return cancelled || !toKey || toKey === fromKey ? null : toKey;
 }
@@ -61,8 +61,8 @@ export const dragJustEnded = (): boolean => Date.now() - lastEnd < 400;
 export interface DragHooks {
   /** The board's root: the ghost lives here. */
   root: HTMLElement;
-  /** Drop on `day` (a column, a day tab or the tray's "Backlog"). */
-  onDrop: (path: string, day: string) => void;
+  /** Drop on `key`: a column's or day tab's date (YYYY-MM-DD) or the tray's "Backlog". A zone marked `data-past` is never highlighted, but a drop on it is still passed on (the board answers with a notice). */
+  onDrop: (path: string, key: string) => void;
   /** A drag started (true) or ended (false): the board postpones redraws while it is on. */
   onState: (on: boolean) => void;
 }
@@ -102,7 +102,7 @@ export function attachCardDrag(card: HTMLElement, path: string, title: string, h
       if (!ghost) return;
       ghost.setCssProps({ "--lk-ghost-x": `${pos.x}px`, "--lk-ghost-y": `${pos.y}px` });
       const t = hit();
-      const next = t && t.dataset.drop !== from ? t : null;
+      const next = t && t.dataset.drop !== from && t.dataset.past === undefined ? t : null;
       if (next === over) return;
       over?.removeClass("is-over"); marker?.remove(); marker = null;
       over = next;
@@ -130,7 +130,7 @@ export function attachCardDrag(card: HTMLElement, path: string, title: string, h
     const finish = (cancelled: boolean): void => {
       window.clearTimeout(timer); window.clearInterval(scrollTimer); ac.abort();
       const wasOn = on;
-      const to = over?.dataset.drop ?? null;
+      const to = (over ?? (cancelled ? null : hit()))?.dataset.drop ?? null;   // not highlighted: a past day
       over?.removeClass("is-over"); marker?.remove(); ghost?.remove(); card.removeClass("is-lifted");
       on = false;
       if (!wasOn) return;

@@ -534,6 +534,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-board-wait, .lk-board-due { color: var(--text-muted); }
 .lk-board-due[data-level="soon"] { color: var(--color-orange); }
 .lk-board-due[data-level="late"] { color: var(--color-red); }
+.lk-board-pill.is-later { color: var(--text-muted); }
 .lk-board-donecount { margin-top: auto; padding: 2px 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
 .lk-board-trayhead { justify-content: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
 .lk-board-tray.is-folded .lk-board-trayhead { margin-bottom: 0; }
