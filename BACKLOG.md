@@ -74,6 +74,15 @@ Anything that changes a visual or existing behaviour is asked here first, never 
       - E, dilution from a stock: for acid solutions (e.g. from glacial acetic acid) to fine-tune pH. Some PISA needs pH 4, so a diluted acid is made first and then added to the main solution in place of part of the water; neat acid would overshoot.
       - G, dilution series: not used by the owner, though common practice.
       - GPC and NMR samples are made up as you go with rough concentrations and are not recorded; concentration matters little there.
+    - **Acid for a target pH (acid-ph-options feedback page, owner 2026-10-19; not redesigned yet, after the I2 answers):**
+      - V1 (target pH → share of the water → how to make the acid solution) is closest to what they do, but:
+        - use more acid solution than water: about 50 % of the aqueous phase as acid solution, not 3 %;
+        - one step only;
+        - a 4-figure balance (0.1 mg);
+        - add the acid first, then make up the remaining mass with water.
+      - V2 (two-step dilution chain): they would not make that much.
+      - V3 (from a kept acid stock): they don't keep stock solutions like this.
+      - The converter (wt% ⇄ mol/kg ⇄ mol/L): not what they meant. They use Sigma's acids and bases calculator, not the molarity / molality one; look at that calculator before redesigning.
 - [ ] **Templater dependency: evaluate removing it (owner, 2026-10-19, from I23 d).** Today Templater carries:
   - Alt+S (the Insert snippet.md hotkey) and 4 user scripts (labSnippets, labForm, labPick, labMethods, plus vtAsk.js);
   - 18 kit template files with about 52 Templater tag lines (To-do, Lab Book Template, Meeting, Meeting series, One-off meeting, Project hub, New project note, New concept, New topic hub, the 7 code snippets, Insert snippet);
