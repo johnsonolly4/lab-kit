@@ -5,6 +5,7 @@
 import { trackPointer } from "./entry-window";
 import { MarkdownView, Notice, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
+import { toggleDoneWithUndo } from "./undo-notice";
 import { applyPatch, cardTag, emptyTodoCursorLine, isBlankBoardNote, isCarried, normalisePatch, tickPatch, todayMark, ymd, dueCountdown, waitingOf, type CountdownMode, type TodoFm } from "./todo";
 
 const RECHECK = 15 * 60 * 1000;     // a new day while Obsidian stays open
@@ -156,7 +157,7 @@ export class TodoEngine {
     e.preventDefault(); e.stopPropagation();
     const f = this.cardFile(box.closest(".bases-kanban-card"));
     if (!f) { new Notice("Couldn't find this card's note: open it to tick done."); return; }
-    void this.app.fileManager.processFrontMatter(f, (x: Record<string, unknown>) => { x.done = x.done !== true; }).catch(err => console.error("Lab Kit to-do engine", err));
+    toggleDoneWithUndo(this.app, f).catch(err => console.error("Lab Kit to-do engine", err));
   }
 
   private queueTag(): void {

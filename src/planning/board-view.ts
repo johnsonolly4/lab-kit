@@ -9,6 +9,7 @@ import type { Series } from "./meetings";
 import { attachCardDrag, dragJustEnded, stepDay, swipeDir } from "./board-drag";
 import { buildWeek, datePill, filterTray, readyPaths, trayProjects, weekCardOf, type BoardCard, type TrayFilter, type WeekCard } from "./board-card";
 import { applyPatch, dropPatch, parseDay, ymd } from "./todo";
+import { toggleDoneWithUndo } from "./undo-notice";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
@@ -189,8 +190,11 @@ class BoardView extends BasesView {
     void this.write(path, x => applyPatch(x, r.patch));
   }
 
-  /** The to-do engine stamps `done_on` (tickPatch). */
-  private toggleDone(path: string): void { void this.write(path, x => { x.done = x.done !== true; }); }
+  /** The to-do engine stamps `done_on` (tickPatch); a tick gets the Undo notice (undo-notice.ts). */
+  private toggleDone(path: string): void {
+    const f = this.app.vault.getFileByPath(path);
+    if (f) toggleDoneWithUndo(this.app, f).catch(e => console.error("Lab Kit board", e));
+  }
 
   private async write(path: string, change: (x: Record<string, unknown>) => void): Promise<void> {
     const f = this.app.vault.getAbstractFileByPath(path);
