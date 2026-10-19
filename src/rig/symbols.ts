@@ -26,11 +26,12 @@ const SYMBOLS: Record<string, RigSymbol> = {
   regulator: make("regulator", 60, 44, `<rect x="-30" y="-22" width="60" height="44" rx="6"/><path d="M-16 -12 L16 12 L16 -12 L-16 12 Z"/>`),
   column: make("column", 96, 22, `<rect x="-48" y="-11" width="96" height="22" rx="8"/>`),
   coil: make("coil", 84, 44, `<rect x="-42" y="-22" width="84" height="44" rx="10"/><path d="M-22 -22 L-14 22 M-10 -22 L-2 22 M2 -22 L10 22 M14 -22 L22 22"/>`),
-  flask: make("flask", 52, 62, `<circle cx="0" cy="8" r="24"/><path d="M-7 -30 L-7 -14 M7 -30 L7 -14 M-9 -30 L9 -30"/>`, { in: { x: -24, y: 8 }, out: { x: 24, y: 8 }, bottom: { x: 0, y: 32 } }),
+  flask: make("flask", 52, 70, `<circle r="24"/><path d="M-7 -35 L-7 -21 M7 -35 L7 -21 M-9 -35 L9 -35"/>`, { bottom: { x: 0, y: 24 } }),
   hotplate: make("hotplate", 68, 22, `<rect x="-34" y="-5" width="68" height="16" rx="3"/><path d="M-20 -11 L-20 -5 M20 -11 L20 -5"/>`, { in: { x: -34, y: 3 }, out: { x: 34, y: 3 }, top: { x: 0, y: -11 }, bottom: { x: 0, y: 11 } }),
   analysis: make("analysis", 72, 44, `<rect x="-36" y="-22" width="72" height="44" rx="6"/><path d="M-24 9 L-12 9 L-6 -9 L0 9 L7 9 L12 -3 L24 9" fill="none"/>`),
   waste: make("waste", 64, 24, `<path d="M-32 0 L16 0" fill="none"/><path d="M12 -9 L32 0 L12 9 Z" class="fill"/>`),
-  vial: make("vial", 30, 54, `<path d="M-15 -26 L-15 20 Q-15 27 -8 27 L8 27 Q15 27 15 20 L15 -26 M-19 -26 L19 -26" fill="none"/>`, { in: { x: 0, y: -26 }, out: { x: 15, y: 0 }, top: { x: 0, y: -26 }, bottom: { x: 0, y: 27 } }, "top"),
+  // The line level (y 0) is above the vial's mouth, so a line can run level and drop straight in. The box is therefore taller than the glass, centred on the line level.
+  vial: make("vial", 30, 136, `<path d="M-15 16 L-15 60 Q-15 68 -7 68 L7 68 Q15 68 15 60 L15 16 M-19 16 L19 16" fill="none"/>`, { in: { x: 0, y: 16 }, out: { x: 15, y: 42 }, top: { x: 0, y: 16 }, bottom: { x: 0, y: 68 } }, "top"),
   tubing: make("tubing", 64, 10, `<rect x="-32" y="-5" width="64" height="10" rx="5"/>`),
 };
 /** The computer that sets and reads the rig: a monitor on a stand over a keyboard. Not a part kind, so not in the table above. */

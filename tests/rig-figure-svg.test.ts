@@ -103,6 +103,37 @@ describe("figureSvg", () => {
     expect(v[v.length - 1]).toBe(`${col.x} ${col.y + symbolFor(col.kind, col.detail).in.y}`);
     expect(v[v.length - 2].split(" ")[0]).toBe(String(col.x));
   });
+  it("tee rig: the flow into the collection vial is one level run and one straight drop from above", () => {
+    const f = fig(...tee), r = figureSvg(f);
+    const pts = nums(new RegExp(`data-from="A1" data-to="COL" d="M ([^"]+)"`).exec(r.svg)![1].replace(/ L /g, " "));
+    const col = f.nodes.find(n => n.id === "COL")!;
+    expect(pts).toHaveLength(3);
+    expect(pts[0][1]).toBe(pts[1][1]);
+    expect(pts[1][0]).toBe(pts[2][0]);
+    expect(pts[2][0]).toBe(col.x);
+    expect(pts[2][1]).toBeGreaterThan(pts[1][1]);   // the drop goes down into the mouth
+  });
+  it("batch rig: the line from the flask to the pump is straight and level (no jog)", () => {
+    const f = fig("F1 | Reactor | flask | P1", "P1 | Pump | | C1", "C1 | Reactor | packed column | W", "W | Outlet | waste |"), r = figureSvg(f);
+    const pts = nums(new RegExp(`data-from="F1" data-to="P1" d="M ([^"]+)"`).exec(r.svg)![1].replace(/ L /g, " "));
+    expect(pts).toHaveLength(2);
+    expect(pts[0][1]).toBe(pts[1][1]);
+    expect(pts[0][1]).toBe(f.nodes.find(n => n.id === "F1")!.y);   // the output is level with the flask's centre
+  });
+  it("recycle rig: the dashed return leaves the valve itself and rejoins the target clear of the feed lines", () => {
+    const f = fig("PA | Pump | | R1", "PB | Pump | | R1", "R1 | Reactor | coil | V1", "V1 | Valve | | OUT, R1", "OUT | Outlet | waste |"), r = figureSvg(f);
+    const get = (attr: string) => nums(new RegExp(`${attr}[^>]* d="M ([^"]+)"`).exec(r.svg)![1].replace(/ L /g, " "));
+    const n = (id: string) => f.nodes.find(x => x.id === id)!;
+    const back = get('data-from="V1" data-to="R1" data-back="1"'), v = n("V1"), valve = symbolFor("Valve", ""), coil = symbolFor("Reactor", "coil");
+    expect(back[0]).toEqual([v.x + valve.bottom.x, v.y + valve.bottom.y]);   // starts on the valve's underside
+    expect(back[1][0]).toBe(back[0][0]);                                     // and drops straight down
+    expect(back).toHaveLength(5);
+    const r1 = n("R1"), feedX = r1.x + coil.in.x - 30;
+    expect(back[3][0]).toBe(r1.x + coil.in.x - 15);                          // rises beside the feed lines' vertical, not on it
+    expect(back[3][0]).not.toBe(feedX);
+    expect(get('data-from="PA" data-to="R1"').some(p => p[0] === feedX)).toBe(true);
+    expect(back[4]).toEqual([r1.x + coil.in.x, r1.y + coil.in.y]);
+  });
   it("a join dot appears where two streams meet a part that is not a tee, and not on a single line", () => {
     const joined = draw("PA | Pump | | R1", "PB | Pump | | R1", "R1 | Reactor | coil |");
     expect((joined.svg.match(/<circle [^>]*r="5"/g) ?? [])).toHaveLength(1);

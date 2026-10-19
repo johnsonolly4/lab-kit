@@ -39,12 +39,14 @@ function tidy(pts: Point[]): Point[] {
   return flat.filter((p, i) => i === 0 || i === flat.length - 1 || !((flat[i - 1].x === p.x && p.x === flat[i + 1].x) || (flat[i - 1].y === p.y && p.y === flat[i + 1].y)));
 }
 
-/** The polyline of a process edge: out of the source, a bend in front of the target, into the target. A tee is met at its centre; a vial is entered from above; a back edge goes round underneath. */
+/** The polyline of a process edge: out of the source, a bend in front of the target, into the target. A tee is met at its centre; a vial is entered from above (level, then straight down); a back edge goes round underneath. */
 function edgePoints(e: FigEdge, from: Placed, to: Placed, bottom: number): Point[] {
   const a = at(from, from.sym.out), b = at(to, to.sym.in);
   let pts: Point[];
-  if (e.back) pts = [a, { x: a.x + BEND, y: a.y }, { x: a.x + BEND, y: bottom }, { x: b.x - BEND, y: bottom }, { x: b.x - BEND, y: b.y }, b];
-  else if (to.sym.enter === "top") pts = [a, { x: b.x - 2 * BEND, y: a.y }, { x: b.x - 2 * BEND, y: b.y - 2 * BEND / 3 }, { x: b.x, y: b.y - 2 * BEND / 3 }, b];
+  if (e.back) {   // leaves the source's underside (so it visibly joins the source) and rejoins the target's last stretch, clear of the lines that feed it
+    const s = at(from, from.sym.bottom);
+    pts = [s, { x: s.x, y: bottom }, { x: b.x - BEND / 2, y: bottom }, { x: b.x - BEND / 2, y: b.y }, b];
+  } else if (to.sym.enter === "top" && a.y < b.y) pts = [a, { x: b.x, y: a.y }, b];
   else if (to.node.kind === "Mixer") pts = [a, { x: b.x, y: a.y }, b];
   else pts = [a, { x: b.x - BEND, y: a.y }, { x: b.x - BEND, y: b.y }, b];
   return tidy(pts);
@@ -75,8 +77,8 @@ function labelSvg(p: Placed, above: boolean): string {
     return `<text x="${x}" y="${n1(node.y + 24)}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 41)}" font-size="13">${esc(detail)}</text>` : "");
   }
-  const id = n1(above ? node.y - sym.h / 2 - (detail ? 26 : 10) : node.y + sym.h / 2 + 20);
-  const dy = n1(above ? node.y - sym.h / 2 - 9 : node.y + sym.h / 2 + 37);
+  const id = n1(above ? node.y - sym.h / 2 - (detail ? 26 : 10) : node.y + sym.bottom.y + 20);
+  const dy = n1(above ? node.y - sym.h / 2 - 9 : node.y + sym.bottom.y + 37);
   return `<text x="${n1(node.x)}" y="${id}" font-size="16" font-weight="700" text-anchor="middle">${idText(node.id)}</text>`
     + (detail ? `<text x="${n1(node.x)}" y="${dy}" font-size="13" text-anchor="middle">${esc(detail)}</text>` : "");
 }
