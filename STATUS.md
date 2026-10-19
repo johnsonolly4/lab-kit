@@ -19,6 +19,7 @@ R0. PLANNED 2026-10-12 (`docs/plans/project-plan-priority.md`, 6 phases: Priorit
 
 ## Running: none
 ## Waiting on owner (needs a human)
+- [ ] Rig figure (`feat/rig-figure`, local): say whether the figure should warn when a table gives a BPR a Control line or a reactor a Data line (BACKLOG "Rig figure feedback page", marks 7 and 8); when the branch is ready, "push" and squash-merge it — by 2026-10-22
 - [ ] Try the New meeting window (checklist 6i, last row: Series chip, One-off title and Project, extra meeting) after `npm run dev`; say what is wrong — by 2026-10-16
 - [ ] Try Codes from (checklist 6i, last row) after Review update… for the six snippets and the scripts; read `docs/snippet-syntax.md` and say if anything is unclear — by 2026-10-13
 - [ ] Try the new Check setup row "Meta Bind buttons that differ from the kit" (checklist 6i, last row); say if it is red on a vault where nothing was changed — by 2026-10-13
