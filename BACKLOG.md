@@ -84,6 +84,8 @@ Anything that changes a visual or existing behaviour is asked here first, never 
     - (d): remove the Templater dependency if it can be done and is a good thing, but evaluate the risk first (see the next item).
     - (f) Solution prep form: not answered. The owner asked to see the different ways a solution is made up ("properly" and less so) to pick the closest to theirs; page `solution-methods.html` opened (methods A to G and a Method chip).
     - Open: (b), (e), (g), (h), and the old NMR/GPC/DLS files.
+    - ANSWERED 2026-10-19 (owner, chat): (d) staged ("sensible": Alt+S becomes a Lab Kit command now; a spike ports the To-do template and measures the rest; full Templater removal decided from its numbers); (e) 1 (phone snippets without Templater, later, last phase); (g) 1 (last 3). Still open: (b), (h), the old NMR/GPC/DLS files.
+    - NEW REQUEST (owner, 2026-10-19): an easy way to build new snippets. The old kit had basic starter templates; look at doing it inside the plugin now (a builder, "new snippet from this table", starter templates). Show options as a feedback page first.
     - **How the owner makes up solutions (solution-methods feedback page, 2026-10-19; for Solution prep, I23 f):**
       - A, volumetric flask: almost never.
       - B, weigh then add solvent: common, but with a target mass of solid to aim for first; the liquid is not adjusted unless the solid is very off. Around 20 % concentrations are normal.
