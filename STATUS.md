@@ -1,15 +1,25 @@
 # Status
-_Updated: 2026-10-20 by Opus 5.5 (orchestrator session of 19-20 Oct: review, research, roadmap, side sessions, the owner's decisions). Earlier: 2026-10-15 by Sonnet 5.5. Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
+_Updated: 2026-10-19 by Opus 5.5 (orchestrator session N1: Templater replacement, staged). Earlier: 2026-10-20 by Opus 5.5 (orchestrator of 19-20 Oct). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 1.4.1 beta (plugin + kit; moves only at `/release`; TypeScript in `src/`)
 ## Now (2026-10-20)
-All work of 19-20 Oct is on the LOCAL integration branch `overnight/2026-10-19` (backup `backup/overnight-2026-10-19`; 92 commits ahead of `main` on 2026-10-20, tests 1272, lint 0 errors), plus `feat/rig-figure` (rig Phases 1-4 + feedback fixes; backup `backup/feat-rig-figure`). NOTHING is pushed or merged to `main`: push / PR need the owner. This checkout's `chore/my-work-layout` is older: start new work from `overnight/2026-10-19`.
+All work of 19-20 Oct is on the LOCAL integration branch `overnight/2026-10-19` (backup `backup/overnight-2026-10-19`; 95 commits ahead of `main` after N1, tests 1291, lint 0 errors / 5 warnings), plus `feat/rig-figure` (rig Phases 1-4 + feedback fixes; backup `backup/feat-rig-figure`). NOTHING is pushed or merged to `main`: push / PR need the owner. This checkout's `chore/my-work-layout` is older: start new work from `overnight/2026-10-19`.
 - Built on the branch: bug fixes (re-tick, Esc Untitled note, Sort inbox, hub chips, prompt corner, plurals, phone Tidy / entry padding); I12 links follow renames; I7 Waiting + I13 no next step; I19 + I20 meeting notes freeze + raised flags; Board B Phases 1-2 (own Bases view, days across, Backlog tray, touch drag, phone tabs); obsidian-check `--mobile`; checks of the to-dos, plan map, button bar / shape pass and phone (BACKLOG).
 - Decided by the owner (BACKLOG "Questions for the owner" + `docs/decisions.md`, 2026-10-19): I2 planned dates (slim model: `scheduled` replaces `day` + `planned`, no `rolled` / `countdown`, write only set values, normalise any note arriving in To-dos, `>` day mark, Undo notice on ticks, no weekend roll-over writes); I23 Alt+S (grouped menu approved, Lab Kit command, Templater removal staged, icons in snippet headers, wording kept, snippets "from this table"); I24 Close experiment (NO freeze: PDFs to user destination folders + `closed_on` + hash footer); robustness (smoke test on public releases); Solution prep by mass + acid-for-pH live block (plain text in the note); Kit files Update always confirms.
+- N1 done 2026-10-19: I23 Phase 1 built (Alt+S grouped menu in the entry-window look, Recent 3, command Lab Kit: Insert snippet over Templater; checked in a throwaway Obsidian with Templater, light and dark; not seen by the owner: checklist 6i last row); Templater spike (To-do ported byte for byte, not wired in; numbers in `docs/plans/templater-spike.md` "Result"). Owner to decide: BACKLOG "Questions for the owner" → "Templater removal" and "I23 Phase 1 new texts". Old lab-kit sessions archived (10); Board B Phase 1 session kept (live background task).
 - Plans and research: `docs/plans/planned-dates.md` (+ existing-vault test), `snippet-menu.md`, `close-experiment.md`, `board-own-view.md`, `obsidian-update-robustness.md`, `plan-map-research.md`, `waiting-and-next-step.md`, `freeze-meeting-notes.md`.
 ## Next (top item = next session)
-N1. Templater replacement, staged (owner: "finish that tonight"): Alt+S as a Lab Kit command (I23 Phase 1, approved menu `my_work/reference_visual/alts-menu-grouped.png`) + a spike porting the To-do template off Templater, with numbers for full removal.
-N2. I2 planned dates: update `docs/plans/planned-dates.md` to the slim model and decisions, then build Phase 1.
+N2. I2 planned dates: update `docs/plans/planned-dates.md` to the slim model and decisions, then build Phase 1. Prompt (Opus for the plan update, Sonnet for the build):
+```
+Read CLAUDE.md, then STATUS.md, docs/decisions.md (only the I2 lines; search for "I2"), the LOG.md entry starting "## 2026-10-19 · N1 orchestrator", and from BACKLOG.md only the I2 items of "Questions for the owner" (search for "I2"; never read BACKLOG whole). Read docs/plans/planned-dates.md. Search src/planning/board-view.ts, src/planning/engine.ts and src/planning/blocks.ts with scripts/codemap.py first; do not read big files whole. Keep token use low: one check run per piece (python3 scripts/check.py), not after every edit. Use the obsidian-check skill to see changes in Obsidian, and render_check.py feedback mode for any visual question.
+
+Do plan step N2 only (work from overnight/2026-10-19; ask before any visual or behaviour change not already decided):
+1. Plan: update docs/plans/planned-dates.md to the slim model (scheduled replaces day + planned; no rolled / countdown; write only set values; normalise any note arriving in To-dos on create / move / rename; `>` day mark; Undo notice on ticks; no weekend roll-over writes; Tidy rule off by default); check: plan committed, every decision line in BACKLOG I2 has a place in it.
+2. Build Phase 1 of the updated plan; check: tests PASS, the I2 fixture vault (tests/fixtures/i2-old-vaults/) gives the board the plan expects.
+3. Report every check as PASS/PARTIAL/FAIL.
+One commit per piece; nothing pushed. At the end: add an entry to my_work/notes/LOG.md, update STATUS.md with the next prompt in the same form, commit in my_work. Stop.
+```
+N1b. After the owner's answer on Templater removal (BACKLOG): I23 Phases 2-4 (forms, two kinds, groups in headers), then 5-6; or the To-do port wired in, if (a).
 N3. I24 Close experiment (no freeze) per `docs/plans/close-experiment.md` and the decision line.
 N4. Solution prep live block + acid for pH (plan from BACKLOG "Acid for a target pH" and the approved `solution-live-block.png`); chemical note fields pKa / Purity / Density; review the owner's SDS script once it is in `my_work/private/`.
 N5. Plan map looks: before / after feedback page of the top five ideas in `docs/plans/plan-map-research.md`, then plan with the owner.
@@ -17,6 +27,8 @@ N6. Small fixes: Kit window look faults (BACKLOG "Last group"), I19 freeze timin
 N7. Stress test on a big synthetic vault (proposed card; one heavy test at a time on this 8 GB Mac), then robustness safety nets S1-S6.
 N8. Ask the owner to push `overnight/2026-10-19` and `feat/rig-figure` and open PRs.
 ## Waiting on owner (2026-10-20)
+- [ ] Templater removal: (a) / (b) / (c) from the spike's numbers, and the I23 Phase 1 new texts (BACKLOG "Questions for the owner").
+- [ ] Try the Alt+S menu (checklist 6i last row) after Review update… for Insert snippet.md and the Hotkeys note.
 - [ ] I19: freeze meeting notes the day after the meeting date, or when the next one is made?
 - [ ] Rig: do you tweak part positions for a poster, and does the rig change after (hand layout in Obsidian or the drawing tool)?
 - [ ] Plan map: OK to make the before / after feedback page (or research the uncovered tools first)?
