@@ -1,7 +1,7 @@
 // Waiting (I7): a to-do with `waiting: <who or what>` is shown as such in the lists, is not blocked, and the board look exists.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { projectCards, projectTodos, thisWeek, type NoteRec } from "../src/planning/lists";
+import { projectCards, projectTodos, thisWeek, waitingOn, type NoteRec } from "../src/planning/lists";
 import { readPlan } from "../src/planning/plan";
 import { waitingOf } from "../src/planning/todo";
 
@@ -55,5 +55,37 @@ describe("the board look", () => {
     expect(src).toContain("el.dataset.vtWaiting = waiting");
     expect(src).toContain('delete el.dataset.vtWaiting');
     expect(src).toContain('querySelectorAll<HTMLElement>("[data-vt-waiting]")');
+  });
+});
+
+describe("the Waiting on list", () => {
+  const other = note("02 Projects/Beta/Beta.md", { kind: "project", Status: "Active" });
+  const todos = [
+    td("NMR run", { waiting: "nmr booking", priority: 2 }),
+    td("NMR prep", { waiting: "NMR booking", priority: 1 }),
+    td("Order solvent", { waiting: "Supplier" }),
+    td("Ticked", { waiting: "Supplier", done: true }),
+    td("In Done", { waiting: "Supplier", day: "Done" }),
+    td("Not waiting"),
+    note(T + "Beta job.md", { kind: "todo", project: "[[Beta]]", day: "Tue", waiting: "Supplier", due: "2026-10-01" }),
+  ];
+  it("groups open waiting to-dos by what they wait on (any case is one group, named as the first note by name spells it), A to Z, priority first inside", () => {
+    const g = waitingOn(todos, WED);
+    expect(g.map(x => x.who)).toEqual(["NMR booking", "Supplier"]);
+    expect(g[0].lines.map(l => l.text)).toEqual(["NMR prep", "NMR run"]);
+    expect(g[1].lines.map(l => l.text)).toEqual(["Beta job", "Order solvent"]);
+    expect(texts(g[1].lines[0].badges)).toEqual(["overdue 1 Oct"]);
+    expect(texts(g[0].lines[0].badges)).toEqual(["· Mon"]);
+  });
+  it("on a project hub: only that project's to-dos", () => {
+    expect(waitingOn(todos, WED, hub).flatMap(x => x.lines.map(l => l.text)).sort()).toEqual(["NMR prep", "NMR run", "Order solvent"]);
+    expect(waitingOn(todos, WED, other).flatMap(x => x.lines.map(l => l.text))).toEqual(["Beta job"]);
+    expect(waitingOn([td("Plain")], WED)).toEqual([]);
+  });
+  it("the block is in the Meeting and Project hub templates and the unknown-card text names it", () => {
+    const meeting = readFileSync("kits/planning/Extras/Templates/Meeting.md", "utf8");
+    expect(meeting.indexOf("show: waiting")).toBeGreaterThan(meeting.indexOf("Flagged for this meeting"));
+    expect(readFileSync("kits/planning/Extras/Templates/Project hub.md", "utf8")).toContain("> [!question] Waiting on\n> ```vault-card\n> show: waiting\n> ```");
+    expect(readFileSync("src/planning/blocks.ts", "utf8")).toContain('case "waiting"');
   });
 });

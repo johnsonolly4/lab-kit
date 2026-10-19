@@ -20,7 +20,7 @@ import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
-import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -305,6 +305,15 @@ class BlockView extends MarkdownRenderChild {
       case "hub-bar": this.hubBar(box); return;
       case "button-bar": this.buttonBar(box); return;
       case "meeting-bar": this.meetingBar(box); return;
+      case "waiting": {   // open to-dos with `waiting` set, grouped by what they wait on; on a project hub only that project's
+        if (!this.need(box, todoFolder(f))) return;
+        const here = this.app.vault.getFileByPath(this.sourcePath), rec = here ? this.owner.rec(here) : null;
+        const onHub = rec?.fm.kind === "project";
+        const groups = waitingOn(this.owner.notesIn(todoFolder(f)), new Date(), onHub ? rec : undefined);
+        if (!groups.length) { box.createDiv({ cls: "vt-muted", text: onHub ? "Nothing in this project is waiting." : "Nothing is waiting." }); return; }
+        for (const g of groups) { box.createDiv({ cls: "vt-muted vt-waiting-who", text: g.who }); this.list(box, g.lines); }
+        return;
+      }
       case "back-to-project": {   // on a note inside a project's folder: a link to that project's hub
         const up = folderHub(this.app.vault.getMarkdownFiles().map(x => this.owner.rec(x)), this.sourcePath);
         if (up) this.link(box, up.path, `\u2190 ${up.name}`, "vt-back");
@@ -444,7 +453,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

@@ -187,6 +187,27 @@ export function projectTodos(todos: NoteRec[], hub: NoteRec, today: Date): ListL
     badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }, ...waitingBadge(t.fm)] }));
 }
 
+export interface WaitingGroup { who: string; lines: ListLine[] }
+
+/** The Waiting on list: open to-dos with `waiting` set (only those of `hub` when given), grouped by what they wait on (same text in any case is one group, shown as the first note by path spells it), groups A → Z, to-dos by priority then name. Each line carries its day or overdue date. */
+export function waitingOn(todos: NoteRec[], today: Date, hub?: NoteRec): WaitingGroup[] {
+  const groups = new Map<string, { who: string; items: NoteRec[] }>();
+  for (const t of [...todos].sort((a, b) => a.path.localeCompare(b.path))) {
+    const who = waitingOf(t.fm);
+    if (!who || !isOpenTodo(t) || (hub && !pointsTo(t.fm.project, hub))) continue;
+    const g = groups.get(who.toLowerCase()) ?? { who, items: [] };
+    g.items.push(t);
+    groups.set(who.toLowerCase(), g);
+  }
+  return [...groups.values()].sort((a, b) => a.who.localeCompare(b.who)).map(g => ({
+    who: g.who,
+    lines: g.items.sort((a, b) => priorityRank(a.fm.priority) - priorityRank(b.fm.priority) || a.name.localeCompare(b.name)).map(t => {
+      const late = overdue(t.fm, today);
+      return { path: t.path, text: t.name, badges: [late ? { text: `overdue ${dayMonth(late)}`, cls: "vt-badge vt-overdue" } : { text: `· ${str(t.fm.day)}`, cls: "vt-muted" }] };
+    }),
+  }));
+}
+
 /** A project hub's Notes tile: every other note in the project's folder (sub-folders too), newest first, with its last-changed date. */
 export function projectNotes(notes: NoteRec[], hub: NoteRec): ListLine[] {
   return notes.filter(n => n.path !== hub.path && inFolder(n.path, hub.folder))

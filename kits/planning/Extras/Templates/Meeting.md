@@ -61,6 +61,11 @@ show: meeting-bar
 > > FROM "00 Planning/To-dos"
 > > WHERE kind = "todo" AND (meeting = link("<% series %>")<% first ? " OR meeting = true" : "" %>) AND !done AND day != "Done"
 > > ```
+> >
+> > **Waiting on**
+> > ```vault-card
+> > show: waiting
+> > ```
 
 ## Notes from the meeting
 - 
