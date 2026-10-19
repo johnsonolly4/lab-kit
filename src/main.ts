@@ -86,7 +86,7 @@ export default class LabKitPlugin extends Plugin {
     this.kit.dueCountdownChanged = () => engine.retag();
     engine.start();
     bridgeOnDelete(this, () => todoFolder(this.kit.kit.planningFolders));
-    this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, engine, () => this.kit.kit, this.kit.folderGuard);
+    this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, () => this.kit.kit, this.kit.folderGuard);
     this.planning.register();
     registerBoardView(this, { kit: () => this.kit.kit, series: () => this.planning?.seriesList() ?? [] });
     this.kit.boardChanged = refreshBoards;

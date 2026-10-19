@@ -36,8 +36,8 @@ export interface KitData {
   chemicalFolder: string;
   /** A form field that asks for a Chemical class lists only chemicals of that class (true), or lists them first and then all the others (false). */
   chemClassOnly: boolean;
-  /** Board countdown to a to-do's due date: off, only to-dos with `countdown: true`, or every to-do with a due date. */
-  dueCountdown: "off" | "marked" | "all";
+  /** Board countdown to a to-do's due date: off, or every to-do with a due date. A vault saved with the old "marked" reads as "all" (I2-S2 a). */
+  dueCountdown: "off" | "all";
   /** The plan map's direction: steps left to right (across) or top to bottom (down). A toggle on the map flips it for the open note. */
   planDirection: "across" | "down";
   /** The to-do board shows Saturday and Sunday columns. */
@@ -128,6 +128,7 @@ export function kitLoad(saved: unknown): KitData {
   const single = { managed: old.managed, paths: old.paths, off: old.off };
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
+  kit.dueCountdown = kit.dueCountdown === "off" ? "off" : "all";   // the old "marked" (it read `countdown: true`, dropped in I2) and anything unknown: all
   if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
   kit.snippetIcons = { ...kit.snippetIcons };
   kit.snippetRecent = Array.isArray(kit.snippetRecent) ? kit.snippetRecent.filter(n => typeof n === "string") : [];

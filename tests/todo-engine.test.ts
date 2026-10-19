@@ -139,7 +139,7 @@ describe("changes: more cases", () => {
 });
 
 describe("due-date countdown", () => {
-  const cd = (fm: Partial<TodoFm>, mode: "off" | "marked" | "all" = "all", now = WED) => dueCountdown(todo(fm), mode, now);
+  const cd = (fm: Partial<TodoFm>, mode: "off" | "all" = "all", now = WED) => dueCountdown(todo(fm), mode, now);
   it("counts whole days", () => {
     expect(cd({ due: "2026-10-07" })).toEqual({ text: "Today", level: "soon" });
     expect(cd({ due: "2026-10-08" })).toEqual({ text: "Tomorrow", level: "soon" });
@@ -155,12 +155,11 @@ describe("due-date countdown", () => {
   it("ignores the time of day", () => {
     expect(cd({ due: "2026-10-08" }, "all", new Date(2026, 9, 7, 23, 59))?.text).toBe("Tomorrow");
   });
-  it("shows nothing when off, done, unmarked or without a valid date", () => {
+  it("shows nothing when off, done or without a valid date; an old countdown property changes nothing (I2-S2 a)", () => {
     expect(cd({ due: "2026-10-09" }, "off")).toBeNull();
     expect(cd({ due: "2026-10-09", done: true })).toBeNull();
-    expect(cd({ due: "2026-10-09" }, "marked")).toBeNull();
-    expect(cd({ due: "2026-10-09", countdown: false }, "marked")).toBeNull();
-    expect(cd({ due: "2026-10-09", countdown: true }, "marked")?.text).toBe("2d");
+    expect(cd({ due: "2026-10-09", countdown: false })?.text).toBe("2d");
+    expect(cd({ due: "2026-10-09", countdown: true }, "off")).toBeNull();
     expect(cd({ due: "" })).toBeNull();
     expect(cd({ due: "2026-02-30" })).toBeNull();
     expect(cd({})).toBeNull();

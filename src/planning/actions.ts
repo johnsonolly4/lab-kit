@@ -56,10 +56,8 @@ export function topicsWithoutHub(folders: string[], notes: { path: string; kind:
     .filter(p => !notes.some(n => direct(n.path) === p && (n.kind === "hub" || n.path === `${p}/${p.slice(root.length + 1)}.md`)));
 }
 
-/** An inbox note made into a to-do: on the Backlog, open; project / due / meeting added only when missing. */
+/** An inbox note made into a to-do: open, in the Backlog (any planned day removed). Only set values are written (I2 slim model): project / due / meeting are kept when there, never added empty. */
 export function todoFields(fm: Record<string, unknown>): void {
-  fm.kind = "todo"; fm.day = "Backlog"; fm.done = false; fm.rolled = false;
-  if (!("project" in fm)) fm.project = "";
-  if (!("due" in fm)) fm.due = "";
-  if (!("meeting" in fm)) fm.meeting = false;
+  fm.kind = "todo"; fm.done = false;
+  for (const k of ["scheduled", "day", "planned", "rolled"]) delete fm[k];
 }

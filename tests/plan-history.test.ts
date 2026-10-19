@@ -120,6 +120,18 @@ describe("ticks in the history", () => {
     await runHistory(app, h, "redo");
     expect(notes["T/B.md"]).toEqual({ kind: "todo", done: false });
   });
+  it("a tick step holds scheduled: Undo puts an old Done card back with its date; a card dragged to another day since is left alone (I2 Phase 3)", async () => {
+    const notes: Record<string, Record<string, unknown>> = { "T/B.md": { kind: "todo", day: "Done", done: true, scheduled: "2026-10-20" }, "T/C.md": { kind: "todo", done: false, scheduled: "2026-10-21" } };
+    const app = appWith(notes), h = new PlanHistory();
+    await recordTick(app, h, "T/B.md", false, "Unticked B");
+    expect(notes["T/B.md"]).toEqual({ kind: "todo", done: false, scheduled: "2026-10-20" });
+    await runHistory(app, h, "undo");
+    expect(notes["T/B.md"]).toEqual({ kind: "todo", day: "Done", done: true, scheduled: "2026-10-20" });
+    await recordTick(app, h, "T/C.md", true, "Ticked C");
+    notes["T/C.md"].scheduled = "2026-10-23";   // dragged to Fri after the tick
+    await runHistory(app, h, "undo");
+    expect(notes["T/C.md"]).toEqual({ kind: "todo", done: true, scheduled: "2026-10-23" });
+  });
   it("steps of one group (Tick all) undo and redo together, from the bar or from a notice's own step", async () => {
     const notes: Record<string, Record<string, unknown>> = { "T/P.md": { done: false }, "T/S1.md": { done: false }, "T/S2.md": { done: false } };
     const app = appWith(notes), h = new PlanHistory();

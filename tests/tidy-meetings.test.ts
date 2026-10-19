@@ -96,8 +96,8 @@ describe("Tidy up notes: to-dos without a kind", () => {
     m.set("00 Planning/To-dos/Bare.md", "Just text\n");
     const g = group(ctx(), m, "todo-properties");
     expect(g?.changes).toEqual([
-      { path: "00 Planning/To-dos/Bare.md", before: "", after: "kind: todo\nday: Backlog\ndone: false\nrolled: false\ncssclasses:\n  - vt" },
-      { path: "00 Planning/To-dos/Buy gloves.md", before: "cssclasses:\n  - vt\ndone: true", after: "cssclasses:\n  - vt\ndone: true\nkind: todo\nday: Backlog\nrolled: false" },
+      { path: "00 Planning/To-dos/Bare.md", before: "", after: "kind: todo\ndone: false\ncssclasses:\n  - vt" },
+      { path: "00 Planning/To-dos/Buy gloves.md", before: "cssclasses:\n  - vt\ndone: true", after: "cssclasses:\n  - vt\ndone: true\nkind: todo" },
     ]);
   });
   it("treats an empty kind as no kind and fills that line in place", () => {
@@ -105,14 +105,14 @@ describe("Tidy up notes: to-dos without a kind", () => {
     m.set("00 Planning/To-dos/Empty kind.md", "---\nkind:\nday: Backlog\nplanned: 2026-10-09\n---\nbody\n");
     const g = group(ctx(), m, "todo-properties");
     expect(g?.changes).toEqual([
-      { path: "00 Planning/To-dos/Empty kind.md", before: "kind:\nday: Backlog\nplanned: 2026-10-09", after: "kind: todo\nday: Backlog\nplanned: 2026-10-09\ndone: false\nrolled: false\ncssclasses:\n  - vt" },
+      { path: "00 Planning/To-dos/Empty kind.md", before: "kind:\nday: Backlog\nplanned: 2026-10-09", after: "kind: todo\nday: Backlog\nplanned: 2026-10-09\ndone: false\ncssclasses:\n  - vt" },
     ]);
   });
   it("applies with a backup, and a second scan finds nothing", async () => {
     const m = vault(); m.set("00 Planning/To-dos/Bare.md", "Just text\n");
     const c = ctx(), s = scan(files(m, c), c), x = io(m);
     await applyTidy(x, selectChanges(s, new Set(["todo-properties"])));
-    expect(m.get("00 Planning/To-dos/Bare.md")).toBe("---\nkind: todo\nday: Backlog\ndone: false\nrolled: false\ncssclasses:\n  - vt\n---\nJust text\n");
+    expect(m.get("00 Planning/To-dos/Bare.md")).toBe("---\nkind: todo\ndone: false\ncssclasses:\n  - vt\n---\nJust text\n");
     expect(x.backups.get("00 Planning/To-dos/Bare.md")).toBe("Just text\n");
     expect(group(c, m, "todo-properties")).toBeUndefined();
   });

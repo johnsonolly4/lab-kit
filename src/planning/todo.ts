@@ -158,8 +158,8 @@ export function applyPatch(x: Record<string, unknown>, p: { set: Record<string, 
   for (const k of p.remove) delete x[k];
 }
 
-/** Due-date countdown on the board: off, only to-dos that set `countdown: true`, or every to-do with a due date. */
-export type CountdownMode = "off" | "marked" | "all";
+/** Due-date countdown on the board: off, or every to-do with a due date. */
+export type CountdownMode = "off" | "all";
 /** `level`: "late" (overdue), "soon" (today to 2 days), "later". */
 export interface Countdown { text: string; level: "late" | "soon" | "later" }
 
@@ -180,10 +180,9 @@ export function cardTag(fm: TodoFm): { text: string; level: "1" | "2" | "3" | ""
   return text ? { text, level } : null;
 }
 
-/** The badge for a card: null when off, done, not marked (mode "marked") or with no valid `due`. Whole local days, so DST can't shift it. */
+/** The badge for a card: null when off, done or with no valid `due`. Whole local days, so DST can't shift it. */
 export function dueCountdown(fm: TodoFm, mode: CountdownMode, now: Date): Countdown | null {
   if (mode === "off" || fm.done === true) return null;
-  if (mode === "marked" && fm.countdown !== true) return null;
   const due = parseDay(fm.due);
   if (!due) return null;
   const n = Math.round((due.getTime() - dayOf(now).getTime()) / 864e5);

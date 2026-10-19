@@ -59,12 +59,11 @@ describe("offeredTodos", () => {
 });
 
 describe("a new to-do", () => {
-  it("has every property the To-do template writes, in Backlog with nothing else asked", () => {
-    const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13));
+  it("in the Backlog with nothing else asked: only set values (kind, done, project, after, cssclasses), no day / planned / rolled / countdown", () => {
+    const text = newTodoText("Alpha", "[[A]]");
     const keys = (s: string): string[] => [...(/^---\n([\s\S]*?)\n---/.exec(s)?.[1] ?? "").matchAll(/^([a-z_]+):/gm)].map(m => m[1]);
-    const template = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8").split("-%>\n---\n").pop()!;
-    expect(new Set([...keys("---\n" + template), "after"])).toEqual(new Set(keys(text)));   // the template writes `after` only when asked: a conditional line
-    expect(text).toContain("kind: todo\nday: Backlog\nplanned: 2026-10-13\ndone: false");
+    expect(keys(text)).toEqual(["kind", "done", "project", "after", "cssclasses"]);
+    expect(text).toContain("kind: todo\ndone: false\n");
     expect(text).toContain('project: "[[Alpha]]"');
     expect(text).toContain('after: "[[A]]"');
   });
@@ -181,14 +180,14 @@ describe("addAfterFlow", () => {
     expect(Object.keys(created)).toHaveLength(0);
   });
   it("newTodoText writes an experiment link only when given", () => {
-    expect(newTodoText("Alpha", "", new Date(2026, 9, 13))).not.toContain("experiment");
-    const text = newTodoText("Alpha", "", new Date(2026, 9, 13), { experiment: "ABC0014-A" });
+    expect(newTodoText("Alpha", "")).not.toContain("experiment");
+    const text = newTodoText("Alpha", "", { experiment: "ABC0014-A" });
     expect(text).toContain('experiment: "[[ABC0014-A]]"\ncssclasses:');
   });
   it("newTodoText writes a waiting line only when given, quoted so a colon or quote is safe", () => {
-    expect(newTodoText("Alpha", "", new Date(2026, 9, 13))).not.toContain("waiting");
-    expect(newTodoText("Alpha", "", new Date(2026, 9, 13), { waiting: "  " })).not.toContain("waiting");
-    expect(newTodoText("Alpha", "", new Date(2026, 9, 13), { waiting: 'Dr "S": samples' })).toContain('waiting: "Dr \\"S\\": samples"\ncssclasses:');
+    expect(newTodoText("Alpha", "")).not.toContain("waiting");
+    expect(newTodoText("Alpha", "", { waiting: "  " })).not.toContain("waiting");
+    expect(newTodoText("Alpha", "", { waiting: 'Dr "S": samples' })).toContain('waiting: "Dr \\"S\\": samples"\ncssclasses:');
   });
   it("the To-do template writes the entry window's Waiting chip", () => {
     const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
@@ -196,11 +195,12 @@ describe("addAfterFlow", () => {
     expect(tpl).toContain("waiting: ${JSON.stringify(waiting)}");
   });
   it("newTodoText writes the meeting, due date and priority it is given", () => {
-    const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13), { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
+    const text = newTodoText("Alpha", "[[A]]", { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
     expect(text).toContain("due: 2026-11-15\n");
     expect(text).toContain("priority: 2\n");
     expect(text).toContain('meeting: "[[Group meeting]]"');
-    expect(newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13))).toContain("meeting: false");
+    expect(newTodoText("Alpha", "[[A]]")).not.toContain("meeting");
+    expect(newTodoText("", "")).not.toMatch(/project|due|priority/);
   });
   it("Undo removes a made to-do, Redo makes it again; one written in since is left alone", async () => {
     const { env, created, history } = setup(fms());
@@ -279,10 +279,9 @@ describe("addAfterFlow", () => {
     expect(f[P("C")].after).toBeUndefined();
   });
   it("newTodoText: no after leaves the line out, several make a list, one stays a single link", () => {
-    const d = new Date(2026, 9, 13);
-    expect(newTodoText("Alpha", [], d)).not.toContain("after:");
-    expect(newTodoText("Alpha", "", d)).not.toContain("after:");
-    expect(newTodoText("Alpha", ["[[A]]"], d)).toContain('after: "[[A]]"\nmeeting:');
-    expect(newTodoText("Alpha", ["[[A]]", "[[C]]"], d)).toContain('after:\n  - "[[A]]"\n  - "[[C]]"\nmeeting:');
+    expect(newTodoText("Alpha", [])).not.toContain("after:");
+    expect(newTodoText("Alpha", "")).not.toContain("after:");
+    expect(newTodoText("Alpha", ["[[A]]"])).toContain('after: "[[A]]"\ncssclasses:');
+    expect(newTodoText("Alpha", ["[[A]]", "[[C]]"])).toContain('after:\n  - "[[A]]"\n  - "[[C]]"\ncssclasses:');
   });
 });

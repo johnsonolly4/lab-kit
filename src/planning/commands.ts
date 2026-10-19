@@ -16,7 +16,6 @@ import { experimentOptions, projectField, projectNames, todoFields as todoEntryF
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { followSeries, meetingFields, meetingStart, ONE_OFF, readMeeting } from "./meeting-entry";
 import { parseQuickTodo, todoFileName } from "./quick-todo";
-import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { addResult } from "./result";
@@ -45,7 +44,7 @@ const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
   /** `state` reads the planning kit's install record when needed (it is replaced on every install); `kit` the current settings. */
-  constructor(private plugin: Plugin, private state: () => ManagedState | null, private engine: TodoEngine, private kit: () => KitData,
+  constructor(private plugin: Plugin, private state: () => ManagedState | null, private kit: () => KitData,
     private guard: FolderGuardActions) {}
 
   get app(): App { return this.plugin.app; }

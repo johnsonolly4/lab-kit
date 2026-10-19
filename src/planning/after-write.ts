@@ -23,15 +23,19 @@ export async function recordChange(app: App, history: PlanHistory, path: string,
   return step;
 }
 
+/** The keys a tick step holds: `done`, an old card's `day` (Done), and the planned date `scheduled`, so Undo puts the card back on its day. */
+const TICK_KEYS = ["done", "day", "scheduled"] as const;
+const tickSnap = (fm: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(TICK_KEYS.map(k => [k, fm[k]]));
+
 /** Ticks or unticks a to-do (as `setDone`) and puts it in `history`; the to-do engine stamps or clears `done_on` when it sees the change. `group`: steps of one action (Tick all) share it. */
 export async function recordTick(app: App, history: PlanHistory, path: string, done: boolean, label: string, group?: number): Promise<HistoryStep> {
   const file = app.vault.getFileByPath(path);
   if (!file) throw new Error("to-do not found");
   let before: unknown, after: unknown;
   await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
-    before = { done: fm.done, day: fm.day };
+    before = tickSnap(fm);
     setDone(fm, done);
-    after = { done: fm.done, day: fm.day };
+    after = tickSnap(fm);
   });
   const step: HistoryStep = { path, key: "tick", before, after, label, group };
   history.push(step);
@@ -48,16 +52,16 @@ async function applyCreate(app: App, s: HistoryStep, side: Side): Promise<boolea
   return true;
 }
 
-/** Writes `want` (the `done` and `day` of a tick step) if the to-do still has `expect`; false when it was changed since. */
+/** Writes `want` (the `done`, `day` and `scheduled` of a tick step) if the to-do still has `expect`; false when it was changed since. */
 async function applyTick(app: App, path: string, expect: unknown, want: unknown): Promise<boolean> {
   const file = app.vault.getFileByPath(path);
   if (!file) throw new Error("to-do not found");
   let same = true;
   await app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => {
-    same = sameValue({ done: fm.done, day: fm.day }, expect);
+    same = sameValue(tickSnap(fm), expect);
     if (!same) return;
-    const w = want as { done?: unknown; day?: unknown };
-    for (const k of ["done", "day"] as const) { if (w[k] === undefined) delete fm[k]; else fm[k] = w[k]; }
+    const w = want as Record<string, unknown>;
+    for (const k of TICK_KEYS) { if (w[k] === undefined) delete fm[k]; else fm[k] = w[k]; }
   });
   return same;
 }

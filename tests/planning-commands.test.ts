@@ -4,7 +4,6 @@ import { readFileSync } from "fs";
 import type { EmbeddedKit } from "../src/kit/managed";
 import { cleanName, sortedName, subfolders, todoFields } from "../src/planning/actions";
 import { PlanningCommands, TPL } from "../src/planning/commands";
-import type { TodoEngine } from "../src/planning/engine";
 import { kitLoad } from "../src/kit/paths";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -39,7 +38,7 @@ const actions = buttons.buttonTemplates.flatMap(b => b.actions.map(a => ({ butto
 function registered(): string[] {
   const ids: string[] = [];
   const plugin = { app: {}, register: () => undefined, addCommand: (c: { id: string }) => { ids.push(c.id); } };
-  new PlanningCommands(plugin as never, null as never, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} }).register();
+  new PlanningCommands(plugin as never, null as never, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} }).register();
   return ids;
 }
 
@@ -89,10 +88,10 @@ describe("sort inbox rules", () => {
   it("makes a to-do on the Backlog, keeping project / due / meeting", () => {
     const fresh: Record<string, unknown> = { tags: ["x"] };
     todoFields(fresh);
-    expect(fresh).toEqual({ tags: ["x"], kind: "todo", day: "Backlog", done: false, rolled: false, project: "", due: "", meeting: false });
+    expect(fresh).toEqual({ tags: ["x"], kind: "todo", done: false });
     const kept: Record<string, unknown> = { project: "[[P]]", due: "2026-10-09", meeting: true, done: true, day: "Mon" };
     todoFields(kept);
-    expect(kept).toMatchObject({ project: "[[P]]", due: "2026-10-09", meeting: true, done: false, day: "Backlog" });
+    expect(kept).toEqual({ project: "[[P]]", due: "2026-10-09", meeting: true, done: false, kind: "todo" });
   });
 });
 
@@ -108,7 +107,7 @@ describe("New meeting series command", () => {
       getMarkdownFiles: () => files, createFolder: async () => undefined },
       metadataCache: { getFileCache: () => ({ frontmatter: { kind: "meeting-series", interval: "weekly", day: "Thu", start: "2026-10-01" } }) } };
     const plugin = { app, addCommand: () => undefined };
-    return new PlanningCommands(plugin as never, () => null, {} as TodoEngine, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} });
+    return new PlanningCommands(plugin as never, () => null, () => kitLoad(undefined), { openSettings: () => {}, findMoved: () => {} });
   };
   beforeEach(() => { answers.length = 0; windows.length = 0; created.length = 0; });
 
@@ -148,7 +147,7 @@ describe("Sort inbox command", () => {
     };
     const kit = () => ({ ...kitLoad(undefined), planningFolders: { ...kitLoad(undefined).planningFolders, inbox: INBOX } });
     const plugin = { app, addCommand: () => undefined };
-    const cmds = new PlanningCommands(plugin as never, () => null, {} as TodoEngine, kit, { openSettings: () => {}, findMoved: () => {} });
+    const cmds = new PlanningCommands(plugin as never, () => null, kit, { openSettings: () => {}, findMoved: () => {} });
     answers.push("delete", true, "stop");
     await (cmds as unknown as { sortInbox(): Promise<void> }).sortInbox();
     expect(log.slice(0, 3)).toEqual(["open A", "open B", "trash A"]);

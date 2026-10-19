@@ -174,7 +174,6 @@ describe("Project deadline countdown", () => {
   });
   it("shows nothing when off, finished, or without a valid date", () => {
     expect(deadlineBadge({ deadline: "2026-10-12" }, "off", WED)).toBeNull();
-    expect(deadlineBadge({ Status: "Active", deadline: "2026-10-12" }, "marked", WED)).toEqual(deadlineBadge({ Status: "Active", deadline: "2026-10-12" }, "all", WED));
     expect(deadlineBadge({ Status: "Done", deadline: "2026-10-12" }, "all", WED)).toBeNull();
     expect(deadlineBadge({ Status: "Active", deadline: "" }, "all", WED)).toBeNull();
     expect(deadlineBadge({ Status: "Active", deadline: "soon" }, "all", WED)).toBeNull();
