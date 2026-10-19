@@ -7,7 +7,8 @@ _Written 2026-10-19 (plan step I23-PLAN, Opus, from the code; nothing built). AG
 - **The menu**: `Insert snippet.md` asks the plugin for the menu (`plugin.snippets.menu(items)`) and falls back to `labPick.js` (old plugin or none). So the old Templater hotkey and the new command open the same menu.
 - **Recent**: the last 3 picks (`kit.snippetRecent`, keyed by the snippet's name), newest first, shown only while the search box is empty, pruned when a snippet is gone.
 - **Icons**: until Phase 5 the Snippet icons settings page still wins over the header (`kit.snippetIcons`, as `labPick.js` does). Change icon… comes with Phase 5.
-- **Check hotkeys / Hotkeys note**: Alt+S is suggested for `Lab Kit: Insert snippet`; a vault whose Alt+S is still on the Templater template counts as "other" (it opens the same menu), never a clash to fix.
+- **Check hotkeys / Hotkeys note**: Alt+S is suggested for `Lab Kit: Insert snippet`; a vault whose Alt+S is still on the Templater template counts as set ("Set on Templater: …, which opens the same menu."), never a clash to fix.
+- Built 2026-10-19 (N1): `src/kit/snippet-menu.ts` (pure), `snippet-menu-ui.ts`, `SnippetTemplates.menu`, `templaterInsert`, `cursorAnchor` (`entry-window.ts`), `.lk-snip-*` in `styles.css`; tests `tests/snippet-menu.test.ts`, `hotkey-check.test.ts`. Checked in a throwaway Obsidian with Templater (obsidian-check): menu under the cursor, groups, search `gp`, Sample list inserted, Recent on reopen, light and dark; no console errors. Not seen by the owner.
 - Not in Phase 1 (unchanged): what any snippet inserts, the forms (`labForm.js`), the stub files `07`–`09`, the group toggles, the Snippet icons page.
 
 ## Goal

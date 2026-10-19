@@ -21,6 +21,18 @@ export function selectionAnchor(app: App): EntryAnchor | null {
   } catch { return null; }
 }
 
+/** The screen position just under the cursor line in the open note (desktop only), else null: the window opens in the middle. Same CodeMirror read as `selectionAnchor`. */
+export function cursorAnchor(app: App): EntryAnchor | null {
+  if (!Platform.isDesktop) return null;
+  const editor = app.workspace.activeEditor?.editor;
+  if (!editor) return null;
+  try {
+    const cm = (editor as unknown as { cm?: { coordsAtPos(pos: number): { left: number; bottom: number } | null } }).cm;
+    const at = cm?.coordsAtPos(editor.posToOffset(editor.getCursor("from")));
+    return at ? { left: at.left, bottom: at.bottom } : null;
+  } catch { return null; }
+}
+
 /** Asks for the value of one field in a dropdown under `anchor` (the chip); null when it was closed without a choice. A toggle just flips. */
 export async function editEntryField(app: App, field: EntryField, current: EntryValue | undefined, anchor: HTMLElement, initialSearch?: string): Promise<EntryValue | null> {
   if (field.kind === "toggle") return current !== true;

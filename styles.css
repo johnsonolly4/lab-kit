@@ -446,6 +446,24 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-entry-hint { font-size: var(--font-ui-smaller); color: var(--text-muted); }
 .vt-entry-hint.is-bad { color: var(--text-error); }
 
+/* ---- Alt+S snippet menu (src/kit/snippet-menu-ui.ts) on the entry window: search box, small-caps group headings, icon + name + description rows ---- */
+.lk-snip-search { display: flex; align-items: center; gap: var(--size-4-2); margin: 0 0 var(--size-4-2); padding: 0 var(--size-4-3); border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: var(--background-modifier-form-field); }
+.lk-snip-search input[type="text"], .lk-snip-search input[type="text"]:focus, .lk-snip-search input[type="text"]:hover { flex: 1; min-width: 0; border: none; box-shadow: none; background: transparent; padding-left: 0; font-size: var(--font-ui-medium); }
+.lk-snip-search:focus-within { border-color: var(--interactive-accent); }
+.lk-snip-search-icon { display: flex; color: var(--text-muted); }
+.lk-snip-search-icon .svg-icon { width: 16px; height: 16px; }
+.lk-snip-list { max-height: min(460px, 60vh); overflow-y: auto; margin: 0 0 var(--size-4-2); }
+.lk-snip-heading { margin: var(--size-4-2) 0 2px; padding: 0 var(--size-4-1); font-size: var(--font-ui-smaller); font-weight: var(--font-semibold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); }
+.lk-snip-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px var(--size-4-2); border-radius: var(--lk-radius-row); cursor: pointer; }
+.lk-snip-row.is-active { background: var(--background-modifier-hover); }
+.lk-snip-icon { display: flex; padding-top: 2px; color: var(--text-accent); }
+.lk-snip-icon .svg-icon { width: 16px; height: 16px; }
+.lk-snip-text { flex: 1; min-width: 0; }
+.lk-snip-name { font-size: var(--font-ui-medium); }
+.lk-snip-desc { font-size: var(--font-ui-smaller); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-snip-tag { flex: none; align-self: center; padding: 1px 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-pill); font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.lk-snip-empty { padding: var(--size-4-2); font-size: var(--font-ui-small); color: var(--text-muted); }
+
 /* ---- Dropdown under a chip (entry window, to-do chip bar) ---- */
 .vt-pop { position: fixed; left: var(--vt-pop-left, 0); top: var(--vt-pop-top, 0); z-index: 100; min-width: 220px; max-width: min(340px, 92vw); padding: 6px; border-radius: var(--lk-radius-control); border: 1px solid var(--background-modifier-border); background: var(--background-primary); box-shadow: var(--shadow-l); outline: none; }
 .vt-pop-search { width: 100%; margin: 0 0 4px; }

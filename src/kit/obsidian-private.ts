@@ -7,7 +7,8 @@ interface TemplaterPlugin {
   settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[];
     folder_templates?: { folder?: string; template?: string }[]; trigger_on_file_creation_mode?: string; startup_templates?: string[] };
   command_handler?: { sync_template_hotkeys?: () => void; add_template_hotkey?: (old: string | null, template: string) => void };
-  templater?: { files_with_pending_templates?: Set<string>; create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
+  templater?: { files_with_pending_templates?: Set<string>; create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined>;
+    append_template_to_active_file?: (template: TFile) => Promise<void> };
   save_settings?: () => Promise<void>;
   saveSettings?: () => Promise<void>;
 }
@@ -62,6 +63,14 @@ export async function templaterCreateNote(app: App, template: TFile, folder: TFo
   const create = templater(app)?.templater?.create_new_note_from_template;
   if (typeof create !== "function") return false;
   await create.call(templater(app)?.templater, template, folder, filename, open);
+  return true;
+}
+
+/** Runs `template` with Templater and inserts the result at the cursor of the open note (Templater's own "Insert template"). False when this Templater has no such function (private API). */
+export async function templaterInsert(app: App, template: TFile): Promise<boolean> {
+  const insert = templater(app)?.templater?.append_template_to_active_file;
+  if (typeof insert !== "function") return false;
+  await insert.call(templater(app)?.templater, template);
   return true;
 }
 

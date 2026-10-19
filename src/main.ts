@@ -22,7 +22,7 @@ export default class LabKitPlugin extends Plugin {
   kit!: KitController;
   /** Planning commands; null without the planning kit. Project cards call `newTodo(project)` / `newProjectNote(folder)`. */
   planning: PlanningCommands | null = null;
-  /** Alt+S token templates; Insert snippet.md (Templater) calls `meta` and `run` on it. */
+  /** Alt+S: Insert snippet.md (Templater) calls `menu`, `meta` and `run` on it. */
   snippets!: SnippetTemplates;
   private store!: HeaderStore;
 
@@ -33,7 +33,7 @@ export default class LabKitPlugin extends Plugin {
     this.header = new HeaderRenderer(this, store);
     this.kit = new KitController(this, store);
     await this.kit.load();
-    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit);
+    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save());
     this.kit.setup();
 
     this.calc.register();

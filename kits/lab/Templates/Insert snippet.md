@@ -42,7 +42,10 @@ if (!files.length && !methods.length) {
     });
   }
   for (const m of methods) items.push({ name: m.name, icon: m.icon, desc: m.desc, value: { method: m.key } });
-  const pick = tp.user?.labPick
+  // The plugin's grouped menu (Recent, groups, search); labPick.js with an older plugin or none
+  const pick = kitSnippets?.menu
+    ? await kitSnippets.menu(items)
+    : tp.user?.labPick
     ? await tp.user.labPick(tp, items, "Insert snippet…")
     : await tp.system.suggester(items.map(i => i.name), files, false, "Insert snippet…");
   if (pick?.method) tR += await tp.user.labSnippets(tp, `method:${pick.method}`);

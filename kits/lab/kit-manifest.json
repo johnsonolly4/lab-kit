@@ -168,8 +168,8 @@
       "src": "Templates/Insert snippet.md",
       "role": "templates",
       "path": "Insert snippet.md",
-      "version": "1.0.0",
-      "sha256": "d2eed79d532828df8927a82dadbe78d20ffecc7ba5e717c1f7c2c0495c9b2dd6",
+      "version": "1.4.1",
+      "sha256": "4a1ff371715fcb8982bb0e5f24df7665621dfcba7d41bb2ff4502a16d72f65cc",
       "renamedFrom": [],
       "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
     },

@@ -7,6 +7,8 @@ import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Ch
 import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, parseTemplate, type ParsedTemplate, type TemplateField } from "./snippet-template";
 import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
+import { pushRecent, type MenuItem } from "./snippet-menu";
+import { openSnippetMenu } from "./snippet-menu-ui";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
@@ -25,7 +27,19 @@ const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("
 const NOTE_FOLDERS: Record<string, string> = { rigsFolder: "Rigs folder", methodsFolder: "Methods folder", chemicalFolder: "Chemical folder", labFolder: "Lab notes folder" };
 
 export class SnippetTemplates {
-  constructor(private app: App, private kit: () => KitData) {}
+  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}) {}
+
+  /** The Alt+S menu (Insert snippet.md calls it in place of labPick.js): the picked entry's `value`, or null. Remembers the pick for Recent. */
+  async menu(items: MenuItem[]): Promise<unknown> {
+    const kit = this.kit();
+    const names = new Set(items.map(it => it.name));
+    const recent = (kit.snippetRecent ?? []).filter(n => names.has(n));
+    const it = await openSnippetMenu(this.app, items, recent, kit.snippetIcons ?? {});
+    if (!it) return null;
+    kit.snippetRecent = pushRecent(recent, it.name);
+    await this.save();
+    return it.value;
+  }
 
   private async parse(file: TFile): Promise<ParsedTemplate | null> {
     return parseTemplate(await this.app.vault.cachedRead(file), parseYaml);

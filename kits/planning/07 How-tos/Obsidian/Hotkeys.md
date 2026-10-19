@@ -24,7 +24,7 @@ These are suggestions. Nothing is set until you do it: by hand (see the end of t
 | `Alt+L` | New lab entry | Lab Kit: New lab entry |
 | `Alt+U` | Update this paper's highlights | ZotLit: Update literature note |
 | `Alt+C` | Insert a citation | ZotLit: Insert Markdown citation |
-| `Alt+S` | Insert a lab snippet | Templater: Insert snippet (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
+| `Alt+S` | Insert a lab snippet | Lab Kit: Insert snippet (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
 | `Alt+M` | New meeting note | Lab Kit: New meeting |
 | `Alt+P` | New note in a project | Lab Kit: New project note |
 | `Alt+K` | New knowledge note | Lab Kit: New concept |

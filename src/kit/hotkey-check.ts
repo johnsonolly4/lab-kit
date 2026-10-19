@@ -5,7 +5,8 @@ import { hotkeyText, sameKey } from "./setup-check";
 import type { WinState } from "./window-look";
 
 /** The Hotkeys note's table (`07 How-tos/Obsidian/Hotkeys.md`), one entry per function; `key` is empty for the "no key suggested" commands. tests/hotkeys-note.test.ts keeps both in step. */
-export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: string; kit: "lab" | "planning" }[] = [
+/** `also`: an older command that does the same (the key set on it counts as set). */
+export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: string; also?: string; kit: "lab" | "planning" }[] = [
   { key: { modifiers: ["Alt"], key: "H" }, does: "Homepage", command: "Notebook Navigator: Open homepage", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "D" }, does: "Today's note", command: "Daily notes: Open today's daily note", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "F" }, does: "Search", command: "Omnisearch: Vault search", kit: "planning" },
@@ -15,7 +16,7 @@ export const RECOMMENDED_HOTKEYS: { key?: KitHotkey; does: string; command: stri
   { key: { modifiers: ["Alt"], key: "L" }, does: "New lab entry", command: "Lab Kit: New lab entry", kit: "lab" },
   { key: { modifiers: ["Alt"], key: "U" }, does: "Update this paper's highlights", command: "ZotLit: Update literature note", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "C" }, does: "Insert a citation", command: "ZotLit: Insert Markdown citation", kit: "planning" },
-  { key: { modifiers: ["Alt"], key: "S" }, does: "Insert a lab snippet", command: "Templater: Insert snippet", kit: "lab" },
+  { key: { modifiers: ["Alt"], key: "S" }, does: "Insert a lab snippet", command: "Lab Kit: Insert snippet", also: "Templater: Insert snippet", kit: "lab" },
   { key: { modifiers: ["Alt"], key: "M" }, does: "New meeting note", command: "Lab Kit: New meeting", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "P" }, does: "New note in a project", command: "Lab Kit: New project note", kit: "planning" },
   { key: { modifiers: ["Alt"], key: "K" }, does: "New knowledge note", command: "Lab Kit: New concept", kit: "planning" },
@@ -67,6 +68,7 @@ export function checkHotkeys(s: HotkeyState): HotkeyRow[] {
     if (own.some(k => sameKey(k, r.key!))) return row("set", "Set.", current);
     if (own.length) return row("other", `Set to ${current.join(", ")} (yours, left as it is).`, current);
     const clash = Object.entries(s.hotkeys).find(([cmd, keys]) => cmd !== id && keys.some(k => sameKey(k, r.key!)))?.[0];
+    if (clash && r.also && clash === findCommand(s.commands, r.also)) return row("set", `Set on ${s.commands[clash] ?? clash}, which opens the same menu.`, [recommended]);
     return row(clash ? "clash" : "none", clash ? `Not set. ${recommended} is already used by ${s.commands[clash] ?? clash}.` : "Not set.", current);
   });
 }

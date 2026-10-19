@@ -7,7 +7,7 @@ import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
 import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
-import { hasTemplater, openPluginSettings, templaterCreateNote } from "./obsidian-private";
+import { hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import type { FolderGuardActions } from "./folder-guard";
 import { MovedFoldersModal } from "./moved-folders-ui";
 import type { HeaderStore } from "../header/settings";
@@ -403,6 +403,8 @@ export class KitController {
     w.vtEntryLab = () => this.askLabEntry();
     plugin.register(() => { delete w.vtEntryLab; });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
+    // Alt+S (I23 Phase 1): the Lab Kit command runs the kit's Insert snippet.md through Templater, which opens the plugin's menu; the code snippets still need Templater (Phase 6 drops it)
+    plugin.addCommand({ id: "insert-snippet", name: "Insert snippet", editorCallback: () => void this.insertSnippet() });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
@@ -515,6 +517,15 @@ export class KitController {
   }
 
   /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Templater. */
+  /** The Insert snippet command: the kit's Insert snippet.md run by Templater at the cursor (it opens the plugin's menu). */
+  async insertSnippet(): Promise<void> {
+    if (!hasTemplater(this.app)) { new Notice("Insert snippet needs Templater until snippets run in Lab Kit (Check setup says how to install it)."); return; }
+    const path = kitJoin(this.managed.templatesFolder(), "Insert snippet.md");
+    const file = this.app.vault.getFileByPath(path);
+    if (!file) { new Notice(`Insert snippet: ${path} was not found. Check setup says how to put it back.`); return; }
+    if (!(await templaterInsert(this.app, file))) new Notice("Templater couldn't insert the snippet. Update it to the latest version, then try again.");
+  }
+
   async newChemical(): Promise<void> {
     const tracked = this.managed.stateOf(CHEMICAL_TEMPLATE_ID)?.path;
     const template = [tracked, kitJoin(this.managed.templatesFolder(), "Chemical database template.md")]

@@ -11,7 +11,7 @@ const source = walk("src").filter(p => p.endsWith(".ts")).map(p => readFileSync(
 
 describe("Hotkeys note", () => {
   it("names only commands Lab Kit registers", () => {
-    const named = [...note.matchAll(/Lab Kit: ([A-Z][^|\n,]*?)(?= \||,|\.|$)/gm)].map(m => m[1].trim());
+    const named = [...note.matchAll(/Lab Kit: ([A-Z][^|\n,]*?)(?= \||,|\.| \(|$)/gm)].map(m => m[1].trim());
     expect(named.length).toBeGreaterThanOrEqual(3);
     for (const n of named) expect(source.includes(`"${n}"`), n).toBe(true);
   });
