@@ -6,7 +6,7 @@ import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { batchChanges, changeKey, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { batchChanges, changeKey, datedTodos, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
@@ -15,7 +15,7 @@ import { ymd } from "../planning/todo";
 import { WIN_MARK, cardWindow, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
 /** What the Tidy up notes window needs from the plugin. */
-export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null }
+export interface TidyHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; save?: () => Promise<void> }
 
 /** The vault as TidyIO: notes through the Vault API, backups into the kit's backups folder (inside the plugin folder), moves through fileManager. */
 export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
@@ -79,6 +79,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     projectHubText: planningOn ? (host.planning?.bundle.contents?.["tpl-project-hub-md"] ?? "").replace(/\r\n/g, "\n").split("-%>\n")[1] : undefined,
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
+    todoQueries: planningOn || undefined,
     freeze: planningOn && app ? path => { const f = app.vault.getFileByPath(path); return f ? freezeDataFor(app, host.kit, f) : null; } : undefined,
   };
 }
@@ -335,6 +336,12 @@ export class TidyNotesModal extends Modal {
       const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.created.length} created`, `${out.settings.length} settings`, `${out.skipped.length} skipped`];
       this.message = `${parts.join(", ")}. Backups: ${backups}.${out.skipped.length ? ` Skipped: ${out.skipped.map(x => `${x.path} (${x.why})`).join("; ")}.` : ""}`;
       new Notice(parts.join(", ") + ".");
+      const dated = this.result ? datedTodos(this.result, changes, out.changed) : 0;
+      if (dated && !this.host.kit.todoDatesNoticed) {   // once per vault (I2, Q18 a)
+        new Notice(`Gave ${dated} ${dated === 1 ? "to-do" : "to-dos"} a planned date`);
+        this.host.kit.todoDatesNoticed = true;
+        await this.host.save?.();
+      }
     } catch (e) { this.message = `Stopped: ${(e as Error).message}. Anything already changed is in the backups folder (${backups}).`; }
     await this.load();   // a second scan: what is left
     this.ticked = new Set(this.result?.groups.filter(g => !g.optIn).map(g => g.id)); this.off.clear();

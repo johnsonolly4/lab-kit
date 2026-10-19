@@ -609,7 +609,7 @@ export class KitController {
   }
 
   /** Opens the Check setup window. */
-  tidyNotes(): void { new TidyNotesModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning }).open(); }
+  tidyNotes(): void { new TidyNotesModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, save: () => this.save() }).open(); }
   checkHotkeys(): void { new HotkeyCheckModal(this.app, this.planning?.slot.enabled === true).open(); }
   checkSetup(): void { new SetupCheckModal(this.app, { kit: this.kit, managed: this.managed, planning: this.planning, header: this.header.settings, pluginId: this.plugin.manifest.id, save: () => this.save(), findMoved: () => this.findMovedFolders(), review: () => this.review(), manage: () => this.manage() }).open(); }
 

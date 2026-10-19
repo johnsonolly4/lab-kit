@@ -4,6 +4,7 @@
 import { BAR_BUTTONS } from "../planning/button-bar";
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
+import { normalisePatch, parseDay, type TodoPatch } from "../planning/todo";
 import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
 import type { WinState } from "./window-look";
@@ -54,6 +55,8 @@ export interface TidyContext {
   hubTemplates?: { project: string; topic: string; series: string };
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
+  /** I2: every note is read, for kept kit queries and your own queries that read the old to-do `day`. Missing = those rules are off. */
+  todoQueries?: boolean;
 }
 
 /** A Meta Bind button action as saved (`type` plus its own fields). */
@@ -199,6 +202,44 @@ export function replaceProperties(text: string, before: string, after: string): 
   return crlf ? out.replace(/\n/g, "\r\n") : out;
 }
 
+/* ---- To-dos on planned dates (I2) ---- */
+
+/** The kit's to-do query lines as shipped before I2, and what they read now (Weekly review Backlog; the Daily note's Planned for today). */
+export const OLD_TODO_QUERIES: [string, string][] = [
+  ['WHERE kind = "todo" AND day = "Backlog" AND !done',
+    'WHERE kind = "todo" AND !scheduled AND !contains(list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Done"), day) AND !done'],
+  ['WHERE kind = "todo" AND !done AND day != "Done" AND (day = dateformat(date(this.file.name), "ccc") OR (due AND due <= date(this.file.name)))',
+    'WHERE kind = "todo" AND !done AND day != "Done" AND ((scheduled AND scheduled <= date(this.file.name)) OR (!scheduled AND day = dateformat(date(this.file.name), "ccc")) OR (due AND due <= date(this.file.name)))'],
+];
+/** What the kit's own queries say about `day` (they stay right on dates): taken out before looking for another use of `day`. */
+const KIT_DAY_READS = [/day\s*!=\s*"Done"/g, /day\s*=\s*"Done"/g, /contains\(list\([^)]*\),\s*day\)/g, /!scheduled AND day = dateformat\(date\(this\.file\.name\),\s*"ccc"\)/g, /dur\([^)]*\)/g, /"[^"]*"/g];
+/** A query line (inside a code block) that reads the to-do property `day` in a way the kit's queries don't. */
+function readsDay(l: string): boolean {
+  const rest = KIT_DAY_READS.reduce((t, re) => t.replace(re, ""), l);
+  return /(^|[^\w.])day\b(?!\s*\()/.test(rest) && !/^\s*(\/\/|%%)/.test(l);
+}
+
+/** The properties as the to-do rules read them: true / false, a list, text; an empty value is null. */
+function fmObject(lines: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const p of props(lines)) {
+    const v = unquote(p.inline);
+    out[p.key.trim()] = p.inline.startsWith("[") || (p.inline === "" && p.end > p.start + 1) ? p.items ?? []
+      : p.inline === "" ? null : v === "true" ? true : v === "false" ? false : v;
+  }
+  return out;
+}
+/** A to-do patch on the properties lines: removed keys go, a changed key keeps its place, a new one goes before `cssclasses` (else last). */
+function patchLines(lines: string[], p: TodoPatch): string[] {
+  let fm = lines;
+  for (const k of p.remove) { const q = find(fm, k); if (q) fm = [...fm.slice(0, q.start), ...fm.slice(q.end)]; }
+  for (const [k, v] of Object.entries(p.set)) {
+    const q = find(fm, k), l = line(k, String(v)), c = find(fm, "cssclasses");
+    fm = q ? [...fm.slice(0, q.start), l, ...fm.slice(q.end)] : c ? [...fm.slice(0, c.start), l, ...fm.slice(c.start)] : [...fm, l];
+  }
+  return fm;
+}
+
 /* ---- Scan ---- */
 
 export const inFolder = (path: string, folder: string): boolean => !!folder && path.startsWith(folder.replace(/\/+$/, "") + "/");
@@ -213,10 +254,14 @@ function isHubName(path: string): boolean {
   return name === "index" || name.endsWith(" index") || (!!parent && name === parent);
 }
 
-/** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js.) */
+/** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js, and for the to-do query rules.) */
 export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
   if (!isNote(path) || hidden(path)) return false;
-  return readAll || inFolder(path, ctx.labFolder) || (!!ctx.chemicalFolder && inFolder(path, ctx.chemicalFolder)) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
+  return readAll || !!ctx.todoQueries || readForRules(path, ctx);
+}
+/** The notes the folder rules read (the button rule looks only at these, unless a view.js made the scan read every note). */
+function readForRules(path: string, ctx: TidyContext): boolean {
+  return inFolder(path, ctx.labFolder) || (!!ctx.chemicalFolder && inFolder(path, ctx.chemicalFolder)) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
     || (!!ctx.meetings && (inFolder(path, ctx.meetings.folder) || inFolder(path, ctx.meetings.todos)))
     || (!!ctx.projectsFolder && inFolder(path, ctx.projectsFolder))
     || (ctx.hubFolders ?? []).some(f => parentOf(path) === f)
@@ -451,14 +496,49 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       if (body !== undefined && !body.includes("show: todo-bar")) bar.changes.push({ path: n.path, before: body, after: `\n\n${TODO_BAR}\n${body.replace(/^\n+/, "\n")}`, body: true });
     }
     if (bar.changes.length) groups.push(bar);
+
+    // I2 planned dates: old to-do properties brought to the slim model, as the engine does for a note arriving in the to-dos folder (the same normalisePatch).
+    // Opt-in (Q9: old notes are read as they are). Worked out from each note on disk, like the freeze rule.
+    const now = parseDay(mt.today) ?? new Date();
+    const dates: TidyGroup = { id: "todo-dates", title: "To-dos: give each card a date", detail: "To-dos with the old day property get the date the board reads it as (scheduled), and lose day, planned, rolled, countdown and empty properties; an old Done card is ticked. The board looks the same afterwards. A day value Lab Kit can't read is kept. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes.filter(x => inFolder(x.path, mt.todos))) {
+      const s = split(n.text ?? "");
+      const p = s ? normalisePatch(fmObject(s.fm), now) : null;
+      if (s && p) dates.changes.push({ path: n.path, before: s.fm.join("\n"), after: patchLines(s.fm, p).join("\n") });
+    }
+    if (dates.changes.length) groups.push(dates);
+  }
+
+  // Kept copies of the kit's to-do lists (Weekly review, daily notes) whose query still reads the old `day`: the line becomes the kit's new one. Opt-in.
+  // Any other query in a note that reads `day` is only listed.
+  const ownQueries: { path: string; note?: string }[] = [];
+  if (ctx.todoQueries) {
+    const kept: TidyGroup = { id: "todo-queries", title: "To-dos: lists read the planned date", detail: "Your copies of the Weekly review and daily notes list to-dos by the old day property; their query line becomes the kit's new one, which reads scheduled (the rest of the note is kept). Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes) {
+      const text = effective.get(n.path) ?? "", s = split(text), body = s ? s.body : text.replace(/\r\n/g, "\n");
+      let fence = false, first = "";
+      const out = body.split("\n").map(l => {
+        const bare = l.replace(/^(\s*>)*\s?/, "");
+        if (/^\s*(```|~~~)/.test(bare)) { fence = !fence; return l; }
+        if (!fence) return l;
+        const swap = OLD_TODO_QUERIES.find(([old]) => bare.trim() === old);
+        if (swap) return l.slice(0, l.length - bare.length) + bare.replace(swap[0], swap[1]);
+        if (!first && readsDay(bare)) first = bare.trim();
+        return l;
+      }).join("\n");
+      if (out !== body && s) kept.changes.push({ path: n.path, before: body, after: out, body: true });   // a body change needs a properties block (as the button rule)
+      if (first) ownQueries.push({ path: n.path, note: first });
+    }
+    if (kept.changes.length) groups.push(kept);
   }
 
   // Buttons: a line that is only Meta Bind buttons becomes the plugin's button bar (the window a button opens then appears under it). Opt-in: it replaces text in many notes. Off with the planning kit.
   if (ctx.buttonFolders) {
     const bar: TidyGroup = { id: "button-bar", title: "Buttons: use the Lab Kit button bar", detail: "A line that holds only Meta Bind buttons (like `BUTTON[new-meeting, go-deck]`) becomes a button-bar block, so the window a button opens appears under it. Lines with other text, buttons Lab Kit does not know, notes in Extras and hub pages (the hub rule rewrites those) are left as they are. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
     const hubPages = new Set((groups.find(g => g.id === "hub-body")?.changes ?? []).map(c => c.path));
+    const readAll = files.some(f => /(^|\/)view\.js$/.test(f.path));
     for (const n of notes) {
-      if (inFolder(n.path, "Extras") || hubPages.has(n.path)) continue;
+      if (inFolder(n.path, "Extras") || hubPages.has(n.path) || (!readAll && !readForRules(n.path, ctx))) continue;
       const text = effective.get(n.path) ?? "", s = split(text);
       const body = s ? s.body : text.replace(/\r\n/g, "\n");
       if (!body.includes("BUTTON[")) continue;
@@ -567,10 +647,17 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     rep("knowledge-headings", "Knowledge notes with ### headings", "Section headings use ## in the kit's concept notes. Change them by hand.", heads),
     rep("knowledge-summary", "Knowledge notes without a summary", "Write one line in the summary property.", noSummary),
     rep("knowledge-sources", "Knowledge notes without sources", "Add the sources property (links or references).", noSources));
+  reported.push(rep("todo-own-queries", "Your own queries that read day", "A Dataview query in these notes reads the to-do day property. To-dos planned on the board have scheduled (a date) instead; old ones keep day until they are given a date. Change the query by hand (Lab Kit does not rewrite it).", ownQueries));
   reported.push(...settingsReported);
   if (skipped.items.length) reported.unshift(skipped);
 
   return { groups, reported: reported.filter((r): r is TidyReported => !!r) };
+}
+
+/** How many to-dos the applied changes of "To-dos: give each card a date" gave a planned date (`changed`: the notes Change notes… wrote). */
+export function datedTodos(s: TidyScan, applied: readonly TidyChange[], changed: readonly string[]): number {
+  const g = s.groups.find(x => x.id === "todo-dates");
+  return (g?.changes ?? []).filter(c => applied.includes(c) && changed.includes(c.path) && !/^scheduled:/m.test(c.before) && /^scheduled:/m.test(c.after)).length;
 }
 
 /** The changes of the rules the user left ticked: the only ones Change notes… may carry out. */

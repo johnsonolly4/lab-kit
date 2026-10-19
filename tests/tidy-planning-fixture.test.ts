@@ -56,4 +56,14 @@ describe("Tidy up notes on the old-style planning fixture", () => {
     expect(s.reported.find(r => r.id === "left-alone")?.items.map(i => i.path)).toEqual(["08 Meetings/Loose/2026-09-01 Loose.md"]);
     expect(hashes()).toEqual(before);
   });
+
+  it("I2 rules: the old-style to-dos get a date, the kept Weekly review and daily note queries the new line, own queries are listed", () => {
+    const c: TidyContext = { ...ctx, todoQueries: true };
+    const s2 = scan(walk(ROOT).map(f => relative(ROOT, f).split(sep).join("/")).map(path => ({ path, text: wantsText(path, c, false) ? readFileSync(join(ROOT, path), "utf8") : undefined })), c);
+    const p2 = (id: string) => s2.groups.find(g => g.id === id)?.changes.map(x => x.path.split("/").pop());
+    expect(p2("todo-dates")).toEqual(["Backlog with planned stamp.md", "Book room.md", "Day Done not ticked.md", "Day typo.md", "Mon planned this week.md", "Order vials.md", "Rolled to Wed.md", "Wed no planned.md"]);
+    expect(p2("todo-queries")).toEqual(["Weekly review.md", "2026-10-21.md"]);
+    expect(s2.reported.find(r => r.id === "todo-own-queries")?.items.map(i => i.path)).toEqual(["00 Planning/Own queries.md"]);
+    expect(hashes()).toEqual(before);
+  });
 });
