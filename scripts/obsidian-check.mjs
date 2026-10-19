@@ -9,6 +9,7 @@
 //   node scripts/obsidian-check.mjs open "Note.md" [--read]                            open a note (path in the vault), --read = reading view
 //   node scripts/obsidian-check.mjs modals [--close]                                   titles of open windows; --close presses Escape
 //   node scripts/obsidian-check.mjs command "lab-kit:some-id"                          run a command by id
+//   node scripts/obsidian-check.mjs type "text"                                        type into the focused field (real input events; Input.insertText)
 //   node scripts/obsidian-check.mjs text [css selector]                                visible text of the note (or selector)
 //   node scripts/obsidian-check.mjs shot out.png [css selector] [--scale 0.5]          screenshot, cropped to the selector
 //   node scripts/obsidian-check.mjs errors                                             console errors since start
@@ -247,6 +248,11 @@ async function main() {
       let last = read();
       for (let i = 0; i < 10; i++) { await new Promise(r => setTimeout(r, 400)); const now = read(); if (now === last) break; last = now; }
       return last;`));
+    case "type": {
+      const s = await connect();
+      try { await s.send("Input.insertText", { text: x }); } finally { s.close(); }
+      return print(await evaluate(`await new Promise(r => setTimeout(r, 400)); const a = document.activeElement; return { typedInto: a ? a.tagName + (a.className ? "." + String(a.className).split(" ")[0] : "") : null, value: a?.value ?? a?.innerText?.slice(0, 80) };`));
+    }
     case "shot": return shot(scale, x || "obsidian.png", y);
     case "errors": return print(await evaluate("return window.__ocheckErrors || ['(error hook not installed: start was not run)'];"));
     default: console.log(readFileSync(fileURLToPath(import.meta.url), "utf8").split("\n").filter((l) => l.startsWith("//")).join("\n"));

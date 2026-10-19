@@ -38,6 +38,7 @@ node scripts/obsidian-check.mjs stop
 - `start` runs `npm run build` (skip with `--no-build`), copies `main.js`, `manifest.json`, `styles.css` into the vault, turns community plugins on, enables Lab Kit, marks the newest changelog section as seen (no What's new window) and closes the trust prompt. Prints JSON: `plugin: true`, version, errors.
 - `command <id>`: an unknown id prints the list of `lab-kit:` command ids.
 - `modals [--close]`: titles of open windows; `--close` presses Escape until none is left.
+- `type "text"`: types into the focused field with real input events (`Input.insertText`); suggest popups and the entry window's title react to this, not to `input.value = …`. Focus the field first with `eval` (`el.focus()`).
 - `eval "<js>"` or `eval --file F.js`: run JS in the window (`app` is there; `return` a value). Long code goes in a file.
 - `text [selector]`: rendered text of the open note (reading view or live preview) or of a selector; it waits until the text stops changing.
 - `--show` on `start`: keep the window on screen (to watch it).
