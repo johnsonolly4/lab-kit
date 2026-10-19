@@ -151,7 +151,7 @@ describe("I2 Phase 4: kit queries pick what the board shows", () => {
   it("To-do board.base: only kind todo, and the kanban fallback groups by a weekday formula of scheduled", () => {
     const base = kitFile("00 Planning/To-do board.base");
     expect(base).toContain('    - kind == "todo"\n');
-    expect(base).toContain(`  weekday: 'if(scheduled, date(scheduled).format("ddd"), if(day, day, "Backlog"))'\n`);
+    expect(base).toContain(`  weekday: 'if(scheduled, date(scheduled).format("ddd"), if(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].contains(day), day, "Backlog"))'\n`);   // a typo day sits in Backlog, as on the board (seen in Obsidian 1.14.4)
     expect(base).toContain("      property: formula.weekday\n");
     expect(base).not.toMatch(/property: day$/m);
   });
