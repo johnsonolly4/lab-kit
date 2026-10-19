@@ -411,7 +411,8 @@ export class PlanningCommands {
     const f = this.folders;
     const roots = { knowledge: f.knowledge, howto: f.howtos, meetings: f.meetings };
     let sorted = 0, skipped = 0;
-    for (const file of this.inboxNotes()) {
+    const queue = this.inboxNotes();
+    for (const [i, file] of queue.entries()) {
       await this.app.workspace.getLeaf(false).openFile(file);
       const where = await pick(this.app,
         ["To-do (goes to Backlog)", "Project...", "Knowledge...", "How-to...", "Meetings...", "Archive", "Delete", "Skip for now", "Stop"],
@@ -442,6 +443,8 @@ export class PlanningCommands {
       } else if (where === "delete") {
         const sure = await pick(this.app, ["Yes, delete it", "No, keep it"], [true, false], `Delete "${file.basename}"?`, true);
         if (!sure) { skipped++; continue; }
+        // The next note opens in this leaf first: trashing the open note closes its leaf and the workspace falls back to the homepage
+        if (queue[i + 1]) await this.app.workspace.getLeaf(false).openFile(queue[i + 1]);
         await this.app.fileManager.trashFile(file);   // the trash setting the user chose (system or .trash), never a hard delete
       }
       sorted++;

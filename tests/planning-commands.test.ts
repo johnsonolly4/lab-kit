@@ -134,3 +134,23 @@ describe("New meeting series command", () => {
     expect(created[0].handoff).toMatchObject({ name: "Journal club", interval: "every 5 weeks", day: "Wed", start: "2026-10-14", deck: "", template: "" });
   });
 });
+
+describe("Sort inbox command", () => {
+  it("Delete opens the next inbox note before the trash, so the view does not fall back to the homepage", async () => {
+    const INBOX = "01 Inbox";
+    const files = ["A", "B", "C"].map((n, i) => ({ path: `${INBOX}/${n}.md`, basename: n, parent: { path: INBOX }, stat: { ctime: i, mtime: i } }));
+    const log: string[] = [];
+    const app = {
+      vault: { getFolderByPath: (p: string) => ({ path: p }), getAbstractFileByPath: () => ({}), getMarkdownFiles: () => files, createFolder: async () => undefined },
+      workspace: { getLeaf: () => ({ openFile: async (f: { basename: string }) => { log.push(`open ${f.basename}`); } }) },
+      metadataCache: { getFirstLinkpathDest: () => null },
+      fileManager: { trashFile: async (f: { basename: string }) => { log.push(`trash ${f.basename}`); } },
+    };
+    const kit = () => ({ ...kitLoad(undefined), planningFolders: { ...kitLoad(undefined).planningFolders, inbox: INBOX } });
+    const plugin = { app, addCommand: () => undefined };
+    const cmds = new PlanningCommands(plugin as never, () => null, {} as TodoEngine, kit, { openSettings: () => {}, findMoved: () => {} });
+    answers.push("delete", true, "stop");
+    await (cmds as unknown as { sortInbox(): Promise<void> }).sortInbox();
+    expect(log.slice(0, 3)).toEqual(["open A", "open B", "trash A"]);
+  });
+});
