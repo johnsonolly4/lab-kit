@@ -19,6 +19,7 @@ Listed in the Obsidian community plugin store (since 2026-10-04); every release 
 If the user asks for another task without clearing, remind them to `/clear` first, once, then do what they decide.
 
 ## Commands
+- Check (kit manifest + tests + lint in one run, failures only; `--build` adds the build): `python3 scripts/check.py` (skill `check`). Use it instead of the separate commands below.
 - Tests: `npm test` (vitest, failures only) · Lint: `npm run lint` · Build: `npm run build`
 - Run: `npm run dev` (watch build into `test-vault/.obsidian/plugins/lab-kit/`)
 - After editing anything in `kits/`: `npm run kit:manifest`
