@@ -1,6 +1,11 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+The to-do board in our own view (plan `docs/plans/board-own-view.md`, Phase 1). Built and tested; seen in a throwaway Obsidian only (cropped screenshots, light and dark), not by the user; touch drag and the phone layout come in Phase 2.
+- **Lab Kit board view** (plugin + planning kit, Review update… to get the `.base`): `To-do board.base` has a new first view, **Lab Kit board**; the built-in kanban stays as the second view, **Board**. Mon-Fri as five columns across the top, the Backlog as a tray along the bottom that scrolls sideways and folds to one bar (**Fold** / **Unfold**, kept per device). Finished cards collapse to "N done" per day. Done circle ticks, a click opens the note (Mod = new tab), drag a card between days or to and from the tray (computer only).
+- **Day header marks** (plugin): a series meeting on that date ("Group meeting · 3 flagged"), a project deadline ("Polymers: deadline") and a to-do's due date when it sits on another day or in the Backlog ("Due: Book NMR time"). The day's count turns amber from a number of open to-dos.
+- **Backlog filter** (plugin): chips All, Ready (nothing open before it in its project plan), each project, No project.
+- **Settings** (plugin): **Show weekend** (adds Sat and Sun columns, off) and **Busy day from** (6) under Planning.
 Meeting notes are records (plan `docs/plans/freeze-meeting-notes.md`; I19, I20). Built and tested; New meeting and the Meeting template could not be run (Templater is not in the throwaway Obsidian), so the rest was seen there only.
 - **Freeze a meeting note** (plugin): when New meeting makes a note of a series, the series' previous meeting note is frozen first: its Experiments, Done, Papers, Waiting and Flagged lists become plain `[[links]]` as they were at that moment, `frozen: <date>` is added to its properties, and what you wrote (To discuss, Notes from the meeting) is not touched. A frozen note is never frozen again. New command **Freeze this meeting note** for a one-off or by hand.
 - **Tidy rule "Meetings: freeze old meeting notes"** (plugin; not ticked until you tick it, each note backed up first): freezes the older notes of each series. The lists show how things are on the day you tidy.
