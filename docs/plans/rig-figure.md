@@ -50,6 +50,14 @@ Optional columns on a parts row: `Control` (what the computer sets, becomes the 
 - Files: `src/rig/parts.ts` (read the optional `Control` / `Data` columns), `src/rig/figure.ts`, `figure-svg.ts` (laptop symbol, dashed coloured lines routed along the top, labelled), the Rig template in `kits/lab/Templates/Rig template.md` (the two optional columns, commented) and `npm run kit:manifest`, tests.
 - Done when: tests for the two columns and the line routing; the example picture shows black process lines and coloured dashed control lines; the user has agreed the column names.
 
+### Feedback fixes (2026-10-19, from the user's 13 marks on the feedback page; before Phase 4; BACKLOG "Rig figure feedback page, 2026-10-19")
+Decided: marks 7-8 need no code (the figure draws the Control / Data lines the table gives). Mark 11 (the user's own tee image) and the pre-mixer box wait for the module pack (Phase 6); the tee dot stays (user, 2026-10-19).
+- **FF1 Symbols** (marks 3, 6, 10, 4). Files: `src/rig/symbols.ts`, `tests/rig-figure-svg.test.ts`. A less acute pump triangle; a syringe symbol picked by Pump detail `syringe`; coil stripes centred. Check: tests for each symbol's size and connection points, PASS.
+- **FF2 Straight lines** (marks 1, 5, 12 and screenshots b, c). Files: `symbols.ts` (flask output level with its centre), `figure-svg.ts` (`edgePoints`: vial entered straight from above, the dashed return joined to the valve, the recycle return clear of the feed line), tests. Check: one test per rig that the named line has no extra bend, PASS.
+- **FF3 Attached parts** (marks 2, 13). Files: `figure-svg.ts` / `figure.ts` (hot plate directly under its flask or column), `symbols.ts` (a Heater with detail `oven` / `jacket` drawn around the column), tests. Check: tests for both placements, PASS.
+- **FF4 Control lines** (mark 9 and screenshot a). Files: `figure-svg.ts` (`controlSvg`: one shared run under the computer where lines go the same way; the computer's label gets a fill), `figure.ts` (band height), tests. Check: tests for the shared run and the label fill, PASS.
+- Then the four made-up rigs are rendered again as a feedback page for the user (their own browser; the built-in browser cannot open `file://`).
+
 ### Phase 4: the figure window and export to files
 - Depends on: Phase 2 (Phase 3 optional before it)
 - Spike first: the largest canvas that works on desktop Obsidian (Electron) for a 10,000 px PNG, and what happens past it (tile the drawing or lower the pixel count and say so). Not verified yet; the earlier survey found no size check in `plan-slide-ui.ts`.
