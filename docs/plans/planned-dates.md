@@ -245,3 +245,15 @@ Test of the kept queries after a week of I2 use (Wed: drag Backlog card to Fri, 
 - **No-kind note:** today's roll-over ignores it, the board draws it; under I2 the board carries it to today. Harmless but a change.
 - **An unreadable `day`** (typo `Teusday`, lower case `mon`, empty): tray before and after; the Tidy rule skips them. The kept Weekly review's Backlog list does not list them either (a baseline limit).
 - **Finished cards with no `done_on`:** today they stay in their `day` column until the roll-over clears them from the last-change time; the I2 view needs a date for them: `scheduled`, else the card is hidden (`done, no date`). One fixture card (`Done no done_on old week`) is shown on Mon in the fallback view and hidden once frozen (Q9 a vs b, Mon).
+
+### 8. Seen in a throwaway Obsidian (obsidian-check, 2026-10-19; today's code, no I2 code)
+Setup: a throwaway vault with the fixture's `vault/` folder as its notes (`--notes`), the built plugin 1.4.1 (`plugin: true`, `errors: []`). The planning kit was switched on by setting its slot in the plugin's data (no kit files installed, so the fixture's kept notes stayed as they were), the kit's own `To-do board.base` was added as `Kit board.base` (it holds the `lab-kit-board` view; the fixture's own `To-do board.base` has only the old kanban). The window's clock was set to the test days by replacing `Date` in the window; the notes' last-change time was set to Fri 16 Oct with `touch`.
+| Check | Result |
+|---|---|
+| Board on Wed 21 Oct, before any roll-over: columns, cards, done lines, markers, tray (11 cards) | **PASS**, identical to the golden `boardBeforeRoll` (the cards of each column compared as sets; the on-screen order is by priority) |
+| Same on Sat 24 Oct and Mon 26 Oct (fixture files put back each time) | **PASS** both |
+| "Roll over to-dos now" on Wed, then the board | **PASS**: board equals the golden `boardAfterRoll`; the 29 properties the roll-over wrote on 13 notes equal the golden `rollOver` data |
+| Today's roll-over also ran by itself once the clock moved to Sat (kanban fallback `Board` view of the old base shows Backlog 6, Mon 16, Tue 1) | seen: the old fallback groups by `day`, so everything rolled at the weekend sits under Mon (the same the I2 weekend defect changes) |
+| Kept notes (Project hub, Daily note, Weekly review, Own queries) | open without errors; Dataview is **not installed** in the throwaway vault, so the queries show as code, **not seen as results**: the query results in section 6 come from the test model, not from Obsidian |
+| Console errors after all of it | `[]` |
+Not seen: Dataview results, Obsidian Sync with two devices, a Review update… over the kept notes (they were never overwritten because no kit files were installed), phone.
