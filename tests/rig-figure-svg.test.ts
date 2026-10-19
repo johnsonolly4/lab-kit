@@ -15,6 +15,9 @@ const ends = (svg: string, attr: string): [number[], number[]] => {
   return [d[0], d[d.length - 1]];
 };
 
+/** The coordinate pairs of an SVG path of M / L commands. */
+const nums = (d: string): number[][] => [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map(m => [Number(m[1]), Number(m[2])]);
+
 describe("symbols", () => {
   it("every part kind has a symbol and an unknown kind gets the box", () => {
     for (const k of PART_KINDS) expect(symbolFor(k, "").name).not.toBe("box");
@@ -28,9 +31,33 @@ describe("symbols", () => {
     expect(symbolFor("Outlet", "Waste").name).toBe("waste");
     expect(symbolFor("Outlet", "collection vial").name).toBe("vial");
   });
+  it("a Pump with detail syringe is drawn as a syringe, any other pump as the round pump", () => {
+    expect(symbolFor("Pump", "Syringe pump").name).toBe("syringe");
+    expect(symbolFor("Pump", "HPLC").name).toBe("pump");
+    expect(symbolFor("Pump", "").name).toBe("pump");
+  });
+  it("the pump's triangle is not acute (apex 60 degrees or wider) and lies inside its circle", () => {
+    const [a, b, c] = nums(symbolFor("Pump", "").body.match(/<path d="([^"]+)"/)![1]);
+    const v1 = [a[0] - b[0], a[1] - b[1]], v2 = [c[0] - b[0], c[1] - b[1]];
+    const angle = Math.acos((v1[0] * v2[0] + v1[1] * v2[1]) / (Math.hypot(...v1) * Math.hypot(...v2))) * 180 / Math.PI;
+    expect(angle).toBeGreaterThanOrEqual(59.9);
+    for (const p of [a, b, c]) expect(Math.hypot(p[0], p[1])).toBeLessThanOrEqual(26.01);
+  });
+  it("sizes and connection points: pump 52x52, syringe 72x22 with the line in on the plunger side and out at the tip, both on the centre line", () => {
+    const pump = symbolFor("Pump", ""), syr = symbolFor("Pump", "syringe");
+    expect([pump.w, pump.h]).toEqual([52, 52]);
+    expect([syr.w, syr.h]).toEqual([72, 22]);
+    expect([syr.in, syr.out]).toEqual([{ x: -36, y: 0 }, { x: 36, y: 0 }]);
+    expect([pump.in.y, pump.out.y]).toEqual([0, 0]);
+  });
+  it("the coil's stripes are centred in the coil", () => {
+    const xs = nums(symbolFor("Reactor", "coil").body.match(/<path d="([^"]+)"/)![1]).map(p => p[0]);
+    expect(Math.min(...xs) + Math.max(...xs)).toBe(0);
+    expect(Math.max(...xs)).toBeLessThan(42);
+  });
   it("connection points lie on or inside the symbol's box and the input is left of the output", () => {
     for (const name of SYMBOL_NAMES) {
-      const s = [...PART_KINDS, ""].map(k => symbolFor(k, ["waste", "flask", "column"].includes(name) ? name : "")).find(x => x.name === name)!;
+      const s = [...PART_KINDS, ""].map(k => symbolFor(k, ["waste", "flask", "column", "syringe"].includes(name) ? name : "")).find(x => x.name === name)!;
       expect(s.in.x).toBeLessThanOrEqual(s.out.x);
       for (const p of [s.in, s.out, s.top, s.bottom]) {
         expect(Math.abs(p.x)).toBeLessThanOrEqual(s.w / 2);
@@ -44,7 +71,7 @@ describe("figureSvg", () => {
   it("wraps each symbol in a group named for its symbols.ts entry, numbered per name", () => {
     const r = draw(...tee, "X1 | Gizmo | | ");
     const groups = [...r.svg.matchAll(/<g id="sym-([a-z]+)-(\d+)" data-symbol="([a-z]+)" data-part="([^"]+)"/g)].map(m => [m[1] + "-" + m[2], m[3], m[4]]);
-    expect(groups.map(g => g.join(" ")).sort()).toEqual(["analysis-1 analysis A1", "box-1 box X1", "coil-1 coil C1", "pump-1 pump PA", "pump-2 pump PB", "tee-1 tee T1", "vial-1 vial COL"]);
+    expect(groups.map(g => g.join(" ")).sort()).toEqual(["analysis-1 analysis A1", "box-1 box X1", "coil-1 coil C1", "syringe-1 syringe PA", "syringe-2 syringe PB", "tee-1 tee T1", "vial-1 vial COL"]);
     for (const [, name] of groups) expect([...SYMBOL_NAMES, "box"]).toContain(name);
     expect(new Set(groups.map(g => g[0])).size).toBe(groups.length);
   });
