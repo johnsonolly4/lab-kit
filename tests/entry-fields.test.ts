@@ -8,8 +8,8 @@ const keys = (v: Record<string, string | number | boolean>) => visibleFields(fie
 
 describe("entry fields", () => {
   it("the to-do fields are Project, Meeting, Due and Priority, and Experiment once there is a list of lab notes", () => {
-    expect(keys({})).toEqual(["project", "meeting", "due", "priority"]);
-    expect(todoFields([], [], [{ label: "ABC0014-A", value: "ABC0014-A" }]).map(f => f.key)).toEqual(["project", "meeting", "due", "priority", "experiment"]);
+    expect(keys({})).toEqual(["project", "meeting", "due", "priority", "waiting"]);
+    expect(todoFields([], [], [{ label: "ABC0014-A", value: "ABC0014-A" }]).map(f => f.key)).toEqual(["project", "meeting", "due", "priority", "experiment", "waiting"]);
   });
   it("a field with showWhen is visible only once the field it names has a value", () => {
     const extra = [...fields, { key: "flag", name: "Flag", icon: "flag", kind: "toggle" as const, prompt: "", showWhen: "due" }];
@@ -43,7 +43,7 @@ describe("entry fields", () => {
   });
   it("a to-do's properties as values and back", () => {
     const fm = { project: "[[Alpha]]", meeting: false, due: "2026-11-15", priority: 2, experiment: "[[ABC0014-A]]" };
-    expect(todoValues(fm)).toEqual({ project: "Alpha", meeting: "", due: "2026-11-15", priority: 2, experiment: "ABC0014-A" });
+    expect(todoValues(fm)).toEqual({ project: "Alpha", meeting: "", due: "2026-11-15", priority: 2, experiment: "ABC0014-A", waiting: "" });
     const out: Record<string, unknown> = {};
     applyTodoValue(out, "project", "Beta"); applyTodoValue(out, "priority", ""); applyTodoValue(out, "due", "2026-12-01");
     expect(out).toEqual({ project: "[[Beta]]", priority: null, due: "2026-12-01" });

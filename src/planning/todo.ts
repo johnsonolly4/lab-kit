@@ -124,6 +124,9 @@ export type CountdownMode = "off" | "marked" | "all";
 /** `level`: "late" (overdue), "soon" (today to 2 days), "later". */
 export interface Countdown { text: string; level: "late" | "soon" | "later" }
 
+/** What a to-do waits on (`waiting: instrument booking`): the trimmed text, "" when the property is absent, empty or not text. */
+export const waitingOf = (fm: { waiting?: unknown }): string => (typeof fm.waiting === "string" ? fm.waiting.trim() : "");
+
 /** The marker for each priority: an up arrow, a dash, a down arrow (visual only: no "P1" text). */
 const PRIORITY_MARK = { "1": "\u2191", "2": "\u2013", "3": "\u2193" } as const;
 

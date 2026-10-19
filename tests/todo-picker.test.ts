@@ -147,7 +147,7 @@ describe("addAfterFlow", () => {
     entry.answers.push({ title: "Book pump service", values: { due: "2026-11-15", priority: 1 } });
     picked.queue.push({ typed: "book pump" });
     await addAfterFlow(env, P("A"));
-    expect(entry.calls[0]).toEqual({ heading: "New to-do", keys: ["meeting", "due", "priority"], title: "book pump" });
+    expect(entry.calls[0]).toEqual({ heading: "New to-do", keys: ["meeting", "due", "priority", "waiting"], title: "book pump" });
     const text = Object.values(created)[0];
     expect(Object.keys(created)[0]).toBe("00 Planning/To-dos/Book pump service.md");
     expect(text).toContain("due: 2026-11-15");
@@ -184,6 +184,16 @@ describe("addAfterFlow", () => {
     expect(newTodoText("Alpha", "", new Date(2026, 9, 13))).not.toContain("experiment");
     const text = newTodoText("Alpha", "", new Date(2026, 9, 13), { experiment: "ABC0014-A" });
     expect(text).toContain('experiment: "[[ABC0014-A]]"\ncssclasses:');
+  });
+  it("newTodoText writes a waiting line only when given, quoted so a colon or quote is safe", () => {
+    expect(newTodoText("Alpha", "", new Date(2026, 9, 13))).not.toContain("waiting");
+    expect(newTodoText("Alpha", "", new Date(2026, 9, 13), { waiting: "  " })).not.toContain("waiting");
+    expect(newTodoText("Alpha", "", new Date(2026, 9, 13), { waiting: 'Dr "S": samples' })).toContain('waiting: "Dr \\"S\\": samples"\ncssclasses:');
+  });
+  it("the To-do template writes the entry window's Waiting chip", () => {
+    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    expect(tpl).toContain("preset.waiting");
+    expect(tpl).toContain("waiting: ${JSON.stringify(waiting)}");
   });
   it("newTodoText writes the meeting, due date and priority it is given", () => {
     const text = newTodoText("Alpha", "[[A]]", new Date(2026, 9, 13), { due: "2026-11-15", priority: 2, meeting: "Group meeting" });
@@ -245,7 +255,7 @@ describe("addAfterFlow", () => {
     expect(text).toContain("priority: 2");
     expect(f[P("B")].after).toBe("[[Before B]]");   // B comes after the new to-do instead of A and C
     expect(history.withGroup("undo", history.peek("undo")!)).toHaveLength(2);   // the note and B: one step
-    expect(entry.calls[0].keys).toEqual(["meeting", "due", "priority"]);
+    expect(entry.calls[0].keys).toEqual(["meeting", "due", "priority", "waiting"]);
     await runHistory(env.app, history, "undo");
     expect(path in created).toBe(false);
     expect(f[P("B")].after).toEqual(["[[A]]", "[[C]]"]);

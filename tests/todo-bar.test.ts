@@ -1,23 +1,47 @@
 // The to-do chip bar: which chips show and what each one writes (src/planning/todo-bar.ts).
 import { describe, it, expect } from "vitest";
-import { todoChips, setProject, setMeeting, setDue, setPriority, setExperiment, readDueText, experimentOptions } from "../src/planning/todo-bar";
+import { todoChips, setProject, setMeeting, setDue, setPriority, setExperiment, setWaiting, applyTodoValue, todoFields, todoValues, readDueText, experimentOptions } from "../src/planning/todo-bar";
 
 const NOW = new Date(2026, 9, 7);
 const vals = (fm: Record<string, unknown>) => todoChips(fm).map(c => `${c.key}=${c.value}`);
 
 describe("todoChips", () => {
   it("a bare to-do has five empty chips", () => {
-    expect(vals({ kind: "todo", project: null, meeting: false, due: null, priority: null })).toEqual(["project=", "meeting=", "due=", "priority=", "experiment="]);
-    expect(vals({})).toEqual(["project=", "meeting=", "due=", "priority=", "experiment="]);
+    expect(vals({ kind: "todo", project: null, meeting: false, due: null, priority: null })).toEqual(["project=", "meeting=", "due=", "priority=", "experiment=", "waiting="]);
+    expect(vals({})).toEqual(["project=", "meeting=", "due=", "priority=", "experiment=", "waiting="]);
   });
   it("shows links by name, the date and the priority (no Countdown chip: that is one setting for all to-dos)", () => {
     expect(vals({ project: "[[Polymer A]]", meeting: "[[Group meeting|GM]]", due: "2026-11-15", priority: 2, countdown: true, experiment: "[[ABC0014-A]]" }))
-      .toEqual(["project=Polymer A", "meeting=Group meeting", "due=2026-11-15", "priority=2 medium", "experiment=ABC0014-A"]);
+      .toEqual(["project=Polymer A", "meeting=Group meeting", "due=2026-11-15", "priority=2 medium", "experiment=ABC0014-A", "waiting="]);
     expect(vals({ project: "[[02 Projects/Alpha/Alpha]]" })[0]).toBe("project=Alpha");
   });
   it("a priority outside 1-3, or text, counts as none", () => {
     expect(vals({ priority: 7 })[3]).toBe("priority=");
     expect(vals({ priority: "high" })[3]).toBe("priority=");
+  });
+});
+
+describe("the waiting chip", () => {
+  it("writes the text, and clearing removes the line (a new to-do has none)", () => {
+    const fm: Record<string, unknown> = { kind: "todo" };
+    applyTodoValue(fm, "waiting", "  instrument booking ");
+    expect(fm.waiting).toBe("instrument booking");
+    applyTodoValue(fm, "waiting", "");
+    expect("waiting" in fm).toBe(false);
+    setWaiting(fm, "Dr Smith");
+    setWaiting(fm, null);
+    expect("waiting" in fm).toBe(false);
+  });
+  it("shows the text on the chip, and a number or list is not a waiting text", () => {
+    expect(vals({ waiting: "samples from Leeds" })[5]).toBe("waiting=samples from Leeds");
+    expect(vals({ waiting: 3 })[5]).toBe("waiting=");
+    expect(vals({ waiting: ["a"] })[5]).toBe("waiting=");
+    expect(todoValues({ waiting: "samples" }).waiting).toBe("samples");
+  });
+  it("is a text chip after Experiment, with or without the experiment list", () => {
+    expect(todoFields([], []).map(f => f.key)).toEqual(["project", "meeting", "due", "priority", "waiting"]);
+    expect(todoFields([], [], []).map(f => f.key)).toEqual(["project", "meeting", "due", "priority", "experiment", "waiting"]);
+    expect(todoFields([], []).find(f => f.key === "waiting")).toMatchObject({ kind: "text", name: "Waiting" });
   });
 });
 

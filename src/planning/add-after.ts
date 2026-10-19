@@ -127,7 +127,7 @@ async function makeTodo(env: AddAfterEnv, answer: EntryAnswer, after: string[]):
   let name = base, n = 2;
   while (env.app.vault.getFileByPath(`${env.folder}/${name}.md`)) name = `${base} ${n++}`;
   const path = `${env.folder}/${name}.md`;
-  const text = newTodoText(env.hub.name, after.map(a => linkText(env.app, a, path)), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? ""), experiment: String(v.experiment ?? "") });
+  const text = newTodoText(env.hub.name, after.map(a => linkText(env.app, a, path)), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? ""), experiment: String(v.experiment ?? ""), waiting: String(v.waiting ?? "") });
   await env.app.vault.create(path, text);
   return { name, path, text };
 }

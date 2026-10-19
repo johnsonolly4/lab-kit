@@ -62,6 +62,7 @@ if (project && !preset) {
 // Meeting: asked only when there are several meeting series ("(none)" = not flagged; Esc cancels); with one series nothing is asked: set meeting in Properties
 const series = app.vault.getMarkdownFiles().filter(f => app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
 let meeting = preset ? (preset.meeting || "") : "";
+const waiting = preset ? String(preset.waiting || "").trim() : "";   // the entry window's Waiting chip (free text); the boxes below never ask
 const experiment = preset ? (preset.experiment || "") : "";   // the entry window's Experiment chip (a lab note's name); the boxes below never ask
 if (!preset && series.length > 1) {
   const chosen = await tp.system.suggester(["(none)", ...series], ["", ...series], false, "Raise at which meeting? (Esc to cancel)");
@@ -109,6 +110,7 @@ priority: <% priority %>
 <% after ? `after: "[[${after}]]"\n` : "" -%>
 meeting: <% meeting ? `"[[${meeting}]]"` : "false" %>
 <% experiment ? `experiment: "[[${experiment}]]"\n` : "" -%>
+<% waiting ? `waiting: ${JSON.stringify(waiting)}\n` : "" -%>
 cssclasses:
   - vt
 ---
