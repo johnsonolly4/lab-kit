@@ -16,7 +16,7 @@ ids: todo, go-todo
 > ```dataview
 > LIST WITHOUT ID file.link + choice(project, " <span class='vt-muted'>&middot; " + project + "</span>", "") + choice(due AND due <= date(this.file.name), " <span class='vt-badge vt-overdue'>due " + dateformat(due, "d MMM") + "</span>", "")
 > FROM "00 Planning/To-dos"
-> WHERE kind = "todo" AND !done AND day != "Done" AND (day = dateformat(date(this.file.name), "ccc") OR (due AND due <= date(this.file.name)))
+> WHERE kind = "todo" AND !done AND day != "Done" AND ((scheduled AND scheduled <= date(this.file.name)) OR (!scheduled AND day = dateformat(date(this.file.name), "ccc")) OR (due AND due <= date(this.file.name)))
 > SORT due ASC
 > ```
 

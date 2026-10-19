@@ -54,6 +54,6 @@ r6: false
 > > ```dataview
 > > LIST WITHOUT ID file.link + choice(due, " <span class='vt-muted'>&middot; due " + dateformat(due, "d MMM") + "</span>", "")
 > > FROM "00 Planning/To-dos"
-> > WHERE kind = "todo" AND day = "Backlog" AND !done
+> > WHERE kind = "todo" AND !scheduled AND !contains(list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Done"), day) AND !done
 > > SORT due ASC
 > > ```

@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.4.1",
-      "sha256": "c620dc7254e4dd87e1954cf06fd9bd2446c19c962e650a0b29971100058798bd",
+      "sha256": "4e9aeb08515d777f7a5683017b93d2ab0adcffc225ebc26ae1940afc0a0afbf4",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -233,7 +233,7 @@
       "role": "planning",
       "path": "To-do board.base",
       "version": "1.4.1",
-      "sha256": "ee489913a601b771bf505491f76aa6411059b91fd4c496ba33687f97ad09cb8f",
+      "sha256": "734d7a0baa6dcfa648cdc8743a32aaa8e43d5c5e7aec648053e8df9b272522d3",
       "renamedFrom": [],
       "desc": "To-do board: one column per day",
       "policy": "keep"
@@ -244,8 +244,8 @@
       "src": "00 Planning/Weekly review.md",
       "role": "planning",
       "path": "Weekly review.md",
-      "version": "1.0.0",
-      "sha256": "d8ef8ae7580764452f42fa9e179f8aac5fb145467ed18204106b3f4a8111ed20",
+      "version": "1.4.1",
+      "sha256": "408812730c423821708070a7dd26e1960b6219906fb78c98e896bfa19c6ab514",
       "renamedFrom": [],
       "desc": "Weekly review note",
       "policy": "keep"
@@ -268,8 +268,8 @@
       "src": "Extras/Templates/Daily note.md",
       "role": "templates",
       "path": "Daily note.md",
-      "version": "1.3.0",
-      "sha256": "d2f7040f0d73ea9779f3fb8c2bb60367abc838dc96247df64c3ebb2005fd6479",
+      "version": "1.4.1",
+      "sha256": "9abd9367ae07d3c614a650d661069d07a2d4791f37918af372d3798ae1b56eea",
       "renamedFrom": [],
       "desc": "Daily note (folder template for 01 Daily Notes)"
     },
