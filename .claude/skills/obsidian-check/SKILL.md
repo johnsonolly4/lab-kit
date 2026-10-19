@@ -41,6 +41,8 @@ node scripts/obsidian-check.mjs stop
 - `eval "<js>"` or `eval --file F.js`: run JS in the window (`app` is there; `return` a value). Long code goes in a file.
 - `text [selector]`: rendered text of the open note (reading view or live preview) or of a selector; it waits until the text stops changing.
 - `--show` on `start`: keep the window on screen (to watch it).
+- `--mobile` on `start`: phone emulation. Window 390 x 844 (set through `@electron/remote`), then Obsidian's internal `app.emulateMobile(true)` (it reloads the window, so it runs before the plugin loads; kept in the script, never in `src/`). Prints `isMobile: true`, body classes `emulate-mobile is-phone is-mobile` and the window size. `Platform.isDesktopApp` stays true under emulation, so the plugin's `hasNode()` (`src/platform.ts`) is false only through `isMobile`; it shows as the header saying "Data folder: desktop only".
+- Another check already on port 9333 (a second session)? `OBSIDIAN_CHECK_PORT=9334` for every command, plus its own `--dir` (also for `stop`).
 
 ## Avoid
 - Clicking with coordinates: use `command`, `eval` with `app` calls or `document.querySelector(...).click()`; check the element exists first.
@@ -51,7 +53,7 @@ node scripts/obsidian-check.mjs stop
 ## Known limits
 - The flash at `start` cannot be avoided without changing how Obsidian starts: its build turns off `--inspect` and `NODE_OPTIONS`, it re-centres off-screen windows, and a window hidden from the start leaves the reading view empty (checked 2026-10-19). A loader shim was blocked as unsafe and the user chose to accept the flash.
 - Desktop only, tested on macOS (Obsidian 1.14.4, Node 20). The Windows and Linux paths (Obsidian binary, no hide) are not tested.
-- Phone layout, real mouse drags, Templater and other community plugins (not installed in the throwaway vault), and how a look *feels* still need the user. Looks must still match `docs/design-standard.md` and the approved screenshots.
+- Phone: emulation covers layout at 390 px and the mobile code paths, not real touch, the on-screen keyboard pushing the layout, or Obsidian Sync. Real mouse drags, Templater and other community plugins (not installed in the throwaway vault), and how a look *feels* still need the user. Looks must still match `docs/design-standard.md` and the approved screenshots.
 - `app.plugins` and `@electron/remote` are Obsidian internals; if an Obsidian update breaks `start`, say so and fall back to the user.
 
 ## Pass/fail

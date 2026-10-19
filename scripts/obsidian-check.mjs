@@ -2,8 +2,9 @@
 // A separate Obsidian instance (own settings folder, own debugging port) opens a scratch vault; the user's running
 // Obsidian and its vaults are not touched. Desktop only (macOS, Windows, Linux).
 //
-//   node scripts/obsidian-check.mjs start [--dir D] [--notes FOLDER] [--no-build] [--show]
+//   node scripts/obsidian-check.mjs start [--dir D] [--notes FOLDER] [--no-build] [--show] [--mobile]
 //                                       build, make the vault, open Obsidian hidden, without taking focus (--show: on screen)
+//                                       --mobile: phone emulation (app.emulateMobile(true), window 390 x 844), before the plugin loads
 //   node scripts/obsidian-check.mjs eval "<js>" | --file F.js                          run JS in the window, print the result
 //   node scripts/obsidian-check.mjs open "Note.md" [--read]                            open a note (path in the vault), --read = reading view
 //   node scripts/obsidian-check.mjs modals [--close]                                   titles of open windows; --close presses Escape
@@ -20,7 +21,7 @@ import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const PORT = 9333;
+const PORT = Number(process.env.OBSIDIAN_CHECK_PORT || 9333); // another check already on 9333? set OBSIDIAN_CHECK_PORT=9334 (with its own --dir)
 const PLUGIN = "lab-kit";
 
 function args() {
@@ -85,9 +86,21 @@ const ERROR_HOOK = `
     window.addEventListener("unhandledrejection", (e) => push("unhandledrejection", e.reason));
   }`;
 
+// Phone emulation. emulateMobile is an Obsidian internal (the dev-console switch), so it lives only here, never in src/.
+// It reloads the window, so it runs before the plugin is enabled; the window is resized through @electron/remote
+// (a CDP device-metrics override would end with the CDP session).
+async function emulatePhone() {
+  await evaluate(`for (let i = 0; i < 60 && !(window.app && app.workspace?.layoutReady); i++) await new Promise(r => setTimeout(r, 250));
+    try { const w = require("@electron/remote").getCurrentWindow(); w.setMinimumSize(1, 1); w.setContentSize(390, 844); } catch {}
+    setTimeout(() => app.emulateMobile(true), 50);`);
+  await wait(3000); // the window reloads
+  await pageTarget(60);
+}
+
 async function start({ a, flag, opt, dir }) {
   const notes = opt("--notes", "");
   const show = flag("--show");
+  const mobile = flag("--mobile");
   if (!flag("--no-build")) execFileSync(platform() === "win32" ? "npm.cmd" : "npm", ["run", "build"], { cwd: ROOT, stdio: "ignore" });
   for (const f of ["main.js", "manifest.json", "styles.css"]) if (!existsSync(join(ROOT, f))) throw new Error(`${f} missing: run npm run build`);
   try { await fetch(`http://127.0.0.1:${PORT}/json`); throw new Error(`Port ${PORT} is in use: run stop first`); } catch (e) { if (String(e.message).startsWith("Port")) throw e; }
@@ -121,6 +134,7 @@ async function start({ a, flag, opt, dir }) {
   writeFileSync(join(dir, "pid"), String(pid));
   await pageTarget(60);
   if (!show) await hideWindow();
+  if (mobile) await emulatePhone();
   // wait for the workspace, then turn community plugins on (restricted mode off) and enable ours
   const state = await evaluate(`
     for (let i = 0; i < 60 && !(window.app && app.workspace?.layoutReady); i++) await new Promise(r => setTimeout(r, 250));
@@ -129,7 +143,8 @@ async function start({ a, flag, opt, dir }) {
     if (!app.plugins.enabledPlugins.has("${PLUGIN}")) await app.plugins.enablePluginAndSave("${PLUGIN}");
     await new Promise(r => setTimeout(r, 1000));
     const p = app.plugins.plugins["${PLUGIN}"];
-    return { vault: app.vault.getName(), plugin: !!p, version: p?.manifest.version, errors: window.__ocheckErrors };`);
+    const phone = ${mobile} ? { isMobile: app.isMobile, bodyClasses: ["emulate-mobile", "is-phone", "is-mobile"].filter(c => document.body.classList.contains(c)), window: [innerWidth, innerHeight] } : {};
+    return { vault: app.vault.getName(), plugin: !!p, version: p?.manifest.version, ...phone, errors: window.__ocheckErrors };`);
   // the trust prompt and What's new open late; close them so they do not cover notes and screenshots
   await wait(2500);
   const { closed = [] } = await modals(true);
