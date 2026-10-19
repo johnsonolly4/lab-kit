@@ -22,6 +22,7 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Check (kit manifest + tests + lint in one run, failures only; `--build` adds the build): `python3 scripts/check.py` (skill `check`). Use it instead of the separate commands below.
 - Tests: `npm test` (vitest, failures only) · Lint: `npm run lint` · Build: `npm run build`
 - Run: `npm run dev` (watch build into `test-vault/.obsidian/plugins/lab-kit/`)
+- See a change in real Obsidian without the user (throwaway vault, separate hidden Obsidian): `node scripts/obsidian-check.mjs start` … `stop` (skill `obsidian-check`)
 - After editing anything in `kits/`: `npm run kit:manifest`
 - New-vault starter (settings + plugin list, from the kits): `npm run starter` (writes `dist/starter/`)
 - Old-style notes to try Tidy up notes on: `npm run tidy-fixture` (writes `test-vault-tidy/`, gitignored; open it as its own vault)
