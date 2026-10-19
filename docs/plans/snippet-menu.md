@@ -1,6 +1,14 @@
 # Plan: a simpler Alt+S snippet menu (roadmap I23)
 
-_Written 2026-10-19 (plan step I23-PLAN, Opus, from the code; nothing built). NOT agreed: every visual or behaviour change below waits for the owner's answers in BACKLOG "Questions for the owner" (I23 a–h). Feedback page: an HTML mock-up kept outside the repo (path in the session report). Each phase = one session, Sonnet._
+_Written 2026-10-19 (plan step I23-PLAN, Opus, from the code; nothing built). AGREED 2026-10-19 by the owner (BACKLOG "Questions for the owner", I23): the menu and its search states as in `my_work/reference_visual/alts-menu-grouped.png`; (a) 1 groups as listed; (b) icons move into each snippet's `icon:` header line by a Tidy rule, changed later with **Change icon…** (right-click a snippet in the menu → the existing icon picker; a kit snippet is copied first with Make my own copy); (c) 1 group toggles hide in the menu only; (d) staged: Alt+S becomes a Lab Kit command now, Templater still runs the code snippets until Phase 6, full Templater removal decided from `docs/plans/templater-spike.md`; (e) 1 phone path without Templater, last; (f) open (Solution prep is redesigned as a live block, BACKLOG "Live solution block"); (g) 1 Recent = last 3; (h) the wording in "New strings" is kept; the old NMR / GPC / DLS files go to the trash only through a Tidy rule the owner runs. Each phase = one session, Sonnet._
+
+## Phase 1 as built (re-cut 2026-10-19, N1, after the answers)
+- **Command** `lab-kit:insert-snippet` ("Insert snippet", no default hotkey). It needs Templater for now (the code snippets and the form are Templater user scripts): the command runs the kit's `Insert snippet.md` through Templater (`templaterInsert` in `src/kit/obsidian-private.ts`, the one private call), so every snippet runs exactly as before. Without Templater: notice `Insert snippet needs Templater until snippets run in Lab Kit (Check setup says how to install it).`
+- **The menu**: `Insert snippet.md` asks the plugin for the menu (`plugin.snippets.menu(items)`) and falls back to `labPick.js` (old plugin or none). So the old Templater hotkey and the new command open the same menu.
+- **Recent**: the last 3 picks (`kit.snippetRecent`, keyed by the snippet's name), newest first, shown only while the search box is empty, pruned when a snippet is gone.
+- **Icons**: until Phase 5 the Snippet icons settings page still wins over the header (`kit.snippetIcons`, as `labPick.js` does). Change icon… comes with Phase 5.
+- **Check hotkeys / Hotkeys note**: Alt+S is suggested for `Lab Kit: Insert snippet`; a vault whose Alt+S is still on the Templater template counts as "other" (it opens the same menu), never a clash to fix.
+- Not in Phase 1 (unchanged): what any snippet inserts, the forms (`labForm.js`), the stub files `07`–`09`, the group toggles, the Snippet icons page.
 
 ## Goal
 Alt+S opens one Lab Kit menu in the entry-window look, grouped and recently-used first, whose forms look the same; every snippet is either a **method** or a **calculator**, and nothing needs Templater user scripts unless the owner wants to keep that path.
@@ -46,6 +54,8 @@ Alt+S opens one Lab Kit menu in the entry-window look, grouped and recently-used
 | Tidy group (stubs) | title `Snippets: old NMR, GPC and DLS files`, detail `The menu now lists NMR, GPC and DLS itself. These files show them a second time. Moved to Obsidian's trash (you can get them back).` |
 | Tidy group (icons) | title `Snippets: icons from settings into the notes`, detail `Icons picked under Settings → Snippet icons are written into each snippet's header (icon:). The settings page goes.` |
 | Check setup row | `Snippets without Templater` (only if I23 d = yes): on `Alt+S runs in Lab Kit; Templater is not needed for snippets.` |
+| Command notice, no Templater (Phase 1, added 2026-10-19; new text, owner to confirm) | `Insert snippet needs Templater until snippets run in Lab Kit (Check setup says how to install it).` |
+| Right-click menu item (Phase 5) | `Change icon…` |
 
 ## Phases
 
@@ -89,7 +99,8 @@ Alt+S opens one Lab Kit menu in the entry-window look, grouped and recently-used
 ### Phase 5 — Icons from headers only
 - Depends on: Phase 4. Only if the owner says the Snippet icons page goes (I23 b).
 - Files: `src/kit/ui.ts:309` (page removed), `src/kit/icon-picker-ui.ts` / `icon-list.ts` (kept only if another page uses them; search first), `kits/lab/Extras/scripts/templater/labPick.js` (stops reading `snippetIcons`; still used by the Templater-only fallback), `src/kit/tidy.ts` (icons rule: writes each saved icon into the header of the user's own copy; for an unedited kit file it writes nothing and reports it, so kit updates stay clean), `src/kit/paths.ts` (`snippetIcons` kept in data, unread, for one release), tests, docs.
-- Done when: Tidy icons rule tests (own copy, kit file, missing file, icon already set); no code reads `snippetIcons` except the Tidy rule.
+- **Change icon…** (owner, 2026-10-19): right-click a snippet in the Alt+S menu → the existing icon picker (search box + grid of Obsidian's own icons) → writes `icon:` into that snippet's header. A kit snippet is first copied with Make my own copy (the copy gets the icon, the kit file stays clean). A "Browse icons" command that copies the picked name was offered, not decided.
+- Done when: Tidy icons rule tests (own copy, kit file, missing file, icon already set); Change icon… tests (own file, kit file → copy, header with no `icon:` line); no code reads `snippetIcons` except the Tidy rule.
 
 ### Phase 6 — Alt+S without Templater (only if I23 d / e = yes)
 - Depends on: Phases 1–3.
