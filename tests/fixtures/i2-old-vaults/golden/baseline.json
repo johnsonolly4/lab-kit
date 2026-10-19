@@ -1,0 +1,2094 @@
+{
+  "vault": {
+    "wed": {
+      "today": "2026-10-21",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Mon no planned",
+              "Mon planned this week",
+              "No kind with day"
+            ],
+            "done": 2,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Plan step 2",
+              "Rolled to Tue yesterday *",
+              "Tue planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Due: Due only overdue"
+            ]
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [
+              "Rolled to Wed *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned last week",
+              "Thu planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3",
+          "Weekend Sat planned",
+          "Weekend Sun planned"
+        ]
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Mon no planned",
+              "Mon planned this week",
+              "No kind with day"
+            ],
+            "done": 2,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Plan step 2",
+              "Rolled to Tue yesterday *",
+              "Tue planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Due: Due only overdue"
+            ]
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [
+              "Rolled to Wed *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned last week",
+              "Thu planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-24": {
+            "open": [
+              "Weekend Sat planned"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-10-25": {
+            "open": [
+              "Weekend Sun planned"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3"
+        ]
+      },
+      "rollOver": {
+        "Day Done not ticked": {
+          "kind": "ticked",
+          "set": {
+            "done": true,
+            "done_on": "2026-10-16",
+            "rolled": false
+          },
+          "remove": []
+        },
+        "Done last week with done_on": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Done no done_on old week": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done",
+            "done_on": "2026-10-16"
+          },
+          "remove": []
+        },
+        "Done no done_on today column": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done",
+            "done_on": "2026-10-16"
+          },
+          "remove": []
+        },
+        "Done on a Backlog day": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Fri no planned": {
+          "kind": "planned",
+          "set": {
+            "planned": "2026-10-19"
+          },
+          "remove": []
+        },
+        "Mon no planned": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Mon planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Plan step 2": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Rolled to Tue yesterday": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Thu planned last week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Tue planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Wed no planned": {
+          "kind": "planned",
+          "set": {
+            "planned": "2026-10-19"
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "No kind with day"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": [
+              "Due: Due only overdue"
+            ]
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [
+              "Mon no planned *",
+              "Mon planned this week *",
+              "Plan step 2 *",
+              "Rolled to Tue yesterday *",
+              "Rolled to Wed *",
+              "Thu planned last week *",
+              "Tue planned this week *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned this week"
+            ],
+            "done": 0,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3",
+          "Weekend Sat planned",
+          "Weekend Sun planned"
+        ]
+      },
+      "thisWeek": [
+        "Due only overdue | overdue 20 Oct",
+        "Mon no planned | · Mon",
+        "Mon planned this week | · Mon",
+        "Plan step 2 | · Tue",
+        "Rolled to Tue yesterday | · Tue / carried over",
+        "Tue planned this week | · Tue",
+        "Rolled to Wed | today / carried over",
+        "Wed no planned | today",
+        "Wed planned today | today",
+        "Flagged for group meeting | · Thu",
+        "Thu planned last week | · Thu",
+        "Thu planned this week | · Thu",
+        "Due and Fri | · Fri",
+        "Fri no planned | · Fri",
+        "Fri planned this week | · Fri"
+      ],
+      "thisWeekAfterRoll": [
+        "Due only overdue | overdue 20 Oct",
+        "Mon no planned | today / carried over",
+        "Mon planned this week | today / carried over",
+        "Plan step 2 | today / carried over",
+        "Rolled to Tue yesterday | today / carried over",
+        "Rolled to Wed | today / carried over",
+        "Thu planned last week | today / carried over",
+        "Tue planned this week | today / carried over",
+        "Wed no planned | today",
+        "Wed planned today | today",
+        "Flagged for group meeting | · Thu",
+        "Thu planned this week | · Thu",
+        "Due and Fri | · Fri",
+        "Fri no planned | · Fri",
+        "Fri planned this week | · Fri"
+      ],
+      "projectAlpha": [
+        "Tue planned this week | · Tue",
+        "Plan step 2 | · Tue",
+        "Backlog with planned stamp | · Backlog",
+        "Plan step 3 | · Backlog"
+      ]
+    },
+    "sat": {
+      "today": "2026-10-24",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Mon no planned",
+              "Mon planned this week",
+              "No kind with day"
+            ],
+            "done": 2,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Plan step 2",
+              "Rolled to Tue yesterday *",
+              "Tue planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Due: Due only overdue"
+            ]
+          },
+          "Wed 2026-10-21": {
+            "open": [
+              "Rolled to Wed *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned last week",
+              "Thu planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3",
+          "Weekend Sat planned",
+          "Weekend Sun planned"
+        ]
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Mon no planned",
+              "Mon planned this week",
+              "No kind with day"
+            ],
+            "done": 2,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Plan step 2",
+              "Rolled to Tue yesterday *",
+              "Tue planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Due: Due only overdue"
+            ]
+          },
+          "Wed 2026-10-21": {
+            "open": [
+              "Rolled to Wed *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned last week",
+              "Thu planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-24 (today)": {
+            "open": [
+              "Weekend Sat planned"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-10-25": {
+            "open": [
+              "Weekend Sun planned"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3"
+        ]
+      },
+      "rollOver": {
+        "Day Done not ticked": {
+          "kind": "ticked",
+          "set": {
+            "done": true,
+            "done_on": "2026-10-16",
+            "rolled": false
+          },
+          "remove": []
+        },
+        "Done last week with done_on": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Done no done_on old week": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done",
+            "done_on": "2026-10-16"
+          },
+          "remove": []
+        },
+        "Done no done_on today column": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done",
+            "done_on": "2026-10-16"
+          },
+          "remove": []
+        },
+        "Done on a Backlog day": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Due and Fri": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Flagged for group meeting": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Fri no planned": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Fri planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Mon no planned": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Mon planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Plan step 2": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Rolled to Tue yesterday": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Rolled to Wed": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Thu planned last week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Thu planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Tue planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Wed no planned": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Wed planned today": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Due and Fri *",
+              "Flagged for group meeting *",
+              "Fri no planned *",
+              "Fri planned this week *",
+              "Mon no planned *",
+              "Mon planned this week *",
+              "No kind with day",
+              "Plan step 2 *",
+              "Rolled to Tue yesterday *",
+              "Rolled to Wed *",
+              "Thu planned last week *",
+              "Thu planned this week *",
+              "Tue planned this week *",
+              "Wed no planned *",
+              "Wed planned today *"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": [
+              "Due: Due only overdue"
+            ]
+          },
+          "Wed 2026-10-21": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [],
+            "done": 0,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": [
+              "Due: Due and Fri"
+            ]
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3",
+          "Weekend Sat planned",
+          "Weekend Sun planned"
+        ]
+      },
+      "thisWeek": [
+        "Due and Fri | overdue 23 Oct",
+        "Due only overdue | overdue 20 Oct",
+        "Mon no planned | · Mon",
+        "Mon planned this week | · Mon",
+        "Plan step 2 | · Tue",
+        "Rolled to Tue yesterday | · Tue / carried over",
+        "Tue planned this week | · Tue",
+        "Rolled to Wed | · Wed / carried over",
+        "Wed no planned | · Wed",
+        "Wed planned today | · Wed",
+        "Flagged for group meeting | · Thu",
+        "Thu planned last week | · Thu",
+        "Thu planned this week | · Thu",
+        "Fri no planned | · Fri",
+        "Fri planned this week | · Fri"
+      ],
+      "thisWeekAfterRoll": [
+        "Due and Fri | overdue 23 Oct / carried over",
+        "Due only overdue | overdue 20 Oct",
+        "Flagged for group meeting | · Mon / carried over",
+        "Fri no planned | · Mon / carried over",
+        "Fri planned this week | · Mon / carried over",
+        "Mon no planned | · Mon / carried over",
+        "Mon planned this week | · Mon / carried over",
+        "Plan step 2 | · Mon / carried over",
+        "Rolled to Tue yesterday | · Mon / carried over",
+        "Rolled to Wed | · Mon / carried over",
+        "Thu planned last week | · Mon / carried over",
+        "Thu planned this week | · Mon / carried over",
+        "Tue planned this week | · Mon / carried over",
+        "Wed no planned | · Mon / carried over",
+        "Wed planned today | · Mon / carried over"
+      ],
+      "projectAlpha": [
+        "Tue planned this week | · Tue",
+        "Plan step 2 | · Tue",
+        "Backlog with planned stamp | · Backlog",
+        "Plan step 3 | · Backlog"
+      ]
+    },
+    "mon": {
+      "today": "2026-10-26",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [
+              "Mon no planned",
+              "Mon planned this week",
+              "No kind with day"
+            ],
+            "done": 2,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [
+              "Plan step 2",
+              "Rolled to Tue yesterday *",
+              "Tue planned this week"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [
+              "Rolled to Wed *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned last week",
+              "Thu planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-30": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": [
+              "Alpha: deadline",
+              "Due: Due only later"
+            ]
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3",
+          "Weekend Sat planned",
+          "Weekend Sun planned"
+        ]
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [
+              "Mon no planned",
+              "Mon planned this week",
+              "No kind with day"
+            ],
+            "done": 2,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [
+              "Plan step 2",
+              "Rolled to Tue yesterday *",
+              "Tue planned this week"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [
+              "Rolled to Wed *",
+              "Wed no planned",
+              "Wed planned today"
+            ],
+            "done": 1,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [
+              "Flagged for group meeting",
+              "Thu planned last week",
+              "Thu planned this week"
+            ],
+            "done": 1,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-30": {
+            "open": [
+              "Due and Fri",
+              "Fri no planned",
+              "Fri planned this week"
+            ],
+            "done": 0,
+            "markers": [
+              "Alpha: deadline",
+              "Due: Due only later"
+            ]
+          },
+          "Sat 2026-10-31": {
+            "open": [
+              "Weekend Sat planned"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-11-01": {
+            "open": [
+              "Weekend Sun planned"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3"
+        ]
+      },
+      "rollOver": {
+        "Day Done not ticked": {
+          "kind": "ticked",
+          "set": {
+            "done": true,
+            "done_on": "2026-10-16",
+            "rolled": false
+          },
+          "remove": []
+        },
+        "Done last week with done_on": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Done no done_on old week": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done",
+            "done_on": "2026-10-16"
+          },
+          "remove": []
+        },
+        "Done no done_on today column": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done",
+            "done_on": "2026-10-16"
+          },
+          "remove": []
+        },
+        "Done on a Backlog day": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Done this week with done_on": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Due and Fri": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Flagged for group meeting": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Fri no planned": {
+          "kind": "planned",
+          "set": {
+            "planned": "2026-10-26"
+          },
+          "remove": []
+        },
+        "Fri planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Mon no planned": {
+          "kind": "planned",
+          "set": {
+            "planned": "2026-10-26"
+          },
+          "remove": []
+        },
+        "Mon planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Plan step 1": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        },
+        "Plan step 2": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Rolled to Tue yesterday": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Rolled to Wed": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Thu planned last week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Thu planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Tue planned this week": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Wed no planned": {
+          "kind": "planned",
+          "set": {
+            "planned": "2026-10-26"
+          },
+          "remove": []
+        },
+        "Wed planned today": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [
+              "Due and Fri *",
+              "Flagged for group meeting *",
+              "Fri planned this week *",
+              "Mon no planned",
+              "Mon planned this week *",
+              "No kind with day",
+              "Plan step 2 *",
+              "Rolled to Tue yesterday *",
+              "Rolled to Wed *",
+              "Thu planned last week *",
+              "Thu planned this week *",
+              "Tue planned this week *",
+              "Wed planned today *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [
+              "Wed no planned"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [],
+            "done": 0,
+            "markers": [
+              "Group meeting · 2 flagged"
+            ]
+          },
+          "Fri 2026-10-30": {
+            "open": [
+              "Fri no planned"
+            ],
+            "done": 0,
+            "markers": [
+              "Alpha: deadline",
+              "Due: Due only later"
+            ]
+          }
+        },
+        "tray": [
+          "Backlog no planned",
+          "Backlog with planned stamp",
+          "Day empty",
+          "Day lower case",
+          "Day typo",
+          "Due only later",
+          "Due only overdue",
+          "Flagged old true",
+          "Plan step 3",
+          "Weekend Sat planned",
+          "Weekend Sun planned"
+        ]
+      },
+      "thisWeek": [
+        "Due and Fri | overdue 23 Oct",
+        "Due only overdue | overdue 20 Oct",
+        "Mon no planned | today",
+        "Mon planned this week | today",
+        "Plan step 2 | · Tue",
+        "Rolled to Tue yesterday | · Tue / carried over",
+        "Tue planned this week | · Tue",
+        "Rolled to Wed | · Wed / carried over",
+        "Wed no planned | · Wed",
+        "Wed planned today | · Wed",
+        "Flagged for group meeting | · Thu",
+        "Thu planned last week | · Thu",
+        "Thu planned this week | · Thu",
+        "Fri no planned | · Fri",
+        "Fri planned this week | · Fri"
+      ],
+      "thisWeekAfterRoll": [
+        "Due and Fri | overdue 23 Oct / carried over",
+        "Due only overdue | overdue 20 Oct",
+        "Flagged for group meeting | today / carried over",
+        "Fri planned this week | today / carried over",
+        "Mon no planned | today",
+        "Mon planned this week | today / carried over",
+        "Plan step 2 | today / carried over",
+        "Rolled to Tue yesterday | today / carried over",
+        "Rolled to Wed | today / carried over",
+        "Thu planned last week | today / carried over",
+        "Thu planned this week | today / carried over",
+        "Tue planned this week | today / carried over",
+        "Wed planned today | today / carried over",
+        "Wed no planned | · Wed",
+        "Fri no planned | · Fri"
+      ],
+      "projectAlpha": [
+        "Tue planned this week | · Tue",
+        "Plan step 2 | · Tue",
+        "Backlog with planned stamp | · Backlog",
+        "Plan step 3 | · Backlog"
+      ]
+    }
+  },
+  "laptop": {
+    "wed": {
+      "today": "2026-10-21",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Sync tick samples"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Sync tick samples"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-24": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-10-25": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "rollOver": {
+        "Sync tick samples": {
+          "kind": "rolled",
+          "set": {
+            "day": "Wed",
+            "planned": "2026-10-21",
+            "rolled": true
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [
+              "Sync move report *",
+              "Sync tick samples *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "thisWeek": [
+        "Sync tick samples | · Tue",
+        "Sync move report | today / carried over",
+        "Sync agree | · Thu"
+      ],
+      "thisWeekAfterRoll": [
+        "Sync move report | today / carried over",
+        "Sync tick samples | today / carried over",
+        "Sync agree | · Thu"
+      ],
+      "projectAlpha": []
+    },
+    "sat": {
+      "today": "2026-10-24",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Sync tick samples"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-21": {
+            "open": [
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [
+              "Sync tick samples"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-21": {
+            "open": [
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-24 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-10-25": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "rollOver": {
+        "Sync agree": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync move report": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync tick samples": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Sync agree *",
+              "Sync move report *",
+              "Sync tick samples *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-21": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "thisWeek": [
+        "Sync tick samples | · Tue",
+        "Sync move report | · Wed / carried over",
+        "Sync agree | · Thu"
+      ],
+      "thisWeekAfterRoll": [
+        "Sync agree | · Mon / carried over",
+        "Sync move report | · Mon / carried over",
+        "Sync tick samples | · Mon / carried over"
+      ],
+      "projectAlpha": []
+    },
+    "mon": {
+      "today": "2026-10-26",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [
+              "Sync tick samples"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-30": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [
+              "Sync tick samples"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-30": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-31": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-11-01": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "rollOver": {
+        "Sync agree": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync move report": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync tick samples": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [
+              "Sync agree *",
+              "Sync move report *",
+              "Sync tick samples *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-30": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "thisWeek": [
+        "Sync tick samples | · Tue",
+        "Sync move report | · Wed / carried over",
+        "Sync agree | · Thu"
+      ],
+      "thisWeekAfterRoll": [
+        "Sync agree | today / carried over",
+        "Sync move report | today / carried over",
+        "Sync tick samples | today / carried over"
+      ],
+      "projectAlpha": []
+    }
+  },
+  "phone": {
+    "wed": {
+      "today": "2026-10-21",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-24": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-10-25": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "rollOver": {},
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-21 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "thisWeek": [
+        "Sync agree | · Thu",
+        "Sync move report | · Fri"
+      ],
+      "thisWeekAfterRoll": [
+        "Sync agree | · Thu",
+        "Sync move report | · Fri"
+      ],
+      "projectAlpha": []
+    },
+    "sat": {
+      "today": "2026-10-24",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-21": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-21": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-24 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-10-25": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "rollOver": {
+        "Sync agree": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync move report": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-24",
+            "rolled": true
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-19": {
+            "open": [
+              "Sync agree *",
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-20": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-21": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-22": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-23": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "thisWeek": [
+        "Sync agree | · Thu",
+        "Sync move report | · Fri"
+      ],
+      "thisWeekAfterRoll": [
+        "Sync agree | · Mon / carried over",
+        "Sync move report | · Mon / carried over"
+      ],
+      "projectAlpha": []
+    },
+    "mon": {
+      "today": "2026-10-26",
+      "boardBeforeRoll": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-30": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "boardBeforeRollWeekend": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [],
+            "done": 1,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [
+              "Sync agree"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-30": {
+            "open": [
+              "Sync move report"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Sat 2026-10-31": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Sun 2026-11-01": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "rollOver": {
+        "Sync agree": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync move report": {
+          "kind": "rolled",
+          "set": {
+            "day": "Mon",
+            "planned": "2026-10-26",
+            "rolled": true
+          },
+          "remove": []
+        },
+        "Sync tick samples": {
+          "kind": "cleared",
+          "set": {
+            "day": "Done"
+          },
+          "remove": []
+        }
+      },
+      "boardAfterRoll": {
+        "days": {
+          "Mon 2026-10-26 (today)": {
+            "open": [
+              "Sync agree *",
+              "Sync move report *"
+            ],
+            "done": 0,
+            "markers": []
+          },
+          "Tue 2026-10-27": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Wed 2026-10-28": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Thu 2026-10-29": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          },
+          "Fri 2026-10-30": {
+            "open": [],
+            "done": 0,
+            "markers": []
+          }
+        },
+        "tray": []
+      },
+      "thisWeek": [
+        "Sync agree | · Thu",
+        "Sync move report | · Fri"
+      ],
+      "thisWeekAfterRoll": [
+        "Sync agree | today / carried over",
+        "Sync move report | today / carried over"
+      ],
+      "projectAlpha": []
+    }
+  }
+}

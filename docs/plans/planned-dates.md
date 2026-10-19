@@ -135,3 +135,126 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 
 ## Verification
 Known answers in tests (Wed 21 Oct 2026 as today): a drop on Mon = 2026-10-26 (this Monday is refused); `next tue` = 2026-10-27; old `day: Thu` + `planned: 2026-10-14` = 2026-10-15. The Sync rules are tested as patch tables (a consistent change → no write; two `now`s → the same `day`). Real two-device Sync is the owner's (not checkable by Claude).
+
+## Existing vaults (I2-TEST, 2026-10-19: measured before any I2 code exists)
+Questions answered: Q9 (does the Tidy rule default on?), Q10 (keep `day` as a mirror?). Nothing here is `src/` code: the I2 rules of this plan (the "Where a card shows" table, the Tidy rule, the roll-over, the mirror repair) are written once as a test helper (`tests/helpers/i2-model.ts`) and run on old-style notes.
+- **Fixture** `tests/fixtures/i2-old-vaults/`: 35 old-style to-dos covering every state, two device copies of three notes, and the kept kit notes (Project hub, Daily note, Weekly review, `To-do board.base`) plus `Own queries.md` (a member's own Dataview on `day`).
+- **Baseline** `tests/i2-baseline.test.ts` + `golden/baseline.json`: today's board, roll-over and lists on three days: Wed 21 Oct, Sat 24 Oct, Mon 26 Oct. The model's `placeNow` is checked against the real `buildBoard` on the same data.
+- **Findings** `tests/i2-migration.test.ts` + `golden/findings.json` (`I2_PRINT=1 npx vitest run tests/i2-migration.test.ts` prints all rows).
+- The old notes' last change is taken as Fri 16 Oct (matters only for finished cards with no `done_on`). `phone` = a device that never rolls over; `computer` = the board after that day's roll-over ran (old code for the baseline, the I2 roll-over for the new view).
+
+### 1. Which cards change column (I2 view with no migration vs today's board; Q9 a)
+Cards counted when the column (or the tray / "N done" line / hidden) differs. "Wed phone" = today's board with no roll-over vs I2.
+
+| Case | Cards | Wed phone | Wed computer | Sat phone | Sat computer | Mon phone | Mon computer |
+|---|---|---|---|---|---|---|---|
+| Backlog | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| due only (Backlog) | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Mon-Fri, with planned | 7 | 3 | 0 | 6 | **7** | 6 | 0 |
+| Mon-Fri, no planned | 3 | 1 | 0 | 2 | **3** | 0 | 0 |
+| rolled | 2 | 1 | 0 | 2 | **2** | 2 | 0 |
+| subtask with after | 3 | 1 | 0 | 1 | **1** | 2 | 0 |
+| meeting-flagged | 3 | 0 | 0 | 1 | **1** | 1 | 0 |
+| done, with done_on | 3 | 1 | 0 | 1 | 0 | 2 | 0 |
+| done, no done_on | 2 | 0 | 0 | 0 | 0 | 1 | 0 |
+| day Done, ticked | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| day Done, not ticked | 1 | 0 | 0 | 0 | 0 | 0 | 0 |
+| day typo / empty / lower case | 3 | 0 | 0 | 0 | 0 | 0 | 0 |
+| weekend planned (Sat, Sun) | 2 | 0 | 0 | 0 | 0 | 0 | 0 |
+| no kind | 1 | 1 | 1 | 0 | 0 | 0 | 0 |
+| **Total** | **35** | **8** | **1** | **13** | **14** | **14** | **0** |
+
+What the changes are:
+- **Wed phone 8:** 7 open cards planned for a day before Wed (Mon, Tue, the Thu of last week, the rolled Tue card, the no-kind note) move from their own past column to **Wed, amber (carried over)**, which is what a computer's roll-over does today; 1 finished card from last week (Thu 15 Oct) leaves the board (Q2 a). A phone that never rolls over now shows the same as a computer.
+- **Mon phone 14:** 11 open cards of last week move from this Monday's past columns to **Mon, amber**, and 3 finished cards of last week leave. This is the effect the plan wants: today a Monday-morning phone shows last week's cards in this week's columns.
+- **Wed computer 1:** the only change after the roll-over has run is the **no-kind note** (`kind` missing): today's roll-over never touches it, so it stays in Mon; the I2 board reads its `day` and carries it to Wed. Nothing else moves for a computer that rolls over daily.
+- **Sat computer 14: a defect in this plan (section 7, weekend roll-over).**
+- Backlog, due-only, `Done`, typo and weekend cards never move. Typo / empty / lower-case `day` cards (3) stay in the tray as today and get no date from the Tidy rule (it only reads Mon to Fri, case exact).
+
+### 2. Q9: Tidy rule off (a) or on (b), the same cards viewed after the rule ran on Wed
+| View day | Cards that differ between a and b |
+|---|---|
+| Wed (the run day) | 0 |
+| Sat | 0 |
+| Mon 26 Oct | 4: the 3 open weekday cards with no `planned` (`Mon no planned`, `Wed no planned`, `Fri no planned`) and 1 finished card with no `done_on` (`Done no done_on old week`) |
+
+- With the rule **off** and no computer rolling over, a card with no `planned` floats: the fallback reads it as "this week's Monday", so it never becomes late. With the rule **on** (or any computer's roll-over, which writes `scheduled` for such cards: the "dated" kind) its date is fixed to the Monday of the day it was migrated, so on the next Monday it is carried over, exactly as today's roll-over does after it stamps `planned`.
+- So **a vault with one computer that rolls over has no real difference between a and b** after the first roll-over; the default only matters for phone-only vaults and for the first minutes before the roll-over (`START_DELAY` 90 s).
+- Both leave `planned` in place; both draw the same on the day they run.
+
+### 3. Which cards could flip done / not done
+- **1 card:** `Day Done, not ticked` (a finished card from before the tick box: `day: Done`, `done: false`). Today it counts as finished everywhere (`isFinished`, `isOpenTodo`). A reader that stops reading `day` (Q10 b) sees it **open**. Under Q10 a nothing changes; the roll-over's "ticked" kind still ticks it on a computer.
+- No card flips because of the migration itself (the Tidy rule writes only `scheduled`).
+- Untick of a card on `day: Done` (the re-tick fix): unchanged in the plan; kept.
+
+### 4. Two devices: copies of one note
+| Note | Laptop copy | Phone copy | Migrated date, laptop / phone | Drawn by I2 (laptop / phone) |
+|---|---|---|---|---|
+| `Sync move report` | `day: Wed`, rolled (the roll-over moved it from Mon) | `day: Fri`, dragged on the phone | **2026-10-21 / 2026-10-23: they disagree** | Wed / Fri |
+| `Sync tick samples` | open | ticked (`done_on` 21 Oct) | 2026-10-20 / 2026-10-20 (agree) | carried to Wed / `1 done` on Wed: **they disagree on done** |
+| `Sync agree` | `day: Thu` | `day: Thu` | 2026-10-22 / 2026-10-22 | Thu / Thu |
+
+- 2 of 3 pairs differ. The differences are not caused by I2: the two devices already disagree on the old data (today's baseline draws the first pair as Wed (amber) vs Fri). The migration copies each device's own disagreement into a new key.
+- **If the Tidy rule runs on both devices before the sync is through,** both write a `scheduled:` line at the same place in the front matter with a different value. How Obsidian Sync merges that was **not tested** (Sync needs two real devices).
+
+### 5. What a device still on the old plugin writes next (on notes migrated on Wed)
+Old plugin = 1.4.x (`changePatch`, `rollOverPatch` as in `src/planning/todo.ts`), which knows nothing of `scheduled`.
+| Old-plugin action | Cards it writes on | I2 draws it wrong (reads `scheduled` first) before the mirror repair | Wrong after the repair (Sync rule 3, simulated) |
+|---|---|---|---|
+| Drag to Fri (writes `day`, `planned`) | 22 | 11 (the card keeps its old date column) | 0 |
+| Drag to Backlog (writes `day: Backlog`, `planned`) | 19 | 14 (the card keeps its date column, `day` says Backlog) | 0 |
+| Roll-over (writes `day`, `planned`, `rolled`) | 8 | 0 | 0 |
+| Tick (writes `done`, `done_on`, `rolled`) | all open | not an issue: `scheduled` is kept and done is the truth | n/a |
+- The repair is only as good as a **new-plugin computer being open** after the old device's write. Until then, the phone / board on a new-plugin device shows the stale date.
+- **Forward-dated cards: a card the I2 board puts in NEXT week meets an old-plugin computer's roll-over.** Old code knows only `day` and `planned` (the new plugin does not write `planned`, and an old note's `planned` is before today). Measured on Wed 21 Oct, `day` mirrored, `scheduled` next week:
+  - Mon 26 Oct and Tue 27 Oct cards: the old roll-over **moves them to Wed (today)** and writes `rolled: true`; the repair then rewrites `scheduled` to today. The planned future date is lost.
+  - Wed, Thu, Fri 28-30 Oct cards: the old roll-over leaves them, and the old board draws them in **this** week's column.
+  - So while one device runs 1.4.x, every forward-dated card is exposed. Q10 b (no `day` written) does not help: the old plugin keeps the card's old `day`.
+  - **Measured protection:** if a drag also writes `planned` = the card's `scheduled` date (the key an older plugin reads), the old roll-over **leaves all five** next-week cards alone (Mon to Fri 26-30 Oct). An old plugin's own drag sets `planned` to today, and its `cardDate` then reads the first such weekday on or after today, which is the right date for anything within the next 7 days. Not covered: a card dated more than a week ahead, which an old board draws at the nearest such weekday. Cost: `planned` stays a key to write (it is a compatibility copy of `scheduled`; the plan's "no longer written" changes). Question Q16.
+
+### 6. Readers of `day`, and what each shows if `day` is kept as a mirror (Q10 a) or dropped (Q10 b)
+Mirror = `day` is the weekday name of `scheduled` (as in this plan); dropped = I2 writes only `scheduled`, an old `day` is left where it is, a new card has none.
+
+| # | Reader | Mirror kept (Q10 a) | Dropped (Q10 b) |
+|---|---|---|---|
+| 1 | `todo.ts` `snapOf`, `changePatch`, `rollOverPatch`, `cardDate` (the roll-over and the old drag rule) | read `scheduled` first; `day` repair | switch to `scheduled`; same change as the rest of the code |
+| 2 | `board-card.ts` `cardOf`, `buildBoard`, tray, `deadlineMarkers` (`c.day !== day`), `meetingMarkers` (`day !== "Done"`) | switched to the date (same change as 1) | same |
+| 3 | `board-view.ts:159` drop writes `day` | writes `scheduled` + `day` in one call | writes `scheduled` only |
+| 4 | `lists.ts` `isOpenTodo`, `thisWeek` (`DAYS.includes(day)`, badge `· Mon`), `openProjectTodos`, `projectTodos`, `waitingOn`, `projectCards` badges | switch to the date (Home "This week", project tiles) | same change; old `Done` cards need `done` |
+| 5 | `actions.ts` `isFinished` (`day === "Done"`), new to-do `day: Backlog`; `plan.ts` (plan rows done), `todo-picker.ts`, `plan-map.ts:233` untick, `after-write.ts` (undo snapshot) | `Done` stays a value of `day` | `day: Done` no longer written: the one card `Day Done, not ticked` is open (section 3); undo snapshot must hold `scheduled` |
+| 6 | `kit/tidy.ts` `todo-properties` (adds `day: Backlog`) | unchanged | must add `scheduled` instead (no value = Backlog) |
+| 7 | Kit To-do template (`:12-17` reads `day`, `:55` `day != "Done"`, `:102` writes `day`) | works; also write `scheduled` (needs Review update…) | template must change; kept copies of the template in vaults still write `day` |
+| 8 | `To-do board.base` filter `day != "Done"` and the built-in kanban `groupBy day` | works | the kanban groups nothing (no `day` on new cards); the filter keeps hiding only old `Done` cards |
+| 9 | Kept Weekly review (`day = "Backlog"`), Daily note (`day = ccc(date)`), One-off meeting (`day != "Done"`), Project hub (`day = "Done"`), never overwritten in existing vaults | right for every card dragged with I2 (0 wrong in the test below); old limit stays (a weekday name cannot tell this Monday from next) | wrong, see below |
+| 10 | `vault-theme.css` (kanban columns, amber `vt-rolled`) | works | the kanban columns are empty |
+| 11 | A member's own Dataview on `day` (`Own queries.md`: group by day, `day = "Fri"`, TASK where `day = "Mon"`) | same as today | stale / missing, see below |
+| 12 | Docs (Vault spec, How my vault works) | `day` column reads "the weekday of scheduled" | rewrite |
+
+Test of the kept queries after a week of I2 use (Wed: drag Backlog card to Fri, drag a card to next Monday, drag a card to Backlog, tick a card, make 2 new cards; only the 6 touched cards are judged against the date):
+| Query | Mirror kept | `day` dropped |
+|---|---|---|
+| Weekly review: Backlog list | 0 wrong | **2 wrong**: the card dragged out of Backlog stays listed; the card dragged to Backlog is missing |
+| Daily note: Planned for today | 0 wrong | **2 wrong**: the card moved to Backlog stays listed; the new card for today is missing |
+| Project hub: Done to-dos | 0 | 0 (it also reads `done`) |
+| Own query 1: open, grouped by day | 0 | **4 wrong** |
+| Own query 2: open on Fri | 0 | **1 wrong** (the card dragged to Fri is missing) |
+| Own query 3: TASK where `day = "Mon"` | 0 | 0 |
+
+### 7. Other findings
+- **Weekend roll-over defect (found by the simulation, not yet in the plan):** on Sat or Sun the roll-over writes `scheduled: today` (a Saturday) and `day: Mon`. With Show weekend off the plan's table sends "open, `scheduled` on Sat / Sun" to the tray with a pill. So after a computer rolls on a Saturday, 14 of 35 cards leave the Mon column for the tray, while a phone that never rolled shows the same cards in Mon (carried over). Today they stay in Mon. Fix options: the roll-over writes the next Monday at the weekend; or the table treats a `rolled` card dated at the weekend as carried over; or keep it, and the tray holds them (a look change: ask).
+- **Show weekend on:** `day: Sat` / `Sun` cards (2) have no weekday in `DAYS`, so the Tidy rule gives them no date; with the weekend shown they fall from their Sat / Sun column to the tray (today they are in the column). With the weekend off nothing changes (tray both ways). A Sat/Sun `day` needs a date from the rule (Saturday after `planned`).
+- **No-kind note:** today's roll-over ignores it, the board draws it; under I2 the board carries it to today. Harmless but a change.
+- **An unreadable `day`** (typo `Teusday`, lower case `mon`, empty): tray before and after; the Tidy rule skips them. The kept Weekly review's Backlog list does not list them either (a baseline limit).
+- **Finished cards with no `done_on`:** today they stay in their `day` column until the roll-over clears them from the last-change time; the I2 view needs a date for them: `scheduled`, else the card is hidden (`done, no date`). One fixture card (`Done no done_on old week`) is shown on Mon in the fallback view and hidden once frozen (Q9 a vs b, Mon).
+
+### 8. Seen in a throwaway Obsidian (obsidian-check, 2026-10-19; today's code, no I2 code)
+Setup: a throwaway vault with the fixture's `vault/` folder as its notes (`--notes`), the built plugin 1.4.1 (`plugin: true`, `errors: []`). The planning kit was switched on by setting its slot in the plugin's data (no kit files installed, so the fixture's kept notes stayed as they were), the kit's own `To-do board.base` was added as `Kit board.base` (it holds the `lab-kit-board` view; the fixture's own `To-do board.base` has only the old kanban). The window's clock was set to the test days by replacing `Date` in the window; the notes' last-change time was set to Fri 16 Oct with `touch`.
+| Check | Result |
+|---|---|
+| Board on Wed 21 Oct, before any roll-over: columns, cards, done lines, markers, tray (11 cards) | **PASS**, identical to the golden `boardBeforeRoll` (the cards of each column compared as sets; the on-screen order is by priority) |
+| Same on Sat 24 Oct and Mon 26 Oct (fixture files put back each time) | **PASS** both |
+| "Roll over to-dos now" on Wed, then the board | **PASS**: board equals the golden `boardAfterRoll`; the 29 properties the roll-over wrote on 13 notes equal the golden `rollOver` data |
+| Today's roll-over also ran by itself once the clock moved to Sat (kanban fallback `Board` view of the old base shows Backlog 6, Mon 16, Tue 1) | seen: the old fallback groups by `day`, so everything rolled at the weekend sits under Mon (the same the I2 weekend defect changes) |
+| Kept notes (Project hub, Daily note, Weekly review, Own queries) | open without errors; Dataview is **not installed** in the throwaway vault, so the queries show as code, **not seen as results**: the query results in section 6 come from the test model, not from Obsidian |
+| Console errors after all of it | `[]` |
+Not seen: Dataview results, Obsidian Sync with two devices, a Review update… over the kept notes (they were never overwritten because no kit files were installed), phone.
