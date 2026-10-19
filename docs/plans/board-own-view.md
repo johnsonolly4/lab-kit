@@ -60,3 +60,25 @@ minAppVersion: the view API needs 1.10.0; `groupOrder` needs 1.14.3. The plugin'
 | Re-tag after every redraw | `onDataUpdated()` is the redraw: we draw tags as we draw cards | the MutationObserver, `cardFile()` title fallback and `tag()` go away (`engine.ts:113-117`, `:180-230`) |
 
 Check (1): table written. PASS.
+
+## 3. Prototype (throwaway, not merged)
+
+Branch `i8-board-proto` in this worktree, commits `7e41073` (view) and `5663a03` (render stats for the measurement). Not merged, not pushed.
+What it is: `src/planning/board-view.ts` (~95 lines) registers view type `lab-kit-board`; columns Backlog … Fri; card = done circle, title, priority / project tag, countdown, waiting grey, carried-over edge; HTML5 drag; click opens the note. It reuses `cardTag`, `dueCountdown`, `waitingOf`, `todayColumn` from `src/planning/todo.ts` unchanged. A bare `TodoEngine` is started in `main.ts` because the throwaway vault has no planning kit.
+
+Run with obsidian-check (Obsidian 1.14.4, macOS, 2026-10-19) on a seeded vault: 50 to-dos in `00 Planning/To-dos` (Wed left empty), a `.base` with the board's filters, `groupBy: day`, `groupOrder`, sort. Check script: `i8-drop-check.js` in the side-session notes folder.
+
+| Check | Result |
+|---|---|
+| View loads from the `.base` (`type: lab-kit-board`) | PASS: 50 cards, 6 columns, `errors: []` |
+| Card pieces | PASS: 25 tags, 9 countdowns, 6 waiting grey, 5 carried over, 5 done (matches the seed) |
+| `groupedData` order follows `groupOrder` | PASS: Backlog, Mon, Tue, Thu, Fri |
+| `groupedData` has a group for an empty `groupOrder` value | FAIL (as the API reads): no Wed group; the view adds empty columns from its own list |
+| Render time, 50 cards, `onDataUpdated` | median 2 ms, max 3 ms (20 redraws) |
+| Drop Task 01 (Mon) on Wed writes `day` | PASS: `day: Mon` → `Wed`, card in Wed column 192 ms after the drop (incl. Bases' own refresh) |
+| Engine stamps follow the drop | PASS: `planned: 2026-10-12` → `2026-10-19` (today), by `changePatch` as for a kanban drag |
+| Done circle ticks | PASS: Task 02 `done: true`, `done_on: 2026-10-19` stamped |
+| Today's column blue without `body[data-vt-today]` | PASS (Mon, screenshot) |
+| Screenshot | `i8-board-proto.png` in the side-session notes folder (cropped `.lk-board`, 0.5 scale; not committed: kept out of the public repo's history) |
+
+Not checked: a real mouse drag (the drop was synthetic `DragEvent`s), touch / phone, the toolbar's own Group by changed by a user, light theme, the user's eyes on the look.
