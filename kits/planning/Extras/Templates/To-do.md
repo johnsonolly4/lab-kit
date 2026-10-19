@@ -19,8 +19,7 @@ const oldDay = ((raw.match(/^day:\s*["']?([^"'\r\n]+)/m) || [])[1] || "").trim()
 let at = null;
 if (setDate) { const [y, m, d] = setDate.split("-").map(Number), x = new Date(y, m - 1, d); if (iso(x) === setDate) { at = x; } }
 else if (days.includes(oldDay)) { at = new Date(today.getFullYear(), today.getMonth(), today.getDate() + (days.indexOf(oldDay) - wd(today) + 7) % 7); }
-const scheduled = at ? iso(at) : "";
-const column = at ? days[wd(at)] : undefined;   // names the column in the entry window's title
+let scheduled = at ? iso(at) : "";
 // Esc: a note the board just made with nothing in it but its day and empty properties (the board's New writes `done:`) goes to the trash, so no empty note is left (a note with any text is never touched)
 const trashIfBlank = async () => {
   const f = tp.config.target_file;
@@ -30,10 +29,11 @@ const trashIfBlank = async () => {
 let preset = window.vtTodo;
 delete window.vtTodo;
 if (!preset && typeof window.vtEntryTodo === "function") {
-  preset = await window.vtEntryTodo(column);
+  preset = await window.vtEntryTodo(scheduled || undefined);   // the window opens its Day chip with the column's date (today or later) and names its weekday
   if (!preset) { await trashIfBlank(); throw new Error("Cancelled - no to-do"); }
 }
 // Text box: same look as the project picker (Extras/scripts/templater/vault/vtAsk.js)
+if (preset && typeof preset.scheduled === "string") { scheduled = /^\d{4}-\d{2}-\d{2}$/.test(preset.scheduled) ? preset.scheduled : ""; }   // the window's Day chip decides (empty = Backlog); an older plugin sends none and the column stays
 const asked = preset ? preset.text : await tp.user.vtAsk(tp, "To-do? (Esc to cancel, Enter on empty = Untitled)");
 if (asked === null) { await trashIfBlank(); throw new Error("Cancelled - no to-do"); }
 const text = (asked || "Untitled to-do").trim();
@@ -97,7 +97,7 @@ try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") {
 const pr = preset ? preset.priority : await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
 if (pr === null || pr === undefined) { await trashIfBlank(); throw new Error("Cancelled - no priority choice"); }
 const priority = pr;
-// `scheduled` (read at the top) keeps the board column the card was made in; anything else (the New to-do command, project cards) starts in the Backlog.
+// `scheduled` (read at the top) keeps the board column the card was made in, or the Day chip's date; anything else (the New to-do command, project cards) starts in the Backlog.
 const base = text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80);
 // The plugin's New to-do makes the note under this name already (todoFileName in src/planning/quick-todo.ts): then nothing is renamed, which would ask "Update links" with Automatically update internal links off
 const here = tp.config.target_file.path;

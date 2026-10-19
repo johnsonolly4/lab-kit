@@ -116,7 +116,7 @@ async function createAfter(env: AddAfterEnv, from: string, fromName: string, typ
 /** The chips of the window: a to-do's, without Project (this map's project is the project). */
 function entryFields(env: AddAfterEnv): ReturnType<typeof todoFields> {
   const series = env.app.vault.getMarkdownFiles().filter(f => env.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
-  return todoFields([], series, env.experiments).filter(f => f.key !== "project");
+  return todoFields([], series, env.experiments).filter(f => f.key !== "project" && f.key !== "scheduled");
 }
 
 /** Makes the note of a new to-do in this map's project from the window's answer: its file name (a number added when taken) and text, coming after the to-dos `after` (paths). Null when the title is empty. */

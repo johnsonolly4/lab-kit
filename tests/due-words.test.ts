@@ -71,7 +71,8 @@ describe("To-do template", () => {
   const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
   it("asks nothing when the plugin's entry window handed the values over (window.vtTodo), and writes the chip bar block", () => {
     expect(tpl).toContain("let preset = window.vtTodo;");
-    expect(tpl).toContain("window.vtEntryTodo(column)");
+    expect(tpl).toContain("window.vtEntryTodo(scheduled || undefined)")
+    expect(tpl).toContain("preset.scheduled");
     expect(tpl).not.toContain("tp.file.cursor");   // Templater leaves it as visible text in a note that is not opened
     expect(tpl).toContain("preset ? preset.text : await tp.user.vtAsk");
     expect(tpl).toContain("if (!project && !preset) {");

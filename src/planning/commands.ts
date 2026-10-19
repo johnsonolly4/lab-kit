@@ -23,7 +23,8 @@ import { addResult } from "./result";
 import { previousMeeting } from "./freeze";
 import { freezeFile, recOf } from "./freeze-note";
 import { linkInOrder } from "./sequence";
-import { dayOf, parseDay, ymd } from "./todo";
+import { dayOf, parseDay, weekdayOf, ymd } from "./todo";
+import { startDate } from "./todo-note";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -38,7 +39,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string; scheduled?: string }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -101,15 +102,18 @@ export class PlanningCommands {
     new Notice(`${name} failed. See the developer console for details.`);
   }
 
-  /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): what the To-do template reads as `window.vtTodo`, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in) is named in the heading. */
+  /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): what the To-do template reads as `window.vtTodo`, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in: its date `YYYY-MM-DD`, or an old weekday name) opens the Day chip with that date when it is today or later, and its weekday is named in the heading. */
   private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<Handoff["vtTodo"] | null> {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => ({ name: f.basename, fm: (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) }));
     const inside = project ?? this.hubOfActiveNote();
-    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
+    const column = day ? startDate(day, new Date()) : "";   // the column's date (a weekday name from an older template: its next such day)
+    const past = !!column && column < ymd(new Date());
+    const heading = column ? `New to-do \u00b7 ${weekdayOf(parseDay(column)!)}` : "New to-do";
+    const answer = await openEntry(this.app, heading, todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...(column && !past ? { scheduled: column } : {}), ...initial.values } });
     if (!answer) return null;
     const v = answer.values;
-    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", experiment: String(v.experiment ?? ""), waiting: String(v.waiting ?? "") };
+    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", experiment: String(v.experiment ?? ""), waiting: String(v.waiting ?? ""), scheduled: String(v.scheduled ?? "") };
   }
 
   /** The lab notes as the Experiment chip's list; none (no chip) when the lab folder is not set. */

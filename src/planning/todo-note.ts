@@ -6,7 +6,7 @@ import { todoFileName } from "./quick-todo";
 import { dateOf, ymd } from "./todo";
 
 /** What the entry window hands over (`window.vtTodo` in commands.ts). */
-export interface TodoAnswer { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string }
+export interface TodoAnswer { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string; scheduled?: string }
 
 /** The note, line for line as To-do.md writes it (I2 slim model: only set values). `waiting` arrives as `waiting_json` because the engine has no JSON-escape token; an optional line is a `{{#if}}` block alone on its line, which takes its line break with it. */
 export const TODO_TEMPLATE = `---
@@ -68,7 +68,7 @@ export function startDate(day: string | undefined, today: Date): string {
 export function todoNoteText(a: TodoAnswer, day: string | undefined, today: Date, after = ""): string {
   const waiting = String(a.waiting ?? "").trim();
   return fillTemplate(TODO_TEMPLATE, {
-    scheduled: startDate(day, today),
+    scheduled: startDate(a.scheduled ?? day, today),   // the entry window's Day chip, else the board column
     project: a.project || "",
     due: a.due || "",
     priority: String(a.priority),

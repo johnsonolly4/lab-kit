@@ -53,6 +53,12 @@ describe("todo-note: same text as To-do.md", () => {
     for (const v of ["Done", "Backlog", "Teusday", "2026-02-30", ""]) assert.equal(todoNoteText(base, v, TODAY), expected({}), v);
     assert.equal(todoNoteText(base, " Fri ", TODAY), expected({ scheduled: "2026-10-23" }));
   });
+  it("the entry window's Day chip decides over the column (I2 Phase 5): a date is written, an empty chip is the Backlog, no chip keeps the column", () => {
+    assert.equal(todoNoteText({ ...base, scheduled: "2026-10-27" }, undefined, TODAY), expected({ scheduled: "2026-10-27" }));
+    assert.equal(todoNoteText({ ...base, scheduled: "2026-10-27" }, "Wed", TODAY), expected({ scheduled: "2026-10-27" }));
+    assert.equal(todoNoteText({ ...base, scheduled: "" }, "2026-10-22", TODAY), expected({}));
+    assert.equal(todoNoteText(base, "2026-10-22", TODAY), expected({ scheduled: "2026-10-22" }));
+  });
   it("everything set", () => {
     const a: TodoAnswer = { text: "x", project: "Alpha", meeting: "Group meeting", due: "2026-11-01", priority: 1, experiment: "ABC0014", waiting: "reply" };
     assert.equal(todoNoteText(a, "Mon", TODAY, "Other"), expected({ scheduled: "2026-10-19", project: "Alpha", due: "2026-11-01", priority: 1, after: "Other", meeting: "Group meeting", experiment: "ABC0014", waiting: '"reply"' }));
@@ -65,10 +71,10 @@ describe("todo-note: same text as To-do.md", () => {
 describe("todo-note: the template's own date lines give startDate's date", () => {
   afterEach(() => { vi.useRealTimers(); });
   const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
-  const from = tpl.indexOf("const days = "), to = tpl.indexOf("const column = ");
+  const from = tpl.indexOf("const days = "), to = tpl.indexOf("let scheduled = ");
   const block = tpl.slice(from, tpl.indexOf("\n", to)).replace(/^const raw = .*$/m, "");
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
-  const run = new Function("raw", `${block}\nreturn { scheduled, column };`) as (raw: string) => { scheduled: string; column: string | undefined };
+  const run = new Function("raw", `${block}\nreturn { scheduled };`) as (raw: string) => { scheduled: string };
   it("for each weekday column and each today of a week, and a scheduled date / no column", () => {
     assert.ok(from > 0 && to > from);
     for (let i = 0; i < 7; i++) {
@@ -77,7 +83,6 @@ describe("todo-note: the template's own date lines give startDate's date", () =>
       for (const v of ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Done", "Backlog", "Teusday"]) {
         const got = run(`---\nday: ${v}\ndone:\n---\n`);
         assert.equal(got.scheduled, startDate(v, today), `${v} on ${isoDay(today)}`);
-        assert.equal(got.column, got.scheduled ? v : undefined);
       }
       assert.equal(run("---\nscheduled: 2026-10-30\n---\n").scheduled, "2026-10-30");
       assert.equal(run("---\nscheduled: 2026-02-30\n---\n").scheduled, "");
