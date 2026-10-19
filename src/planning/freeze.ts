@@ -114,5 +114,13 @@ export function freezeMeeting(text: string, lists: FreezeLists, today: string): 
   return crlf ? out.replace(/\n/g, "\r\n") : out;
 }
 
+/** The meeting note New meeting freezes: the latest note of kind meeting directly in `folder` dated before `date` (YYYY-MM-DD) that is not frozen yet; null when there is none. */
+export function previousMeeting(notes: NoteRec[], folder: string, date: string): NoteRec | null {
+  const day = (n: NoteRec): string => (typeof n.fm.date === "string" ? n.fm.date : "").slice(0, 10);
+  const held = notes.filter(n => n.folder === folder && n.fm.kind === "meeting" && day(n) && day(n) < date);
+  const last = held.sort((a, b) => day(b).localeCompare(day(a)) || b.name.localeCompare(a.name))[0];
+  return last && !last.fm[FROZEN] ? last : null;
+}
+
 /** The series link of a meeting note's properties as a hub name. */
 export const seriesName = (fm: Record<string, unknown>): string => linkTarget(fm.series).split("/").pop() ?? "";

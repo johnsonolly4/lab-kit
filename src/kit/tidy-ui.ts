@@ -10,6 +10,7 @@ import { batchChanges, changeKey, countRows, diffRows, foldRows, pageSummary, re
 import { hotkeysInUse, metaBindButtons, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
+import { freezeDataFor } from "../planning/freeze-note";
 import { ymd } from "../planning/todo";
 import { WIN_MARK, cardWindow, winFold, winFoot, winIntro, winSummary } from "./window-look";
 
@@ -78,6 +79,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     projectHubText: planningOn ? (host.planning?.bundle.contents?.["tpl-project-hub-md"] ?? "").replace(/\r\n/g, "\n").split("-%>\n")[1] : undefined,
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
+    freeze: planningOn && app ? path => { const f = app.vault.getFileByPath(path); return f ? freezeDataFor(app, host.kit, f) : null; } : undefined,
   };
 }
 

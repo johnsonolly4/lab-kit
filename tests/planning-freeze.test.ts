@@ -1,7 +1,9 @@
 // I19 / I20: freezing a meeting note (src/planning/freeze.ts), against a fixture note.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { flaggedLines, freezeBody, freezeMeeting, frozenOn, lineMarkdown, meetingFreezeLists, raisedStamp, type FreezeLists } from "../src/planning/freeze";
+import { flaggedLines, freezeBody, freezeMeeting, frozenOn, lineMarkdown, meetingFreezeLists, previousMeeting, raisedStamp, type FreezeData, type FreezeLists } from "../src/planning/freeze";
+import { scan, selectChanges, wantsText, type TidyContext } from "../src/kit/tidy";
+import { applyTidy } from "../src/kit/tidy-apply";
 import type { NoteRec } from "../src/planning/lists";
 
 const rec = (path: string, fm: Record<string, unknown>, mtime = 0): NoteRec => ({ path, name: path.split("/").pop()!.replace(/\.md$/, ""), folder: path.split("/").slice(0, -1).join("/"), fm, ctime: 0, mtime });
@@ -110,5 +112,69 @@ describe("raised flags (I20)", () => {
     expect(lines.map(l => l.text)).toEqual(["A", "B", "C"]);
     expect(lines.map(l => l.badges.map(b => b.text))).toEqual([["raised 8 Oct"], [], []]);
     expect(flaggedLines(t, hub, false, "2026-10-15").map(l => l.text)).toEqual(["A", "B"]);
+  });
+});
+
+describe("previousMeeting (New meeting)", () => {
+  const m = (name: string, date: string, extra: Record<string, unknown> = {}): NoteRec => rec(`08 Meetings/Weekly/${name}.md`, { kind: "meeting", date, ...extra });
+  it("is the latest earlier meeting of the folder that is not frozen", () => {
+    const notes = [m("a", "2026-10-01"), m("b", "2026-10-08"), m("c", "2026-10-15"), rec("08 Meetings/Other/x.md", { kind: "meeting", date: "2026-10-12" }), rec("08 Meetings/Weekly/hub.md", { kind: "meeting-series" })];
+    expect(previousMeeting(notes, "08 Meetings/Weekly", "2026-10-22")?.name).toBe("c");
+    expect(previousMeeting(notes, "08 Meetings/Weekly", "2026-10-15")?.name).toBe("b");
+    expect(previousMeeting(notes, "08 Meetings/Weekly", "2026-10-01")).toBeNull();
+  });
+  it("is null when that meeting is already frozen", () => {
+    expect(previousMeeting([m("a", "2026-10-01", { frozen: "2026-10-08" })], "08 Meetings/Weekly", "2026-10-08")).toBeNull();
+  });
+});
+
+describe("Tidy rule: Meetings: freeze old meeting notes", () => {
+  const meet = (date: string, extra = ""): string => `---\nkind: meeting\nseries: "[[Weekly]]"\ndate: ${date}\nsince: 2026-10-01\n${extra}---\n\nmine\n\n\`\`\`vault-card\nshow: meeting-flagged\n\`\`\`\n`;
+  const vault = (): Map<string, string> => new Map([
+    ["08 Meetings/Weekly/Weekly.md", "---\nkind: meeting-series\ninterval: weekly\n---\n"],
+    ["08 Meetings/Weekly/2026-10-08 Weekly.md", meet("2026-10-08")],
+    ["08 Meetings/Weekly/2026-10-15 Weekly.md", meet("2026-10-15")],
+    ["08 Meetings/Weekly/2026-10-22 Weekly.md", meet("2026-10-22")],
+    ["00 Planning/To-dos/Fix pump.md", "---\nkind: todo\nmeeting: \"[[Weekly]]\"\n---\n"],
+  ]);
+  const flagged = (): FreezeData => ({ lists: { "meeting-flagged": ["- [[Fix pump]]"] }, flagged: [rec("00 Planning/To-dos/Fix pump.md", { kind: "todo" })] });
+  const make = (freeze?: TidyContext["freeze"]): TidyContext => ({
+    labFolder: "03 Lab", knowledgeFolder: "06 Knowledge", inboxFolder: "00 Inbox", contractFolders: [], rootNotes: [], migrations: [],
+    meetings: { folder: "08 Meetings", todos: "00 Planning/To-dos", today: "2026-10-23", interval: "weekly", day: "Thu" }, freeze,
+  });
+  const run = (m: Map<string, string>, c: TidyContext) => scan([...m.keys()].map(path => ({ path, text: wantsText(path, c, false) ? m.get(path) : undefined })), c).groups.find(g => g.id === "meeting-freeze");
+
+  it("is off without the lists provider", () => { expect(run(vault(), make())).toBeUndefined(); });
+
+  it("proposes the two older notes, not the newest, opt-in, and stamps the to-do once with the earliest date", () => {
+    const g = run(vault(), make(() => flagged()))!;
+    expect(g.optIn).toBe(true);
+    const props = g.changes.filter(c => !c.body), bodies = g.changes.filter(c => c.body);
+    expect(props.map(c => c.path)).toEqual(["08 Meetings/Weekly/2026-10-08 Weekly.md", "00 Planning/To-dos/Fix pump.md", "08 Meetings/Weekly/2026-10-15 Weekly.md"]);
+    expect(g.changes.filter(c => c.path.includes("2026-10-22"))).toEqual([]);
+    expect(bodies.map(c => c.path)).toEqual(["08 Meetings/Weekly/2026-10-08 Weekly.md", "08 Meetings/Weekly/2026-10-15 Weekly.md"]);
+    expect(bodies[0].after).toContain("- [[Fix pump]]");
+    expect(bodies[0].after).toContain("mine");
+    expect(g.changes.find(c => c.path.includes("Fix pump"))!.after).toContain("raised_on: 2026-10-08");
+  });
+
+  it("applies with a backup of each note, and a second scan finds nothing", async () => {
+    const m = vault(), c = make(() => flagged());
+    const g = run(m, c)!;
+    const backups = new Map<string, string>();
+    const out = await applyTidy({ read: async p => m.get(p) ?? null, write: async (p, t) => { m.set(p, t); }, backup: async (p, t) => { backups.set(p, t); return `b/${p}`; },
+      exists: p => m.has(p), filesIn: p => [p], linkedFrom: () => [], rename: async () => undefined, create: async () => undefined, settingSnapshot: () => "", setSetting: async () => null }, selectChanges({ groups: [g], reported: [] }, new Set(["meeting-freeze"])));
+    expect(out.skipped).toEqual([]);
+    expect([...backups.keys()].sort()).toEqual(["00 Planning/To-dos/Fix pump.md", "08 Meetings/Weekly/2026-10-08 Weekly.md", "08 Meetings/Weekly/2026-10-15 Weekly.md"]);
+    expect(m.get("08 Meetings/Weekly/2026-10-08 Weekly.md")).toContain("frozen: 2026-10-23");
+    expect(m.get("08 Meetings/Weekly/2026-10-22 Weekly.md")).toBe(meet("2026-10-22"));
+    expect(m.get("00 Planning/To-dos/Fix pump.md")).toContain("raised_on: 2026-10-08");
+    expect(run(m, c)).toBeUndefined();
+  });
+
+  it("leaves a one-off series alone", () => {
+    const m = vault();
+    m.set("08 Meetings/Weekly/Weekly.md", "---\nkind: meeting-series\ninterval: once\n---\n");
+    expect(run(m, make(() => flagged()))).toBeUndefined();
   });
 });

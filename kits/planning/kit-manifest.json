@@ -136,8 +136,8 @@
       "src": "07 How-tos/Obsidian/How my vault works.md",
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
-      "version": "1.1.0",
-      "sha256": "0085c5a2d871c3436cfe6aead2a00ae6449aff1fb48f228f1c922e281f58f53f",
+      "version": "1.4.1",
+      "sha256": "22ec5c5b0adbcd40d87ba32863d5efdbff74ca69ac5b3ef1916df0d6bdc2d251",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },

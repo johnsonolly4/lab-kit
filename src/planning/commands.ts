@@ -20,6 +20,8 @@ import type { TodoEngine } from "./engine";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { addResult } from "./result";
+import { previousMeeting } from "./freeze";
+import { freezeFile, recOf } from "./freeze-note";
 import { linkInOrder } from "./sequence";
 import { dayOf, parseDay, ymd } from "./todo";
 
@@ -75,6 +77,7 @@ export class PlanningCommands {
     add("archive-todos", "Archive old to-dos", () => this.archiveTodos());
     add("new-meeting", "New meeting", () => this.newMeeting());
     add("new-extra-meeting", "New extra meeting now", () => this.newMeeting(undefined, true));
+    add("freeze-meeting", "Freeze this meeting note", () => this.freezeActive());
     add("new-one-off-meeting", "New one-off meeting", () => this.newOneOff());
     add("new-meeting-series", "New meeting series", () => this.newSeries());
     add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
@@ -199,8 +202,29 @@ export class PlanningCommands {
     else await this.makeMeeting(read.series, read.date);
   }
 
-  /** Makes the meeting note of a regular series on `date`, "since" the last meeting of the series. */
+  /** Freeze this meeting note: the active note's lists become plain links (the command, for a one-off or by hand). */
+  async freezeActive(): Promise<void> {
+    const file = this.app.workspace.getActiveFile();
+    const r = file ? await freezeFile(this.app, this.kit(), file) : null;
+    if (!file || !r) new Notice("This is not a meeting note.");
+    else if (r.done) new Notice("Meeting note frozen.");
+    else if (r.why === "frozen") new Notice(`This note was frozen on ${r.on}.`);
+    else if (r.why === "no-window") new Notice("This note has no since and date properties.");
+    else new Notice("This is not a meeting note.");
+  }
+
+  /** Freezes the series' previous meeting note before a new one is made; a failure is a notice, never a stop. */
+  private async freezePrevious(series: Series, date: string): Promise<void> {
+    const prev = previousMeeting(this.app.vault.getMarkdownFiles().map(f => recOf(this.app, f)), series.folder, date);
+    const file = prev ? this.app.vault.getFileByPath(prev.path) : null;
+    if (!prev || !file) return;
+    try { await freezeFile(this.app, this.kit(), file); }
+    catch (e) { console.error("Lab Kit", "freeze", e); new Notice(`Could not freeze ${prev.name}. See the developer console for details.`); }
+  }
+
+  /** Makes the meeting note of a regular series on `date`, "since" the last meeting of the series. The series' previous meeting note is frozen first. */
   private async makeMeeting(series: Series, date: string): Promise<void> {
+    await this.freezePrevious(series, date);
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
     handoff().vtMeeting = { series: series.name, folder: series.folder, date, since: ymd(sinceLast(series, parseDay(date)!, held)) };

@@ -4,6 +4,7 @@
 import { BAR_BUTTONS } from "../planning/button-bar";
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
+import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
 import type { WinState } from "./window-look";
 
@@ -41,6 +42,8 @@ export interface TidyContext {
   hubFolders?: string[];
   /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
   meetings?: { folder: string; todos: string; today: string; interval: string; day: string };
+  /** The lists of a meeting note as they are now (null: no since and date). Missing = the freeze rule is off. */
+  freeze?: (path: string) => FreezeData | null;
   /** Folders whose notes (directly in them) and the root notes are read for old `BUTTON[...]` lines. Missing = the button rule has nothing to read. */
   buttonFolders?: string[];
   /** The Projects folder (project hubs). Missing = the project rule is off. */
@@ -409,6 +412,37 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       put(n.path, full.join("\n"));
     }
     if (g.changes.length) groups.push(g);
+
+    // Meeting notes before the newest of their series are frozen (I19, I20): lists written out as links, `frozen` set, flagged to-dos stamped `raised_on`. Opt-in: it replaces generated text in many notes.
+    if (ctx.freeze) {
+      const fz: TidyGroup = { id: "meeting-freeze", title: "Meetings: freeze old meeting notes", detail: "Meeting notes dated before the newest one of their series get their generated lists (experiments, done, papers, waiting, flagged) written out as plain links, and the date frozen. What you wrote is kept. To-dos in the flagged list are stamped with raised_on. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+      const dateOf = (path: string): string => (values(find(fmOf(path), "date"))[0] ?? "").slice(0, 10);
+      const meet = notes.filter(n => inFolder(n.path, mt.folder) && kindOf(n.path) === "meeting" && dateOf(n.path));
+      const oneOff = new Set(notes.filter(n => kindOf(n.path) === "meeting-series" && (values(find(fmOf(n.path), "interval"))[0] ?? "").toLowerCase() === "once").map(n => parentOf(n.path)));
+      const newest = new Map<string, string>();
+      for (const n of meet) newest.set(parentOf(n.path), [newest.get(parentOf(n.path)) ?? "", dateOf(n.path)].sort()[1]);
+      // Worked out from each note as it is on disk, not from the other rules' proposals, so the rule works when it is the only one ticked (a note another ticked rule also changes is skipped by Change notes… and found again by the next scan)
+      const disk = new Map(notes.map(n => [n.path, n.text ?? ""]));
+      const stamps = new Map<string, { change: TidyChange; fm: string[] }>();
+      for (const n of meet.filter(x => !oneOff.has(parentOf(x.path)) && dateOf(x.path) < (newest.get(parentOf(x.path)) ?? "") && !find(fmOf(x.path), FROZEN)).sort((a, b) => dateOf(a.path).localeCompare(dateOf(b.path)) || a.path.localeCompare(b.path))) {
+        const data = ctx.freeze(n.path), date = dateOf(n.path);
+        if (!data) { skipped.items.push({ path: n.path, note: "meeting note without since and date properties: not frozen" }); continue; }
+        const s = split(disk.get(n.path) ?? "");
+        if (!s) continue;
+        const body = freezeBody(s.body, data.lists);
+        fz.changes.push({ path: n.path, before: s.fm.join("\n"), after: [...s.fm, line(FROZEN, mt.today)].join("\n") });
+        if (body !== s.body) fz.changes.push({ path: n.path, before: s.body, after: body, body: true });
+        for (const t of data.flagged) {
+          const prior = stamps.get(t.path), tf = prior?.fm ?? split(disk.get(t.path) ?? "")?.fm;
+          const stamp = tf ? raisedStamp(values(find(tf, RAISED))[0], date) : null;
+          if (!tf || !stamp) continue;
+          const had = find(tf, RAISED), next = had ? [...tf.slice(0, had.start), line(RAISED, stamp), ...tf.slice(had.end)] : [...tf, line(RAISED, stamp)];
+          if (prior) { prior.change.after = next.join("\n"); prior.fm = next; }
+          else { const change = { path: t.path, before: tf.join("\n"), after: next.join("\n") }; stamps.set(t.path, { change, fm: next }); fz.changes.push(change); }
+        }
+      }
+      if (fz.changes.length) groups.push(fz);
+    }
 
     // The chip bar at the top of each to-do (show: todo-bar): opt-in, because it touches every to-do
     const bar: TidyGroup = { id: "todo-bar", title: "To-dos: add the chip bar", detail: "Every to-do (kind: todo) gets the bar of chips (project, meeting, due, priority) at the top of the page, like the To-do template writes now. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };

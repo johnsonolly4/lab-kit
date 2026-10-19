@@ -180,6 +180,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | Roll over to-dos now | Rolls unfinished to-dos over to today and clears last week's finished ones, now |
 | Open to-do board | Opens the [[To-do board.base\|To-do board]] |
 | New meeting | New meeting note for a series (asks which when there are several) |
+| Freeze this meeting note | Turns a meeting note's lists into plain links, so it stays a record (New meeting does this to the last one) |
 | New extra meeting now | An in-between meeting on a date you choose |
 | New one-off meeting | A meeting that belongs to no series |
 | New meeting series | Makes a series: name, how often, day, first date, deck, template |
