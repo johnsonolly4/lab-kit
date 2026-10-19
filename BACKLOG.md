@@ -103,6 +103,14 @@ Anything that changes a visual or existing behaviour is asked here first, never 
       - V2 (two-step dilution chain): they would not make that much.
       - V3 (from a kept acid stock): they don't keep stock solutions like this.
       - The converter (wt% ⇄ mol/kg ⇄ mol/L): not what they meant. They use Sigma's acids and bases calculator, not the molarity / molality one; look at that calculator before redesigning.
+    - **Acid page round 2 (acid-ph-v2 feedback page, owner 2026-10-19):** layout A (form with numbered steps) is liked over the calc table (B):
+      - It must record in the note how the solution was made.
+      - The owner asked whether it can go into the note and still be edited live.
+      - Problem raised: leaving a form midway to look something up loses the progress.
+      - Snippet forms might open like the in-line to-do entry window (anchored where you are), possibly for all snippets: the owner wants to see and test that first.
+      - The reagent fields (purity wt%, density, pKa, acid / base kind) must be held in the chemical database, so concentrated reagents are just chemical notes.
+      - The owner has a PDF-to-SDS Python script that might fill chemical notes from safety data sheets: review it (location to be given by the owner; never read the real vault).
+      - Proposal given in chat: insert a live block (like calc tables) whose inputs and actual masses are stored in the block itself, so nothing is lost when you leave and come back; to be shown as a feedback page.
 - [ ] **Templater dependency: evaluate removing it (owner, 2026-10-19, from I23 d).** Today Templater carries:
   - Alt+S (the Insert snippet.md hotkey) and 4 user scripts (labSnippets, labForm, labPick, labMethods, plus vtAsk.js);
   - 18 kit template files with about 52 Templater tag lines (To-do, Lab Book Template, Meeting, Meeting series, One-off meeting, Project hub, New project note, New concept, New topic hub, the 7 code snippets, Insert snippet);
