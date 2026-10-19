@@ -82,3 +82,59 @@ Run with obsidian-check (Obsidian 1.14.4, macOS, 2026-10-19) on a seeded vault: 
 | Screenshot | `i8-board-proto.png` in the side-session notes folder (cropped `.lk-board`, 0.5 scale; not committed: kept out of the public repo's history) |
 
 Not checked: a real mouse drag (the drop was synthetic `DragEvent`s), touch / phone, the toolbar's own Group by changed by a user, light theme, the user's eyes on the look.
+
+## 4. Options
+
+| | A. Keep the built-in kanban | B. Our own Bases view | C. Our own ItemView |
+|---|---|---|---|
+| What it is | as now: Bases draws, `engine.ts` tags its markup | the `.base` file stays; `type: lab-kit-board`; Bases filters / sorts / groups, we draw | a plugin tab that reads the To-dos folder itself; no `.base` |
+| Depends on undocumented markup | yes (`engine.ts`, `src/kit/board-colours.ts`, `vault-theme.css`) | no: public API since 1.10.0 | no |
+| Filters, sort, toolbar, search | Bases | Bases | ours to build |
+| Drag, touch | Bases (touch works today) | ours (desktop shown here; touch to build) | ours |
+| Board without the plugin | works | the view type is unknown: needs a fallback `kanban` view in the same `.base` | gone |
+| Cost now | 0 | 5 phases, about 600-800 lines incl. tests | 6-7 phases, about 1200+ lines (B plus query, filter UI, sort, toolbar, view state) |
+| I2 planned dates | more tags on cards we don't draw; date columns need a `groupOrder` per week written into the `.base` | card shows the date; columns from our own list (weekday or date) | same as B |
+| I3 week clean | engine only (writes notes): same in all three | same; the Done column and "this week" are our own columns | same |
+| I9 lanes by project | not possible: Bases groups one level | ours: lanes inside the view (rows by `project`) | ours |
+| W1 column colours | CSS on tagged columns (works while the markup holds) | a class on our columns, a colour option per column | same as B |
+
+## Recommendation
+
+**B, our own Bases view.** It removes every reach into Bases' markup on the board (MutationObserver, capture click, title fallback) while keeping the `.base` file, its filters, sort and toolbar, and the user's ability to switch back to the built-in kanban in one click. The prototype drew 50 cards in 2 ms, wrote `day` on drop and the engine stamped `planned` unchanged. C costs about twice as much for nothing the board needs that B lacks. A costs nothing now but makes I2 and W1 deeper hacks and I9 impossible.
+Costs of B: touch drag becomes ours to write and test on a phone; `minAppVersion` 1.14.3 if we use `groupOrder` (or 1.14.0 with our own column list); a fallback `kanban` view in the kit's `.base` for a vault with the plugin off.
+
+## Phases (option B)
+
+### Phase 1 — View and card at parity
+- Files: `src/planning/board-view.ts` (new), `src/planning/board-card.ts` (pure card model, new), `src/main.ts`, `styles.css`, `tests/board-card.test.ts`
+- Columns from the base's `groupOrder`, empty columns added; card pieces from `todo.ts`; done circle; click opens (Mod = new tab); today class
+- Done when: tests for the card model; obsidian-check shows the 50-card seed as in section 3
+- Size: M
+
+### Phase 2 — Drag on desktop and touch
+- Depends on: Phase 1
+- Files: `src/planning/board-view.ts`, `styles.css`
+- Pointer-event drag (one code path for mouse and touch, long-press start on touch), drop marker, auto-scroll at the edges; writes `day` only
+- Done when: obsidian-check drop writes `day` and `planned` follows; the user drags on a phone (checklist row)
+- Size: M
+
+### Phase 3 — Column New and options
+- Depends on: Phase 1
+- Files: `src/planning/board-view.ts`
+- `+` in each column opens the entry window with the column (`window.vtEntryTodo`); column width as a `slider` option
+- Size: S
+
+### Phase 4 — Switch the kit's board and remove the tagging
+- Depends on: Phases 1-3
+- Files: `kits/planning/00 Planning/To-do board.base` (`type: lab-kit-board` first, built-in `kanban` second as fallback), `src/planning/engine.ts` (drop `tag()`, `cardFile()`, `onCardClick`, the MutationObserver), `kits/planning/.obsidian/snippets/vault-theme.css` (kanban rules), `kit-manifest.json`, `manifest.json` `minAppVersion` at `/release` only
+- Done when: tests; existing vaults get the new `.base` through Review update…; obsidian-check
+- Size: S-M
+
+### Phase 5 — Docs and the user's try
+- Files: `docs/architecture.md`, `kits/planning/07 How-tos/Obsidian/Vault spec.md`, `docs/obsidian-test-checklist.md`, `docs/changelog.md`
+- Done when: the user tries it on desktop and phone
+- Size: S
+
+Then I2, I3, I9, W1 build on this view.
+
+Waiting for the owner's choice.
