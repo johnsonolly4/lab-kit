@@ -10,6 +10,7 @@ import { attachCardDrag, dragJustEnded, stepDay, swipeDir } from "./board-drag";
 import { buildWeek, datePill, filterTray, readyPaths, trayProjects, weekCardOf, type BoardCard, type TrayFilter, type WeekCard } from "./board-card";
 import { applyPatch, dropPatch, parseDay, ymd } from "./todo";
 import { toggleDoneWithUndo } from "./undo-notice";
+import { drawDone } from "./board-done";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
@@ -33,6 +34,8 @@ class BoardView extends BasesView {
   private dragging = false;
   private late = false;
   private pick = "";
+  /** The days (YYYY-MM-DD) whose `N done` is unfolded: kept across redraws, until the view closes. */
+  private unfolded = new Set<string>();
   private sizer: ResizeObserver;
 
   constructor(controller: QueryController, private el: HTMLElement, private env: BoardEnv) {
@@ -94,7 +97,12 @@ class BoardView extends BasesView {
       for (const m of d.markers) col.createDiv({ cls: `lk-board-mark is-${m.kind}`, text: m.text });
       const list = col.createDiv({ cls: "lk-board-list" });
       for (const c of d.open) this.card(list, c);
-      if (d.done) col.createDiv({ cls: "lk-board-donecount", text: `${d.done} done` });
+      const key = ymd(d.date);
+      drawDone(col, d.finished, this.unfolded.has(key), {
+        toggle: () => { if (!this.unfolded.delete(key)) this.unfolded.add(key); this.draw(); },
+        untick: path => this.toggleDone(path),
+        open: (path, ev) => { const f = this.app.vault.getFileByPath(path); if (f) void this.app.workspace.getLeaf(Keymap.isModEvent(ev)).openFile(f); },
+      });
     }
 
     const tray = root.createDiv({ cls: "lk-board-tray" });

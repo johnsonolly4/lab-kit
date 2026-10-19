@@ -541,7 +541,12 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-board-due[data-level="soon"] { color: var(--color-orange); }
 .lk-board-due[data-level="late"] { color: var(--color-red); }
 .lk-board-pill.is-later { color: var(--text-muted); }
-.lk-board-donecount { margin-top: auto; padding: 2px 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.lk-board-donebox { margin-top: auto; display: flex; flex-direction: column; gap: 6px; }
+.lk-board-donecount { align-self: flex-start; height: auto; padding: 2px 4px; font-size: var(--font-ui-smaller); color: var(--text-muted); background: none; border: none; box-shadow: none; cursor: pointer; }
+.lk-board-donecount:hover { color: var(--text-normal); background: none; }
+.lk-board-donelist { display: flex; flex-direction: column; gap: 8px; }
+.lk-board-card.is-finished .lk-board-title { text-decoration: line-through; color: var(--text-muted); }
+.lk-board-done.is-done, .lk-board-done.is-done:hover { corner-shape: round; border-color: var(--interactive-accent); background: var(--interactive-accent); }
 .lk-board-trayhead { justify-content: flex-start; flex-wrap: wrap; margin-bottom: 10px; }
 .lk-board-tray.is-folded .lk-board-trayhead { margin-bottom: 0; }
 .lk-board-chips { display: flex; flex-wrap: wrap; gap: 6px; font-weight: 400; }
