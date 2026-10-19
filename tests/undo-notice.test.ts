@@ -8,6 +8,7 @@ const WED = new Date(2026, 9, 21, 9);
 
 /** A one-note vault whose front matter writes re-serialise the block (as Obsidian's do: quotes and order may change). */
 function fakeApp(text: string) {
+  const changed: ((f: unknown) => void)[] = [];
   const file = { path: "To-dos/Book NMR.md", basename: "Book NMR" };
   let body = text;
   const parse = (t: string): Record<string, unknown> => {
@@ -31,9 +32,9 @@ function fakeApp(text: string) {
         body = `---\n${Object.entries(fm).map(([k, v]) => `${k}: ${String(v)}`).join("\n")}\n---\n` + body.slice(frontOf(body).length);
       },
     },
-    metadataCache: { getFileCache: () => ({ frontmatter: parse(body) }) },
+    metadataCache: { getFileCache: () => ({ frontmatter: parse(body) }), on: (_ev: string, fn: (f: unknown) => void) => { changed.push(fn); return {}; } },
   };
-  return { app, file, text: () => body };
+  return { app, file, text: () => body, changed, set: (t: string) => { body = t; } };
 }
 
 const NOTE = '---\nkind: todo\ndone: false\nscheduled: "2026-10-22"\nrolled: 2026-10-20\npriority: 2\n---\nBook the 400 MHz.\n';
@@ -104,13 +105,14 @@ function fakeParent() {
   };
   return { btn, parent: { createEl: () => btn } };
 }
+const owner = { registerEvent: () => { /* ignored */ } };
 const click = { stopPropagation() { /* ignored */ } };
 
 describe("tickButton (the chip bar's round tick)", () => {
   it("an open tick says Mark done; a click writes done: true, shows the notice, and the circle fills at once", async () => {
     const { app, file, text } = fakeApp(NOTE);
     const { btn, parent } = fakeParent();
-    tickButton(parent as never, app as never, file as never, false);
+    tickButton(parent as never, app as never, file as never, false, owner);
     expect(btn.attrs["aria-label"]).toBe("Mark done");
     expect(btn.className).toBe("vt-todo-tick");
     const count = created.length;
@@ -127,7 +129,7 @@ describe("tickButton (the chip bar's round tick)", () => {
   it("a ticked tick says Mark not done and shows a check; a click writes done: false, no notice, and the circle opens", async () => {
     const { app, file, text } = fakeApp(NOTE.replace("done: false", "done: true"));
     const { btn, parent } = fakeParent();
-    tickButton(parent as never, app as never, file as never, true);
+    tickButton(parent as never, app as never, file as never, true, owner);
     expect(btn.attrs["aria-label"]).toBe("Mark not done");
     expect(btn.className).toBe("vt-todo-tick is-done");
     expect(btn.dataset.icon).toBe("check");
@@ -138,5 +140,17 @@ describe("tickButton (the chip bar's round tick)", () => {
     await new Promise(r => setTimeout(r, 0));
     expect(text()).toContain("done: false");
     expect(created.length).toBe(count);
+  });
+
+  it("follows the note when its properties change (an Undo): a ticked circle opens again", async () => {
+    const { app, file, changed, set } = fakeApp(NOTE.replace("done: false", "done: true"));
+    const { btn, parent } = fakeParent();
+    tickButton(parent as never, app as never, file as never, true, owner);
+    set(NOTE);
+    changed[0](file);
+    expect(btn.className).toBe("vt-todo-tick");
+    expect(btn.attrs["aria-label"]).toBe("Mark done");
+    changed[0]({ path: "other.md" });
+    expect(btn.className).toBe("vt-todo-tick");
   });
 });

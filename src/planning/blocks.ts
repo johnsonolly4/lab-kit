@@ -557,7 +557,7 @@ class BlockView extends MarkdownRenderChild {
     if (fm.kind !== "todo") { box.createDiv({ cls: "vt-muted", text: "todo-bar belongs on a to-do note." }); return; }
     const fields = this.todoEntryFields(), values = todoValues(fm);
     const bar = box.createDiv({ cls: "vt-todo-bar" });
-    tickButton(bar, this.app, file, fm.done === true);
+    tickButton(bar, this.app, file, fm.done === true, this);
     for (const f of visibleFields(fields, values)) {
       const btn = bar.createEl("button", { cls: "vt-todo-chip", attr: { "aria-label": f.name, title: f.name } });
       this.paintChip(btn, f, values[f.key]);

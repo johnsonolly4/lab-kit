@@ -1,6 +1,6 @@
 // Ticking a to-do from the board, with the notice `Ticked "<name>". Undo` (I2 Phase 6, Q19; docs/plans/planned-dates.md "What writes what").
 // Undo writes the note's properties back as they were before the tick. Unticks get no notice.
-import { Notice, setIcon, type App, type TFile } from "obsidian";
+import { Notice, setIcon, type App, type EventRef, type TFile } from "obsidian";
 import { undoPatch, applyPatch } from "./todo";
 
 /** How long the notice stays (ms). */
@@ -70,8 +70,8 @@ export async function toggleDoneWithUndo(app: App, file: TFile): Promise<void> {
   });
 }
 
-/** The round tick at the start of a to-do's chip bar: open circle, ticked = accent fill + check. A click ticks (with the Undo notice) or unticks (none); it flips at once, the block redraws when the note's properties are read again. */
-export function tickButton(parent: HTMLElement, app: App, file: TFile, done: boolean): HTMLElement {
+/** The round tick at the start of a to-do's chip bar: open circle, ticked = accent fill + check. A click ticks (with the Undo notice) or unticks (none); it flips at once, and follows the note when its properties change (an Undo, a tick from the board). `owner` takes the event so it goes with the block. */
+export function tickButton(parent: HTMLElement, app: App, file: TFile, done: boolean, owner: { registerEvent: (ref: EventRef) => void }): HTMLElement {
   const btn = parent.createEl("button", { attr: { type: "button" } });
   const paint = (): void => {
     const label = done ? "Mark not done" : "Mark done";
@@ -82,6 +82,11 @@ export function tickButton(parent: HTMLElement, app: App, file: TFile, done: boo
     if (done) setIcon(btn, "check");
   };
   paint();
+  owner.registerEvent(app.metadataCache.on("changed", f => {
+    if (f.path !== file.path) return;
+    const now = app.metadataCache.getFileCache(f)?.frontmatter?.done === true;
+    if (now !== done) { done = now; paint(); }
+  }));
   // Live Preview opens a code block for editing on a click inside it: the events stop here
   for (const ev of ["mousedown", "click"]) btn.addEventListener(ev, e => e.stopPropagation());
   btn.addEventListener("click", () => {
