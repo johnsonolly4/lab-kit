@@ -73,7 +73,8 @@ export function changePatch(fm: TodoFm, before: TodoSnap | undefined, now: TodoS
   if (!before || fm.kind !== "todo") return null;
   if (now.done !== before.done) {
     if (now.done && (fm.done_on == null || fm.rolled === true)) return { set: { ...(fm.done_on == null ? { done_on: ymd(today) } : {}), rolled: false }, remove: [] };
-    if (!now.done && fm.done_on != null) return { set: {}, remove: ["done_on"] };
+    // Unticked on the Done column: back to Backlog too, else the roll-over reads Done + not done as an old finished card and ticks it again
+    if (!now.done && (fm.done_on != null || fm.day === "Done")) return { set: fm.day === "Done" ? { day: "Backlog" } : {}, remove: fm.done_on != null ? ["done_on"] : [] };
     return null;
   }
   if (now.day !== before.day) {

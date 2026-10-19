@@ -46,6 +46,15 @@ describe("changes (Obsidian Sync safe)", () => {
     expect(after(todo({ day: "Wed", done: false, done_on: "2026-10-07" }), todo({ day: "Wed", done: true }))).not.toHaveProperty("done_on");
     expect(changePatch(todo({ day: "Wed", done: false }), { day: "Wed", done: true }, { day: "Wed", done: false }, WED)).toBeNull();
   });
+  it("untick of a cleared card (day Done) goes back to Backlog, so the next roll-over does not tick it again", () => {
+    const cleared = todo({ day: "Done", done: true, done_on: "2026-09-20" });
+    const unticked = after(todo({ ...cleared, done: false }), cleared);
+    expect(unticked).toMatchObject({ day: "Backlog" });
+    expect(unticked).not.toHaveProperty("done_on");
+    expect(rollOverPatch(unticked as TodoFm, WED, WED)).toBeNull();
+    // without the fix the card stays on Done and the roll-over ticks it
+    expect(rollOverPatch(todo({ day: "Done", done: false }), WED, WED)?.kind).toBe("ticked");
+  });
   it("local drag: stamps planned today and clears rolled", () => {
     expect(after(todo({ day: "Fri", planned: "2026-10-05" }), todo({ day: "Mon", planned: "2026-10-05" }))).toMatchObject({ planned: "2026-10-07", rolled: false });
   });
