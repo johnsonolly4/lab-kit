@@ -139,6 +139,7 @@ Anything that changes a visual or existing behaviour is asked here first, never 
     - (g) Status Closed set by hand doesn't close the note; Check setup lists it with a Close button: sensible.
     - (h) Footer: yes.
     - (d) Reopen: not answered; with no freeze it only clears the closed mark.
+    - DECIDED 2026-10-19 (owner, chat): no freeze. Closing = the PDF(s) to the destination folders + `closed_on` + the hash footer; the note stays live; Reopen clears the mark; hazards left out of the PDF; smaller text, landscape pages only for tables too wide.
 - [ ] **Try on your own setup (behaviour not yet seen by the owner):** Board B Phases 1-2 in a test vault and drag on a real phone; a saved rig SVG opened in PowerPoint / Illustrator / Inkscape; New meeting with Templater freezes the earlier note; Sort inbox opens the next note after a delete; the hub bar chips and the Add to shopping prompt corners on real elements.
 
 ## NEXT TASK (user, 2026-10-12, chat, asked mid-session)
