@@ -11,6 +11,7 @@ One script does it: `scripts/obsidian-check.mjs`. Do not start Obsidian or build
 - It starts a **separate** Obsidian (own settings folder, debugging port 9333), hidden and without focus. The user's own Obsidian keeps running; `stop` quits only the instance this script started (pid file).
 - Notes passed with `--notes` must be test notes (fixtures, scratchpad); `data.json` and `.obsidian/plugins` are not copied.
 - Always `stop` at the end of a check.
+- **Warn the user before every `start`**, in a message of its own ("Starting the test Obsidian now: a window flashes for a second"), so they can pause their work. On macOS the window shows for 1–2 s while Obsidian loads, then hides; it does not come back for later commands. Start once per check, not once per command.
 
 ## Steps
 ```bash
@@ -48,6 +49,7 @@ node scripts/obsidian-check.mjs stop
 - Starting twice: `start` refuses while port 9333 is in use; run `stop` first.
 
 ## Known limits
+- The flash at `start` cannot be avoided without changing how Obsidian starts: its build turns off `--inspect` and `NODE_OPTIONS`, it re-centres off-screen windows, and a window hidden from the start leaves the reading view empty (checked 2026-10-19). A loader shim was blocked as unsafe and the user chose to accept the flash.
 - Desktop only, tested on macOS (Obsidian 1.14.4, Node 20). The Windows and Linux paths (Obsidian binary, no hide) are not tested.
 - Phone layout, real mouse drags, Templater and other community plugins (not installed in the throwaway vault), and how a look *feels* still need the user. Looks must still match `docs/design-standard.md` and the approved screenshots.
 - `app.plugins` and `@electron/remote` are Obsidian internals; if an Obsidian update breaks `start`, say so and fall back to the user.
