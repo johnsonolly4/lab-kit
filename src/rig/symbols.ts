@@ -28,6 +28,7 @@ const SYMBOLS: Record<string, RigSymbol> = {
   coil: make("coil", 84, 44, `<rect x="-42" y="-22" width="84" height="44" rx="10"/><path d="M-22 -22 L-14 22 M-10 -22 L-2 22 M2 -22 L10 22 M14 -22 L22 22"/>`),
   flask: make("flask", 52, 70, `<circle r="24"/><path d="M-7 -35 L-7 -21 M7 -35 L7 -21 M-9 -35 L9 -35"/>`, { bottom: { x: 0, y: 24 } }),
   hotplate: make("hotplate", 68, 22, `<rect x="-34" y="-5" width="68" height="16" rx="3"/><path d="M-20 -11 L-20 -5 M20 -11 L20 -5"/>`, { in: { x: -34, y: 3 }, out: { x: 34, y: 3 }, top: { x: 0, y: -11 }, bottom: { x: 0, y: 11 } }),
+  oven: make("oven", 124, 50, `<rect x="-62" y="-25" width="124" height="50" rx="8"/>`),
   analysis: make("analysis", 72, 44, `<rect x="-36" y="-22" width="72" height="44" rx="6"/><path d="M-24 9 L-12 9 L-6 -9 L0 9 L7 9 L12 -3 L24 9" fill="none"/>`),
   waste: make("waste", 64, 24, `<path d="M-32 0 L16 0" fill="none"/><path d="M12 -9 L32 0 L12 9 Z" class="fill"/>`),
   // The line level (y 0) is above the vial's mouth, so a line can run level and drop straight in. The box is therefore taller than the glass, centred on the line level.
@@ -37,16 +38,22 @@ const SYMBOLS: Record<string, RigSymbol> = {
 /** The computer that sets and reads the rig: a monitor on a stand over a keyboard. Not a part kind, so not in the table above. */
 export const COMPUTER: RigSymbol = make("computer", 72, 70,
   `<rect x="-30" y="-35" width="60" height="40" rx="3"/><rect x="-25" y="-30" width="50" height="30"/><path d="M-6 5 L-8 14 L8 14 L6 5"/><path d="M-34 33 L-26 17 L26 17 L34 33 Z"/><path d="M-18 25 L18 25"/>`);
+/** A heater drawn around its host (a column oven or a jacket): an outline a little larger than the host, with the same centre. */
+export function ovenAround(host: RigSymbol): RigSymbol {
+  const w = host.w + 28, h = host.h + 24;
+  return make("oven", w, h, `<rect x="${-w / 2}" y="${-h / 2}" width="${w}" height="${h}" rx="8"/>`);
+}
 /** The names of the generic symbols, for tests. */
 export const SYMBOL_NAMES = Object.keys(SYMBOLS);
 
-/** Keyword tests on the lower-cased detail that pick a symbol for a Pump, a Reactor or an Outlet; the first match wins. */
+/** Keyword tests on the lower-cased detail that pick a symbol for a Pump, a Heater, a Reactor or an Outlet; the first match wins. */
 const REACTOR_BY_DETAIL: [RegExp, string][] = [
   [/vessel|flask|batch|rbf|round.?bottom/, "flask"],
   [/column|packed|bed|beads/, "column"],
   [/chip|cstr|plate/, "box"],
 ];
 const PUMP_BY_DETAIL: [RegExp, string][] = [[/syringe/, "syringe"]];
+const HEATER_BY_DETAIL: [RegExp, string][] = [[/oven|jacket/, "oven"]];
 const OUTLET_BY_DETAIL: [RegExp, string][] = [[/waste/, "waste"]];
 
 /** The symbol for a part. A kind that is not known gets the plain box (the writer lists such parts as missing). */
@@ -59,7 +66,8 @@ export function symbolFor(kind: PartKind | "", detail: string): RigSymbol {
     case "Valve": return SYMBOLS.valve;
     case "Regulator": return SYMBOLS.regulator;
     case "Reactor": return by(REACTOR_BY_DETAIL, "coil");
-    case "Heater": case "Stirrer": return SYMBOLS.hotplate;
+    case "Heater": return by(HEATER_BY_DETAIL, "hotplate");
+    case "Stirrer": return SYMBOLS.hotplate;
     case "Analysis": return SYMBOLS.analysis;
     case "Outlet": return by(OUTLET_BY_DETAIL, "vial");
     case "Tubing": return SYMBOLS.tubing;

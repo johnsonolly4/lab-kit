@@ -1,7 +1,7 @@
 // Rig figure: the SVG text of a laid-out figure (symbols, lines, labels). Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. Colour and control lines come in Phase 3.
 import { LANE, type FigEdge, type Figure, type FigNode } from "./figure";
-import { COMPUTER, symbolFor, type Point, type RigSymbol } from "./symbols";
+import { COMPUTER, ovenAround, symbolFor, type Point, type RigSymbol } from "./symbols";
 
 export interface FigureSvgOptions {
   title?: string;
@@ -52,11 +52,6 @@ function edgePoints(e: FigEdge, from: Placed, to: Placed, bottom: number): Point
   return tidy(pts);
 }
 
-/** The dashed line of a part attached to a host: straight down from the slot above it (the host, or the part attached before it). */
-function attachedPoints(above: Placed, part: Placed): Point[] {
-  return [at(above, above.sym.bottom), at(part, part.sym.top)];
-}
-
 /** `<g id="sym-<name>-<n>" data-symbol="<name>">`: which symbols.ts entry a mark is, numbered per name in drawing order, so feedback on a picture maps back to the table. */
 const symAttr = (name: string, n: number): string => `id="sym-${esc(name)}-${n}" data-symbol="${esc(name)}"`;
 
@@ -64,10 +59,10 @@ function symbolSvg(p: Placed, n: number): string {
   return `<g ${symAttr(p.sym.name, n)} data-part="${esc(p.node.id)}" transform="translate(${n1(p.node.x)} ${n1(p.node.y)})">${p.sym.body}</g>`;
 }
 
-function labelSvg(p: Placed, above: boolean): string {
+function labelSvg(p: Placed, above: boolean, half = p.sym.h / 2): string {
   const { node, sym } = p;
   const detail = node.detail && node.detail !== node.kind ? cut(node.detail, DETAIL_CHARS) : "";
-  if (node.host) {   // an attached part keeps its label to the right, so the dashed line down the middle stays clear
+  if (node.host && sym.name !== "oven") {   // an attached part keeps its label to the right, so the dashed line down the middle stays clear
     const x = n1(node.x + sym.w / 2 + 10);
     return `<text x="${x}" y="${n1(node.y + (detail ? 0 : 5))}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 17)}" font-size="13">${esc(detail)}</text>` : "");
@@ -77,8 +72,8 @@ function labelSvg(p: Placed, above: boolean): string {
     return `<text x="${x}" y="${n1(node.y + 24)}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 41)}" font-size="13">${esc(detail)}</text>` : "");
   }
-  const id = n1(above ? node.y - sym.h / 2 - (detail ? 26 : 10) : node.y + sym.bottom.y + 20);
-  const dy = n1(above ? node.y - sym.h / 2 - 9 : node.y + sym.bottom.y + 37);
+  const id = n1(above ? node.y - half - (detail ? 26 : 10) : node.y + sym.bottom.y + 20);
+  const dy = n1(above ? node.y - half - 9 : node.y + sym.bottom.y + 37);
   return `<text x="${n1(node.x)}" y="${id}" font-size="16" font-weight="700" text-anchor="middle">${idText(node.id)}</text>`
     + (detail ? `<text x="${n1(node.x)}" y="${dy}" font-size="13" text-anchor="middle">${esc(detail)}</text>` : "");
 }
@@ -146,6 +141,21 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const missing = fig.nodes.filter(n => !n.kind).map(n => n.id);
   const hosts = new Set(fig.nodes.map(n => n.host).filter(Boolean));
   const bottom = fig.height - 14;
+  // An attached part is drawn touching its host: a plate directly under it (or under the part attached before it), an oven or jacket around it.
+  const ovens = new Map<string, number>();   // host ID -> half the height of the oven around it
+  for (const n of fig.nodes) {
+    if (!n.host) continue;
+    const p = placed.get(n.id)!, h = placed.get(n.host);
+    if (p.sym.name === "oven" && h) {
+      p.sym = ovenAround(h.sym);
+      p.node = { ...n, x: h.node.x, y: h.node.y };
+      ovens.set(n.host, p.sym.h / 2);
+      continue;
+    }
+    const above = fig.nodes.find(m => m.layer === n.layer && m.row === n.row - 1);
+    const a = above && placed.get(above.id);
+    if (a) p.node = { ...n, y: a.node.y + a.sym.bottom.y - p.sym.top.y };
+  }
 
   const lines: string[] = [], dots: string[] = [];
   const merges = new Map<string, number>();
@@ -154,11 +164,11 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
     if (!from || !to) continue;
     const onHost = e.attached && from.node.host === e.to;
     const dashed = e.attached || e.back;
-    const above = onHost ? fig.nodes.find(n => n.layer === from.node.layer && n.row === from.node.row - 1) : undefined;
-    const pts = onHost && above ? attachedPoints(placed.get(above.id)!, from) : edgePoints(e, from, to, bottom);
-    const attr = onHost && above ? `data-attached="${esc(e.from)}" data-host="${esc(e.to)}"` : `data-from="${esc(e.from)}" data-to="${esc(e.to)}"${e.back ? ' data-back="1"' : ""}`;
+    if (onHost && fig.nodes.some(n => n.layer === from.node.layer && n.row === from.node.row - 1)) continue;   // touching its host: no line to draw
+    const pts = edgePoints(e, from, to, bottom);
+    const attr = `data-from="${esc(e.from)}" data-to="${esc(e.to)}"${e.back ? ' data-back="1"' : ""}`;
     lines.push(`<path ${attr} d="M ${pts.map(pt).join(" L ")}"${dashed ? ' stroke-dasharray="7 5"' : ""}/>`);
-    if (!onHost && !e.attached && !e.back) merges.set(e.to, (merges.get(e.to) ?? 0) + 1);
+    if (!e.attached && !e.back) merges.set(e.to, (merges.get(e.to) ?? 0) + 1);
   }
   // Where two or more streams run into one part, a small filled dot marks the join (a tee symbol is its own dot).
   for (const [id, count] of merges) {
@@ -170,13 +180,14 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
 
   const parts = fig.nodes.map(node => placed.get(node.id)!);
   const seen = new Map<string, number>();
-  const numbered = parts.map(p => { const n = (seen.get(p.sym.name) ?? 0) + 1; seen.set(p.sym.name, n); return symbolSvg(p, n); });
+  const drawn = parts.map(p => { const n = (seen.get(p.sym.name) ?? 0) + 1; seen.set(p.sym.name, n); return { p, svg: symbolSvg(p, n) }; });
+  const isOven = (d: { p: Placed }): boolean => d.p.sym.name === "oven" && ovens.has(d.p.node.host);
   const title = opts.title ? `<text x="20" y="28" font-size="20" font-weight="700">${esc(opts.title)}</text>` : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${fig.height}" width="${fig.width}" height="${fig.height}" font-family="${FONT}" fill="${INK}">`
     + `<style>.fill{fill:${INK}}</style>`
     + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
-    + `<g fill="none">${lines.join("")}</g>${dots.join("")}${numbered.join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
-    + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id))).join("")}</g></svg>`;
+    + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
+    + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id))).join("")}</g></svg>`;
   return { svg, missing };
 }

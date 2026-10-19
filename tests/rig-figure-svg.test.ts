@@ -57,7 +57,7 @@ describe("symbols", () => {
   });
   it("connection points lie on or inside the symbol's box and the input is left of the output", () => {
     for (const name of SYMBOL_NAMES) {
-      const s = [...PART_KINDS, ""].map(k => symbolFor(k, ["waste", "flask", "column", "syringe"].includes(name) ? name : "")).find(x => x.name === name)!;
+      const s = [...PART_KINDS, ""].map(k => symbolFor(k, ["waste", "flask", "column", "syringe", "oven"].includes(name) ? name : "")).find(x => x.name === name)!;
       expect(s.in.x).toBeLessThanOrEqual(s.out.x);
       for (const p of [s.in, s.out, s.top, s.bottom]) {
         expect(Math.abs(p.x)).toBeLessThanOrEqual(s.w / 2);
@@ -140,11 +140,45 @@ describe("figureSvg", () => {
     expect(draw(...tee).svg).not.toMatch(/<circle [^>]*r="5"/);
     expect(draw("P1 | Pump | | R1", "R1 | Reactor | coil |").svg).not.toMatch(/<circle [^>]*r="5"/);
   });
-  it("a heater hangs off its reactor on a dashed line, a cycle returns on a dashed line", () => {
-    const h = draw("P1 | Pump | | R1", "R1 | Reactor | | OUT", "H1 | Heater | | R1", "OUT | Outlet | |");
-    expect(h.svg).toMatch(/data-attached="H1" data-host="R1" d="[^"]+" stroke-dasharray/);
+  it("a cycle returns on a dashed line", () => {
     const c = draw("P1 | Pump | | R1", "R1 | Reactor | | V1", "V1 | Valve | | R1");
     expect(c.svg).toMatch(/data-back="1" d="[^"]+" stroke-dasharray/);
+  });
+  /** Where a part's symbol group is drawn: the translate of its `data-part` group. */
+  const spot = (svg: string, id: string): number[] => {
+    const m = new RegExp(`data-part="${id}" transform="translate\\(([-\\d.]+) ([-\\d.]+)\\)"`).exec(svg)!;
+    return [Number(m[1]), Number(m[2])];
+  };
+  it("a hot plate sits directly under its flask (or column), touching it, with no line between", () => {
+    for (const host of ["flask", "packed column"]) {
+      const f = fig("P1 | Pump | | R1", `R1 | Reactor | ${host} | OUT`, "H1 | Heater | | R1", "OUT | Outlet | waste |"), r = figureSvg(f);
+      const hs = symbolFor("Reactor", host), ps = symbolFor("Heater", "");
+      const [hx, hy] = spot(r.svg, "R1"), [px, py] = spot(r.svg, "H1");
+      expect(px).toBe(hx);
+      expect(py + ps.top.y).toBe(hy + hs.bottom.y);   // the plate's top meets the host's underside
+      expect(r.svg).not.toContain('data-attached="H1"');
+      expect(r.svg).not.toMatch(/data-from="H1"/);
+    }
+  });
+  it("a second attached part sits under the first", () => {
+    const f = fig("P1 | Pump | | R1", "R1 | Reactor | flask | ", "H1 | Heater | | R1", "S1 | Stirrer | | R1"), r = figureSvg(f);
+    const ps = symbolFor("Heater", "");
+    expect(spot(r.svg, "S1")[1] + ps.top.y).toBe(spot(r.svg, "H1")[1] + ps.bottom.y);
+  });
+  it("a heater with detail oven or jacket is drawn around its column, larger than it and with the same centre, under the lines", () => {
+    for (const detail of ["column oven", "jacket"]) {
+      const f = fig("P1 | Pump | | R1", "R1 | Reactor | packed column | OUT", `H1 | Heater | ${detail} | R1`, "OUT | Outlet | waste |"), r = figureSvg(f);
+      const col = symbolFor("Reactor", "packed column");
+      expect(symbolFor("Heater", detail).name).toBe("oven");
+      expect(spot(r.svg, "H1")).toEqual(spot(r.svg, "R1"));
+      const m = new RegExp(`data-symbol="oven" data-part="H1"[^>]*><rect x="(-?[\\d.]+)" y="(-?[\\d.]+)" width="([\\d.]+)" height="([\\d.]+)"`).exec(r.svg)!;
+      const [x, y, w, h] = m.slice(1).map(Number);
+      expect(x).toBeLessThan(-col.w / 2); expect(y).toBeLessThan(-col.h / 2);
+      expect(x + w).toBeGreaterThan(col.w / 2); expect(y + h).toBeGreaterThan(col.h / 2);
+      expect(x + w).toBe(-x); expect(y + h).toBe(-y);
+      expect(r.svg.indexOf('data-symbol="oven"')).toBeLessThan(r.svg.indexOf('<g fill="none">'));   // drawn first, so the lines run over it
+      expect(r.svg).not.toContain('data-attached="H1"');
+    }
   });
   it("text is escaped and the SVG has no script", () => {
     const r = figureSvg(fig("P1 | Pump | <script>alert(1)</script> & \"q\" |"), { title: "A <b> & B" });
