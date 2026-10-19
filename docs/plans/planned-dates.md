@@ -125,6 +125,7 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - Files: `lists.ts`, `actions.ts`, `plan.ts`, `todo-picker.ts`, `plan-map.ts`, `after-write.ts`, `meetings.ts`, `kit/tidy.ts` (`todo-properties`), `todo-bar.ts`, settings (countdown options), tests.
 - Checks: Home "This week" and project tiles from `scheduled`; plan rows done from `isFinished`; undo snapshot restores `scheduled`; a new to-do from the board / actions has no `day`.
 - Size: M
+- **Result (N2c, 2026-10-19, commits fcbf908, 1606b39):** BUILT. Lists badge a day as `· Thu` (this week), `· Tue 27 Oct` (another week), `· Backlog` (owner asked in BACKLOG "I2 list day badges"); `todo-note.ts` (the template port) waits for Phase 4. Fixture test: This week = buildWeek's Mon-Fri columns for Wed / Sat / Mon, old and normalised notes (`tests/i2-slim.test.ts`). In a throwaway Obsidian (Wed clock): Home 15 lines, plan rows, the countdown row, Templater-made to-do normalised after Templater, phone layout: PASS.
 
 ### Phase 4: The kit (template, base, kept queries, Tidy rules)
 - Depends on: Phase 3.
