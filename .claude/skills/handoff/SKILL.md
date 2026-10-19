@@ -14,16 +14,19 @@ description: End-of-session routine. Updates STATUS.md and BACKLOG.md, commits, 
    - **Waiting on owner:** anything only a human can do (check in Obsidian, phone test, push, deleting branches), with a suggested date.
 4. Tick every `BACKLOG.md` item this session fixed or the user confirmed (date + source; check STATUS → Now for retest results). Then: anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) → `BACKLOG.md` as an unticked item with file:line pointers.
 5. New rule or decision made this session → one line in `CLAUDE.md` (rule) or `docs/decisions.md` (decision).
-6. Commit on the current branch. Do not push unless asked.
-7. Print this block for the user (optional to paste after `/clear`):
+6. Commit on the current branch. Do not push unless asked. Add the session's entry to `my_work/notes/LOG.md` (pieces with PASS/PARTIAL/FAIL, commits, wrong turns, next) and commit in `my_work/`.
+7. Write the next prompt in the agent-kit form (`my_work/agent_kit/CLAUDE_TEMPLATE.md` → Next-prompt template, with this repo's files: `STATUS.md`, `docs/decisions.md`; there is no NEXT_SESSION file). Put the same prompt in `STATUS.md` → Next under the top item, and print it in a code block **before** any closing box, with the model to pick on the line under it (CLAUDE.md → Models). Fill the `<...>` parts, keep the rest; never shorten it to a summary block:
 
 ```text
-Repo: lab-kit   Branch: <branch>
-Read STATUS.md first, then only what docs/INDEX.md says this task needs.
-Task: <top item from Next> — done when: <criterion>.
-Out of scope: <list>.
-Be token-light: use the explorer agent for searches; plan first if >2 files change.
+Read CLAUDE.md, then STATUS.md, docs/decisions.md (only the <id> lines; search for "<id>"), the LOG.md entry starting "<heading of the entry this step needs>", and from BACKLOG.md only <the items, by search word; never read BACKLOG whole>. <Other files to read, or "Search X with scripts/codemap.py first; do not read big files whole">. Keep token use low: one check run per piece (python3 scripts/check.py), not after every edit. Use the <skill> skill for <what>.
+
+Do plan step <id> only (<what is already done>; work from <branch>; ask before any visual or behaviour change not already decided):
+1. <piece>: <what to build or decide>; check: <the test or numbers that show it passes>.
+2. ...
+N. Report the result of every check as numbers or PASS/PARTIAL/FAIL.
+One commit per piece in the main repo; fixtures and docs in my_work. At the end: add an entry to my_work/notes/LOG.md, tick the answered BACKLOG questions, add any new decision to docs/decisions.md, update STATUS.md with the next prompt in the same form (template in my_work/agent_kit/CLAUDE_TEMPLATE.md), commit in my_work. Stop.
 ```
+Model: <Haiku / Sonnet / Opus / Fable> (<why, from the CLAUDE.md Models line>).
 
 8. Report what you verified and what you did not (e.g. "not seen in Obsidian"). Then STOP and end the reply with exactly:
 
