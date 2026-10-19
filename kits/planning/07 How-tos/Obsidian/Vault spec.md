@@ -160,7 +160,7 @@ Created with the **New to-do** button or command (`Alt+T`): an entry window (tit
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); *Comes after?* (only for a project with other open to-dos: one pick, "(nothing)" first); which meeting to raise it at (only when there are several series); a due date (Enter = none; `YYYY-MM-DD`, or `today`, `tomorrow`, a weekday such as `fri`, `next mon`) and, with a date, whether to show a countdown; the priority (none, 1, 2, 3). Esc at any box cancels the to-do, except at *Comes after?*, where it picks nothing. New to-dos get `cssclasses: [vt]`.
 
-**Roll-over** is done by Lab Kit itself (no Templater startup template), when the planning kit is on and installed: about 90 seconds after Obsidian opens, and again when the date changes while Obsidian stays open. The command **Roll over to-dos now** runs it at once.
+**Carried over** cards are drawn by Lab Kit from the planned date (`scheduled`): an open card planned for a day before today shows in today's column with an amber edge, on every device. Nothing is written and nothing runs at startup (the roll-over and its command are gone).
 - A card's day means *the first such weekday on or after `planned`*. So a card dragged onto Mon on a Friday waits for next Monday.
 - Unfinished card whose day has passed -> moves to today's column (Mon at the weekend), `rolled: true`, shown **amber**.
 - Ticked `done` (click the circle on the card) -> stays on its day, shown **green**, `done_on` stamped.

@@ -1,6 +1,7 @@
 // I2-TEST step 3: the planned-dates (I2) model of docs/plans/planned-dates.md as a PURE TEST HELPER (no src/ code exists yet).
 // Used only to measure what I2 would do to old-style to-dos; it is not the implementation.
-import { DAYS, cardDate, changePatch, dayOf, isoWeekday, parseDay, rollOverPatch, todayColumn, weekStart, ymd, type TodoFm, type TodoPatch } from "../../src/planning/todo";
+import { DAYS, dayOf, isoWeekday, parseDay, weekStart, ymd, type TodoFm, type TodoPatch } from "../../src/planning/todo";
+import { cardDate, changePatch, rollOverPatch, todayColumn } from "./old-todo";
 
 /** The three days of the test: a Wednesday, the Saturday and the next Monday; MTIME = the notes' last change (a Friday before the test week). */
 export const DATES = { wed: new Date(2026, 9, 21), sat: new Date(2026, 9, 24), mon: new Date(2026, 9, 26) };

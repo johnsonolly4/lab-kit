@@ -117,31 +117,7 @@ export function deadlineMarkers(h: HeaderSrc, cards: BoardCard[], day: string, d
   return [{ kind: "deadline", text: `${marks.length} due` }];
 }
 
-export interface Board { days: DayColumn[]; tray: BoardCard[] }
-
-/**
- * Split the cards into the day columns and the tray. A card whose `day` is not a shown column (Backlog, or Sat / Sun with the weekend off,
- * or anything unknown) goes to the tray, so none is hidden. Finished cards in a day column collapse into its `done` count; finished cards
- * in the tray are dropped (the base already leaves out `day: Done`).
- */
-export function buildBoard(cards: BoardCard[], head: HeaderSrc, o: BoardOptions): Board {
-  const names = shownDays(o.weekend);
-  const monday = weekStart(o.now);
-  const days = names.map((day, i): DayColumn => {
-    const date = dayOf(monday, i);
-    const mine = cards.filter(c => c.day === day);
-    const open = mine.filter(c => !c.done);
-    return {
-      day, date, today: isToday(i, o.now, o.weekend), open, done: mine.length - open.length, count: open.length,
-      busy: o.busyFrom > 0 && open.length >= o.busyFrom,
-      markers: [...meetingMarkers(head, date), ...deadlineMarkers(head, cards, day, date)],
-    };
-  });
-  const tray = cards.filter(c => !names.includes(c.day) && !c.done);
-  return { days, tray };
-}
-
-// ---- The board on planned dates (I2 Phase 1, pure; the view switches over in Phase 2). Plan: docs/plans/planned-dates.md "Where a card shows".
+// ---- The board on planned dates (I2; the old `day` board, buildBoard, is frozen in tests/helpers/old-todo.ts). Plan: docs/plans/planned-dates.md "Where a card shows".
 
 /** One card with its dates. */
 export interface WeekCard extends BoardCard {

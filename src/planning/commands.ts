@@ -84,7 +84,6 @@ export class PlanningCommands {
     add("new-project-note", "New project note", () => this.newProjectNote());
     add("new-concept", "New concept", () => this.newConcept());   // the template asks title + topic and files the note
     add("new-topic-hub", "New topic hub", () => this.newTopicHub());
-    add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
     add("open-todo-board", "Open to-do board", () => this.openBoard());
     // Desktop only: opening a file in another app needs Electron
     this.plugin.addCommand({

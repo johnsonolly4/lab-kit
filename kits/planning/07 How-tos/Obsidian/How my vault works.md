@@ -57,7 +57,7 @@ flowchart LR
 - Tick **meeting** on a to-do (open the note) if you want to raise it at the next meeting.
 - A card with a priority or a project shows a small tag at the bottom left, like `↑ Polymers` (↑ high, – medium, ↓ low). In each column done cards go last, then the highest priority comes first.
 - A long name shows on one line on a card with a tag or a countdown (up to 3 lines on a plain card) - open the card to see the rest.
-- Today's column not blue? The roll-over isn't running: the planning kit must be on and its files installed (Settings → Lab Kit → Updates). **Roll over to-dos now** in the command palette runs it at once.
+- Today's column not blue? The planning kit must be on and its files installed (Settings → Lab Kit → Updates).
 
 ## Experiments
 
@@ -177,7 +177,6 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | Add to shopping list | Adds items (commas between them) to the [[Shopping list]] |
 | Sort inbox | Goes through the inbox one note at a time and files each |
 | Archive old to-dos | Moves to-dos finished over 30 days ago to the archive, except those of a project that is not Done |
-| Roll over to-dos now | Rolls unfinished to-dos over to today and clears last week's finished ones, now |
 | Open to-do board | Opens the [[To-do board.base\|To-do board]] |
 | New meeting | New meeting note for a series (asks which when there are several) |
 | Freeze this meeting note | Turns a meeting note's lists into plain links, so it stays a record (New meeting does this to the last one) |

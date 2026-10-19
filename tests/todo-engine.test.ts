@@ -1,6 +1,7 @@
 // Phase 4a: the to-do board rules (src/planning/todo.ts), including the 2026-10-07 Obsidian Sync scenarios.
 import { describe, it, expect } from "vitest";
-import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, emptyTodoCursorLine, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { applyPatch, cardTag, dueCountdown, emptyTodoCursorLine, parseDay, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { cardDate, changePatch, rollOverPatch, snapOf, todayColumn } from "./helpers/old-todo";
 
 const day = (s: string): Date => parseDay(s)!;
 const WED = day("2026-10-07");   // a Wednesday
@@ -134,17 +135,6 @@ describe("changes: more cases", () => {
   });
   it("tick with done_on already set and not carried over: nothing written", () => {
     expect(changePatch(todo({ day: "Wed", done: true, done_on: "2026-10-07", rolled: false }), { day: "Wed", done: false }, { day: "Wed", done: true }, WED)).toBeNull();
-  });
-});
-
-describe("which devices roll over", () => {
-  it("the per-device switch wins; unset = computers yes, phones and tablets no", async () => {
-    const { rollsOnDevice } = await import("../src/planning/engine");
-    expect(rollsOnDevice("on", true)).toBe(true);
-    expect(rollsOnDevice("off", false)).toBe(false);
-    expect(rollsOnDevice(null, false)).toBe(true);
-    expect(rollsOnDevice(null, true)).toBe(false);
-    expect(rollsOnDevice("maybe", false)).toBe(false);   // like the old template: any other stored value means off
   });
 });
 

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildBoard, cardOf, deadlineMarkers, filterTray, meetingMarkers, projectName, readyPaths, shownDays, trayProjects, type BoardCard, type HeaderSrc, type BoardOptions } from "../src/planning/board-card";
+import { cardOf, deadlineMarkers, filterTray, meetingMarkers, projectName, readyPaths, shownDays, trayProjects, type BoardCard, type HeaderSrc, type BoardOptions } from "../src/planning/board-card";
+import { buildBoard } from "./helpers/old-todo";
 import type { NoteRec } from "../src/planning/lists";
 import type { Series } from "../src/planning/meetings";
 

@@ -31,7 +31,7 @@ These are suggestions. Nothing is set until you do it: by hand (see the end of t
 | `Alt+B` | To-do board | Lab Kit: Open to-do board |
 | `Ctrl+E` | Switch between reading and editing | Obsidian's own key, nothing to set |
 
-No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Roll over to-dos now, Archive old to-dos, Link to-dos in order, Add result, New chemical, New rig, Clone experiment.
+No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Archive old to-dos, Link to-dos in order, Add result, New chemical, New rig, Clone experiment.
 
 ## Editing
 

@@ -5,10 +5,11 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { buildBoard, cardOf, type HeaderSrc } from "../src/planning/board-card";
+import { cardOf, type HeaderSrc } from "../src/planning/board-card";
+import { buildBoard, rollOverPatch } from "./helpers/old-todo";
 import { projectTodos, thisWeek, type NoteRec } from "../src/planning/lists";
 import { parseSeries } from "../src/planning/meetings";
-import { applyPatch, rollOverPatch, ymd } from "../src/planning/todo";
+import { applyPatch, ymd } from "../src/planning/todo";
 import { DATES, MTIME } from "./helpers/i2-model";
 import { I2_ROOT, boardNotes, loadVault, todoNotes } from "./helpers/i2-vault";
 
