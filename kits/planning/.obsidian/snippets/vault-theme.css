@@ -114,7 +114,7 @@ body {
   background: rgba(var(--vt-badge), var(--vt-tint));
 }
 .vt-badge:is(.vt-active, .vt-closed, .vt-done)          { --vt-badge: var(--vt-done);    --vt-badge-text: var(--vt-done-text); }
-.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled, .vt-waiting) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
+.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled, .vt-waiting, .vt-nonext) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
 .vt-badge:is(.vt-started, .vt-today)                    { --vt-badge: var(--vt-doing);   --vt-badge-text: var(--vt-doing-text); }
 .vt-badge:is(.vt-planned, .vt-backlog)                  { --vt-badge: var(--vt-neutral); --vt-badge-text: var(--vt-neutral-text); }
 .vt-badge.vt-overdue                                    { --vt-badge: var(--vt-overdue); --vt-badge-text: var(--vt-overdue-text); }

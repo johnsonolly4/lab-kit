@@ -1,7 +1,7 @@
 // Waiting (I7): a to-do with `waiting: <who or what>` is shown as such in the lists, is not blocked, and the board look exists.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { projectCards, projectTodos, thisWeek, waitingOn, type NoteRec } from "../src/planning/lists";
+import { projectCards, noNextStep, projects, projectTodos, thisWeek, waitingOn, type NoteRec } from "../src/planning/lists";
 import { readPlan } from "../src/planning/plan";
 import { waitingOf } from "../src/planning/todo";
 
@@ -48,7 +48,7 @@ describe("the board look", () => {
   it("the vault theme greys a card with data-vt-waiting and colours the badge", () => {
     const css = readFileSync("kits/planning/.obsidian/snippets/vault-theme.css", "utf8");
     expect(css).toMatch(/\.bases-kanban-card\[data-vt-waiting\]\s*\{[^}]*--vt-waiting/);
-    expect(css).toContain(".vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled, .vt-waiting)");
+    expect(css).toContain(".vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled, .vt-waiting, .vt-nonext)");
   });
   it("the engine sets and clears data-vt-waiting", () => {
     const src = readFileSync("src/planning/engine.ts", "utf8");
@@ -87,5 +87,26 @@ describe("the Waiting on list", () => {
     expect(meeting.indexOf("show: waiting")).toBeGreaterThan(meeting.indexOf("Flagged for this meeting"));
     expect(readFileSync("kits/planning/Extras/Templates/Project hub.md", "utf8")).toContain("> [!question] Waiting on\n> ```vault-card\n> show: waiting\n> ```");
     expect(readFileSync("src/planning/blocks.ts", "utf8")).toContain('case "waiting"');
+  });
+});
+
+describe("no next step (I13)", () => {
+  const proj = (name: string, Status?: string) => note(`02 Projects/${name}/${name}.md`, { kind: "project", ...(Status ? { Status } : {}) });
+  const open = [td("Do it")];   // points at Alpha
+  const line = (h: NoteRec, todos: NoteRec[]) => projects([h], Infinity, "off", WED, todos)[0].badges.map(b => b.text);
+  it("Active with no open to-do gets the badge", () => {
+    expect(noNextStep(proj("Alpha", "Active"), [])).toBe(true);
+    expect(line(proj("Alpha", "Active"), [])).toContain("no next step");
+    expect(noNextStep(proj("Alpha"), [])).toBe(true);   // no Status counts as Active
+  });
+  it("Active with one open to-do has none; ticked and Done-column to-dos and other projects' to-dos do not count", () => {
+    expect(noNextStep(proj("Alpha", "Active"), open)).toBe(false);
+    expect(line(proj("Alpha", "Active"), open)).not.toContain("no next step");
+    expect(noNextStep(proj("Alpha", "Active"), [td("T", { done: true }), td("D", { day: "Done" }), td("Other", { project: "[[Beta]]" })])).toBe(true);
+  });
+  it("Paused and Done projects with none have no badge; without a to-do list the tile is as before", () => {
+    expect(noNextStep(proj("Alpha", "Paused"), [])).toBe(false);
+    expect(noNextStep(proj("Alpha", "Done"), [])).toBe(false);
+    expect(projects([proj("Alpha", "Active")]).flatMap(l => l.badges.map(b => b.text))).toEqual(["active"]);
   });
 });

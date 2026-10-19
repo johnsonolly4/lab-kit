@@ -20,7 +20,7 @@ import { PlanHistory } from "./plan-history";
 import { runHistory } from "./after-write";
 import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
 import { hasNode } from "../platform";
-import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -227,7 +227,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       case "projects":
-        if (this.need(box, f.projects)) this.capped(box, projects(this.owner.notesIn(f.projects), Infinity, kit.dueCountdown), o.limit ?? TILE_ROWS, "No projects yet.");
+        if (this.need(box, f.projects)) this.capped(box, projects(this.owner.notesIn(f.projects), Infinity, kit.dueCountdown, new Date(), this.app.vault.getFolderByPath(todoFolder(f)) ? this.owner.notesIn(todoFolder(f)) : []), o.limit ?? TILE_ROWS, "No projects yet.");
         return;
       case "recently-read":
         // Literature is only made with ZotLit: without it, an absent folder is normal
@@ -474,6 +474,7 @@ class BlockView extends MarkdownRenderChild {
       this.projectChips(bar, file);
       const badge = deadlineBadge(this.owner.rec(file).fm, this.owner.kit().dueCountdown, new Date());   // none once the project is Done
       if (badge) bar.createSpan({ cls: badge.cls, text: badge.text });
+      if (noNextStep(this.owner.rec(file), this.owner.notesIn(todoFolder(this.owner.kit().planningFolders)))) bar.createSpan({ cls: NO_NEXT_STEP.cls, text: NO_NEXT_STEP.text });
     }
     else if (kind === "hub") button("New concept", c => void c.newConcept(file.parent?.path));
     else if (kind === "meeting-series") {

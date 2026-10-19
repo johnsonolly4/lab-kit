@@ -67,14 +67,21 @@ export function deadlineBadge(fm: Record<string, unknown>, mode: CountdownMode, 
   return { text: `deadline ${cd.text}`, cls: `vt-badge ${cd.level === "late" ? "vt-overdue" : cd.level === "soon" ? "vt-today" : "vt-planned"}` };
 }
 
-/** Projects: project hubs, Active → Paused → Done (others last), then by name. A hub with a `deadline` gets the countdown badge (mode "off" = none). */
-export function projects(notes: NoteRec[], limit = Infinity, mode: CountdownMode = "off", now: Date = new Date()): ListLine[] {
+/** An Active project (Status not Done or Paused; none counts as Active) with no open to-do: nothing is planned next. */
+export function noNextStep(hub: NoteRec, todos: NoteRec[]): boolean {
+  const s = str(hub.fm.Status).trim().toLowerCase();
+  return hub.fm.kind === "project" && s !== "done" && s !== "paused" && !todos.some(t => isOpenTodo(t) && pointsTo(t.fm.project, hub));
+}
+export const NO_NEXT_STEP: Badge = { text: "no next step", cls: "vt-badge vt-nonext" };
+
+/** Projects: project hubs, Active → Paused → Done (others last), then by name. A hub with a `deadline` gets the countdown badge (mode "off" = none). With `todos`, an Active project with no open to-do gets the "no next step" badge. */
+export function projects(notes: NoteRec[], limit = Infinity, mode: CountdownMode = "off", now: Date = new Date(), todos?: NoteRec[]): ListLine[] {
   return notes.filter(n => n.fm.kind === "project")
     .sort((a, b) => statusRank(str(a.fm.Status)) - statusRank(str(b.fm.Status)) || a.name.localeCompare(b.name))
     .slice(0, limit)
     .map(n => {
       const s = str(n.fm.Status), d = deadlineBadge(n.fm, mode, now);
-      return { path: n.path, text: n.name, badges: [...(s ? [{ text: s.toLowerCase(), cls: `vt-badge vt-${slug(s)}` }] : []), ...(d ? [d] : [])] };
+      return { path: n.path, text: n.name, badges: [...(s ? [{ text: s.toLowerCase(), cls: `vt-badge vt-${slug(s)}` }] : []), ...(d ? [d] : []), ...(todos && noNextStep(n, todos) ? [NO_NEXT_STEP] : [])] };
     });
 }
 
