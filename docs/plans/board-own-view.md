@@ -120,11 +120,26 @@ Decided by the owner 2026-10-19 (two feedback pages, `docs/decisions.md`): optio
 - Checks: `tests/board-card.test.ts` per piece; obsidian-check on a seeded vault (50 to-dos, a series meeting this week, a hub with a deadline): 5 columns and the tray at 1200 px, markers on the right days, a chip filters, a drop from the tray on Wed writes `day: Wed`, weekend on shows Sat / Sun, errors `[]`, cropped screenshots light and dark.
 - Size: L (split into: model, view, kit file, docs)
 
-### Phase 2 — Drag on desktop and touch
+### Phase 2 — Drag on desktop and touch, phone layout
 - Depends on: Phase 1
-- Files: `src/planning/board-view.ts`, `styles.css`
-- Pointer-event drag (one code path for mouse and touch, long-press start on touch), drop marker, auto-scroll at the edges; writes `day` only
-- Done when: obsidian-check drop writes `day` and `planned` follows; the user drags on a phone (checklist row)
+- Files: `src/planning/board-drag.ts` (new: pure rules and the pointer-drag wiring), `src/planning/board-view.ts`, `styles.css` (`.lk-board-*`), `tests/board-drag.test.ts` (new), `docs/obsidian-test-checklist.md`, `docs/changelog.md`, `docs/architecture.md`
+- Not changed: `board-card.ts`, settings, markers, what a drop writes (`day` only through `processFrontMatter`; the engine stamps `planned`).
+- Piece A, one drag code path (replaces HTML5 `draggable` / `dragstart` / `dragover` / `drop`):
+  - `pointerdown` on a card (not on the done circle, left button only). Mouse and pen: the drag starts after 5 px of movement. Touch: a long press of 350 ms starts it; moving more than 10 px before that is a scroll and the press is dropped, so the page, the tray row and a swipe still work.
+  - While dragging: a ghost with the card title follows the pointer (`position: fixed`, set with `setCssProps`), the card is dimmed, the zone under the pointer gets the dashed outline and a drop marker (a dashed bar at the end of its list or tray row). Zones are the elements with `data-drop` (day columns, the tray, on a phone the day tabs); the target comes from their rectangles (`targetAt`). Over the card's own zone: no marker, no write.
+  - Auto-scroll while dragging: the tray row sideways within 48 px of its left / right edge, the page up / down within 48 px of the view's top / bottom edge (14 px per 30 ms), so a long day and a long tray are reachable.
+  - Escape (or `pointercancel`) cancels: nothing is written. The click that follows a drag does not open the note.
+  - Listeners sit on `document` with an `AbortController`; a redraw that arrives mid-drag (Bases data update) waits until the drag ends. A non-passive `touchmove` listener on the card calls `preventDefault` only while a drag is on. CSS: cards `touch-action: pan-y` (a horizontal swipe reaches the script; vertical scroll stays), tray cards `pan-x pan-y`, `user-select: none` and `-webkit-touch-callout: none` on cards.
+  - Pure parts (`board-drag.ts`, tested): `pressState(kind, ms, dist)` → `wait | drag | abandon`; `targetAt(zones, x, y)`; `edgeStep(rect, x, y)`; `dropDay(fromKey, toKey, cancelled)` → the day to write or `null`.
+  - Check: `tests/board-drag.test.ts` (long-press threshold, slop, target from a point, edge steps, cancel, same zone); obsidian-check with synthetic `PointerEvent`s (`pointerType` mouse and touch): tray to Wed, Wed to Mon, Escape cancels (no write); `day` and `planned` as expected; errors `[]`.
+- Piece B, phone layout at widths under 600 px of the board's own area, or `Platform.isPhone` (a `ResizeObserver` toggles the class `is-narrow` on `.lk-board`; no redraw):
+  - Day tabs across the top (`Mon 3` ... `Fri 0`; with Show weekend also Sat, Sun): the day name and the open count; today first selected (else the first day); the tab strip is sticky so it stays reachable in a long day. Only the selected day's column shows, one column wide.
+  - Swipe left / right on the day area (touch only, 60 px and clearly more sideways than down) moves to the next / previous day; no wrap-around.
+  - The Backlog tray stays at the bottom and is folded by default when this device has never stored a choice (`Unfold` still works; the choice is kept as before).
+  - A card dragged onto a tab drops on that day (the tab gets the dashed outline; no marker).
+  - Check: `obsidian-check` with the window at 390 px: tabs show with counts, only one column visible, a synthetic swipe moves the day, a touch drag onto a tab writes `day`, tray folded; cropped screenshots light and dark. A real phone is not tried (owner row in checklist 6i).
+- Exact new strings: none visible beyond day names and counts already used. Accessible names only: tab strip `aria-label` "Days", tabs `role="tab"` with `aria-selected`.
+- Done when: both checks pass; the owner drags on a real phone (checklist row)
 - Size: M
 
 ### Phase 3 — Column New and options
