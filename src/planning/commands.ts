@@ -11,6 +11,7 @@ import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
 import type { EntryField, EntryValues } from "./entry-fields";
+import { datePill } from "./board-card";
 import { captureAnchor, openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
 import { experimentOptions, projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
@@ -119,13 +120,14 @@ export class PlanningCommands {
     return experimentOptions(this.app.vault.getMarkdownFiles().filter(f => f.path.startsWith(prefix)).map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })));
   }
 
-  /** Highlighted text in the open note as a quick to-do: the title and the `@project`, `%date`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */
+  /** Highlighted text in the open note as a quick to-do: the title and the `+project`, `%date`, `>day`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */
   private selectionTodo(): { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } {
     const text = this.app.workspace.activeEditor?.editor?.getSelection() ?? "";
     if (!text.trim()) return {};
     const projects = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => f.basename);
     const q = parseQuickTodo(text, projects, new Date());
-    return { title: q.title, anchor: selectionAnchor(this.app), ...(q.projectGuess ? { openField: { key: "project", search: q.projectGuess } } : {}), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
+    if (q.pastDay) new Notice(`${datePill(parseDay(q.pastDay)!)} has passed: pick today or a later day.`);
+    return { title: q.title, anchor: selectionAnchor(this.app), ...(q.projectGuess ? { openField: { key: "project", search: q.projectGuess } } : {}), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.scheduled ? { scheduled: q.scheduled } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
   }
 
   /** New to-do: the entry window, then the To-do template makes the note from what was set. */

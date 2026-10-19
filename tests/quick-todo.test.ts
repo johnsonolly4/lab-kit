@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import { parseQuickTodo, todoFileName } from "../src/planning/quick-todo";
 
+const MON = new Date(2026, 9, 19, 9, 0);   // Mon 2026-10-19 (I2 Phase 5)
+const qm = (t: string, now = MON) => parseQuickTodo(t, ["Polymers", "Thesis"], now);
+
 const NOW = new Date(2026, 9, 7, 15, 30);   // Wed 2026-10-07
 const projects = ["Polymer A", "Polymer", "Flow reactor", "Thesis"];
 const q = (t: string) => parseQuickTodo(t, projects, NOW);
@@ -131,5 +134,33 @@ describe("todoFileName (I12: the to-do is made under its final name)", () => {
     expect(tpl).toContain(String.raw`text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80)`);
     expect(tpl).toContain("if (here !== `${folder}/${name}.md`) { await tp.file.move(");
     expect(todoFileName("a#b[c]^d|e", none)).toBe("a-b-c--d-e");
+  });
+});
+
+describe("the > day mark (I2 Phase 5, Mon 19 Oct)", () => {
+  it(">next tue is the Tuesday of next week", () => {
+    expect(qm("Book NMR time +Polymers >next tue !1")).toEqual({ title: "Book NMR time", project: "Polymers", scheduled: "2026-10-27", priority: 1 });
+  });
+  it(">tue on a Tuesday is today", () => {
+    expect(qm("a >tue", new Date(2026, 9, 20)).scheduled).toBe("2026-10-20");
+    expect(qm("a >today", new Date(2026, 9, 20)).scheduled).toBe("2026-10-20");
+  });
+  it(">backlog sets nothing and leaves no trace in the title", () => {
+    expect(qm("Book NMR >backlog")).toEqual({ title: "Book NMR" });
+  });
+  it("marks in any order, with words up to the next mark", () => {
+    const want = { title: "Book NMR time", project: "Thesis", due: "2026-10-23", scheduled: "2026-10-21", priority: 2 };
+    expect(qm("Book NMR time +Thesis %fri >wed !2")).toEqual(want);
+    expect(qm(">wed !2 %fri +Thesis Book NMR time")).toEqual(want);
+    expect(qm("!2 >wed +Thesis Book NMR time %fri")).toEqual(want);
+    expect(qm("Book >in 3 days %fri")).toEqual({ title: "Book", scheduled: "2026-10-22", due: "2026-10-23" });
+    expect(qm("Book >27 oct")).toEqual({ title: "Book", scheduled: "2026-10-27" });
+  });
+  it("a past day is returned as pastDay and not set; a word that is not a date stays", () => {
+    expect(qm("a >2026-10-14")).toEqual({ title: "a", pastDay: "2026-10-14" });
+    expect(qm("a > soon").title).toBe("a > soon");
+  });
+  it("a leading quote marker is dropped, not read as the mark", () => {
+    expect(qm("> Book NMR >fri")).toEqual({ title: "Book NMR", scheduled: "2026-10-23" });
   });
 });
