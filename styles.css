@@ -432,6 +432,10 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-todo-chip:hover { background: var(--background-modifier-hover); }
 .vt-todo-chip.is-empty { border-style: dashed; color: var(--text-muted); }
 .vt-todo-chip.is-set { border-color: var(--interactive-accent); color: var(--text-accent); }
+.vt-todo-tick { flex: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; width: 18px; height: 18px; min-height: 0; padding: 0; border: 1.5px solid var(--text-muted); border-radius: var(--lk-radius-pill); corner-shape: round; background: none; box-shadow: none; cursor: pointer; color: var(--text-on-accent); }
+.vt-todo-tick:hover { border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
+.vt-todo-tick.is-done, .vt-todo-tick.is-done:hover { border-color: var(--interactive-accent); background: var(--interactive-accent); }
+.vt-todo-tick .svg-icon { width: 12px; height: 12px; stroke-width: 3px; }
 .vt-todo-chip-icon { display: inline-flex; }
 .vt-todo-chip-icon .svg-icon { width: 14px; height: 14px; }
 

@@ -1,7 +1,7 @@
 // The Undo notice after a tick (I2 Phase 6, Q19): Undo leaves the front matter byte-equal to before; a second tick replaces the first notice.
 import { describe, it, expect } from "vitest";
 import { Notice } from "obsidian";
-import { frontOf, swapFront, tickNotice, toggleDoneWithUndo, undoPlan } from "../src/planning/undo-notice";
+import { frontOf, swapFront, tickButton, tickNotice, toggleDoneWithUndo, undoPlan } from "../src/planning/undo-notice";
 import { applyPatch, tickPatch } from "../src/planning/todo";
 
 const WED = new Date(2026, 9, 21, 9);
@@ -94,3 +94,39 @@ describe("tickNotice", () => {
 type Seen = { texts: string[]; clicks: (() => void)[]; hidden: boolean };
 const created = (Notice as unknown as { all: Seen[] }).all;
 const lastNotice = (): Seen => created[created.length - 1];
+
+/** A parent that records the button it is asked for (no DOM in the tests). */
+function fakeParent() {
+  const btn = { opts: {} as { cls?: string; attr?: Record<string, string> }, dataset: {} as Record<string, string>, on: {} as Record<string, (e: unknown) => void>, addEventListener(ev: string, fn: (e: unknown) => void) { this.on[ev] = fn; } };
+  return { btn, parent: { createEl: (_tag: string, o: typeof btn.opts) => { btn.opts = o; return btn; } } };
+}
+
+describe("tickButton (the chip bar's round tick)", () => {
+  it("an open tick says Mark done; a click writes done: true and shows the notice", async () => {
+    const { app, file, text } = fakeApp(NOTE);
+    const { btn, parent } = fakeParent();
+    tickButton(parent as never, app as never, file as never, false);
+    expect(btn.opts.attr?.["aria-label"]).toBe("Mark done");
+    expect(btn.opts.cls).toBe("vt-todo-tick");
+    const count = created.length;
+    btn.on.click({ stopPropagation() { /* ignored */ } });
+    await new Promise(r => setTimeout(r, 0));
+    expect(text()).toContain("done: true");
+    expect(created.length).toBe(count + 1);
+    expect(lastNotice().texts).toEqual(['Ticked "Book NMR". ', "Undo"]);
+  });
+
+  it("a ticked tick says Mark not done and shows a check; a click writes done: false with no notice", async () => {
+    const { app, file, text } = fakeApp(NOTE.replace("done: false", "done: true"));
+    const { btn, parent } = fakeParent();
+    tickButton(parent as never, app as never, file as never, true);
+    expect(btn.opts.attr?.["aria-label"]).toBe("Mark not done");
+    expect(btn.opts.cls).toBe("vt-todo-tick is-done");
+    expect(btn.dataset.icon).toBe("check");
+    const count = created.length;
+    btn.on.click({ stopPropagation() { /* ignored */ } });
+    await new Promise(r => setTimeout(r, 0));
+    expect(text()).toContain("done: false");
+    expect(created.length).toBe(count);
+  });
+});

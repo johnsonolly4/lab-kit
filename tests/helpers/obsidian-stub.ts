@@ -52,6 +52,7 @@ export class AbstractInputSuggest {
   close(): void { /* ignored */ }
 }
 export const Platform = { isDesktop: true, isDesktopApp: true, isMobile: false, isWin: false, isMacOS: false };
+export const setIcon = (el: { dataset?: Record<string, string> }, name: string): void => { if (el.dataset) el.dataset.icon = name; };
 export const getIcon = (_name: string): SVGElement | null => null;
 export const MarkdownRenderer = {
   render: async (_app: unknown, md: string, el: any): Promise<void> => { el.innerHTML = "<p>" + md + "</p>"; },
