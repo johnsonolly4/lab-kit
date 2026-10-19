@@ -3,6 +3,16 @@ filters:
     - file.inFolder("00 Planning/To-dos")
     - day != "Done"
 views:
+  - type: lab-kit-board
+    name: Lab Kit board
+    order:
+      - file.name
+      - done
+    sort:
+      - property: done
+        direction: ASC
+      - property: priority
+        direction: ASC
   - type: kanban
     name: Board
     groupBy:

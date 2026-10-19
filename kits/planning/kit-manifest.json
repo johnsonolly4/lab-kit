@@ -232,8 +232,8 @@
       "src": "00 Planning/To-do board.base",
       "role": "planning",
       "path": "To-do board.base",
-      "version": "1.0.1",
-      "sha256": "21e2dba58c68c1839c04cde7fb50414aca7e8587b08299097db68ecfa3c19b11",
+      "version": "1.4.1",
+      "sha256": "ee489913a601b771bf505491f76aa6411059b91fd4c496ba33687f97ad09cb8f",
       "renamedFrom": [],
       "desc": "To-do board: one column per day",
       "policy": "keep"
