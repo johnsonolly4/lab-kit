@@ -64,6 +64,22 @@ Decided: marks 7-8 need no code (the figure draws the Control / Data lines the t
 - Files: new `src/rig/figure-ui.ts` (window: preview, width in mm and DPI, Save SVG, Save PNG), a button on the rig block in `src/rig/render.ts`, a "Figures folder" setting (`src/kit/ui.ts`, `src/kit/paths.ts`, folder contract in README), saving through the vault API (`createBinary` / `create`; no code for it exists yet), tests for the file names and the pixel size maths.
 - Done when: tests; the user saves an SVG and a PNG of a fictional rig and opens the SVG in a drawing tool; the PNG pixel size is what the window says; desktop and mobile behaviour stated (desktop only if the canvas is).
 
+#### Phase 4 result (spike, 2026-10-19, checked in a throwaway Obsidian 1.14.4 on macOS with `scripts/obsidian-check.mjs`; the figure was a made-up 1080 x 458 rig, drawn from its SVG onto a canvas, read back with `toBlob`)
+| Canvas (w x h px) | Pixels | Result |
+|---|---|---|
+| 10,000 x 4,241 (figure's own height) | 42 M | PNG made, 1.1 MB, 2.0 s, size read back 10000x4241 |
+| 14,000 x 5,937 | 83 M | PNG made, 2.0 MB, ink present, 1.5 s |
+| 16,384 x 6,948 / 16,385 x 6,948 / 20,000 x 8,481 | 114-170 M | PNG made, size read back exact (no side limit at 16,384 here) |
+| 10,000 x 14,000 (A0 portrait at 300 dpi is 9,933 x 14,043) | 140 M | PNG made, 3.0 MB, 2.2 s |
+| 14,000 x 14,000 | 196 M | PNG made, 4.1 MB, 2.3 s |
+| 16,384 x 16,384 | 268 M | PNG made, 5.6 MB, 2.6 s |
+| 40,000 x 6,000 | 240 M | PNG made, 5.3 MB, 0.9 s |
+| 32,767 x 10,000, 20,000 x 20,000 | 328-400 M | **fails**: no error is thrown, the canvas stays blank (`getImageData` all transparent) and `toBlob` gives `null` |
+
+- The limit measured here is the total pixel count (between 268 M and 328 M), not 16,384 px a side. Other machines (Windows, Linux, a GPU with less memory) and Obsidian versions were not measured, and a phone has far less, so the cap is set well below the measured edge.
+- **Cap used by the window: 16,000 px a side and 150 million pixels in all.** A0 at 300 dpi (139.5 M) fits. Above the cap the window lowers the pixel count to fit (same shape) and says so, with the size it got, in the notice. A `null` blob or a thrown error is also a notice ("could not make the PNG"), never a silent empty file.
+- Not measured: the real Windows and Linux builds, memory use during the draw, mobile (the PNG is desktop only).
+
 ### Phase 5: hand layout
 - Depends on: Phase 4
 - Files: `src/rig/figure-ui.ts` (drag a symbol, bend or move a line, snap to a grid, Reset to automatic), a `rig-layout` block read and written in the rig note (`src/rig/layout.ts`: parse, write, merge with the automatic layout when parts are added or removed), tests for the block's round trip and for a part removed or added.
