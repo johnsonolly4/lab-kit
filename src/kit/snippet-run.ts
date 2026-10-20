@@ -4,10 +4,10 @@ import { Notice, TFile, TFolder, parseYaml, type App } from "obsidian";
 import { text } from "../calc/engine";
 import { prop, toList } from "../frontmatter";
 import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "./snippet-env";
-import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, parseTemplate, type ParsedTemplate, type TemplateField } from "./snippet-template";
+import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, oldStub, parseTemplate, type ParsedTemplate, type TemplateField } from "./snippet-template";
 import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
-import { pushRecent, type MenuItem } from "./snippet-menu";
+import { hideShadowedStubs, pushRecent, type MenuItem } from "./snippet-menu";
 import { openSnippetMenu } from "./snippet-menu-ui";
 import type { FormFn } from "./snippet-form";
 
@@ -23,7 +23,7 @@ export interface SnippetTp {
 interface FormField { key: string; label: string; hint?: string; required?: boolean; placeholder?: string; type: string; value: string; suggest?: { name: string; aliases: string[] }[] }
 
 /** Title, icon, description and group for the Alt+S menu. */
-export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string }
+export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string; /** An old-form stub file (`<%*` … `labSnippets(tp, "nmr")`): the key it runs. */ oldStub?: string }
 
 /** The keys of labSnippets.js a header's `run:` may name. */
 export const CALCULATORS = ["solution", "recipe", "raft", "results", "nmr", "gpc", "dls"];
@@ -38,7 +38,8 @@ export class SnippetTemplates {
   constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn) {}
 
   /** The Alt+S menu (Insert snippet.md calls it in place of labPick.js): the picked entry's `value`, or null. Remembers the pick for Recent. */
-  async menu(items: MenuItem[]): Promise<unknown> {
+  async menu(all: MenuItem[]): Promise<unknown> {
+    const items = hideShadowedStubs(all);
     const kit = this.kit();
     const names = new Set(items.map(it => it.name));
     const recent = (kit.snippetRecent ?? []).filter(n => names.has(n));
@@ -53,11 +54,13 @@ export class SnippetTemplates {
     return parseTemplate(await this.app.vault.cachedRead(file), parseYaml);
   }
 
-  /** null = a plain snippet (inserted as it is). A token template with a bad header is still listed (empty meta); picking it shows the error. */
+  /** null = a plain snippet (inserted as it is). A token template with a bad header is still listed (empty meta); picking it shows the error. An old-form calculator stub counts as `run: <key>` with its own icon and description. */
   async meta(file: TFile): Promise<SnippetMeta | null> {
     try {
       const p = await this.parse(file);
-      return p ? { title: p.header.title, icon: p.header.icon, desc: p.header.desc, group: p.header.group } : null;
+      if (p) return { title: p.header.title, icon: p.header.icon, desc: p.header.desc, group: p.header.group };
+      const stub = oldStub(await this.app.vault.cachedRead(file));
+      return stub ? { icon: stub.icon, desc: stub.desc, oldStub: stub.run } : null;
     } catch (e) {
       if (e instanceof TemplateError) return {};
       throw e;
@@ -108,7 +111,11 @@ export class SnippetTemplates {
   async run(tp: SnippetTp, file: TFile): Promise<string> {
     let parsed: ParsedTemplate | null;
     try { parsed = await this.parse(file); } catch (e) { return this.fail(file, e); }
-    if (!parsed) return await this.app.vault.cachedRead(file);
+    if (!parsed) {
+      const text = await this.app.vault.cachedRead(file);
+      const stub = oldStub(text);
+      return stub ? await this.calculator(tp, file, undefined, stub.run) : text;
+    }
     const { header, body } = parsed;
     if (header.run) return await this.calculator(tp, file, header.title, header.run);
     const kit = this.kit();

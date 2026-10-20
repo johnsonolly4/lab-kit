@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import {
-  TemplateError, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, type TemplateEnv,
+  TemplateError, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, oldStub, type TemplateEnv,
 } from "../src/kit/snippet-template";
 import { makeEnv } from "../src/kit/snippet-env";
 import { miniYaml, runToken } from "./token-snippets";
@@ -213,5 +213,22 @@ describe("fillTemplate", () => {
     fails("{{@i}}", { a: "1" });
     fails("text {{ never closed");
     fails("{{#if a ^= h}}x{{/if}}", { a: "1" });
+  });
+});
+
+describe("oldStub", () => {
+  const stub = (body: string) => `<%*\n${body}\n%>`;
+  it("reads the key, icon and description of the old calculator file", () => {
+    assert.deepStrictEqual(oldStub(stub('// icon: magnet\n// desc: Sample table\ntR += await tp.user.labSnippets(tp, "nmr");')), { run: "nmr", icon: "magnet", desc: "Sample table" });
+    assert.deepStrictEqual(oldStub(stub('tR += await tp.user.labSnippets(tp, "raft")')), { run: "raft" });
+  });
+  it("takes Windows line endings and other comment lines", () => {
+    assert.deepStrictEqual(oldStub(stub('// icon: x\n// note to self\ntR += await tp.user.labSnippets(tp, "dls");').replace(/\n/g, "\r\n")), { run: "dls", icon: "x" });
+  });
+  it("is null for anything else: other code, two calls, no call, plain text", () => {
+    assert.strictEqual(oldStub(stub('const a = 1;\ntR += await tp.user.labSnippets(tp, "nmr");')), null);
+    assert.strictEqual(oldStub(stub('tR += await tp.user.labSnippets(tp, "nmr");\ntR += await tp.user.labSnippets(tp, "gpc");')), null);
+    assert.strictEqual(oldStub(stub("// icon: x")), null);
+    assert.strictEqual(oldStub("plain text\n"), null);
   });
 });

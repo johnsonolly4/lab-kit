@@ -327,3 +327,36 @@ describe("SnippetTemplates: run: calculators", () => {
     expect(Notice.messages.at(-1)).toContain("needs the name of a Lab Kit calculator");
   });
 });
+
+describe("SnippetTemplates: old calculator stubs kept in a vault", () => {
+  const OLD = (key: string, extra = "") => `<%*\n// icon: wand\n// desc: My words\n${extra}tR += await tp.user.labSnippets(tp, "${key}");\n%>`;
+  const calcTp = (calls: string[]) => ({ user: { labSnippets: async (_tp: unknown, key: string) => { calls.push(key); return `out:${key}\n`; } } }) as unknown as SnippetTp;
+
+  it("meta: the key, icon and description of the old form; no title (the menu uses the file name)", async () => {
+    const { st } = setup({ files: { "S/07 NMR samples.md": OLD("nmr") } });
+    expect(await st.meta(file("S/07 NMR samples.md"))).toEqual({ icon: "wand", desc: "My words", oldStub: "nmr" });
+  });
+
+  it("run: an old stub runs its calculator through labSnippets, an edited icon or an extra comment line changes nothing", async () => {
+    const { st } = setup({ files: { "S/a.md": OLD("raft"), "S/b.md": OLD("solution", "// remember to check MW\n") } });
+    const calls: string[] = [];
+    expect(await st.run(calcTp(calls), file("S/a.md"))).toBe("out:raft\n");
+    expect(await st.run(calcTp(calls), file("S/b.md"))).toBe("out:solution\n");
+    expect(calls).toEqual(["raft", "solution"]);
+  });
+
+  it("run: an old stub with an unknown key shows the Notice and inserts nothing", async () => {
+    const { st } = setup({ files: { "S/07 Mine.md": OLD("mine") } });
+    const calls: string[] = [];
+    expect(await st.run(calcTp(calls), file("S/07 Mine.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toBe("“Mine”: Lab Kit has no calculator called “mine”.");
+    expect(calls).toEqual([]);
+  });
+
+  it("a snippet with other code in it is a plain snippet: inserted as it is (Templater runs it)", async () => {
+    const code = '<%*\nconst x = 1;\ntR += await tp.user.labSnippets(tp, "nmr");\n%>';
+    const { st } = setup({ files: { "S/c.md": code } });
+    expect(await st.meta(file("S/c.md"))).toBeNull();
+    expect(await st.run(calcTp([]), file("S/c.md"))).toBe(code);
+  });
+});

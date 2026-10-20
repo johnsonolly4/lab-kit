@@ -41,6 +41,7 @@ if (!files.length && !methods.length) {
       icon: meta ? meta.icon?.trim() : text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim(),
       desc: meta ? meta.desc?.trim() : text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim(),
       group: meta?.group,
+      oldStub: meta?.oldStub,
       value: f,
       token: !!meta
     });

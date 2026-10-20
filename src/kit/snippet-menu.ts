@@ -2,7 +2,7 @@
 // Plan: docs/plans/snippet-menu.md Phase 1. Until snippet headers carry `group:` (Phase 4) the kit snippets are grouped by name here.
 
 /** One menu entry, as Insert snippet.md lists it: a Snippets-folder note or a Methods-folder method (`value.method`). */
-export interface MenuItem { name: string; icon?: string; desc?: string; /** The header's `group:`. */ group?: string; value: unknown }
+export interface MenuItem { name: string; icon?: string; desc?: string; /** The header's `group:`. */ group?: string; /** An old-form stub file: the calculator key it runs. */ oldStub?: string; value: unknown }
 export interface MenuSection { heading: string; items: MenuItem[] }
 
 /** The groups in the order the menu shows them; your own snippets come last. */
@@ -24,6 +24,10 @@ const isMethod = (it: MenuItem): boolean => !!it.value && typeof it.value === "o
 /** NMR, GPC and DLS (labMethods.js `builtins`): listed ahead of the other entries of their group, where their stub files 07-09 used to stand. */
 const BUILTIN_METHODS = ["nmr", "gpc", "dls"];
 const isBuiltin = (it: MenuItem): boolean => isMethod(it) && BUILTIN_METHODS.includes(String((it.value as { method: unknown }).method));
+
+/** An old stub file (`07 NMR samples.md` kept in the vault) whose calculator is also a built-in method is listed once: the built-in stays, the file is hidden. */
+export const hideShadowedStubs = (items: MenuItem[]): MenuItem[] =>
+  items.filter(it => !it.oldStub || !items.some(m => isMethod(m) && (m.value as { method: unknown }).method === it.oldStub));
 
 /** The group an entry is shown under: a Methods-folder method is Characterise, a header's `group:` when it names one of the groups, a kit snippet its group, anything else My snippets. */
 export function groupOf(it: MenuItem): string {

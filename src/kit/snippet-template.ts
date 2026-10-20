@@ -151,6 +151,25 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
   return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, required, ...(set ? { set } : {}), fields };
 }
 
+/**
+ * The old stub form of a calculator file (Lab Kit before 1.5, files 01-03 and 07-10): `<%*`, comment lines (`// icon:`, `// desc:`, any other), one
+ * `tR += await tp.user.labSnippets(tp, "<key>");` line, `%>`. Anything else (more code, no call, two calls) is not a stub: null.
+ * Kit updates leave an edited stub alone, so the menu reads this form as `run: <key>`.
+ */
+export function oldStub(text: string): { run: string; icon?: string; desc?: string } | null {
+  const lines = text.replace(/\r\n/g, "\n").split("\n").map(l => l.trim()).filter(Boolean);
+  if (lines.length < 3 || lines[0] !== "<%*" || lines[lines.length - 1] !== "%>") return null;
+  let run: string | undefined, icon: string | undefined, desc: string | undefined;
+  for (const l of lines.slice(1, -1)) {
+    const call = /^tR\s*\+=\s*await\s+tp\.user\.labSnippets\(\s*tp\s*,\s*"([^"]+)"\s*\)\s*;?$/.exec(l);
+    if (call) { if (run) return null; run = call[1]; continue; }
+    const note = /^\/\/\s*(icon|desc):\s*(.+)$/.exec(l);
+    if (note) { if (note[1] === "icon") icon ??= note[2].trim(); else desc ??= note[2].trim(); continue; }
+    if (!l.startsWith("//")) return null;
+  }
+  return run ? { run, ...(icon ? { icon } : {}), ...(desc ? { desc } : {}) } : null;
+}
+
 /** True when the required field has no list item: nothing is inserted. */
 export function isCancelled(header: TemplateHeader, answers: Record<string, string>): boolean {
   return !!header.required && listOf(answers[header.required]).length === 0;

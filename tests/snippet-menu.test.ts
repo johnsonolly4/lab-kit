@@ -1,7 +1,7 @@
 // The Alt+S menu's contents (pure): groups, section order, Recent, search ranking (docs/plans/snippet-menu.md Phase 1).
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
-import { groupOf, iconNames, menuSections, pushRecent, searchItems, type MenuItem } from "../src/kit/snippet-menu";
+import { groupOf, hideShadowedStubs, iconNames, menuSections, pushRecent, searchItems, type MenuItem } from "../src/kit/snippet-menu";
 
 const kit = ["Solution prep", "Recipe by equivalents", "RAFT recipe generator", "Variant naming matrix", "Sample list", "Sampling timetable",
   "NMR samples", "GPC samples", "DLS samples", "Combined results", "Flow column prep", "Residence times", "Blank calc table", "Rig"];
@@ -77,5 +77,21 @@ describe("built-in methods in the menu (labMethods.js menuEntries)", () => {
     const files: MenuItem[] = [{ name: "Sample list", value: "f5" }, { name: "Combined results", group: "Characterise", value: "f10" }];
     const s = menuSections([...files, { name: "UV-vis", value: { method: "uv-vis" } }, ...built], []);
     expect(s.find(x => x.heading === "Characterise")!.items.map(i => i.name)).toEqual(["NMR samples", "GPC samples", "DLS samples", "Combined results", "UV-vis"]);
+  });
+});
+
+describe("old stub files beside the built-in methods", () => {
+  const nmr: MenuItem = { name: "NMR samples", value: { method: "nmr" } };
+  const stub: MenuItem = { name: "NMR samples", oldStub: "nmr", value: "f7" };
+  const names = (list: MenuItem[]) => menuSections(hideShadowedStubs(list), []).flatMap(s => s.items).map(i => i.name);
+  it("NMR is listed once with the old file, once without it", () => {
+    expect(names([stub, nmr])).toEqual(["NMR samples"]);
+    expect(hideShadowedStubs([stub, nmr])).toEqual([nmr]);
+    expect(names([nmr])).toEqual(["NMR samples"]);
+  });
+  it("a stub whose calculator is no built-in method, or a run: header, stays", () => {
+    const other: MenuItem = { name: "Solution prep (old)", oldStub: "solution", value: "f1" };
+    expect(hideShadowedStubs([other, nmr])).toEqual([other, nmr]);
+    expect(hideShadowedStubs([{ name: "Mine", value: "f" }, nmr]).length).toBe(2);
   });
 });
