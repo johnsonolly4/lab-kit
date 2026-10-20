@@ -64,8 +64,8 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
   const fm = h.frontmatter();
   if (isClosed(fm)) { h.notice(MSG.alreadyClosed(closedOn(fm))); return; }
   if (h.canPdf && !h.folders.length) { h.notice(MSG.noFolder); return; }
-  // A note that has only `closed_on` (ended, never formally closed) keeps that date: the PDF footer, its name and the mark use it.
-  const date = closedOn(fm) || h.today;
+  // The PDF is made today: its name, footer and the confirm window carry today's date. A note that has only `closed_on` (ended, never formally closed) keeps that end date in `closed_on`.
+  const date = h.today;
   if (!(await h.confirm("close", date, h.canPdf ? h.folders : []))) return;
 
   const hash = await closedHash(await h.readText());
@@ -84,7 +84,7 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
     }
   }
   await h.editFrontmatter(f => {
-    f.closed_on = date;
+    f.closed_on = closedOn(fm) || date;   // the experiment's end date stays when the note already had one
     f.closed_hash = hash;
     f.closed_pdf = files.length ? files : PENDING;
     f.Status = CLOSED_STATUS;

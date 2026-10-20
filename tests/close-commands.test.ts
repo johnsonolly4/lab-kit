@@ -7,7 +7,7 @@ const BODY = "# Run\n\nDry the beads first.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n
 
 /** A fake note: front matter as an object, body as text; `text()` joins them the way a file would read. */
 function fake(over: Partial<CloseHost> = {}, fm: Record<string, unknown> = { "Exp. Class": "RAFT", Status: "Started" }) {
-  const state = { fm: { ...fm } as Record<string, unknown>, body: BODY, saved: [] as [string, string, number][], notices: [] as string[], asked: [] as string[], footers: [] as string[], onDisk: new Set<string>() };
+  const state = { fm: { ...fm } as Record<string, unknown>, body: BODY, saved: [] as [string, string, number][], notices: [] as string[], asked: [] as string[], footers: [] as string[], dates: [] as string[], onDisk: new Set<string>() };
   const yaml = () => `---\n${Object.entries(state.fm).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n")}\n---\n`;
   const host: CloseHost = {
     name: "ABC0011 - RAFT test", today: "2026-10-20", isLabNote: true, canPdf: true, folders: ["/pdf/a", "/pdf/b"],
@@ -17,7 +17,7 @@ function fake(over: Partial<CloseHost> = {}, fm: Record<string, unknown> = { "Ex
     makePdf: async footer => { state.footers.push(footer); return new ArrayBuffer(8); },
     fileExists: (folder, name) => state.onDisk.has(`${folder}/${name}`),
     saveFile: (folder, name, bytes) => { state.saved.push([folder, name, bytes.byteLength]); state.onDisk.add(`${folder}/${name}`); },
-    confirm: async (kind, _date, folders) => { state.asked.push(`${kind}:${folders.join("|")}`); return true; },
+    confirm: async (kind, date, folders) => { state.asked.push(`${kind}:${folders.join("|")}`); state.dates.push(date); return true; },
     notice: m => { state.notices.push(m); },
     logError: () => {},
     ...over,
@@ -53,16 +53,25 @@ describe("closeExperiment: refusals (nothing is written, nobody is asked)", () =
     expect(state.saved).toEqual([]);
     expect(state.asked).toEqual([]);
   });
-  it("a note with only closed_on (ended, not formally closed) is NOT refused: it is closed, keeping its date", async () => {
+  it("a note with only closed_on (ended, not formally closed) is NOT refused: the PDF is dated today, closed_on keeps the end date", async () => {
     const { host, state, yaml } = fake({}, { "Exp. Class": "RAFT", Status: "Started", closed_on: "2026-09-03" });
     const before = await closedHash(yaml() + BODY);
     await closeExperiment(host);
     expect(state.asked).toEqual(["close:/pdf/a|/pdf/b"]);
+    expect(state.dates).toEqual(["2026-10-20"]);
     expect(state.fm.closed_on).toBe("2026-09-03");
     expect(state.fm.closed_hash).toBe(before);
-    expect(state.fm.closed_pdf).toEqual(["ABC0011 - RAFT test (closed 2026-09-03).pdf"]);
+    expect(state.fm.closed_pdf).toEqual(["ABC0011 - RAFT test (closed 2026-10-20).pdf"]);
     expect(state.fm.Status).toBe("Closed");
-    expect(state.footers).toEqual([closedFooter("2026-09-03", "ABC0011 - RAFT test", before)]);
+    expect(state.footers).toEqual([closedFooter("2026-10-20", "ABC0011 - RAFT test", before)]);
+    // the stored hash still recomputes equal, so Check setup does not call the note edited
+    expect(await closedHash(yaml() + BODY)).toBe(state.fm.closed_hash);
+  });
+  it("a note with no closed_on: closed_on, PDF name, footer and window all use today", async () => {
+    const { host, state } = fake();
+    await closeExperiment(host);
+    expect(state.fm.closed_on).toBe("2026-10-20");
+    expect(state.dates).toEqual(["2026-10-20"]);
   });
   it("no PDF folder on a computer", async () => {
     const { host, state } = fake({ folders: [] });
