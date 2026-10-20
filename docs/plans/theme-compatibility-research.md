@@ -120,6 +120,11 @@ Maintenance per Obsidian release (all options): the S6 routine (`docs/maintenanc
 
 Phases if B is chosen (each needs the owner's look answer first): 1) fix `vault-theme.css` (S4, `!important`, every-note rules) with before / after renders; 2) the opt-in look snippet, both kits, Check setup row, smoke step; 3) calc cell tints from theme colours; 4) optional Style Settings block. Check each with the default theme and two popular themes (e.g. Minimal, Things) in light and dark through obsidian-check, and on phone emulation.
 
+### Status of the phases (2026-10-20, after owner board 5: TC1 D, TC2 accent follows Obsidian, TC3 off by default, TC4 yes, TC5 now, TC6 later with a picture, TC7 not now)
+- **Phase 1 BUILT** (`vault-theme.css`, setting Style all notes; `tests/style-all-notes.test.ts`): S4 callout colours; the every-note rules (width, line spacing, heading and link colours, cursor line, card look) scoped to `cssclasses: vt` unless the body class `lab-kit-style-all-notes` is on, which the plugin sets from the new setting (off by default). Checked in a throwaway Obsidian 1.14.4, dark and light, reading view and Live Preview. The 53 `!important` are not reduced (not asked). Existing vaults: Review update…. Note: `vt` sits on the view element itself (`.markdown-rendered.vt`, `.markdown-source-view.vt`), so descendant selectors must not name those classes.
+- **TC2 accent**: nothing hard-coded to change; `styles.css` and the snippet already use `--interactive-accent` / `--text-accent`. The six-colour palette (`--vt-*`) are meanings (doing, waiting, done, overdue), not the accent, and are unchanged.
+- **Phase 2 (the opt-in look snippet, TC1 option B) NOT built**; **TC6** (corners follow Obsidian) waits for a picture; phases 3 and 4 not started.
+
 ## 8. Questions for the owner
 In BACKLOG "Questions for the owner" as "Theme compatibility / own theme" (TC1-TC7), with a feedback page: `my_work/mockups/theme-options.html` (private; made-up content; the same Lab Kit screens under three looks).
 

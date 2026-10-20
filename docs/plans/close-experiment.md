@@ -70,6 +70,18 @@ Electron access: `require("electron").remote` exists in Obsidian 1.14.4 (Obsidia
 ### 5. Docs (BUILT 2026-10-20, N3e: changelog line, six checklist rows in 6i, architecture already current from Phases 3-4, no new decision; the rig PDF item in BACKLOG "NEXT TASK" was NOT ticked because the rig diagram was never checked in a closed-note PDF; the owner's answers to BACKLOG "I24 Phase 3 leftovers" (2)-(6), "I24 Phase 4 leftovers" and "I24 re-cut" (c) were still missing, so nothing from them was applied)
 - `docs/changelog.md`, `docs/obsidian-test-checklist.md` 6i rows (Close, Reopen, phone pending, Check setup rows), `docs/architecture.md` (`src/close/`), `docs/decisions.md` line, BACKLOG tick of the rig PDF item (NEXT TASK, item (1)) only if the rig diagram was checked in the PDF.
 
+## Where the closed-note rows live (owner, chat 2026-10-20: "Isn't that Tidy notes? Check setup is meant to be for settings and the like")
+Assessed 2026-10-20 against `src/kit/tidy.ts` and `src/kit/tidy-ui.ts`. Nothing moved; the three rows stay in Check setup until the owner picks.
+- What Tidy up notes is: rules that propose a `TidyChange` per note (properties, page, move, new note, trash, setting), shown before / after, ticked per rule, applied together after "I have backed up my vault". The only other output is `reported`: path plus a note, no button, headed "Nothing here is ever changed".
+- The two button rows do not fit: Close writes a PDF to the device's folders and sets `closed_*` after a confirm window, and Make PDF writes only a file; neither is a note rewrite shown as before / after, neither is applied by the window's one Change notes button, and Tidy has no per-note action buttons (a PDF is per device, Tidy's changes are the same everywhere). The "edited after closing" row fits `reported` (info lines) as it is.
+- Options:
+  - A. Leave all three in Check setup (today). One place for "needs a look", buttons work, but it holds notes, not settings.
+  - B. Move only "edited after closing" to Tidy `reported`; Close and Make PDF stay in Check setup. Splits one feature over two windows.
+  - C. Move all three to a Tidy group `closed-notes` and add per-note action buttons to Tidy's `reported` list (new UI: a button beside a path, runs an injected action, window re-scans). Fits the question best, needs a new Tidy feature and a look to approve.
+  - D. Own small window `Closed lab notes` (command + Home link), listing the three cases with the buttons; Check setup keeps one line "N closed lab notes need a look" opening it.
+- Recommendation: C if the owner wants Tidy to be "everything about notes"; otherwise D (smallest new UI that does not bend Tidy). Not A long term. `scanClosed` stays pure and unchanged in every option. `Close again` is not needed (owner: rows only, unchanged).
+- Asked in BACKLOG "Questions for the owner" (Closed-note rows: where they live).
+
 ## New user-facing strings (exact; for the rec. answers)
 - Commands: `Close experiment` · `Reopen experiment` · `Make PDF of closed experiment`
 - Confirm window: title `Close this experiment?`; text `A PDF of this note is saved in {folders}. The note is marked closed on {date}; if you change it later, Check setup tells you. You can reopen it.`; buttons `Close experiment` · `Cancel`

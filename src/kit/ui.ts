@@ -9,6 +9,7 @@ import { chemicalClasses } from "./snippet-env";
 import { formsAtCursorRow, groupToggleRows } from "./snippet-settings";
 import { loadDeviceFolders, saveDeviceFolders } from "../close/device-folders";
 import { FREEZE_AUTO } from "../planning/freeze";
+import { STYLE_ALL_NOTES } from "./style-all-notes";
 import { prop, toList } from "../frontmatter";
 import { ensurePropertyType, hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import { insertSnippet } from "./snippet-insert";
@@ -156,6 +157,8 @@ class KitSettingTab extends PluginSettingTab {
           b.addExtraButton(x => x.setIcon("rotate-ccw").setTooltip("Back to the default").onClick(async () => { delete bc.colours[key]; await this.ctl.save(); this.ctl.boardColoursChanged?.(); this.update(); }));
         } });
     }
+    setup.push({ name: STYLE_ALL_NOTES.name, desc: STYLE_ALL_NOTES.desc,
+      render: b => { b.addToggle(t => t.setValue(kit.styleAllNotes).onChange(async v => { kit.styleAllNotes = v; await this.ctl.save(); this.ctl.styleAllNotesChanged?.(); })); } });
     setup.push({ name: "Log kit actions to the console", desc: "For troubleshooting only.",
       render: b => { b.addToggle(t => t.setValue(kit.debug).onChange(async v => { kit.debug = v; await this.ctl.save(); })); } });
     return { updates, setup, boards };
@@ -343,6 +346,8 @@ export class KitController {
   /** Set by the plugin when the to-do engine runs: redraws the board's countdown badges. */
   dueCountdownChanged: (() => void) | null = null;
   boardColoursChanged: (() => void) | null = null;
+  /** Set by the plugin: puts the body class of "Style all notes" on or off. */
+  styleAllNotesChanged: (() => void) | null = null;
   /** Set by the plugin's board view: redraws open boards (Show weekend or Busy day from changed). */
   boardChanged: (() => void) | null = null;
 

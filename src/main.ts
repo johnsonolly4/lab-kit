@@ -15,6 +15,7 @@ import { bridgeOnDelete } from "./planning/after-bridge";
 import { PlanningBlocks } from "./planning/blocks";
 import { ProgressWriter } from "./planning/progress";
 import { BoardColours } from "./kit/board-colours";
+import { applyStyleAllNotes } from "./kit/style-all-notes";
 import { calcTextRefs } from "./calc/text-refs-cm";
 import { SnippetTemplates } from "./kit/snippet-run";
 import { RigRenderer } from "./rig/render";
@@ -55,6 +56,11 @@ export default class LabKitPlugin extends Plugin {
     const colours = new BoardColours(this, () => this.kit.kit);
     colours.start();
     this.kit.boardColoursChanged = () => colours.apply();
+    // Style all notes: the planning snippet's every-note rules apply to all notes while this body class is on (default off)
+    const styleAll = (): void => applyStyleAllNotes(activeDocument.body, this.kit.kit.styleAllNotes);
+    styleAll();
+    this.kit.styleAllNotesChanged = styleAll;
+    this.register(() => applyStyleAllNotes(activeDocument.body, false));
 
     // To-do engine and planning commands: once the planning kit is switched on and installed (at load, or right after its install)
     this.startPlanning();
