@@ -279,3 +279,51 @@ describe("SnippetTemplates", () => {
     expect(calls2[0].fields[0].suggest).toEqual([]);
   });
 });
+
+describe("SnippetTemplates: run: calculators", () => {
+  const stub = (key: string, extra: object = {}) => header({ title: "Solution prep", icon: "test-tube", desc: "d", group: "Make up", run: key, ...extra }, "");
+  const calcTp = (calls: { key: string; tp: unknown }[], md = "## Out\n") => ({
+    config: { target_file: { basename: "ABC0016 - test" } },
+    user: { labSnippets: async (tp: unknown, key: string) => { calls.push({ key, tp }); return md; } },
+  }) as unknown as SnippetTp;
+
+  it("meta: a run header lists like a token template and carries its group", async () => {
+    const { st } = setup({ files: { "S/01.md": stub("solution") } });
+    expect(await st.meta(file("S/01.md"))).toEqual({ title: "Solution prep", icon: "test-tube", desc: "d", group: "Make up" });
+  });
+
+  it("run: hands the key and the same tp to labSnippets and inserts exactly what it returns", async () => {
+    for (const key of ["solution", "recipe", "raft", "results", "nmr", "gpc", "dls"]) {
+      const { st } = setup({ files: { "S/s.md": stub(key) } });
+      const calls: { key: string; tp: unknown }[] = [];
+      const tp = calcTp(calls, `## ${key}\n| a |\n\n`);
+      expect(await st.run(tp, file("S/s.md"))).toBe(`## ${key}\n| a |\n\n`);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].key).toBe(key);
+      expect(calls[0].tp).toBe(tp);
+    }
+    expect(Notice.messages).toEqual([]);
+  });
+
+  it("run: an unknown key shows the Notice and inserts nothing; labSnippets is not called", async () => {
+    const { st } = setup({ files: { "S/s.md": stub("nope") } });
+    const calls: { key: string; tp: unknown }[] = [];
+    expect(await st.run(calcTp(calls), file("S/s.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toBe("“Solution prep”: Lab Kit has no calculator called “nope”.");
+    expect(calls).toEqual([]);
+  });
+
+  it("run: without labSnippets (no user scripts) a Notice says where to look", async () => {
+    const { st } = setup({ files: { "S/s.md": stub("raft") } });
+    expect(await st.run({ user: {} }, file("S/s.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toContain("User script functions folder");
+  });
+
+  it("run: a header with run: and fields, or an empty run:, is an error with a Notice", async () => {
+    const { st } = setup({ files: { "S/a.md": stub("raft", { fields: [] }), "S/b.md": stub("  ") } });
+    expect(await st.run(calcTp([]), file("S/a.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toContain("has no fields");
+    expect(await st.run(calcTp([]), file("S/b.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toContain("needs the name of a Lab Kit calculator");
+  });
+});

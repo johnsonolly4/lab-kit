@@ -2,7 +2,7 @@
 // Plan: docs/plans/snippet-menu.md Phase 1. Until snippet headers carry `group:` (Phase 4) the kit snippets are grouped by name here.
 
 /** One menu entry, as Insert snippet.md lists it: a Snippets-folder note or a Methods-folder method (`value.method`). */
-export interface MenuItem { name: string; icon?: string; desc?: string; value: unknown }
+export interface MenuItem { name: string; icon?: string; desc?: string; /** The header's `group:`. */ group?: string; value: unknown }
 export interface MenuSection { heading: string; items: MenuItem[] }
 
 /** The groups in the order the menu shows them; your own snippets come last. */
@@ -22,9 +22,11 @@ const KIT_GROUPS: Record<string, (typeof GROUPS)[number]> = {
 
 const isMethod = (it: MenuItem): boolean => !!it.value && typeof it.value === "object" && "method" in it.value;
 
-/** The group an entry is shown under: a Methods-folder method is Characterise, a kit snippet its group, anything else My snippets. */
+/** The group an entry is shown under: a Methods-folder method is Characterise, a header's `group:` when it names one of the groups, a kit snippet its group, anything else My snippets. */
 export function groupOf(it: MenuItem): string {
   if (isMethod(it)) return "Characterise";
+  const named = GROUPS.find(g => g.toLowerCase() === (it.group ?? "").trim().toLowerCase());
+  if (named) return named;
   return KIT_GROUPS[it.name.trim().toLowerCase()] ?? OWN_GROUP;
 }
 

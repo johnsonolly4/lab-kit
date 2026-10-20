@@ -15,12 +15,18 @@ import type { FormFn } from "./snippet-form";
 export interface SnippetTp {
   config?: { target_file?: { basename?: string } };
   file?: { title?: string };
-  user: { labForm?: (tp: unknown, title: string, fields: FormField[], opts?: unknown) => Promise<Record<string, unknown> | null> };
+  user: {
+    labForm?: (tp: unknown, title: string, fields: FormField[], opts?: unknown) => Promise<Record<string, unknown> | null>;
+    labSnippets?: (tp: unknown, key: string) => Promise<string>;
+  };
 }
 interface FormField { key: string; label: string; hint?: string; required?: boolean; placeholder?: string; type: string; value: string; suggest?: { name: string; aliases: string[] }[] }
 
-/** Title, icon and description for the Alt+S menu. */
-export interface SnippetMeta { title?: string; icon?: string; desc?: string }
+/** Title, icon, description and group for the Alt+S menu. */
+export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string }
+
+/** The keys of labSnippets.js a header's `run:` may name. */
+export const CALCULATORS = ["solution", "recipe", "raft", "results", "nmr", "gpc", "dls"];
 
 const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
 
@@ -51,7 +57,7 @@ export class SnippetTemplates {
   async meta(file: TFile): Promise<SnippetMeta | null> {
     try {
       const p = await this.parse(file);
-      return p ? { title: p.header.title, icon: p.header.icon, desc: p.header.desc } : null;
+      return p ? { title: p.header.title, icon: p.header.icon, desc: p.header.desc, group: p.header.group } : null;
     } catch (e) {
       if (e instanceof TemplateError) return {};
       throw e;
@@ -104,6 +110,7 @@ export class SnippetTemplates {
     try { parsed = await this.parse(file); } catch (e) { return this.fail(file, e); }
     if (!parsed) return await this.app.vault.cachedRead(file);
     const { header, body } = parsed;
+    if (header.run) return await this.calculator(tp, file, header.title, header.run);
     const kit = this.kit();
     try {
       const target = tp.config?.target_file;
@@ -166,6 +173,19 @@ export class SnippetTemplates {
       for (const e of edits) editor!.replaceRange(e.text, editor!.offsetToPos(e.from), editor!.offsetToPos(e.to));
       return out.text;
     } catch (e) { return this.fail(file, e); }
+  }
+
+  /** `run: <key>`: the calculator of that name in labSnippets.js asks its questions and builds the text, exactly as the stub files did. */
+  private async calculator(tp: SnippetTp, file: TFile, title: string | undefined, key: string): Promise<string> {
+    if (!CALCULATORS.includes(key)) {
+      new Notice(`“${title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "")}”: Lab Kit has no calculator called “${key}”.`);
+      return "";
+    }
+    if (!tp.user.labSnippets) {
+      new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
+      return "";
+    }
+    return await tp.user.labSnippets(tp, key);
   }
 
   private fail(file: TFile, e: unknown): string {

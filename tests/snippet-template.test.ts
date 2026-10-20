@@ -111,6 +111,18 @@ describe("parseTemplate", () => {
     assert.ok(!("mandatory" in p!.header.fields[1]));
     assert.ok(!("mandatory" in p!.header.fields[2]));
   });
+  it("reads group, and a header with run: needs no fields", () => {
+    const p = parseTemplate("---\nx: 1\n---\n", () => ({ title: "T", group: " Make up ", run: " solution ", icon: "i", desc: "d" }));
+    assert.deepStrictEqual(p?.header, { title: "T", icon: "i", desc: "d", group: "Make up", run: "solution", fields: [] });
+    const f = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [], group: "Samples" }));
+    assert.strictEqual(f?.header.group, "Samples");
+    assert.strictEqual(f?.header.run, undefined);
+    assert.strictEqual(parseTemplate("---\nx: 1\n---\n", () => ({ group: "Samples" })), null);
+  });
+  it("rejects run: with fields or without a name", () => {
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ run: "raft", fields: [] })), /has no fields/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ run: "" })), /needs the name/);
+  });
   it("turns YAML numbers into text", () => {
     const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "n", label: "N", type: "number", value: 6 }] }));
     assert.strictEqual(p?.header.fields[0].value, "6");

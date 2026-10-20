@@ -20,6 +20,12 @@ describe("snippet menu", () => {
     expect(groupOf(method)).toBe("Characterise");
     expect(groupOf(mine)).toBe("My snippets");
   });
+  it("a header's group wins over the built-in map when it names one of the groups; any other group text is My snippets", () => {
+    expect(groupOf({ name: "Solution prep", group: "Tables", value: 1 })).toBe("Tables");
+    expect(groupOf({ name: "Anything", group: " samples ", value: 1 })).toBe("Samples");
+    expect(groupOf({ name: "Solution prep", group: "Unknown", value: 1 })).toBe("Make up");
+    expect(groupOf({ name: "Mine", group: "Unknown", value: 1 })).toBe("My snippets");
+  });
   it("sections: groups in the fixed order, file order inside a group, My snippets last and only when not empty", () => {
     const s = menuSections([...items, method], []);
     expect(s.map(x => x.heading)).toEqual(["Make up", "Samples", "Characterise", "Flow", "Tables"]);

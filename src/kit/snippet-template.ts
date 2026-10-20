@@ -32,6 +32,10 @@ export interface TemplateHeader {
   required?: string;
   /** `set:` properties written on the note after the insert: name and value (the value may hold tokens; an empty one is not written). */
   set?: { name: string; value: string }[];
+  /** The Alt+S menu section (`Make up`, `Samples`, …). Anything else is listed under My snippets. */
+  group?: string;
+  /** `run: solution` = a calculator: Lab Kit runs that key of labSnippets.js, which asks its own questions, so the header has no `fields` and the note has no body. */
+  run?: string;
   fields: TemplateField[];
 }
 
@@ -88,18 +92,25 @@ const asText = (v: unknown): string | undefined => typeof v === "string" ? v : t
 
 /**
  * Splits a snippet note into its header and body. null = a plain snippet (no header between `---` lines, or a header
- * without `fields`), which is inserted as it is. A header that is not valid throws a TemplateError.
+ * with neither `fields` nor `run`), which is inserted as it is. A header that is not valid throws a TemplateError.
  */
 export function parseTemplate(text: string, parseYaml: (yaml: string) => unknown): ParsedTemplate | null {
   const m = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
   if (!m) return null;
   let raw: unknown;
   try { raw = parseYaml(m[1]); } catch (e) { throw new TemplateError(`The header is not valid YAML: ${e instanceof Error ? e.message : "unreadable"}`); }
-  if (!isRecord(raw) || !("fields" in raw)) return null;
+  if (!isRecord(raw) || !("fields" in raw || "run" in raw)) return null;
   return { header: readHeader(raw), body: text.slice(m[0].length) };
 }
 
 function readHeader(raw: Record<string, unknown>): TemplateHeader {
+  const group = asText(raw.group)?.trim() || undefined;
+  if ("run" in raw) {
+    const run = asText(raw.run)?.trim();
+    if (!run) throw new TemplateError("run: needs the name of a Lab Kit calculator, for example run: solution.");
+    if ("fields" in raw) throw new TemplateError("A header with run: has no fields: the calculator asks its own questions.");
+    return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, run, fields: [] };
+  }
   if (!Array.isArray(raw.fields)) throw new TemplateError("The header's fields must be a list.");
   const fields: TemplateField[] = [];
   for (const [n, f] of (raw.fields as unknown[]).entries()) {
@@ -137,7 +148,7 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
       return { name, value };
     });
   }
-  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), required, ...(set ? { set } : {}), fields };
+  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, required, ...(set ? { set } : {}), fields };
 }
 
 /** True when the required field has no list item: nothing is inserted. */
