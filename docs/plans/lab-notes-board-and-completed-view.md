@@ -1,6 +1,6 @@
 # Plan: Lab notes board and completed view
 
-_**PLAN WAITING FOR OWNER.** Written 2026-10-20 (side session, `/phase-plan`, plan and mock-ups only, no plugin code). Built on the owner board 5 answers (2026-10-20). Owner answers of 2026-10-20 are in "Owner answers 2026-10-20" below (Q1, Q2, Q5, Q6 answered; Q3 answered (Exp. Class plus an in-silico class), Q7 answered (`closed_on` replaces `Exp. End`; migration risk open), Q4, Q8-Q10 open). Open questions: BACKLOG "Lab notes board and completed view" and the end of this file; looks: `my_work/mockups/lab-board-options.html` (private, made-up data). Nothing here is decided by Claude; recommendations are marked "rec."._
+_**PLAN WAITING FOR OWNER.** Written 2026-10-20 (side session, `/phase-plan`, plan and mock-ups only, no plugin code). Built on the owner board 5 answers (2026-10-20). Owner answers of 2026-10-20 are in "Owner answers 2026-10-20" below (Q1, Q2, Q5, Q6 answered; Q3 answered (Exp. Class plus an in-silico class), Q7 answered (`closed_on` replaces `Exp. End`; migration risk open), Q8 answered A for now, Q9 proposed B waiting for the owner's yes, Q4, Q10 open). Open questions: BACKLOG "Lab notes board and completed view" and the end of this file; looks: `my_work/mockups/lab-board-options.html` (private, made-up data). Nothing here is decided by Claude; recommendations are marked "rec."._
 
 ## Goal
 Running experiments stay on a card board; finished ones are found again in a table with saved filters and search (by number or date, Exp. Class, project, chemical, outcome or result, free text), drawn in Lab Kit's own look.
@@ -40,8 +40,13 @@ Running experiments stay on a card board; finished ones are found again in a tab
     Also: Reopen deletes `closed_on` even for a real Close, so a reopened-then-running note has no end date (correct) but a note that ended and was never formally closed keeps it only if nothing reopens it.
   - **Safest migration proposed (question in BACKLOG, owner to pick):** fill `closed_on` ONLY, and change the meaning of "closed": a note is formally closed when `closed_on` AND (`closed_hash` or `closed_pdf`) are present; `closed_on` alone means "ended, not formally closed" and gets no row, Close experiment still works on it (it sets hash and PDF and keeps the date, unless the owner wants today's date), Reopen on it only clears Status. The Check row "marked Closed but not closed" then still fires for a Status Closed note without hash or PDF (the owner may want that: they are not closed formally). Tests: `tests/close-*.test.ts` (find by name) get a case for each of the four points.
   - Ended column and the board: `closed_on` (all formally closed and merely ended notes); the 30-day clock (Q5) also uses `closed_on`.
-- **Q8 new saved filters: not answered.** Explained in chat: A Lab Kit ships ready-made named views and you add your own with Obsidian's Bases toolbar (rec.) / B a Lab Kit `Save as view…` button that writes your chips into the `.base`.
-- **Q9 where the completed view lives: not answered.** Explanation asked: A a new file `Completed experiments.base` (rec.; arrives by Review update… without touching an edited `Lab book base.base`) / B more views in `Lab book base.base`. Phase 1 assumes A until answered.
+- **Q8 new saved filters: A for now (owner chat, 2026-10-20).** Lab Kit ships ready-made named views; the owner adds their own with Obsidian's own Bases toolbar. No `Save as view…` button yet (option B can come later).
+- **Q9 where the completed view lives: PROPOSED B, waiting for the owner's yes.** The owner said: "Getting between the two needs to be seamless": the running board and the completed view must be one click apart, with no navigation between files.
+  - **Analysis.** Obsidian Bases switches between the views of ONE base file with the view tabs in the toolbar: one click, same pane, same file. Two files (A, a separate `Completed experiments.base`) need a link or an extra step (open the other file, or click a link chip); that is navigation, which the owner ruled out. Only B (more views inside `Lab book base.base`) gives the one-click switch with nothing extra to build. (Whether the view switcher behaves this way for our views is measured in Phase 0, not yet seen.)
+  - **Proposed answer: B.** `Lab book base.base` holds the running board, `Summary` and the built-in `Completed table` (`All completed`, `This year`, later `Failed runs`) as views; the toolbar tabs are the switch.
+  - **Cost of B.** A `Lab book base.base` the owner edited (`policy: keep`) gets the new views only through Compare / merge in Review update… (Obsidian re-saves `.base` files on toolbar use, so most vaults count as edited). Only the owner has used it, so they can restore the kit original instead. The two files are not independent any more: one bad edit of the file affects the running board and the completed views together.
+  - **Alternative, A kept.** A separate `Completed experiments.base` arrives as a new file by Review update… without touching an edited `Lab book base.base` (safer migration), with a link-chip row at the top of each file to jump to the other. Not one click inside one toolbar, so it does not fully meet "seamless".
+  - **Fallback if Bases cannot do B** (P0 measures: several views in one base, the first view that opens, view tabs on desktop and phone, a base with mixed built-in and own view types): go back to A with the link-chip row, and ask the owner again.
 - **Q10 table look: not answered.**
 
 Phase order after these answers: Phase 0, then Phase 1 first, so the owner can see the built-in table in Obsidian. Phase 2 then adds `Project` (New lab entry) and `Result` (Close window) as answered, and the 30-day clock moves to `closed_on`. Phases 3-6 (own look) wait for the owner's look at Phase 1 (Q4) and Q10.
@@ -144,11 +149,12 @@ Omnisearch is not required for any of these.
 - Measure: toolbar search scope (name / properties / body); `note["Exp. Class"]` in a filter and a formula; `Chemicals` contains a link; `this` + `file.hasLink(this.file)` in a base embedded in a chemical note; table `groupBy` and column summaries (count); `if()` formula for Ended; duplicate / new view in the toolbar; which view opens first; what a `.base` with an unknown view type shows with the plugin off.
 - Done when: each row PASS / FAIL with the Obsidian version; the "Bases only" column above is corrected.
 
-### Phase 1 — Completed experiments base (Bases only)
-- Depends on: Phase 0, Q8, Q9.
-- Files: `kits/lab/03 Lab Book/Completed experiments.base` (new), `kits/lab/kit-manifest.json` (`npm run kit:manifest`), `.gitignore` not needed (inside `kits/`), `tests/lab-bases.test.ts` (new: parses the `.base` YAML; filters, views, sort, folder string follows `patchFolders`).
-- Built-in `table` views `All completed`, `This year` (and `Failed runs` after Phase 2); formula `ended`; columns per the owner's pick.
-- Done when: tests; obsidian-check on 40 made-up lab notes: row counts per view match the seed; Review update… lists the new file in a vault with the kit installed.
+### Phase 1 — Completed views in the Lab book base (Bases only)
+- Depends on: Phase 0, Q8 (answered: A), Q9 (proposed B, owner's yes needed; with A this phase builds the separate file plus link chips instead).
+- Files: the kit's `Lab book base.base` (edited: the built-in `table` views `All completed`, `This year` (and `Failed runs` after Phase 2) added next to the running board; with Q9 = A instead `kits/lab/03 Lab Book/Completed experiments.base` (new)), `kits/lab/kit-manifest.json` (`npm run kit:manifest`), `tests/lab-bases.test.ts` (new: parses the `.base` YAML; filters, views, sort, folder string follows `patchFolders`; the running board's filter is unchanged).
+- Formula `ended`; columns per the owner's pick. The toolbar view tabs are the one-click switch between running board and completed views.
+- If Phase 0 shows Bases cannot hold these views in one file: fall back to the separate file with a link-chip row and ask the owner again.
+- Done when: tests; obsidian-check on 40 made-up lab notes: row counts per view match the seed, one click on a toolbar tab switches running board to completed table; Review update… on a vault with an edited `Lab book base.base` offers the new views through Compare / merge (measured, with the kit installed).
 
 ### Phase 2 — New properties (as answered 2026-10-20: `Project` from Q1, `Result` from Q2; 30-day clock from `closed_on`, Q5)
 - Depends on: Q1, Q2 (and a feedback page for the chip row, which is a visual change).
@@ -189,7 +195,7 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 
 ## Risks
 - Bases' filter language for property names with spaces and dots (`Exp. Class`) and for link lists: wrong syntax shows an empty table, not an error (Phase 0).
-- Obsidian re-saves `.base` files on toolbar use, so most vaults count as "edited" and keep the old `Lab book base.base`: the new views reach them only through Compare / merge. Mitigation: the completed view is a new file (Q9 A).
+- Obsidian re-saves `.base` files on toolbar use, so most vaults count as "edited" and keep the old `Lab book base.base`: the new views reach them only through Compare / merge. Mitigation with Q9 A: the completed view is a new file. With the proposed Q9 B this is the accepted cost (owner restores the kit original, or uses Compare / merge).
 - The own view type is unknown with the plugin off: every `.base` keeps a built-in fallback view.
 - Body search on hundreds of notes on a phone may be slow: the body part runs only on Enter / the toggle.
 - Old notes keep a hand-typed `Exp. End` until Tidy moves it; `closed_on` is empty on running and never-closed notes, so Ended is blank there. The migration risk in Q7 (the Close mark) is open.
@@ -203,6 +209,6 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 5. **The 30-day clock for Closed cards**: A (rec.) 30 days from `closed_on` (from the last edit when there is none) · B from the last edit, as now (an edit brings a card back).
 6. **Chemical "Used in" list in chemical notes**: A (rec.) yes, an embedded base in the Chemical database template + an Alt+S snippet for old chemical notes · B no, the completed table's Chemicals filter is enough.
 7. **Ended**: ANSWERED, `closed_on` replaces `Exp. End`. Open follow-up: how old notes migrate without breaking the Close mark, see Q7 and BACKLOG.
-8. **Making a new saved filter**: A (rec.) Lab Kit ships named views; your own come from Bases' toolbar (new / duplicate view) and the own view remembers its chips per view · B a `Save as view…` button that writes a new view into the `.base` file.
-9. **Where the completed view lives**: A (rec.) a new `Completed experiments.base` next to the Lab book base · B more views inside `Lab book base.base`.
+8. **Making a new saved filter**: ANSWERED A for now (2026-10-20): Lab Kit ships named views; your own come from Bases' toolbar. B (a `Save as view…` button) not now.
+9. **Where the completed view lives**: PROPOSED B, waiting for the owner's yes (owner: running board and completed view must be one click apart, "seamless"): more views inside `Lab book base.base`, toolbar tabs as the switch; cost and alternative A (separate `Completed experiments.base` plus link chips) in "Owner answers 2026-10-20", Q9.
 10. **The look** (mock-up page, section 4): A rows in a card (rec.) · B compact lines · C row cards; and the summary tiles and running cards as drawn, or comments on the page.
