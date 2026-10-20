@@ -73,4 +73,15 @@ Order: S4 check first (a likely live bug), then S2, S1, S3, S5, S6; S7 only if y
 - R4 Retire the built-in kanban fallback view in the To-do board once Board B is proven? (a, rec) keep it as the second view, unstyled; (b) remove it.
 - R5 A beta track (BRAT pre-releases before the store)? (a) yes; (b, rec) not now, few users.
 
-Waiting for the owner's choices.
+R1-R5 are answered (`docs/decisions.md`, 2026-10-19: smoke test on public releases only, own Lab book view later, built-in kanban kept as an unstyled fallback, no beta track).
+
+## Status of the safety nets (2026-10-20, overnight side session)
+| Net | Status | What is needed |
+|---|---|---|
+| S1 smoke run | **plan waiting for owner** (agreed in principle by R2, but it is size M: a `smoke` subcommand in `scripts/obsidian-check.mjs` plus a seeded `tests/fixtures/smoke-vault/`, more than 2 files, and it needs a plan-mode session) | Steps: build, start a seeded vault, install both kits, load each shipped `.base` and count rows, open Home / plan map / the 0011 calc note (1.7591) / a rig note, open one window of each kind, check each class in `scripts/obsidian-internals.json` exists in the DOM, check every `--callout-color` is a colour, repeat `--mobile`, print PASS / FAIL per step plus console errors. `scripts/make-stress-vault.mjs` and the eval helpers used for `docs/plans/stress-test-result.md` are a starting point. |
+| S2 inventory | **BUILT** (`scripts/obsidian-internals.json`, `tests/obsidian-internals.test.ts`) | Listed: 22 classes, 6 private `app` members, 2 files with casts. Not covered: members read through a cast with another variable name than `app`, and `.vt-*` own classes. |
+| S3 one isolation layer | **plan waiting for owner** (the decision says no further question, but it touches `src/kit/ui.ts:631` and the two kit templates `To-do.md:74, 88`, `Project hub.md:8`, which call `app.metadataTypeManager` from Templater, i.e. more than 2 files and the templates change behaviour paths) | Move the `metadataTypeManager` cast in `src/kit/ui.ts:631` into `src/kit/obsidian-private.ts` as `setPropertyType` / `assignedType`; the templates call it through the plugin (needs a plugin-exposed function and `npm run kit:manifest`). Then S2's cast list shrinks to one file. |
+| S4 callout colours | **plan waiting for owner** (a look change: BACKLOG "Callout colours outside kit notes" says ask first) | `--callout-color: rgb(var(--vt-*-text))` in `kits/planning/.obsidian/snippets/vault-theme.css:55-63` and `color: var(--callout-color)` at line 151; before / after feedback page; a test that every `--callout-color` value is a colour. |
+| S5 typings and versions | **plan waiting for owner** (touches `package.json`, `package-lock.json`, `README.md` and maybe `src/` for changed signatures: more than 2 files) | `obsidian` types are pinned at 1.13.1 while `minAppVersion` is 1.14.0: bump to the newest, fix what `tsc` reports, add "tested up to Obsidian 1.14.4" (the only version obsidian-check has run on) to the README. |
+| S6 update routine | **BUILT** (`docs/maintenance.md`, last section) | By hand until S1 exists. |
+| S7 beta track | not wanted now (R5 b) | |
