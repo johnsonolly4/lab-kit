@@ -5,6 +5,8 @@ import { MarkdownRenderChild, TFile, type App, type Plugin } from "obsidian";
 import { makeFigure } from "./figure-make";
 import { readRig } from "./parts";
 import { openFigureWindow } from "./figure-ui";
+import { snapshotState } from "./snapshot-io";
+import { openSnapshotWindow } from "./snapshot-ui";
 
 export class RigRenderer {
   /** The open blocks, so an edit to their note redraws them. */
@@ -12,6 +14,9 @@ export class RigRenderer {
 
   /** `figuresFolder` gives the Figures folder setting at the time of a save. */
   constructor(private plugin: Plugin, readonly figuresFolder: () => string = () => "") {}
+
+  /** The plugin's version, written into every snapshot. */
+  version(): string { return this.plugin.manifest?.version ?? ""; }
 
   get app(): App { return this.plugin.app; }
 
@@ -59,7 +64,9 @@ class RigView extends MarkdownRenderChild {
     const text = file instanceof TFile ? await app.vault.cachedRead(file) : "";
     const rig = readRig(text);
     const made = makeFigure(text);
-    const sig = JSON.stringify([made?.svg ?? "", rig.problems]);
+    let snap: { date: string; changed: boolean } | null = null;
+    try { snap = file instanceof TFile && made ? await snapshotState(app, file, text) : null; } catch (e) { console.error("Lab Kit rig snapshot", e); }
+    const sig = JSON.stringify([made?.svg ?? "", rig.problems, snap]);
     if (run !== this.drawing || sig === this.shown) return;
 
     const box = this.containerEl.createDiv({ cls: "lab-kit-rig" });
@@ -76,6 +83,11 @@ class RigView extends MarkdownRenderChild {
       const open = box.createEl("button", { cls: "lab-kit-rig-figure", text: "Figure…", attr: { "aria-label": "Preview the figure and save it as SVG or PNG" } });
       open.addEventListener("click", () => { void openFigureWindow(app, this.sourcePath, this.owner.figuresFolder(), open); });
     }
+    if (rig.parts.length) {
+      const save = box.createEl("button", { cls: "lab-kit-rig-figure", text: "Save snapshot…", attr: { "aria-label": "Save a dated picture of the rig and add it to the Rig history table" } });
+      save.addEventListener("click", () => { openSnapshotWindow(app, this.sourcePath, this.owner.version(), save, () => { this.owner.refreshFile(this.sourcePath); }); });
+    }
+    if (snap?.changed) box.createDiv({ cls: "vt-muted lab-kit-rig-changed", text: `Changed since the last snapshot (${snap.date})` });
     if (rig.problems.length) {
       const list = box.createEl("ul", { cls: "lab-kit-rig-problems lab-kit-warn" });
       for (const p of rig.problems) list.createEl("li", { text: p });
