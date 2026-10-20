@@ -183,6 +183,12 @@ export function commandNames(app: App): Record<string, string> {
   return Object.fromEntries(Object.entries(cmds).map(([id, c]) => [id, c?.name ?? id]));
 }
 
+/** One registered command's name and icon (`app.commands.commands[id]`, private); undefined when there is none (its plugin is not installed or off). */
+export function commandInfo(app: App, id: string): { name: string; icon?: string } | undefined {
+  const c = (app as unknown as { commands?: { commands?: Record<string, { name?: string; icon?: string } | undefined> } }).commands?.commands?.[id];
+  return c ? { name: c.name || id, icon: c.icon || undefined } : undefined;
+}
+
 /** Runs a command by id (`app.commands.executeCommandById`, private): for Go to links that name a command. False when it can't. */
 export function runCommand(app: App, id: string): boolean {
   const cmds = (app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;

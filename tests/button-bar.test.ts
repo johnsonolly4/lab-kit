@@ -1,7 +1,9 @@
 // The button-bar block: ids → buttons from the one table (src/planning/button-bar.ts), read from the Meta Bind template file.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { BAR_BUTTONS, applyReplace, openName, parseAlignEnd, parseIds, resolveBar, type BarEdit } from "../src/planning/button-bar";
+import { BAR_BUTTONS, applyReplace, cmdId, openName, parseAlignEnd, parseIds, resolveBar, type BarEdit } from "../src/planning/button-bar";
+import { commandInfo, runCommand } from "../src/kit/obsidian-private";
+import type { App } from "obsidian";
 import { PLANNING_BUTTONS } from "../src/planning/buttons";
 
 describe("the button table", () => {
@@ -70,5 +72,37 @@ describe("the block's code", () => {
     expect(src).toContain('case "button-bar"');
     expect(src).toMatch(/vault\.process\(file, text => applyReplace\(text, e\)\)/);   // one atomic write
     expect(src).toMatch(/processFrontMatter\(file, fm => \{ Object\.assign\(fm, e\.values\)/);
+  });
+});
+
+describe("cmd: ids run any Obsidian command", () => {
+  const ran: string[] = [];
+  const app = { commands: { commands: { "refpane:toggle-queue": { name: "Refpane: Toggle queue", icon: "list-checks" }, "other:plain": { name: "Plain one" } }, executeCommandById: (id: string) => { ran.push(id); return true; } } } as unknown as App;
+  const lookup = (id: string) => commandInfo(app, id);
+
+  it("parseIds keeps the id whole, colon and all", () => {
+    expect(parseIds("show: button-bar\nids: todo, cmd:refpane:toggle-queue go-deck")).toEqual(["todo", "cmd:refpane:toggle-queue", "go-deck"]);
+    expect(cmdId("cmd:refpane:toggle-queue")).toBe("refpane:toggle-queue");
+    expect(cmdId("cmd:")).toBeNull();
+    expect(cmdId("todo")).toBeNull();
+  });
+  it("label and icon come from the command; a command with no icon gets the generic one", () => {
+    const r = resolveBar(["cmd:refpane:toggle-queue", "cmd:other:plain"], lookup);
+    expect(r.problems).toEqual([]);
+    expect(r.buttons).toMatchObject([{ label: "Refpane: Toggle queue", icon: "list-checks", kind: "command", target: "refpane:toggle-queue" }, { label: "Plain one", icon: "zap", kind: "command", target: "other:plain" }]);
+  });
+  it("a missing command (plugin off) gives the same muted line as an unknown id, and no button", () => {
+    const r = resolveBar(["cmd:nope:gone", "todo"], lookup);
+    expect(r.problems).toEqual(['"cmd:nope:gone" is not a button']);
+    expect(r.buttons.map(b => b.id)).toEqual(["todo"]);
+    expect(resolveBar(["cmd:refpane:toggle-queue"]).buttons).toEqual([]);   // no lookup: none
+  });
+  it("a click runs the command once, by its id", () => {
+    const b = resolveBar(["cmd:refpane:toggle-queue"], lookup).buttons[0];
+    expect(runCommand(app, b.target)).toBe(true);
+    expect(ran).toEqual(["refpane:toggle-queue"]);
+  });
+  it("existing ids resolve as before when a lookup is given", () => {
+    expect(resolveBar(["todo", "nope"], lookup).buttons.map(b => b.id)).toEqual(["todo"]);
   });
 });

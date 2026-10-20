@@ -412,7 +412,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > - **Move and rename inside Obsidian**, never in File Explorer or Finder - links and Lab Kit's folder settings only follow that way. A folder moved outside Obsidian is found again with **Find moved folders**.
 > - Anything that has to be set up on **each computer** (apps, Zotero add-ons and settings, per-machine paths) is listed in [[Setting up a computer]] (`07 How-tos/Obsidian`). Add to it whenever such a setting is introduced.
 > - Buttons never contain file paths. Anything that differs between Windows and Mac is a property on a note (e.g. `deck_windows` / `deck_mac`), read by a Lab Kit command.
-> - Buttons are drawn by Lab Kit: a note holds a `vault-card` block with `show: button-bar` and `ids: id1, id2`, and the label, icon and action come from Lab Kit, never from the note. (Exceptions still on Meta Bind buttons: the Weekly review and the ZotLit note template, until they are reworked.)
+> - Buttons are drawn by Lab Kit: a note holds a `vault-card` block with `show: button-bar` and `ids: id1, id2`, and the label, icon and action come from Lab Kit, never from the note. An id written `cmd:<command id>` (for example `cmd:refpane:toggle-queue`) is a button for any Obsidian command, named from the command itself; if that plugin is off the block says the id is not a button. (Exceptions still on Meta Bind buttons: the Weekly review and the ZotLit note template, until they are reworked.)
 > - No commas or apostrophes in Meta Bind arguments (e.g. placeholders) - they break the parser.
 > - Folder names: no apostrophes or `&`.
 > - When a workflow changes, update **both** this spec and the user guide [[How my vault works]].

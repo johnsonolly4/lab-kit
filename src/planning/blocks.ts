@@ -2,7 +2,7 @@
 // (no Dataview). Rules: src/planning/lists.ts. Plan: docs/plans/phase-5-homepage-meetings.md.
 import { Keymap, MarkdownRenderChild, Notice, TFile, TFolder, debounce, setIcon, type App, type Plugin } from "obsidian";
 import { folderMissingText } from "../kit/folder-guard";
-import { runCommand, loadedPlugins } from "../kit/obsidian-private";
+import { runCommand, commandInfo, loadedPlugins } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
@@ -513,7 +513,7 @@ class BlockView extends MarkdownRenderChild {
 
   /** A row of the planning kit's buttons, named by id in the block (`ids: new-meeting, go-deck`); the label, icon and action come from the plugin's table, never from the note. */
   private buttonBar(box: HTMLElement): void {
-    const { buttons, problems } = resolveBar(parseIds(this.source));
+    const { buttons, problems } = resolveBar(parseIds(this.source), id => commandInfo(this.app, id));
     if (!buttons.length && !problems.length) { box.createDiv({ cls: "vt-muted", text: "button-bar needs a line like ids: new-meeting, go-deck." }); return; }
     const bar = box.createDiv({ cls: parseAlignEnd(this.source) ? "vt-button-bar is-end" : "vt-button-bar" });
     for (const b of buttons) {
