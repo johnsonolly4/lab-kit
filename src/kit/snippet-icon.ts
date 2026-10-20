@@ -39,23 +39,23 @@ export interface IconDeps {
   copy(path: string): Promise<string | null>;
 }
 
-/** Whether the right-click menu offers Change icon… for this file: it has a header to write into; an unedited kit file only when it can be copied with its header (a token template; a calculator's copy is its frozen output). */
+/** Whether the right-click menu offers Change icon… for this file: it has a header to write into. An unedited kit token template is copied first; an unedited kit calculator (`run:` file: Solution prep, Recipe by equivalents, RAFT, Combined results) is edited in place, because its copy would be its frozen output with no header. */
 export async function canChangeIcon(d: Pick<IconDeps, "read" | "isKit" | "kind">, path: string): Promise<boolean> {
   const text = await d.read(path);
   if (text === null || withIcon(text, "x") === null) return false;
   const kind = d.kind(text);
-  if (kind === "plain") return false;
-  return !(await d.isKit(path)) || kind === "token";
+  return kind !== "plain";
 }
 
 export type IconResult = { icon: string; path: string; copied: boolean } | null;
 
-/** Change icon…: pick, copy the file first when it is an unedited kit file, write `icon:` into the header. null = nothing changed. */
+/** Change icon…: pick, copy the file first when it is an unedited kit token template, write `icon:` into the header. null = nothing changed. */
 export async function changeIcon(d: IconDeps, path: string, current: string): Promise<IconResult> {
   if (!(await canChangeIcon(d, path))) return null;
   const icon = await d.pick(current);
   if (!icon) return null;
-  const kit = await d.isKit(path);
+  const text0 = await d.read(path);
+  const kit = (await d.isKit(path)) && text0 !== null && d.kind(text0) === "token";   // a kit calculator is edited in place (its copy is frozen output)
   const target = kit ? await d.copy(path) : path;
   if (!target) return null;
   const text = await d.read(target);

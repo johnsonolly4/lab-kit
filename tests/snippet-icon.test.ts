@@ -68,10 +68,17 @@ describe("Change icon…", () => {
     await changeIcon(d, "S/A.md", "");
     expect(d.files["S/A.md"]).toBe("---\ntitle: A\nicon: flask-round\nfields:\n  - key: a\n---\nx");
   });
-  it("is offered only where an icon can be kept: not for plain snippets, not for an unedited kit calculator (its copy is frozen text), not for a missing file", async () => {
+  it("an unedited kit calculator (run: file) gets the icon in its own header, no copy", async () => {
+    const CALC = "---\ntitle: Solution prep\nicon: test-tube\nrun: solution\n---\n";
+    const d = fake({ "S/01 Solution prep.md": CALC }, {}, ["S/01 Solution prep.md"]);
+    expect(await changeIcon(d, "S/01 Solution prep.md", "test-tube")).toEqual({ icon: "flask-round", path: "S/01 Solution prep.md", copied: false });
+    expect(d.files["S/01 Solution prep.md"]).toBe(CALC.replace("test-tube", "flask-round"));
+    expect(d.copies).toEqual([]);
+  });
+  it("is offered only where an icon can be kept: not for plain snippets, not for a missing file; yes for kit calculators", async () => {
     const d = fake({ "S/plain.md": "just a table", "S/01.md": "---\ntitle: Solution prep\nrun: solution\n---\n", "S/own.md": "---\ntitle: Mine\nrun: raft\n---\n", "S/old.md": "<%*\n// icon: x\n%>" }, {}, ["S/01.md"]);
     expect(await canChangeIcon(d, "S/plain.md")).toBe(false);
-    expect(await canChangeIcon(d, "S/01.md")).toBe(false);
+    expect(await canChangeIcon(d, "S/01.md")).toBe(true);
     expect(await canChangeIcon(d, "S/gone.md")).toBe(false);
     expect(await canChangeIcon(d, "S/own.md")).toBe(true);
     expect(await canChangeIcon(d, "S/old.md")).toBe(true);
