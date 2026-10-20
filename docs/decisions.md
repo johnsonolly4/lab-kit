@@ -182,3 +182,5 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner, chat): I23 (f) `when:` hiding stays unbuilt, tied to the N4 live block (analysis accepted).
 - 2026-10-20 (owner, chat): plan map: all five ideas on `my_work/mockups/plan-map-top5-before-after.html` approved (Reset tidy icon, bigger row gap with arrow stub, one-line empty cards, amber arrow for done-before-prerequisite, phone list view); not built. The slide-picture export must also be improved to show tasks and subtasks in a sensible view (details still to be agreed).
 - 2026-10-20 (owner, chat): robustness safety nets are built in the order S5, S3, S1.
+- 2026-10-20 (owner, chat): Set up no longer adds the Templater hotkey for Alt+S; the two Templater rows in Check setup go (or become not-needed) because Alt+S no longer needs them. (I23 Phase 6 leftovers (1); not built in the S3 run: see BACKLOG.)
+- 2026-10-20 (owner, chat): an edited vault copy of labSnippets.js does NOT override the bundled one (I23 Phase 6 leftovers (2); this is how it is built).
