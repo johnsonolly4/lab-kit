@@ -1,13 +1,13 @@
 # Plan: Lab notes board and completed view
 
-_**PLAN WAITING FOR OWNER.** Written 2026-10-20 (side session, `/phase-plan`, plan and mock-ups only, no plugin code). Built on the owner board 5 answers (2026-10-20). Owner answers of 2026-10-20 are in "Owner answers 2026-10-20" below (Q1, Q2, Q5, Q6 answered; Q7 proposed; Q3, Q4, Q8-Q10 open). Open questions: BACKLOG "Lab notes board and completed view" and the end of this file; looks: `my_work/mockups/lab-board-options.html` (private, made-up data). Nothing here is decided by Claude; recommendations are marked "rec."._
+_**PLAN WAITING FOR OWNER.** Written 2026-10-20 (side session, `/phase-plan`, plan and mock-ups only, no plugin code). Built on the owner board 5 answers (2026-10-20). Owner answers of 2026-10-20 are in "Owner answers 2026-10-20" below (Q1, Q2, Q5, Q6 answered; Q3 answered (Exp. Class plus an in-silico class), Q7 answered (`closed_on` replaces `Exp. End`; migration risk open), Q4, Q8-Q10 open). Open questions: BACKLOG "Lab notes board and completed view" and the end of this file; looks: `my_work/mockups/lab-board-options.html` (private, made-up data). Nothing here is decided by Claude; recommendations are marked "rec."._
 
 ## Goal
 Running experiments stay on a card board; finished ones are found again in a table with saved filters and search (by number or date, Exp. Class, project, chemical, outcome or result, free text), drawn in Lab Kit's own look.
 
 ## Owner answers this plan is built on (board 5, 2026-10-20; decisions)
 - Look experiments up by: number or date, Exp. Class, project, chemical, outcome or result, free-text search (all six ticked).
-- The list shows "Ended (Exp. End)".
+- The list shows "Ended" (owner board 5 said `Exp. End`; replaced by `closed_on`, Q7 of 2026-10-20 chat).
 - "Depends where the view is: the SUMMARY board should be a status / projects / type split, the list / detail view needs more columns."
 - A closed experiment STAYS on the board for 30 days (as now) AND is also in the completed view (option B).
 - Completed work: a TABLE WITH SAVED FILTERS; running work stays as cards (option A).
@@ -16,16 +16,30 @@ Running experiments stay on a card board; finished ones are found again in a tab
 ## Owner answers 2026-10-20 (chat, source "owner chat")
 - **Q1 by project: answered (A or B accepted).** Default: A, a `Project` link set in New lab entry, with the to-dos' `experiment` links as the fallback for notes without one.
 - **Q2 by result: A.** New `Result` property (`Worked` / `Partly` / `Failed` / `Unclear`), chosen in the Close experiment window.
-- **Q3 "Type" in the summary: open.** The owner is not sure what is meant. Explained in chat: Exp. Class (existing) vs a separate `Type` property. Recommendation Exp. Class; re-ask.
+- **Q3 "Type" in the summary: Exp. Class, AND an in-silico class (owner chat, 2026-10-20).** The summary's type split uses `Exp. Class`. The owner needs an IN-SILICO class (computational experiments, not a wet-lab run): `Exp. Class` must include `in silico`. Not built; own BACKLOG item "In-silico experiments in the lab notebook" (questions there). Note for the summary and filters: the class text is the user's own, so `in silico` and the hazard setting's `in-silico` (below) must be one spelling (see that item).
 - **Q4 which parts get the own look: not decided.** The owner must SEE the built-in Bases table in Obsidian first. Build Phase 0 and Phase 1 (built-in table, `Completed experiments.base`) first; the own-look views (Phases 3-6) only after the owner has seen it and approved.
 - **Q5 clock: A.** The 30-day clock for Closed cards counts from `closed_on` (last edit when there is none).
 - **Q6 chemical notes: filter first.** Maybe a "Used in" list, but better a chemical filter in the experiments view. Recommended: the filter first, "Used in" later (not built now).
-- **Q7 Ended when `Exp. End` is empty: PROPOSED convention, waiting for the owner's yes.** The owner says only they have used this, so the best naming convention is chosen and rolled out; their own notes are updated by hand or with Tidy. Proposed:
-  - `Exp. End` = when the experiment ended (typed by hand, or filled by Close experiment with today's date when empty).
-  - `closed_on` = when the note was closed (stamp written by Close).
-  - The Ended column shows `Exp. End`, else `closed_on`.
-  - A Tidy rule can fill `Exp. End` from `closed_on` for old closed notes.
-  - Owner's question "do we need a completed date?": no new one. `closed_on` already is the completed stamp (written by Close experiment, I24); `Exp. End` stays the experiment's own end date.
+- **Q7 Ended: ANSWERED by the owner (chat, 2026-10-20): "Exp. End was meant to be a closed_on thing really, so we can replace it".** So `Exp. End` is RETIRED and replaced by `closed_on` (written by Close experiment) as the experiment's end / completed date. The Ended column shows `closed_on`. The earlier proposal below (Close fills `Exp. End`; Ended = `Exp. End` else `closed_on`; Tidy fills `Exp. End` from `closed_on`) is SUPERSEDED.
+  - New notes: the Lab Book Template drops `Exp. End` (`kits/lab/Templates/Lab Book Template.md:64`), and the kit's property list (`kits/lab/kit-manifest.json:57`, op `add-property`) drops it; Clone stops resetting it (`src/kit/clone.ts:59`); fixtures and tests follow.
+  - Old notes: a Tidy rule moves a hand-typed `Exp. End` value into `closed_on` (when `closed_on` is empty) and removes `Exp. End`.
+  - **Every use of `Exp. End` found by grep (2026-10-20; `src/`, `kits/`, `tests/`, `scripts/`, `docs/`; nothing in `src/` reads it, only Clone writes it empty):**
+    - `src/kit/clone.ts:59` (Clone resets it to empty)
+    - `kits/lab/kit-manifest.json:57` (property list, `add-property`)
+    - `kits/lab/Templates/Lab Book Template.md:64` (front matter)
+    - `tests/tidy.test.ts:48`, `:49`, `:54` (expected property order in the Tidy tests)
+    - `tests/fixtures/tidy-vault/03 Lab Book/Notes/ABC0005-A.md:7`
+    - `tests/fixtures/lab-notes/clone-source.md:7` (value `2026-09-03`, the Clone test)
+    - `scripts/smoke.mjs:34`, `scripts/make-stress-vault.mjs:49` (generated notes)
+    - docs: `docs/backlog-archive.md:179` (history, leave), `docs/decisions.md:244` and `:304` (the owner's earlier lines; leave, a new decision line supersedes), this plan.
+  - **RISK to resolve before building (not silent): `closed_on` is the Close mark.** `isClosed` is true when `closed_on` holds a value (`src/close/mark.ts:37-40`; used at `src/close/commands.ts:65` and `src/close/scan.ts:25`). Moving an old `Exp. End` into `closed_on` would therefore, unless the code changes:
+    1. make Close experiment refuse the note ("already closed", `commands.ts:65`) although it has no hash and no PDF;
+    2. drop the note from the Check / Tidy row "Lab notes marked Closed but not closed" (`scan.ts:26-27`, `src/kit/setup-check.ts:387`) when Status is Closed: the row is hidden by a date that is not a Close;
+    3. make Reopen experiment offer to reopen it and then DELETE `closed_on` (`commands.ts:120`), i.e. lose the end date;
+    4. `closed_hash` / `closed_pdf` are empty: "edited after closing" needs a stored hash (`scan.ts:30`, so no false row); "without a PDF" needs `closed_pdf: pending` (`scan.ts:28`, so no false row). These two are safe.
+    Also: Reopen deletes `closed_on` even for a real Close, so a reopened-then-running note has no end date (correct) but a note that ended and was never formally closed keeps it only if nothing reopens it.
+  - **Safest migration proposed (question in BACKLOG, owner to pick):** fill `closed_on` ONLY, and change the meaning of "closed": a note is formally closed when `closed_on` AND (`closed_hash` or `closed_pdf`) are present; `closed_on` alone means "ended, not formally closed" and gets no row, Close experiment still works on it (it sets hash and PDF and keeps the date, unless the owner wants today's date), Reopen on it only clears Status. The Check row "marked Closed but not closed" then still fires for a Status Closed note without hash or PDF (the owner may want that: they are not closed formally). Tests: `tests/close-*.test.ts` (find by name) get a case for each of the four points.
+  - Ended column and the board: `closed_on` (all formally closed and merely ended notes); the 30-day clock (Q5) also uses `closed_on`.
 - **Q8 new saved filters: not answered.** Explained in chat: A Lab Kit ships ready-made named views and you add your own with Obsidian's Bases toolbar (rec.) / B a Lab Kit `Save as view…` button that writes your chips into the `.base`.
 - **Q9 where the completed view lives: not answered.** Explanation asked: A a new file `Completed experiments.base` (rec.; arrives by Review update… without touching an edited `Lab book base.base`) / B more views in `Lab book base.base`. Phase 1 assumes A until answered.
 - **Q10 table look: not answered.**
@@ -44,7 +58,7 @@ From `kits/lab/Templates/Lab Book Template.md:58-75` (front matter written for e
 | `Status` | template (`Planned`, or the board column), Close (`Closed`, `src/close/commands.ts:88`), Reopen (`Started`) | Planned / Started / Processing results / Closed | board groups by it |
 | `Exp. Class` | New lab entry window (`:61`) | quoted text, the user's classes (RAFT, Flow, in-silico ...) | — |
 | `Plan date` | template, today | date | — |
-| `Exp. Start`, `Exp. End` | by hand only (nothing in `src/` writes them; Clone empties them, `src/kit/clone.ts:58-59`) | date or empty | — |
+| `Exp. Start`, `Exp. End` | by hand only (nothing in `src/` writes them; Clone empties them, `src/kit/clone.ts:58-59`); `Exp. End` is RETIRED, replaced by `closed_on` (Q7) | date or empty | — |
 | `Chemicals` | by hand with the `[[` chemical suggest (`src/chem/index.ts:50`, `chemicalLink`) | list of `[[chemical note]]` links (or plain names with no note); read by the hazard header (`src/header/hazards.ts:54`) | — |
 | `CoSHH`, `RA` | by hand | text | — |
 | `Objective`, `Outcome` | by hand | free text | — |
@@ -71,7 +85,7 @@ Not recorded on a lab note: a **project** (dropped 2026-10-12; `docs/plans/exper
 | **Completed view** | new `Completed experiments.base` (rec.) | a table of Closed notes with search, filter chips, sortable headers and saved filters (named views): `All completed`, `This year`, `Failed runs` (needs Q2), one per Exp. Class is a chip, not a view |
 | **List / detail columns** | the completed table, all columns on a wide pane; a row opens a detail strip | default columns: Note (number + title), Exp. Class, Ended, Outcome; more on demand: Project, Chemicals, Result, Objective, Exp. Start, CoSHH, RA, PDF (from `closed_pdf`) |
 
-"Ended" = `Exp. End`; when empty, `closed_on` in grey (Q7, rec.).
+"Ended" = `closed_on` (Q7 answered 2026-10-20; `Exp. End` is retired).
 
 ## Bases only vs a Lab Kit own view
 
@@ -97,7 +111,7 @@ What the own view gets from the API is the same as for the to-do board (`docs/pl
 - **By chemical: answerable now.** `Chemicals` is a list of links to chemical notes. (a) In the completed table: a filter `Chemicals` contains the chemical (expression to measure in Phase 0: `Chemicals.contains(link("Styrene"))` or the filter menu's "contains"). (b) In a chemical note: an embedded base "Used in" with `file.hasLink(this.file)` or `Chemicals.contains(this.file)` lists every lab note that uses it (`this` = the note the base is embedded in; **not confirmed**, Phase 0). (b) changes the Chemical database template: owner's call (Q6 part).
 - **By outcome or result: partly.** `Outcome` is free text: search finds words in it ("failed", "Mn 12"), but "every failed run" is only as good as the wording. To answer it reliably add a property with fixed values. Rec.: `Result` with `Worked` / `Partly` / `Failed` / `Unclear` (names for the owner), asked as one chip row in the Close experiment window (it is the moment the result is known), editable in the properties; old notes show `not set` and can be set from the table's detail strip. Outcome stays free text. (Q2)
 - **By project: not answerable without a change.** Options: a new `Project` link property (to the project hub) asked in the New lab entry window like the to-dos' project chip, empty for old notes, with a Tidy up notes rule that offers the project from a to-do whose `experiment` links the note; or no property and derive it from those to-do links (planning kit only, only linked notes; Bases formulas cannot follow a backlink to another note's property as far as read, **not confirmed**, so own view only). (Q1)
-- **By number or date**: file name (number) and `Exp. End` / `closed_on` already exist; a sort on Ended and a `Year` chip. **By Exp. Class**: exists.
+- **By number or date**: file name (number) and `closed_on` already exist; a sort on Ended and a `Year` chip. **By Exp. Class**: exists.
 
 ## Free-text search options
 1. Own view box (rec.): instant over the name and every property of the rows in the view; Enter (or a `Search note text` toggle) also reads each note's body with `vault.cachedRead` and keeps rows whose text matches; matches are shown as a short line under the row. Works on the phone; cost measured in Phase 4 (target: 300 notes under 300 ms on desktop).
@@ -121,7 +135,7 @@ Omnisearch is not required for any of these.
 - Changing what Close experiment writes (beyond the optional `Result` chip, Q2), the PDF, the hash.
 - A project property on to-dos or hubs (exists), Omnisearch, Dataview.
 - The Chemical database board look.
-- Bulk-filling `Exp. End` on old notes.
+- Bulk-filling `closed_on` from `Exp. End` on old notes (only the Tidy rule, owner chooses per run).
 
 ## Phases (one Sonnet session each, after the answers; Phase 0 may need Opus if Bases behaves unexpectedly)
 
@@ -174,11 +188,11 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 - Not verifiable by Claude: a real phone, Windows / Linux, the owner's eyes on the look.
 
 ## Risks
-- Bases' filter language for property names with spaces and dots (`Exp. Class`, `Exp. End`) and for link lists: wrong syntax shows an empty table, not an error (Phase 0).
+- Bases' filter language for property names with spaces and dots (`Exp. Class`) and for link lists: wrong syntax shows an empty table, not an error (Phase 0).
 - Obsidian re-saves `.base` files on toolbar use, so most vaults count as "edited" and keep the old `Lab book base.base`: the new views reach them only through Compare / merge. Mitigation: the completed view is a new file (Q9 A).
 - The own view type is unknown with the plugin off: every `.base` keeps a built-in fallback view.
 - Body search on hundreds of notes on a phone may be slow: the body part runs only on Enter / the toggle.
-- `Exp. End` is filled by hand and is often empty: the Ended column falls back to `closed_on`, else is blank.
+- Old notes keep a hand-typed `Exp. End` until Tidy moves it; `closed_on` is empty on running and never-closed notes, so Ended is blank there. The migration risk in Q7 (the Close mark) is open.
 - Bases is undocumented in places (toolbar search, duplicate view); anything not measured in Phase 0 is not promised in UI text.
 
 ## Open questions (multiple choice, rec. first; BACKLOG "Lab notes board and completed view")
@@ -188,7 +202,7 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 4. **Which parts get Lab Kit's own look**: A (rec.) the completed table now; summary board and running board after the table's look is approved · B all three in this plan (adds Phase 6) · C built-in Bases views only, styled with CSS.
 5. **The 30-day clock for Closed cards**: A (rec.) 30 days from `closed_on` (from the last edit when there is none) · B from the last edit, as now (an edit brings a card back).
 6. **Chemical "Used in" list in chemical notes**: A (rec.) yes, an embedded base in the Chemical database template + an Alt+S snippet for old chemical notes · B no, the completed table's Chemicals filter is enough.
-7. **Ended when Exp. End is empty**: A (rec.) show `closed_on` in grey · B blank · C Close experiment fills `Exp. End` when empty (changes Close).
+7. **Ended**: ANSWERED, `closed_on` replaces `Exp. End`. Open follow-up: how old notes migrate without breaking the Close mark, see Q7 and BACKLOG.
 8. **Making a new saved filter**: A (rec.) Lab Kit ships named views; your own come from Bases' toolbar (new / duplicate view) and the own view remembers its chips per view · B a `Save as view…` button that writes a new view into the `.base` file.
 9. **Where the completed view lives**: A (rec.) a new `Completed experiments.base` next to the Lab book base · B more views inside `Lab book base.base`.
 10. **The look** (mock-up page, section 4): A rows in a card (rec.) · B compact lines · C row cards; and the summary tiles and running cards as drawn, or comments on the page.
