@@ -5,7 +5,7 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget, figuresTarget } from "../src/kit/paths";
 import { readRig } from "../src/rig/parts";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -351,7 +351,7 @@ describe("lab kit completion (Phase 2)", () => {
     const rig = readRig(text);
     expect(rig.problems).toEqual([]);
     expect(rig.tables.map(t => t.heading)).toEqual(["Pumps", "Reactor line", "Analysis"]);
-    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds"]);
+    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds", "Control"]);
   });
 
   it("the bases' filters follow the folder settings", async () => {
@@ -470,5 +470,19 @@ describe("Snippet icons page follows the Snippets folder", () => {
     expect(inSnippetsFolder("Extras/Templates/Lab Kit/Insert snippet.md", t)).toBe(false);
     expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/notes.txt", t)).toBe(false);
     expect(inSnippetsFolder("Snippets/05 Sample list.md", "")).toBe(true);
+  });
+});
+
+describe("Figures folder", () => {
+  it("is empty by default, which means the rig note's own folder", () => {
+    expect(KIT_DEFAULTS.figuresFolder).toBe("");
+    expect(kitLoad(undefined).figuresFolder).toBe("");
+    expect(kitLoad({ figuresFolder: 5 }).figuresFolder).toBe("");
+    expect(figuresTarget({ figuresFolder: "", notePath: "03 Lab Book/Rigs/Rig A.md" })).toBe("03 Lab Book/Rigs");
+    expect(figuresTarget({ figuresFolder: "  ", notePath: "Rig A.md" })).toBe("");
+  });
+  it("uses the setting when set, trimmed of slashes", () => {
+    expect(kitLoad({ figuresFolder: "Posters/Figures" }).figuresFolder).toBe("Posters/Figures");
+    expect(figuresTarget({ figuresFolder: " /Posters/Figures/ ", notePath: "03 Lab Book/Rigs/Rig A.md" })).toBe("Posters/Figures");
   });
 });

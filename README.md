@@ -149,6 +149,7 @@ The kits expect these folders. Each is a setting; empty means the default below,
 | `05 Chemicals/Chemicals` | lab kit: chemical notes | Chemical folder |
 | Methods folder (empty until set) | lab kit: analysis methods | Methods folder |
 | Rigs folder (`03 Lab Book/Rigs` unless you set another; Check setup's Fix creates it) | lab kit: rig notes | Rigs folder |
+| Figures folder (empty: the rig note's own folder; made when first saved to) | lab kit: rig figure SVG and PNG files | Figures folder |
 | `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
 | `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
@@ -164,7 +165,7 @@ Settings → Lab Kit is searchable and grouped. A name in bold with several sett
 |---|---|
 | **Updates** | Update available, Kept files with a newer kit version, Lab kit (Manage files, Review update, Update all safe files), Planning kit switch and its files, update notice, What's new, **Backups** (Old backups with **Clear old backups…**, Backup folder) |
 | **Setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, **Find moved folders…**, **Kit folders** (Templates folder, Scripts folder, Snippets folder), console log |
-| **Lab notebook** | Initials; Lab notes folder, Chemical folder, Rigs folder; Data folder root (one for Windows, one for macOS / Linux); Molecular weight property; **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default); **Board colours** (**Colour board columns**: kanban columns coloured by status, Planned, Started, Processing results, Closed, with a colour for each) |
+| **Lab notebook** | Initials; Lab notes folder, Chemical folder, Rigs folder, Figures folder; Data folder root (one for Windows, one for macOS / Linux); Molecular weight property; **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default); **Board colours** (**Colour board columns**: kanban columns coloured by status, Planned, Started, Processing results, Closed, with a colour for each) |
 | **Snippets** | Methods folder; Only suggest chemicals of the asked class; one switch per Alt+S group (Make up, Samples, Characterise, Flow, Tables: **Show these snippets in the Alt+S menu.** Off hides the group, its entries in the search and in Recent; no file is removed) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
 | **Planning** (planning kit on) | **Due-date countdown** (Off / every to-do with a due date: days left on the board card; a vault set to the old "only to-dos with `countdown: true`" reads as every to-do), **Project plan map direction** (left to right, or top to bottom), **Planning folders** (Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive; empty = the default, e.g. `02 Projects`; the row says how many are changed, for example "2 of 9 changed") |

@@ -249,6 +249,18 @@ class KitSettingTab extends PluginSettingTab {
             });
           });
         } },
+      { name: "Figures folder", desc: "The folder where the rig figure's SVG and PNG are saved. Empty: the rig note's own folder. A folder that does not exist yet is created.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.figuresFolder).onChange(async v => { kit.figuresFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+            // once the box is left (not on every key): a folder that does not exist yet is created
+            t.inputEl.addEventListener("change", () => {
+              const path = kit.figuresFolder;
+              if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
+            });
+          });
+        } },
       ...this.header.rootRows(),
       { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
@@ -387,7 +399,7 @@ export class KitController {
         const to = followFolderRename(pf[role], oldPath, file.path);
         if (to) { pf[role] = to; changed = foldersMoved = true; }
       }
-      for (const key of ["labFolder", "chemicalFolder", "methodsFolder", "rigsFolder"] as const) {
+      for (const key of ["labFolder", "chemicalFolder", "methodsFolder", "rigsFolder", "figuresFolder"] as const) {
         const to = this.kit[key] ? followFolderRename(this.kit[key], oldPath, file.path) : null;
         if (to) { this.kit[key] = to; changed = foldersMoved = true; }
       }

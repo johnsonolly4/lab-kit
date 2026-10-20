@@ -2,12 +2,14 @@
 // The Mermaid text goes through Obsidian's Markdown renderer, so it needs no Node and works on mobile.
 import { MarkdownRenderChild, MarkdownRenderer, TFile, type App, type Plugin } from "obsidian";
 import { readRig } from "./parts";
+import { openFigureWindow } from "./figure-ui";
 
 export class RigRenderer {
   /** The open blocks, so an edit to their note redraws them. */
   private views = new Set<RigView>();
 
-  constructor(private plugin: Plugin) {}
+  /** `figuresFolder` gives the Figures folder setting at the time of a save. */
+  constructor(private plugin: Plugin, readonly figuresFolder: () => string = () => "") {}
 
   get app(): App { return this.plugin.app; }
 
@@ -55,6 +57,10 @@ class RigView extends MarkdownRenderChild {
 
     const box = this.containerEl.createDiv({ cls: "lab-kit-rig" });
     if (rig.mermaid) await MarkdownRenderer.render(app, "```mermaid\n" + rig.mermaid + "\n```", box.createDiv({ cls: "lab-kit-rig-diagram" }), this.sourcePath, this);
+    if (rig.parts.length) {
+      const open = box.createEl("button", { cls: "lab-kit-rig-figure", text: "Figure…", attr: { "aria-label": "Preview the figure and save it as SVG or PNG" } });
+      open.addEventListener("click", () => { void openFigureWindow(app, this.sourcePath, this.owner.figuresFolder(), open); });
+    }
     if (rig.problems.length) {
       const list = box.createEl("ul", { cls: "lab-kit-rig-problems lab-kit-warn" });
       for (const p of rig.problems) list.createEl("li", { text: p });

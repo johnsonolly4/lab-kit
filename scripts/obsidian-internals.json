@@ -56,6 +56,7 @@
     "src/kit/snippet-menu-ui.ts",
     "src/planning/board-close-ui.ts",
     "src/planning/entry-window.ts",
+    "src/rig/figure-ui.ts",
     "styles.css"
    ],
    "risk": "medium",

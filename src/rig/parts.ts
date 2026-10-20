@@ -9,7 +9,11 @@ export type PartKind = (typeof PART_KINDS)[number];
 /** A parts table as found in the note: any table with an `ID` and a `Feeds` column. */
 export interface RigTable { heading: string; header: string[]; lines: string[] }
 /** One row of a parts table. `cells` holds every column as written, by header. `kind` is "" when it could not be worked out. */
-export interface RigPart { id: string; kind: PartKind | ""; detail: string; feeds: string[]; cells: Record<string, string>; table: number }
+export interface RigPart {
+  id: string; kind: PartKind | ""; detail: string; feeds: string[]; cells: Record<string, string>; table: number;
+  /** The optional `Control` and `Data` columns: what the computer sets on this part, and what the part sends back ("" when empty or absent). Used by the rig figure. */
+  control: string; data: string;
+}
 /** A connection between two parts. `attached` = not in the flow (a heater on its reactor). */
 export interface RigLink { from: string; to: string; attached: boolean }
 export interface Rig { tables: RigTable[]; parts: RigPart[]; links: RigLink[]; problems: string[]; mermaid: string }
@@ -125,7 +129,7 @@ export function readRig(text: string): Rig {
       const cells: Record<string, string> = {};
       t.header.forEach((h, n) => { if (h) cells[h] = row[n] ?? ""; });
       const detail = DETAIL_COLUMNS.map(d => cell(names.indexOf(d))).find(Boolean) ?? kind;
-      const part: RigPart = { id, kind, detail, feeds: cell(feedsCol).split(",").map(s => s.trim()).filter(Boolean), cells, table: ti };
+      const part: RigPart = { id, kind, detail, feeds: cell(feedsCol).split(",").map(s => s.trim()).filter(Boolean), cells, table: ti, control: cell(names.indexOf("control")), data: cell(names.indexOf("data")) };
       parts.push(part); byId.set(id.toLowerCase(), part);
     });
   });
@@ -138,4 +142,11 @@ export function readRig(text: string): Rig {
     }
   }
   return { tables, parts, links, problems, mermaid: toMermaid(parts, links) };
+}
+
+/** The computer's label for the figure: the note's `Control:` property (front matter), "" when it is missing or empty. */
+export function controlLabel(text: string): string {
+  const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
+  const line = front && front[1].split(/\r?\n/).find(l => /^control\s*:/i.test(l));
+  return line ? line.replace(/^[^:]*:/, "").trim().replace(/^(["'])(.*)\1$/, "$2").trim() : "";
 }

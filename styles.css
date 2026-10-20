@@ -293,6 +293,9 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-rig-diagram, .lab-kit-rig-diagram .mermaid { overflow-x: auto; }
 
 /* Picture for a slide window (src/planning/plan-slide-ui.ts): the preview is always on white, like the picture */
+.lab-kit-figure-preview { display: block; width: 100%; max-height: 40vh; object-fit: contain; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: #fff; margin: 8px 0; }
+.lab-kit-figure-size { font-size: var(--font-ui-small); color: var(--text-muted); margin: 0 0 8px; }
+.lab-kit-rig-figure { margin-top: 6px; }
 .lab-kit-slide-preview { display: block; width: 100%; height: auto; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: #fff; margin: 8px 0; }
 .lab-kit-hidden { display: none; }
 

@@ -62,6 +62,8 @@ export interface KitData {
   methodsFolder: string;
   /** Vault folder of rig notes (New rig; the kit's Rig template is installed once it is set). Empty = not set. */
   rigsFolder: string;
+  /** Vault folder where the rig figure's SVG and PNG are saved. Empty = the rig note's own folder. */
+  figuresFolder: string;
   /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
   planningFolders: PlanningFolders;
 }
@@ -114,7 +116,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
 /** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
 export const RIGS_DEFAULT = "03 Lab Book/Rigs";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, figuresFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -136,6 +138,7 @@ export function kitLoad(saved: unknown): KitData {
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
   kit.dueCountdown = kit.dueCountdown === "off" ? "off" : "all";   // the old "marked" (it read `countdown: true`, dropped in I2) and anything unknown: all
   if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
+  if (typeof kit.figuresFolder !== "string") kit.figuresFolder = "";
   kit.snippetIcons = { ...kit.snippetIcons };
   kit.snippetRecent = Array.isArray(kit.snippetRecent) ? kit.snippetRecent.filter(n => typeof n === "string") : [];
   kit.snippetGroupsOff = Array.isArray(kit.snippetGroupsOff) ? kit.snippetGroupsOff.filter(n => typeof n === "string") : [];
@@ -314,4 +317,9 @@ export function newRigTarget(o: { template: string | null; rigsFolder: string })
   if (!folder) return { error: "Set the Rigs folder in Lab Kit settings first." };
   if (!o.template) return { error: "The Rig template is not installed. Install it from Manage kit files." };
   return { template: o.template, folder };
+}
+
+/** Where a rig note's figure files are saved: the Figures folder setting, or (empty) the folder of the rig note itself. "" is the vault root. */
+export function figuresTarget(o: { figuresFolder: string; notePath: string }): string {
+  return kitJoin(o.figuresFolder.trim()) || kitParent(o.notePath);
 }
