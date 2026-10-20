@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
 import { TFile } from "obsidian";
-import { currentItem, matchNames, missingRequired, replaceItem, startValues, PILL_MAX, type FormField, type FormFn } from "../src/kit/snippet-form";
+import { formFooter, currentItem, matchNames, missingRequired, replaceItem, startValues, PILL_MAX, type FormField, type FormFn } from "../src/kit/snippet-form";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 
@@ -34,6 +34,14 @@ describe("plugin form helpers = labForm.js", () => {
     expect(missingRequired(fields, values)).toEqual(["a", "d"]);
     expect(missingRequired(fields, values)).toEqual(old.missingRequired(fields, values));
     expect(missingRequired(fields, { a: "x", b: "", c: false, d: "0" })).toEqual([]);
+  });
+});
+
+describe("form footer follows the button", () => {
+  it("Save reads Enter saves, the default Insert reads Enter inserts", () => {
+    expect(formFooter("Save")).toBe("Enter saves · Esc cancels");
+    expect(formFooter()).toBe("Enter inserts · Esc cancels");
+    expect(formFooter("Insert")).toBe("Enter inserts · Esc cancels");
   });
 });
 

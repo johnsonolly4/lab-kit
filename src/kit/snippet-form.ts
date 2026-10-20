@@ -20,6 +20,9 @@ export interface FormField {
   suggest?: SuggestEntry[];
 }
 export interface FormOpts { intro?: string; submitText?: string }
+
+/** The footer line follows the button: Save reads "Enter saves", the default Insert "Enter inserts". */
+export const formFooter = (submitText?: string): string => `Enter ${submitText === "Save" ? "saves" : "inserts"} · Esc cancels`;
 export type FormFn = (title: string, fields: FormField[], opts?: FormOpts) => Promise<Record<string, unknown> | null>;
 
 /** Entries whose name or an alias contains the query, best first: name starts with it, alias starts with it, name contains it, alias contains it. */
@@ -137,7 +140,7 @@ class FormWindow extends Modal {
     const bar = this.contentEl.createDiv({ cls: "lk-form-bar" });
     bar.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
     bar.createEl("button", { text: this.opts.submitText ?? "Insert", cls: "mod-cta" }).addEventListener("click", () => this.submit());
-    this.contentEl.createDiv({ cls: "vt-entry-hint", text: "Enter inserts · Esc cancels" });
+    this.contentEl.createDiv({ cls: "vt-entry-hint", text: formFooter(this.opts.submitText) });
     this.contentEl.addEventListener("keydown", e => {
       if (e.key !== "Enter" || e.isComposing) return;
       if (this.popups.some(p => p.shown)) return;   // a suggestion is showing: Enter picks it

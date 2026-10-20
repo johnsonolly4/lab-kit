@@ -3,6 +3,9 @@
 import { massToGrams, parseQuantity } from "./block";
 import type { ActualField, View } from "./view";
 
+/** The red line under an Actual box that is not a mass (owner board 5, 2026-10-20). */
+export const NOT_A_MASS = "Not a mass: use g or mg.";
+
 /** The line value for what was typed: "1.30" in a mg row → "1.30 mg", "1.3mg" → "1.3 mg", a mass in another unit keeps its unit ("0.0013 g"),
  *  "" → "" (clears the actual). null when it is not a number with a mass unit. The number is kept as typed (the balance's decimals). */
 export function actualText(typed: string, rowUnit: string): string | null {

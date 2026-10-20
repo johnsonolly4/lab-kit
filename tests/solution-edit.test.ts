@@ -144,6 +144,8 @@ describe("the block in the note", () => {
     await ticks();
     expect(t.notes["Lab/0042.md"]).toBe(half);
     expect(t.el.querySelector(".lk-sol-input").classList.contains("is-bad")).toBe(true);
+    expect(t.el.querySelector(".lk-sol-err").textContent).toBe("Not a mass: use g or mg.");
+    expect(t.el.querySelectorAll(".lk-sol-err")).toHaveLength(1);
     press(t.el, "Escape");
     await ticks();
     expect(t.notes["Lab/0042.md"]).toBe(half);

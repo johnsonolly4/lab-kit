@@ -7,7 +7,7 @@ import type { FormFn } from "../kit/snippet-form";
 import { readReagent } from "./reagent";
 import { blockRange, parseSolution, writeActual, writeSetup } from "./block";
 import { askReagent } from "./ask-reagent";
-import { actualText, cellsOf, nextCell } from "./edit";
+import { NOT_A_MASS, actualText, cellsOf, nextCell } from "./edit";
 import { openSetup, reagentChoices, SETUP_HINT, type SetupFn } from "./setup";
 import { setupChanges, valuesFromSetup } from "./setup-text";
 import { buildView, reagentName, TEXT, type ActualField, type ReagentLookup, type View } from "./view";
@@ -167,6 +167,7 @@ class SolutionView extends MarkdownRenderChild {
       if (save && text === null) {   // not a mass: stay open (Enter / Tab) or give up (the focus left)
         if (how === null) { closed = true; this.stopEditing(); return; }
         input.addClass("is-bad");
+        if (!cell.querySelector(".lk-sol-err")) cell.createDiv({ cls: "lk-sol-err", text: NOT_A_MASS });
         return;
       }
       closed = true;
@@ -185,7 +186,7 @@ class SolutionView extends MarkdownRenderChild {
       else if (e.key === "Tab") { e.preventDefault(); finish(true, e.shiftKey ? "back" : "tab"); }
       else if (e.key === "Escape") { e.preventDefault(); finish(false, null); }
     });
-    input.addEventListener("input", () => input.removeClass("is-bad"));
+    input.addEventListener("input", () => { input.removeClass("is-bad"); cell.querySelector(".lk-sol-err")?.remove(); });
     input.addEventListener("click", e => e.stopPropagation());
     // A click elsewhere saves; a click that only moves the focus for a moment (a suggestion, the window) does not
     input.addEventListener("blur", () => window.setTimeout(() => {
