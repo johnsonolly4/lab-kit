@@ -7,6 +7,7 @@ import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
 import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
 import { formsAtCursorRow, groupToggleRows } from "./snippet-settings";
+import { loadDeviceFolders, saveDeviceFolders } from "../close/device-folders";
 import { FREEZE_AUTO } from "../planning/freeze";
 import { prop, toList } from "../frontmatter";
 import { ensurePropertyType, hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
@@ -47,7 +48,7 @@ class KitSettingTab extends PluginSettingTab {
   private closeFolderRows(): SettingGroupItem[] {
     if (!hasNode()) return [];
     const folders = this.ctl.kit.closePdfFolders;
-    const rows: SettingGroupItem[] = [{ name: "Close experiment: PDF folders", desc: "Close experiment saves a PDF of the note in each of these folders (full paths on this computer, for example one on a shared drive). Empty: Close experiment asks you to add one first.",
+    const rows: SettingGroupItem[] = [{ name: "Close experiment: PDF folders", desc: "Close experiment saves a PDF of the note in each of these folders (full paths on this computer, for example one on a shared drive). Empty: Close experiment asks you to add one first. Kept on this device only (not synced), so each computer can have its own.",
       render: b => { b.addButton(btn => btn.setButtonText("Add folder").onClick(() => { folders.push(""); this.update(); })); } }];
     folders.forEach((folder, i) => rows.push({ name: `Folder ${i + 1}`,
       render: b => {
@@ -351,10 +352,15 @@ export class KitController {
   async load(): Promise<void> {
     const saved = (await this.plugin.loadData()) as { kit?: unknown } | null;
     this.kit = kitLoad(saved?.kit);   // a v0.5.2 single-kit state moves into kits.lab
+    // Close experiment: PDF folders are per device: data.json's list is only the start for a device that has none (kept there, never rewritten)
+    this.syncedPdfFolders = this.kit.closePdfFolders;
+    this.kit.closePdfFolders = loadDeviceFolders(this.app, this.syncedPdfFolders);
   }
+  private syncedPdfFolders: string[] = [];
   async save(): Promise<void> {
     const data = ((await this.plugin.loadData()) ?? {}) as Record<string, unknown>;
-    data.kit = this.kit;
+    data.kit = { ...this.kit, closePdfFolders: this.syncedPdfFolders };   // the synced copy of the PDF folders stays as it was
+    saveDeviceFolders(this.app, this.kit.closePdfFolders);
     await this.plugin.saveData(data);
     this.onChanged?.();
   }

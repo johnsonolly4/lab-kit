@@ -20,6 +20,8 @@ export interface PlanRow {
   priority: number | null;
   /** Open, not waiting on something outside the plan (`waiting`), and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
   blocked: boolean;
+  /** What it waits on outside the plan (`waiting`, trimmed), "" when nothing. */
+  waiting: string;
   /** The to-do this one is a subtask of (`sub`; its path), or null. One level only. */
   parent: string | null;
   /** The to-do its `sub` names, found in this project, even when that `sub` is refused (a subtask of a subtask, a loop): null when `sub` is empty or names nothing found. */
@@ -139,7 +141,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       if (!lab) issue([t.path], `"${t.name}" links to the experiment "${target}", which wasn't found.`, [{ path: t.path, key: "experiment", label: "Remove the experiment link", does: `Removes the experiment link from "${t.name}".`, done: `Removed the experiment link from "${t.name}".` }]);
     }
     return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subOf: wanted.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
-      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && !waitingOf(t.fm) && openBefore(t) };
+      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), waiting: waitingOf(t.fm), blocked: !done && !waitingOf(t.fm) && openBefore(t) };
   });
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
   for (const r of rows) {   // ticked on the board, in the note or on the map without ticking the subtasks

@@ -3,6 +3,7 @@
 import { Modal, Notice, Setting, type App } from "obsidian";
 import { MIN_READABLE, slideModel, slideSvg, type SlideLayout, type SlidePicture } from "./plan-slide";
 import type { PlanMap } from "./plan-map";
+import { ymd } from "./todo";
 
 export const DEFAULT_AHEAD = 5;
 const WIDTH = 1920, HEIGHT = 1080;
@@ -71,7 +72,7 @@ export class PlanSlideModal extends Modal {
   private note!: HTMLElement;
 
   private picture(): SlidePicture {
-    return slideSvg(slideModel(this.map, layoutOf(this.choice)), { title: this.title, width: WIDTH, height: HEIGHT });
+    return slideSvg(slideModel(this.map, layoutOf(this.choice)), { title: this.title, width: WIDTH, height: HEIGHT, today: ymd(new Date()) });
   }
 
   private draw(): void {
