@@ -195,6 +195,8 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | New rig | Makes a rig note from the Rig template in your Rigs folder (asks the name) |
 | Insert snippet | The Alt+S menu: Recent, then the snippets by group; type to search. Needs Templater for now |
 | Clone experiment | Copies a lab note (the open one, or pick) into a new numbered lab note: set-up kept, sample codes renumbered, status, dates, results and notes started again, with a `Cloned from` link back |
+| Close experiment | Saves a PDF of the open lab note in the PDF folders you set (settings, Close experiment: PDF folders), marks the note closed with the date and a SHA-256 of its text, and sets Status to Closed; the note stays editable. On a phone the PDF is left pending |
+| Reopen experiment | Removes the closed mark and sets Status back to Started; the PDFs are kept |
 | Insert empty calc block | A blank calc table at the cursor |
 | Insert lab header block | The hazard / data-folder header at the cursor |
 | Tidy up notes | Finds notes that don't follow the vault's rules and fixes the ones you tick |

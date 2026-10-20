@@ -104,6 +104,6 @@ describe("lab-kit windows corner", () => {
       windows += classes;
       expect(text.match(/\bcardWindow\(this\)/g)?.length ?? 0, f).toBe(classes);
     }
-    expect(windows).toBe(9);   // five in managed / merge, three Check setup / hotkeys, Tidy
+    expect(windows).toBe(10);   // five in managed / merge, three Check setup / hotkeys, Tidy, Close experiment
   });
 });

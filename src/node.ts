@@ -6,11 +6,11 @@ import { Platform } from "obsidian";
 export interface NodeFs {
   existsSync(path: string): boolean;
   mkdirSync(path: string, options: { recursive: boolean }): unknown;
-  writeFileSync(path: string, data: string): void;
+  writeFileSync(path: string, data: string | Uint8Array): void;
   unlinkSync(path: string): void;
 }
 export interface NodeOs { tmpdir(): string }
-export interface NodePath { join(...parts: string[]): string }
+export interface NodePath { join(...parts: string[]): string; isAbsolute(path: string): boolean }
 
 export interface NodeModules {
   fs: NodeFs;
@@ -82,4 +82,19 @@ export async function printHtmlToPdf(html: string, footerHtml: string): Promise<
     win?.destroy();
     try { fs.unlinkSync(file); } catch { /* already gone */ }
   }
+}
+
+/** Saves bytes as `folder/name` outside the vault (desktop). The folder is made if missing. Throws when the folder is not an absolute path, there is no Node here, or the disk refuses. */
+export function saveFileTo(folder: string, name: string, bytes: ArrayBuffer): void {
+  const fs = nodeModule("fs"), path = nodeModule("path");
+  if (!fs || !path) throw new Error("No file access on this device");
+  if (!path.isAbsolute(folder)) throw new Error(`${folder} is not an absolute path`);
+  fs.mkdirSync(folder, { recursive: true });
+  fs.writeFileSync(path.join(folder, name), new Uint8Array(bytes));
+}
+
+/** True when `folder/name` exists (desktop; false without Node). */
+export function fileExistsIn(folder: string, name: string): boolean {
+  const fs = nodeModule("fs"), path = nodeModule("path");
+  return !!fs && !!path && fs.existsSync(path.join(folder, name));
 }

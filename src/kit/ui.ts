@@ -9,6 +9,8 @@ import { chemicalClasses } from "./snippet-env";
 import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import type { FolderGuardActions } from "./folder-guard";
+import { runCloseCommand } from "../close/ui";
+import { hasNode } from "../platform";
 import { MovedFoldersModal } from "./moved-folders-ui";
 import type { HeaderStore } from "../header/settings";
 import changelog from "../../docs/changelog.md";
@@ -90,6 +92,20 @@ class KitSettingTab extends PluginSettingTab {
         }
       });
     }
+    return rows;
+  }
+
+  /** Close experiment: PDF folders (desktop only). A row with Add folder, then one row per folder with a Remove button. The folders are absolute paths on this device, outside the vault if you like. */
+  private closeFolderRows(): SettingGroupItem[] {
+    if (!hasNode()) return [];
+    const folders = this.ctl.kit.closePdfFolders;
+    const rows: SettingGroupItem[] = [{ name: "Close experiment: PDF folders", desc: "Close experiment saves a PDF of the note in each of these folders (full paths on this computer, for example one on a shared drive). Empty: Close experiment asks you to add one first.",
+      render: b => { b.addButton(btn => btn.setButtonText("Add folder").onClick(() => { folders.push(""); this.update(); })); } }];
+    folders.forEach((folder, i) => rows.push({ name: `Folder ${i + 1}`,
+      render: b => {
+        b.addText(t => wideBox(b, t).setPlaceholder("Full path of a folder").setValue(folder).onChange(async v => { folders[i] = v.trim(); await this.ctl.save(); }));
+        b.addButton(btn => btn.setButtonText("Remove").onClick(async () => { folders.splice(i, 1); await this.ctl.save(); this.update(); }));
+      } }));
     return rows;
   }
 
@@ -304,6 +320,7 @@ class KitSettingTab extends PluginSettingTab {
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
       { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
         render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
+      ...this.closeFolderRows(),
       planning.progress,
       { type: "page", name: "Board colours", items: builtIn.boards },
       ...(snippets.length ? [{ type: "page" as const, name: "Snippet icons", items: snippets }] : [])
@@ -407,6 +424,8 @@ export class KitController {
     plugin.addCommand({ id: "insert-snippet", name: "Insert snippet", editorCallback: () => void this.insertSnippet() });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
+    plugin.addCommand({ id: "close-experiment", name: "Close experiment", callback: () => void runCloseCommand(this.app, this.kit, "close") });
+    plugin.addCommand({ id: "reopen-experiment", name: "Reopen experiment", callback: () => void runCloseCommand(this.app, this.kit, "reopen") });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once
