@@ -9,7 +9,7 @@ import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
 import { hideShadowedStubs, pushRecent, type MenuItem } from "./snippet-menu";
 import { openSnippetMenu } from "./snippet-menu-ui";
-import type { FormFn } from "./snippet-form";
+import type { FormField, FormFn } from "./snippet-form";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
@@ -20,7 +20,6 @@ export interface SnippetTp {
     labSnippets?: (tp: unknown, key: string) => Promise<string>;
   };
 }
-interface FormField { key: string; label: string; hint?: string; required?: boolean; placeholder?: string; type: string; value: string; suggest?: { name: string; aliases: string[] }[] }
 
 /** Title, icon, description and group for the Alt+S menu. */
 export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string; /** An old-form stub file (`<%*` … `labSnippets(tp, "nmr")`): the key it runs. */ oldStub?: string }
