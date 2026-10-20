@@ -1,4 +1,5 @@
 // Lab Kit: live ```calc tables, hazard header + built-in kit. See STATUS.md.
+import { openSnippetForm } from "./kit/snippet-form";
 import { Plugin } from "obsidian";
 import { CalcRenderer } from "./calc/render";
 import { HeaderRenderer } from "./header/render";
@@ -33,7 +34,7 @@ export default class LabKitPlugin extends Plugin {
     this.header = new HeaderRenderer(this, store);
     this.kit = new KitController(this, store);
     await this.kit.load();
-    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save());
+    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app));
     this.kit.setup();
 
     this.calc.register();

@@ -9,6 +9,7 @@ import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
 import { pushRecent, type MenuItem } from "./snippet-menu";
 import { openSnippetMenu } from "./snippet-menu-ui";
+import type { FormFn } from "./snippet-form";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
@@ -27,7 +28,8 @@ const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("
 const NOTE_FOLDERS: Record<string, string> = { rigsFolder: "Rigs folder", methodsFolder: "Methods folder", chemicalFolder: "Chemical folder", labFolder: "Lab notes folder" };
 
 export class SnippetTemplates {
-  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}) {}
+  /** `form` = the plugin's question window (main.ts); without it the answers come from Templater's labForm.js on `tp` (tests, old setups). */
+  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn) {}
 
   /** The Alt+S menu (Insert snippet.md calls it in place of labPick.js): the picked entry's `value`, or null. Remembers the pick for Recent. */
   async menu(items: MenuItem[]): Promise<unknown> {
@@ -128,9 +130,11 @@ export class SnippetTemplates {
       // suggest: codes: the box holds the note's sample codes and, with several tables, a "Codes from" choice follows it
       const sources = header.fields.some(f => f.suggest === "codes") ? codeSources(note) : [];
       const parts = codeFormParts(sources);
-      if (!tp.user.labForm) throw new TemplateError("The form script labForm.js was not found. Run Check setup.");
+      const labForm = tp.user.labForm;
+      if (!this.form && !labForm) throw new TemplateError("The form script labForm.js was not found. Run Check setup.");
+      const ask: FormFn = this.form ?? ((t, f, o) => labForm!(tp, t, f, o));
       const title = header.title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "");
-      const got = await tp.user.labForm(tp, title, header.fields.flatMap(f => {
+      const got = await ask(title, header.fields.flatMap(f => {
         const isCodes = f.suggest === "codes";
         const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: isCodes && parts.prefill ? parts.prefill : defaults[f.key],
           ...(f.mandatory ? { required: true } : {}),
