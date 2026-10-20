@@ -60,7 +60,7 @@ How other plugins stay robust (from their release notes): raise minAppVersion wh
 | S3 | **One isolation layer**: every private member read through `obsidian-private.ts` (move `metadataTypeManager`, the remaining casts), each with a feature check and a soft-fail notice | `src/kit/obsidian-private.ts`, callers | S2's test shows no private use outside it | M |
 | S4 | **Fix the callout colours** (high row 1) if the check confirms it | `vault-theme.css` | computed `--callout-color` is a colour; screenshot | S |
 | S5 | **Typings and versions**: bump `obsidian` types to the newest release, read its CHANGELOG at each bump; README / changelog line "tested up to Obsidian x.y"; minAppVersion moves only at `/release` | `package.json`, `README.md` | `tsc` passes | S |
-| S6 | **Update routine**: when Obsidian releases (or an Insider build is out), run S1 on it, read the changelog sections Plugins / API / Bases / mobile, and add any finding to BACKLOG | `docs/maintenance.md` | a checklist row | S |
+| S6 (BUILT 2026-10-20, by hand until S1 exists) | **Update routine**: when Obsidian releases (or an Insider build is out), run S1 on it, read the changelog sections Plugins / API / Bases / mobile, and add any finding to BACKLOG | `docs/maintenance.md` | a checklist row | S |
 | S7 | **Beta track** (optional): pre-release builds through BRAT before the store | `.github/workflows/release.yml` | a pre-release tag builds | M |
 
 Order: S4 check first (a likely live bug), then S2, S1, S3, S5, S6; S7 only if you want it.
