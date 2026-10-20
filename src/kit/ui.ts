@@ -1,6 +1,6 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
 import { Notice, PluginSettingTab, TFile, type Editor, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
-import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
+import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { openEntry } from "../planning/entry-window";
 import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";

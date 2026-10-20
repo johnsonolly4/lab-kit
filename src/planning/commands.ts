@@ -10,7 +10,7 @@ import { nodeModule } from "../node";
 import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
-import type { EntryField, EntryValues } from "./entry-fields";
+import type { EntryValues } from "./entry-fields";
 import { datePill } from "./board-card";
 import { captureAnchor, openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
 import { experimentOptions, projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
