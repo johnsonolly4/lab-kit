@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100" width="200" height="100" font-family="Helvetica, Arial, sans-serif" fill="#000000">
+<metadata id="lab-kit-rig-snapshot">
+lab-kit rig-snapshot format: 1
+rig: Saved rig
+date: 2026-10-20
+lab-kit: 0.0.0-test
+control: made-up 1.0
+=== tables ===
+## Pumps
+| ID | Model | Feeds |
+|---|---|---|
+| P1 | syringe pump &amp; &lt;made up&gt; | OUT |
+
+## Outlets
+| ID | Part | Feeds |
+|---|---|---|
+| OUT | Outlet | |
+=== layout ===
+format: 1
+P1: 40, 40
+</metadata><rect width="200" height="100" fill="#ffffff"/><text x="10" y="20">P1</text></svg>
