@@ -57,6 +57,7 @@
     "src/planning/board-close-ui.ts",
     "src/planning/entry-window.ts",
     "src/rig/figure-ui.ts",
+    "src/solution/setup.ts",
     "styles.css"
    ],
    "risk": "medium",

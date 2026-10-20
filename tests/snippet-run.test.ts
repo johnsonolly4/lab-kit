@@ -5,6 +5,8 @@ import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { chemicalClasses, classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "../src/kit/snippet-env";
 import { parseTemplate, TemplateError } from "../src/kit/snippet-template";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
+import type { SetupFn, SetupInit } from "../src/solution/setup";
+import { DEFAULT_SETUP, solutionBlock } from "../src/solution/setup-text";
 
 const json = (s: string): unknown => JSON.parse(s);
 const header = (o: object, body: string): string => `---\n${JSON.stringify(o)}\n---\n${body}`;
@@ -142,7 +144,7 @@ describe("makeEnv", () => {
 
 const file = (path: string): TFile => { const base = path.replace(/\.md$/, "").split("/").pop()!; return new TFile({ path, basename: base }); };
 
-function setup(opts: { files: Record<string, string>; note?: string; kit?: Partial<KitData>; chems?: { path: string; fm: Record<string, unknown> }[] }) {
+function setup(opts: { files: Record<string, string>; note?: string; kit?: Partial<KitData>; chems?: { path: string; fm: Record<string, unknown> }[]; window?: SetupFn; cursor?: { ch: number } }) {
   const folder = new TFolder({ path: "Chem", children: [] });
   for (const c of opts.chems ?? []) folder.children.push(file(c.path));
   const fmOf = new Map((opts.chems ?? []).map((c, i) => [folder.children[i], c.fm]));
@@ -151,14 +153,14 @@ function setup(opts: { files: Record<string, string>; note?: string; kit?: Parti
       cachedRead: async (f: TFile) => opts.files[f.path],
       getFolderByPath: (p: string) => (p === "Chem" ? folder : null),
     },
-    workspace: { activeEditor: { editor: { getValue: () => opts.note ?? "" } }, getActiveFile: () => file("ABC0016 - test.md") },
+    workspace: { activeEditor: { editor: { getValue: () => opts.note ?? "", getCursor: () => opts.cursor ?? { line: 0, ch: 0 } } }, getActiveFile: () => file("ABC0016 - test.md") },
     metadataCache: {
       getFileCache: (f: TFile) => ({ frontmatter: f.basename === "toluene" ? { density: "0,867" } : fmOf.get(f) }),
       getFirstLinkpathDest: (name: string) => (name === "toluene" ? file("toluene.md") : null),
     },
   };
   const kit = { ...KIT_DEFAULTS, initials: "ABC", chemicalFolder: "Chem", ...opts.kit } as KitData;
-  return { st: new SnippetTemplates(app as never, () => kit), app };
+  return { st: new SnippetTemplates(app as never, () => kit, undefined, undefined, opts.window), app };
 }
 
 type FormCall = { title: string; fields: { key: string; value: string; required?: boolean; suggest?: { name: string }[] }[] };
@@ -293,7 +295,7 @@ describe("SnippetTemplates: run: calculators", () => {
   });
 
   it("run: hands the key and the same tp to labSnippets and inserts exactly what it returns", async () => {
-    for (const key of ["solution", "recipe", "raft", "results", "nmr", "gpc", "dls"]) {
+    for (const key of ["recipe", "raft", "results", "nmr", "gpc", "dls"]) {
       const { st } = setup({ files: { "S/s.md": stub(key) } });
       const calls: { key: string; tp: unknown }[] = [];
       const tp = calcTp(calls, `## ${key}\n| a |\n\n`);
@@ -303,6 +305,30 @@ describe("SnippetTemplates: run: calculators", () => {
       expect(calls[0].tp).toBe(tp);
     }
     expect(Notice.messages).toEqual([]);
+  });
+
+  it("run: solution is the live block: its own window, no labSnippets; solution-volume is the old volume form (labSnippets key solution)", async () => {
+    const asked: SetupInit[] = [];
+    const lines = { reagent: "Acetic acid", aqueous: "15.00 g", pH: "4.00", share: "60 %", use: "50 %", balance: "0.1 mg" };
+    const window: SetupFn = async (_app, init) => { asked.push(init); return { values: init.values, lines }; };
+    const { st } = setup({ files: { "S/s.md": stub("solution"), "S/v.md": stub("solution-volume") }, window });
+    const calls: { key: string; tp: unknown }[] = [];
+    const out = await st.run(calcTp(calls), file("S/s.md"));
+    expect(out).toBe(solutionBlock(lines));
+    expect(out.startsWith("```solution\nformat: 1\n")).toBe(true);
+    expect(calls).toEqual([]);
+    expect(asked[0].submit).toBe("Insert");
+    expect(asked[0].values).toEqual(DEFAULT_SETUP);
+    expect(await st.run(calcTp(calls, "old\n"), file("S/v.md"))).toBe("old\n");
+    expect(calls.map(c => c.key)).toEqual(["solution"]);
+  });
+
+  it("run: solution starts the block on a line of its own and gives nothing when the window is closed", async () => {
+    const lines = { reagent: "A", aqueous: "1 g", pH: "4", share: "60 %", use: "50 %", balance: "0.1 mg" };
+    const { st } = setup({ files: { "S/s.md": stub("solution") }, cursor: { ch: 5 }, window: async (_a, i) => ({ values: i.values, lines }) });
+    expect((await st.run(calcTp([]), file("S/s.md"))).startsWith("\n```solution\n")).toBe(true);
+    const closed = setup({ files: { "S/s.md": stub("solution") }, window: async () => null });
+    expect(await closed.st.run(calcTp([]), file("S/s.md"))).toBe("");
   });
 
   it("run: an unknown key shows the Notice and inserts nothing; labSnippets is not called", async () => {
@@ -338,11 +364,11 @@ describe("SnippetTemplates: old calculator stubs kept in a vault", () => {
   });
 
   it("run: an old stub runs its calculator through labSnippets, an edited icon or an extra comment line changes nothing", async () => {
-    const { st } = setup({ files: { "S/a.md": OLD("raft"), "S/b.md": OLD("solution", "// remember to check MW\n") } });
+    const { st } = setup({ files: { "S/a.md": OLD("raft"), "S/b.md": OLD("recipe", "// remember to check MW\n") } });
     const calls: string[] = [];
     expect(await st.run(calcTp(calls), file("S/a.md"))).toBe("out:raft\n");
-    expect(await st.run(calcTp(calls), file("S/b.md"))).toBe("out:solution\n");
-    expect(calls).toEqual(["raft", "solution"]);
+    expect(await st.run(calcTp(calls), file("S/b.md"))).toBe("out:recipe\n");
+    expect(calls).toEqual(["raft", "recipe"]);
   });
 
   it("run: an old stub with an unknown key shows the Notice and inserts nothing", async () => {

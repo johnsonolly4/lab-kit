@@ -77,7 +77,7 @@ export function startValues(fields: FormField[]): Record<string, unknown> {
 /** A select with this many options or fewer is drawn as pills, more as a dropdown. */
 export const PILL_MAX = 3;
 
-class Suggest extends AbstractInputSuggest<{ name: string; alias: string | null }> {
+export class Suggest extends AbstractInputSuggest<{ name: string; alias: string | null }> {
   shown = false;
   constructor(app: App, private input: HTMLInputElement, private entries: SuggestEntry[], private store: (v: string) => void) { super(app, input); }
   getSuggestions(value: string) {

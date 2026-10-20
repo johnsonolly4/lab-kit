@@ -651,6 +651,14 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-sol-input.is-bad { border-color: var(--text-error); }
 .lk-sol button.lk-sol-error.is-ask { display: block; width: 100%; height: auto; padding: 2px 0; background: none; box-shadow: none; text-align: left; white-space: normal; cursor: pointer; }
 .lk-sol button.lk-sol-error.is-ask:hover { text-decoration: underline; }
+.lk-sol .lk-sol-edit { margin-left: auto; height: auto; padding: 2px 12px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: transparent; box-shadow: none; font-size: var(--font-ui-small); color: var(--text-normal); cursor: pointer; }
+.lk-sol .lk-sol-edit:hover { background: var(--background-modifier-hover); }
+.lk-sol-caution.lk-sol-warn { margin: 0 0 10px; }
+.lk-sol-setup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; margin: 8px 0 4px; }
+.lk-sol-setup select.lk-form-box { background-color: var(--background-modifier-form-field); border: 1px solid var(--background-modifier-border); text-overflow: ellipsis; }
+.lk-sol-setup .lk-form-row { margin: 0 0 var(--size-4-3); min-width: 0; }
+.lk-sol-setup .vt-entry-hint { margin: 0 0 var(--size-4-2); }
+@media (max-width: 480px) { .lk-sol-setup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lk-sol-estimate { margin: 10px 0 8px; font-size: var(--font-ui-small); }
 .lk-sol-estimate-value { font-weight: 700; color: var(--interactive-accent); }
 .lk-sol-estimate-range { color: var(--text-muted); }

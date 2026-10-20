@@ -10,6 +10,8 @@ import type { KitData } from "./paths";
 import { hideShadowedStubs, pushRecent, visibleItems, type MenuItem } from "./snippet-menu";
 import { openSnippetMenu, type MenuIcons } from "./snippet-menu-ui";
 import type { FormField, FormFn } from "./snippet-form";
+import { openSetup, reagentChoices, setupAnchor, SETUP_HINT, type SetupFn } from "../solution/setup";
+import { DEFAULT_SETUP, solutionBlock } from "../solution/setup-text";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
@@ -24,8 +26,8 @@ export interface SnippetTp {
 /** Title, icon, description and group for the Alt+S menu. */
 export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string; /** An old-form stub file (`<%*` … `labSnippets(tp, "nmr")`): the key it runs. */ oldStub?: string }
 
-/** The keys of labSnippets.js a header's `run:` may name. */
-export const CALCULATORS = ["solution", "recipe", "raft", "results", "nmr", "gpc", "dls"];
+/** The keys a header's `run:` may name. `solution` is the live ```solution block (N4: Solution prep IS the block, its own set-up window); the old volume tables run on as `solution-volume` (labSnippets.js `solution`). The rest are labSnippets.js keys. */
+export const CALCULATORS = ["solution", "solution-volume", "recipe", "raft", "results", "nmr", "gpc", "dls"];
 
 const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
 
@@ -34,7 +36,7 @@ const NOTE_FOLDERS: Record<string, string> = { rigsFolder: "Rigs folder", method
 
 export class SnippetTemplates {
   /** `form` = the plugin's question window (main.ts); without it the answers come from Templater's labForm.js on `tp` (tests, old setups). */
-  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn) {}
+  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn, private setup: SetupFn = openSetup) {}
 
   /** Right-click → Change icon… in the menu (set by the kit controller; without it the menu has no right-click). */
   icons: MenuIcons | null = null;
@@ -186,6 +188,7 @@ export class SnippetTemplates {
 
   /** `run: <key>`: the calculator of that name in labSnippets.js asks its questions and builds the text, exactly as the stub files did. */
   private async calculator(tp: SnippetTp, file: TFile, title: string | undefined, key: string): Promise<string> {
+    if (key === "solution") return await this.solutionBlock();
     if (!CALCULATORS.includes(key)) {
       new Notice(`“${title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "")}”: Lab Kit has no calculator called “${key}”.`);
       return "";
@@ -194,7 +197,16 @@ export class SnippetTemplates {
       new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
       return "";
     }
-    return await tp.user.labSnippets(tp, key);
+    return await tp.user.labSnippets(tp, key === "solution-volume" ? "solution" : key);
+  }
+
+  /** `run: solution`: the set-up window at the cursor, then the live block (set-up filled in, actuals empty). "" when it was closed. */
+  private async solutionBlock(): Promise<string> {
+    const kit = this.kit();
+    const got = await this.setup(this.app, { values: DEFAULT_SETUP, choices: reagentChoices(this.app, kit.chemicalFolder, kit.mwProperty), anchor: setupAnchor(this.app, kit.snippetFormsAtCursor !== false), submit: "Insert", hint: SETUP_HINT.insert });
+    if (!got) return "";
+    const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
+    return (at && at.ch > 0 ? "\n" : "") + solutionBlock(got.lines);   // a fence starts on a line of its own
   }
 
   private fail(file: TFile, e: unknown): string {

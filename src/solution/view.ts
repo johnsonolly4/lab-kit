@@ -20,6 +20,8 @@ export interface View {
   title: string;
   status: string;
   summary: string;
+  /** Q4: the acid to weigh is under 10 times the balance's readability, with a larger batch suggested; "" when it is fine. */
+  warning: string;
   steps: ViewStep[];
   /** "Estimated pH from what you've entered:" value, the ± text and the asterisk note; null until something is entered. */
   estimate: { pH: string; range: string } | null;
@@ -37,10 +39,13 @@ export const TEXT = {
   done: "done",
   estimate: "Estimated pH from what you've entered:",
   caution: (name: string) => `Estimate for ${lowerFirst(name)} in water alone; monomer, initiator or salts shift it. Check with a pH meter.`,
+  editSetup: "Edit set-up",
   noNote: (name: string) => `no note called "${name}"`,
   hasNo: (name: string, what: string) => `"${name}" has no ${what}: type it once, it is saved in the chemical note.`,
   // New wording, asked in BACKLOG "Questions for the owner":
   approx: "* Approximate: mol/kg is taken as mol/L.",
+  // Q12 wording of the plan:
+  small: (base: boolean, pct: string, g: string, use: string) => `${base ? "Base" : "Acid"} to weigh is small for your balance (±${pct} %): make ${g} g and use ${use} %.`,
   noReagent: "no reagent given",
   bad: (key: string) => `${key} is missing or not a number`,
   both: (name: string) => `"${name}" has both Purity and Concentration: use one`,
@@ -90,7 +95,7 @@ const stripUnit = (g: number): { v: number; u: string } => g < 1 ? { v: g * 1000
 /** What the block shows for this text and this reagent note. */
 export function buildView(source: string, lookup: (name: string) => ReagentLookup): View {
   const sol: Solution = parseSolution(source);
-  const view: View = { newer: null, errors: [], ask: [], askLines: [], title: "", status: "", summary: "", steps: [], estimate: null, caution: "", approx: "" };
+  const view: View = { newer: null, errors: [], ask: [], askLines: [], title: "", status: "", summary: "", warning: "", steps: [], estimate: null, caution: "", approx: "" };
   if (sol.newer) { view.newer = TEXT.newer; return view; }
 
   const su = sol.setup;
@@ -144,6 +149,10 @@ export function buildView(source: string, lookup: (name: string) => ReagentLooku
       { label: "Water", target: t(recipe.waterG), actual: waterAct.text, field: { step: "step 2", key: "water", unit: "g" } },
     ] },
   ];
+  if (recipe.tooSmall && recipe.acidG > 0 && recipe.batchG !== null) {
+    const batch = Math.ceil(recipe.batchG);
+    view.warning = TEXT.small(base, sig2(balance / recipe.acidG * 100), String(batch), sig2(recipe.solutionG / batch * 100));
+  }
   const left = view.steps.findIndex(s => !s.done);
   view.status = left < 0 ? TEXT.done : TEXT.inProgress(left + 1, view.steps.length);
 
@@ -165,6 +174,9 @@ export function buildView(source: string, lookup: (name: string) => ReagentLooku
   view.caution = TEXT.caution(name);
   return view;
 }
+
+/** Two significant figures, no trailing zeros: 62, 8, 0.5. */
+const sig2 = (x: number): string => String(Number(x.toPrecision(2)));
 
 /** The balance as it is shown: 0.1 mg for 0.0001 g. */
 function balanceShow(g: number): string {
