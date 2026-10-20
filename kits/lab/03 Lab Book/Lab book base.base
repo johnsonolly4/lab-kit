@@ -1,12 +1,15 @@
 filters:
   and:
     - file.inFolder("03 Lab Book/Notes")
+properties:
+  note.closed_on:
+    displayName: Ended
 views:
   - type: kanban
     name: Experiments
     filters:
       and:
-        - Status != "Closed" || file.mtime > now() - "30d"
+        - Status != "Closed" || if(closed_on, closed_on > now() - "30d", file.mtime > now() - "30d")
     groupBy:
       property: Status
       direction: ASC
@@ -30,3 +33,49 @@ views:
       - file.name
       - Status
       - progress
+  - type: table
+    name: Completed experiments
+    filters:
+      or:
+        - Status == "Closed"
+        - closed_on
+    sort:
+      - property: closed_on
+        direction: DESC
+    order:
+      - file.name
+      - Exp. Class
+      - Chemicals
+      - Outcome
+      - Status
+      - closed_on
+  - type: table
+    name: RAFT experiments
+    filters:
+      and:
+        - note["Exp. Class"].lower().contains("raft")
+    sort:
+      - property: file.name
+        direction: DESC
+    order:
+      - file.name
+      - Exp. Class
+      - Chemicals
+      - Outcome
+      - Status
+      - closed_on
+  - type: table
+    name: Closed this year
+    filters:
+      and:
+        - closed_on.year == now().year
+    sort:
+      - property: closed_on
+        direction: DESC
+    order:
+      - file.name
+      - Exp. Class
+      - Chemicals
+      - Outcome
+      - Status
+      - closed_on
