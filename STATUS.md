@@ -47,7 +47,7 @@ N8. Ask the owner to push `overnight/2026-10-19` and `feat/rig-figure` and open 
 - [ ] Answer BACKLOG N2h leftovers (4 questions) and try two devices on one board (checklist row Sync, two devices, same board), by 2026-10-23.
 - [ ] Try the Undo notice on the board, the chip-bar tick and the unfoldable `N done` (checklist row "Undo after a tick", I2 Phase 6), by 2026-10-22.
 - [ ] Try the day-header `+` (checklist row "Day header +"; Review update… for `To-do.md` first) and say if the look is right (not in the approved picture), by 2026-10-22.
-- [ ] I23 Phase 1 new texts (BACKLOG "Questions for the owner"). Templater removal ANSWERED 2026-10-20: (b) now, (a) later.
+- [ ] I23 Phase 1: keep or hide the close ✕ on the Alt+S menu (texts OK'd 2026-10-20). Templater removal ANSWERED 2026-10-20: (b) now, (a) later.
 - [ ] Try the Alt+S menu (checklist 6i last row) after Review update… for Insert snippet.md and the Hotkeys note.
 - [ ] I19: freeze meeting notes the day after the meeting date, or when the next one is made?
 - [ ] Rig: do you tweak part positions for a poster, and does the rig change after (hand layout in Obsidian or the drawing tool)?
