@@ -100,7 +100,7 @@ describe("states", () => {
   });
   it("errors: no note, missing pKa, both Purity and Concentration", () => {
     expect(buildView(base.replace("[[Acetic acid]]", "[[Nope]]"), lookup).errors).toEqual(['no note called "Nope"']);
-    expect(buildView(base.replace("[[Acetic acid]]", "[[Blank template]]"), lookup).errors).toContain('"Blank template" has no pKa');
+    expect(buildView(base.replace("[[Acetic acid]]", "[[Blank template]]"), lookup).errors).toContain('"Blank template" has no pKa: type it once, it is saved in the chemical note.');
     expect(buildView(base.replace("[[Acetic acid]]", "[[Both given]]"), lookup).errors.join()).toContain("use one");
   });
   it("a base reads 'Base solution for pH …'", () => {

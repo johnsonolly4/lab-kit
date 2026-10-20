@@ -45,7 +45,7 @@ export default class LabKitPlugin extends Plugin {
     this.registerEditorExtension(calcTextRefs());
     this.header.register();
     new RigRenderer(this, () => this.kit.kit.figuresFolder).register();
-    new SolutionRenderer(this, () => this.kit.kit).register();
+    new SolutionRenderer(this, () => this.kit.kit, openSnippetForm(this.app)).register();
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();

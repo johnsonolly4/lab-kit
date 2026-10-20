@@ -4,13 +4,19 @@ import { acidRecipe, balanceRange, pHFromMasses, type AcidSetup } from "./acid";
 import { formatQuantity, massToGrams, parseQuantity, parseSolution, type Solution } from "./block";
 import type { ReagentField, ReagentRead } from "./reagent";
 
-export interface ViewRow { label: string; target: string; actual: string }
+/** Where an Actual is stored: the `step N:` section, its key and the unit a bare number takes. */
+export interface ActualField { step: string; key: string; unit: string }
+export interface ViewRow { label: string; target: string; actual: string; field: ActualField }
 export interface ViewStep { title: string; done: boolean; rows: ViewRow[] }
 export interface View {
   /** Set when the block is from a newer plugin: only this line is drawn. */
   newer: string | null;
   /** Lines that stop the block from being drawn (nothing else is shown with them). */
   errors: string[];
+  /** Properties the reagent's chemical note lacks (they can be typed once and are saved there); empty for any other error. */
+  ask: ReagentField[];
+  /** The `errors` lines that belong to `ask` (they are clickable). */
+  askLines: string[];
   title: string;
   status: string;
   summary: string;
@@ -32,7 +38,7 @@ export const TEXT = {
   estimate: "Estimated pH from what you've entered:",
   caution: (name: string) => `Estimate for ${lowerFirst(name)} in water alone; monomer, initiator or salts shift it. Check with a pH meter.`,
   noNote: (name: string) => `no note called "${name}"`,
-  hasNo: (name: string, what: string) => `"${name}" has no ${what}`,
+  hasNo: (name: string, what: string) => `"${name}" has no ${what}: type it once, it is saved in the chemical note.`,
   // New wording, asked in BACKLOG "Questions for the owner":
   approx: "* Approximate: mol/kg is taken as mol/L.",
   noReagent: "no reagent given",
@@ -84,7 +90,7 @@ const stripUnit = (g: number): { v: number; u: string } => g < 1 ? { v: g * 1000
 /** What the block shows for this text and this reagent note. */
 export function buildView(source: string, lookup: (name: string) => ReagentLookup): View {
   const sol: Solution = parseSolution(source);
-  const view: View = { newer: null, errors: [], title: "", status: "", summary: "", steps: [], estimate: null, caution: "", approx: "" };
+  const view: View = { newer: null, errors: [], ask: [], askLines: [], title: "", status: "", summary: "", steps: [], estimate: null, caution: "", approx: "" };
   if (sol.newer) { view.newer = TEXT.newer; return view; }
 
   const su = sol.setup;
@@ -100,6 +106,7 @@ export function buildView(source: string, lookup: (name: string) => ReagentLooku
     if (read.conflict) view.errors.push(TEXT.both(name));
     for (const f of read.invalid) view.errors.push(TEXT.unusable(name, FIELD_LABEL[f]));
     for (const f of read.missing) view.errors.push(TEXT.hasNo(name, FIELD_LABEL[f]));
+    if (!read.conflict && !read.invalid.length) { view.ask = [...read.missing]; view.askLines = read.missing.map(f => TEXT.hasNo(name, FIELD_LABEL[f])); }
   }
 
   const aqueous = grams(su.aqueous), pH = num(su["target-pH"]), share = pct(su.share), use = pct(su.use), balance = grams(su.balance);
@@ -129,12 +136,12 @@ export function buildView(source: string, lookup: (name: string) => ReagentLooku
   view.title = su.title?.trim() || title;
   view.steps = [
     { title: `1. Make the ${base ? "base" : "acid"} solution (${t(recipe.madeG)}): ${base ? "base" : "acid"} first${done1 ? " ✓" : ""}`, done: done1, rows: [
-      { label: name, target: formatQuantity(a.v, a.u, 2), actual: accAct.text },
-      { label: "Water to a total of", target: t(recipe.madeG), actual: waterToAct.text },
+      { label: name, target: formatQuantity(a.v, a.u, 2), actual: accAct.text, field: { step: "step 1", key: "acid", unit: "mg" } },
+      { label: "Water to a total of", target: t(recipe.madeG), actual: waterToAct.text, field: { step: "step 1", key: "water-to", unit: "g" } },
     ] },
     { title: `2. Into the aqueous phase${done2 ? " ✓" : ""}`, done: done2, rows: [
-      { label: `${base ? "Base" : "Acid"} solution`, target: t(recipe.solutionG), actual: solAct.text },
-      { label: "Water", target: t(recipe.waterG), actual: waterAct.text },
+      { label: `${base ? "Base" : "Acid"} solution`, target: t(recipe.solutionG), actual: solAct.text, field: { step: "step 2", key: "acid-solution", unit: "g" } },
+      { label: "Water", target: t(recipe.waterG), actual: waterAct.text, field: { step: "step 2", key: "water", unit: "g" } },
     ] },
   ];
   const left = view.steps.findIndex(s => !s.done);

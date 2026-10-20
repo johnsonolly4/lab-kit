@@ -643,6 +643,13 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-sol-cell.is-target { font-weight: 700; color: var(--interactive-accent); }
 .lk-sol-cell.is-actual { background: rgba(var(--color-orange-rgb), 0.1); border-left: 1px solid var(--background-modifier-border); }
 .lk-sol-row.is-head .lk-sol-cell.is-num { border-left: 1px solid var(--background-modifier-border); }
+.lk-sol-cell.is-editable { cursor: text; }
+.lk-sol-cell.is-editable.is-empty::before { content: "click to enter"; font-style: italic; color: var(--text-faint); }
+.lk-sol-cell.is-editing { padding: 2px 4px; }
+.lk-sol-input { width: 100%; min-width: 5.5em; box-sizing: border-box; padding: 2px 6px; border-radius: var(--lk-radius-control); font-size: var(--font-ui-small); font-variant-numeric: tabular-nums; text-align: right; }
+.lk-sol-input.is-bad { border-color: var(--text-error); }
+.lk-sol button.lk-sol-error.is-ask { display: block; width: 100%; height: auto; padding: 2px 0; background: none; box-shadow: none; text-align: left; white-space: normal; cursor: pointer; }
+.lk-sol button.lk-sol-error.is-ask:hover { text-decoration: underline; }
 .lk-sol-estimate { margin: 10px 0 8px; font-size: var(--font-ui-small); }
 .lk-sol-estimate-value { font-weight: 700; color: var(--interactive-accent); }
 .lk-sol-estimate-range { color: var(--text-muted); }

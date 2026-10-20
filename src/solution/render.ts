@@ -1,17 +1,26 @@
 // Renders ```solution blocks (read only): the set-up and the typed actuals of the block, worked out by src/solution/view.ts and drawn with div rows
 // (no <table>, so a vault's table styling cannot reach it). Redrawn when the note or the reagent's chemical note changes.
-// Plan: docs/plans/solution-live-block.md, Phase 3. Typing into the block is Phase 4.
-import { MarkdownRenderChild, TFile, type App, type MarkdownPostProcessorContext, type Plugin } from "obsidian";
+// Plan: docs/plans/solution-live-block.md, Phase 3 (drawing) and Phase 4 (typing an actual writes its own line; a missing reagent property is asked once).
+import { MarkdownRenderChild, Notice, TFile, type App, type MarkdownPostProcessorContext, type Plugin } from "obsidian";
 import type { ChemSettings } from "../calc/render";
+import type { FormFn } from "../kit/snippet-form";
 import { readReagent } from "./reagent";
-import { blockRange, parseSolution } from "./block";
-import { buildView, reagentName, TEXT, type ReagentLookup, type View } from "./view";
+import { blockRange, parseSolution, writeActual } from "./block";
+import { askReagent } from "./ask-reagent";
+import { actualText, cellsOf, nextCell } from "./edit";
+import { buildView, reagentName, TEXT, type ActualField, type ReagentLookup, type View } from "./view";
 
 export class SolutionRenderer {
   /** The open blocks, so an edit to their note or to their reagent's note redraws them. */
   private views = new Set<SolutionView>();
 
-  constructor(private plugin: Plugin, private settings: () => ChemSettings = () => ({})) {}
+  /** The Actual cell to open once the block is drawn again (Enter / Tab moved on); a redrawn block may be a new view, so it is kept here. */
+  pending: { path: string; line: number; idx: number } | null = null;
+
+  /** `form` = the plugin's question window, used to ask a missing reagent property (without it that line is only text). */
+  constructor(private plugin: Plugin, private settings: () => ChemSettings = () => ({}), readonly form: FormFn | null = null) {}
+
+  get mwProperty(): string { return this.settings().mwProperty ?? ""; }
 
   get app(): App { return this.plugin.app; }
 
@@ -45,10 +54,17 @@ class SolutionView extends MarkdownRenderChild {
   reagentPath: string | null = null;
   private shown: string | null = null;
   private drawing = 0;
+  private view: View | null = null;
+  private cells: HTMLElement[] = [];
+  /** The Actual cell being typed in; while it is open a redraw waits. */
+  private editing: number | null = null;
+  private stale = false;
 
   constructor(el: HTMLElement, private owner: SolutionRenderer, private source: string, private ctx: MarkdownPostProcessorContext) { super(el); }
 
   get sourcePath(): string { return this.ctx.sourcePath; }
+
+  get line(): number | null { return this.ctx.getSectionInfo(this.containerEl)?.lineStart ?? null; }
 
   onload(): void { this.owner.add(this); this.paint(); }
   onunload(): void { this.owner.remove(this); }
@@ -69,6 +85,7 @@ class SolutionView extends MarkdownRenderChild {
   }
 
   private paint(): void {
+    if (this.editing !== null) { this.stale = true; return; }
     let found: (ReagentLookup & { path: string | null }) | null = null;
     const name = reagentName(parseSolution(this.source).setup.reagent);
     const view = buildView(this.source, n => (found = this.owner.lookup(n, this.sourcePath)));
@@ -77,18 +94,123 @@ class SolutionView extends MarkdownRenderChild {
     if (sig === this.shown) return;
     this.shown = sig;
     this.containerEl.empty();
-    drawView(this.containerEl, view);
+    this.view = view;
+    this.cells = drawView(this.containerEl, view, { edit: i => this.edit(i), ask: () => { void this.ask(); } });
+    this.openPending();
+  }
+
+  private openPending(): void {
+    const p = this.owner.pending;
+    if (!p || p.path !== this.sourcePath || p.line !== this.line || !this.cells[p.idx]) return;
+    this.owner.pending = null;
+    this.edit(p.idx);
+  }
+
+  /** A missing reagent property: ask for it and save it in the chemical note (the block redraws when the note changes). */
+  private async ask(): Promise<void> {
+    const form = this.owner.form, file = this.reagentPath ? this.owner.app.vault.getAbstractFileByPath(this.reagentPath) : null;
+    if (!form || !(file instanceof TFile) || !this.view?.ask.length) return;
+    if (await askReagent(this.owner.app, form, file, this.view.ask, this.owner.mwProperty)) this.draw();
+  }
+
+  /** Opens the input in Actual cell `idx`: Enter saves and moves to the next empty one, Tab / Shift+Tab move, Esc cancels. */
+  private edit(idx: number): void {
+    const cell = this.cells[idx], current = cellsOf(this.view!)[idx];
+    if (!cell || !current || this.editing !== null) return;
+    this.editing = idx;
+    cell.empty();
+    cell.addClass("is-editing");
+    const input = cell.createEl("input", { type: "text", cls: "lk-sol-input", attr: { placeholder: current.field.unit, "aria-label": "Actual" } });
+    input.value = current.value;
+    input.focus();
+    input.select();
+    let closed = false;
+    const finish = (save: boolean, how: "enter" | "tab" | "back" | null): void => {
+      if (closed) return;
+      const text = save ? actualText(input.value, current.field.unit) : current.value;
+      if (save && text === null) {   // not a mass: stay open (Enter / Tab) or give up (the focus left)
+        if (how === null) { closed = true; this.stopEditing(); return; }
+        input.addClass("is-bad");
+        return;
+      }
+      closed = true;
+      const next = how && this.view ? nextCell(cellsOf(this.view), idx, how) : null;
+      this.editing = null;
+      void (async () => {
+        if (save && text !== null && text !== current.value) await this.save(current.field, text, next);
+        else { if (next !== null && this.view) this.owner.pending = this.pendingFor(next); this.stopEditing(); }
+      })();
+    };
+    input.addEventListener("keydown", e => {
+      e.stopPropagation();
+      if (e.isComposing) return;
+      if (e.key === "Enter") { e.preventDefault(); finish(true, "enter"); }
+      else if (e.key === "Tab") { e.preventDefault(); finish(true, e.shiftKey ? "back" : "tab"); }
+      else if (e.key === "Escape") { e.preventDefault(); finish(false, null); }
+    });
+    input.addEventListener("input", () => input.removeClass("is-bad"));
+    input.addEventListener("click", e => e.stopPropagation());
+    // A click elsewhere saves; a click that only moves the focus for a moment (a suggestion, the window) does not
+    input.addEventListener("blur", () => window.setTimeout(() => { if (!closed && input.ownerDocument.activeElement !== input) finish(true, null); }, 150));
+  }
+
+  private pendingFor(idx: number): { path: string; line: number; idx: number } | null {
+    const line = this.line;
+    return line === null ? null : { path: this.sourcePath, line, idx };
+  }
+
+  /** The editor is gone without a write: draw the block as it is (and what changed meanwhile). */
+  private stopEditing(): void {
+    this.editing = null;
+    this.stale = false;
+    this.shown = null;
+    this.paint();
+  }
+
+  /** Writes one actual into its own line of the note, keeps the page where it was, and draws the block again. */
+  private async save(f: ActualField, text: string, next: number | null): Promise<void> {
+    const app = this.owner.app;
+    const info = this.ctx.getSectionInfo(this.containerEl);
+    const file = app.vault.getAbstractFileByPath(this.sourcePath);
+    if (!info || !(file instanceof TFile)) { new Notice("Couldn't find this solution block. Edit it in source mode instead."); this.stopEditing(); return; }
+    this.holdScroll();
+    let out: string | null = null;
+    await app.vault.process(file, data => { out = writeActual(data, info.lineStart, f.step, f.key, text); return out ?? data; });
+    if (out === null) { new Notice("Couldn't change this solution block. Edit it in source mode instead."); this.stopEditing(); return; }
+    const r = blockRange(out, info.lineStart);
+    if (r) this.source = r.source;
+    if (next !== null) this.owner.pending = this.pendingFor(next);
+    this.stopEditing();
+  }
+
+  /** Puts the note back where it was scrolled to while Obsidian lays the redrawn block out, until the user scrolls. */
+  private holdScroll(): void {
+    const scroller = this.containerEl.closest<HTMLElement>(".cm-scroller") ?? this.containerEl.closest<HTMLElement>(".markdown-preview-view");
+    if (!scroller) return;
+    const top = scroller.scrollTop;
+    const ac = new AbortController();
+    const stop = (): void => ac.abort();
+    scroller.addEventListener("wheel", stop, { signal: ac.signal, passive: true });
+    scroller.addEventListener("touchmove", stop, { signal: ac.signal, passive: true });
+    for (const ms of [0, 60, 200, 500, 1000, 1800]) window.setTimeout(() => { if (!ac.signal.aborted && scroller.scrollTop !== top) scroller.scrollTop = top; if (ms === 1800) ac.abort(); }, ms);
   }
 }
 
-/** The DOM of one block: `div` rows with ARIA roles, `.lk-sol-*` classes (styles.css). */
-export function drawView(host: HTMLElement, view: View): void {
+/** What a click on the block does; without it (the closed-experiment PDF, tests) the block is only drawn. */
+export interface DrawHandlers { edit: (cell: number) => void; ask: () => void }
+
+/** The DOM of one block: `div` rows with ARIA roles, `.lk-sol-*` classes (styles.css). Returns the Actual cells in order. */
+export function drawView(host: HTMLElement, view: View, on?: DrawHandlers): HTMLElement[] {
+  const cells: HTMLElement[] = [];
   const box = host.createDiv({ cls: "lk-sol" });
-  if (view.newer) { box.createDiv({ cls: "lk-sol-note", text: view.newer }); return; }
+  if (view.newer) { box.createDiv({ cls: "lk-sol-note", text: view.newer }); return cells; }
   if (view.errors.length) {
     const list = box.createDiv({ cls: "lk-sol-errors" });
-    for (const e of view.errors) list.createDiv({ cls: "lk-sol-error", text: e });
-    return;
+    for (const e of view.errors) {
+      if (on && view.askLines.includes(e)) list.createEl("button", { cls: "lk-sol-error is-ask", text: e }).addEventListener("click", on.ask);
+      else list.createDiv({ cls: "lk-sol-error", text: e });
+    }
+    return cells;
   }
   const head = box.createDiv({ cls: "lk-sol-head" });
   head.createSpan({ cls: "lk-sol-title", text: view.title });
@@ -106,7 +228,14 @@ export function drawView(host: HTMLElement, view: View): void {
       const row = grid.createDiv({ cls: "lk-sol-row", attr: { role: "row" } });
       row.createDiv({ cls: "lk-sol-cell", text: r.label, attr: { role: "cell" } });
       row.createDiv({ cls: "lk-sol-cell is-num is-target", text: r.target, attr: { role: "cell" } });
-      row.createDiv({ cls: r.actual ? "lk-sol-cell is-num is-actual" : "lk-sol-cell is-num is-actual is-empty", text: r.actual, attr: { role: "cell" } });
+      const cell = row.createDiv({ cls: `lk-sol-cell is-num is-actual${r.actual ? "" : " is-empty"}${on ? " is-editable" : ""}`, text: r.actual, attr: { role: "cell" } });
+      if (on) {
+        const idx = cells.length;
+        cell.tabIndex = 0;
+        cell.addEventListener("click", () => on.edit(idx));
+        cell.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); on.edit(idx); } });
+      }
+      cells.push(cell);
     }
   }
   if (view.estimate) {
@@ -117,4 +246,5 @@ export function drawView(host: HTMLElement, view: View): void {
   }
   box.createDiv({ cls: "lk-sol-caution", text: view.caution });
   if (view.approx) box.createDiv({ cls: "lk-sol-approx", text: view.approx });
+  return cells;
 }
