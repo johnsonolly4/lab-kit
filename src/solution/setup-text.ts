@@ -97,3 +97,8 @@ export function reagentRow(name: string, read: ReagentRead): string {
   const strength = read.basis === "concentration" ? `${read.reagent.concentration} mol/L` : read.reagent.purity !== undefined ? `${read.reagent.purity} %` : "";
   return [name, strength, read.pKa === undefined ? "" : `pKa ${read.pKa}`].filter(Boolean).join(" · ");
 }
+
+/** What `reagentRow` shows after the name: `99.7 % · pKa 4.76` (empty when the note has neither). */
+export function reagentDetail(read: ReagentRead): string {
+  return reagentRow("", read).replace(/^ · /, "");
+}

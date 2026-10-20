@@ -323,6 +323,16 @@ describe("SnippetTemplates: run: calculators", () => {
     expect(calls.map(c => c.key)).toEqual(["solution"]);
   });
 
+  it("run: solution, Method: by volume in the window gives the old volume form (labSnippets key solution), the window offers the choice", async () => {
+    const asked: SetupInit[] = [];
+    const window: SetupFn = async (_app, init) => { asked.push(init); return { values: init.values, lines: {} as never, method: "volume" }; };
+    const { st } = setup({ files: { "S/s.md": stub("solution") }, window });
+    const calls: { key: string; tp: unknown }[] = [];
+    expect(await st.run(calcTp(calls, "old volume table\n"), file("S/s.md"))).toBe("old volume table\n");
+    expect(calls.map(c => c.key)).toEqual(["solution"]);
+    expect(asked[0].methods).toBe(true);
+  });
+
   it("run: solution starts the block on a line of its own and gives nothing when the window is closed", async () => {
     const lines = { reagent: "A", aqueous: "1 g", pH: "4", share: "60 %", use: "50 %", balance: "0.1 mg" };
     const { st } = setup({ files: { "S/s.md": stub("solution") }, cursor: { ch: 5 }, window: async (_a, i) => ({ values: i.values, lines }) });

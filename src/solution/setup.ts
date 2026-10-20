@@ -1,13 +1,13 @@
 // Solution prep, the set-up window (L1): at the cursor in the entry-window look, the chips Method / Acid for pH / + Solute and the six boxes.
 // Used by Alt+S → Solution prep (inserts the block) and by the block's Edit set-up (rewrites only the changed lines). Plan: docs/plans/solution-live-block.md, Phase 5.
-import { Modal, TFile, TFolder, type App } from "obsidian";
+import { Menu, Modal, TFile, TFolder, type App } from "obsidian";
 import { cursorAnchor, type EntryAnchor } from "../planning/entry-window";
 import { Suggest } from "../kit/snippet-form";
 import { isReagentNote, readReagent, type ReagentRead } from "./reagent";
-import { reagentRow, setupLines, SETUP_LABEL, type SetupField, type SetupLines, type SetupValues } from "./setup-text";
+import { reagentDetail, reagentRow, setupLines, SETUP_LABEL, type SetupField, type SetupLines, type SetupValues } from "./setup-text";
 
 /** A chemical note as the picker needs it. */
-export interface ReagentChoice { name: string; /** `Acetic acid · 99.7 % · pKa 4.76` */ row: string; base: boolean; /** Has `Acid / base` set: listed in the dropdown. */ reagent: boolean }
+export interface ReagentChoice { name: string; /** `Acetic acid · 99.7 % · pKa 4.76` */ row: string; /** `99.7 % · pKa 4.76`, shown under the box (the closed box shows the name only). */ detail: string; base: boolean; /** Has `Acid / base` set: listed in the dropdown. */ reagent: boolean }
 
 /** Every note of the chemical folder (and below) with what the picker shows for it. Empty without a folder. */
 export function reagentChoices(app: App, folder: string, mwProperty?: string): ReagentChoice[] {
@@ -21,7 +21,7 @@ export function reagentChoices(app: App, folder: string, mwProperty?: string): R
       else if (c instanceof TFile && c.extension === "md") {
         const fm: Record<string, unknown> | undefined = app.metadataCache.getFileCache(c)?.frontmatter;
         const read: ReagentRead = readReagent(fm, mwProperty);
-        out.push({ name: c.basename, row: reagentRow(c.basename, read), base: read.kind === "base", reagent: isReagentNote(fm) });
+        out.push({ name: c.basename, row: reagentRow(c.basename, read), detail: reagentDetail(read), base: read.kind === "base", reagent: isReagentNote(fm) });
       }
     }
   };
@@ -37,16 +37,18 @@ export interface SetupInit {
   submit: string;
   /** The line under the boxes. */
   hint: string;
+  /** The Method chip offers `by volume` (a new block only; Edit set-up edits a by-mass block). */
+  methods?: boolean;
 }
 /** What the window answers: the boxes as typed and as block lines. */
-export interface SetupAnswer { values: SetupValues; lines: SetupLines }
+export interface SetupAnswer { values: SetupValues; lines: SetupLines; /** `volume`: the old solution-by-volume form is wanted instead (lines are then not used). */ method?: "mass" | "volume" }
 export type SetupFn = (app: App, init: SetupInit) => Promise<SetupAnswer | null>;
 
 /** New wording (BACKLOG "Questions for the owner"): the picture's line for a new block, and the one for Edit set-up. */
 export const SETUP_HINT = { insert: "Enter inserts the block · Esc closes · you can change all of this later in the block", edit: "Enter saves · Esc closes" };
 
 /** The chips of the picture (L1): the method, the kind, and the by-mass solute chip that waits for Phase 6. */
-const CHIP = { method: "Method: by mass", kind: "Acid for pH", solute: "+ Solute" };
+const CHIP = { method: (m: "mass" | "volume") => `Method: by ${m}`, kind: "Acid for pH", solute: "+ Solute" };
 
 class SetupWindow extends Modal {
   private values: SetupValues;
@@ -71,7 +73,12 @@ class SetupWindow extends Modal {
     }
     this.contentEl.createEl("h3", { text: "Solution prep", cls: "vt-entry-heading" });
     const chips = this.contentEl.createDiv({ cls: "vt-todo-bar vt-entry-chips" });
-    chips.createEl("button", { cls: "vt-todo-chip is-set", text: CHIP.method, attr: { type: "button", tabindex: "-1" } });
+    const method = chips.createEl("button", { cls: "vt-todo-chip is-set", text: CHIP.method("mass"), attr: { type: "button", tabindex: "-1" } });
+    if (this.init.methods) method.addEventListener("click", e => {
+      const menu = new Menu();
+      for (const m of ["mass", "volume"] as const) menu.addItem(i => i.setTitle(`by ${m}`).setChecked(m === "mass").onClick(() => { if (m === "volume") this.chooseVolume(); }));
+      menu.showAtMouseEvent(e);
+    });
     chips.createEl("button", { cls: "vt-todo-chip is-set", text: CHIP.kind, attr: { type: "button", tabindex: "-1" } });
     chips.createEl("button", { cls: "vt-todo-chip is-empty", text: CHIP.solute, attr: { type: "button", disabled: "" } });   // by-mass solutes come in Phase 6
 
@@ -101,6 +108,13 @@ class SetupWindow extends Modal {
     window.setTimeout(() => { const first = this.inputs.aqueous as HTMLInputElement; first.focus(); first.select(); }, 30);
   }
 
+  /** `by volume`: the window closes and the old volume form asks its own questions. */
+  private chooseVolume(): void {
+    this.done = true;
+    this.settle({ values: { ...this.values }, lines: {} as SetupLines, method: "volume" });
+    this.close();
+  }
+
   private isBase(): boolean { return this.init.choices.find(c => c.name === this.values.reagent)?.base === true; }
 
   private place(): void {
@@ -124,10 +138,13 @@ class SetupWindow extends Modal {
       const sel = row.createEl("select", { cls: "dropdown lk-form-box" });
       const names = listed.map(c => c.name);
       if (this.values.reagent && !names.includes(this.values.reagent)) sel.createEl("option", { value: this.values.reagent, text: this.values.reagent });   // a reagent the block names that the list lacks
-      for (const c of listed) sel.createEl("option", { value: c.name, text: c.row });
+      for (const c of listed) sel.createEl("option", { value: c.name, text: c.name });   // the closed box shows the name only, like the picture
       if (!this.values.reagent) this.values.reagent = listed[0].name;
       sel.value = this.values.reagent;
-      sel.addEventListener("change", () => { this.values.reagent = sel.value; this.labels.share.setText(SETUP_LABEL.share(this.isBase())); });
+      const detail = row.createDiv({ cls: "lk-sol-detail" });   // `99.7 % · pKa 4.76` below the box, never cut off
+      const show = (): void => { detail.setText(listed.find(c => c.name === sel.value)?.detail ?? ""); };
+      show();
+      sel.addEventListener("change", () => { this.values.reagent = sel.value; show(); this.labels.share.setText(SETUP_LABEL.share(this.isBase())); });
       this.inputs.reagent = sel;
       return;
     }

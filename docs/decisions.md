@@ -292,4 +292,6 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner board 5) 51: A, hide the Alt+S picker close X (the plugin only works on new Obsidian anyway).
 - 2026-10-20 (owner board 5) 52: keep the Links follow renames and waiting-on wording.
 - 2026-10-20 (owner board 5) 53: plan-map top five: ideas 1, 3 and 4 first, then 2.
+- 2026-10-20 (owner, after board 5) Q15: make the Solution prep set-up window match the approved picture: lighter field labels, and the closed Reagent box shows the chemical's name only (the detail `99.7 % · pKa 4.76` is shown below the box, not cut off).
+- 2026-10-20 (owner, after board 5) Q17 A: the old solution-by-volume form becomes a Method in the same window (`Method: by mass` default, `by volume` = the old volume calc table, `run: solution-volume`); only new wording is `by volume`.
 - 2026-10-20 (owner board 5): board 5 answers recorded; open: 15, 17, 28, 41, 48, 49, 50 (explained in chat, re-ask later).

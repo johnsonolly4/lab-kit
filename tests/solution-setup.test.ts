@@ -70,6 +70,7 @@ describe("the window's answers as block text", () => {
     };
     const c = reagentChoices(app, "Chem/");
     expect(c.map(x => [x.name, x.reagent, x.base])).toEqual([["Acetic acid", true, false], ["Blank template", false, false], ["Sodium hydroxide 50", true, true]]);
+    expect(c.find(x => x.name === "Acetic acid")?.detail).toBe("99.7 % · pKa 4.76");
     expect(reagentChoices(app, "")).toEqual([]);
     expect(reagentChoices(app, "Nope")).toEqual([]);
   });

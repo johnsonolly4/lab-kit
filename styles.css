@@ -659,6 +659,8 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-sol-setup-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; margin: 8px 0 4px; }
 .lk-sol-setup select.lk-form-box { background-color: var(--background-modifier-form-field); border: 1px solid var(--background-modifier-border); text-overflow: ellipsis; }
 .lk-sol-setup .lk-form-row { margin: 0 0 var(--size-4-3); min-width: 0; }
+.lk-sol-setup .lk-form-label { font-weight: var(--font-normal); color: var(--text-muted); }   /* the picture's lighter labels */
+.lk-sol-detail { margin-top: 2px; font-size: var(--font-ui-smaller); color: var(--text-muted); overflow-wrap: anywhere; }
 .lk-sol-setup .vt-entry-hint { margin: 0 0 var(--size-4-2); }
 @media (max-width: 480px) { .lk-sol-setup-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .lk-sol-estimate { margin: 10px 0 8px; font-size: var(--font-ui-small); }

@@ -188,7 +188,7 @@ export class SnippetTemplates {
 
   /** `run: <key>`: the calculator of that name in labSnippets.js asks its questions and builds the text, exactly as the stub files did. */
   private async calculator(tp: SnippetTp, file: TFile, title: string | undefined, key: string): Promise<string> {
-    if (key === "solution") return await this.solutionBlock();
+    if (key === "solution") return await this.solutionBlock(tp, file, title);
     if (!CALCULATORS.includes(key)) {
       new Notice(`“${title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "")}”: Lab Kit has no calculator called “${key}”.`);
       return "";
@@ -201,10 +201,11 @@ export class SnippetTemplates {
   }
 
   /** `run: solution`: the set-up window at the cursor, then the live block (set-up filled in, actuals empty). "" when it was closed. */
-  private async solutionBlock(): Promise<string> {
+  private async solutionBlock(tp: SnippetTp, file: TFile, title: string | undefined): Promise<string> {
     const kit = this.kit();
-    const got = await this.setup(this.app, { values: DEFAULT_SETUP, choices: reagentChoices(this.app, kit.chemicalFolder, kit.mwProperty), anchor: setupAnchor(this.app, kit.snippetFormsAtCursor !== false), submit: "Insert", hint: SETUP_HINT.insert });
+    const got = await this.setup(this.app, { values: DEFAULT_SETUP, choices: reagentChoices(this.app, kit.chemicalFolder, kit.mwProperty), anchor: setupAnchor(this.app, kit.snippetFormsAtCursor !== false), submit: "Insert", hint: SETUP_HINT.insert, methods: true });
     if (!got) return "";
+    if (got.method === "volume") return await this.calculator(tp, file, title, "solution-volume");   // Method: by volume = the old volume form, as before
     const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
     return (at && at.ch > 0 ? "\n" : "") + solutionBlock(got.lines);   // a fence starts on a line of its own
   }
