@@ -1,6 +1,6 @@
 # Plan: the in-silico study note (Run record, run table, record helper)
 
-> [!warning] PLAN WAITING FOR OWNER
+> [!warning] PARKED 2026-10-20 (owner: looks OK; come back with the optimisation project)
 > Written 2026-10-20 (plan and mock-up only, no plugin code changed). Built on the research in `docs/plans/in-silico-record-requirements.md` and the owner's answers in chat on 2026-10-20 (below). Open questions are at the end and in BACKLOG "In-silico experiments in the lab notebook". Looks are never decided here: the feedback page is `my_work/mockups/in-silico-note-mockup.html` (private, made-up content; feedback copy in `my_work/mockups/in-silico-note-mockup-feedback/`). Each phase = one Sonnet session.
 
 ## Goal

@@ -2,7 +2,9 @@
 
 _Research only, 2026-10-20. Nothing built, no code changed. Asked by the owner (chat, 2026-10-20) for the `in silico` Exp. Class: BACKLOG "In-silico experiments in the lab notebook"._
 
-> [!note] The plan built on this research is `docs/plans/in-silico-note.md` (2026-10-20, waiting for the owner). The owner answered: the record goes in the note's body, not front matter, and one note per study. The front-matter list and the YAML block proposed below are superseded by that plan; the requirements table still stands.
+> [!warning] PARKED 2026-10-20 (owner: looks OK; come back with the optimisation project)
+
+> [!note] The plan built on this research is `docs/plans/in-silico-note.md` (2026-10-20, parked). The owner answered: the record goes in the note's body, not front matter, and one note per study. The front-matter list and the YAML block proposed below are superseded by that plan; the requirements table still stands.
 
 ## Sources
 
