@@ -179,3 +179,6 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner, chat): I23 Phase 6 approved: Alt+S runs without Templater (code snippets and token templates on the plugin form).
 - 2026-10-20 (owner, chat): I23 question (a) own group names stays as built: a header `group:` that is not one of the five groups is listed under My snippets.
 - 2026-10-20 (owner, chat): I23 stub icons stay as built: a kept old 07-09 file with its own icon is hidden for the built-in; its icon does not carry over.
+- 2026-10-20 (owner, chat): I23 (f) `when:` hiding stays unbuilt, tied to the N4 live block (analysis accepted).
+- 2026-10-20 (owner, chat): plan map: all five ideas on `my_work/mockups/plan-map-top5-before-after.html` approved (Reset tidy icon, bigger row gap with arrow stub, one-line empty cards, amber arrow for done-before-prerequisite, phone list view); not built. The slide-picture export must also be improved to show tasks and subtasks in a sensible view (details still to be agreed).
+- 2026-10-20 (owner, chat): robustness safety nets are built in the order S5, S3, S1.
