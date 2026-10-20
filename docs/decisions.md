@@ -295,3 +295,11 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner, after board 5) Q15: make the Solution prep set-up window match the approved picture: lighter field labels, and the closed Reagent box shows the chemical's name only (the detail `99.7 % · pKa 4.76` is shown below the box, not cut off).
 - 2026-10-20 (owner, after board 5) Q17 A: the old solution-by-volume form becomes a Method in the same window (`Method: by mass` default, `by volume` = the old volume calc table, `run: solution-volume`); only new wording is `by volume`.
 - 2026-10-20 (owner board 5): board 5 answers recorded; open: 15, 17, 28, 41, 48, 49, 50 (explained in chat, re-ask later).
+- 2026-10-20 (owner chat) Lab notes board Q1: by project is wanted; default is a `Project` link set in New lab entry, with the to-dos' `experiment` links as the fallback.
+- 2026-10-20 (owner chat) Lab notes board Q2: A, a new `Result` property (Worked / Partly / Failed / Unclear) chosen in the Close experiment window.
+- 2026-10-20 (owner chat) Lab notes board Q3: open (owner unsure what "Type" means; Exp. Class vs a separate `Type` property explained, rec. Exp. Class, re-ask).
+- 2026-10-20 (owner chat) Lab notes board Q4: not decided; the owner must SEE the built-in Bases table first, so Phase 0 and Phase 1 (`Completed experiments.base`) are built first, own-look views only after.
+- 2026-10-20 (owner chat) Lab notes board Q5: the 30-day clock for Closed cards counts from `closed_on`.
+- 2026-10-20 (owner chat) Lab notes board Q6: a chemical filter in the experiments view first; a "Used in" list in chemical notes later.
+- 2026-10-20 (owner chat) Lab notes board Q7: PROPOSED, waiting for the owner's yes: `Exp. End` = experiment's own end (typed, or filled by Close with today's date when empty), `closed_on` = when closed (already the completed stamp, I24; no new completed date), Ended column shows `Exp. End` else `closed_on`, a Tidy rule can fill `Exp. End` from `closed_on` on old closed notes.
+- 2026-10-20 (owner chat) Lab notes board Q8, Q9, Q10: not answered (Q8 and Q9 explained in chat at the owner's request; Q9 rec. a new `Completed experiments.base`).

@@ -1,6 +1,6 @@
 # Plan: Lab notes board and completed view
 
-_**PLAN WAITING FOR OWNER.** Written 2026-10-20 (side session, `/phase-plan`, plan and mock-ups only, no plugin code). Built on the owner board 5 answers (2026-10-20). Open questions: BACKLOG "Lab notes board and completed view" and the end of this file; looks: `my_work/mockups/lab-board-options.html` (private, made-up data). Nothing here is decided by Claude; recommendations are marked "rec."._
+_**PLAN WAITING FOR OWNER.** Written 2026-10-20 (side session, `/phase-plan`, plan and mock-ups only, no plugin code). Built on the owner board 5 answers (2026-10-20). Owner answers of 2026-10-20 are in "Owner answers 2026-10-20" below (Q1, Q2, Q5, Q6 answered; Q7 proposed; Q3, Q4, Q8-Q10 open). Open questions: BACKLOG "Lab notes board and completed view" and the end of this file; looks: `my_work/mockups/lab-board-options.html` (private, made-up data). Nothing here is decided by Claude; recommendations are marked "rec."._
 
 ## Goal
 Running experiments stay on a card board; finished ones are found again in a table with saved filters and search (by number or date, Exp. Class, project, chemical, outcome or result, free text), drawn in Lab Kit's own look.
@@ -12,6 +12,25 @@ Running experiments stay on a card board; finished ones are found again in a tab
 - A closed experiment STAYS on the board for 30 days (as now) AND is also in the completed view (option B).
 - Completed work: a TABLE WITH SAVED FILTERS; running work stays as cards (option A).
 - "A Bases table but let's make it look visually appealing like the rest of the plugin": our own Bases view (like the to-do board, `docs/plans/board-own-view.md`), the shape standard (`docs/design-standard.md`), the entry-window look.
+
+## Owner answers 2026-10-20 (chat, source "owner chat")
+- **Q1 by project: answered (A or B accepted).** Default: A, a `Project` link set in New lab entry, with the to-dos' `experiment` links as the fallback for notes without one.
+- **Q2 by result: A.** New `Result` property (`Worked` / `Partly` / `Failed` / `Unclear`), chosen in the Close experiment window.
+- **Q3 "Type" in the summary: open.** The owner is not sure what is meant. Explained in chat: Exp. Class (existing) vs a separate `Type` property. Recommendation Exp. Class; re-ask.
+- **Q4 which parts get the own look: not decided.** The owner must SEE the built-in Bases table in Obsidian first. Build Phase 0 and Phase 1 (built-in table, `Completed experiments.base`) first; the own-look views (Phases 3-6) only after the owner has seen it and approved.
+- **Q5 clock: A.** The 30-day clock for Closed cards counts from `closed_on` (last edit when there is none).
+- **Q6 chemical notes: filter first.** Maybe a "Used in" list, but better a chemical filter in the experiments view. Recommended: the filter first, "Used in" later (not built now).
+- **Q7 Ended when `Exp. End` is empty: PROPOSED convention, waiting for the owner's yes.** The owner says only they have used this, so the best naming convention is chosen and rolled out; their own notes are updated by hand or with Tidy. Proposed:
+  - `Exp. End` = when the experiment ended (typed by hand, or filled by Close experiment with today's date when empty).
+  - `closed_on` = when the note was closed (stamp written by Close).
+  - The Ended column shows `Exp. End`, else `closed_on`.
+  - A Tidy rule can fill `Exp. End` from `closed_on` for old closed notes.
+  - Owner's question "do we need a completed date?": no new one. `closed_on` already is the completed stamp (written by Close experiment, I24); `Exp. End` stays the experiment's own end date.
+- **Q8 new saved filters: not answered.** Explained in chat: A Lab Kit ships ready-made named views and you add your own with Obsidian's Bases toolbar (rec.) / B a Lab Kit `Save as view…` button that writes your chips into the `.base`.
+- **Q9 where the completed view lives: not answered.** Explanation asked: A a new file `Completed experiments.base` (rec.; arrives by Review update… without touching an edited `Lab book base.base`) / B more views in `Lab book base.base`. Phase 1 assumes A until answered.
+- **Q10 table look: not answered.**
+
+Phase order after these answers: Phase 0, then Phase 1 first, so the owner can see the built-in table in Obsidian. Phase 2 then adds `Project` (New lab entry) and `Result` (Close window) as answered, and the 30-day clock moves to `closed_on`. Phases 3-6 (own look) wait for the owner's look at Phase 1 (Q4) and Q10.
 
 ## Current state (measured from the files, 2026-10-20)
 
@@ -117,7 +136,7 @@ Omnisearch is not required for any of these.
 - Built-in `table` views `All completed`, `This year` (and `Failed runs` after Phase 2); formula `ended`; columns per the owner's pick.
 - Done when: tests; obsidian-check on 40 made-up lab notes: row counts per view match the seed; Review update… lists the new file in a vault with the kit installed.
 
-### Phase 2 — New properties (only those the owner picks: Q1, Q2)
+### Phase 2 — New properties (as answered 2026-10-20: `Project` from Q1, `Result` from Q2; 30-day clock from `closed_on`, Q5)
 - Depends on: Q1, Q2 (and a feedback page for the chip row, which is a visual change).
 - Files: `kits/lab/Templates/Lab Book Template.md` (none if properties are written only when set), `src/planning/entry-window.ts` or the lab entry flow (`window.vtEntryLab`) for `Project`, `src/close/commands.ts` + its window for `Result`, `tests/close-commands.test.ts`, the lab entry tests.
 - Done when: tests (written only when set; Close / Reopen round trip keeps `Result`); obsidian-check: New lab entry with a project, Close with `Failed`; Phase 1's `Failed runs` view added.
