@@ -88,7 +88,7 @@ All rows draw from to-dos with `due`, `waiting`, `after`, subtasks; note data st
 
 ### Where a group could come from (derived, re-runnable: `my_work/mockups/plan-map-export-src/goals.ts`)
 - **The end goal a to-do leads to does not work as a group.** On the 59 to-do project there are 20 end goals, but **36 of the 59 to-dos (20 of the 24 open ones) lead to the single goal "Supervisor review of draft"**, and 8 to-dos are linked to nothing. So a group cannot be computed from `after` links alone.
-- Options that exist or are cheap (interpretation, not checked in code): a new property on the to-do; the experiment the to-do links to (the chip bar has an Experiment chip, but `PlanRow` does not read it today); who it is waiting on (`waiting`, only set on some); the parent to-do (conflicts with using subtasks for small steps).
+- Options that exist or are cheap (interpretation, not checked in code): a new property on the to-do; the experiment the to-do links to (`PlanRow.experiment` already holds the lab note's name and Status, `src/planning/plan.ts:30`; corrected 2026-10-20, the first version of this line wrongly said it was not read); who it is waiting on (`waiting`, only set on some); the parent to-do (conflicts with using subtasks for small steps).
 - M1 and M4 need none of these: M4's dot columns are the plugin's own steps.
 
 ## Ranked recommendation (for the owner to decide; nothing chosen)
@@ -121,5 +121,32 @@ Corrections made to the first pass: monday's "group summary" is a time span, not
 
 ## Still not confirmed after the second pass
 Asana's official help article text (blocked) and an official baseline article; whether GitHub's roadmap view draws sub-issue progress (docs and community disagree); the exact Notion "Show as" menu label; Kanban plugin, Dataview-roadmap snippets and Canvas as project views (not read); any measured performance figure for Project Planner, Simpromana, Spatial Task Graph or Project Manager Enhanced (their READMEs give none).
+
+## Owner feedback 2026-10-20 (9 pins on the feedback copy) and answers
+Pins were mapped by loading the page at the owner's window size and converting each box to slide (1920 x 1080) coordinates; two of the mappings are my best reading and are marked.
+
+| Pin | Where it was | Owner's note | My answer |
+|---|---|---|---|
+| 1 | M1 header, top right: "as of" date and "35 of 59 done" bar | I like this | Keep that header on every picture (all four already have it). |
+| 2 | M1 legend: "waiting on someone" | How is this defined? | A to-do is "waiting" when it is open and has the `waiting` property set, for example `waiting: panel decision` on "SAXS beamtime proposal". It is about someone outside the plan, not an earlier to-do (that is the dashed "waits for an earlier step"). If it is also past its due date, **late wins**: "Book GPC time for diblocks" has both and draws as late (the picture does not yet say it is also waiting; a possible fix is to print the waiting text on the chip). |
+| 3 | M1 legend: "late" and "waiting" | Colours look the same | Yes, for some eyes: red #c62828 and dark amber #b45309 differ by only 10 (CIE76 distance) under a deuteranopia simulation, 22 under protanopia, 28 normally. Changed to crimson-magenta #b3124f (late) and amber #c77700 (waiting): the smallest distance between late, waiting, can start (blue #1f6feb) and done (grey) goes 28 to 69 normally, 10 to 32 deuteranopia, 22 to 36 protanopia, 24 to 28 tritanopia; both colours still reach 3:1 contrast on white (6.7 and 3.5). Computed by a scratch script (Machado simulation matrices; not a clinical test). The mock-up page now uses them; whether the owner likes the pair is open. |
+| 4 | M1, the small dot in the top-right corner of "SAXS beamtime proposal" (my reading; the nearest element) | What does this mean? | It is a corner badge I put on late and waiting chips so they stand out; it repeats what the border colour says, so it is redundant (and its colour was the one that looked the same). Recommend removing it; asked below. |
+| 5 | M1 subtitle line (my reading: the question is about the "Not linked to other open work" row, the only place unlinked to-dos appear) | What if there are more unassigned ones? | The row now shows as many chips as fit, most urgent first (late, waiting, can start), then one grey chip: "+28 more not linked (late, waiting counts)". The picture does not grow and nothing is hidden silently; drawn on the page with 30 made-up extra to-dos. |
+| 6 | M1 slide-size panel as a whole | Where do other note properties go, e.g. experiment? | The engine already has them: `PlanRow` carries the experiment (lab note name and Status), due, priority, result. Today's card prints the experiment as a line (`plan-slide.ts:123`). M1 chips are name-only to fit 24 chips, so a property needs room. Options: (a) a small second line only on the chips that need action (late, waiting, can start), for example "ABC0014 · Started" (rec); (b) on every chip (fewer rows fit, the picture shrinks again); (c) not on M1, only in a list. Not drawn: the owner decides the look. |
+| 7 | M2 description ("Notion board / table grouped by a property") | This changes things and means that to-dos need a stream | Agreed: M2 and M3 need a stream (workstream) on every to-do; M1 and M4 do not. |
+| 8 | M3 description ("Notion table with a rollup") | Also needs workstreams. Could be a print from the projects hub, or an alternative for the homepage? | Yes to both, see below; and M3 with the **project** as the row needs no stream at all. |
+| 9 | M4 slide panel as a whole | Dashboard rather than plan really | Agreed. M4 answers "how are we doing and what needs me", not "what comes after what". |
+
+### Streams, hub and Home (five lines)
+1. A stream would be one new optional text property on a to-do (say `stream`), set by a Stream chip beside the Experiment chip in the entry window and the chip bar, and written only when set. Today's to-do properties: `kind`, `project`, `after`, `due`, `scheduled`, `priority`, `waiting`, `result`, `sub`, `experiment`, `done`; none groups work inside a project.
+2. Existing to-dos: leave blank = a last row "No stream", so nothing breaks. A Tidy rule (opt-in, with a preview window) could fill it by default (subtasks take the parent's stream; to-dos sharing an experiment get the same stream name suggested; otherwise one stream named after the project), never silently.
+3. M3 as a printable view from the project hub: yes. The same drawing code gives an SVG; a hub block can show it live (image of the SVG, no editing) and a Print button on desktop could reuse the PDF path built for Close experiment (`src/close/pdf.ts`, `printHtmlToPdf`, null on phone). On the phone the block shows, printing is desktop only.
+4. M3 on the Home page: yes, and better with the **project** as the row (bar, "N of M done", late / waiting counts, next to-do): the `project` property already exists, so Home needs no stream; streams only matter inside one big project.
+5. Not built or decided: all of the above is a plan for the owner to accept or change.
+
+### Answer to pin 9 and updated recommendation
+M4 is a dashboard, so it should live where dashboards live: a block on the project hub and (as one M3-style row per project) on Home, always current, phone-friendly, no new field. The slide picture should stay a **plan** view: today's option A while it is readable, then **M1 (open work, arrows kept, loose to-dos capped)** for a big project. The owner liked M1's header and picked its look in pins 1 and 5, so M1 moves up from third to **first for the slide picture**. M3 by stream and M2 stay later and optional, behind a stream property the owner has not asked for yet. Ranking by purpose: **dashboard block (hub, Home): M4, then M3 by project; slide picture: M1 for a big project; M3 / M2 by stream: only if a stream is added.**
+
+New questions for the owner are in BACKLOG "Plan map, big project: examples" (Q3-Q6).
 
 Looks: `my_work/mockups/plan-map-big-project-mockups.html` (feedback copy `my_work/mockups/plan-map-big-project-feedback/page.html`); generator `my_work/mockups/plan-map-export-src/gen-big.ts`, page builder `build-big.py`. Question: BACKLOG "Questions for the owner", item "Plan map, big project: examples".
