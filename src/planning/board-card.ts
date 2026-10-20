@@ -175,8 +175,9 @@ export function buildWeek(cards: WeekCard[], head: HeaderSrc, o: WeekOptions): W
       if (when && when >= first && when <= last) finished[Math.max(0, colOf(when))].push(c);
     } else if (!c.date) tray.push(c);
     else if (c.date < iso) { if (thisWeek) open[todayCol].push(c); }
+    else if (isoWeekday(parseDay(c.date)!) > names.length) tray.push({ ...c, pill: datePill(parseDay(c.date)!) });   // Sat / Sun with the weekend off: in the tray of every week (owner, 2026-10-20)
     else if (c.date < first) continue;   // a week before the shown one, not late yet
-    else if (c.date > last || colOf(c.date) < 0) { if (thisWeek) tray.push({ ...c, pill: datePill(parseDay(c.date)!) }); }   // away from this week the tray holds undated cards only
+    else if (c.date > last) { if (thisWeek) tray.push({ ...c, pill: datePill(parseDay(c.date)!) }); }   // away from this week the tray holds undated and weekend-dated cards only
     else open[colOf(c.date)].push(c);
   }
   // Due marks look at where a card is drawn, not at its old `day`

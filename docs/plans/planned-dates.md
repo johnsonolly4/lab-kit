@@ -45,7 +45,8 @@ A to-do knows the date it is planned for, so the board can show this week, next 
 | open, date before today, shown week ≠ this week | not shown (it is carried into this week) |
 | open, no date | the tray (Backlog) |
 | open, date after the shown week, shown week = this week | the tray, with a small date pill `Tue 27 Oct` (Q3) |
-| any dated open card, shown week ≠ this week, not in a column above | not shown: away from this week the tray lists only undated cards (owner board 2, 2026-10-20) |
+| open, dated Sat / Sun, weekend off, shown week ≠ this week | the tray, with the same date pill (owner, 2026-10-20) |
+| any other dated open card, shown week ≠ this week, not in a column above | not shown: away from this week the tray lists only undated cards (owner board 2, 2026-10-20) |
 | finished, `done_on` in the shown week | the `N done` list of `done_on`'s column (Q4); Sat / Sun with the weekend off → Mon (where the card sat when it was ticked). Stays all week, so it can be unticked there (Q19) |
 | finished, `done_on` before the shown week | not shown: finished cards of earlier weeks leave the board on Monday by themselves (Q2) |
 | finished, no `done_on` | its date's `N done` list when that date is in the shown week, else not shown |
@@ -147,7 +148,7 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - Size: S
 
 ### Phase 7: Week arrows (F1), desktop and phone
-- **BUILT 2026-10-20 (N2g, 04102a8):** `board-week-nav.ts`, `weekTitle`, offset kept while the view is open; tests 1422; throwaway Obsidian PASS (BACKLOG "N2g leftovers"). Follow-up 2026-10-20 (owner board 2): in a past or next week the tray lists only undated cards (`buildWeek`); this week's tray unchanged.
+- **BUILT 2026-10-20 (N2g, 04102a8):** `board-week-nav.ts`, `weekTitle`, offset kept while the view is open; tests 1422; throwaway Obsidian PASS (BACKLOG "N2g leftovers"). Follow-up 2026-10-20 (owner board 2): in a past or next week the tray lists only undated cards (`buildWeek`), plus Sat / Sun-dated cards when the weekend is off (owner, same day); this week's tray unchanged.
 - Depends on: Phase 2.
 - Files: `board-view.ts` (top row, shown-week offset, phone row), `board-card.ts` (`weekTitle`), `styles.css`, tests.
 - Checks: `›` shows Week of 26 Oct with next week's cards; `This week` returns; a drop on Tue of next week writes `2026-10-27`; a past week shows `N done` and takes no drop; at 390 px the week row fits in one line; screenshots.
