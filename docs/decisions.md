@@ -184,3 +184,19 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner, chat): robustness safety nets are built in the order S5, S3, S1.
 - 2026-10-20 (owner, chat): Set up no longer adds the Templater hotkey for Alt+S; the two Templater rows in Check setup go (or become not-needed) because Alt+S no longer needs them. (I23 Phase 6 leftovers (1); not built in the S3 run: see BACKLOG.)
 - 2026-10-20 (owner, chat): an edited vault copy of labSnippets.js does NOT override the bundled one (I23 Phase 6 leftovers (2); this is how it is built).
+- 2026-10-20 (owner, chat): the Set up Templater notice drops the sentence "Last step: set Alt+S for Insert snippet in Obsidian → Hotkeys." (option A); the notice shows nothing about Alt+S.
+- 2026-10-20 (owner, chat, N4 Q1): the live solution block IS Solution prep; the old volume table leaves the menu (still runs from a kept copy).
+- 2026-10-20 (owner, chat, N4 Q2): the closed-experiment PDF draws the L4 table from the block's values; the note is unchanged.
+- 2026-10-20 (owner, chat, N4 Q3): mol/kg is treated as mol/L, with an asterisk / marker on the shown value saying it is an approximation (the asterisk text is new wording: shown as a crop for the owner's OK).
+- 2026-10-20 (owner, chat, N4 Q4): warn when the acid mass is under 10 x the balance readability and suggest a larger batch size.
+- 2026-10-20 (owner, chat, N4 Q5): first pKa only.
+- 2026-10-20 (owner, chat, N4 Q6): the same block handles bases (the acid / base field decides).
+- 2026-10-20 (owner, chat, N4 Q7): a missing Purity is asked once and saved to the chemical note.
+- 2026-10-20 (owner, chat, N4 Q8): the L6 setting "Open snippet forms at the cursor" is ON by default.
+- 2026-10-20 (owner, chat, N4 Q9): solvent target stays as planned; a second line when the solid is more than 5 % off.
+- 2026-10-20 (owner, chat, N4 Q10): by-mass block also shows approximate mol/L from the densities, marked as an estimate.
+- 2026-10-20 (owner, chat, N4 Q11): the by-mass solutes block goes on a feedback page first; the L1 window is tried after Phase 5; warning / error lines come as crops first.
+- 2026-10-20 (owner, chat, N4 Q12): the plan's new wording is taken as written and adjusted after the owner sees it.
+- 2026-10-20 (owner, chat, N4): a reagent comes as a wt% OR a molarity: a chemical note holds either `Purity` (wt%) or `Concentration` (mol/L), plus `Density`; moles per gram of liquid = M / (density x 1000) for molarity reagents, purity / molar mass for wt%; a missing density for a molarity reagent is asked once and saved (as Q7); the block shows which one it used.
+- 2026-10-20 (owner, chat, GENERAL RULE for live blocks): blocks stored in notes must keep reading correctly after future plugin updates. Each block's text carries a format version; the plugin always reads older versions; a format change ships with a reader for the old version and a test on a saved old note. (Written into `docs/plans/solution-live-block.md` "Block format version"; applies also to calc, rig and planning blocks when their format next changes.)
+- 2026-10-20 (owner, chat): the SDS-to-chemical-database script (fills Purity / Concentration / Density / pKa from safety data sheets) is a separate item, not part of N4; the owner's script is not yet in `my_work/private/`.
