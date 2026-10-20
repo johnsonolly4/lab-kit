@@ -38,7 +38,7 @@ One commit per piece in the main repo. At the end: add an entry to my_work/notes
 ```
 Model: Sonnet (Opus if the stub recognition for edited files needs a design call).
 N4. Solution prep live block + acid for pH (plan from BACKLOG "Acid for a target pH" and the approved `solution-live-block.png`); chemical note fields pKa / Purity / Density; review the owner's SDS script once it is in `my_work/private/`.
-N1d. I23 Phase 4 (groups in headers, one Snippets settings group) after N1c; Phases 5-6 or the To-do port wired in only after the owner's Templater answer (BACKLOG "Questions for the owner").
+N1d. I23 Phase 4 (groups in headers, one Snippets settings group) after N1c; Phase 6 (Alt+S without Templater) is now unblocked: owner chose (b) on 2026-10-20 (full removal later).
 N5. Plan map looks: before / after feedback page of the top five ideas in `docs/plans/plan-map-research.md`, then plan with the owner.
 N6. Small fixes: Kit window look faults (BACKLOG "Last group"), I19 freeze timing (if the owner picks "day after the meeting"), kit callouts outside `vt` notes (if wanted).
 N7. Stress test on a big synthetic vault (proposed card; one heavy test at a time on this 8 GB Mac), then robustness safety nets S1-S6.
@@ -47,7 +47,7 @@ N8. Ask the owner to push `overnight/2026-10-19` and `feat/rig-figure` and open 
 - [ ] Answer BACKLOG N2h leftovers (4 questions) and try two devices on one board (checklist row Sync, two devices, same board), by 2026-10-23.
 - [ ] Try the Undo notice on the board, the chip-bar tick and the unfoldable `N done` (checklist row "Undo after a tick", I2 Phase 6), by 2026-10-22.
 - [ ] Try the day-header `+` (checklist row "Day header +"; Review update… for `To-do.md` first) and say if the look is right (not in the approved picture), by 2026-10-22.
-- [ ] Templater removal: (a) / (b) / (c) from the spike's numbers, and the I23 Phase 1 new texts (BACKLOG "Questions for the owner").
+- [ ] I23 Phase 1 new texts (BACKLOG "Questions for the owner"). Templater removal ANSWERED 2026-10-20: (b) now, (a) later.
 - [ ] Try the Alt+S menu (checklist 6i last row) after Review update… for Insert snippet.md and the Hotkeys note.
 - [ ] I19: freeze meeting notes the day after the meeting date, or when the next one is made?
 - [ ] Rig: do you tweak part positions for a poster, and does the rig change after (hand layout in Obsidian or the drawing tool)?
