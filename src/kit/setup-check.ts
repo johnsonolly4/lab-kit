@@ -77,7 +77,7 @@ export interface SetupState {
   /** Loaded plugin ids (plus kit names such as `zotlit`). */
   plugins: ReadonlySet<string>;
   planning: boolean;
-  templater: { templatesFolder: string; userScriptsFolder: string; menuHotkey: boolean; folderTemplates: { folder: string; template: string }[]; matchingMode?: string; startupTemplates?: string[] };
+  templater: { templatesFolder: string; userScriptsFolder: string; folderTemplates: { folder: string; template: string }[]; matchingMode?: string; startupTemplates?: string[] };
   /** The kits' Templater user scripts (tp.user.<name>): `exists` is false when the file isn't where the kit put it. */
   scripts?: { name: string; kit: "lab" | "planning"; exists: boolean }[];
   /** The homepage note's `obsidianUIMode` (Force note view mode reads it); null when the note isn't there. */
@@ -274,10 +274,8 @@ export function checkSetup(s: SetupState): SetupItem[] {
     const items: [string, string, boolean][] = [
       ["templates-folder", "Templater template folder", !!t.templatesFolder.trim()],
       ["user-scripts", "Templater user scripts folder", !!t.userScriptsFolder.trim()],
-      ["menu-hotkey", "Insert snippet in Templater's Template hotkeys", t.menuHotkey],
     ];
     for (const [id, label, ok] of items) {
-      if (id === "menu-hotkey" && !s.menu) continue;
       out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
         fix: ok || !s.menu ? undefined : { kind: "templater" } });
     }

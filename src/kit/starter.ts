@@ -30,7 +30,6 @@ export function starterMenu(lab: EmbeddedKit): string {
 export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
   const lab = kits.find(k => k.manifest.id === "lab"), planning = kits.find(k => k.manifest.id === "planning");
   if (!lab || !planning) throw new Error("the starter needs the lab and planning kits");
-  const menu = starterMenu(lab);
   const pf = PLANNING_FOLDER_DEFAULTS;
   const templates = kitJoin(LAB_LAYOUT.templates);
   const snippets = kits.flatMap(k => k.manifest.enableCss ?? []).map(n => n.replace(/\.css$/, ""));
@@ -42,7 +41,6 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
     [`${CONFIG}/plugins/templater-obsidian/data.json`]: json({
       templates_folder: templates,
       user_scripts_folder: LAB_LAYOUT.userScripts,
-      enabled_templates_hotkeys: [menu],
       folder_templates: [
         ...labFolderTemplates(KIT_DEFAULTS.labFolder, KIT_DEFAULTS.chemicalFolder).map(f => ({ folder: f.folder, template: kitJoin(templates, LAB_LAYOUT.templatesSub, f.file) })),   // the lab kit's templates sit in a Lab Kit subfolder
         ...planningFolderTemplates(pf).map(f => ({ folder: f.folder, template: kitJoin(templates, f.file) })),

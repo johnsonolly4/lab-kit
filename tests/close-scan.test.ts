@@ -46,7 +46,7 @@ describe("scanClosed", () => {
 const baseState = (closed?: SetupState["closed"]): SetupState => ({
   lab: { initials: "ABC", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: "03 Lab Book/Notes", chemicalFolder: "x" },
   metaBind: null, zotlitGuide: null, plugins: new Set(), planning: false,
-  templater: { templatesFolder: "", userScriptsFolder: "", menuHotkey: true, folderTemplates: [] },
+  templater: { templatesFolder: "", userScriptsFolder: "", folderTemplates: [] },
   menu: null, installed: { lab: false, planning: false }, css: [], folders: [], folderTemplates: [], closed,
 });
 const rows = (c?: SetupState["closed"]) => checkSetup(baseState(c)).filter(i => i.id.startsWith("closed:"));

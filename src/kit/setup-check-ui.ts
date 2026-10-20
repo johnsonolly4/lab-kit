@@ -3,7 +3,7 @@ import { Modal, Notice, Platform, type App, type EventRef } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
 import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
-import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, alwaysUpdateLinks, setAlwaysUpdateLinks, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate, hasTemplaterHotkey,
+import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, alwaysUpdateLinks, setAlwaysUpdateLinks, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
   templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData,
   corePluginsOn, dailyNotesOptions, dataviewInlineQueries, propertyTypes, setPropertyType } from "./obsidian-private";
@@ -70,7 +70,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
     planning: planningOn,
     templater: {
       templatesFolder: templaterTemplatesFolder(app) ?? "", userScriptsFolder: templaterUserScriptsFolder(app) ?? "",
-      menuHotkey: menuFile ? hasTemplaterHotkey(app, menuFile) : true, folderTemplates: templaterFolderTemplates(app),
+      folderTemplates: templaterFolderTemplates(app),
       matchingMode: templaterMatchingMode(app), startupTemplates: templaterStartupTemplates(app),
     },
     menu: menuFile,

@@ -62,7 +62,7 @@ describe("new-vault starter (Phase 8)", () => {
       updateLinks: read(".obsidian/app.json").alwaysUpdateLinks === true,
       plugins: new Set(read(".obsidian/community-plugins.json") as string[]),
       planning: true,
-      templater: { templatesFolder: tpl.templates_folder, userScriptsFolder: tpl.user_scripts_folder, menuHotkey: tpl.enabled_templates_hotkeys.includes(menu),
+      templater: { templatesFolder: tpl.templates_folder, userScriptsFolder: tpl.user_scripts_folder,
         folderTemplates: tpl.folder_templates, matchingMode: tpl.trigger_on_file_creation_mode, startupTemplates: tpl.startup_templates },
       scripts: [lab, planning].flatMap(k => k.manifest.files.filter(f => f.role === "userScripts" && !f.optional).map(f => {
         const name = f.dest.split("/").pop()!.replace(/\.js$/, "");
@@ -92,6 +92,7 @@ describe("new-vault starter (Phase 8)", () => {
 
   it("settings only: no notes, no personal values, no hotkeys", () => {
     expect(starter.files[".obsidian/hotkeys.json"]).toBeUndefined();
+    expect(JSON.parse(starter.files[".obsidian/plugins/templater-obsidian/data.json"]).enabled_templates_hotkeys).toBeUndefined();   // Alt+S is a Lab Kit command, no Templater hotkey
     expect(Object.keys(starter.files).filter(p => p.endsWith(".md"))).toEqual([]);
     expect(JSON.stringify(starter.files)).not.toMatch(/[A-Za-z]:\\|\/Users\/|\/home\//);
   });

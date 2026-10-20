@@ -11,7 +11,7 @@ const state = (o: Partial<SetupState> = {}): SetupState => ({
   propertiesView: "hidden",
   plugins: new Set(["templater-obsidian", "dataview", "table-editor-obsidian"]),
   planning: false,
-  templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", menuHotkey: true, folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
+  templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
   menu: MENU,
   installed: { lab: true, planning: false },
   css: [{ name: "scrolling-mermaid", enabled: true }],
@@ -40,7 +40,7 @@ describe("check setup (Phase 6)", () => {
   it("a fresh vault: missing plugin, kit not installed, empty Templater folders, snippet off, folder missing", () => {
     const r = byId(state({
       plugins: new Set(["templater-obsidian"]), installed: { lab: false, planning: false }, menu: null,
-      templater: { templatesFolder: "", userScriptsFolder: "", menuHotkey: true, folderTemplates: [] },
+      templater: { templatesFolder: "", userScriptsFolder: "", folderTemplates: [] },
       css: [{ name: "scrolling-mermaid", enabled: false }], folders: [{ path: "03 Lab Book/Notes", exists: false }],
     }));
     expect(r["plugin:dataview"]).toBeUndefined();   // no lab kit file uses Dataview: it is a planning kit plugin
@@ -54,7 +54,7 @@ describe("check setup (Phase 6)", () => {
   });
 
   it("Templater values already set are ok and get no fix", () => {
-    const r = byId(state({ templater: { templatesFolder: "Mine", userScriptsFolder: "My scripts", menuHotkey: true, folderTemplates: [] } }));
+    const r = byId(state({ templater: { templatesFolder: "Mine", userScriptsFolder: "My scripts", folderTemplates: [] } }));
     expect(r["templater:templates-folder"]).toMatchObject({ ok: true, fix: undefined });
     expect(r["templater:user-scripts"]).toMatchObject({ ok: true, fix: undefined });
   });
@@ -62,7 +62,7 @@ describe("check setup (Phase 6)", () => {
   it("planning on: Meta Bind and ZotLit (optional) are checked, a folder template is added only where the folder has none", () => {
     const r = byId(state({
       planning: true, installed: { lab: true, planning: true },
-      templater: { templatesFolder: "T", userScriptsFolder: "S", menuHotkey: true, folderTemplates: [{ folder: "00 Planning/To-dos", template: "Mine.md" }] },
+      templater: { templatesFolder: "T", userScriptsFolder: "S", folderTemplates: [{ folder: "00 Planning/To-dos", template: "Mine.md" }] },
       folderTemplates: [{ folder: "01 Daily Notes", template: "T/Daily note.md" }, { folder: "00 Planning/To-dos", template: "T/To-do.md" }],
     }));
     expect(r["plugin:obsidian-meta-bind-plugin"].ok).toBe(false);
@@ -112,7 +112,7 @@ describe("check setup (Phase 6)", () => {
 
   it("Templater (planning): matching mode None is fixed, a chosen mode is left alone; only the old roll-over startup entry is offered for removal", () => {
     const planned = (t: Partial<SetupState["templater"]>) => byId(state({ planning: true, installed: { lab: true, planning: true },
-      templater: { templatesFolder: "T", userScriptsFolder: "S", menuHotkey: true, folderTemplates: [], ...t } }));
+      templater: { templatesFolder: "T", userScriptsFolder: "S", folderTemplates: [], ...t } }));
     expect(planned({ matchingMode: "none" })["templater:matching-mode"].fix).toEqual({ kind: "matching-mode" });
     const regex = planned({ matchingMode: "regex" })["templater:matching-mode"];
     expect(regex.ok).toBe(false);

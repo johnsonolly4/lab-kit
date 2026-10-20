@@ -9,14 +9,11 @@ import { KitMergeModal } from "./merge-ui";
 import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary, tickAllLine, updateLabel } from "./managed-look";
 import { cardWindow, winFold, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
-import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
 import { makeMyCopy } from "./snippet-copy-ui";
 import { canCopy, isStubSnippet, isTokenTemplate, snippetKey } from "./snippet-copy";
 import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
-
-/** Id of the Alt+S menu template in kit-manifest.json. */
-const MENU_ID = "tpl-insert-snippet-md";
 
 /** Names of the settings a kit file can need (`needs` in kit-manifest.json), as the settings tab shows them. */
 const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder", rigsFolder: "Rigs folder" };
@@ -148,14 +145,6 @@ export class KitManaged {
     return out;
   }
 
-  /** The Alt+S menu template goes into Templater's Template hotkeys when it is written and isn't listed there yet (nothing is ever removed). */
-  private hotkeySetting(items: ManagedItem[], select: (it: ManagedItem) => boolean): SettingChange[] {
-    const menu = items.find(i => i.file.id === MENU_ID && select(i));
-    if (!menu || !hasTemplater(this.app) || hasTemplaterHotkey(this.app, menu.dest)) return [];
-    return [{ name: "Add Insert snippet to Templater's Template hotkeys", desc: `${menu.dest}. Then set Alt+S for it in Obsidian → Hotkeys.`,
-      apply: async () => { await addTemplaterHotkey(this.app, menu.dest); } }];
-  }
-
   /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
   private async settleVersion(): Promise<void> {
     const m = this.slot.managed;
@@ -204,7 +193,7 @@ export class KitManaged {
     const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge");
     let results: ManagedResult[] = [];
     const item = items.find(go);
-    await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, settings: this.hotkeySetting(items, go), run: async () => {
+    await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, run: async () => {
       const out = await this.quietly(items, this.applyOptions({ select: go, keepVersion: true }), o => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, o));
       kit.managed = out.state;
       await this.settleVersion();
@@ -339,13 +328,13 @@ export class KitManaged {
     const select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action);
     const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
     const first = !this.slot.managed && writes > 0;
-    return { items, select, writes, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] };
+    return { items, select, writes, first, settings: [...(first ? this.firstInstallSettings() : [])], folders: first ? this.kitFolders() : [] };
   }
 
   /** The same for the files the review window has ticked. */
   private pickedSpec(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<{ items: ManagedItem[]; select: (it: ManagedItem) => boolean; first: boolean; settings: SettingChange[]; folders: KitFolder[] }> {
     const first = !this.slot.managed;
-    return Promise.resolve({ items, select, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] });
+    return Promise.resolve({ items, select, first, settings: [...(first ? this.firstInstallSettings() : [])], folders: first ? this.kitFolders() : [] });
   }
 
   /** This kit for "Update all safe files" across both kits (src/kit/kit-set.ts `runSafeUpdate`). */
@@ -368,7 +357,7 @@ export class KitManaged {
     const first = !this.slot.managed;
     await this.confirmThen({
       title: first ? "Install the kit?" : "Update these files?", yes: "Update", ask: first,
-      items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [],
+      items, select, settings: [...(first ? this.firstInstallSettings() : [])], folders: first ? this.kitFolders() : [],
       run: async () => report(await this.apply(items, select)),
     });
   }
@@ -376,7 +365,7 @@ export class KitManaged {
   /**
    * The "Set up Templater" button. Lists every change first and makes them only when confirmed: Templater's user scripts folder (only when
    * it has none; a folder that is set is never changed, issue #34: when the kit's scripts are outside it, fresh copies go into a lab-kit folder
-   * inside it and the old copies stay), its template folder (only when empty), and Insert snippet in its Template hotkeys.
+   * inside it and the old copies stay), and its template folder (only when empty). Alt+S is not a Templater hotkey any more.
    */
   async setupTemplater(): Promise<void> {
     if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
@@ -396,8 +385,6 @@ export class KitManaged {
       if (!tplFolder && target) settings.push({ name: "Set Templater's template folder", desc: `To ${target}. Templater has none yet.`,
         apply: async () => { await setTemplaterTemplatesFolder(this.app, target); done.push(`Template folder set to ${target}.`); } });
       else if (tplFolder && templaterScriptsNeedChange(tplFolder, roles.templates)) done.push(`Template folder left as ${tplFolder} (the kit's templates are in ${roles.templates}).`);
-      if (!hasTemplaterHotkey(this.app, menu)) settings.push({ name: "Add Insert snippet to Templater's Template hotkeys", desc: menu,
-        apply: async () => { if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys."); } });
 
       // The kit's scripts are outside the folder Templater reads (an older install): fresh copies into <folder>/lab-kit, tracked there
       const kit = this.slot;
