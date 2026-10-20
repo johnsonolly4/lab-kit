@@ -1,6 +1,6 @@
 // Settings → Lab Kit → Snippets: one toggle per Alt+S menu group (docs/plans/snippet-menu.md Phase 4). A switched-off group is skipped by the menu, its search and Recent (visibleItems in snippet-menu.ts); no file is removed.
 import type { SettingGroupItem } from "obsidian";
-import { GROUPS } from "./snippet-menu";
+import { GROUPS, OWN_GROUP } from "./snippet-menu";
 import type { KitData } from "./paths";
 
 export const GROUP_TOGGLE_DESC = "Show these snippets in the Alt+S menu.";
@@ -20,7 +20,7 @@ export const formsAtCursorRow = (kit: KitData, save: () => Promise<void>): Setti
   render: b => { b.addToggle(t => t.setValue(kit.snippetFormsAtCursor).onChange(async v => { kit.snippetFormsAtCursor = v; await save(); })); }
 });
 
-export const groupToggleRows = (kit: KitData, save: () => Promise<void>): SettingGroupItem[] => GROUPS.map((g): SettingGroupItem => ({
+export const groupToggleRows = (kit: KitData, save: () => Promise<void>): SettingGroupItem[] => [...GROUPS, OWN_GROUP].map((g): SettingGroupItem => ({
   name: g, desc: GROUP_TOGGLE_DESC,
   render: b => { b.addToggle(t => t.setValue(!kit.snippetGroupsOff.includes(g)).onChange(async v => { setGroupShown(kit, g, v); await save(); })); }
 }));

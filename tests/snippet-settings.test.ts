@@ -1,6 +1,6 @@
 // Settings → Lab Kit → Snippets: one toggle per Alt+S group (docs/plans/snippet-menu.md Phase 4).
 import { describe, it, expect } from "vitest";
-import { GROUPS } from "../src/kit/snippet-menu";
+import { GROUPS, OWN_GROUP, visibleItems, menuSections, searchItems } from "../src/kit/snippet-menu";
 import { FORMS_AT_CURSOR, GROUP_TOGGLE_DESC, formsAtCursorRow, groupToggleRows, setGroupShown } from "../src/kit/snippet-settings";
 import { KIT_DEFAULTS, kitLoad, type KitData } from "../src/kit/paths";
 
@@ -17,7 +17,9 @@ function draw(kit: KitData, save: () => Promise<void>) {
 describe("Snippets settings: group toggles", () => {
   it("one toggle per group, named like the group, all on by default", () => {
     const rows = draw({ ...KIT_DEFAULTS, snippetGroupsOff: [] }, async () => {});
-    expect(rows.map(r => r.name)).toEqual([...GROUPS]);
+    expect(rows.map(r => r.name)).toEqual([...GROUPS, "My snippets"]);
+    expect(rows).toHaveLength(6);
+    expect(OWN_GROUP).toBe("My snippets");
     expect(rows.every(r => r.desc === "Show these snippets in the Alt+S menu." && r.desc === GROUP_TOGGLE_DESC)).toBe(true);
     expect(rows.every(r => r.t.value === true)).toBe(true);
   });
@@ -31,6 +33,18 @@ describe("Snippets settings: group toggles", () => {
     await rows.find(r => r.name === "Flow")!.t.handler!(true);
     expect(kit.snippetGroupsOff).toEqual(["Tables"]);
     expect(saves).toBe(2);
+  });
+  it("My snippets can be switched off: menu, search and Recent skip it", async () => {
+    const kit: KitData = { ...KIT_DEFAULTS, snippetGroupsOff: [] };
+    const rows = draw(kit, async () => {});
+    await rows.find(r => r.name === "My snippets")!.t.handler!(false);
+    expect(kit.snippetGroupsOff).toEqual(["My snippets"]);
+    const items = [{ name: "Mine", value: 1 }, { name: "Unknown", group: "Nope", value: 1 }, { name: "Tab", group: "Tables", value: 1 }];
+    const shown = visibleItems(items, kit.snippetGroupsOff);
+    expect(shown.map(i => i.name)).toEqual(["Tab"]);
+    expect(menuSections(shown, ["Mine", "Tab"]).map(s => s.heading)).toEqual(["Recent", "Tables"]);
+    expect(menuSections(shown, ["Mine"]).map(s => s.heading)).toEqual(["Tables"]);
+    expect(searchItems(shown, "mine")).toEqual([]);
   });
   it("setGroupShown never repeats a group", () => {
     const kit = { snippetGroupsOff: ["Flow"] };
