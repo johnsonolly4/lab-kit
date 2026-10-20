@@ -10,4 +10,8 @@ State at RTP:
 Boiling point:
 Melting point:
 Density:
+Purity:
+Concentration:
+pKa:
+Acid / base:
 ---
