@@ -67,7 +67,7 @@ Electron access: `require("electron").remote` exists in Obsidian 1.14.4 (Obsidia
 - Rows: closed notes whose hash no longer matches (edited after closing); `Status: Closed` without `closed_on` (button Close); `closed_pdf: pending` (button Make PDF, desktop).
 - Done when: a test per row on a fixture vault.
 
-### 5. Docs
+### 5. Docs (BUILT 2026-10-20, N3e: changelog line, six checklist rows in 6i, architecture already current from Phases 3-4, no new decision; the rig PDF item in BACKLOG "NEXT TASK" was NOT ticked because the rig diagram was never checked in a closed-note PDF; the owner's answers to BACKLOG "I24 Phase 3 leftovers" (2)-(6), "I24 Phase 4 leftovers" and "I24 re-cut" (c) were still missing, so nothing from them was applied)
 - `docs/changelog.md`, `docs/obsidian-test-checklist.md` 6i rows (Close, Reopen, phone pending, Check setup rows), `docs/architecture.md` (`src/close/`), `docs/decisions.md` line, BACKLOG tick of the rig PDF item (NEXT TASK, item (1)) only if the rig diagram was checked in the PDF.
 
 ## New user-facing strings (exact; for the rec. answers)
