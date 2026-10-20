@@ -1,5 +1,5 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
-import { Modal, Notice, Platform, type App } from "obsidian";
+import { Modal, Notice, Platform, type App, type EventRef } from "obsidian";
 import { kitJoin, type KitData, type PlanningRole } from "./paths";
 import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
@@ -94,8 +94,12 @@ export class SetupCheckModal extends Modal {
   private types: SetupState["propertyTypes"];
   private zotlit: ZotlitScan | null = null;
   private closed: ClosedScan | undefined;
+  /** Notes Close / Make PDF is writing: Obsidian updates its copy of their properties a moment after the write, so the list redraws when it has. */
+  private writing = new Set<string>();
+  private changed: EventRef | null = null;
 
   onOpen(): void {
+    this.changed = this.app.metadataCache.on("changed", f => { if (this.writing.delete(f.path) && !this.writing.size) void this.refresh(); });
     this.render();
     void this.refresh();
   }
@@ -149,7 +153,7 @@ export class SetupCheckModal extends Modal {
       this.newerKit = (await Promise.all(kits.map(k => k.newerKitFiles()))).flat();
     } catch (e) { console.error(e); }
   }
-  onClose(): void { this.contentEl.empty(); }
+  onClose(): void { if (this.changed) this.app.metadataCache.offref(this.changed); this.contentEl.empty(); }
 
   private render(): void {
     const el = this.contentEl;
@@ -216,10 +220,11 @@ export class SetupCheckModal extends Modal {
         await this.refresh(); return;
       case "close-notes":
         // each note asks in its own window (the Close experiment command's), one after the other
+        this.writing = new Set(fix.paths);
         for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await closeExperiment(closeHostFor(this.app, this.host.kit, file)); }
         await this.refresh(); return;
       case "make-pdfs": await confirm({ name: `Make the PDF of ${fix.paths.length} closed ${fix.paths.length === 1 ? "note" : "notes"}`, desc: "Saved in the PDF folders (Close experiment: PDF folders). Each note's closed_pdf is set to the file names.",
-        apply: async () => { for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await makeClosedPdf(closeHostFor(this.app, this.host.kit, file)); } } });
+        apply: async () => { this.writing = new Set(fix.paths); for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await makeClosedPdf(closeHostFor(this.app, this.host.kit, file)); } } });
         await this.refresh(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
