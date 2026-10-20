@@ -15,7 +15,7 @@ export class SolutionRenderer {
   private views = new Set<SolutionView>();
 
   /** The Actual cell to open once the block is drawn again (Enter / Tab moved on); a redrawn block may be a new view, so it is kept here. */
-  pending: { path: string; line: number; idx: number } | null = null;
+  pending: { path: string; line: number; idx: number; until: number } | null = null;
 
   /** `form` = the plugin's question window, used to ask a missing reagent property (without it that line is only text). */
   constructor(private plugin: Plugin, private settings: () => ChemSettings = () => ({}), readonly form: FormFn | null = null) {}
@@ -95,15 +95,16 @@ class SolutionView extends MarkdownRenderChild {
     this.shown = sig;
     this.containerEl.empty();
     this.view = view;
-    this.cells = drawView(this.containerEl, view, { edit: i => this.edit(i), ask: () => { void this.ask(); } });
+    this.cells = drawView(this.containerEl, view, { edit: i => { this.owner.pending = null; this.edit(i); }, ask: () => { void this.ask(); } });
     this.openPending();
   }
 
   private openPending(): void {
     const p = this.owner.pending;
-    if (!p || p.path !== this.sourcePath || p.line !== this.line || !this.cells[p.idx]) return;
-    this.owner.pending = null;
-    this.edit(p.idx);
+    if (!p || Date.now() > p.until || p.path !== this.sourcePath || p.line !== this.line || !this.cells[p.idx] || this.editing !== null) return;
+    // A copy that is not on screen (yet, or hidden: Reading view and Live Preview both keep one) must not take the editor; look again shortly
+    if (!this.containerEl.isConnected || this.containerEl.offsetParent === null) { window.setTimeout(() => this.openPending(), 100); return; }
+    this.edit(p.idx);   // kept (not cleared) so the view Obsidian draws after the note changed opens it as well; the next Enter / Esc / click sets it again or clears it
   }
 
   /** A missing reagent property: ask for it and save it in the chemical note (the block redraws when the note changes). */
@@ -135,10 +136,11 @@ class SolutionView extends MarkdownRenderChild {
       }
       closed = true;
       const next = how && this.view ? nextCell(cellsOf(this.view), idx, how) : null;
+      this.owner.pending = next === null ? null : this.pendingFor(next);
       this.editing = null;
       void (async () => {
-        if (save && text !== null && text !== current.value) await this.save(current.field, text, next);
-        else { if (next !== null && this.view) this.owner.pending = this.pendingFor(next); this.stopEditing(); }
+        if (save && text !== null && text !== current.value) await this.save(current.field, text);
+        else this.stopEditing();
       })();
     };
     input.addEventListener("keydown", e => {
@@ -151,12 +153,16 @@ class SolutionView extends MarkdownRenderChild {
     input.addEventListener("input", () => input.removeClass("is-bad"));
     input.addEventListener("click", e => e.stopPropagation());
     // A click elsewhere saves; a click that only moves the focus for a moment (a suggestion, the window) does not
-    input.addEventListener("blur", () => window.setTimeout(() => { if (!closed && input.ownerDocument.activeElement !== input) finish(true, null); }, 150));
+    input.addEventListener("blur", () => window.setTimeout(() => {
+      if (closed) return;
+      if (!input.isConnected) { closed = true; this.editing = null; return; }   // Obsidian drew the block again: the new view takes over (pending), nothing to save here
+      if (input.ownerDocument.activeElement !== input) finish(true, null);
+    }, 150));
   }
 
-  private pendingFor(idx: number): { path: string; line: number; idx: number } | null {
+  private pendingFor(idx: number): { path: string; line: number; idx: number; until: number } | null {
     const line = this.line;
-    return line === null ? null : { path: this.sourcePath, line, idx };
+    return line === null ? null : { path: this.sourcePath, line, idx, until: Date.now() + 2500 };
   }
 
   /** The editor is gone without a write: draw the block as it is (and what changed meanwhile). */
@@ -168,7 +174,7 @@ class SolutionView extends MarkdownRenderChild {
   }
 
   /** Writes one actual into its own line of the note, keeps the page where it was, and draws the block again. */
-  private async save(f: ActualField, text: string, next: number | null): Promise<void> {
+  private async save(f: ActualField, text: string): Promise<void> {
     const app = this.owner.app;
     const info = this.ctx.getSectionInfo(this.containerEl);
     const file = app.vault.getAbstractFileByPath(this.sourcePath);
@@ -179,7 +185,6 @@ class SolutionView extends MarkdownRenderChild {
     if (out === null) { new Notice("Couldn't change this solution block. Edit it in source mode instead."); this.stopEditing(); return; }
     const r = blockRange(out, info.lineStart);
     if (r) this.source = r.source;
-    if (next !== null) this.owner.pending = this.pendingFor(next);
     this.stopEditing();
   }
 
