@@ -392,3 +392,7 @@ Two plugins switch a **file tab** with the ordinary View API and the undocumente
 - `registerBasesView language:TypeScript NOT path:mocks NOT path:docs`
 - Obsidian Forum (Developers: API): search `bases view switch`, `QueryController`
 - obsidian-releases PRs: `is:pr "internal" in:comments repo:obsidianmd/obsidian-releases`, and `repo:obsidianmd/obsidian-releases undocumented`
+
+## Prototype vault for the owner
+
+Prototype vault for the owner: test-vault-labboard/ (ignored), sources in my_work/prototypes/lab-board-proto. Options A to E, made-up notes; delete the folder when done.
