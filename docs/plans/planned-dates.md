@@ -153,12 +153,14 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - Size: M
 
 ### Phase 8: Close the week (F4) and Late cards
+- **BUILT 2026-10-20 (N2h, 705114f, 0825e35, a39878f):** `board-close.ts`, `board-close-ui.ts`; tests 1436; throwaway Obsidian PASS (BACKLOG "N2h leftovers").
 - Depends on: Phase 7.
 - Files: `src/planning/board-close.ts` (new: pure `closeWeekPlan(cards, today, choice)` → patches; windows), `board-view.ts`, `styles.css`, `tests/board-close.test.ts`.
 - Checks: 4 open cards → `Move 4` writes `2026-10-26` to each ticked one; unticked rows untouched; Backlog choice; Leave writes nothing; pressed on a Wednesday it lists only Mon / Tue cards; late-cards buttons write as drags; obsidian-check of both windows (design standard corners); screenshots.
 - Size: M
 
 ### Phase 9: Docs
+- **BUILT 2026-10-20 (N2i):** Vault spec on `scheduled`, changelog line (all devices together), checklist Sync row, architecture. The owner's two-device Sync try is still open.
 - Files: `docs/architecture.md`, `kits/planning/07 How-tos/Obsidian/Vault spec.md` (`scheduled`; `day`, `planned`, `rolled`, `countdown` gone), `docs/changelog.md` (update every device first), `docs/obsidian-test-checklist.md` 6i rows, `docs/decisions.md`.
 - Done when: the owner tries the board on two devices with Sync (checklist row).
 - Size: S
