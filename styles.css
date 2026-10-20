@@ -451,7 +451,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-entry-hint.is-bad { color: var(--text-error); }
 
 /* ---- Alt+S snippet menu (src/kit/snippet-menu-ui.ts) on the entry window: search box, small-caps group headings, icon + name + description rows ---- */
-.lk-snip .modal-close-button { display: none; }   /* the approved picture has no close mark; Esc and a click outside close it */
+.lk-snip .modal-close-button, .lk-snip .modal-header-button { display: none; }   /* the approved picture has no close mark; Esc and a click outside close it */
 .lk-snip-search { display: flex; align-items: center; gap: var(--size-4-2); margin: 0 0 var(--size-4-2); padding: 0 var(--size-4-3); border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: var(--background-modifier-form-field); }
 .lk-snip-search input[type="text"], .lk-snip-search input[type="text"]:focus, .lk-snip-search input[type="text"]:hover { flex: 1; min-width: 0; border: none; box-shadow: none; background: transparent; padding-left: 0; font-size: var(--font-ui-medium); }
 .lk-snip-search:focus-within { border-color: var(--interactive-accent); }

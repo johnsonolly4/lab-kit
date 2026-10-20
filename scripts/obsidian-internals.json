@@ -192,6 +192,15 @@
    "note": "Window close X, hidden or moved on our windows"
   },
   {
+   "name": "modal-header-button",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Window close X in Obsidian 1.14.4 and later (drawn as a header button), hidden on the Alt+S picker"
+  },
+  {
    "name": "bases-kanban-card-cover",
    "kind": "selector",
    "files": [
