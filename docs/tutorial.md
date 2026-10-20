@@ -55,7 +55,7 @@ Put your cursor where you want the table, press **Alt+S**, type a few letters to
 
 | Snippet | Use it for | Gives you |
 |---|---|---|
-| **Solution prep** | Making up a stock solution | Targets table (final volume, optional total concentration) + one row per solute and solvent: MW (from the chemical note) · target (M, mg/mL or g, or a total concentration split by a ratio) · added in g or mL (mL uses the row's Density) · mmol · concentration reached |
+| **Solution prep** | Making up an acid or base solution for a target pH | A small window at the cursor (aqueous phase, target pH, reagent, shares, balance), then a live block with two numbered steps (Target / Actual). Click an Actual cell, type what you weighed, press Enter: only that line of the block changes and the estimated pH follows. **Edit set-up** changes the set-up. The reagent's chemical note needs `Purity` (wt%) or `Concentration` (mol/L), `Density` for a molarity, `pKa` and `Acid / base`; a missing one is asked once and saved there. The old volume tables: a snippet with `run: solution-volume` |
 | **Recipe by equivalents** | Planning amounts from eq. | Eq. *relative to* any reagent, the first reagent's amount in mmol, g or M (× volume), solvent "rest" row, total mass, wt% |
 | **RAFT recipe generator** | RAFT / PISA | Monomer mass, DP, CTA:I, solids → every mass, solvent (and an optional co-solvent as % of its mass), Mn (several monomers: the mol fractions always add up) |
 | **Variant naming matrix** | A grid of conditions | `ABC0016-A`, `-B`… · **Copy** gives one column for Excel |
