@@ -65,4 +65,12 @@ describe("rig block snapshots", () => {
     await tick(); await tick();
     expect(el.textContent).toContain("Changed since the last snapshot (2026-10-20)");
   });
+  it("shows the table / folder problems in the block's problem list", async () => {
+    const { v, mount } = setup(FIXTURE);
+    await takeSnapshot(v.app, v.file(NOTE), "9.9.9", new Date(2026, 9, 20, 12));
+    v.files.set(NOTE, FIXTURE + "\n## Rig history\n| Date | Snapshot | Change |\n|---|---|---|\n| 2026-10-20 | [[Rigs/Rig A history/Gone.svg]] | |\n");
+    const el = await mount();
+    expect(el.textContent).toContain('History lists "Gone.svg" but the file is missing.');
+    expect(el.textContent).toContain('"Rig A 2026-10-20.svg" is in the history folder but not in the table.');
+  });
 });

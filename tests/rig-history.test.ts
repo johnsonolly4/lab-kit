@@ -1,7 +1,7 @@
 // The `## Rig history` table (src/rig/history.ts). Plan: docs/plans/rig-block-no-mermaid.md, Phase 4. The saved v1 note is written by hand and never regenerated.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { appendRow, readHistory, type Appended } from "../src/rig/history";
+import { appendRow, historyTargets, linkTarget, readHistory, reconcile, type Appended } from "../src/rig/history";
 
 const SAVED = readFileSync("tests/fixtures/rigs/saved/history-v1.md", "utf8");
 const row = { date: "2026-12-01", snapshot: "[[Saved rig history/Saved rig 2026-12-01.svg]]", change: "Pump P1 swapped" };
@@ -63,5 +63,23 @@ describe("appending", () => {
   it("a newer format is refused, as is a table without Date and Snapshot; nothing is guessed", () => {
     expect(appendRow(SAVED.replace("format: 1", "format: 2"), row)).toEqual({ refused: expect.stringMatching(/newer Lab Kit: update the plugin/) });
     expect(appendRow("## Rig history\n| When | File |\n|---|---|\n", row)).toEqual({ refused: expect.stringMatching(/no Date and Snapshot columns/) });
+  });
+});
+
+describe("table against folder (pure)", () => {
+  it("link targets: wiki, alias, escaped pipe, heading, embed, markdown; none for plain text", () => {
+    expect(["[[a/b.svg]]", "[[a/b.svg|x]]", "[[a/b.svg\\|x]]", "[[a/b.svg#h]]", "![[a/b.svg]]", "[x](a/b.svg)", "[x](<a/b.svg>)"].map(linkTarget)).toEqual(Array(7).fill("a/b.svg"));
+    expect(linkTarget("typed by hand")).toBeNull();
+  });
+  it("historyTargets: the saved v1 note lists its snapshots in order; no table or a newer format gives null", () => {
+    expect(historyTargets(SAVED)).toHaveLength(readHistory(SAVED).rows.length - readHistory(SAVED).rows.filter(r => !/\[\[|\]\(/.test(r.Snapshot)).length);
+    expect(historyTargets("Text")).toBeNull();
+    expect(historyTargets(SAVED.replace("format: 1", "format: 2"))).toBeNull();
+    expect(historyTargets(SAVED.replace(/\n/g, "\r\n"))).toEqual(historyTargets(SAVED));
+  });
+  it("reconcile: latest is the last existing row; missing and unlisted files are problems; no rows, no problems", () => {
+    const r = reconcile([{ target: "f/a.svg", path: "f/a.svg" }, { target: "f/b.svg", path: null }, { target: "f/b.svg", path: null }], ["f/a.svg", "f/c.svg"]);
+    expect(r).toEqual({ latest: "f/a.svg", problems: ['History lists "b.svg" but the file is missing.', '"c.svg" is in the history folder but not in the table.'] });
+    expect(reconcile([], ["f/c.svg"])).toEqual({ latest: null, problems: [] });
   });
 });

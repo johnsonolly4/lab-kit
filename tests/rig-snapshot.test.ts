@@ -145,8 +145,8 @@ describe("snapshot files in the vault", () => {
     const v = rigVault({ [NOTE]: FIXTURE });
     expect(await snapshotState(v.app, v.file(NOTE), FIXTURE)).toBeNull();
     await takeSnapshot(v.app, v.file(NOTE), "1.0.0", day(10, 20));
-    expect(await snapshotState(v.app, v.file(NOTE), FIXTURE)).toEqual({ date: "2026-10-20", changed: false });
-    expect(await snapshotState(v.app, v.file(NOTE), FIXTURE.replace("T-piece", "Y-piece"))).toEqual({ date: "2026-10-20", changed: true });
+    expect(await snapshotState(v.app, v.file(NOTE), FIXTURE)).toEqual({ date: "2026-10-20", changed: false, problems: [] });
+    expect(await snapshotState(v.app, v.file(NOTE), FIXTURE.replace("T-piece", "Y-piece"))).toEqual({ date: "2026-10-20", changed: true, problems: [] });
   });
 
   it("a snapshot of a newer Lab Kit is left alone and says nothing", async () => {
@@ -154,6 +154,70 @@ describe("snapshot files in the vault", () => {
     const v = rigVault({ [NOTE]: FIXTURE, [`${FOLDER}/Rig A 2026-12-31.svg`]: newer });
     expect(await snapshotState(v.app, v.file(NOTE), FIXTURE)).toBeNull();
     expect((await latestSnapshot(v.app, v.file(NOTE)))!.newer).toBe(true);
+  });
+
+  describe("the history table is the source of truth for the latest snapshot", () => {
+    const snap = (rig: string, date: string, tables: string): string => readFileSync(DIR + "saved/snapshot-v1.svg", "utf8").replace("rig: Saved rig", `rig: ${rig}`).replace("date: 2026-10-20", `date: ${date}`).replace(/=== tables ===\n[\s\S]*\n=== layout ===/, `=== tables ===\n${tables}\n=== layout ===`);
+    const A = `${FOLDER}/Rig A 2026-10-20.svg`, B = `${FOLDER}/Rig A 2026-11-03.svg`, C = `${FOLDER}/Rig A 2026-12-01.svg`;
+    const table = (...links: string[]): string => `\n## Rig history\n<!-- lab-kit rig-history format: 1 -->\n| Date | Snapshot | Change |\n|---|---|---|\n${links.map(l => `| 2026-10-20 | ${l} | x |`).join("\n")}\n`;
+    const files = (): Record<string, string> => ({ [A]: snap("Rig A", "2026-10-20", "a"), [B]: snap("Rig A", "2026-11-03", "b"), [C]: snap("Rig A", "2026-12-01", "c") });
+    const latest = async (note: string, extra: Record<string, string> = files()) => { const v = rigVault({ [NOTE]: note, ...extra }); return { v, l: await latestSnapshot(v.app, v.file(NOTE)) }; };
+
+    it("picks the table's last existing row even when a newer-dated file is in the folder; that file is reported as not in the table", async () => {
+      const { l } = await latest(FIXTURE + table(`[[${A}]]`, `[[${B}]]`));
+      expect(l!.file.path).toBe(B);
+      expect(l!.meta!.date).toBe("2026-11-03");
+      expect(l!.problems).toEqual(['"Rig A 2026-12-01.svg" is in the history folder but not in the table.']);
+    });
+    it("the table's order wins over the dates (a hand-reordered table)", async () => {
+      const { l } = await latest(FIXTURE + table(`[[${B}]]`, `[[${A}]]`, `[[${C}]]`).replace("| 2026-10-20 | [[" + C, "| 2026-12-01 | [[" + C));
+      expect(l!.file.path).toBe(C);
+      const r = await latest(FIXTURE + table(`[[${C}]]`, `[[${A}]]`, `[[${B}]]`));
+      expect(r.l!.file.path).toBe(B);
+      expect(r.l!.problems).toEqual([]);
+    });
+    it("a row whose file is missing is skipped for the latest and reported; nothing is written", async () => {
+      const note = FIXTURE + table(`[[${A}]]`, `[[${FOLDER}/Rig A 2026-11-03 2.svg]]`);
+      const { v, l } = await latest(note);
+      expect(l!.file.path).toBe(A);
+      expect(l!.problems).toEqual(['History lists "Rig A 2026-11-03 2.svg" but the file is missing.', '"Rig A 2026-11-03.svg" is in the history folder but not in the table.', '"Rig A 2026-12-01.svg" is in the history folder but not in the table.']);
+      expect(v.files.get(NOTE)).toBe(note);
+      expect(v.created).toEqual([]);
+    });
+    it("falls back to the newest-dated file when there is no table, no row with a link, or no row with a file; no problems then", async () => {
+      for (const note of [FIXTURE, FIXTURE + "\n## Rig history\n", FIXTURE + table("typed by hand"), FIXTURE + "\n## Rig history\n| Date | Snapshot |\n|---|---|\n"]) {
+        const { l } = await latest(note);
+        expect(l!.file.path).toBe(C);
+        expect(l!.problems).toEqual([]);
+      }
+      const { l } = await latest(FIXTURE + table(`[[${FOLDER}/Gone.svg]]`));
+      expect(l!.file.path).toBe(C);
+      expect(l!.problems).toContain('History lists "Gone.svg" but the file is missing.');
+    });
+    it("a table of a newer format is not read: newest-dated file, no problems", async () => {
+      const { l } = await latest((FIXTURE + table(`[[${A}]]`)).replace("format: 1", "format: 2"));
+      expect(l!.file.path).toBe(C);
+      expect(l!.problems).toEqual([]);
+    });
+    it("reads links with a text, a heading or the markdown form, and Windows line ends", async () => {
+      for (const link of [`[[${A}|first]]`, `[[${A}\\|first]]`, `![[${A}]]`, `[first](${A.replace(/ /g, "%20")})`]) {
+        const { l } = await latest((FIXTURE + table(link)).replace(/\n/g, "\r\n"));
+        expect(l!.file.path).toBe(A);
+        expect(l!.problems).toEqual(['"Rig A 2026-11-03.svg" is in the history folder but not in the table.', '"Rig A 2026-12-01.svg" is in the history folder but not in the table.']);
+      }
+    });
+    it("finds a file by its short link, the way Obsidian writes it", async () => {
+      const { l } = await latest(FIXTURE + table("[[Rig A 2026-10-20.svg]]"));
+      expect(l!.file.path).toBe(A);
+    });
+    it("reuse and the changed-since line follow the table's latest", async () => {
+      const text = FIXTURE;
+      const v = rigVault({ [NOTE]: text + table(`[[${A}]]`), [A]: snapshotSvg(makeFigure(text)!.svg, { rig: "Rig A", date: "2026-10-20", version: "1", record: rigRecord(text) }), [C]: snap("Rig A", "2026-12-01", "other") });
+      const t = await takeSnapshot(v.app, v.file(NOTE), "1.0.0", day(12, 5));
+      expect(t).toMatchObject({ created: false });
+      expect(t!.file.path).toBe(A);
+      expect(await snapshotState(v.app, v.file(NOTE), text)).toMatchObject({ date: "2026-10-20", changed: false, problems: ['"Rig A 2026-12-01.svg" is in the history folder but not in the table.'] });
+    });
   });
 
   for (const name of fixtures) {

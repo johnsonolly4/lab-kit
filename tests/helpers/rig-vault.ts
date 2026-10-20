@@ -21,6 +21,7 @@ export function rigVault(initial: Record<string, string>) {
       createFolder: async (p: string) => { folders.add(p); },
       process: async (f: TFile, fn: (d: string) => string) => { files.set(f.path, fn(files.get(f.path)!)); },
     },
+    metadataCache: { getFirstLinkpathDest: (t: string) => [...files.keys()].find(k => k === t || k.endsWith("/" + t)) ? get([...files.keys()].find(k => k === t || k.endsWith("/" + t))!) as TFile : null },
     fileManager: { generateMarkdownLink: (f: TFile) => `[[${f.path}]]` },
   };
   return { app, files, created, file };

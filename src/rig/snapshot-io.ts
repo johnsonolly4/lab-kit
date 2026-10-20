@@ -4,31 +4,46 @@ import { TFile, TFolder, normalizePath, type App } from "obsidian";
 import { ensureFolder } from "../kit/ensure-folder";
 import { kitJoin, kitParent } from "../kit/paths";
 import { makeFigure } from "./figure-make";
-import { appendRow } from "./history";
+import { appendRow, historyTargets, reconcile } from "./history";
 import { localDate, readSnapshotMeta, rigRecord, sameRecord, snapshotName, snapshotNames, snapshotSvg, type SnapshotMeta } from "./snapshot";
 
 /** The folder a rig note's snapshots live in: "<rig> history", beside the rig note (owner, N2 a). */
 export const historyFolder = (rigPath: string, basename: string): string => kitJoin(kitParent(rigPath), `${basename} history`);
 
-export interface Latest { file: TFile; meta: SnapshotMeta | null; /** True when the file was made with a newer Lab Kit (its record is not read). */ newer: boolean }
+export interface Latest { file: TFile; meta: SnapshotMeta | null; /** True when the file was made with a newer Lab Kit (its record is not read). */ newer: boolean; /** Table and folder that disagree (texts for the rig block); nothing is changed. */ problems: string[] }
 
-/** The newest snapshot of a rig note, null when there is none. */
-export async function latestSnapshot(app: App, rig: TFile): Promise<Latest | null> {
+/** The snapshot files in a rig's history folder, oldest first (by the date in the name). */
+function folderSnapshots(app: App, rig: TFile): TFile[] {
   const folder = app.vault.getAbstractFileByPath(historyFolder(rig.path, rig.basename));
-  if (!(folder instanceof TFolder)) return null;
+  if (!(folder instanceof TFolder)) return [];
   const files = folder.children.filter((c): c is TFile => c instanceof TFile && c.extension === "svg");
-  const last = snapshotNames(rig.basename, files.map(f => f.name)).pop();
-  const file = files.find(f => f.name === last);
-  if (!file) return null;
-  const read = readSnapshotMeta(await app.vault.cachedRead(file));
-  return { file, meta: read.status === "ok" ? read.meta : null, newer: read.status === "newer" };
+  return snapshotNames(rig.basename, files.map(f => f.name)).flatMap(n => files.filter(f => f.name === n));
 }
 
-/** What the rig block says about snapshots: the date of the latest one (null when there is none) and whether the rig changed since it. */
-export async function snapshotState(app: App, rig: TFile, text: string): Promise<{ date: string; changed: boolean } | null> {
+/** The file a history row links to: the path as written, else the way Obsidian resolves a link from the rig note. */
+function resolveLink(app: App, rig: TFile, target: string): TFile | null {
+  const exact = app.vault.getAbstractFileByPath(normalizePath(target));
+  if (exact instanceof TFile) return exact;
+  return app.metadataCache?.getFirstLinkpathDest(target, rig.path) ?? null;
+}
+
+/** The latest snapshot of a rig note, null when there is none. The `## Rig history` table is the source of truth (owner, 2026-10-20): the last row whose file exists. No usable table, or no row with a file: the newest-dated file in the history folder. */
+export async function latestSnapshot(app: App, rig: TFile): Promise<Latest | null> {
+  const files = folderSnapshots(app, rig);
+  const targets = historyTargets(await app.vault.cachedRead(rig));
+  const rec = targets ? reconcile(targets.map(t => ({ target: t, path: resolveLink(app, rig, t)?.path ?? null })), files.map(f => f.path)) : { latest: null, problems: [] as string[] };
+  const file = (rec.latest ? app.vault.getAbstractFileByPath(rec.latest) : null) ?? files[files.length - 1];
+  if (!(file instanceof TFile)) return null;
+  const read = readSnapshotMeta(await app.vault.cachedRead(file));
+  return { file, meta: read.status === "ok" ? read.meta : null, newer: read.status === "newer", problems: rec.problems };
+}
+
+/** What the rig block says about snapshots: the date of the latest one ("" when none can be read), whether the rig changed since it, and the table / folder problems. null when there is nothing to say. */
+export async function snapshotState(app: App, rig: TFile, text: string): Promise<{ date: string; changed: boolean; problems: string[] } | null> {
   const last = await latestSnapshot(app, rig);
-  if (!last?.meta) return null;   // none, or one this Lab Kit cannot read: say nothing rather than guess
-  return { date: last.meta.date, changed: !sameRecord(last.meta.record, rigRecord(text)) };
+  if (!last) return null;
+  if (!last.meta) return last.problems.length ? { date: "", changed: false, problems: last.problems } : null;   // one this Lab Kit cannot read: say nothing about it rather than guess
+  return { date: last.meta.date, changed: !sameRecord(last.meta.record, rigRecord(text)), problems: last.problems };
 }
 
 export interface Taken { file: TFile; /** False when the latest snapshot already held this rig, so it is used again. */ created: boolean }

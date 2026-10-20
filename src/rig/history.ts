@@ -87,3 +87,42 @@ export function appendRow(text: string, row: HistoryRow): Appended {
   const body = text.endsWith("\n") || text === "" ? text : text + eol;
   return { text: `${body}${text === "" ? "" : eol}## ${HISTORY_HEADING}${eol}${block.join(eol)}${eol}` };
 }
+
+/** The file a Snapshot cell links to: `[[path]]`, `[[path|text]]`, `[[path#x]]`, `![[path]]` or `[text](path)`; null for a cell with no link. */
+export function linkTarget(cell: string): string | null {
+  const w = /!?\[\[([^\]|#]+?)\\?(?:[|#][^\]]*)?\]\]/.exec(cell);
+  if (w) return w[1].trim() || null;
+  const m = /\[[^\]]*\]\(\s*<?([^)>]+?)>?\s*\)/.exec(cell);
+  if (!m) return null;
+  try { return decodeURIComponent(m[1]).trim() || null; } catch { return m[1].trim(); }
+}
+
+/** The snapshot links of the rig note's history table, in table order. null when the table cannot be used (no section, no table, no Snapshot column, or a newer format: Lab Kit then does not read it). Rows without a link are skipped. */
+export function historyTargets(text: string): string[] | null {
+  const h = readHistory(text);
+  if (h.heading < 0 || h.tableFirst < 0 || h.format > HISTORY_FORMAT) return null;
+  const col = h.header.find(c => c.trim().toLowerCase() === "snapshot");
+  if (col === undefined) return null;
+  return h.rows.flatMap(r => { const t = linkTarget((r[col] ?? "").replace(/\r/g, "")); return t ? [t] : []; });
+}
+
+export interface Listed { /** The link target as the row holds it. */ target: string; /** The vault path of the file it points to, null when there is no such file. */ path: string | null }
+export interface Reconciled { /** The vault path of the last row whose file exists, null when no row has one. */ latest: string | null; problems: string[] }
+
+const baseName = (p: string): string => p.slice(p.lastIndexOf("/") + 1);
+
+/** Compares the table with the folder (`folderPaths`: the snapshot files found there). Nothing is changed; the problems are texts for the rig block. With no linked row there is nothing to compare, so no problems. */
+export function reconcile(listed: Listed[], folderPaths: string[]): Reconciled {
+  if (!listed.length) return { latest: null, problems: [] };
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const l of listed) {
+    if (l.path !== null || seen.has(l.target)) continue;
+    seen.add(l.target);
+    problems.push(`History lists "${baseName(l.target)}" but the file is missing.`);
+  }
+  const known = new Set(listed.flatMap(l => l.path === null ? [] : [l.path]));
+  for (const p of folderPaths) if (!known.has(p)) problems.push(`"${baseName(p)}" is in the history folder but not in the table.`);
+  const latest = [...listed].reverse().find(l => l.path !== null)?.path ?? null;
+  return { latest, problems };
+}

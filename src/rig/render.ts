@@ -64,7 +64,7 @@ class RigView extends MarkdownRenderChild {
     const text = file instanceof TFile ? await app.vault.cachedRead(file) : "";
     const rig = readRig(text);
     const made = makeFigure(text);
-    let snap: { date: string; changed: boolean } | null = null;
+    let snap: { date: string; changed: boolean; problems: string[] } | null = null;
     try { snap = file instanceof TFile && made ? await snapshotState(app, file, text) : null; } catch (e) { console.error("Lab Kit rig snapshot", e); }
     const sig = JSON.stringify([made?.svg ?? "", rig.problems, snap]);
     if (run !== this.drawing || sig === this.shown) return;
@@ -87,10 +87,11 @@ class RigView extends MarkdownRenderChild {
       const save = box.createEl("button", { cls: "lab-kit-rig-figure", text: "Save snapshot…", attr: { "aria-label": "Save a dated picture of the rig and add it to the Rig history table" } });
       save.addEventListener("click", () => { openSnapshotWindow(app, this.sourcePath, this.owner.version(), save, () => { this.owner.refreshFile(this.sourcePath); }); });
     }
-    if (snap?.changed) box.createDiv({ cls: "vt-muted lab-kit-rig-changed", text: `Changed since the last snapshot (${snap.date})` });
-    if (rig.problems.length) {
+    if (snap?.date && snap.changed) box.createDiv({ cls: "vt-muted lab-kit-rig-changed", text: `Changed since the last snapshot (${snap.date})` });
+    const problems = [...rig.problems, ...(snap?.problems ?? [])];
+    if (problems.length) {
       const list = box.createEl("ul", { cls: "lab-kit-rig-problems lab-kit-warn" });
-      for (const p of rig.problems) list.createEl("li", { text: p });
+      for (const p of problems) list.createEl("li", { text: p });
     }
     if (run !== this.drawing) { box.remove(); if (url) URL.revokeObjectURL(url); return; }
     this.box?.remove();
