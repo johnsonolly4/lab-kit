@@ -3,7 +3,7 @@
 import { prop } from "../frontmatter";
 import { text } from "../calc/engine";
 
-const MARK_LINE = /^(closed_on|closed_hash|closed_pdf|closed_pdf_old|status)\s*:/i;
+const MARK_LINE = /^(closed_on|closed_hash|closed_pdf|closed_pdf_old|closed_data|status)\s*:/i;
 const FOOTER_HASH_LENGTH = 12;
 
 /** The note as the hash sees it: `\n` line ends, no `closed_*` lines and no `Status` line in the front matter (a board drag is not an edit). */

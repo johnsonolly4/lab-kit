@@ -90,6 +90,7 @@ describe("makeClosedPdf", () => {
     const host: CloseHost = {
       name: "ABC0008", today: "2026-10-22", isLabNote: true, canPdf: true, folders: ["/pdf/a", "/pdf/b"],
       readText: async () => "", frontmatter: () => state.fm, editFrontmatter: async fn => { fn(state.fm); },
+      checkData: async () => ({ state: "no-node" as const, folder: "", property: "", files: 0, hash: "", missingLinks: [] }),
       makePdf: async footer => { state.footers.push(footer); return new ArrayBuffer(4); },
       fileExists: () => false, saveFile: (folder, name) => { state.saved.push(`${folder}/${name}`); },
       confirm: async () => true, notice: m => { state.notices.push(m); }, logError: () => {}, ...over,

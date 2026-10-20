@@ -2,22 +2,24 @@
 import { describe, it, expect } from "vitest";
 import { closeExperiment, reopenExperiment, pdfFileName, MSG, PENDING, type CloseHost } from "../src/close/commands";
 import { closedFooter, closedHash } from "../src/close/mark";
+import type { DataCheck } from "../src/close/data";
 
 const BODY = "# Run\n\nDry the beads first.\n\n| a | b |\n|---|---|\n| 1 | 2 |\n";
 
 /** A fake note: front matter as an object, body as text; `text()` joins them the way a file would read. */
 function fake(over: Partial<CloseHost> = {}, fm: Record<string, unknown> = { "Exp. Class": "RAFT", Status: "Started" }) {
-  const state = { fm: { ...fm } as Record<string, unknown>, body: BODY, saved: [] as [string, string, number][], notices: [] as string[], asked: [] as string[], footers: [] as string[], dates: [] as string[], onDisk: new Set<string>() };
+  const state = { fm: { ...fm } as Record<string, unknown>, body: BODY, saved: [] as [string, string, number][], notices: [] as string[], asked: [] as string[], footers: [] as string[], dates: [] as string[], onDisk: new Set<string>(), extra: [] as [string, string][][], data: { state: "found", folder: "/lab/data/ABC0011-A", property: "", files: 3, hash: "h".repeat(64), missingLinks: [] } as DataCheck, dataSeen: [] as (DataCheck | undefined)[] };
   const yaml = () => `---\n${Object.entries(state.fm).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n")}\n---\n`;
   const host: CloseHost = {
     name: "ABC0011 - RAFT test", today: "2026-10-20", isLabNote: true, canPdf: true, folders: ["/pdf/a", "/pdf/b"],
     readText: async () => yaml() + state.body,
     frontmatter: () => state.fm,
     editFrontmatter: async fn => { fn(state.fm); },
-    makePdf: async footer => { state.footers.push(footer); return new ArrayBuffer(8); },
+    checkData: async () => state.data,
+    makePdf: async (footer, extra) => { state.footers.push(footer); state.extra.push(extra); return new ArrayBuffer(8); },
     fileExists: (folder, name) => state.onDisk.has(`${folder}/${name}`),
     saveFile: (folder, name, bytes) => { state.saved.push([folder, name, bytes.byteLength]); state.onDisk.add(`${folder}/${name}`); },
-    confirm: async (kind, date, folders) => { state.asked.push(`${kind}:${folders.join("|")}`); state.dates.push(date); return true; },
+    confirm: async (kind, date, folders, data) => { state.dataSeen.push(data); state.asked.push(`${kind}:${folders.join("|")}`); state.dates.push(date); return true; },
     notice: m => { state.notices.push(m); },
     logError: () => {},
     ...over,

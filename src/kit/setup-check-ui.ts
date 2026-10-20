@@ -221,10 +221,10 @@ export class SetupCheckModal extends Modal {
       case "close-notes":
         // each note asks in its own window (the Close experiment command's), one after the other
         this.writing = new Set(fix.paths);
-        for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await closeExperiment(closeHostFor(this.app, this.host.kit, file)); }
+        for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await closeExperiment(closeHostFor(this.app, this.host.kit, this.host.header, file)); }
         await this.refresh(); return;
       case "make-pdfs": await confirm({ name: `Make the PDF of ${fix.paths.length} closed ${fix.paths.length === 1 ? "note" : "notes"}`, desc: "Saved in the PDF folders (Close experiment: PDF folders). Each note's closed_pdf is set to the file names.",
-        apply: async () => { this.writing = new Set(fix.paths); for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await makeClosedPdf(closeHostFor(this.app, this.host.kit, file)); } } });
+        apply: async () => { this.writing = new Set(fix.paths); for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await makeClosedPdf(closeHostFor(this.app, this.host.kit, this.host.header, file)); } } });
         await this.refresh(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,

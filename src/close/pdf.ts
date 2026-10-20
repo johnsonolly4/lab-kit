@@ -68,7 +68,7 @@ export function footerTemplate(footer: string): string {
 }
 
 /** Renders the note fresh (the open view loses sections that are off screen) and returns the finished HTML page (after 3 s at most it prints what has drawn). */
-export async function renderForPdf(app: App, file: TFile): Promise<{ html: string; wide: boolean }> {
+export async function renderForPdf(app: App, file: TFile, extra: [string, string][] = []): Promise<{ html: string; wide: boolean }> {
   const note = await app.vault.read(file);
   const body = note.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, "");
   const host = document.body.createDiv({ cls: "markdown-rendered markdown-preview-view lk-close-host" });
@@ -90,7 +90,7 @@ export async function renderForPdf(app: App, file: TFile): Promise<{ html: strin
     for (const sheet of Array.from(document.styleSheets)) {
       try { for (const r of Array.from(sheet.cssRules)) css += r.cssText + "\n"; } catch { /* a sheet from another origin cannot be read */ }
     }
-    const props = propRows(app.metadataCache.getFileCache(file)?.frontmatter);
+    const props = [...propRows(app.metadataCache.getFileCache(file)?.frontmatter), ...extra];
     const bodyClass = document.body.className.replace("theme-dark", "theme-light");
     return { html: pdfHtml(file.basename, props, bodyHtml, widest > WIDE_COLUMNS, css, bodyClass), wide: widest > WIDE_COLUMNS };
   } finally {

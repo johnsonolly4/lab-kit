@@ -395,8 +395,8 @@ export class KitController {
     plugin.addCommand({ id: "insert-snippet", name: "Insert snippet", editorCallback: editor => void this.insertSnippet(editor) });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
-    plugin.addCommand({ id: "close-experiment", name: "Close experiment", callback: () => void runCloseCommand(this.app, this.kit, "close") });
-    plugin.addCommand({ id: "reopen-experiment", name: "Reopen experiment", callback: () => void runCloseCommand(this.app, this.kit, "reopen") });
+    plugin.addCommand({ id: "close-experiment", name: "Close experiment", callback: () => void runCloseCommand(this.app, this.kit, this.header.settings, "close") });
+    plugin.addCommand({ id: "reopen-experiment", name: "Reopen experiment", callback: () => void runCloseCommand(this.app, this.kit, this.header.settings, "reopen") });
     plugin.addCommand({ id: "find-moved-folders", name: "Find moved folders", callback: () => this.findMovedFolders() });
     plugin.addCommand({ id: "tidy-notes", name: "Tidy up notes", callback: () => this.tidyNotes() });
     // First start after the plugin changed version: show what's new once

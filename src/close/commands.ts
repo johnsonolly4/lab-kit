@@ -4,6 +4,7 @@
 import { closedFooter, closedHash, isClosed } from "./mark";
 import { prop } from "../frontmatter";
 import { text } from "../calc/engine";
+import { closedDataValue, dataPdfRows, type DataCheck } from "./data";
 
 type Fm = Record<string, unknown>;
 
@@ -37,13 +38,15 @@ export interface CloseHost {
   frontmatter(): Fm | undefined;
   /** Edits the front matter in place (Obsidian: `processFrontMatter`). */
   editFrontmatter(fn: (fm: Fm) => void): Promise<void>;
-  /** The note as a PDF with `footer` on every page; null when this Obsidian cannot print. */
-  makePdf(footer: string): Promise<ArrayBuffer | null>;
+  /** The data folder, its files and the missing links of this note, on this device. */
+  checkData(): Promise<DataCheck>;
+  /** The note as a PDF with `footer` on every page and `extra` rows under the properties; null when this Obsidian cannot print. */
+  makePdf(footer: string, extra: [string, string][]): Promise<ArrayBuffer | null>;
   fileExists(folder: string, name: string): boolean;
   /** Throws when the folder cannot be written. */
   saveFile(folder: string, name: string, bytes: ArrayBuffer): void;
-  /** Asks the user; false = cancelled. `folders` is empty where no PDF is made. */
-  confirm(kind: "close" | "reopen", date: string, folders: string[]): Promise<boolean>;
+  /** Asks the user; false = cancelled. `folders` is empty where no PDF is made. `data` (Close only) is shown in the window; a warning there needs the tick "Close anyway". */
+  confirm(kind: "close" | "reopen", date: string, folders: string[], data?: DataCheck): Promise<boolean>;
   notice(message: string): void;
   logError(error: unknown): void;
 }
@@ -66,14 +69,15 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
   if (h.canPdf && !h.folders.length) { h.notice(MSG.noFolder); return; }
   // The PDF is made today: its name, footer and the confirm window carry today's date. A note that has only `closed_on` (ended, never formally closed) keeps that end date in `closed_on`.
   const date = h.today;
-  if (!(await h.confirm("close", date, h.canPdf ? h.folders : []))) return;
+  const data = await h.checkData();
+  if (!(await h.confirm("close", date, h.canPdf ? h.folders : [], data))) return;
 
   const hash = await closedHash(await h.readText());
   const files: string[] = [];
   let pdfMissing = false;
   if (h.canPdf) {
     const footer = closedFooter(date, h.name, hash);
-    const bytes = await h.makePdf(footer);
+    const bytes = await h.makePdf(footer, dataPdfRows(data));
     if (!bytes) pdfMissing = true;
     else {
       const name = pdfFileName(h.name, date, n => h.folders.some(f => h.fileExists(f, n)));
@@ -88,6 +92,8 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
     f.closed_hash = hash;
     f.closed_pdf = files.length ? files : PENDING;
     f.Status = CLOSED_STATUS;
+    const where = closedDataValue(data);
+    if (where) f.closed_data = where;   // not when the note has its own data-folder property: that already holds the location
   });
   if (files.length) h.notice(MSG.saved(files[0]));
   else if (pdfMissing) h.notice("Experiment closed. This Obsidian cannot make the PDF here: Check setup lists it as pending.");
@@ -99,7 +105,7 @@ export async function makeClosedPdf(h: CloseHost): Promise<boolean> {
   const fm = h.frontmatter(), date = closedOn(fm), hash = text(prop(fm, "closed_hash")).trim();
   if (!h.isLabNote || !date || !hash) { h.notice("This note is not closed."); return false; }
   if (!h.canPdf || !h.folders.length) { h.notice(h.canPdf ? MSG.noFolder : "This device cannot make the PDF: do it on a computer."); return false; }
-  const bytes = await h.makePdf(closedFooter(date, h.name, hash));
+  const bytes = await h.makePdf(closedFooter(date, h.name, hash), dataPdfRows(await h.checkData(), h.today));
   if (!bytes) { h.notice("This Obsidian cannot make the PDF here."); return false; }
   const name = pdfFileName(h.name, date, n => h.folders.some(f => h.fileExists(f, n)));
   const files: string[] = [];
@@ -121,6 +127,7 @@ export async function reopenExperiment(h: CloseHost): Promise<void> {
   await h.editFrontmatter(f => {
     delete f.closed_on;
     delete f.closed_hash;
+    delete f.closed_data;
     const pdf = f.closed_pdf;
     delete f.closed_pdf;
     if (pdf !== undefined && pdf !== PENDING) f.closed_pdf_old = pdf;   // the PDFs stay: their names stay in the note

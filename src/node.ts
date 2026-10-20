@@ -8,6 +8,8 @@ export interface NodeFs {
   mkdirSync(path: string, options: { recursive: boolean }): unknown;
   writeFileSync(path: string, data: string | Uint8Array): void;
   unlinkSync(path: string): void;
+  readdirSync(path: string): string[];
+  statSync(path: string): { isDirectory(): boolean; size: number };
 }
 export interface NodeOs { tmpdir(): string }
 export interface NodePath { join(...parts: string[]): string; isAbsolute(path: string): boolean }
@@ -97,4 +99,27 @@ export function saveFileTo(folder: string, name: string, bytes: ArrayBuffer): vo
 export function fileExistsIn(folder: string, name: string): boolean {
   const fs = nodeModule("fs"), path = nodeModule("path");
   return !!fs && !!path && fs.existsSync(path.join(folder, name));
+}
+
+/** Files below `folder` (all levels) as [path relative to it with `/`, size in bytes], sorted; `exists` false when the folder is not there. Null without Node (a phone). Stops at `limit` files. */
+export function listFolderFiles(folder: string, limit = 50000): { exists: boolean; files: [string, number][] } | null {
+  const fs = nodeModule("fs"), path = nodeModule("path");
+  if (!fs || !path) return null;
+  const files: [string, number][] = [];
+  try { if (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory()) return { exists: false, files }; }
+  catch { return { exists: false, files }; }
+  const walk = (dir: string, rel: string): void => {
+    let names: string[];
+    try { names = fs.readdirSync(dir); } catch { return; }
+    for (const n of names) {
+      if (files.length >= limit) return;
+      const full = path.join(dir, n), r = rel ? `${rel}/${n}` : n;
+      try {
+        const st = fs.statSync(full);
+        if (st.isDirectory()) walk(full, r); else files.push([r, st.size]);
+      } catch { /* a file that vanished or cannot be read is skipped */ }
+    }
+  };
+  walk(folder, "");
+  return { exists: true, files: files.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)) };
 }
