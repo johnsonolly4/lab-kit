@@ -32,7 +32,8 @@ Running experiments stay on a card board; finished ones are found again in a tab
     - `tests/fixtures/lab-notes/clone-source.md:7` (value `2026-09-03`, the Clone test)
     - `scripts/smoke.mjs:34`, `scripts/make-stress-vault.mjs:49` (generated notes)
     - docs: `docs/backlog-archive.md:179` (history, leave), `docs/decisions.md:244` and `:304` (the owner's earlier lines; leave, a new decision line supersedes), this plan.
-  - **RISK to resolve before building (not silent): `closed_on` is the Close mark.** `isClosed` is true when `closed_on` holds a value (`src/close/mark.ts:37-40`; used at `src/close/commands.ts:65` and `src/close/scan.ts:25`). Moving an old `Exp. End` into `closed_on` would therefore, unless the code changes:
+  - **BUILT 2026-10-20 (Exp. End retired; owner chat 2026-10-20, Q7b a; unit tests on made-up notes, NOT seen in Obsidian):** template, kit property list and Clone drop `Exp. End`; `isClosed` = `closed_on` AND (`closed_hash` OR `closed_pdf`, `pending` included), new `hasEnded` = `closed_on` set (`src/close/mark.ts`); Close accepts a `closed_on`-only note and keeps its date; Reopen finds such a note "not closed" and keeps `closed_on`; the scan gives no row for `closed_on` alone (a note with Status Closed and only `closed_on` still has the "marked Closed but not closed" row); Tidy rule `exp-end` (`src/kit/tidy.ts`, `src/kit/exp-end.ts`, opt-in). The board and completed view, which read `closed_on`, are unaffected. The risk below is resolved this way.
+  - **RISK (resolved by the build above): `closed_on` is the Close mark.** `isClosed` is true when `closed_on` holds a value (`src/close/mark.ts:37-40`; used at `src/close/commands.ts:65` and `src/close/scan.ts:25`). Moving an old `Exp. End` into `closed_on` would therefore, unless the code changes:
     1. make Close experiment refuse the note ("already closed", `commands.ts:65`) although it has no hash and no PDF;
     2. drop the note from the Check / Tidy row "Lab notes marked Closed but not closed" (`scan.ts:26-27`, `src/kit/setup-check.ts:387`) when Status is Closed: the row is hidden by a date that is not a Close;
     3. make Reopen experiment offer to reopen it and then DELETE `closed_on` (`commands.ts:120`), i.e. lose the end date;
@@ -198,7 +199,7 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 - Obsidian re-saves `.base` files on toolbar use, so most vaults count as "edited" and keep the old `Lab book base.base`: the new views reach them only through Compare / merge. Mitigation with Q9 A: the completed view is a new file. With the proposed Q9 B this is the accepted cost (owner restores the kit original, or uses Compare / merge).
 - The own view type is unknown with the plugin off: every `.base` keeps a built-in fallback view.
 - Body search on hundreds of notes on a phone may be slow: the body part runs only on Enter / the toggle.
-- Old notes keep a hand-typed `Exp. End` until Tidy moves it; `closed_on` is empty on running and never-closed notes, so Ended is blank there. The migration risk in Q7 (the Close mark) is open.
+- Old notes keep a hand-typed `Exp. End` until Tidy moves it; `closed_on` is empty on running and never-closed notes, so Ended is blank there. The migration risk in Q7 (the Close mark) is resolved (Q7b a, built 2026-10-20: `closed_on` alone = ended, not closed).
 - Bases is undocumented in places (toolbar search, duplicate view); anything not measured in Phase 0 is not promised in UI text.
 
 ## Open questions (multiple choice, rec. first; BACKLOG "Lab notes board and completed view")
@@ -208,7 +209,7 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 4. **Which parts get Lab Kit's own look**: A (rec.) the completed table now; summary board and running board after the table's look is approved · B all three in this plan (adds Phase 6) · C built-in Bases views only, styled with CSS.
 5. **The 30-day clock for Closed cards**: A (rec.) 30 days from `closed_on` (from the last edit when there is none) · B from the last edit, as now (an edit brings a card back).
 6. **Chemical "Used in" list in chemical notes**: A (rec.) yes, an embedded base in the Chemical database template + an Alt+S snippet for old chemical notes · B no, the completed table's Chemicals filter is enough.
-7. **Ended**: ANSWERED, `closed_on` replaces `Exp. End`. Open follow-up: how old notes migrate without breaking the Close mark, see Q7 and BACKLOG.
+7. **Ended**: ANSWERED, `closed_on` replaces `Exp. End`. Follow-up Q7b ANSWERED a and BUILT 2026-10-20 (owner chat): old notes migrate with the Tidy rule `exp-end`; `closed_on` alone is "ended, not closed".
 8. **Making a new saved filter**: ANSWERED A for now (2026-10-20): Lab Kit ships named views; your own come from Bases' toolbar. B (a `Save as view…` button) not now.
 9. **Where the completed view lives**: PROPOSED B, waiting for the owner's yes (owner: running board and completed view must be one click apart, "seamless"): more views inside `Lab book base.base`, toolbar tabs as the switch; cost and alternative A (separate `Completed experiments.base` plus link chips) in "Owner answers 2026-10-20", Q9.
 10. **The look** (mock-up page, section 4): A rows in a card (rec.) · B compact lines · C row cards; and the summary tiles and running cards as drawn, or comments on the page.

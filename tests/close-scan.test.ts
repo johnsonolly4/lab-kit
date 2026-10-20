@@ -36,6 +36,10 @@ describe("scanClosed", () => {
     expect(scan.unclosed.map(n => n.name)).toEqual(["ABC0005", "ABC0006"]);
     expect(scan.edited).toEqual([]);
   });
+  it("closed_on alone (ended, not formally closed) gives no row; with Status Closed it is a 'marked Closed but not closed' row", async () => {
+    const scan = await scanClosed([note("ABC0010", { Status: "Started", closed_on: "2026-09-03" }), note("ABC0011", { Status: "Closed", closed_on: "2026-09-03" })]);
+    expect(scan).toEqual({ edited: [], unclosed: [{ path: "03 Lab Book/Notes/ABC0011.md", name: "ABC0011" }], noPdf: [] });
+  });
   it("closed_pdf: pending is listed; a note with file names is not", async () => {
     const scan = await scanClosed([await closedNote("ABC0008", { closed_pdf: PENDING }), await closedNote("ABC0009")]);
     expect(scan.noPdf.map(n => n.name)).toEqual(["ABC0008"]);

@@ -46,7 +46,6 @@ Status: ${pick(statuses)}
 Exp. Class: ${pick(classes)}
 Plan date: ${iso(d)}
 Exp. Start: ${iso(d)}
-Exp. End: ${iso(addDays(d, 1))}
 Chemicals:
   - "[[${a}]]"
   - "[[${b}]]"

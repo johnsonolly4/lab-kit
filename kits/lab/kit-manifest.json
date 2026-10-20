@@ -54,11 +54,6 @@
         },
         {
           "op": "add-property",
-          "name": "Exp. End",
-          "value": ""
-        },
-        {
-          "op": "add-property",
           "name": "Chemicals",
           "value": ""
         },
@@ -179,8 +174,8 @@
       "src": "Templates/Lab Book Template.md",
       "role": "templates",
       "path": "Lab Book Template.md",
-      "version": "1.3.0",
-      "sha256": "0f54a24bbba9cc30072c614b304d006c4ae45979357ed096c37215b733086751",
+      "version": "1.4.1",
+      "sha256": "41610cb53639ff938bb16fa2103bf5ebc30e86638b31768c309d8b2575fcf02e",
       "renamedFrom": [],
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },

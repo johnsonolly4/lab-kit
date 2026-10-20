@@ -61,7 +61,6 @@ Status: <% /^[\w .-]+$/.test(status) ? status : JSON.stringify(status) %>
 Exp. Class: <% expClass ? JSON.stringify(expClass) : "" %>
 Plan date: <% tp.date.now("YYYY-MM-DD") %>
 Exp. Start:
-Exp. End:
 Chemicals:
 CoSHH:
 RA:

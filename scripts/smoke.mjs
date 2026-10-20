@@ -31,7 +31,6 @@ Status: ${statuses[i % 4]}
 Exp. Class: ${i % 2 ? "Flow RAFT" : "Batch RAFT"}
 Plan date: 2026-01-${String(i + 10)}
 Exp. Start: 2026-01-${String(i + 10)}
-Exp. End: 2026-01-${String(i + 11)}
 Chemicals:
   - "[[Smoke chemical 000${(i % 4) + 1}]]"
 CoSHH: C-${i}

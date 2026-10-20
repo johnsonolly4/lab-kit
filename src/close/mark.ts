@@ -33,10 +33,16 @@ export async function closedHash(text: string): Promise<string> {
   return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** A note is closed when `closed_on` holds a value. Status `Closed` alone does not close. */
+const filled = (v: unknown): boolean => v != null && text(v).trim() !== "";
+
+/** `closed_on` holds a value: the experiment has ended. Alone this is not a formal close (an old note's `Exp. End` moved by Tidy lands here). */
+export function hasEnded(fm: Record<string, unknown> | undefined): boolean {
+  return filled(prop(fm, "closed_on"));
+}
+
+/** A note is formally closed when `closed_on` is set AND Close left its trace: `closed_hash` or `closed_pdf` (`pending` counts). Status `Closed` alone does not close, and neither does a bare `closed_on`. */
 export function isClosed(fm: Record<string, unknown> | undefined): boolean {
-  const v = prop(fm, "closed_on");
-  return v != null && text(v).trim() !== "";
+  return hasEnded(fm) && (filled(prop(fm, "closed_hash")) || filled(prop(fm, "closed_pdf")));
 }
 
 /** The line printed at the foot of every PDF page. */

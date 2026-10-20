@@ -45,13 +45,13 @@ describe("Tidy up notes scan (Phase 7a)", () => {
     const g = group(s, "lab-template-properties");
     expect(g?.changes.map(c => c.path)).toEqual(["03 Lab Book/Notes/ABC0001-A.md", "03 Lab Book/Notes/ABC0002-A.md", "03 Lab Book/Notes/ABC0003-A.md", "03 Lab Book/Notes/ABC0004-A.md", "03 Lab Book/Notes/ABC0006-A.md"]);
     // after the Status rule (the properties are read as they will be), existing values and extra properties stay, only missing keys are added
-    expect(g?.changes[0].after).toBe("Exp. Class: Test\nStatus: Planned\ndate: 2026-01-05\nType:\nPlan date:\nExp. Start:\nExp. End:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:");
-    expect(g?.changes[3].after).toBe("Status: Planned\nType:\nExp. Class:\nPlan date:\nExp. Start:\nExp. End:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:");
+    expect(g?.changes[0].after).toBe("Exp. Class: Test\nStatus: Planned\ndate: 2026-01-05\nType:\nPlan date:\nExp. Start:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:");
+    expect(g?.changes[3].after).toBe("Status: Planned\nType:\nExp. Class:\nPlan date:\nExp. Start:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:");
     expect(g?.changes[4]).toMatchObject({ before: "" });
   });
 
   it("a lab note with a Cloned from property (written only by Clone experiment, like Rig) and the template's properties is left alone", () => {
-    const full = 'Type:\nStatus: Planned\nExp. Class:\nPlan date:\nExp. Start:\nExp. End:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:\nCloned from: "[[ABC0001 - A]]"\nRig: "[[Rig one]]"';
+    const full = 'Type:\nStatus: Planned\nExp. Class:\nPlan date:\nExp. Start:\nChemicals:\nCoSHH:\nRA:\nObjective:\nOutcome:\nCloned from: "[[ABC0001 - A]]"\nRig: "[[Rig one]]"';
     const r = scan([{ path: "03 Lab Book/Notes/ABC0002 - A.md", text: `---\n${full}\n---\n` }], ctx);
     expect(r.groups).toEqual([]);
   });

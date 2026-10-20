@@ -6,6 +6,7 @@ import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
 import { normalisePatch, parseDay, type TodoPatch } from "../planning/todo";
 import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
+import { normaliseDate } from "./exp-end";
 import { headerIcon } from "./icon-list";
 import { withIcon } from "./snippet-icon";
 import { oldStub } from "./snippet-template";
@@ -340,6 +341,31 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   };
   const fmOf = (path: string): string[] => split(effective.get(path) ?? "")?.fm ?? [];
   const kindOf = (path: string): string => values(find(fmOf(path), "kind")).map(lower)[0] ?? "";
+  // Exp. End is retired (Q7b): a hand-typed date moves to `closed_on` (ended, not formally closed). Opt-in: it rewrites a property in old notes.
+  {
+    const g: TidyGroup = { id: "exp-end", title: "Lab notes: Exp. End becomes closed_on", detail: "A lab note with a typed Exp. End date and no closed_on gets that date as closed_on, and the Exp. End line goes. An empty Exp. End line just goes. A date that cannot be read, or a note that has both, is listed and left. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes.filter(x => inFolder(x.path, ctx.labFolder) && /^[A-Za-z]*[0-9]{2,}/.test(baseName(x.path)))) {
+      const fm = fmOf(n.path), e = find(fm, "Exp. End");
+      if (!e) continue;
+      const typed = values(e), c = find(fm, "closed_on");
+      let next: string[];
+      if (!typed.length) next = [...fm.slice(0, e.start), ...fm.slice(e.end)];
+      else if (typed.length > 1) { skipped.items.push({ path: n.path, note: `Exp. End has ${typed.length} values: left as it is` }); continue; }
+      else if (c && values(c).length) { skipped.items.push({ path: n.path, note: `Exp. End (${typed[0]}) and closed_on are both set: left as it is` }); continue; }
+      else {
+        const date = normaliseDate(typed[0]);
+        if (!date) { skipped.items.push({ path: n.path, note: `Exp. End "${typed[0]}" is not a date I can read: left as it is` }); continue; }
+        const rest = c ? [...fm.slice(0, c.start), ...fm.slice(c.end)] : fm;   // an empty closed_on line is replaced by the new one
+        const at = find(rest, "Exp. End");
+        if (!at) continue;
+        next = [...rest.slice(0, at.start), line("closed_on", date), ...rest.slice(at.end)];
+      }
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: next.join("\n") });
+      put(n.path, next.join("\n"));
+    }
+    if (g.changes.length) groups.push(g);
+  }
+
   const mt = ctx.meetings;
   if (mt) {
     const g: TidyGroup = { id: "meetings", title: "Meetings: series hub and links", detail: "The old weekly-meeting hub becomes a meeting series, meeting notes get a series link and to-dos flagged with meeting: true link to the first series.", changes: [], ask: "meetings" };

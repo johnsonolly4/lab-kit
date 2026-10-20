@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { closedHash, closedFooter, isClosed, withoutClosedLines } from "../src/close/mark";
+import { closedHash, closedFooter, hasEnded, isClosed, withoutClosedLines } from "../src/close/mark";
 
 const note = (fm: string, body = "Dry the beads first.\n") => `---\n${fm}\n---\n${body}`;
 const base = note("Exp. Class: RAFT\nStatus: Running");
@@ -29,14 +29,26 @@ describe("closedHash", () => {
   });
 });
 
-describe("isClosed", () => {
-  it("is true only for a non-empty closed_on", () => {
-    expect(isClosed({ closed_on: "2026-10-20" })).toBe(true);
-    expect(isClosed({ Closed_On: "2026-10-20" })).toBe(true);
-    expect(isClosed({ closed_on: "" })).toBe(false);
-    expect(isClosed({ closed_on: null })).toBe(false);
+describe("isClosed / hasEnded", () => {
+  const on = "2026-10-20";
+  it("truth table: closed only when closed_on AND (closed_hash OR closed_pdf, pending included)", () => {
+    expect(isClosed({ closed_on: on, closed_hash: "ab" })).toBe(true);
+    expect(isClosed({ closed_on: on, closed_pdf: "pending" })).toBe(true);
+    expect(isClosed({ closed_on: on, closed_pdf: ["a.pdf"] })).toBe(true);
+    expect(isClosed({ Closed_On: on, Closed_Hash: "ab" })).toBe(true);
+    expect(isClosed({ closed_on: on })).toBe(false);
+    expect(isClosed({ closed_on: on, closed_hash: "", closed_pdf: null })).toBe(false);
+    expect(isClosed({ closed_on: on, closed_pdf: [] })).toBe(false);
+    expect(isClosed({ closed_on: "", closed_hash: "ab" })).toBe(false);
+    expect(isClosed({ closed_hash: "ab", closed_pdf: "pending" })).toBe(false);
     expect(isClosed({ Status: "Closed" })).toBe(false);
     expect(isClosed(undefined)).toBe(false);
+  });
+  it("hasEnded is a non-empty closed_on alone", () => {
+    expect(hasEnded({ closed_on: on })).toBe(true);
+    expect(hasEnded({ closed_on: "" })).toBe(false);
+    expect(hasEnded({ closed_hash: "ab" })).toBe(false);
+    expect(hasEnded(undefined)).toBe(false);
   });
 });
 

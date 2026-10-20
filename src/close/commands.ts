@@ -64,17 +64,19 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
   const fm = h.frontmatter();
   if (isClosed(fm)) { h.notice(MSG.alreadyClosed(closedOn(fm))); return; }
   if (h.canPdf && !h.folders.length) { h.notice(MSG.noFolder); return; }
-  if (!(await h.confirm("close", h.today, h.canPdf ? h.folders : []))) return;
+  // A note that has only `closed_on` (ended, never formally closed) keeps that date: the PDF footer, its name and the mark use it.
+  const date = closedOn(fm) || h.today;
+  if (!(await h.confirm("close", date, h.canPdf ? h.folders : []))) return;
 
   const hash = await closedHash(await h.readText());
   const files: string[] = [];
   let pdfMissing = false;
   if (h.canPdf) {
-    const footer = closedFooter(h.today, h.name, hash);
+    const footer = closedFooter(date, h.name, hash);
     const bytes = await h.makePdf(footer);
     if (!bytes) pdfMissing = true;
     else {
-      const name = pdfFileName(h.name, h.today, n => h.folders.some(f => h.fileExists(f, n)));
+      const name = pdfFileName(h.name, date, n => h.folders.some(f => h.fileExists(f, n)));
       for (const folder of h.folders) {
         try { h.saveFile(folder, name, bytes); if (!files.includes(name)) files.push(name); }
         catch (e) { h.logError(e); h.notice(MSG.failed(folder)); }
@@ -82,7 +84,7 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
     }
   }
   await h.editFrontmatter(f => {
-    f.closed_on = h.today;
+    f.closed_on = date;
     f.closed_hash = hash;
     f.closed_pdf = files.length ? files : PENDING;
     f.Status = CLOSED_STATUS;
@@ -113,8 +115,8 @@ export async function makeClosedPdf(h: CloseHost): Promise<boolean> {
 
 export async function reopenExperiment(h: CloseHost): Promise<void> {
   if (!h.isLabNote) { h.notice(MSG.notLab); return; }
-  const date = closedOn(h.frontmatter());
-  if (!date) { h.notice("This note is not closed."); return; }
+  const fm = h.frontmatter(), date = closedOn(fm);
+  if (!isClosed(fm)) { h.notice("This note is not closed."); return; }
   if (!(await h.confirm("reopen", date, []))) return;
   await h.editFrontmatter(f => {
     delete f.closed_on;

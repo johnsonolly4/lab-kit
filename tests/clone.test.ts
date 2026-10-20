@@ -61,7 +61,7 @@ describe("cloneLabNote", () => {
     expect(t).toContain("Status: Planned\n");
     expect(t).toContain("Plan date: 2026-10-13\n");
     expect(t).toMatch(/\nExp\. Start:\n/);
-    expect(t).toMatch(/\nExp\. End:\n/);
+    expect(t).not.toContain("Exp. End");   // retired: the clone neither writes nor resets it
     expect(t).toMatch(/\nOutcome:\n/);
     expect(t).not.toContain("Worked, Mn");
     for (const kept of ["Type: Experiment", "Exp. Class: Flow RAFT", 'Rig: "[[Rig one]]"', "CoSHH: C-12", "RA: RA-7", "Objective: Test the reactor", '  - "[[Styrene]]"', '  - "[[AIBN]]"', "  - vt"])

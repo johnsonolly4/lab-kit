@@ -47,11 +47,22 @@ describe("closeExperiment: refusals (nothing is written, nobody is asked)", () =
     expect(state.fm.closed_on).toBeUndefined();
   });
   it("already closed", async () => {
-    const { host, state } = fake({}, { closed_on: "2026-10-01", Status: "Closed" });
+    const { host, state } = fake({}, { closed_on: "2026-10-01", closed_hash: "abc", closed_pdf: "pending", Status: "Closed" });
     await closeExperiment(host);
     expect(state.notices).toEqual([MSG.alreadyClosed("2026-10-01")]);
     expect(state.saved).toEqual([]);
     expect(state.asked).toEqual([]);
+  });
+  it("a note with only closed_on (ended, not formally closed) is NOT refused: it is closed, keeping its date", async () => {
+    const { host, state, yaml } = fake({}, { "Exp. Class": "RAFT", Status: "Started", closed_on: "2026-09-03" });
+    const before = await closedHash(yaml() + BODY);
+    await closeExperiment(host);
+    expect(state.asked).toEqual(["close:/pdf/a|/pdf/b"]);
+    expect(state.fm.closed_on).toBe("2026-09-03");
+    expect(state.fm.closed_hash).toBe(before);
+    expect(state.fm.closed_pdf).toEqual(["ABC0011 - RAFT test (closed 2026-09-03).pdf"]);
+    expect(state.fm.Status).toBe("Closed");
+    expect(state.footers).toEqual([closedFooter("2026-09-03", "ABC0011 - RAFT test", before)]);
   });
   it("no PDF folder on a computer", async () => {
     const { host, state } = fake({ folders: [] });
@@ -135,6 +146,13 @@ describe("reopenExperiment", () => {
     const b = fake({ isLabNote: false });
     await reopenExperiment(b.host);
     expect(b.state.notices).toEqual([MSG.notLab]);
+  });
+  it("a bare closed_on is not a close: Reopen says so and keeps it", async () => {
+    const { host, state } = fake({}, { Status: "Started", closed_on: "2026-09-03" });
+    await reopenExperiment(host);
+    expect(state.asked).toEqual([]);
+    expect(state.notices).toEqual(["This note is not closed."]);
+    expect(state.fm.closed_on).toBe("2026-09-03");
   });
   it("Close then Reopen: the body is byte for byte the same, the mark is gone, the PDF name stays as closed_pdf_old, Status is Started", async () => {
     const { host, state, yaml } = fake();

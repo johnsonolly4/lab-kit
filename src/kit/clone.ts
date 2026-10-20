@@ -56,7 +56,6 @@ const RESET: [RegExp, (o: CloneOptions) => string][] = [
   [/^Status:/, () => "Status: Planned"],
   [/^Plan date:/, o => `Plan date: ${o.today}`],
   [/^Exp\. Start:/, () => "Exp. Start:"],
-  [/^Exp\. End:/, () => "Exp. End:"],
   [/^Outcome:/, () => "Outcome:"],
 ];
 
