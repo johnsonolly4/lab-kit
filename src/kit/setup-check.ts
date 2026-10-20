@@ -5,6 +5,7 @@ import type { ZotlitScan } from "./zotlit";
 import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
+import type { ClosedScan } from "../close/scan";
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
 export const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
@@ -106,6 +107,8 @@ export interface SetupState {
   dataviewInline?: boolean | null;
   /** The type Obsidian has assigned to each property of `PROPERTY_TYPES` (null = none assigned); null when it can't be read; undefined = no rows. */
   propertyTypes?: Record<string, string | null> | null;
+  /** Lab notes closed with Close experiment (see `scanClosed`); `canPdf`: this device can make a PDF. undefined until scanned (no rows). */
+  closed?: ClosedScan & { canPdf: boolean };
 }
 
 export type SetupFix =
@@ -129,7 +132,9 @@ export type SetupFix =
   | { kind: "open-note"; path: string }
   | { kind: "manage" }
   | { kind: "zotlit-fields" }
-  | { kind: "property-type"; name: string; type: string };
+  | { kind: "property-type"; name: string; type: string }
+  | { kind: "close-notes"; paths: string[] }
+  | { kind: "make-pdfs"; paths: string[] };
 
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
@@ -372,6 +377,19 @@ export function checkSetup(s: SetupState): SetupItem[] {
       if (ok && !m.deck) out.push({ id: `meetings-deck:${m.path}`, group: "Meetings", label: `${m.name}: deck for this computer`, ok: false, warn: true, optional: true,
         detail: "No deck location set for this computer yet (deck_windows / deck_mac: a folder of decks, or the path to one deck file). Only Open meeting deck needs it.", fix: { kind: "open-note", path: m.path } });
     }
+  }
+
+  // Close experiment: three cases that need a look. A row appears only when a note is in its case.
+  if (s.closed) {
+    const { edited, unclosed, noPdf, canPdf } = s.closed;
+    const named = (list: { name: string }[]): string => ` ${list.map(n => n.name).join(", ")}.`;
+    const nNotes = (n: number): string => `${n} note${n === 1 ? "" : "s"}`;
+    if (edited.length) out.push({ id: "closed:edited", group: "Lab notes", label: "Closed lab notes edited after closing", ok: false, warn: true,
+      detail: `${nNotes(edited.length)} changed since they were closed.${named(edited)}` });
+    if (unclosed.length) out.push({ id: "closed:unclosed", group: "Lab notes", label: "Lab notes marked Closed but not closed", ok: false, warn: true,
+      detail: `${nNotes(unclosed.length)} marked Closed but not closed.${named(unclosed)}`, fix: { kind: "close-notes", paths: unclosed.map(n => n.path) } });
+    if (noPdf.length) out.push({ id: "closed:no-pdf", group: "Lab notes", label: "Closed lab notes without a PDF", ok: false, warn: true,
+      detail: `${nNotes(noPdf.length)} closed without a PDF.${named(noPdf)}`, fix: canPdf ? { kind: "make-pdfs", paths: noPdf.map(n => n.path) } : undefined });
   }
 
   for (const c of s.css) {

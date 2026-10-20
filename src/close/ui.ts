@@ -1,10 +1,11 @@
 // Close experiment (I24 Phase 3): the confirm windows and the glue between the active note and `closeExperiment` / `reopenExperiment`.
-import { Modal, Notice, type App, type TFile } from "obsidian";
+import { Modal, Notice, TFile, type App } from "obsidian";
 import { cardWindow, winFoot, winIntro } from "../kit/window-look";
 import { labPrefix, localDate } from "../kit/clone";
 import { hasNode } from "../platform";
 import { fileExistsIn, printHtmlToPdf, saveFileTo } from "../node";
 import { closeExperiment, reopenExperiment, type CloseHost } from "./commands";
+import { scanClosed, type ClosedScan } from "./scan";
 import { footerTemplate, renderForPdf } from "./pdf";
 import type { KitData } from "../kit/paths";
 
@@ -30,7 +31,7 @@ class CloseConfirmModal extends Modal {
   onClose(): void { this.contentEl.empty(); if (!this.done) this.answer(false); }
 }
 
-function hostFor(app: App, kit: KitData, file: TFile): CloseHost {
+export function closeHostFor(app: App, kit: KitData, file: TFile): CloseHost {
   const inLabFolder = !!kit.labFolder && file.parent?.path === kit.labFolder && !!labPrefix(file.basename);
   return {
     name: file.basename,
@@ -57,6 +58,13 @@ function hostFor(app: App, kit: KitData, file: TFile): CloseHost {
 export async function runCloseCommand(app: App, kit: KitData, which: "close" | "reopen"): Promise<void> {
   const file = app.workspace.getActiveFile();
   if (!file || file.extension !== "md") { new Notice("This is not a lab note."); return; }
-  const host = hostFor(app, kit, file);
+  const host = closeHostFor(app, kit, file);
   await (which === "close" ? closeExperiment(host) : reopenExperiment(host));
+}
+
+/** The lab notes (numbered notes in the lab notes folder) sorted for Check setup. */
+export function scanLabNotes(app: App, kit: KitData): Promise<ClosedScan> {
+  const folder = kit.labFolder ? app.vault.getFolderByPath(kit.labFolder) : null;
+  const files = (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md" && !!labPrefix(f.basename));
+  return scanClosed(files.map(f => ({ path: f.path, name: f.basename, fm: app.metadataCache.getFileCache(f)?.frontmatter, read: () => app.vault.read(f) })));
 }

@@ -13,6 +13,10 @@ import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
 import { parseSeries } from "../planning/meetings";
 import type { HeaderSettings } from "../header/settings";
+import { hasNode } from "../platform";
+import { closeHostFor, scanLabNotes } from "../close/ui";
+import { closeExperiment, makeClosedPdf } from "../close/commands";
+import type { ClosedScan } from "../close/scan";
 import { cardWindow, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
@@ -89,6 +93,7 @@ export class SetupCheckModal extends Modal {
   private kitFiles: SetupState["kitFiles"];
   private types: SetupState["propertyTypes"];
   private zotlit: ZotlitScan | null = null;
+  private closed: ClosedScan | undefined;
 
   onOpen(): void {
     this.render();
@@ -97,7 +102,7 @@ export class SetupCheckModal extends Modal {
 
   /** Reads again what needs files read (kept files, kit files, ZotLit's settings), then redraws. */
   private async refresh(): Promise<void> {
-    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(),
+    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(), this.loadClosed(),
       (async () => { this.types = this.host.planning?.slot.enabled ? await propertyTypes(this.app, PROPERTY_TYPES.map(p => p.name)) : undefined; })()]);
     if (this.contentEl.isConnected) this.render();
   }
@@ -117,6 +122,11 @@ export class SetupCheckModal extends Modal {
         return { kit, update: names("create", "fast-forward", "merge"), missing: names("missing"), conflict: names("needs-merge") };
       }));
     } catch (e) { console.error(e); }
+  }
+
+  /** The lab notes closed with Close experiment, sorted into the cases the rows report (reads each closed note to compare its hash). */
+  private async loadClosed(): Promise<void> {
+    try { this.closed = await scanLabNotes(this.app, this.host.kit); } catch (e) { console.error(e); }
   }
 
   /** The folders the kit's Set up ZotLit checklist names, from the planning folders setting and the templates folder. */
@@ -147,13 +157,13 @@ export class SetupCheckModal extends Modal {
     el.addClass("lab-kit-win");
     cardWindow(this);
     this.setTitle("Check setup");
-    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit });
+    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit, closed: this.closed && { ...this.closed, canPdf: hasNode() } });
     winIntro(el, "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one.");
     winSummary(el, setupSummary(items));
     for (const it of orderSetupItems(items)) {
       const { row } = winRow(el, { state: setupRowState(it), title: it.label, detail: it.detail, group: it.group });
       const fix = it.fix;
-      if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note", "manage"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
+      if (fix) row.createEl("button", { text: ["plugin", "settings", "open-note", "manage"].includes(fix.kind) ? "Open" : fix.kind === "find-moved" ? "Find" : fix.kind === "close-notes" ? "Close" : fix.kind === "make-pdfs" ? "Make PDF" : "Fix" }).addEventListener("click", () => void this.fix(it, fix));
     }
     const foot = winFoot(el);
     foot.createEl("button", { text: "Check again" }).addEventListener("click", () => void this.refresh());
@@ -203,6 +213,13 @@ export class SetupCheckModal extends Modal {
       case "find-moved": this.after(this.host.findMoved()); return;
       case "property-type": await confirm({ name: `Make ${fix.name} a ${fix.type} property`, desc: "Obsidian's property type (Settings → Properties). Values already typed in notes are not changed.",
         apply: async () => { if (!(await setPropertyType(this.app, fix.name, fix.type))) new Notice("Couldn't set it here. Set the type in a note's properties (click the property's icon)."); } });
+        await this.refresh(); return;
+      case "close-notes":
+        // each note asks in its own window (the Close experiment command's), one after the other
+        for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await closeExperiment(closeHostFor(this.app, this.host.kit, file)); }
+        await this.refresh(); return;
+      case "make-pdfs": await confirm({ name: `Make the PDF of ${fix.paths.length} closed ${fix.paths.length === 1 ? "note" : "notes"}`, desc: "Saved in the PDF folders (Close experiment: PDF folders). Each note's closed_pdf is set to the file names.",
+        apply: async () => { for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await makeClosedPdf(closeHostFor(this.app, this.host.kit, file)); } } });
         await this.refresh(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
