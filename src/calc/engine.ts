@@ -295,7 +295,7 @@ const FUNCS: Record<string, (a: Value[]) => Value> = {
   }
 };
 export const SUPPORTED_FUNCTIONS = [...Object.keys(FUNCS), "IF", "XLOOKUP", "INDEX", "MW", "PROP"];
-const MW_KEYS = ["mw", "mr", "molecular weight", "molecular_weight", "molar mass", "molar_mass", "m_w"];
+export const MW_KEYS = ["mw", "mr", "molecular weight", "molecular_weight", "molar mass", "molar_mass", "m_w"];
 
 /** A workbook = every calc block in one note. env.prop(note, keys) reads note properties. */
 export class Workbook {
