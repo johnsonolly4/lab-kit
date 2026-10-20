@@ -62,7 +62,7 @@ Electron access: `require("electron").remote` exists in Obsidian 1.14.4 (Obsidia
 - Reopen: clears `closed_on` and `closed_hash`; keeps `closed_pdf` as `closed_pdf_old`.
 - Done when: unit tests for refusal cases and a Close / Reopen round trip (body byte for byte); obsidian-check: Close on 0011 writes the PDF to a temp folder, Reopen clears the mark.
 
-### 4. Check setup
+### 4. Check setup (BUILT 2026-10-20, N3d: commits bbf28bd, e41a2e8; (c) not answered by the owner, built as rec. A: rows only, no Close again button; the rows show only for their case, group `Lab notes`, amber; detail = the plan's sentence + the note names; a row's Close button closes each listed note in turn through the Close experiment window, Make PDF asks once, saves with the closing date and the note's own `closed_hash` in the footer and sets `closed_pdf` to the file names; Make PDF has no button on a phone)
 - Files: `src/kit/setup-check.ts` + `setup-check-ui.ts` (rows), tests.
 - Rows: closed notes whose hash no longer matches (edited after closing); `Status: Closed` without `closed_on` (button Close); `closed_pdf: pending` (button Make PDF, desktop).
 - Done when: a test per row on a fixture vault.
