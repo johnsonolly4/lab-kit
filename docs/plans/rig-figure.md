@@ -25,7 +25,7 @@ Black line art on white, bold sans-serif labels with subscripts and units. Symbo
 
 ## Out of scope
 - Chemical structures and reaction schemes (they come from a structure editor); the user places them in the poster tool.
-- A PDF export; any change to the existing rig block, its Mermaid diagram or the summary table (they stay as they are).
+- A PDF export; the summary table (stays as it is). Changes to the rig block (the figure instead of Mermaid), the lab-note snapshot and the rig history moved to `docs/plans/rig-block-no-mermaid.md` (owner, 2026-10-20).
 - Shipping, copying or redrawing the user's group's symbols or the example figures; the example images stay out of the repo.
 - Pictures of instruments (NMR magnet, light-scattering cell): possible only through a pack.
 
@@ -85,6 +85,7 @@ Decided: marks 7-8 need no code (the figure draws the Control / Data lines the t
 - Checked with obsidian-check (a made-up rig): the button opened the window; width 841 mm at 300 dpi showed 9,933 x 4,212 px; Save SVG, Save PNG and a second Save SVG wrote `figure.svg`, `figure.png`, `figure 2.svg` next to the note; the PNG's header read 9933x4212; the SVG had no `<style>` and the label "Lab PC". Under-the-button placement was checked with a faked button position (a hidden test window gives the button none): no dim, left 200 px as given. Not seen: a real window on screen, the PNG opened in another tool, Windows / Linux, a phone.
 
 ### Phase 5: hand layout
+- **Approved (owner, 2026-10-20): drag inside Obsidian, layout stored as plain text** in the rig note (answers BACKLOG "Rig figure R5"). Built as Phase 6 of `docs/plans/rig-block-no-mermaid.md`, which sets the ```` ```rig-layout ```` format (`format: 1` first line, then `ID: x, y` per hand-placed part, figure units on the snap grid; unlisted parts placed automatically; lines naming a part that is gone kept and listed as a problem) and the saved-old-note test. Where the drag happens (the Figure… window or the block) is that plan's N5. The layout text is also stored inside each rig snapshot SVG, so a lab note's snapshot keeps the layout it was drawn with.
 - Depends on: Phase 4
 - Files: `src/rig/figure-ui.ts` (drag a symbol, bend or move a line, snap to a grid, Reset to automatic), a `rig-layout` block read and written in the rig note (`src/rig/layout.ts`: parse, write, merge with the automatic layout when parts are added or removed), tests for the block's round trip and for a part removed or added.
 - Done when: tests; the user moves symbols, saves, closes the note, reopens it and the figure is as left; a new part appears automatically placed without moving the others.
@@ -92,6 +93,7 @@ Decided: marks 7-8 need no code (the figure draws the Control / Data lines the t
 ### Phase 6: module packs
 - Depends on: Phases 2 and 5
 - Files: new `src/rig/packs.ts` (list file format: `kind`, `name`, `file`, connection points, optional size; loader from a vault folder; fallback to generic symbols; safe handling of an SVG file: no scripts, size limit), a "Module pack folder" setting, a command "Check module pack" (what is missing / unreadable / unused), tests with a fictional pack, docs.
+- Note (2026-10-20): a pack symbol is drawn into each rig snapshot SVG (`docs/plans/rig-block-no-mermaid.md`), so old lab notes keep their picture if the pack is later removed or changed; snapshots live in the user's vault only.
 - Done when: tests; a fictional pack with two symbols replaces the generic ones in the figure; a broken pack falls back and says why; a test or check keeps any pack-like asset out of the repo (no `.svg` or `.png` under `src/` or `kits/` except the generic symbols' text in code).
 
 ### Phase 7: docs and tutorial
@@ -100,7 +102,7 @@ Decided: marks 7-8 need no code (the figure draws the Control / Data lines the t
 - Done when: docs match the code; each phase has a checklist row.
 
 ## Order check
-1 → 2 → 3 are pure and testable without Obsidian; 4 needs 2; 5 needs 4; 6 needs the symbol interface from 2 and the window from 5 (to show packs); 7 last. Phase 3 can swap with 4 if the user wants a first picture sooner.
+1 → 2 → 3 are pure and testable without Obsidian; 4 needs 2; 5 needs 4 (and the rig block of `rig-block-no-mermaid.md` Phase 2, where it is built as Phase 6); 6 needs the symbol interface from 2 and the window from 5 (to show packs); 7 last. Phase 3 can swap with 4 if the user wants a first picture sooner.
 
 ## Verification
 The look is the user's to judge, against their own field's figures (ten examples were shown in chat; kept only in `my_work/private/rig-examples/`, never committed). Each of 2, 4, 5, 6 ends with a picture the user opens. A poster check at the end: the SVG placed at A0 width in a drawing tool, no pixelation, text still crisp.

@@ -228,6 +228,7 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner board 2, rig block Q12): white card with black line art.
 - 2026-10-20 (owner board 2, rig block Q13): shrink to the page width, then slide sideways.
 - 2026-10-20 (owner board 2, rig block Q14): not answered directly; the owner says "see my answer to Q11 and evaluate". The evaluation is being written into the rig plan by another agent; nothing decided.
+- 2026-10-20 (Claude, plan only, rig block Q14 follow-up): Q4 evaluated in `docs/plans/rig-block-no-mermaid.md` ("Q4 evaluated"); recommendation for the owner's OK (BACKLOG N1 a): a dated, write-once SVG snapshot embedded with `![[…svg]]` plus the parts tables as plain text; nothing decided yet.
 - 2026-10-20 (owner board 2, plan map export Q1): yes to both: the picture window and a view-only block in a note. The owner will test it and may remove one later if unused.
 - 2026-10-20 (owner board 2, plan map export Q2): layout A, today's layout plus status marks.
 - 2026-10-20 (owner board 2, plan map large projects Q3): NONE of the offered options. The owner wants a separate session that shows real examples from the internet (Notion, other plugins) and how to implement them, then mock-ups, then decide; the research session `planmap-research` was started. Q4 (workstream source) has no answer and is moot until then.
