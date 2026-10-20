@@ -146,6 +146,7 @@ Top row of the board (free since Board B Phase 1, must not be cramped), left to 
 - Size: S
 
 ### Phase 7: Week arrows (F1), desktop and phone
+- **BUILT 2026-10-20 (N2g, 04102a8):** `board-week-nav.ts`, `weekTitle`, offset kept while the view is open; tests 1422; throwaway Obsidian PASS (BACKLOG "N2g leftovers").
 - Depends on: Phase 2.
 - Files: `board-view.ts` (top row, shown-week offset, phone row), `board-card.ts` (`weekTitle`), `styles.css`, tests.
 - Checks: `›` shows Week of 26 Oct with next week's cards; `This week` returns; a drop on Tue of next week writes `2026-10-27`; a past week shows `N done` and takes no drop; at 390 px the week row fits in one line; screenshots.
