@@ -171,6 +171,8 @@ A phase would sit after Phase 2 (status marks, header, key) and reuse its status
 11. **Known answers for tests** (the made-up 59 to-do project in `my_work/mockups/plan-map-export-src/gen-large.ts`, today 2026-10-20): 24 open parents; 21 linked in 9 steps by 6 places, 3 loose; late 2 ("Kinetics repeat at 80 C", "Book GPC time for diblocks"); waiting 2 ("SAXS beamtime proposal", "Supervisor review of draft"); can start 5; later 15; 35 of 59 done; with 30 extra loose to-dos the loose row shows 5 chips and "+28 more not linked". Make the list a test fixture; do not put real names in the repo (these are made up).
 12. **Not verified:** how it looks in real Obsidian, on a pasted slide, and on a phone; the colour pair by the owner's eye; real projects bigger or shaped differently from the synthetic one.
 
+**Owner answers 2026-10-20:** streams, hub print, Home block and dashboard: left out for now. Slide picture = option A while readable, then M1: YES. Properties on M1 chips (point 6): a second line on late / waiting / can-start chips only: YES. Corner dot (point 5): removed: YES. Still open: phone answer, subtasks as counts only. The page has not been redrawn for the last two answers.
+
 Rough effort (guess, Sonnet builder): one session for the pure model (open filter, fold and cap rules, `chooseLayout`, tests), one for geometry and SVG, one for the window note and docs. Needs Phases 1-2 of `plan-map-export.md` first.
 
 Looks: `my_work/mockups/plan-map-big-project-mockups.html` (feedback copy `my_work/mockups/plan-map-big-project-feedback/page.html`); generator `my_work/mockups/plan-map-export-src/gen-big.ts`, page builder `build-big.py`. Question: BACKLOG "Questions for the owner", item "Plan map, big project: examples".
