@@ -48,6 +48,7 @@ Phases 2-5 need `buildFigure`, `figureSvg`, `symbols.ts`, `makeFigure` and the `
 ## Phases
 
 ### Phase 0 — merge `feat/rig-figure` (owner's go first)
+- **DONE 2026-10-20:** merged (commit 57bee8b; backup `backup/pre-rig-merge-2026-10-20`), conflicts resolved: README.md, STATUS.md, docs/architecture.md, docs/changelog.md, docs/obsidian-test-checklist.md, src/kit/paths.ts, src/main.ts (both sides kept); plus `scripts/obsidian-internals.json` (added `src/rig/figure-ui.ts` to `modal-bg`). `check.py --build` PASS, 1695 tests.
 - Files: the 7 conflicting files above (keep both sides; `src/main.ts` keeps both the overnight changes and `new RigRenderer(this, () => settings.figuresFolder)`), `kits/lab/kit-manifest.json` (`npm run kit:manifest`).
 - Done when: `python3 scripts/check.py` PASS on the merged branch; `git diff feat/rig-figure -- src/rig` empty; the rig-figure tests run on the integration branch.
 - New dependencies: none
