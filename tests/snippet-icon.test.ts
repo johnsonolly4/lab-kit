@@ -1,6 +1,6 @@
 // I23 Phase 5: icons live in snippet headers. withIcon (writing one), Change icon… (own file, kit file, header with no icon line) and the Tidy rule that moves the old Snippet icons page into headers.
 import { describe, it, expect } from "vitest";
-import { canChangeIcon, changeIcon, withIcon, type IconDeps } from "../src/kit/snippet-icon";
+import { canChangeIcon, changeIcon, keepOwnIcon, withIcon, type IconDeps } from "../src/kit/snippet-icon";
 import { scan, type TidyContext, type TidyFile } from "../src/kit/tidy";
 import { applyTidy, type TidyIO } from "../src/kit/tidy-apply";
 import { selectChanges } from "../src/kit/tidy";
@@ -135,5 +135,27 @@ describe("no code reads the old Snippet icons setting except the Tidy rule", () 
     const { execSync } = await import("node:child_process");
     const hits = execSync("grep -rl snippetIcons src kits --include=*.ts --include=*.js || true", { encoding: "utf8" }).split("\n").filter(Boolean).sort();
     expect(hits).toEqual(["src/kit/paths.ts", "src/kit/tidy-ui.ts", "src/kit/tidy.ts"]);
+  });
+});
+
+describe("keepOwnIcon: a kit update meets a file where only the icon was changed", () => {
+  const BASE = "---\ntitle: Sample list\nicon: list\ndesc: x\n---\nbody {{a}}\n";
+  const NEW = "---\ntitle: Sample list\nicon: list\ndesc: y\n---\nbody {{a}} {{b}}\n";
+  it("keeps the user's icon in the new kit text", () => {
+    expect(keepOwnIcon(BASE, BASE.replace("icon: list", "icon: flask-conical"), NEW)).toBe(NEW.replace("icon: list", "icon: flask-conical"));
+  });
+  it("keeps it when the new kit text has no icon line, and when the user removed theirs", () => {
+    const noIcon = NEW.replace("icon: list\n", "");
+    expect(keepOwnIcon(BASE, BASE.replace("icon: list", "icon: star"), noIcon)).toBe(noIcon.replace("title: Sample list\n", "title: Sample list\nicon: star\n"));
+    expect(keepOwnIcon(BASE, BASE.replace("icon: list\n", ""), NEW)).toBe(NEW.replace("icon: list\n", ""));
+  });
+  it("is null when another header line or the body also changed", () => {
+    expect(keepOwnIcon(BASE, BASE.replace("icon: list", "icon: star").replace("desc: x", "desc: mine"), NEW)).toBeNull();
+    expect(keepOwnIcon(BASE, BASE.replace("icon: list", "icon: star") + "more\n", NEW)).toBeNull();
+    expect(keepOwnIcon(BASE, BASE.replace("icon: list", "icon: star").replace(/\n/g, "\r\n"), NEW)).toBeNull();
+  });
+  it("is null when nothing changed, or there is no header", () => {
+    expect(keepOwnIcon(BASE, BASE, NEW)).toBeNull();
+    expect(keepOwnIcon("plain\n", "plain\nx\n", "plain\ny\n")).toBeNull();
   });
 });

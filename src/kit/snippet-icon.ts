@@ -64,3 +64,35 @@ export async function changeIcon(d: IconDeps, path: string, current: string): Pr
   await d.write(target, next);
   return { icon, path: target, copied: kit };
 }
+
+/** Where the icon line sits in a header: the index of the `icon:` line (-1 = none) and the header's last line (`---`, or the `<%*` stub's top); end < 0 = no header. Lines are split on "\n" only, so a "\r" stays part of its line. */
+function iconSlot(lines: string[]): { at: number; end: number; title: number; stub: boolean } {
+  if (lines[0] === "---" || lines[0] === "---\r") {
+    const end = lines.findIndex((l, i) => i > 0 && l.replace(/\r$/, "") === "---");
+    if (end > 0) return { at: lines.findIndex((l, i) => i > 0 && i < end && /^icon:/.test(l)), end, title: lines.findIndex((l, i) => i > 0 && i < end && /^title:/.test(l)), stub: false };
+  } else if (lines[0].trim() === "<%*") return { at: lines.findIndex(l => /^\s*\/\/\s*icon:/.test(l)), end: 0, title: -1, stub: true };
+  return { at: -1, end: -1, title: -1, stub: false };
+}
+
+/**
+ * A kit update meets a kit file whose only edit is its `icon:` line (Change icon… in the file itself). `base` = the kit text it was installed from, `cur` = the file now,
+ * `kitNew` = the new kit text. Returns `kitNew` with the user's icon line kept (added, replaced or removed to match `cur`), or null when the icon is not the only difference
+ * (any other line, the body or a line ending differs: the normal "changed by you" path) or there is nothing to keep (same icon, or a file with no header).
+ */
+export function keepOwnIcon(base: string, cur: string, kitNew: string): string | null {
+  const b = base.split("\n"), c = cur.split("\n"), k = kitNew.split("\n");
+  const sb = iconSlot(b), sc = iconSlot(c), sk = iconSlot(k);
+  if (sb.end < 0 || sc.end < 0 || sk.end < 0 || sb.stub !== sc.stub || sb.stub !== sk.stub) return null;
+  const without = (l: string[], at: number): string[] => (at < 0 ? l : l.filter((_, i) => i !== at));
+  const rb = without(b, sb.at), rc = without(c, sc.at);
+  if (rb.length !== rc.length || rb.some((l, i) => l !== rc[i])) return null;
+  if ((sb.at < 0 ? null : b[sb.at]) === (sc.at < 0 ? null : c[sc.at])) return null;
+  const rest = without(k, sk.at);
+  if (sc.at < 0) return rest.join("\n");
+  const line = c[sc.at];
+  if (sk.at >= 0) return k.map((l, i) => (i === sk.at ? line : l)).join("\n");
+  // the new kit text has no icon line: add the user's where Change icon… adds one
+  const title = sk.title;
+  const after = sk.stub ? 1 : title > 0 ? title + 1 : sk.end;
+  return [...rest.slice(0, after), line, ...rest.slice(after)].join("\n");
+}

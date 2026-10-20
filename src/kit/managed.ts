@@ -7,6 +7,7 @@
 //  - "needs-merge" (the same lines changed on both sides) is only reported and left untouched until you settle it in the merge window (resolveManaged)
 import type { DataAdapter } from "obsidian";
 import { merge3 } from "./merge";
+import { keepOwnIcon } from "./snippet-icon";
 import type { Migration } from "./tidy";
 import { kitEnsureDir, kitIsBackup, kitJoin, kitParent, type Roles } from "./paths";
 
@@ -57,6 +58,8 @@ export interface ManagedItem {
   untracked: boolean;
   /** action "merge": your edits and the kit's combined (what would be written). */
   merged?: string;
+  /** action "merge": the only edit of yours is the `icon:` line; `merged` is the new kit text with your icon kept. */
+  iconOnly?: boolean;
   /** action "needs-merge": how many places both sides changed differently (absent when no merge was tried). */
   conflicts?: number;
   /** The kit renamed this file: where your copy is now. Applying the update writes it at `dest` and removes this one (backed up first). */
@@ -64,7 +67,7 @@ export interface ManagedItem {
 }
 /** Files the old folder updater wrote: path -> SHA-1 of what it wrote, and how to compute that hash. */
 export interface LegacyRecord { files: Record<string, string>; hash: (text: string) => Promise<string> }
-export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "merged" | "adopted" | "skipped" | "moved"; backup?: string }
+export interface ManagedResult { id: string; dest: string; action: ManagedAction; outcome: "created" | "updated" | "merged" | "adopted" | "skipped" | "moved"; backup?: string; iconOnly?: boolean }
 
 /** Actions on which a file the kit renamed is moved to its new name (the others leave it where it is). */
 const MOVABLE: ManagedAction[] = ["up-to-date", "fast-forward", "merge"];
@@ -169,7 +172,11 @@ export async function planManaged(adapter: ManagedAdapter, bundle: EmbeddedKit, 
     else if (st && st.installedHash !== kitHash) {
       const baseFile = baseDir ? kitJoin(baseDir, `${file.id}.txt`) : null;
       if (baseFile && await adapter.exists(baseFile)) {
-        const m = merge3(await adapter.read(baseFile), cur, text);
+        const base = await adapter.read(baseFile);
+        // Only your icon: line differs from what the kit installed: the rest of the file updates, your icon stays (a normal merge could meet the kit's own icon line)
+        const keepIcon = keepOwnIcon(base, cur, text);
+        if (keepIcon !== null) { items.push(item("merge", curHash, { merged: keepIcon, iconOnly: true })); continue; }
+        const m = merge3(base, cur, text);
         items.push(m.clean ? item("merge", curHash, { merged: m.text }) : item("needs-merge", curHash, { conflicts: m.conflicts }));
       } else items.push(item("needs-merge", curHash));
     } else items.push(item("user-modified", curHash));
@@ -364,7 +371,7 @@ export async function applyManaged(adapter: ManagedAdapter, bundle: EmbeddedKit,
       const backup = await backupFile(adapter, it, opts);
       await adapter.write(it.dest, it.merged);
       await rememberFile(adapter, next, it, opts, true);   // base = the kit's text, so the next merge starts from this kit version
-      results.push({ id, dest: it.dest, action: it.action, outcome: "merged", backup });
+      results.push({ id, dest: it.dest, action: it.action, outcome: "merged", backup, ...(it.iconOnly ? { iconOnly: true } : {}) });
       log("merge", it.dest, "backup", backup);
     } else {
       // user-modified / needs-merge / keep / detached are never written by apply, even if a caller selects them
@@ -467,6 +474,9 @@ export function setDetached(state: ManagedState | null, id: string, detached: bo
   return true;
 }
 
+/** The one line a Review update… row and the report show for a kit file where only the icon was changed. */
+export const ICON_ONLY_LINE = "Only your icon changed: kept.";
+
 /** Plain-words status for a plan item (the labels in the Manage kit files window). */
 export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: string; tone: "ok" | "info" | "warn" | "muted" } {
   switch (item.action) {
@@ -474,7 +484,7 @@ export function statusOf(item: ManagedItem, st?: ManagedFileState): { label: str
     case "fast-forward": return { label: "Update available", tone: "info" };
     case "create": return { label: "New", tone: "info" };
     case "user-modified": return st?.merged ? { label: "Merged", tone: "info" } : { label: "Changed by you", tone: "warn" };
-    case "merge": return { label: "Merges cleanly", tone: "info" };
+    case "merge": return item.iconOnly ? { label: ICON_ONLY_LINE, tone: "info" } : { label: "Merges cleanly", tone: "info" };
     case "needs-merge": return { label: "Conflict", tone: "warn" };
     case "missing": return { label: "Missing", tone: "warn" };
     case "keep": return kitKept(item, st) ? { label: "Newer kit version available (you kept yours)", tone: "muted" } : kitHasNewer(item, st) ? { label: "Newer kit version available", tone: "info" } : st ? { label: "Up to date with the kit", tone: "ok" } : { label: "Kept (your settings)", tone: "muted" };

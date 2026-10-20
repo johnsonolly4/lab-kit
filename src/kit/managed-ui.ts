@@ -3,7 +3,7 @@
 import { Modal, Notice, Setting, parseYaml, setIcon, type App, type Plugin, type TFile } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
-  kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  ICON_ONLY_LINE, kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
 import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary, tickAllLine, updateLabel } from "./managed-look";
@@ -500,7 +500,7 @@ class KitReviewSection {
   /** Draws one top-box row for `it`: the same boxes as before (recreate / merge / add / update), at the row's right end, centred. `tag` is the kit's name when there are several kits. */
   drawTopRow(parent: HTMLElement, it: ManagedItem, tag: string): void {
     const note = it.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it." : "";
-    const { row, text } = winRow(parent, { state: actionWinState(it.action), title: it.dest, detail: [TOP_LINES[it.action], it.file.desc, note].filter(Boolean).join(" · ") });
+    const { row, text } = winRow(parent, { state: actionWinState(it.action), title: it.dest, detail: [it.iconOnly ? ICON_ONLY_LINE : TOP_LINES[it.action], it.file.desc, note].filter(Boolean).join(" · ") });
     if (tag) text.querySelector(".lab-kit-win-title")?.createSpan({ cls: "lab-kit-badge", text: tag });
     const box = (word: string, on: boolean, set: (on: boolean) => void): void => {
       const label = row.createEl("label", { cls: "lab-kit-win-tick" });
@@ -800,7 +800,7 @@ export class KitReportModal extends Modal {
       if (!group.length) continue;
       const open = o === "created" || o === "updated" || o === "merged" || o === "moved" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
       const det = winFold(contentEl, { title: names[o], count: group.length, open }).body;
-      for (const r of group) winRow(det, { state: outcomeWinState(o), title: r.dest, detail: r.backup ? `Old copy: ${r.backup}` : o === "skipped" ? r.action : undefined });
+      for (const r of group) winRow(det, { state: outcomeWinState(o), title: r.dest, detail: r.backup ? `${r.iconOnly ? `${ICON_ONLY_LINE} ` : ""}Old copy: ${r.backup}` : o === "skipped" ? r.action : undefined });
     }
     const foot = winFoot(contentEl);
     foot.addClass("lab-kit-sticky-foot");   // Close stays on screen, as in the Kit files window

@@ -130,7 +130,7 @@ It only redraws when this note's Chemicals or a linked chemical note changes. Th
 
 ## Built-in kit
 The templates (Lab Book, Alt+S menu, one file per snippet), the Templater scripts and a CSS snippet are bundled inside the plugin. Updating the plugin brings the new kit, but your files only change when you say so:
-- **Review update…** previews every file (new, updated, changed by you, missing) and writes nothing until you press **Apply**. Each file has a tick box, so you can leave single files out.
+- **Review update…** previews every file (new, updated, changed by you, missing) and writes nothing until you press **Apply**. Each file has a tick box, so you can leave single files out. A kit file where the only edit is its `icon:` line is updated with your icon kept (the row says **Only your icon changed: kept.**).
 - **Update all safe files** adds new files and updates the ones you never edited.
 - **Manage files…** lists every kit file with a status and buttons to update, restore the original, detach, or open it; files that need action come first. Each snippet row has **Make my own copy**: it asks for a name and saves a plain, editable note in the Snippets folder.
 - A file you edited is never overwritten. If your changes and the kit's touch different lines you can **merge**; if they touch the same lines you **resolve** them change by change.
