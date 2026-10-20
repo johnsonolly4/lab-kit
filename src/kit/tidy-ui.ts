@@ -1,7 +1,7 @@
 // Tidy up notes window: the scan's result as a before (left) / after (right) split view, one tick box per rule, an "Only reported" group, Copy report.
 // Nothing is written until: the backup box is ticked, Change notes… is pressed and the second window is confirmed (Phase 7b).
 import { Modal, Notice, type App } from "obsidian";
-import { PLANNING_FOLDER_DEFAULTS, kitParent, kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
+import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitParent, kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { ensureFolder } from "./ensure-folder";
@@ -38,6 +38,7 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
     settingSnapshot: target => settingSnapshot(app, target),
     setSetting: async c => c.target === "metabind-button" ? setMetaBindActions(app, c.key, c.from, c.to) : setTemplaterPath(app, c.target, c.key, c.from as string, c.to as string),
     create: async (p, text) => { await ensureFolder(app.vault, kitParent(p)); await app.vault.create(p, text); },
+    trash: async p => { const f = file(p); if (f) await app.fileManager.trashFile(f); },
     rename: async (from, to) => {
       const f = app.vault.getAbstractFileByPath(from);
       if (!f) return;
@@ -72,6 +73,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     contractFolders: planningOn ? [...new Set(contract)] : [],
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
+    snippetsFolder: kitJoin(host.managed.templatesFolder(), "Snippets"),
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
     projectsFolder: planningOn ? pf.projects : undefined,
     buttonFolders: planningOn ? [pf.planning, pf.projects, pf.meetings, pf.daily] : undefined,
@@ -189,6 +191,7 @@ export class TidyNotesModal extends Modal {
         if (indices.length === 1) {
           single(line, indices[0]);
           if (c.to !== undefined) { line.createSpan({ text: `${c.path} → ${c.to}${c.note ? ` (${c.note})` : ""}` }); continue; }
+          if (c.trash) { line.createSpan({ text: `${c.path} → Obsidian's trash${c.note ? ` (${c.note})` : ""}` }); continue; }
           this.path(line, c.path, c.create ? "new note" : c.body ? "page" : "");
           this.change(block, line, c);
           continue;
@@ -333,7 +336,7 @@ export class TidyNotesModal extends Modal {
     const backups = this.host.managed.roles().backups;
     try {
       const out = await applyTidy(vaultIO(this.app, backups, new Date().toISOString()), changes);
-      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, `${out.created.length} created`, `${out.settings.length} settings`, `${out.skipped.length} skipped`];
+      const parts = [`${out.changed.length} notes changed`, `${out.moved.length} moved`, ...(out.trashed.length ? [`${out.trashed.length} to the trash`] : []), `${out.created.length} created`, `${out.settings.length} settings`, `${out.skipped.length} skipped`];
       this.message = `${parts.join(", ")}. Backups: ${backups}.${out.skipped.length ? ` Skipped: ${out.skipped.map(x => `${x.path} (${x.why})`).join("; ")}.` : ""}`;
       new Notice(parts.join(", ") + ".");
       const dated = this.result ? datedTodos(this.result, changes, out.changed) : 0;

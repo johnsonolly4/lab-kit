@@ -16,6 +16,8 @@ export interface TidyIO {
   /** Notes (other than the given ones) whose links point at one of the files: a move rewrites them. */
   linkedFrom(paths: string[]): string[];
   rename(from: string, to: string): Promise<void>;
+  /** Sends a file to Obsidian's trash. Missing = the vault cannot trash (the change is skipped). */
+  trash?(path: string): Promise<void>;
   /** Makes a new note (folders as needed). Only called when `exists(path)` is false. */
   create(path: string, text: string): Promise<void>;
   /** The saved value of a settings target as text (JSON), for the backup. */
@@ -27,6 +29,7 @@ export interface TidyIO {
 export interface TidyOutcome {
   changed: string[];
   moved: { from: string; to: string }[];
+  trashed: string[];
   created: string[];
   settings: string[];
   skipped: { path: string; why: string }[];
@@ -34,12 +37,12 @@ export interface TidyOutcome {
   backups: Record<string, string>;
 }
 
-/** Applies the changes: properties first, then moves, then new notes, then plugin settings (backed up as JSON under settings/). A change that no longer fits (note edited, place taken) is skipped and named, never forced. */
+/** Applies the changes: properties first, then moves, then files to the trash, then new notes, then plugin settings (backed up as JSON under settings/). A change that no longer fits (note edited, place taken) is skipped and named, never forced. */
 export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<TidyOutcome> {
-  const out: TidyOutcome = { changed: [], moved: [], created: [], settings: [], skipped: [], backups: {} };
+  const out: TidyOutcome = { changed: [], moved: [], trashed: [], created: [], settings: [], skipped: [], backups: {} };
   const backUp = async (path: string, text: string): Promise<void> => { if (!(path in out.backups)) out.backups[path] = await io.backup(path, text); };
 
-  for (const c of changes.filter(x => x.to === undefined && !x.create && !x.setting && !x.body)) {
+  for (const c of changes.filter(x => x.to === undefined && !x.create && !x.setting && !x.body && !x.trash)) {
     try {
       const text = await io.read(c.path);
       if (text === null) { out.skipped.push({ path: c.path, why: "the note is gone" }); continue; }
@@ -76,6 +79,17 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
       }
       await io.rename(c.path, to);
       out.moved.push({ from: c.path, to });
+    } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
+  }
+
+  for (const c of changes.filter(x => x.trash)) {   // a copy to the backups folder, then the trash
+    try {
+      const text = await io.read(c.path);
+      if (text === null) { out.skipped.push({ path: c.path, why: "the file is gone" }); continue; }
+      if (!io.trash) { out.skipped.push({ path: c.path, why: "this vault cannot move files to the trash" }); continue; }
+      await backUp(c.path, text);
+      await io.trash(c.path);
+      out.trashed.push(c.path);
     } catch (e) { out.skipped.push({ path: c.path, why: (e as Error).message }); }
   }
 

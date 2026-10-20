@@ -6,6 +6,7 @@ import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
 import { normalisePatch, parseDay, type TodoPatch } from "../planning/todo";
 import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
+import { oldStub } from "./snippet-template";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
 import type { WinState } from "./window-look";
 
@@ -55,6 +56,8 @@ export interface TidyContext {
   hubTemplates?: { project: string; topic: string; series: string };
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
+  /** The Snippets folder of the Lab kit's templates. Missing = the old-stub rule is off. */
+  snippetsFolder?: string;
   /** I2: every note is read, for kept kit queries and your own queries that read the old to-do `day`. Missing = those rules are off. */
   todoQueries?: boolean;
 }
@@ -85,6 +88,8 @@ export interface TidyChange {
   text?: string;
   /** The page below the properties is replaced: `before` / `after` are that page's text, not the properties. */
   body?: boolean;
+  /** The file goes to Obsidian's trash (the user's own trash setting decides where); `before` / `after` are empty. A copy goes to the backups folder first. */
+  trash?: boolean;
   /** A plugin setting rather than a note: `path` is the label shown, `before` / `after` the lines shown. */
   setting?: TidySetting;
 }
@@ -257,7 +262,7 @@ function isHubName(path: string): boolean {
 /** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js, and for the to-do query rules.) */
 export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
   if (!isNote(path) || hidden(path)) return false;
-  return readAll || !!ctx.todoQueries || readForRules(path, ctx);
+  return readAll || !!ctx.todoQueries || readForRules(path, ctx) || (!!ctx.snippetsFolder && parentOf(path) === ctx.snippetsFolder.replace(/\/+$/, ""));
 }
 /** The notes the folder rules read (the button rule looks only at these, unless a view.js made the scan read every note). */
 function readForRules(path: string, ctx: TidyContext): boolean {
@@ -579,6 +584,18 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   }
   if (missing.changes.length) groups.push(missing);
 
+  // Snippets: the old NMR / GPC / DLS stub files (the Alt+S menu lists those three itself since Phase 3). Opt-in: a file goes to the trash.
+  if (ctx.snippetsFolder) {
+    const folder = ctx.snippetsFolder.replace(/\/+$/, "");
+    const stubs: TidyGroup = { id: "snippet-stubs", title: "Snippets: old NMR, GPC and DLS files", detail: "The menu now lists NMR, GPC and DLS itself. These files show them a second time. Moved to Obsidian's trash (you can get them back). Not ticked until you tick it; each file is copied to the backups folder first.", changes: [], optIn: true };
+    for (const n of notes) {
+      if (parentOf(n.path) !== folder) continue;
+      const stub = oldStub(n.text ?? "");
+      if (stub && ["nmr", "gpc", "dls"].includes(stub.run)) stubs.changes.push({ path: n.path, before: "", after: "", trash: true, note: stub.run.toUpperCase() });
+    }
+    if (stubs.changes.length) groups.push(stubs);
+  }
+
   // Plugin settings (Phase 7c-2): Templater paths into moved folders, Meta Bind buttons that run a template file
   const settingsReported: TidyReported[] = [];
   const st = ctx.settings;
@@ -748,7 +765,7 @@ export function pageSummary(before: string, after: string): PageSummary {
 export function batchChanges(changes: TidyChange[]): { indices: number[] }[] {
   const out: { indices: number[] }[] = [], at = new Map<string, number>();
   changes.forEach((c, i) => {
-    if (c.to !== undefined || c.setting) { out.push({ indices: [i] }); return; }
+    if (c.to !== undefined || c.setting || c.trash) { out.push({ indices: [i] }); return; }
     // a replaced page is the same change when it loses and gains the same lines, whatever it keeps (hubs differ in their goal)
     const sum = replacesPage(c) ? pageSummary(c.before, c.after) : null;
     const key = sum ? `replace\n${JSON.stringify([sum.lost, sum.added])}`
@@ -782,7 +799,7 @@ export function reportMarkdown(s: TidyScan, ticked?: ReadonlySet<string>): strin
 /** How a rule reads in the window: red when it removes lines of the user's (a replaced page that drops some, or a change that only deletes), else amber. */
 export function tidyGroupState(g: TidyGroup): WinState {
   const removes = g.changes.some(c => {
-    if (c.to !== undefined || c.create || c.setting) return false;
+    if (c.to !== undefined || c.create || c.setting || c.trash) return false;
     if (replacesPage(c)) return pageSummary(c.before, c.after).lost.length > 0;
     return countRows(diffRows(c.before, c.after)).removed > 0;
   });
