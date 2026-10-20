@@ -285,3 +285,63 @@ Order checked: Phase 0 first because it decides how much is Bases only; 1 before
 8. **Making a new saved filter**: ANSWERED A for now (2026-10-20): Lab Kit ships named views; your own come from Bases' toolbar. B (a `Save as view…` button) not now.
 9. **Where the completed view lives**: PROPOSED B, waiting for the owner's yes (owner: running board and completed view must be one click apart, "seamless"): more views inside `Lab book base.base`, toolbar tabs as the switch; cost and alternative A (separate `Completed experiments.base` plus link chips) in "Owner answers 2026-10-20", Q9.
 10. **The look** (mock-up page, section 4): A rows in a card (rec.) · B compact lines · C row cards; and the summary tiles and running cards as drawn, or comments on the page.
+
+## Who else calls the Bases controller (researched 2026-10-20; GitHub code search via the `gh` API, raw source read, web search)
+Question (owner): do many other plugins call `selectView`, `getQueryViewNames`, `viewName` on the controller Obsidian hands to a registered Bases view? **Short answer: a few do, none is a big name, and the official API does not offer a switch.** Searches are GitHub code search, which is capped and indexes only part of GitHub: counts are "found", not "all".
+
+### Counts (found 2026-10-20)
+- **`registerBasesView` in real source** (mocks, tests, docs and vendored copies left out): 194 repos; **86 of them are in the official directory** (`community-plugins.json`, 9231 entries). Code search reported 462 files in total.
+- **`getQueryViewNames`**: 8 files in all of GitHub. Only **1 plugin calls it** (padasch/obsidian-my-hotfixes, not in the directory). The rest: a reimplementation of Bases (obsenmd/notes), a typings file (fronglemog/obsidian-base-source-editor-plugin `src/obsidian-types.d.ts`), a test-mock list, and notes.
+- **`selectView` on a Bases controller**: **4 plugins call it**; 1 more only declares it (see table). **1 of the 4 is in the official directory** (bases-cms).
+- **`controller.viewName` read** (the active view's name, no call): 4 more plugins, 2 in the directory.
+- Nothing found in the official docs or `obsidian.d.ts` for any of the three: `QueryController` is still an empty class (`@since 1.10.0`, current `obsidian-api` master, package version 1.14.4). No Bases type was added after 1.10.0 (checked `@since 1.11` to `1.14` tags).
+
+### Who uses what (source read, file:line on the default branch the day of the check)
+| Plugin | Directory? | Uses | Where |
+|---|---|---|---|
+| davidvkimball/obsidian-bases-cms (`bases-cms`, 0.5.15, 2026-10-09) | yes | `controller.selectView(name)` to open on a default view, feature-checked with `typeof`, with `setView` / `switchView` guesses as fallbacks | [`src/views/cms-view.ts:724-736`](https://github.com/davidvkimball/obsidian-bases-cms/blob/master/src/views/cms-view.ts#L724-L736) |
+| padasch/obsidian-my-hotfixes (1.0.30, 2026-07-06) | no | its own view-switcher row: `controller.selectView`, `getQueryViewNames()`, `controller.viewName`; feature-checked | [`main.ts:312-313`](https://github.com/padasch/obsidian-my-hotfixes/blob/main/main.ts#L312-L313), `1344`, `1477-1478`, `1595-1596` |
+| Maws7140/Views ("More views for Bases") | no | embedded bases: `controller.viewName` + `controller.selectView`; file tabs: `leaf.setViewState({state:{viewName}})` | [`src/base-tabs/BaseViewTabsHost.ts:23-59`](https://github.com/Maws7140/Views/blob/master/src/base-tabs/BaseViewTabsHost.ts#L23-L59) |
+| obsenmd/notes | no | its own `BasesController extends QueryController`, implements `selectView`, `getQueryViewNames`, `viewName` (an app that re-implements Bases; shows the shape of the members) | [`src/renderer/bases/controller.ts:1196-1245`](https://github.com/obsenmd/notes/blob/main/src/renderer/bases/controller.ts#L1196-L1245) |
+| KulySocc/obsidian-folder-base-view (`folder-base-view`, 0.1.2) | yes | declares `selectView?` and other internals (`updateCurrentFile`, `setQuery`); the ADR says "undocumented internal Bases APIs", feature-detected, "tolerated but scrutinised in community-plugin review". I did not find the `selectView` call itself | [`src/bases/basesInternals.ts:20`](https://github.com/KulySocc/obsidian-folder-base-view/blob/main/src/bases/basesInternals.ts#L20), [ADR 0001](https://github.com/KulySocc/obsidian-folder-base-view/blob/main/docs/adr/0001-in-memory-scope-injection.md) |
+| callumalpass/canvas-bases (`canvas-bases`, 0.1.5) | yes | reads `controller.viewName` and `controller.query.views` | [`src/bases/CanvasBasesView.ts:212-214, 498-499`](https://github.com/callumalpass/canvas-bases/blob/main/src/bases/CanvasBasesView.ts#L498-L499) |
+| flowing-abyss/obsidian-micropatches (`micropatches`, 1.11.1) | yes | reads `controller.viewName`; patches toolbar and pagination of core Bases | [`src/patches/bases-column-search.ts:152`](https://github.com/flowing-abyss/obsidian-micropatches/blob/main/src/patches/bases-column-search.ts#L152) |
+| iiz00/obsidian-base-views (0.1.0) | no (forum: BRAT) | reads `controller.viewName`, `controller.query.views` | [`src/bases/TaskListViewCustom.ts:196-215, 697`](https://github.com/iiz00/obsidian-base-views/blob/main/src/bases/TaskListViewCustom.ts#L196-L215) |
+| mdelobelle/link-suggester (0.0.1, 2023) | no | builds its own controller and sets `ctrl.viewName` | [`src/engine/basesAdapter.ts:313`](https://github.com/mdelobelle/link-suggester/blob/master/src/engine/basesAdapter.ts#L313) |
+
+Also: typed declarations of the whole internal controller (`getQueryViewNames`, `selectView`, `setEphemeralState`, ...) exist in the community `obsidian-typings` style file in fronglemog/obsidian-base-source-editor-plugin (`base-source-editor`, 0.6.2, directory) [`src/obsidian-types.d.ts:409, 493`](https://github.com/fronglemog/obsidian-base-source-editor-plugin/blob/main/src/obsidian-types.d.ts#L409). Counting the bases-cms copies that vaults vendor (dozens of `.obsidian/plugins/bases-cms/main.js` files) would inflate the numbers; I left them out.
+
+### A way that does not touch the controller
+Two plugins switch a **file tab** with the ordinary View API and the undocumented state key `viewName`: hornatx/base-view-switcher (`base-view-switcher`, 1.0.4, directory; `main.js:191-197`: `view.getState()`, set `viewName`, `view.setState(state)`) and Maws7140/Views (above). This works on a `.base` tab, but I did not test it on an embed (Maws7140 uses the controller for embeds, which suggests it does not work there). The key `viewName` is also not in the docs. Untested by me in Obsidian.
+
+### Official word
+- The only official pages on Bases views are the [Build a Bases view guide](https://docs.obsidian.md/plugins/guides/bases-view) and [`registerBasesView`](https://docs.obsidian.md/Reference/TypeScript+API/Plugin/registerBasesView); both only hand a `QueryController` to the factory. No page mentions switching views. Searching the developer docs repo for `selectView` and `getQueryViewNames`: 0 hits.
+- Changelog: Bases API arrived in [1.10.0](https://obsidian.md/changelog/2025-10-01-desktop-v1.10.0/) ("initial version"); no later entry about Bases API changes turned up (I did not read every 1.11 to 1.14 entry).
+- Forum: feature requests exist ([API access to results of a Bases view](https://forum.obsidian.md/t/provide-api-access-to-the-results-of-bases-view/110660), [action menu item](https://forum.obsidian.md/t/obsidian-bases-api-support-for-adding-an-action-menu-item/109283)); the plugin thread [Base Views](https://forum.obsidian.md/t/plugin-base-views-quick-view-switching-for-base-files-custom-bases-views/111918) does not name the mechanism. None says Obsidian plans a switch API. Not found: any staff statement on the three members.
+
+### Review and rules
+- [Plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines) do not mention undocumented or internal APIs (the closest: "Avoid using global app instance", which "might be removed in the future"). The reviewer lint (`obsidianmd/eslint-plugin`) has no rule for them; `no-unsupported-api` only checks the minimum app version. `obsidian-releases` search for "internal API", "undocumented", "private API" on issues and PRs: 0 hits.
+- Obsidian's [blog](https://obsidian.md/blog/future-of-plugins/): new versions are scanned automatically and a failing version is dropped from search within a day; humans look at popular, featured and flagged plugins.
+- Evidence of tolerance: bases-cms (calls `selectView`) and folder-base-view (declares and relies on other internals) are in the directory, so at least those two passed review. I found **no** case of a rejection for it. That is absence of evidence, not a promise.
+
+### Other quick switchers and full pages
+- hornatx/base-view-switcher: buttons in the `.base` title bar (state key method above). iiz00/obsidian-base-views: a view list for `.base` files, mechanism not read. padasch/obsidian-my-hotfixes: a switcher row, controller method. Maws7140/Views: tabs for file and embeds. theluckystrike/bases-filter-switches (directory): chips for saved filters, not for views (no `selectView` or `viewName` in its source).
+- A custom full page over Bases data: KulySocc/folder-base-view opens a pinned Bases leaf and drives it through the controller (no own ItemView); callumalpass/canvas-bases and others register their own Bases view type and draw inside it. I did not find a plugin that wraps Bases data in its own `ItemView`.
+
+### What I could not confirm
+- GitHub code search is capped (1000 results per query), skips some files and large bundles, and treats `selectView` as a common word, so the real number of callers may be higher, especially in minified `main.js`.
+- I did not run any of these plugins; "uses X" means the source contains it, not that it works on 1.14.4.
+- The Obsidian Discord was not searched (not reachable). Forum search was by web search only, not the forum's own search.
+- The review bot's comments on `obsidian-releases` PRs are mostly closed or not indexed; I cannot rule out a rejection.
+
+### Answer
+**Not many.** Of 194 repos that register a Bases view, 4 call `selectView` (1 in the directory), 1 calls `getQueryViewNames`, and about 4 more read `viewName`. All feature-detect and degrade. No official API, no announced change, no review rule against it found. The risk is a silent break in a future Obsidian version, so Lab Kit would feature-detect (`typeof controller.selectView === 'function'`) and keep the two-click native switch as the fallback.
+
+### Searches the owner can run by hand (github.com/search, type "Code")
+- `getQueryViewNames language:TypeScript`
+- `"controller.selectView" language:TypeScript`
+- `selectView path:src BasesView NOT path:docs`
+- `"controller.viewName" language:TypeScript`
+- `registerBasesView language:TypeScript NOT path:mocks NOT path:docs`
+- Obsidian Forum (Developers: API): search `bases view switch`, `QueryController`
+- obsidian-releases PRs: `is:pr "internal" in:comments repo:obsidianmd/obsidian-releases`, and `repo:obsidianmd/obsidian-releases undocumented`
