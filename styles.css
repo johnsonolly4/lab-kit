@@ -105,7 +105,7 @@ body { --lk-radius-card: 14px; --lk-radius-control: 10px; --lk-radius-row: 6px; 
 .lab-kit-whatsnew-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
 .lab-kit-win-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--size-4-2); margin: var(--lk-block-gap) 0; }
 /* Manage files: the path gets the whole row width and wraps; the buttons sit below it instead of squeezing it */
-.lab-kit-badge { margin-left: 8px; padding: 0 8px; border-radius: var(--lk-radius-pill); font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
+.lab-kit-badge { margin-left: 8px; padding: 0 8px; white-space: nowrap; border-radius: var(--lk-radius-pill); font-size: var(--font-ui-smaller); font-weight: 600; background: var(--background-modifier-hover); color: var(--text-muted); }
 .lab-kit-badge.is-ok { color: var(--text-success); }
 .lab-kit-badge.is-info { color: var(--text-accent); }
 .lab-kit-badge.is-warn { color: var(--text-warning); }
@@ -514,6 +514,7 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-fold-count { flex: none; margin-left: auto; padding: 0 var(--size-4-2); border-radius: var(--lk-radius-pill); background: var(--background-modifier-border); color: var(--text-muted); font-size: var(--font-ui-smaller); }
 .lab-kit-fold-body { display: none; padding: var(--size-4-2) var(--size-4-3); }
 .lab-kit-fold-body > .lab-kit-win-row:first-child { border-top: none; }
+.lab-kit-fold-body > :first-child:not(.lab-kit-win-row), .lab-kit-fold-body > div > :first-child:not(.lab-kit-win-row) { margin-top: var(--size-4-1); }   /* the first line under the header sits as far below it as the side gap (body padding 8 + 4 = 12), not 8 + its own 8 */
 .lab-kit-fold.is-open > .lab-kit-fold-body { display: block; }
 
 /* The planning kit's button bar (show: button-bar): one row of buttons named by id */
