@@ -9,6 +9,24 @@ How the facts were got (tags as in the verifiable-claims rule; this note is **no
 - **(interpretation)** = my reading, not a measured fact.
 - Code facts carry `file:line` (read 2026-10-21 on branch `overnight/2026-10-19`).
 
+## Owner answer 2026-10-21: scope (chat, replaces the amounts part of this plan)
+
+Owner: "The risk assessment only needs chemicals and H phrases." Consequences (interpretation):
+- **Amounts are not needed.** The argument in section 1.3 (calc formulas, so the plugin must collect the data) **no longer applies**. Sections 1.3, 4 (amounts row), 5 ("weak point") and 6 (routes P / J) below are kept as history and are superseded by the three routes here.
+- **The data is plain text already:** the lab note's `Chemicals` links in front matter, and in each chemical note the `H_Phrase` list, plus `CAS-No.` and `Names` if present (section 2). A script reading the `.md` files is enough and simple. No calc engine needed.
+- **Three routes, smallest first:**
+
+| Route | What | Effort (interpretation, nothing built) | Cost |
+|---|---|---|---|
+| **A (rec, first)** | Tiny Lab Kit command **Copy hazard table for RA**: puts a ready-to-paste table (chemical, CAS, H statements with text) on the clipboard; you paste it into the group's Word form | Smallest: one session. Reuses `collectHazards` (`src/header/hazards.ts:44-81`) and the H texts | No Word library, no bundle growth, works on phone, no template needed, never overwrites anything |
+| **B (if you want the whole form filled)** | Python script (`python-docx` or `docxtpl`) in your own repo: reads a lab note and its chemical notes, fills the group's template | Small to medium: 1-2 sessions in your repo, needs the blank template | No plugin change; desktop only; run by hand |
+| **C (only if A and B are not enough)** | The plugin fills the `.docx` itself (docxtemplater + pizzip, about +27 % on `main.js` by Bundlephobia's sizes, section 3) | Largest: phases 1-4 of section 6, reduced to chemicals and H phrases | Bundle growth, two dependencies, store review of the bundle |
+
+- **Recommendation: A first** (smallest, immediate), **B** if you want the whole form filled, **C** only if both fall short.
+- **Verifiable record** (which chemical notes and their SHA-256 hashes, template hash, date) stays an option **for B** (and C): the script writes it into the document's custom properties and a footer line (section 6, "Verifiability"). Route A copies text only, so it has no record; it can add a first line `Made from: <note>, <date>` if wanted (ask).
+- **Blank template:** "please copy a **BLANK** copy of the group's RA template into `my_work/private/`" is needed **only for B / C**, not for A.
+- Route A paste target: a Word table needs a table-shaped clipboard; plain text with tabs pastes as a table in Word (interpretation, not tried): Phase A checks this in Word, and HTML on the clipboard is the fallback.
+
 ## 1. Short answer
 
 1. **Can the plugin make .docx files? Yes.** A `.docx` is a zip of XML files; a JavaScript library bundled into `main.js` can build or fill one and `Vault.createBinary(path, ArrayBuffer)` writes it into the vault on desktop and phone ([API page](https://docs.obsidian.md/Reference/TypeScript+API/Vault/createBinary), reported; it throws if the file already exists, so it never overwrites). Store rules allow bundled libraries; they forbid obfuscation, self-updating and client telemetry, and ask that network use be disclosed ([Developer policies](https://docs.obsidian.md/Community+directory/Developer+policies), reported). No network is needed for this.
@@ -84,6 +102,9 @@ The output records, in the document's custom properties (`docProps/custom.xml`) 
 - the JSON in route J carries the same record, and the Python script copies it and adds its own version and the template hash it used.
 A later check (`Check setup` row or a script flag) can say "this RA was made from older chemical notes" by comparing hashes (later phase, optional).
 
+> [!note] Superseded 2026-10-21 (see "Owner answer: scope", top)
+> With amounts out of scope the recommendation is: **route A first** (Copy hazard table for RA), B if the whole form should be filled, C only if both fall short. Phases for A: one session (command + test on fixtures with a chemical missing its note or `H_Phrase`, shown as a gap row; check the paste in Word; docs per `docs/maintenance.md`). Phases for B: Phase 0 below, then the owner's script. Phases below apply to C only, minus amounts (no `Workbook`).
+
 ### Phases (one session each; Sonnet unless said)
 - **Phase 0, owner:** blank RA template into `my_work/private/` (Q1). A session reads it (`anthropic-skills:docx` unpack), lists every field, table, checkbox and picture, and decides P or J with the owner (Opus, short). No code.
 - **Phase 1, data, pure:** `src/ra/collect.ts` builds the RA data (note fields, chemicals from `collectHazards`, amounts from calc tables / solution blocks via `Workbook`, signal word, category, pictogram lookup, gaps, hashes). Tests on fixtures (two chemicals, one missing note, one formula amount; 0005 / 0011 guards). Done when the JSON is byte-stable.
@@ -104,6 +125,7 @@ A later check (`Check setup` row or a script flag) can say "this RA was made fro
 
 ## 7. Questions for the owner (rec first)
 
+- **Scope answered 2026-10-21 (owner):** chemicals and H phrases only; Q1 below is needed only for routes B / C; Q2 is replaced by the A / B / C choice at the top; Q3-Q8 matter only if B / C is chosen (Q5 pictograms and Q6 P statements are out of the stated scope).
 - **Q1 Template:** please copy a **BLANK** copy of the group's RA template (the `.docx` you fill in) into `my_work/private/` (never into the public repo). (a, rec) yes, the Word file / (b) only a PDF or screenshot (then the plan stays a guess) / (c) the group has a web form, not Word (then this plan changes).
 - **Q2 Who fills the form:** (a, rec) decide after Phase 0: plugin (P) if the form is simple, JSON + your Python script (J) if not / (b) plugin only, also on the phone / (c) Python only, reading the notes itself (amounts would be formulas, so typed amounts only).
 - **Q3 Is one RA per lab note right?** (a, rec) yes, one draft per lab note / (b) one RA covers several experiments (a "procedure" RA), so the source is a list of notes / (c) both.
