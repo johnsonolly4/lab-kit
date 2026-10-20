@@ -265,9 +265,10 @@ async function runMode({ mobile, dir, seed, build, inventory }) {
       return ok(/Reactor volume\s+1\.7591/.test(r.text), /Reactor volume\s+(\S+)/.exec(r.text)?.[0] ?? "no Reactor volume row in the rendered text");
     });
 
-    await step(steps, "rig note draws its diagram", async () => {
-      const r = ev(STEPS.note("03 Lab Book/Rigs/Smoke rig.md", { rig: ".lab-kit-rig", svg: ".lab-kit-rig-diagram svg", problems: ".lab-kit-rig-problems" }, "preview", true));
-      return ok(r.counts.rig > 0 && r.counts.svg > 0 && r.counts.problems === 0, `rig ${r.counts.rig}, svg ${r.counts.svg}, problems ${r.counts.problems}${r.guardShown ? "; Mermaid asked 'Display Mermaid diagrams in this vault?' first (allowed in the throwaway vault)" : ""}`);
+    await step(steps, "rig note draws its figure, no Mermaid", async () => {
+      // the figure is an <img> of the SVG; Obsidian's Mermaid prompt or a Mermaid diagram must not appear (plan rig-block-no-mermaid, Phase 2)
+      const r = ev(STEPS.note("03 Lab Book/Rigs/Smoke rig.md", { rig: ".lab-kit-rig", img: ".lab-kit-rig-diagram img.lab-kit-rig-img", mermaid: ".mermaid, .mermaid-guard-actions", problems: ".lab-kit-rig-problems" }, "preview"));
+      return ok(r.counts.rig > 0 && r.counts.img > 0 && r.counts.mermaid === 0 && r.counts.problems === 0, `rig ${r.counts.rig}, image ${r.counts.img}, mermaid ${r.counts.mermaid}, problems ${r.counts.problems}`);
     });
 
     await step(steps, "kit callouts have a colour in a kit note", async () => {

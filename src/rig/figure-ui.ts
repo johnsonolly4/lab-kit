@@ -4,24 +4,11 @@ import { Modal, Notice, Platform, Setting, TFile, normalizePath, type App } from
 import { cardWindow } from "../kit/window-look";
 import { ensureFolder } from "../kit/ensure-folder";
 import { figuresTarget, kitJoin } from "../kit/paths";
-import { buildFigure } from "./figure";
 import { figureFileName, heightMm, pngSize, savedNote, sizeLine } from "./figure-export";
-import { figureSvg } from "./figure-svg";
-import { controlLabel, readRig } from "./parts";
+import { makeFigure, type Made } from "./figure-make";
 
 /** Width and dpi the window remembers while Obsidian is open. */
 const choice = { widthMm: 400, dpi: 300 };
-
-interface Made { svg: string; width: number; height: number; missing: string[] }
-
-/** The figure of a rig note's text, or null when it has no parts to draw. */
-export function makeFigure(text: string): Made | null {
-  const rig = readRig(text);
-  if (!rig.parts.length) return null;
-  const fig = buildFigure(rig.parts, rig.links, { computer: controlLabel(text) || undefined });
-  const { svg, missing } = figureSvg(fig);
-  return { svg, width: fig.width, height: fig.height, missing };
-}
 
 /** The SVG text drawn onto a canvas of exactly width × height and read as PNG bytes; the canvas is the size it really got. Rejects when the browser could not make it. */
 async function makePng(svg: string, width: number, height: number): Promise<{ bytes: ArrayBuffer; width: number; height: number }> {
