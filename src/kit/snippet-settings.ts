@@ -11,6 +11,15 @@ export function setGroupShown(kit: Pick<KitData, "snippetGroupsOff">, group: str
   kit.snippetGroupsOff = shown ? rest : [...rest, group];
 }
 
+/** Wording from the plan (N4 Q12). */
+export const FORMS_AT_CURSOR = { name: "Open snippet forms at the cursor", desc: "Off: forms open in the middle of the window." };
+
+/** The switch for where the Alt+S question windows open (desktop; a phone always has them in the middle). */
+export const formsAtCursorRow = (kit: KitData, save: () => Promise<void>): SettingGroupItem => ({
+  ...FORMS_AT_CURSOR,
+  render: b => { b.addToggle(t => t.setValue(kit.snippetFormsAtCursor).onChange(async v => { kit.snippetFormsAtCursor = v; await save(); })); }
+});
+
 export const groupToggleRows = (kit: KitData, save: () => Promise<void>): SettingGroupItem[] => GROUPS.map((g): SettingGroupItem => ({
   name: g, desc: GROUP_TOGGLE_DESC,
   render: b => { b.addToggle(t => t.setValue(!kit.snippetGroupsOff.includes(g)).onChange(async v => { setGroupShown(kit, g, v); await save(); })); }

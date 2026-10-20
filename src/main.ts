@@ -37,7 +37,7 @@ export default class LabKitPlugin extends Plugin {
     this.header = new HeaderRenderer(this, store);
     this.kit = new KitController(this, store);
     await this.kit.load();
-    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app));
+    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor));
     this.kit.snippets = this.snippets;
     this.kit.setup();
 
@@ -45,7 +45,7 @@ export default class LabKitPlugin extends Plugin {
     this.registerEditorExtension(calcTextRefs());
     this.header.register();
     new RigRenderer(this, () => this.kit.kit.figuresFolder).register();
-    new SolutionRenderer(this, () => this.kit.kit, openSnippetForm(this.app)).register();
+    new SolutionRenderer(this, () => this.kit.kit, openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor)).register();
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();

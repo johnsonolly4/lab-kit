@@ -223,5 +223,5 @@ class FormWindow extends Modal {
 }
 
 /** Opens the question window; the answers (same keys and types as labForm.js), or null on Cancel / Esc. */
-export const openSnippetForm = (app: App): FormFn => (title, fields, opts = {}) =>
-  new Promise(resolve => new FormWindow(app, title, fields, opts, cursorAnchor(app), resolve).open());
+export const openSnippetForm = (app: App, atCursor: () => boolean = () => true): FormFn => (title, fields, opts = {}) =>
+  new Promise(resolve => new FormWindow(app, title, fields, opts, atCursor() ? cursorAnchor(app) : null, resolve).open());

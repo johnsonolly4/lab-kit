@@ -6,7 +6,7 @@ import { openEntry } from "../planning/entry-window";
 import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
 import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
-import { groupToggleRows } from "./snippet-settings";
+import { formsAtCursorRow, groupToggleRows } from "./snippet-settings";
 import { prop, toList } from "../frontmatter";
 import { ensurePropertyType, hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import { insertSnippet } from "./snippet-insert";
@@ -283,6 +283,7 @@ class KitSettingTab extends PluginSettingTab {
         } },
       { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
         render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
+      formsAtCursorRow(kit, () => this.ctl.save()),
       ...groupToggleRows(kit, () => this.ctl.save())
     ];
     const planningOn = !!kit.kits[PLANNING_KIT]?.enabled;
@@ -498,7 +499,7 @@ export class KitController {
     this.snippets.icons = menuIcons(this.app, this.managed);
     const snippetFolder = `${kitJoin(this.managed.templatesFolder(), "Snippets")}`;
     try {
-      await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app), scripts: { labSnippets, labMethods }, snippetFolder,
+      await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app, () => this.kit.snippetFormsAtCursor), scripts: { labSnippets, labMethods }, snippetFolder,
         templaterInsert: hasTemplater(this.app) ? f => templaterInsert(this.app, f) : null }, editor);
     } catch (e) { console.error(e); new Notice("Insert snippet failed. See the developer console for details."); }
   }

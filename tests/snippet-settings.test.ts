@@ -1,7 +1,7 @@
 // Settings → Lab Kit → Snippets: one toggle per Alt+S group (docs/plans/snippet-menu.md Phase 4).
 import { describe, it, expect } from "vitest";
 import { GROUPS } from "../src/kit/snippet-menu";
-import { GROUP_TOGGLE_DESC, groupToggleRows, setGroupShown } from "../src/kit/snippet-settings";
+import { FORMS_AT_CURSOR, GROUP_TOGGLE_DESC, formsAtCursorRow, groupToggleRows, setGroupShown } from "../src/kit/snippet-settings";
 import { KIT_DEFAULTS, kitLoad, type KitData } from "../src/kit/paths";
 
 /** A stand-in for the setting builder: addToggle hands the callback a toggle that remembers its value and handler. */
@@ -41,5 +41,32 @@ describe("Snippets settings: group toggles", () => {
     expect(kitLoad({}).snippetGroupsOff).toEqual([]);
     expect(kitLoad({ snippetGroupsOff: "Flow" }).snippetGroupsOff).toEqual([]);
     expect(kitLoad({ snippetGroupsOff: ["Flow", 3] }).snippetGroupsOff).toEqual(["Flow"]);
+  });
+});
+
+describe("Snippets settings: Open snippet forms at the cursor (N4 Q8, Q12)", () => {
+  const row = (kit: KitData, save: () => Promise<void>) => {
+    const t = { value: undefined as boolean | undefined, handler: undefined as ((v: boolean) => Promise<void>) | undefined,
+      setValue(v: boolean) { this.value = v; return this; }, onChange(h: (v: boolean) => Promise<void>) { this.handler = h; return this; } };
+    const r = formsAtCursorRow(kit, save) as unknown as { name: string; desc: string; render: (b: unknown) => void };
+    r.render({ addToggle: (cb: (t: unknown) => void) => cb(t) });
+    return { r, t };
+  };
+  it("is on by default, with the plan's name and description", () => {
+    expect(KIT_DEFAULTS.snippetFormsAtCursor).toBe(true);
+    const { r, t } = row({ ...KIT_DEFAULTS }, async () => {});
+    expect([r.name, r.desc]).toEqual([FORMS_AT_CURSOR.name, FORMS_AT_CURSOR.desc]);
+    expect(r.name).toBe("Open snippet forms at the cursor");
+    expect(r.desc).toBe("Off: forms open in the middle of the window.");
+    expect(t.value).toBe(true);
+  });
+  it("switching writes the setting and saves; data.json without it loads as on, an explicit false stays off", async () => {
+    const kit: KitData = { ...KIT_DEFAULTS };
+    let saves = 0;
+    const { t } = row(kit, async () => { saves++; });
+    await t.handler!(false);
+    expect([kit.snippetFormsAtCursor, saves]).toEqual([false, 1]);
+    expect(kitLoad({}).snippetFormsAtCursor).toBe(true);
+    expect(kitLoad({ snippetFormsAtCursor: false }).snippetFormsAtCursor).toBe(false);
   });
 });
