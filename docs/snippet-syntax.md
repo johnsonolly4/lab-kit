@@ -6,15 +6,15 @@ Everything you can write in a Lab Kit snippet, a calc block or a method note. On
 
 | I want… | Use | Where it lives |
 |---|---|---|
-| A table or text with a few questions asked first | a **token template** | a note in the `Snippets` folder with a header and `{{tokens}}` |
-| A sample table for an analysis (columns, defaults, machines) that also feeds Combined results | a **method note** | a note in the Methods folder (Settings → Lab Kit) |
-| Anything the first two cannot do (reads many notes, calls other code) | a **code snippet** | a section of `labSnippets.js` (only NMR, GPC, DLS, Combined results, solution, recipe, RAFT use it) |
+| A table or text built from a few answers (a **calculator**) | a **token template**: a header with `fields` and `{{tokens}}` | a note in the `Snippets` folder |
+| Anything a token template cannot do (reads many notes, row maths, calls other code): Solution prep, Recipe by equivalents, RAFT recipe generator, Combined results | a **calculator by name**: a header with `run: <key>` and no fields or body | a note in the `Snippets` folder; the key names a section of `labSnippets.js` (`solution`, `recipe`, `raft`, `results`) |
+| A sample table for an analysis (columns, defaults, machines) that also feeds Combined results | a **method**: a note in the Methods folder (Settings → Lab Kit). NMR, GPC and DLS are built in and listed by the menu itself | the Methods folder |
 
-A token template can build a table but Combined results does not know about it (see "Sample codes" below for what it can still share).
+A token template can build a table but Combined results does not know about it (see "Sample codes" below for what it can still share). An old calculator file that starts with `<%*` and calls `labSnippets(tp, "nmr")` still works: the menu reads it as `run: nmr`. Tidy up notes offers to move kept NMR, GPC and DLS files to the trash, because the menu lists those three itself.
 
 ## 1. Token templates
 
-A note in the `Snippets` folder whose first lines are a header between `---` lines (valid YAML) with a `fields` key. A note without `fields` is a plain snippet and is inserted as written. Esc in the form inserts nothing.
+A note in the `Snippets` folder whose first lines are a header between `---` lines (valid YAML) with a `fields` key (or `run`, below). A note with neither is a plain snippet and is inserted as written. Esc in the form inserts nothing.
 
 ### Header keys
 
@@ -22,6 +22,8 @@ A note in the `Snippets` folder whose first lines are a header between `---` lin
 |---|---|
 | `title` | form title and the name in the Alt+S menu |
 | `icon`, `desc` | menu icon (a Lucide name) and the one-line description |
+| `group` | the Alt+S menu section: `Make up`, `Samples`, `Characterise`, `Flow` or `Tables` (any other text, or none, lists the snippet under My snippets) |
+| `run` | a calculator of Lab Kit by name (`solution`, `recipe`, `raft`, `results`, `nmr`, `gpc`, `dls`): it asks its own questions and builds the text, so a header with `run` has no `fields` and the note has no body. An unknown name shows `“Title”: Lab Kit has no calculator called “name”.` and inserts nothing |
 | `required` | key of a field that must hold at least one list item, else nothing is inserted (silently; to make the form refuse an empty field, give that field `mandatory: true`, below) |
 | `set` | properties written on the note you are in when the snippet is inserted, one `Name: value` line each; the value may hold tokens (`Rig: "[[{{rig}}]]"`). An existing property is replaced; an empty value is not written |
 | `fields` | the questions (below); an empty list is allowed |
