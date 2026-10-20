@@ -175,3 +175,7 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner, chat): Templater removal is staged: (b) now, i.e. Templater stays for note templates and only Alt+S loses it (I23 Phase 6); full removal (a) is the goal for later and gets its own plan. Replaces the open scope in the 2026-10-19 line.
 - 2026-10-20 (owner, chat): the three I23 Phase 1 notice / row texts stay as built (Insert snippet without Templater; menu file missing; Check hotkeys "Set on Templater: Insert …").
 - 2026-10-20 (owner, chat): the Alt+S menu window hides Obsidian's close ✕ (matches the approved picture); Esc and a click outside close it. The entry window and the question window keep theirs.
+- 2026-10-20 (owner, chat): I23 Phase 5 approved: icons come from snippet headers only (Snippet icons settings page goes, opt-in Tidy rule moves saved icons into `icon:` lines, right-click a snippet in Alt+S → `Change icon…`, a kit snippet is copied first with Make my own copy); no `when:` hiding and no My snippets switch with it.
+- 2026-10-20 (owner, chat): I23 Phase 6 approved: Alt+S runs without Templater (code snippets and token templates on the plugin form).
+- 2026-10-20 (owner, chat): I23 question (a) own group names stays as built: a header `group:` that is not one of the five groups is listed under My snippets.
+- 2026-10-20 (owner, chat): I23 stub icons stay as built: a kept old 07-09 file with its own icon is hidden for the built-in; its icon does not carry over.
