@@ -1,8 +1,14 @@
 // The Alt+S menu window in the entry-window look (approved: my_work/reference_visual/alts-menu-grouped.png): heading, search box, Recent then the groups, hint line.
 // Contents and search are in snippet-menu.ts (pure). Insert snippet.md opens it through `plugin.snippets.menu(items)`.
-import { Modal, getIcon, type App } from "obsidian";
+import { Menu, Modal, getIcon, type App } from "obsidian";
 import { cursorAnchor, type EntryAnchor } from "../planning/entry-window";
 import { groupOf, iconNames, menuSections, searchItems, type MenuItem } from "./snippet-menu";
+
+/** Right-click → Change icon…: `can` says whether an entry has a header to keep an icon in; `change` runs the picker and writes it (null = nothing changed; `copied` = a copy of a kit snippet got the icon). */
+export interface MenuIcons {
+  can(it: MenuItem): Promise<boolean>;
+  change(it: MenuItem): Promise<{ icon: string; copied: boolean } | null>;
+}
 
 class SnippetMenu extends Modal {
   private input!: HTMLInputElement;
@@ -12,7 +18,7 @@ class SnippetMenu extends Modal {
   private active = 0;
   private settled = false;
 
-  constructor(app: App, private items: MenuItem[], private recent: string[], private icons: Record<string, string>, private anchor: EntryAnchor | null, private done: (it: MenuItem | null) => void) { super(app); }
+  constructor(app: App, private items: MenuItem[], private recent: string[], private icons: MenuIcons | null, private anchor: EntryAnchor | null, private done: (it: MenuItem | null) => void) { super(app); }
 
   onOpen(): void {
     this.modalEl.addClass("vt-entry", "lk-snip");   // styles.css
@@ -69,7 +75,7 @@ class SnippetMenu extends Modal {
     const i = this.rows.length;
     const el = parent.createDiv({ cls: "lk-snip-row" });
     const ic = el.createSpan({ cls: "lk-snip-icon" });
-    const svg = iconNames(it, this.icons).map(n => getIcon(n)).find(Boolean) ?? getIcon("file-text");
+    const svg = iconNames(it).map(n => getIcon(n)).find(Boolean) ?? getIcon("file-text");
     if (svg) ic.appendChild(svg);
     const text = el.createDiv({ cls: "lk-snip-text" });
     text.createDiv({ cls: "lk-snip-name", text: it.name });
@@ -77,7 +83,28 @@ class SnippetMenu extends Modal {
     if (tag) el.createSpan({ cls: "lk-snip-tag", text: groupOf(it) });
     el.addEventListener("mousemove", () => { if (this.active !== i) { this.active = i; this.mark(); } });
     el.addEventListener("click", () => this.pick(it));
+    el.addEventListener("contextmenu", e => { e.preventDefault(); void this.rightClick(it, e); });
     this.rows.push(el);
+  }
+
+  /** Change icon… under the pointer, for entries that have a header to write into. */
+  private async rightClick(it: MenuItem, e: MouseEvent): Promise<void> {
+    const icons = this.icons;
+    if (!icons || !(await icons.can(it))) return;
+    const menu = new Menu();
+    menu.addItem(m => m.setTitle("Change icon…").setIcon("palette").onClick(() => void this.changeIcon(it)));
+    menu.showAtPosition({ x: e.clientX, y: e.clientY });
+  }
+
+  private async changeIcon(it: MenuItem): Promise<void> {
+    const res = await this.icons?.change(it);
+    if (!res) return;
+    if (res.copied) { this.close(); return; }   // the copy is a new entry: it shows the next time the menu opens
+    it.icon = res.icon;
+    const keep = this.active;
+    this.draw();
+    this.active = Math.min(keep, this.rows.length - 1);
+    this.mark();
   }
 
   private move(by: number): void {
@@ -103,6 +130,6 @@ class SnippetMenu extends Modal {
   }
 }
 
-/** Opens the menu; the picked entry, or null on Esc / a click outside. `icons` = Settings → Snippet icons (name → icon). */
-export const openSnippetMenu = (app: App, items: MenuItem[], recent: string[], icons: Record<string, string>): Promise<MenuItem | null> =>
+/** Opens the menu; the picked entry, or null on Esc / a click outside. */
+export const openSnippetMenu = (app: App, items: MenuItem[], recent: string[], icons: MenuIcons | null): Promise<MenuItem | null> =>
   new Promise(resolve => new SnippetMenu(app, items, recent, icons, cursorAnchor(app), resolve).open());

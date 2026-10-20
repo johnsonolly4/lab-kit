@@ -1,5 +1,5 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, type Editor, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Notice, PluginSettingTab, TFile, type Editor, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { openEntry } from "../planning/entry-window";
@@ -11,6 +11,7 @@ import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import { insertSnippet } from "./snippet-insert";
 import { openSnippetForm } from "./snippet-form";
+import { menuIcons } from "./snippet-icon-ui";
 import type { SnippetTemplates } from "./snippet-run";
 import labSnippets from "../../kits/lab/Extras/scripts/templater/labSnippets.js";
 import labMethods from "../../kits/lab/Extras/scripts/templater/labMethods.js";
@@ -30,8 +31,6 @@ import { ClearBackupsModal } from "./backups-ui";
 import { BOARD_STATUSES } from "./board-colours";
 import { TidyNotesModal } from "./tidy-ui";
 import { actionRow, wideBox } from "./settings-box";
-import { firstIcon, headerIcon } from "./icon-list";
-import { IconPickerModal } from "./icon-picker-ui";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
@@ -41,64 +40,6 @@ class KitSettingTab extends PluginSettingTab {
     super(app, plugin);
     this.containerEl.addClass("lab-kit-settings");   // scopes the phone-width rules in styles.css to this tab
     ctl.redrawSettings = () => this.update();
-  }
-
-  /** Built-in icon of each snippet (from its `// icon:` line, or the `icon:` header of a token template), read before the rows are drawn so no row changes after it is shown. */
-  private builtInIcons = new Map<string, string>();
-
-  private snippetFiles(): TFile[] {
-    const folder = this.app.vault.getFolderByPath(normalizePath(`${this.ctl.managed.templatesFolder()}/Snippets`));
-    return (folder?.children ?? []).filter((f): f is TFile => f instanceof TFile && f.extension === "md")
-      .sort((a, b) => a.basename.localeCompare(b.basename, undefined, { numeric: true }));
-  }
-
-  /** Reads the built-in icon names, then redraws the tab. Call once the vault index is ready. */
-  async refreshSnippets(): Promise<void> {
-    for (const f of this.snippetFiles()) {
-      const text = await this.app.vault.cachedRead(f);
-      this.builtInIcons.set(f.path, headerIcon(text));
-    }
-    this.update();
-  }
-
-  /** One icon row per snippet in the Snippets folder next to the menu template (the name is what the Alt+S menu shows). */
-  private snippetRows(): SettingGroupItem[] {
-    const files = this.snippetFiles();
-    const icons = this.ctl.kit.snippetIcons;
-    if (!files.length) return [];
-    const rows: SettingGroupItem[] = [{ name: "Icons", desc: "Press Choose to pick an icon for each snippet from Obsidian's icons, or type a Lucide icon name, e.g. flask-round (see lucide.dev). Empty keeps the snippet's own icon, shown in grey. The colour is always your Obsidian accent colour." }];
-    for (const f of files) {
-      const name = f.basename.replace(/^\d+\s*[-.]?\s*/, "");
-      rows.push({
-        name,
-        render: b => {
-          const own = firstIcon(this.builtInIcons.get(f.path) ?? "", n => !!getIcon(n));
-          const preview = b.controlEl.createSpan({ cls: "lab-kit-icon-preview" });
-          const show = (typed: string): void => {
-            preview.empty();
-            const shown = [typed, own].map(n => n.trim()).find(n => n && getIcon(n));
-            if (shown) setIcon(preview, shown);
-            preview.toggleClass("is-default", !typed.trim());
-          };
-          show(icons[name] ?? "");
-          b.addText(t => {
-            wideBox(b, t);
-            t.setPlaceholder(own).setValue(icons[name] ?? "").onChange(async v => {
-              if (v.trim()) icons[name] = v.trim(); else delete icons[name];
-              show(v);
-              await this.ctl.save();
-            });
-            b.addButton(btn => btn.setButtonText("Choose…").onClick(() => new IconPickerModal(this.app, icons[name] ?? own, picked => {
-              icons[name] = picked;
-              t.setValue(picked);
-              show(picked);
-              void this.ctl.save();
-            }).open()));
-          });
-        }
-      });
-    }
-    return rows;
   }
 
   /** Close experiment: PDF folders (desktop only). A row with Add folder, then one row per folder with a Remove button. The folders are absolute paths on this device, outside the vault if you like. */
@@ -277,7 +218,6 @@ class KitSettingTab extends PluginSettingTab {
 
   getSettingDefinitions(): SettingDefinitionItem[] {
     const kit = this.ctl.kit;
-    const snippets = this.snippetRows();
     const builtIn = this.builtInGroups();
     const planning = this.planningRows();
     const notebook: SettingGroupItem[] = [
@@ -314,8 +254,7 @@ class KitSettingTab extends PluginSettingTab {
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
       ...this.closeFolderRows(),
       planning.progress,
-      { type: "page", name: "Board colours", items: builtIn.boards },
-      ...(snippets.length ? [{ type: "page" as const, name: "Snippet icons", items: snippets }] : [])
+      { type: "page", name: "Board colours", items: builtIn.boards }
     ];
     const snippetGroup: SettingGroupItem[] = [
       { name: "Methods folder", desc: "The folder of your analysis method notes (one note per method, with its columns and machines). The Alt+S analysis snippets then offer them next to the built-in NMR, GPC and DLS. Empty: only the built-in methods. A folder that does not exist yet is created.",
@@ -410,17 +349,6 @@ export class KitController {
     const plugin = this.plugin;
     const tab = new KitSettingTab(this.app, plugin, this, this.header);
     plugin.addSettingTab(tab);
-    // The snippet rows need the vault index, which is not ready yet when the tab is registered
-    // and they follow the Snippets folder afterwards: a first install, a Use toggle, Make my own copy or a snippet of your own
-    // adds or removes files after the tab was built (the rows used to appear only after a restart).
-    this.app.workspace.onLayoutReady(() => {
-      void tab.refreshSnippets();
-      const refresh = debounce(() => void tab.refreshSnippets(), 500, true);
-      const touched = (path: string): void => { if (inSnippetsFolder(path, this.managed.templatesFolder())) refresh(); };
-      plugin.registerEvent(this.app.vault.on("create", f => touched(f.path)));
-      plugin.registerEvent(this.app.vault.on("delete", f => touched(f.path)));
-      plugin.registerEvent(this.app.vault.on("rename", (f, old) => { touched(f.path); touched(old); }));
-    });
     plugin.addCommand({ id: "kit-review", name: "Review kit files", callback: () => this.review() });
     plugin.addCommand({ id: "kit-manage", name: "Manage kit files", callback: () => this.manage() });
     plugin.addCommand({ id: "whats-new", name: "Show what's new", callback: () => this.showWhatsNew() });
@@ -551,6 +479,7 @@ export class KitController {
   /** The Insert snippet command (Alt+S): the menu and the snippet run by Lab Kit itself, no Templater (snippet-insert.ts); the text goes in at the cursor. */
   async insertSnippet(editor: Editor): Promise<void> {
     if (!this.snippets) return;
+    this.snippets.icons = menuIcons(this.app, this.managed);
     const snippetFolder = `${kitJoin(this.managed.templatesFolder(), "Snippets")}`;
     try {
       await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app), scripts: { labSnippets, labMethods }, snippetFolder,

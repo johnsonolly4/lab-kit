@@ -1,4 +1,4 @@
-// v0.4: icons set in Settings → Lab Kit → Snippet menu (kit.snippetIcons) win over the snippet's own icon.
+// I23 Phase 5: labPick shows each snippet's own icon only; the old Settings → Snippet icons page (kit.snippetIcons) is not read any more.
 import { describe, it } from "vitest";
 import assert from "node:assert";
 import { createRequire } from "node:module";
@@ -34,13 +34,8 @@ describe("labPick icons", () => {
     assert.deepStrictEqual(await shownIcons(ITEMS, null), { "Solution prep": "test-tube", "NMR samples": "magnet" });
   });
 
-  it("uses the icon set for that snippet name", async () => {
-    const data = JSON.stringify({ kit: { snippetIcons: { "Solution prep": "flask-round" } } });
-    assert.deepStrictEqual(await shownIcons(ITEMS, data), { "Solution prep": "flask-round", "NMR samples": "magnet" });
-  });
-
-  it("falls back to the snippet's own icon when the set name is not an icon", async () => {
-    const data = JSON.stringify({ kit: { snippetIcons: { "Solution prep": "no-such-icon", "NMR samples": "  " } } });
+  it("does not read the old Snippet icons setting any more (Tidy up notes moves it into the headers)", async () => {
+    const data = JSON.stringify({ kit: { snippetIcons: { "Solution prep": "flask-round", "NMR samples": "  " } } });
     assert.deepStrictEqual(await shownIcons(ITEMS, data), { "Solution prep": "test-tube", "NMR samples": "magnet" });
   });
 });

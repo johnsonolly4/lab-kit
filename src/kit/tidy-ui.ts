@@ -63,7 +63,7 @@ function hubTemplates(host: TidyHost): TidyContext["hubTemplates"] {
 }
 
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
-export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App): TidyContext {
+export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App, kitSnippets?: string[]): TidyContext {
   const planningOn = !!host.planning?.slot.enabled;
   const pf: PlanningFolders = planningOn ? host.kit.planningFolders : { ...PLANNING_FOLDER_DEFAULTS };
   const migrations: Migration[] = [host.managed, ...(planningOn && host.planning ? [host.planning] : [])].flatMap(k => k.bundle.manifest.migrations ?? []);
@@ -74,6 +74,8 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
     snippetsFolder: kitJoin(host.managed.templatesFolder(), "Snippets"),
+    snippetIcons: host.kit.snippetIcons,
+    kitSnippets,
     hubFolders: planningOn ? [pf.projects, pf.literature, pf.knowledge, pf.howtos] : undefined,
     projectsFolder: planningOn ? pf.projects : undefined,
     buttonFolders: planningOn ? [pf.planning, pf.projects, pf.meetings, pf.daily] : undefined,
@@ -105,6 +107,8 @@ export class TidyNotesModal extends Modal {
   private message = "";
   private files: TidyFile[] = [];
   private answers: MeetingAnswers = { ...MEETING_DEFAULTS };
+  /** The kit's snippet files nobody has edited (the icons rule leaves them alone). */
+  private kitSnippets: string[] = [];
 
   constructor(app: App, private host: TidyHost) { super(app); }
 
@@ -123,11 +127,12 @@ export class TidyNotesModal extends Modal {
 
   /** Reads the vault and scans it. */
   private async load(): Promise<void> {
-    this.files = await readVault(this.app, tidyContext(this.host, this.answers, this.app));
+    this.kitSnippets = (await this.host.managed.plan()).filter(i => i.file.dest.startsWith("Snippets/") && (i.action === "up-to-date" || i.action === "fast-forward")).map(i => i.dest);
+    this.files = await readVault(this.app, tidyContext(this.host, this.answers, this.app, this.kitSnippets));
     this.rescan();
   }
   /** Scans again with the current answers (no reading: the answers only change what the meetings rule proposes). */
-  private rescan(): void { this.off.clear(); this.result = scan(this.files, tidyContext(this.host, this.answers, this.app)); }
+  private rescan(): void { this.off.clear(); this.result = scan(this.files, tidyContext(this.host, this.answers, this.app, this.kitSnippets)); }
 
   private render(): void {
     const el = this.contentEl, r = this.result;

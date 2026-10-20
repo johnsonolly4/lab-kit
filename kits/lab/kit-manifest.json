@@ -358,8 +358,8 @@
       "src": "Extras/scripts/templater/labPick.js",
       "role": "userScripts",
       "path": "labPick.js",
-      "version": "0.3.0",
-      "sha256": "5cfda721dc56b2073ec409cd4329abc87529219753abb3987567e7718e47ae26",
+      "version": "1.4.1",
+      "sha256": "fbcf73d73ecd3373d84117a707450e2bd5d4c0f180c9ca2de00d222d385ba4a3",
       "renamedFrom": [],
       "desc": "The searchable snippet menu with icons"
     },

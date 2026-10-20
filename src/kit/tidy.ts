@@ -6,6 +6,8 @@ import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
 import { normalisePatch, parseDay, type TodoPatch } from "../planning/todo";
 import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
+import { headerIcon } from "./icon-list";
+import { withIcon } from "./snippet-icon";
 import { oldStub } from "./snippet-template";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
 import type { WinState } from "./window-look";
@@ -58,6 +60,10 @@ export interface TidyContext {
   settings?: TidySettings;
   /** The Snippets folder of the Lab kit's templates. Missing = the old-stub rule is off. */
   snippetsFolder?: string;
+  /** The icons saved under the old Settings → Snippet icons page (`kit.snippetIcons`, snippet name → icon). Missing or empty = the icons rule is off. */
+  snippetIcons?: Record<string, string>;
+  /** Paths of the kit's snippet files nobody has edited: their icon is not written (a kit update would meet it). */
+  kitSnippets?: string[];
   /** I2: every note is read, for kept kit queries and your own queries that read the old to-do `day`. Missing = those rules are off. */
   todoQueries?: boolean;
 }
@@ -594,6 +600,28 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       if (stub && ["nmr", "gpc", "dls"].includes(stub.run)) stubs.changes.push({ path: n.path, before: "", after: "", trash: true, note: stub.run.toUpperCase() });
     }
     if (stubs.changes.length) groups.push(stubs);
+  }
+
+  // Snippets: icons saved under the old Settings → Snippet icons page go into each snippet's header (`icon:`). Opt-in; a note is backed up first.
+  const savedIcons = Object.entries(ctx.snippetIcons ?? {}).map(([name, icon]) => [name.trim(), icon.trim()] as const).filter(([name, icon]) => name && icon);
+  if (ctx.snippetsFolder && savedIcons.length) {
+    const folder = ctx.snippetsFolder.replace(/\/+$/, "");
+    const icons: TidyGroup = { id: "snippet-icons", title: "Snippets: icons from settings into the notes", detail: "Icons picked under Settings → Snippet icons are written into each snippet's header (icon:). The settings page goes. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    const kit = new Set(ctx.kitSnippets ?? []);
+    const nameOf = (path: string): string => baseName(path).replace(/^\d+\s*[-.]?\s*/, "");
+    for (const [name, icon] of savedIcons) {
+      const hit = notes.find(n => parentOf(n.path) === folder && nameOf(n.path) === name);
+      if (!hit) { skipped.items.push({ path: name, note: `Snippet icon “${icon}”: there is no snippet of that name in the Snippets folder: left as it is` }); continue; }
+      if (kit.has(hit.path)) { skipped.items.push({ path: hit.path, note: `Snippet icon “${icon}”: a kit file nobody has edited keeps the kit's icon. Make my own copy of it to give the copy an icon` }); continue; }
+      const text = hit.text ?? "";
+      const s = split(text);
+      if (headerIcon(text) === icon) continue;
+      const next = s ? withIcon(text, icon) : null;
+      const after = next ? split(next) : null;
+      if (!s || !after) { skipped.items.push({ path: hit.path, note: `Snippet icon “${icon}”: this snippet has no header to hold it: left as it is` }); continue; }
+      icons.changes.push({ path: hit.path, before: s.fm.join("\n"), after: after.fm.join("\n") });
+    }
+    if (icons.changes.length) groups.push(icons);
   }
 
   // Plugin settings (Phase 7c-2): Templater paths into moved folders, Meta Bind buttons that run a template file

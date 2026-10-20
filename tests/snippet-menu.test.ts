@@ -75,9 +75,9 @@ describe("snippet menu", () => {
     expect(searchItems(items, "hplc")).toEqual([]);
     expect(searchItems(items, "  ")).toBe(items);
   });
-  it("icons: the Snippet icons setting first, then the snippet's own (comma lists allowed)", () => {
-    expect(iconNames({ name: "Rig", icon: "waves, git-branch", value: 1 }, { Rig: "pipette" })).toEqual(["pipette", "waves", "git-branch"]);
-    expect(iconNames({ name: "Rig", value: 1 }, {})).toEqual([]);
+  it("icons: the snippet's own header icon only (comma lists allowed); the old Snippet icons setting is not read", () => {
+    expect(iconNames({ name: "Rig", icon: "waves, git-branch", value: 1 })).toEqual(["waves", "git-branch"]);
+    expect(iconNames({ name: "Rig", value: 1 })).toEqual([]);
   });
 });
 

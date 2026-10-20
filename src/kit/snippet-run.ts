@@ -8,7 +8,7 @@ import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, i
 import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
 import { hideShadowedStubs, pushRecent, visibleItems, type MenuItem } from "./snippet-menu";
-import { openSnippetMenu } from "./snippet-menu-ui";
+import { openSnippetMenu, type MenuIcons } from "./snippet-menu-ui";
 import type { FormField, FormFn } from "./snippet-form";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
@@ -36,13 +36,16 @@ export class SnippetTemplates {
   /** `form` = the plugin's question window (main.ts); without it the answers come from Templater's labForm.js on `tp` (tests, old setups). */
   constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn) {}
 
+  /** Right-click → Change icon… in the menu (set by the kit controller; without it the menu has no right-click). */
+  icons: MenuIcons | null = null;
+
   /** The Alt+S menu (Insert snippet.md calls it in place of labPick.js): the picked entry's `value`, or null. Remembers the pick for Recent. */
   async menu(all: MenuItem[]): Promise<unknown> {
     const items = visibleItems(hideShadowedStubs(all), this.kit().snippetGroupsOff ?? []);
     const kit = this.kit();
     const names = new Set(items.map(it => it.name));
     const recent = (kit.snippetRecent ?? []).filter(n => names.has(n));
-    const it = await openSnippetMenu(this.app, items, recent, kit.snippetIcons ?? {});
+    const it = await openSnippetMenu(this.app, items, recent, this.icons);
     if (!it) return null;
     kit.snippetRecent = pushRecent(recent, it.name);
     await this.save();

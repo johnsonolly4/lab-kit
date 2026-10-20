@@ -65,7 +65,7 @@ export function searchItems(items: MenuItem[], query: string): MenuItem[] {
 /** The Recent list after picking `name`: it goes first, no repeats, at most RECENT_MAX. */
 export const pushRecent = (recent: string[], name: string): string[] => [name, ...recent.filter(n => n !== name)].slice(0, RECENT_MAX);
 
-/** The icon names to try for an entry: the one picked under Settings → Snippet icons first (until Phase 5), then the snippet's own, comma lists allowed. */
-export function iconNames(it: MenuItem, custom: Record<string, string>): string[] {
-  return [custom[it.name] ?? "", it.icon ?? ""].join(",").split(",").map(s => s.trim()).filter(Boolean);
+/** The icon names to try for an entry: its header's `icon:`, a comma list tried in turn (the Snippet icons settings page is gone, Phase 5). */
+export function iconNames(it: MenuItem): string[] {
+  return (it.icon ?? "").split(",").map(s => s.trim()).filter(Boolean);
 }
