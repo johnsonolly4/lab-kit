@@ -647,8 +647,8 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-sol-cell.is-editable.is-empty::before { content: "click to enter"; font-style: italic; color: var(--text-faint); }
 .lk-sol-cell.is-editing { padding: 2px 4px; }
 .lk-sol-cell.is-editable.is-editing::before { content: none; }
-.lk-sol-input { width: 7em; max-width: 100%; min-width: 0; box-sizing: border-box; padding: 2px 6px; border-radius: var(--lk-radius-control); font-size: var(--font-ui-small); font-variant-numeric: tabular-nums; text-align: right; }
-.lk-sol-input.is-bad { border-color: var(--text-error); }
+.lk-sol .lk-sol-cell input.lk-sol-input { width: 7em; max-width: 100%; min-width: 0; height: auto; min-height: 0; box-sizing: border-box; padding: 2px 6px; border-radius: var(--lk-radius-control); font-size: var(--font-ui-small); font-variant-numeric: tabular-nums; text-align: right; }
+.lk-sol .lk-sol-cell input.lk-sol-input.is-bad { border-color: var(--text-error); }
 .lk-sol button.lk-sol-error.is-ask { display: block; width: 100%; height: auto; padding: 2px 0; background: none; box-shadow: none; text-align: left; white-space: normal; cursor: pointer; }
 .lk-sol button.lk-sol-error.is-ask:hover { text-decoration: underline; }
 .lk-sol .lk-sol-edit { margin-left: auto; height: auto; padding: 2px 12px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: transparent; box-shadow: none; font-size: var(--font-ui-small); color: var(--text-normal); cursor: pointer; }
