@@ -356,6 +356,7 @@ The planning kit turns the vault around the lab book into a planner: a homepage,
 - **New meeting** makes the note for the series' next date and fills it with what happened since the last meeting: experiments changed, to-dos finished, papers read, and the to-dos flagged for that series.
 - **New extra meeting now** adds a meeting on a date you give; the schedule does not move. **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and goes in a **One-off** hub.
 - **Open meeting deck** (desktop only) opens the deck location in the series' hub (`deck_windows` / `deck_mac`: a folder of decks or the path to one deck file). On a series hub or a meeting note it opens that series' deck; elsewhere it asks which.
+- **Freezing:** the day after its date a meeting note is frozen on its own (the check runs when Obsidian starts and when the day changes). Only the generated lists (Experiments, Done, Papers, Waiting, Flagged: the live queries) become plain links and `frozen: <date>` is added; the text you typed (To discuss, Notes from the meeting, anything else) is never changed. **Freeze this meeting note** does it by hand. To stop the automatic freeze, switch off **Freeze meeting notes automatically** (Settings → Lab Kit → Planning); the command and the Tidy rule still work.
 - The **Meetings** hub shows a card per series: next date, how often, how many notes, and its buttons.
 
 ### 8.6 Knowledge, inbox and the rest

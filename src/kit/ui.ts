@@ -7,6 +7,7 @@ import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
 import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
 import { formsAtCursorRow, groupToggleRows } from "./snippet-settings";
+import { FREEZE_AUTO } from "../planning/freeze";
 import { prop, toList } from "../frontmatter";
 import { ensurePropertyType, hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import { insertSnippet } from "./snippet-insert";
@@ -197,8 +198,10 @@ class KitSettingTab extends PluginSettingTab {
       render: b => { b.addText(t => { t.inputEl.type = "number"; t.inputEl.min = "1"; t.setValue(String(this.ctl.kit.boardBusyFrom)).onChange(async v => { const n = Math.floor(Number(v)); this.ctl.kit.boardBusyFrom = Number.isFinite(n) && n >= 1 ? n : 6; await this.ctl.save(); this.ctl.boardChanged?.(); }); }); } };
     const progress: SettingGroupItem = { name: "Checklist progress", desc: "Writes progress (for example 3/7: ticked check boxes out of all) into the properties of lab notes and the Shopping list as you tick, so a kanban card can show it. It edits those notes' properties. Off: nothing is written.",
       render: b => { b.addToggle(t => t.setValue(this.ctl.kit.checklistProgress).onChange(async v => { this.ctl.kit.checklistProgress = v; await this.ctl.save(); })); } };
+    const freezeAuto: SettingGroupItem = { name: FREEZE_AUTO.name, desc: FREEZE_AUTO.desc,
+      render: b => { b.addToggle(t => t.setValue(this.ctl.kit.freezeAuto).onChange(async v => { this.ctl.kit.freezeAuto = v; await this.ctl.save(); })); } };
     const changed = changedPlanningFolders(pf);
-    return { options: [countdown, planDirection, boardWeekend, boardBusy], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
+    return { options: [countdown, planDirection, boardWeekend, boardBusy, freezeAuto], progress, folders: [intro, ...rows.map(([role, name, desc]): SettingGroupItem => ({ name, desc: `${desc} Empty: ${PLANNING_FOLDER_DEFAULTS[role]}.`,
       render: b => {
         b.addText(t => {
           wideBox(b, t, this.app);

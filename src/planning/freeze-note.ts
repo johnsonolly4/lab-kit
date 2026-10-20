@@ -50,8 +50,9 @@ export async function freezeFile(app: App, kit: KitData, file: TFile, today: Dat
   return { done: true, flagged: data.flagged.length };
 }
 
-/** The daily check (I19): freezes each meeting note of a regular series whose date is before `today` (see `dueToFreeze`). One-off meetings are left to the command. Returns the names of the notes that failed; the others are still done. */
+/** The daily check (I19; nothing when `kit.freezeAuto` is off): freezes each meeting note of a regular series whose date is before `today` (see `dueToFreeze`). One-off meetings are left to the command. Returns the names of the notes that failed; the others are still done. */
 export async function freezeDue(app: App, kit: KitData, today: Date = new Date()): Promise<string[]> {
+  if (kit.freezeAuto === false) return [];   // switched off under Settings → Planning: the command and the Tidy rule still freeze
   const day = ymd(today), failed: string[] = [];
   const folder = kit.planningFolders.meetings;
   for (const f of app.vault.getMarkdownFiles()) {

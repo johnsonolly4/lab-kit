@@ -54,6 +54,8 @@ export interface KitData {
   todoDatesNoticed: boolean;
   /** Write `progress: 3/7` (ticked / all check boxes) into lab notes and the Shopping list, for the kanban cards. Off by default. */
   checklistProgress: boolean;
+  /** I19: freeze a meeting note the day after its date (default on). Off: only the Freeze command and the Tidy rule freeze. */
+  freezeAuto: boolean;
   /** Colour the columns of Bases kanban boards by status name (on), and the colour of each status (hex; missing = the default). */
   boardColours: { enabled: boolean; colours: Record<string, string> };
   /** Vault folder of lab notes (New lab entry; the kit's Lab book base goes next to it). Empty = not set. */
@@ -118,7 +120,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
 /** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
 export const RIGS_DEFAULT = "03 Lab Book/Rigs";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, figuresFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, freezeAuto: true, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, figuresFolder: "", planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -145,6 +147,7 @@ export function kitLoad(saved: unknown): KitData {
   kit.snippetRecent = Array.isArray(kit.snippetRecent) ? kit.snippetRecent.filter(n => typeof n === "string") : [];
   kit.snippetGroupsOff = Array.isArray(kit.snippetGroupsOff) ? kit.snippetGroupsOff.filter(n => typeof n === "string") : [];
   kit.snippetFormsAtCursor = kit.snippetFormsAtCursor !== false;
+  kit.freezeAuto = kit.freezeAuto !== false;
   kit.closePdfFolders = Array.isArray(kit.closePdfFolders) ? kit.closePdfFolders.filter(f => typeof f === "string" && f.trim()).map(f => f.trim()) : [];
   kit.boardColours = { enabled: kit.boardColours?.enabled !== false, colours: { ...(kit.boardColours?.colours ?? {}) } };
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));

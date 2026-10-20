@@ -7,6 +7,8 @@ import { parseDay } from "./todo";
 /** The lists of a meeting note as plain markdown lines (no callout prefix), by what the block shows: `meeting-experiments`, `meeting-done`, `meeting-papers`, `waiting`, `meeting-flagged`. A missing key leaves that block as it is. */
 export type FreezeLists = Record<string, string[]>;
 
+/** The Settings → Planning switch (owner board 5, 2026-10-20; the wording is new, recorded in BACKLOG for the owner's OK). */
+export const FREEZE_AUTO = { name: "Freeze meeting notes automatically", desc: "Freeze a meeting note the day after its date." };
 export const FROZEN = "frozen";
 export const RAISED = "raised_on";
 export const FLAGGED_EMPTY = "Nothing is flagged for this meeting.";

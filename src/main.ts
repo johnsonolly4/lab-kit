@@ -88,6 +88,7 @@ export default class LabKitPlugin extends Plugin {
   private scheduleFreeze(planning: PlanningCommands): void {
     let last = "";
     const run = (): void => {
+      if (this.kit.kit.freezeAuto === false) return;   // off in Settings: not marked as done, so switching it on freezes at the next 15-minute check
       const today = ymd(new Date());
       if (today === last) return;
       last = today;

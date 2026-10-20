@@ -2,7 +2,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { freezeDue, freezeFile } from "../src/planning/freeze-note";
-import { PLANNING_FOLDER_DEFAULTS, type KitData } from "../src/kit/paths";
+import { KIT_DEFAULTS, PLANNING_FOLDER_DEFAULTS, kitLoad, type KitData } from "../src/kit/paths";
+import { FREEZE_AUTO } from "../src/planning/freeze";
 
 interface F { path: string; basename: string; parent: { path: string }; stat: { ctime: number; mtime: number } }
 function fakeApp(files: Record<string, { text: string; fm: Record<string, unknown> }>) {
@@ -72,6 +73,19 @@ describe("freezeDue (the daily check)", () => {
     const b = dated("2026-10-15");
     await freezeDue(b.app, kit, new Date(2026, 10, 20));
     expect(b.files[MEET].text).toContain("frozen: 2026-11-20");
+  });
+  it("freezeAuto off: the daily check freezes nothing, the command still does; default and bad values load as on", async () => {
+    const m = dated("2026-10-15");
+    const was = m.files[MEET].text;
+    expect(await freezeDue(m.app, { ...kit, freezeAuto: false }, new Date(2026, 9, 20))).toEqual([]);
+    expect(m.files[MEET].text).toBe(was);
+    expect(await freezeFile(m.app, { ...kit, freezeAuto: false }, m.app.vault.getFileByPath(MEET)!, new Date(2026, 9, 20))).toEqual({ done: true, flagged: 2 });
+    expect(m.files[MEET].text).toContain("frozen: 2026-10-20");
+    expect(KIT_DEFAULTS.freezeAuto).toBe(true);
+    expect(kitLoad({}).freezeAuto).toBe(true);
+    expect(kitLoad({ freezeAuto: "x" }).freezeAuto).toBe(true);
+    expect(kitLoad({ freezeAuto: false }).freezeAuto).toBe(false);
+    expect([FREEZE_AUTO.name, FREEZE_AUTO.desc]).toEqual(["Freeze meeting notes automatically", "Freeze a meeting note the day after its date."]);
   });
   it("freezes nothing when the date is missing or unreadable", async () => {
     for (const d of [undefined, "", "next week"]) {
