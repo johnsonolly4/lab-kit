@@ -396,3 +396,18 @@ Two plugins switch a **file tab** with the ordinary View API and the undocumente
 ## Prototype vault for the owner
 
 Prototype vault for the owner: test-vault-labboard/ (ignored), sources in my_work/prototypes/lab-board-proto. Options A to E, made-up notes; delete the folder when done.
+
+## Owner feedback on the prototypes and the decision (2026-10-20)
+
+Feedback (from `test-vault-labboard/START HERE.md`):
+- **A (native):** likes the dragging (a button bar at the top of the lab note template that changes state would also be fine). Cards too big, locked to two sizes, no multi-row card with the extra information.
+- **B (own view with tabs):** likes the easy switch to Summary and Completed. Dislikes that the Bases filter / toolbar row is still visible. Asks for own card height and a way to hide the toolbar.
+- **C (closed tray):** OK only if custom tile heights are easy.
+- **D (block in a note):** not a favourite (no dragging).
+- **E (quick switch):** avoid.
+
+**Decision (owner, 2026-10-20):** direction **B**: one own view inside the `.base` with **Running | Summary | Completed** tabs. **No closed tray for now.** Own cards. Dragging between status columns. Hide the Bases toolbar if possible. E is out of the recommendation.
+
+**Card content (owner):** code and name; Exp. Class; Status = the column; start date (`Exp. Start`); the main chemicals (first 2 to 3 of `Chemicals`, "+N"); progress. On how to-dos are assigned: "I don't know how we assign to-dos; there might be checkboxes inside, but an overall progress of these is fine." So progress is a bar and "n/m" counted from the note's own check boxes (the idea of Checklist progress, `src/planning/progress.ts`), optionally the number of open to-dos that link to the experiment through `experiment`. For closed ones: Result and closed date.
+
+**Prototype B2** (`proto-lab-board-2`, in `my_work/prototypes/lab-board-proto/`, `Option B2 (cards, drag).base`): own cards in three sizes (Compact / Normal / Tall), drag between Planned / Started / Processing results writing `Status` with `processFrontMatter`, a Closed drop target that sets `Status: Closed` only (does not run Close experiment), a per-base "Hide toolbar" switch kept in local storage. Hide toolbar adds a class to the nearest `.workspace-leaf-content` and a scoped rule hides Obsidian's `.bases-header` and `.bases-search-row` under it; no `:has`. If those class names change, the toolbar just shows. Open to-dos are counted from the metadata cache (`experiment`, `done` not true). Checked in a throwaway Obsidian (desktop and phone emulation, synthetic pointer events, not a real mouse); the owner has not tried B2 yet.
