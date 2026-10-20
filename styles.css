@@ -599,3 +599,6 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-board.is-narrow .lk-board-days, .lk-board.is-narrow .lk-board-days.has-weekend { grid-template-columns: minmax(0, 1fr); }
 .lk-board.is-narrow .lk-board-col:not(.is-picked) { display: none; }
 .lk-board.is-narrow .lk-board-col { min-height: 120px; }
+
+/* Close experiment: the off-screen copy of a note that is printed to PDF */
+.lk-close-host { position: fixed; left: -10000px; top: 0; width: 900px; }
