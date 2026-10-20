@@ -143,7 +143,7 @@ Created with the **New to-do** button or command (`Alt+T`): an entry window (tit
 | Property | Values | Set by |
 |---|---|---|
 | `kind` | `todo` | template |
-| `scheduled` | date (`YYYY-MM-DD`) the to-do is planned for; none = the Backlog. Before today and not done = carried over (orange card, worked out, never stored) | dragging the card |
+| `scheduled` | date (`YYYY-MM-DD`) the to-do is scheduled for; none = the Backlog. Before today and not done = carried over (orange card, worked out, never stored) | dragging the card |
 | `done` | tick box - finished | me |
 | `done_on` | date `done` was ticked | Lab Kit |
 | `project` | link to a project hub, e.g. `"[[Flow rig]]"`; none when not in a project | template / me |
@@ -158,14 +158,15 @@ Created with the **New to-do** button or command (`Alt+T`): an entry window (tit
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); *Comes after?* (only for a project with other open to-dos: one pick, "(nothing)" first); which meeting to raise it at (only when there are several series); a due date (Enter = none; `YYYY-MM-DD`, or `today`, `tomorrow`, a weekday such as `fri`, `next mon`) and, with a date, whether to show a countdown; the priority (none, 1, 2, 3). Esc at any box cancels the to-do, except at *Comes after?*, where it picks nothing. New to-dos get `cssclasses: [vt]`.
 
-**Carried over** cards are drawn by Lab Kit from the planned date (`scheduled`): an open card planned for a day before today shows in today's column with an amber edge, on every device. Nothing is written and nothing runs at startup (the roll-over and its command are gone).
-- A card's day means *the first such weekday on or after `planned`*. So a card dragged onto Mon on a Friday waits for next Monday.
-- Unfinished card whose day has passed -> moves to today's column (Mon at the weekend), `rolled: true`, shown **amber**.
-- Ticked `done` (click the circle on the card) -> stays on its day, shown **green**, `done_on` stamped.
-- Monday (first run of a new week) -> cards finished in an earlier week get `day: Done` and leave the board. They still count everywhere else (meeting note, daily note, hubs, archive).
-- Dragging a card yourself stamps `planned` and clears `rolled`. Backlog cards never roll.
-- No weekend column: weekend leftovers roll to Monday.
-- Lab Kit also makes the circle on each card clickable, marks carried-over cards orange (`vt-rolled`), marks today's column (`body[data-vt-today]`) and puts the countdown on cards with a `due` date.
+**Carried over** cards are drawn by Lab Kit from the `scheduled` date: an open card scheduled for a day before today shows in today's column with an amber edge, on every device. Nothing is written and nothing runs at startup (the roll-over and its command are gone).
+- Ticked `done` (click the circle on the card) -> stays on its day, shown **green**, `done_on` stamped; a tick from the board or the chip bar shows an **Undo** notice for 8 seconds. A day's `N done` unfolds to that day's finished cards (the circle unticks one).
+- Cards finished in an earlier week leave the board by their date; they still count everywhere else (meeting note, daily note, hubs, archive). Nothing is written for that.
+- Dragging a card onto a day writes `scheduled` for that day of the shown week; onto the Backlog removes it. A past day takes no drop (a notice instead). Only properties with a value are written.
+- No weekend column by default (Settings > Lab Kit > Show weekend adds Sat and Sun); a weekend `scheduled` shows in the Backlog tray with its date.
+- **Week arrows**: `‹` `›` in the board's top row move the shown week (`Week of 26 Oct`); `This week` appears away from this week. Past weeks can be viewed and take no drops; the shown week is not saved.
+- **Late cards**: the grey `N carried over` chip opens a window with, per late card, `Today`, `Tomorrow`, `Next week`, `Backlog` and `Done`; each writes as a drag (or a tick) would.
+- **Close the week...** (top row) lists the open cards of the week (from Friday the whole week, before that only past days) with a box per card; choices `Move to next Monday` (default), `Move to the Backlog`, `Leave them`. Notes are never moved or archived.
+- Lab Kit also makes the circle on each card clickable, marks carried-over cards amber, marks today's column (`body[data-vt-today]`) and puts the countdown on cards with a `due` date.
 - Check it is running: today's column is blue. If not, check the planning kit is on and its files installed (Settings > Lab Kit > Updates); restart Obsidian.
 
 ```mermaid
@@ -173,9 +174,9 @@ flowchart LR
   N[New to-do] --> BL[Backlog]
   BL -->|plan the week| D[Mon ... Fri]
   D -->|tick done| G[Green on its day]
-  D -->|day passed, not done| O[Orange, moved to today]
+  D -->|day passed, not done| O[Amber, drawn in today's column]
   O -->|tick done| G
-  G -->|next week| DN[day: Done, off the board]
+  G -->|next week| DN[Off the board, still counted]
   D -->|won't happen this week| BL
 ```
 
@@ -235,7 +236,7 @@ flowchart LR
 ```
 
 ### Shopping list ([[Shopping list]], `00 Planning`)
-One list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not planned. **Add to shopping** (homepage; the Lab Kit command **Add to shopping list**) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
+One list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not scheduled. **Add to shopping** (homepage; the Lab Kit command **Add to shopping list**) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
 
 ### Inbox (`00 Inbox`)
 Everything captured quickly lands here (**Quick capture**, `Alt+N`). The homepage shows the count under *This week* with a **Sort inbox** button; the weekly review has the same button.
@@ -244,7 +245,7 @@ Everything captured quickly lands here (**Quick capture**, `Alt+N`). The homepag
 
 | Choice | What happens |
 |---|---|
-| To-do | becomes a to-do (`kind: todo`, `day: Backlog`) in `00 Planning/To-dos` |
+| To-do | becomes a to-do (`kind: todo`, no `scheduled`: the Backlog) in `00 Planning/To-dos` |
 | Project... | moved into the chosen project's folder |
 | Knowledge... / How-to... / Meetings... | moved into a chosen subfolder (or a new one: type its name) |
 | Archive | moved to `99 Archive/Inbox` |
@@ -292,7 +293,7 @@ Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kin
 | Section | What it shows |
 |---|---|
 | Buttons | **New to-do**, **To-do board** |
-| *Planned for today* | open to-dos whose `day` matches that date's weekday, plus anything due on or before that date |
+| *Planned for today* | open to-dos whose `scheduled` is that date, plus anything due on or before that date |
 | *Notes* | free text - the log of the day |
 | *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`), papers imported on that date |
 
@@ -354,7 +355,7 @@ Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkey
 - The title wraps onto up to 3 lines, then "..."; on a card with a tag or a countdown it is one line, so it stays clear of the bottom row. The tick circle sits top right; **clicking it ticks `done`** (Lab Kit handles the click, because Bases cards are read-only). Clicking anywhere else opens the note.
 - Cards are a **fixed 88px**: Bases works out card heights itself and places each part with inline styles (`top`, `height`), so the CSS overrides those with `!important` rather than changing the height.
 - Card HTML, for future CSS: `.bases-kanban-card` > `.bases-kanban-card-property.mod-title[data-property="file.name"]` and `.bases-kanban-card-property[data-property="note.done"]`, each with a `.bases-kanban-card-label` and `.bases-kanban-card-line`. A ticked box renders an `input:checked`.
-- Green comes from `done` in the card; amber from a `vt-rolled` class Lab Kit adds (no `rolled` row needed on the card).
+- Green comes from `done` in the card; amber from a carried-over class Lab Kit adds (no extra row needed on the card).
 
 **Vault callouts** (defined in `vault-theme.css`): `[!focus]`, `[!projects]`, `[!planning]`, `[!lab]`, `[!goto]`, `[!overdue]`, `[!summary]`, `[!question]`, `[!comment]`, and `[!columns]` (the callouts inside it sit side by side, **at most 2 per row**, equal height). Standard Obsidian callouts (`note`, `tip`, `warning`, ...) are fine in ordinary notes.
 
@@ -421,7 +422,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > - Templates use Templater syntax only - except ZotLit's templates, which must be Liquid and live directly in `Extras/Templates/ZotLit/`. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
 > - Kit files (templates, scripts, these notes) are updated through Settings > Lab Kit > **Review update…**. A file I edited is never overwritten: it merges, or shows in **Manage files…** with Compare… / Use kit version… / Keep mine.
 > - Templates ask for text with `tp.user.vtAsk(tp, "Placeholder")` - never `tp.system.prompt` - so every box looks like the pickers. Lists to choose from use `tp.system.suggester`. My user scripts live in `Extras/scripts/templater/vault/` (the kit owns `lab-kit/`).
-> - Templates that a board can create (folder templates) keep any `day` / `Status` the board already wrote, unless the default is intended (lab entries always start `Planned`).
+> - Templates that a board can create (folder templates) keep any `scheduled` / `Status` the board already wrote, unless the default is intended (lab entries always start `Planned`).
 
 ## Changelog
 - 2026-10-07 - First kit version.
