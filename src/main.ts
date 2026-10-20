@@ -16,6 +16,7 @@ import { BoardColours } from "./kit/board-colours";
 import { calcTextRefs } from "./calc/text-refs-cm";
 import { SnippetTemplates } from "./kit/snippet-run";
 import { RigRenderer } from "./rig/render";
+import { SolutionRenderer } from "./solution/render";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
@@ -42,6 +43,7 @@ export default class LabKitPlugin extends Plugin {
     this.registerEditorExtension(calcTextRefs());
     this.header.register();
     new RigRenderer(this).register();
+    new SolutionRenderer(this, () => this.kit.kit).register();
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();

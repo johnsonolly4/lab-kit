@@ -618,3 +618,31 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 
 /* Close experiment: the off-screen copy of a note that is printed to PDF */
 .lk-close-host { position: fixed; left: -10000px; top: 0; width: 900px; }
+
+/* Solution prep: the ```solution block (src/solution/render.ts). div rows, not <table>, so a vault's table / td rules cannot reach it.
+   Everything is under .lk-sol; colours are Obsidian variables. Look: my_work/reference_visual/solution-live-block.png (frame 2). */
+.lk-sol { margin: 0.6em 0; padding: 14px 16px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-card); background: var(--background-primary); color: var(--text-normal); line-height: 1.4; }
+.lk-sol-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; }
+.lk-sol-title { font-size: 1.15em; font-weight: 700; }
+.lk-sol-chip { padding: 1px 10px; border: 1px solid var(--color-orange); border-radius: var(--lk-radius-pill); font-size: var(--font-ui-smaller); color: var(--color-orange); white-space: nowrap; }
+.lk-sol-chip.is-done { border-color: var(--color-green); color: var(--color-green); }
+.lk-sol-summary { margin: 6px 0 10px; font-size: var(--font-ui-small); color: var(--text-muted); }
+.lk-sol-step { margin: 10px 0; padding-left: 12px; border-left: 3px solid var(--interactive-accent); }
+.lk-sol-step.is-done { border-left-color: var(--color-green); }
+.lk-sol-step-title { margin-bottom: 6px; font-weight: 700; }
+.lk-sol-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(max-content, 1fr) minmax(max-content, 1fr); border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-row); overflow: hidden; }
+.lk-sol-row { display: contents; }
+.lk-sol-cell { padding: 4px 10px; border-top: 1px solid var(--background-modifier-border); font-size: var(--font-ui-small); }
+.lk-sol-row.is-head .lk-sol-cell { border-top: 0; background: var(--background-secondary); color: var(--text-muted); }
+.lk-sol-cell.is-num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.lk-sol-cell.is-target { font-weight: 700; color: var(--interactive-accent); }
+.lk-sol-cell.is-actual { background: rgba(var(--color-orange-rgb), 0.1); border-left: 1px solid var(--background-modifier-border); }
+.lk-sol-row.is-head .lk-sol-cell.is-num { border-left: 1px solid var(--background-modifier-border); }
+.lk-sol-estimate { margin: 10px 0 8px; font-size: var(--font-ui-small); }
+.lk-sol-estimate-value { font-weight: 700; color: var(--interactive-accent); }
+.lk-sol-estimate-range { color: var(--text-muted); }
+.lk-sol-caution { padding: 8px 12px; border-radius: var(--lk-radius-control); background: rgba(var(--color-orange-rgb), 0.12); color: var(--color-orange); font-size: var(--font-ui-small); }
+.lk-sol-approx, .lk-sol-note { margin-top: 6px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.lk-sol-note { margin-top: 0; font-size: var(--font-ui-small); }
+.lk-sol-error { color: var(--text-error); font-weight: 600; font-size: var(--font-ui-small); }
+@media (max-width: 480px) { .lk-sol { padding: 10px 10px; } .lk-sol-grid { grid-template-columns: minmax(4.5em, 1fr) 6.5em 6.5em; } .lk-sol-cell { padding: 4px 6px; font-size: var(--font-ui-smaller); } }
