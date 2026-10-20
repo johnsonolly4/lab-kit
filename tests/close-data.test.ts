@@ -1,7 +1,7 @@
 // Close experiment, the data check (src/close/data.ts) and its place in Close: folder found / empty / missing / no root / phone,
-// missing linked files, the file-list hash, the PDF rows and `closed_data`. All paths are made up.
+// missing linked files, the PDF rows and `closed_data`. All paths are made up.
 import { describe, it, expect } from "vitest";
-import { checkData, closedDataValue, dataFoundLine, dataPdfRows, dataProperty, dataWarnings, fileListHash, type DataCheck, type DataInput } from "../src/close/data";
+import { checkData, closedDataValue, dataFoundLine, dataPdfRows, dataProperty, dataWarnings, type DataCheck, type DataInput } from "../src/close/data";
 import { closedHash, withoutClosedLines } from "../src/close/mark";
 import { closeExperiment, reopenExperiment, type CloseHost } from "../src/close/commands";
 import { pdfHtml } from "../src/close/pdf";
@@ -15,19 +15,11 @@ const input = (over: Partial<DataInput> = {}): DataInput => ({
 });
 
 describe("checkData", () => {
-  it("folder with files: found, count, hash of the sorted list", async () => {
+  it("folder with files: found and counted", async () => {
     const d = await checkData(input());
     expect(d).toMatchObject({ state: "found", folder: FOLDER, files: 2, property: "", missingLinks: [] });
-    expect(d.hash).toBe(await fileListHash([["a.txt", 10], ["raw/b.csv", 20]]));
-    expect(d.hash).toMatch(/^[0-9a-f]{64}$/);
     expect(dataFoundLine(d)).toBe("Data folder found: 2 files.");
     expect(dataWarnings(d)).toEqual([]);
-  });
-  it("the hash does not depend on the listing order and changes with a size or a name", async () => {
-    const a = await fileListHash([["a", 1], ["b", 2]]);
-    expect(await fileListHash([["b", 2], ["a", 1]])).toBe(a);
-    expect(await fileListHash([["a", 1], ["b", 3]])).not.toBe(a);
-    expect(await fileListHash([["a", 1], ["c", 2]])).not.toBe(a);
   });
   it("one file reads 'file'; .DS_Store is not counted", async () => {
     const d = await checkData(input({ list: () => ({ exists: true, files: [[".DS_Store", 5], ["x.csv", 1]] }) }));
@@ -43,8 +35,7 @@ describe("checkData", () => {
   it("missing folder warns", async () => {
     const d = await checkData(input({ list: () => ({ exists: false, files: [] }) }));
     expect(d.state).toBe("missing");
-    expect(d.hash).toBe("");
-    expect(dataWarnings(d)).toEqual([`Data folder not found: ${FOLDER}`]);
+      expect(dataWarnings(d)).toEqual([`Data folder not found: ${FOLDER}`]);
   });
   it("no root on this device warns", async () => {
     const d = await checkData(input({ root: "  " }));
@@ -71,26 +62,25 @@ describe("checkData", () => {
 });
 
 describe("PDF rows", () => {
-  it("print the folder, the property, the count and the hash; the PDF text contains them", async () => {
+  it("print only the folder and the note's property; the PDF text contains them", async () => {
     const d = await checkData(input({ fm: { "Data folder": "/other/ABC0011-A" } }));
     const rows = dataPdfRows(d);
-    expect(rows).toEqual([["Data folder (this device)", FOLDER], ["Data folder (note property)", "/other/ABC0011-A"], ["Data files", "2"], ["Data file list SHA-256", d.hash]]);
+    expect(rows).toEqual([["Data folder (this device)", FOLDER], ["Data folder (note property)", "/other/ABC0011-A"]]);
     const html = pdfHtml("ABC0011-A", [["Exp. Class", "RAFT"], ...rows], "<p>x</p>", false);
     expect(html).toContain(`<th>Data folder (this device)</th><td>${FOLDER}</td>`);
-    expect(html).toContain(`<th>Data file list SHA-256</th><td>${d.hash}</td>`);
+    expect(html).not.toContain("Data file");
   });
-  it("say so when nothing could be checked, and add the date for a later PDF", async () => {
+  it("say so when nothing could be checked; no count, checksum or date row in any case", async () => {
     const phone = await checkData(input({ canRead: false, list: () => null, root: "" }));
-    expect(dataPdfRows(phone)[0]).toEqual(["Data folder (this device)", "cannot check on this device"]);
+    expect(dataPdfRows(phone)).toEqual([["Data folder (this device)", "cannot check on this device"]]);
     const none = await checkData(input({ root: "" }));
-    expect(dataPdfRows(none)[0][1]).toBe("no data folder root set on this device");
+    expect(dataPdfRows(none)).toEqual([["Data folder (this device)", "no data folder root set on this device"]]);
     const miss = await checkData(input({ list: () => ({ exists: false, files: [] }) }));
-    expect(dataPdfRows(miss, "2026-10-21").at(-1)).toEqual(["Data checked", "2026-10-21"]);
-    expect(dataPdfRows(miss)).toContainEqual(["Data files", "folder not found"]);
+    expect(dataPdfRows(miss)).toEqual([["Data folder (this device)", FOLDER]]);
   });
 });
 
-describe("closed_data and the hash", () => {
+describe("closed_data and the note hash", () => {
   it("is the resolved path unless the note has its own property or no folder was resolved", async () => {
     expect(closedDataValue(await checkData(input()))).toBe(FOLDER);
     expect(closedDataValue(await checkData(input({ fm: { "Data folder": "/other/x" } })))).toBe("");
@@ -104,7 +94,7 @@ describe("closed_data and the hash", () => {
   });
 });
 
-const found: DataCheck = { state: "found", folder: FOLDER, property: "", files: 3, hash: "a".repeat(64), missingLinks: [] };
+const found: DataCheck = { state: "found", folder: FOLDER, property: "", files: 3, missingLinks: [] };
 function host(data: DataCheck, over: Partial<CloseHost> = {}) {
   const st = { fm: { Status: "Started" } as Record<string, unknown>, extra: [] as [string, string][][], data: [] as (DataCheck | undefined)[] };
   const h: CloseHost = {
@@ -123,7 +113,7 @@ describe("closeExperiment with the data check", () => {
     await closeExperiment(h);
     expect(st.data).toEqual([found]);
     expect(st.extra[0]).toContainEqual(["Data folder (this device)", FOLDER]);
-    expect(st.extra[0]).toContainEqual(["Data file list SHA-256", "a".repeat(64)]);
+    expect(st.extra[0].map(r => r[0])).toEqual(["Data folder (this device)"]);
     expect(st.fm.closed_data).toBe(FOLDER);
   });
   it("does not write closed_data when the note has its own data-folder property", async () => {
@@ -133,7 +123,7 @@ describe("closeExperiment with the data check", () => {
     expect(st.extra[0]).toContainEqual(["Data folder (note property)", "/other/x"]);
   });
   it("a warning does not stop Close: the window decides (the tick lives there)", async () => {
-    const { h, st } = host({ ...found, state: "missing", files: 0, hash: "" });
+    const { h, st } = host({ ...found, state: "missing", files: 0 });
     await closeExperiment(h);
     expect(st.fm.Status).toBe("Closed");
   });

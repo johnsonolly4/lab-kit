@@ -12,8 +12,6 @@ export interface DataCheck {
   /** The note's own data-folder property, "" when it has none. */
   property: string;
   files: number;
-  /** SHA-256 of the sorted file list (`path<TAB>size` per line); "" when there is no folder to read. */
-  hash: string;
   /** Linked or embedded files that are not in the vault. */
   missingLinks: string[];
 }
@@ -34,13 +32,6 @@ export function dataProperty(fm: Record<string, unknown> | undefined): string {
   return key === undefined ? "" : text(prop(fm, key)).trim();
 }
 
-/** SHA-256 (64 hex) of the sorted `path<TAB>size` lines. */
-export async function fileListHash(files: [string, number][]): Promise<string> {
-  const lines = files.map(([p, n]) => `${p}\t${n}`).sort();
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(lines.join("\n")));
-  return Array.from(new Uint8Array(buf), b => b.toString(16).padStart(2, "0")).join("");
-}
-
 export interface DataInput {
   noteName: string;
   fm: Record<string, unknown> | undefined;
@@ -58,14 +49,14 @@ export interface DataInput {
 export async function checkData(i: DataInput): Promise<DataCheck> {
   const property = dataProperty(i.fm), base = { property, missingLinks: i.missingLinks };
   const folder = resolveDataFolder(i.root, i.noteName, i.join);
-  const none = { files: 0, hash: "" };
+  const none = { files: 0 };
   if (!i.canRead) return { ...base, ...none, state: "no-node", folder };
   if (!folder) return { ...base, ...none, state: "no-root", folder };
   const found = i.list(folder);
   if (!found) return { ...base, ...none, state: "no-node", folder };
   if (!found.exists) return { ...base, ...none, state: "missing", folder };
   const files = found.files.filter(([p]) => !NOISE.test(p));
-  return { ...base, state: files.length ? "found" : "empty", folder, files: files.length, hash: await fileListHash(files) };
+  return { ...base, state: files.length ? "found" : "empty", folder, files: files.length };
 }
 
 /** Warning lines; empty = nothing to confirm. A phone cannot check the folder, so only missing links warn there. */
@@ -89,15 +80,11 @@ export function dataFoundLine(d: DataCheck): string {
 /** Shown when the check cannot run here. */
 export const NO_NODE_LINE = "Cannot check the data folder on this device.";
 
-/** The rows the PDF prints under the properties table. `checked` is the date, only given for a PDF made after closing. */
-export function dataPdfRows(d: DataCheck, checked = ""): [string, string][] {
+/** The rows the PDF prints under the properties table: the folder location only (data may be added later, so no count or checksum). */
+export function dataPdfRows(d: DataCheck): [string, string][] {
   const where = d.folder || (d.state === "no-node" ? "cannot check on this device" : "no data folder root set on this device");
   const rows: [string, string][] = [["Data folder (this device)", where]];
   if (d.property) rows.push(["Data folder (note property)", d.property]);
-  if (d.hash) {
-    rows.push(["Data files", String(d.files)], ["Data file list SHA-256", d.hash]);
-  } else rows.push(["Data files", d.state === "missing" ? "folder not found" : d.state === "no-node" ? "not checked" : d.state === "no-root" ? "not checked" : "0"]);
-  if (checked) rows.push(["Data checked", checked]);
   return rows;
 }
 

@@ -105,7 +105,7 @@ export async function makeClosedPdf(h: CloseHost): Promise<boolean> {
   const fm = h.frontmatter(), date = closedOn(fm), hash = text(prop(fm, "closed_hash")).trim();
   if (!h.isLabNote || !date || !hash) { h.notice("This note is not closed."); return false; }
   if (!h.canPdf || !h.folders.length) { h.notice(h.canPdf ? MSG.noFolder : "This device cannot make the PDF: do it on a computer."); return false; }
-  const bytes = await h.makePdf(closedFooter(date, h.name, hash), dataPdfRows(await h.checkData(), h.today));
+  const bytes = await h.makePdf(closedFooter(date, h.name, hash), dataPdfRows(await h.checkData()));
   if (!bytes) { h.notice("This Obsidian cannot make the PDF here."); return false; }
   const name = pdfFileName(h.name, date, n => h.folders.some(f => h.fileExists(f, n)));
   const files: string[] = [];
