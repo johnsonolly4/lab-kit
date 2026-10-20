@@ -23,7 +23,7 @@ export default class LabKitPlugin extends Plugin {
   kit!: KitController;
   /** Planning commands; null without the planning kit. Project cards call `newTodo(project)` / `newProjectNote(folder)`. */
   planning: PlanningCommands | null = null;
-  /** Alt+S: Insert snippet.md (Templater) calls `menu`, `meta` and `run` on it. */
+  /** Alt+S: the Insert snippet command and the old Insert snippet.md (Templater) use `menu`, `meta` and `run` on it. */
   snippets!: SnippetTemplates;
   private store!: HeaderStore;
 
@@ -35,6 +35,7 @@ export default class LabKitPlugin extends Plugin {
     this.kit = new KitController(this, store);
     await this.kit.load();
     this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app));
+    this.kit.snippets = this.snippets;
     this.kit.setup();
 
     this.calc.register();

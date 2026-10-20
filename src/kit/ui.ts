@@ -1,5 +1,5 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Notice, PluginSettingTab, TFile, type Editor, debounce, normalizePath, setIcon, getIcon, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, inSnippetsFolder, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { openEntry } from "../planning/entry-window";
@@ -9,6 +9,11 @@ import { chemicalClasses } from "./snippet-env";
 import { groupToggleRows } from "./snippet-settings";
 import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
+import { insertSnippet } from "./snippet-insert";
+import { openSnippetForm } from "./snippet-form";
+import type { SnippetTemplates } from "./snippet-run";
+import labSnippets from "../../kits/lab/Extras/scripts/templater/labSnippets.js";
+import labMethods from "../../kits/lab/Extras/scripts/templater/labMethods.js";
 import type { FolderGuardActions } from "./folder-guard";
 import { runCloseCommand } from "../close/ui";
 import { hasNode } from "../platform";
@@ -347,6 +352,8 @@ class KitSettingTab extends PluginSettingTab {
 export class KitController {
   kit: KitData = { ...KIT_DEFAULTS };
   readonly managed: KitManaged;
+  /** Set by the plugin before `setup()`: the Alt+S menu and runner. */
+  snippets: SnippetTemplates | null = null;
   /** Set by the plugin: runs after a kit's files were written. */
   onInstalled: (() => void) | null = null;
   installed(): void { this.onInstalled?.(); }
@@ -425,8 +432,8 @@ export class KitController {
     w.vtEntryLab = () => this.askLabEntry();
     plugin.register(() => { delete w.vtEntryLab; });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
-    // Alt+S (I23 Phase 1): the Lab Kit command runs the kit's Insert snippet.md through Templater, which opens the plugin's menu; the code snippets still need Templater (Phase 6 drops it)
-    plugin.addCommand({ id: "insert-snippet", name: "Insert snippet", editorCallback: () => void this.insertSnippet() });
+    // Alt+S (I23 Phase 6): the Lab Kit command does it all itself; the Templater hotkey on Insert snippet.md only calls this command
+    plugin.addCommand({ id: "insert-snippet", name: "Insert snippet", editorCallback: editor => void this.insertSnippet(editor) });
     plugin.addCommand({ id: "new-rig", name: "New rig", callback: () => void this.newRig() });
     plugin.addCommand({ id: "clone-experiment", name: "Clone experiment", callback: () => void this.cloneExperiment() });
     plugin.addCommand({ id: "close-experiment", name: "Close experiment", callback: () => void runCloseCommand(this.app, this.kit, "close") });
@@ -541,13 +548,14 @@ export class KitController {
   }
 
   /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Templater. */
-  /** The Insert snippet command: the kit's Insert snippet.md run by Templater at the cursor (it opens the plugin's menu). */
-  async insertSnippet(): Promise<void> {
-    if (!hasTemplater(this.app)) { new Notice("Insert snippet needs Templater until snippets run in Lab Kit (Check setup says how to install it)."); return; }
-    const path = kitJoin(this.managed.templatesFolder(), "Insert snippet.md");
-    const file = this.app.vault.getFileByPath(path);
-    if (!file) { new Notice(`Insert snippet: ${path} was not found. Check setup says how to put it back.`); return; }
-    if (!(await templaterInsert(this.app, file))) new Notice("Templater couldn't insert the snippet. Update it to the latest version, then try again.");
+  /** The Insert snippet command (Alt+S): the menu and the snippet run by Lab Kit itself, no Templater (snippet-insert.ts); the text goes in at the cursor. */
+  async insertSnippet(editor: Editor): Promise<void> {
+    if (!this.snippets) return;
+    const snippetFolder = `${kitJoin(this.managed.templatesFolder(), "Snippets")}`;
+    try {
+      await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app), scripts: { labSnippets, labMethods }, snippetFolder,
+        templaterInsert: hasTemplater(this.app) ? f => templaterInsert(this.app, f) : null }, editor);
+    } catch (e) { console.error(e); new Notice("Insert snippet failed. See the developer console for details."); }
   }
 
   async newChemical(): Promise<void> {
