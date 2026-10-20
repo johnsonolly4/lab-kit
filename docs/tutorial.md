@@ -48,10 +48,8 @@ flowchart LR
 Put your cursor where you want the table, press **Alt+S**, type a few letters to filter, press Enter. Each snippet opens **one form**; press **Enter** to insert or **Esc** to cancel. Forms start empty (grey placeholders show what to type), and submitting an untouched form inserts nothing.
 
 > [!note] One-time setup for Alt+S
-> Snippets need [Templater](https://github.com/SilentVoid13/Templater). Install the kit files first (see section 7), then:
-> 1. Settings → Lab Kit → Setup → **Check setup…** → press **Fix** on the Templater rows. That adds `Insert snippet.md` to Templater's **Template hotkeys** and sets its **User script functions** folder when it has none (a folder you set yourself is never changed). Doing it by hand works too: Settings → Lab Kit → **Manage files…** shows where each kit file is.
-> 2. Obsidian → **Hotkeys** → search for *Insert snippet* (Templater lists it as "Templater: Insert …Insert snippet") → set **Alt+S**. Or let Lab Kit do it: **Check hotkeys…** shows which of the recommended keys are set, and its **Set the suggested keys…** sets the ones that are free after you confirm (a key you have is never changed).
-> 3. If the forms ask one question at a time, Templater's **User script functions** folder is not the folder that holds `labSnippets.js` (Templater also reads subfolders, so a folder above it works too). See Troubleshooting.
+> Snippets run inside Lab Kit; Templater is not needed for them. Install the kit files first (see section 7), then Obsidian → **Hotkeys** → search for *Insert snippet* (the command **Lab Kit: Insert snippet**) → set **Alt+S**. Or let Lab Kit do it: **Check hotkeys…** shows which of the recommended keys are set, and its **Set the suggested keys…** sets the ones that are free after you confirm (a key you have is never changed).
+> If you already have Alt+S on Templater's *Insert snippet* (older setups), it keeps working: that template only calls the Lab Kit command. A snippet of your own that holds Templater code (`<% %>`) still needs Templater to run.
 >
 > Set **Settings → Lab Kit → Initials** too: the sample codes use them (`ABC0016-A`). Until then they use `XX` and a notice says so.
 
