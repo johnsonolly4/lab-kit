@@ -12,6 +12,7 @@ import { applyPatch, dropPatch, parseDay, ymd } from "./todo";
 import { toggleDoneWithUndo } from "./undo-notice";
 import { drawDone } from "./board-done";
 import { drawHeadAdd } from "./board-head";
+import { drawWeekRow, weekAt } from "./board-week-nav";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
@@ -37,6 +38,8 @@ class BoardView extends BasesView {
   private pick = "";
   /** The days (YYYY-MM-DD) whose `N done` is unfolded: kept across redraws, until the view closes. */
   private unfolded = new Set<string>();
+  /** Weeks from this one that the board shows (0 = this week): kept across redraws, until the view closes. */
+  private offset = 0;
   private sizer: ResizeObserver;
 
   constructor(controller: QueryController, private el: HTMLElement, private env: BoardEnv) {
@@ -68,10 +71,11 @@ class BoardView extends BasesView {
     const todos = files.filter(f => inFolder(f.path, todoFolder(kit.planningFolders))).map(f => this.rec(f));
     const hubs = files.filter(f => inFolder(f.path, kit.planningFolders.projects) || inFolder(f.path, kit.planningFolders.meetings)).map(f => this.rec(f))
       .filter(n => n.fm.kind === "project" || n.fm.kind === "meeting-series");
-    const board = buildWeek(cards, { series: this.env.series(), todos, hubs }, { weekend: kit.boardWeekend, busyFrom: kit.boardBusyFrom, countdown: kit.dueCountdown, now });
+    const board = buildWeek(cards, { series: this.env.series(), todos, hubs }, { weekend: kit.boardWeekend, busyFrom: kit.boardBusyFrom, countdown: kit.dueCountdown, now, week: weekAt(now, this.offset) });
 
     const root = this.root = this.el.createDiv({ cls: "lk-board" });
     root.toggleClass("is-narrow", this.narrow());
+    drawWeekRow(root, board.monday, this.offset, step => { this.offset = step === 0 ? 0 : this.offset + step; this.pick = ""; this.draw(); });
     const names = board.days.map(d => d.day);
     if (!names.includes(this.pick)) this.pick = board.days.find(d => d.today)?.day ?? names[0] ?? "";
     const tabs = root.createDiv({ cls: "lk-board-tabs", attr: { role: "tablist", "aria-label": "Days" } });

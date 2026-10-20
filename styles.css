@@ -512,6 +512,12 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 
 /* To-do board, our own Bases view (src/planning/board-view.ts; docs/plans/board-own-view.md). Days across the top, the Backlog tray along the bottom. */
 .lk-board { display: flex; flex-direction: column; gap: 16px; padding: 12px; }
+/* The week row: `‹` `›`, the title, `This week` (only away from this week); one line, also at 390 px. `.lk-board` beats Obsidian's button fill; `corner-shape: round` stops 1.14 squircling the arrows. */
+.lk-board-weekrow { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.lk-board-weektitle { flex: 0 1 auto; min-width: 0; margin-right: auto; padding-left: 4px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lk-board .lk-board-weekbtn { flex: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 24px; min-height: 0; padding: 0 8px; font-size: var(--font-ui-small); line-height: 1; color: var(--text-muted); background: none; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); box-shadow: none; }
+.lk-board .lk-board-weekbtn.is-prev, .lk-board .lk-board-weekbtn.is-next { width: 24px; padding: 0; border-radius: var(--lk-radius-pill); corner-shape: round; }
+.lk-board .lk-board-weekbtn:hover { color: var(--text-accent); border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
 .lk-board-days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .lk-board-days.has-weekend { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .lk-board-col, .lk-board-tray { background: var(--background-secondary); border-radius: var(--lk-radius-card); padding: 10px; }

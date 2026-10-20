@@ -135,6 +135,9 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 /** `Tue 27 Oct`. */
 export const datePill = (d: Date): string => `${weekdayOf(d)} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 
+/** `Week of 26 Oct`: the Monday of the shown week. */
+export const weekTitle = (monday: Date): string => `Week of ${monday.getDate()} ${MONTHS[monday.getMonth()]}`;
+
 /** One card's pieces and dates. `done` is true for old `day: Done` cards too. */
 export function weekCardOf(src: CardSrc, mode: CountdownMode, now: Date): WeekCard {
   const fm = src.fm, d = dateOf(fm, now), done = isFinishedTodo(fm), on = parseDay(fm.done_on);
