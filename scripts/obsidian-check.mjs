@@ -13,6 +13,7 @@
 //   node scripts/obsidian-check.mjs text [css selector]                                visible text of the note (or selector)
 //   node scripts/obsidian-check.mjs shot out.png [css selector] [--scale 0.5]          screenshot, cropped to the selector
 //   node scripts/obsidian-check.mjs errors                                             console errors since start
+//   node scripts/obsidian-check.mjs smoke [--no-mobile] [--no-build]                  the smoke run (scripts/smoke.mjs): seeded vault, both kits, key surfaces, PASS / FAIL per step
 //   node scripts/obsidian-check.mjs stop                                               quit this Obsidian (only the one started here)
 // Every command prints JSON or plain text and exits 0 on success, 1 on failure (a thrown error is printed).
 import { spawn, execFileSync } from "child_process";
@@ -222,6 +223,7 @@ async function main() {
   const [cmd, x, y] = o.a;
   const print = (v) => console.log(typeof v === "string" ? v : JSON.stringify(v, null, 1));
   switch (cmd) {
+    case "smoke": { const r = spawn(process.execPath, [join(ROOT, "scripts", "smoke.mjs"), ...process.argv.slice(3)], { stdio: "inherit" }); return new Promise(() => r.on("exit", (code) => process.exit(code ?? 1))); }
     case "start": return start(o);
     case "stop": return stop(o);
     case "eval": {
