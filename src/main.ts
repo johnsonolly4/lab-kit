@@ -8,6 +8,8 @@ import { KitController } from "./kit/ui";
 import { PLANNING_KIT, todoFolder } from "./kit/paths";
 import { PlanningCommands } from "./planning/commands";
 import { TodoEngine } from "./planning/engine";
+import { ymd } from "./planning/todo";
+import { metadataResolved } from "./kit/obsidian-private";
 import { refreshBoards, registerBoardView } from "./planning/board-view";
 import { bridgeOnDelete } from "./planning/after-bridge";
 import { PlanningBlocks } from "./planning/blocks";
@@ -82,6 +84,22 @@ export default class LabKitPlugin extends Plugin {
     this.kit.onChanged?.();
   }
 
+  /** The daily check that freezes meeting notes dated before today (I19): once the note properties are read, then whenever the day changes. */
+  private scheduleFreeze(planning: PlanningCommands): void {
+    let last = "";
+    const run = (): void => {
+      const today = ymd(new Date());
+      if (today === last) return;
+      last = today;
+      void planning.freezeDueNotes().catch(e => console.error("Lab Kit", "freeze", e));
+    };
+    this.app.workspace.onLayoutReady(() => {
+      if (metadataResolved(this.app)) run();
+      else { const ref = this.app.metadataCache.on("resolved", () => { this.app.metadataCache.offref(ref); run(); }); this.registerEvent(ref); }
+      this.registerInterval(window.setInterval(run, 15 * 60 * 1000));
+    });
+  }
+
   /** Starts the to-do engine and registers the planning commands, once, when the planning kit is on and installed. Switching it off needs a reload. */
   startPlanning(): void {
     const planning = this.kit.kit.kits[PLANNING_KIT];
@@ -92,6 +110,7 @@ export default class LabKitPlugin extends Plugin {
     bridgeOnDelete(this, () => todoFolder(this.kit.kit.planningFolders));
     this.planning = new PlanningCommands(this, () => this.kit.kit.kits[PLANNING_KIT]?.managed ?? null, () => this.kit.kit, this.kit.folderGuard);
     this.planning.register();
+    this.scheduleFreeze(this.planning);
     registerBoardView(this, { kit: () => this.kit.kit, series: () => this.planning?.seriesList() ?? [], newTodo: day => this.planning?.newTodoOn(day) });
     this.kit.boardChanged = refreshBoards;
   }

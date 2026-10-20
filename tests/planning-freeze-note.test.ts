@@ -1,7 +1,7 @@
 // I19 / I20: freezeFile on a fake vault (src/planning/freeze-note.ts): lists written, to-dos stamped, never twice.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { freezeFile } from "../src/planning/freeze-note";
+import { freezeDue, freezeFile } from "../src/planning/freeze-note";
 import { PLANNING_FOLDER_DEFAULTS, type KitData } from "../src/kit/paths";
 
 interface F { path: string; basename: string; parent: { path: string }; stat: { ctime: number; mtime: number } }
@@ -54,5 +54,58 @@ describe("freezeFile", () => {
     expect(await freezeFile(app, kit, file, new Date(2026, 10, 1))).toEqual({ done: false, why: "frozen", on: "2026-10-22" });
     expect(files[MEET].text).toBe(once);
     expect(await freezeFile(app, kit, app.vault.getFileByPath("00 Planning/To-dos/Fix pump.md")!)).toEqual({ done: false, why: "not-meeting" });
+  });
+});
+
+describe("freezeDue (the daily check)", () => {
+  const dated = (date: unknown, extra: Record<string, unknown> = {}) => {
+    const m = mk();
+    m.files[MEET].fm = { ...m.files[MEET].fm, date, ...extra };
+    return m;
+  };
+  it("does not freeze on the day of the meeting, freezes the day after, and is the same on later days", async () => {
+    const a = dated("2026-10-15");
+    expect(await freezeDue(a.app, kit, new Date(2026, 9, 15))).toEqual([]);
+    expect(a.files[MEET].text).not.toContain("frozen:");
+    expect(await freezeDue(a.app, kit, new Date(2026, 9, 16))).toEqual([]);
+    expect(a.files[MEET].text).toContain("frozen: 2026-10-16");
+    const b = dated("2026-10-15");
+    await freezeDue(b.app, kit, new Date(2026, 10, 20));
+    expect(b.files[MEET].text).toContain("frozen: 2026-11-20");
+  });
+  it("freezes nothing when the date is missing or unreadable", async () => {
+    for (const d of [undefined, "", "next week"]) {
+      const m = dated(d);
+      const was = m.files[MEET].text;
+      await freezeDue(m.app, kit, new Date(2027, 0, 1));
+      expect(m.files[MEET].text).toBe(was);
+    }
+  });
+  it("leaves a frozen note unchanged, and a date edited later after the freeze does not freeze it again", async () => {
+    const m = dated("2026-10-15");
+    await freezeDue(m.app, kit, new Date(2026, 9, 16));
+    const once = m.files[MEET].text;
+    await freezeDue(m.app, kit, new Date(2026, 9, 20));
+    expect(m.files[MEET].text).toBe(once);
+    m.files[MEET].fm.date = "2026-11-30";
+    await freezeDue(m.app, kit, new Date(2026, 9, 21));
+    expect(m.files[MEET].text).toBe(once);
+  });
+  it("a date edited to a later day before the freeze is not frozen until after that day", async () => {
+    const m = dated("2026-10-15");
+    m.files[MEET].fm.date = "2026-10-29";
+    await freezeDue(m.app, kit, new Date(2026, 9, 20));
+    expect(m.files[MEET].text).not.toContain("frozen:");
+    await freezeDue(m.app, kit, new Date(2026, 9, 30));
+    expect(m.files[MEET].text).toContain("frozen: 2026-10-30");
+  });
+  it("leaves a one-off meeting alone and writes nothing else of the owner's", async () => {
+    const m = dated("2026-10-15");
+    m.files["08 Meetings/Weekly meetings/Weekly meetings.md"].fm.interval = "once";
+    await freezeDue(m.app, kit, new Date(2026, 9, 20));
+    expect(m.files[MEET].text).not.toContain("frozen:");
+    const n = dated("2026-10-15");
+    await freezeDue(n.app, kit, new Date(2026, 9, 20));
+    expect(n.files[MEET].text).toContain("- agreed to repeat 0005");
   });
 });

@@ -114,12 +114,16 @@ export function freezeMeeting(text: string, lists: FreezeLists, today: string): 
   return crlf ? out.replace(/\n/g, "\r\n") : out;
 }
 
-/** The meeting note New meeting freezes: the latest note of kind meeting directly in `folder` dated before `date` (YYYY-MM-DD) that is not frozen yet; null when there is none. */
-export function previousMeeting(notes: NoteRec[], folder: string, date: string): NoteRec | null {
-  const day = (n: NoteRec): string => (typeof n.fm.date === "string" ? n.fm.date : "").slice(0, 10);
-  const held = notes.filter(n => n.folder === folder && n.fm.kind === "meeting" && day(n) && day(n) < date);
-  const last = held.sort((a, b) => day(b).localeCompare(day(a)) || b.name.localeCompare(a.name))[0];
-  return last && !last.fm[FROZEN] ? last : null;
+/** The meeting's date as YYYY-MM-DD; "" when the property is missing or not a real day (such a note is never frozen by date). */
+export function meetingDay(fm: Record<string, unknown>): string {
+  const d = typeof fm.date === "string" ? fm.date.slice(0, 10) : "";
+  return parseDay(d) ? d : "";
+}
+
+/** Freeze timing (I19, owner 2026-10-20): a meeting note freezes the day after its meeting date, i.e. when `today` (YYYY-MM-DD) is after the date. Not on the day itself; never without a readable date; never when `frozen` is set (so a date edited later after the freeze changes nothing). */
+export function dueToFreeze(fm: Record<string, unknown>, today: string): boolean {
+  const d = meetingDay(fm);
+  return fm.kind === "meeting" && !fm[FROZEN] && !!d && d < today;
 }
 
 /** The series link of a meeting note's properties as a hub name. */

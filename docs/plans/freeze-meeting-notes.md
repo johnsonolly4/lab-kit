@@ -2,8 +2,17 @@
 
 _Agreed: 2026-10-19, approved by the orchestrator on the owner's behalf (roadmap cards I19, I20); the owner can reject. Model: Sonnet._
 
+## Change 2026-10-20 (owner board: freeze the day after the meeting) BUILT
+The trigger below ("when the next meeting is made") is replaced. A meeting note of a regular series freezes when today is after its `date` (`dueToFreeze` in `src/planning/freeze.ts`): not on the meeting day, yes the day after and on every later day. The daily check (`scheduleFreeze` in `src/main.ts`: once the properties are read at start, then when the day changes; `freezeDue` in `src/planning/freeze-note.ts`) does it. What is rewritten, `raised_on`, `frozen`, never freezing twice: unchanged. Rules where nothing was specified (each is a question in BACKLOG, nothing destructive):
+- No date, or one that is not a real day: never frozen by date.
+- A `frozen` note is never touched again, so editing its date later changes nothing; a date edited later before the freeze just moves the freeze.
+- Several meetings of a series on one day: each has its own date, all freeze the day after.
+- One-off meetings (hub interval `once`) and notes with no series hub: not frozen by date (command and Tidy only), as the plan said.
+- New meeting no longer freezes the previous note (that was the old trigger); the command and the Tidy rule stay as they were (Tidy still means "dated before the newest of its series").
+- The frozen date is the day the check ran: a note opened after a week away freezes with the lists as of that day.
+
 ## Goal
-A meeting note becomes a record: when the next meeting of its series is made, the old note's generated lists turn into plain wikilink lists, and each flagged to-do is stamped with the meeting that first raised it.
+A meeting note becomes a record: the day after its meeting date, the note's generated lists turn into plain wikilink lists, and each flagged to-do is stamped with the meeting that first raised it.
 
 ## Decision taken
 Follow ELN practice (LabArchives, Labfolder lock a signed page): freeze, do not keep live queries. Rejected: a date property on lab notes for the Experiments filter (changes every lab note); snapshots kept in a separate file (a second place to look).
@@ -28,7 +37,7 @@ Follow ELN practice (LabArchives, Labfolder lock a signed page): freeze, do not 
 
 ### 3. When it runs
 - Files: `src/planning/commands.ts` (`freezeNote`, `freezePrevious`, command, `makeMeeting`), `src/kit/tidy.ts` + `src/kit/tidy-ui.ts` (rule), tests.
-- New meeting (regular series) freezes the series' latest earlier meeting note before making the new one. A failure to freeze never stops the new meeting (a notice says so).
+- (Replaced 2026-10-20, see above: the daily check freezes by date; New meeting no longer freezes.) A failure to freeze is a notice and never stops the others.
 - Command "Freeze this meeting note" (active note).
 - Tidy rule, opt-in (not ticked until ticked; backed up first like the other opt-in rules), for meeting notes dated before the newest one in their series.
 - Done when: tests for the command logic and the Tidy rows pass; obsidian-check: two meetings of one series, the first is frozen with readable lists.

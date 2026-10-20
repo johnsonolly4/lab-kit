@@ -2,7 +2,7 @@
 // The text rules are in freeze.ts (pure). Plan: docs/plans/freeze-meeting-notes.md.
 import type { App, TFile } from "obsidian";
 import { kitJoin, todoFolder, type KitData } from "../kit/paths";
-import { freezeMeeting, frozenOn, meetingFreezeLists, raisedStamp, RAISED, type FreezeData } from "./freeze";
+import { dueToFreeze, freezeMeeting, frozenOn, meetingFreezeLists, raisedStamp, RAISED, type FreezeData } from "./freeze";
 import { inFolder, linkTarget, meetingWindow, type NoteRec } from "./lists";
 import { firstSeries } from "./meetings";
 import { ymd } from "./todo";
@@ -48,4 +48,20 @@ export async function freezeFile(app: App, kit: KitData, file: TFile, today: Dat
     if (todo) await app.fileManager.processFrontMatter(todo, (fm: Record<string, unknown>) => { const s = raisedStamp(fm[RAISED], date); if (s) fm[RAISED] = s; });
   }
   return { done: true, flagged: data.flagged.length };
+}
+
+/** The daily check (I19): freezes each meeting note of a regular series whose date is before `today` (see `dueToFreeze`). One-off meetings are left to the command. Returns the names of the notes that failed; the others are still done. */
+export async function freezeDue(app: App, kit: KitData, today: Date = new Date()): Promise<string[]> {
+  const day = ymd(today), failed: string[] = [];
+  const folder = kit.planningFolders.meetings;
+  for (const f of app.vault.getMarkdownFiles()) {
+    if (!inFolder(f.path, folder)) continue;
+    const fm = app.metadataCache.getFileCache(f)?.frontmatter ?? {};
+    if (!dueToFreeze(fm, day)) continue;
+    const target = linkTarget(fm.series), hub = target ? app.metadataCache.getFirstLinkpathDest(target, f.path) : null;
+    if (!hub || String(app.metadataCache.getFileCache(hub)?.frontmatter?.interval ?? "").toLowerCase() === "once") continue;   // no series or a one-off: not by date
+    try { await freezeFile(app, kit, f, today); }
+    catch (e) { console.error("Lab Kit", "freeze", e); failed.push(f.basename); }
+  }
+  return failed;
 }

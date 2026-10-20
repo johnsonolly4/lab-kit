@@ -1,7 +1,7 @@
 // I19 / I20: freezing a meeting note (src/planning/freeze.ts), against a fixture note.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { flaggedLines, freezeBody, freezeMeeting, frozenOn, lineMarkdown, meetingFreezeLists, previousMeeting, raisedStamp, type FreezeData, type FreezeLists } from "../src/planning/freeze";
+import { flaggedLines, freezeBody, freezeMeeting, frozenOn, dueToFreeze, lineMarkdown, meetingDay, meetingFreezeLists, raisedStamp, type FreezeData, type FreezeLists } from "../src/planning/freeze";
 import { scan, selectChanges, wantsText, type TidyContext } from "../src/kit/tidy";
 import { applyTidy } from "../src/kit/tidy-apply";
 import type { NoteRec } from "../src/planning/lists";
@@ -115,16 +115,23 @@ describe("raised flags (I20)", () => {
   });
 });
 
-describe("previousMeeting (New meeting)", () => {
-  const m = (name: string, date: string, extra: Record<string, unknown> = {}): NoteRec => rec(`08 Meetings/Weekly/${name}.md`, { kind: "meeting", date, ...extra });
-  it("is the latest earlier meeting of the folder that is not frozen", () => {
-    const notes = [m("a", "2026-10-01"), m("b", "2026-10-08"), m("c", "2026-10-15"), rec("08 Meetings/Other/x.md", { kind: "meeting", date: "2026-10-12" }), rec("08 Meetings/Weekly/hub.md", { kind: "meeting-series" })];
-    expect(previousMeeting(notes, "08 Meetings/Weekly", "2026-10-22")?.name).toBe("c");
-    expect(previousMeeting(notes, "08 Meetings/Weekly", "2026-10-15")?.name).toBe("b");
-    expect(previousMeeting(notes, "08 Meetings/Weekly", "2026-10-01")).toBeNull();
+describe("dueToFreeze (the day after the meeting, owner 2026-10-20)", () => {
+  const fm = (date: unknown, extra: Record<string, unknown> = {}): Record<string, unknown> => ({ kind: "meeting", date, ...extra });
+  it("is not due on the day of the meeting, is due the day after and on later days", () => {
+    expect(dueToFreeze(fm("2026-10-15"), "2026-10-14")).toBe(false);
+    expect(dueToFreeze(fm("2026-10-15"), "2026-10-15")).toBe(false);
+    expect(dueToFreeze(fm("2026-10-15"), "2026-10-16")).toBe(true);
+    expect(dueToFreeze(fm("2026-10-15"), "2026-12-01")).toBe(true);
+    expect(dueToFreeze(fm("2026-12-31"), "2027-01-01")).toBe(true);
   });
-  it("is null when that meeting is already frozen", () => {
-    expect(previousMeeting([m("a", "2026-10-01", { frozen: "2026-10-08" })], "08 Meetings/Weekly", "2026-10-08")).toBeNull();
+  it("is not due without a readable date", () => {
+    for (const d of [undefined, "", "soon", "15/10/2026", "2026-02-30", 20261015]) expect(dueToFreeze(fm(d), "2027-01-01")).toBe(false);
+    expect(meetingDay(fm("2026-10-15T09:00"))).toBe("2026-10-15");
+  });
+  it("is not due for a frozen note (also when its date was edited later) or a note that is not a meeting", () => {
+    expect(dueToFreeze(fm("2026-10-15", { frozen: "2026-10-16" }), "2026-10-20")).toBe(false);
+    expect(dueToFreeze(fm("2026-12-01", { frozen: "2026-10-16" }), "2026-10-20")).toBe(false);
+    expect(dueToFreeze({ kind: "todo", date: "2026-10-15" }, "2026-10-20")).toBe(false);
   });
 });
 

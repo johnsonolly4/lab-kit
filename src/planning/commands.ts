@@ -20,8 +20,7 @@ import { parseQuickTodo, todoFileName } from "./quick-todo";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { addResult } from "./result";
-import { previousMeeting } from "./freeze";
-import { freezeFile, recOf } from "./freeze-note";
+import { freezeDue, freezeFile } from "./freeze-note";
 import { linkInOrder } from "./sequence";
 import { dayOf, parseDay, ymd } from "./todo";
 import { columnEntry } from "./todo-note";
@@ -221,18 +220,14 @@ export class PlanningCommands {
     else new Notice("This is not a meeting note.");
   }
 
-  /** Freezes the series' previous meeting note before a new one is made; a failure is a notice, never a stop. */
-  private async freezePrevious(series: Series, date: string): Promise<void> {
-    const prev = previousMeeting(this.app.vault.getMarkdownFiles().map(f => recOf(this.app, f)), series.folder, date);
-    const file = prev ? this.app.vault.getFileByPath(prev.path) : null;
-    if (!prev || !file) return;
-    try { await freezeFile(this.app, this.kit(), file); }
-    catch (e) { console.error("Lab Kit", "freeze", e); new Notice(`Could not freeze ${prev.name}. See the developer console for details.`); }
+  /** The daily check (I19): freezes every regular-series meeting note dated before today; a failure is a notice, never a stop. */
+  async freezeDueNotes(today: Date = new Date()): Promise<void> {
+    const failed = await freezeDue(this.app, this.kit(), today);
+    for (const name of failed) new Notice(`Could not freeze ${name}. See the developer console for details.`);
   }
 
-  /** Makes the meeting note of a regular series on `date`, "since" the last meeting of the series. The series' previous meeting note is frozen first. */
+  /** Makes the meeting note of a regular series on `date`, "since" the last meeting of the series. */
   private async makeMeeting(series: Series, date: string): Promise<void> {
-    await this.freezePrevious(series, date);
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
     handoff().vtMeeting = { series: series.name, folder: series.folder, date, since: ymd(sinceLast(series, parseDay(date)!, held)) };
