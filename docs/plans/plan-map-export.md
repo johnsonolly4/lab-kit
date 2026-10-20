@@ -51,6 +51,9 @@ The rejected options and their reasons are in the research file: a Gantt / timel
 Order check: 1 → 2 → 3 → 4. Phase 3 needs the finished picture from 2. Phase 1 changes `PlanRow`, which the on-screen map also uses (it only adds a field, so the map does not change).
 If the owner picks **Q2 B (columns)** or **C (both)**: one more phase between 2 and 3, a `{ kind: "columns" }` layout in `slideModel` / `slideSvg` with "+N more" per column and a third entry in the window's Layout list.
 
+## Large projects (research 2026-10-20; not planned yet)
+For a big project (the 59 to-do test on `my_work/mockups/plan-map-export-mature.html`) the compact picture shrinks to 12.3 px text (limit 22 px), and fewer steps do not fix it. Research: `docs/plans/plan-map-large-graph-research.md`; looks: `my_work/mockups/plan-map-large-options.html`. Recommended there (nothing decided): (1) an "open work only" picture (Late / Waiting / Can start / Next, the rest as one count line) used when option A would be too small, no new data; (2) a workstream rollup (needs a workstream on each to-do); (3) a rollup plus one slide per workstream. Question: BACKLOG "Questions for the owner", item "Plan map, large projects". If the owner picks one, a planning session adds its phase after Phase 2 here.
+
 ## Verification
 - Known answer: the example project in `my_work/mockups/plan-map-export-src/gen.ts` with today = 2026-10-20 must give Book GPC time = late + waiting, Run RAFT screen = can start, due in 3 d, 2/4 subtasks, GPC analysis = after Run RAFT screen, Book GPC time, and 4 of 12 done. Make it a test fixture in Phase 1.
 - By eye without Obsidian: SVG → PNG with `qlmanage` each phase.
