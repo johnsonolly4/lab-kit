@@ -412,7 +412,7 @@ export class KitManaged {
         },
       });
       if (report) new KitReportModal(this.app, report).open();
-      if (ran && done.length) new Notice(done.join("\n") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
+      if (ran && done.length) new Notice(done.join("\n"), 15000);
     } catch (e) { this.failed(e); }
   }
 
