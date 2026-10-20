@@ -118,6 +118,7 @@ What is stored where (recommendation; folder per N2):
 - Done when: the owner has answered N1-N5 and the looks on the page (ticked in BACKLOG, a line in `docs/decisions.md`).
 
 ### Phase 2 — the rig block draws the figure
+- **BUILT 2026-10-20 (Phase 2** commit "Rig block draws the figure…"; `src/rig/figure-make.ts`, `render.ts`, `styles.css`, `tests/rig-render.test.ts` (12 tests, 7 fixtures), `scripts/smoke.mjs` rig step; checklist 6i row). Docs not changed yet and **to update with Phase 4** (ship 2 and 4 together): README Rig notes line and `docs/tutorial.md` Mermaid-prompt line still describe Mermaid.
 - Depends on: Phase 0 (done); Q1-Q3 answered. Does not wait for N1-N5.
 - Files: move `makeFigure` out of `figure-ui.ts` to a pure `src/rig/figure-make.ts` (window and block share it); `src/rig/render.ts` (no `MarkdownRenderer`; `<img class="lab-kit-rig-diagram">` from the SVG; redraw key = SVG text + problems; the "drawn as a plain box" line); `styles.css` (Q3 a: width 100 % with a minimum width so labels stay ≥ about 9 px, then `overflow-x: auto`; white card per Q2 a; corners `--lk-radius-control`); `tests/rig-render.test.ts` (rewritten); `scripts/smoke.mjs` (rig step: image, no Mermaid).
 - Tests against fixtures: for each of the 7 rigs, the block's SVG equals `figureSvg(buildFigure(...))` and has one `data-part` per part; no `MarkdownRenderer.render`; problems as today; no table → message, no image; redraw once on a change, not for an equal SVG, not after unload.

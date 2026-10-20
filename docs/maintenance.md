@@ -41,7 +41,7 @@ Owner's choice (2026-10-19, R1/R2): public releases only, on each Obsidian relea
 | Home | 5 or more Lab Kit blocks, no "planning kit is off", no "folder not found" |
 | plan map | `.vt-plan` with its cards and ticks |
 | calc note 0011 | rendered text has `Reactor volume 1.7591` |
-| rig note | the rig diagram draws an SVG with no problem list (Obsidian 1.14 asks once per vault "Display Mermaid diagrams in this vault?"; the run allows it in the throwaway vault and says so) |
+| rig note | the rig block shows the figure as an `<img>`, no Mermaid diagram or Mermaid prompt, no problem list |
 | kit callouts | each of the 8 kit callout types looks different from Obsidian's default callout (background or icon colour), in a note with `cssclasses: vt` |
 | windows | Check setup, Review, Manage, Alt+S, What's new open, are at least 100 x 50, sit inside the screen, and close on Escape. New lab entry and New chemical need Templater (not in the throwaway vault): the run reports NOTE with the notice text |
 | Alt+S picker has no close X | NOTE while it shows one (see BACKLOG) |
