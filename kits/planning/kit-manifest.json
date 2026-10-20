@@ -348,7 +348,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "1.4.1",
-      "sha256": "233f081f51f89defff92c9b8856ec94223e5c0701bab6e45961b7c8ba86761cc",
+      "sha256": "504277d35b954aa27aadb42a64889fc75db9f75d56ff6932928e6870df2ca67d",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },
@@ -359,7 +359,7 @@
       "role": "templates",
       "path": "To-do.md",
       "version": "1.4.1",
-      "sha256": "f5c0a1825c787c4640db557fa909927c704dae6d9bf0b00c8ba1224d8bd85c70",
+      "sha256": "84d250e85e327e6dd2794dc47599f7b2247cde363c3c5751e784ebbf403a6d60",
       "renamedFrom": [],
       "desc": "New to-do note (folder template for 00 Planning/To-dos)"
     },

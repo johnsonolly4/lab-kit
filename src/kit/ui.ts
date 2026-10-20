@@ -8,7 +8,7 @@ import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "
 import { chemicalClasses } from "./snippet-env";
 import { groupToggleRows } from "./snippet-settings";
 import { prop, toList } from "../frontmatter";
-import { hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
+import { ensurePropertyType, hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import { insertSnippet } from "./snippet-insert";
 import { openSnippetForm } from "./snippet-form";
 import { menuIcons } from "./snippet-icon-ui";
@@ -359,6 +359,10 @@ export class KitController {
     const w = window as unknown as { vtEntryLab?: () => Promise<{ title: string; expClass: string } | null> };
     w.vtEntryLab = () => this.askLabEntry();
     plugin.register(() => { delete w.vtEntryLab; });
+    // The planning templates set the due / priority / deadline property types through this one call (the private type manager stays in obsidian-private.ts)
+    const t = window as unknown as { vtEnsureType?: (name: string, type: string) => Promise<boolean> };
+    t.vtEnsureType = (name, type) => ensurePropertyType(this.app, name, type);
+    plugin.register(() => { delete t.vtEnsureType; });
     plugin.addCommand({ id: "new-chemical", name: "New chemical", callback: () => void this.newChemical() });
     // Alt+S (I23 Phase 6): the Lab Kit command does it all itself; the Templater hotkey on Insert snippet.md only calls this command
     plugin.addCommand({ id: "insert-snippet", name: "Insert snippet", editorCallback: editor => void this.insertSnippet(editor) });
@@ -555,10 +559,9 @@ export class KitController {
     return pick<string>(this.app, [...used, "No class (fill in later)"], [...used, ""], "Chemical class: pick one or type a new one (Esc cancels)", false, { prefix: "+ New class: ", make: text => text });
   }
 
-  /** Makes "Chemical class" a list property, so the Properties pane offers the classes already in use. Private API, kept in this one function; an older Obsidian keeps it as text. */
+  /** Makes "Chemical class" a list property, so the Properties pane offers the classes already in use. Private API, reached through obsidian-private.ts; an older Obsidian keeps it as text. */
   private async makeClassAList(): Promise<void> {
-    const types = (this.app as unknown as { metadataTypeManager?: { getAssignedType?: (p: string) => string | null; setType?: (p: string, t: string) => Promise<void> } }).metadataTypeManager;
-    try { if (types?.getAssignedType?.("Chemical class") !== "multitext") await types?.setType?.("Chemical class", "multitext"); } catch (e) { console.error(e); }
+    await ensurePropertyType(this.app, "Chemical class", "multitext");
   }
 
   /** Writes the class into the note Templater just made and opened (only if it is in the Chemical folder and has no class yet). */

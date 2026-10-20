@@ -5,7 +5,7 @@ if (!name) { throw new Error("Cancelled - no project name"); }   // Esc (null) o
 name = name.replace(/['&\\/:*?"<>|#^\[\]]/g, "").trim();
 const folder = `02 Projects/${name}`;
 // deadline: optional date property, set once here (Obsidian keeps it in .obsidian/types.json)
-try { if (app.metadataTypeManager?.getAssignedType?.("deadline") !== "date") { await app.metadataTypeManager?.setType?.("deadline", "date"); } } catch (e) { /* older Obsidian: deadline stays text */ }
+try { await window.vtEnsureType?.("deadline", "date"); } catch (e) { /* older Lab Kit or Obsidian: deadline stays text */ }
 if (!app.vault.getAbstractFileByPath(folder)) { await app.vault.createFolder(folder); }
 await tp.file.move(`${folder}/${name}`);
 -%>

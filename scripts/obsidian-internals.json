@@ -240,12 +240,10 @@
    "name": "metadataTypeManager",
    "kind": "member",
    "files": [
-    "kits/planning/Extras/Templates/Project hub.md",
-    "kits/planning/Extras/Templates/To-do.md",
     "src/kit/obsidian-private.ts"
    ],
    "risk": "medium",
-   "note": "Sets property types (due, priority, deadline); wrapped in try / optional chaining (audit medium row 4)"
+   "note": "Sets property types (due, priority, deadline, Chemical class); only src/kit/obsidian-private.ts reads it (ensurePropertyType / setPropertyType / assignedType, feature-checked, soft-fail); kit templates call window.vtEnsureType (audit medium row 4, S3)"
   },
   {
    "name": "plugins",
@@ -291,15 +289,6 @@
    ],
    "risk": "medium",
    "note": "The one isolation layer: typed casts of app / vault / metadataCache to the private shapes (audit S3)"
-  },
-  {
-   "name": "src/kit/ui.ts",
-   "kind": "cast",
-   "files": [
-    "src/kit/ui.ts"
-   ],
-   "risk": "medium",
-   "note": "A cast for metadataTypeManager.getAssignedType / setType; to move into obsidian-private.ts (S3, waiting for owner)"
   }
  ]
 }

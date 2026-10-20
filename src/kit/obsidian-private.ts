@@ -30,7 +30,7 @@ interface PrivateApp {
   /** Obsidian's own (core) plugins, by id; `instance.options` is that plugin's saved settings. */
   internalPlugins?: { plugins?: Record<string, { enabled?: boolean; instance?: { options?: Record<string, unknown> } }> };
   /** Property types (Settings → Properties, saved in types.json). */
-  metadataTypeManager?: { setType?: (name: string, type: string) => Promise<void> | void };
+  metadataTypeManager?: { getAssignedType?: (name: string) => string | null; setType?: (name: string, type: string) => Promise<void> | void };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
@@ -396,6 +396,17 @@ export async function propertyTypes(app: App, names: string[]): Promise<Record<s
     const lower = new Map(Object.entries(types).map(([k, v]) => [k.toLowerCase(), v]));
     return Object.fromEntries(names.map(n => { const t = lower.get(n.toLowerCase()); return [n, typeof t === "string" ? t : null]; }));
   } catch (e) { console.error(e); return null; }
+}
+/** The type the manager reports for a property (`metadataTypeManager.getAssignedType`, private). undefined when this Obsidian has no such call. */
+export function assignedType(app: App, name: string): string | null | undefined {
+  const m = priv(app).metadataTypeManager;
+  if (typeof m?.getAssignedType !== "function") return undefined;
+  try { return m.getAssignedType(name); } catch (e) { console.error(e); return undefined; }
+}
+/** Gives a property a type unless the manager already reports it (kit templates call this through `window.vtEnsureType`). True when the type was set, false when it was already right, missing or failed (the property then stays as it is). */
+export async function ensurePropertyType(app: App, name: string, type: string): Promise<boolean> {
+  if (assignedType(app, name) === type) return false;
+  return setPropertyType(app, name, type);
 }
 /** Sets a property's type (as Settings → Properties does). False when this Obsidian has no such call or it fails. */
 export async function setPropertyType(app: App, name: string, type: string): Promise<boolean> {

@@ -174,7 +174,7 @@ describe("To-do template due date and countdown", () => {
     expect(tpl).not.toContain("Countdown on the board card?");
     expect(tpl).not.toMatch(/countdown/i);
     expect(tpl).toMatch(/^<% due \? `due: \$\{due\}\\n` : "" -%>$/m);
-    expect(tpl).toContain('setType?.("due", "date")');
+    expect(tpl).toContain('vtEnsureType?.("due", "date")');
   });
 });
 

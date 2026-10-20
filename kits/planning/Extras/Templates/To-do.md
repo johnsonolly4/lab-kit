@@ -81,7 +81,7 @@ if (!preset && series.length > 1) {
 }
 // Due date: optional (Enter on empty = none). Esc cancels.
 // `due` is a date property in this vault (set once here, Obsidian keeps it in .obsidian/types.json).
-try { if (app.metadataTypeManager?.getAssignedType?.("due") !== "date") { await app.metadataTypeManager?.setType?.("due", "date"); } } catch (e) { /* older Obsidian: due stays text */ }
+try { await window.vtEnsureType?.("due", "date"); } catch (e) { /* older Lab Kit or Obsidian: due stays text */ }
 const parseDue = tp.user.vtAsk.parseDue;   // words like "fri" or "next mon"; an older vtAsk.js has none (then only YYYY-MM-DD)
 let due = preset ? (preset.due || "") : "", prompt = "Due date? (YYYY-MM-DD, or today, tomorrow, fri, next mon; Enter = none, Esc to cancel)";
 while (!preset) {
@@ -93,7 +93,7 @@ while (!preset) {
   prompt = `"${d}" is not a date. Use YYYY-MM-DD, or today, tomorrow, fri, next mon (Enter = none, Esc to cancel)`;
 }
 // Priority: optional, a number property (1 = highest). Esc cancels.
-try { if (app.metadataTypeManager?.getAssignedType?.("priority") !== "number") { await app.metadataTypeManager?.setType?.("priority", "number"); } } catch (e) { /* older Obsidian: priority stays text */ }
+try { await window.vtEnsureType?.("priority", "number"); } catch (e) { /* older Lab Kit or Obsidian: priority stays text */ }
 const pr = preset ? preset.priority : await tp.system.suggester(["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3], false, "Priority? (1 = high, 3 = low; Esc to cancel)");
 if (pr === null || pr === undefined) { await trashIfBlank(); throw new Error("Cancelled - no priority choice"); }
 const priority = pr;

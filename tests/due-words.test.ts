@@ -87,7 +87,7 @@ describe("To-do template", () => {
   });
   it("asks the priority with a text hint (Esc cancels), sets a number property, writes it only when set, after due", () => {
     expect(tpl).toContain('["No priority", "1 - high", "2 - medium", "3 - low"], ["", 1, 2, 3]');
-    expect(tpl).toContain('setType?.("priority", "number")');
+    expect(tpl).toContain('vtEnsureType?.("priority", "number")');
     expect(tpl).toContain("Cancelled - no priority choice");
     expect(tpl).toMatch(/^<% due \? `due: \$\{due\}\\n` : "" -%>\n<% priority \? `priority: \$\{priority\}\\n` : "" -%>\n/m);
   });
