@@ -1,5 +1,6 @@
 // I2 Phase 1: buildWeek places cards by date (docs/plans/planned-dates.md "Where a card shows"), row by row.
 import { describe, it, expect } from "vitest";
+import { dropPatch } from "../src/planning/todo";
 import { buildWeek, datePill, weekCardOf, type HeaderSrc, type WeekBoard, type WeekCard, type WeekOptions } from "../src/planning/board-card";
 
 const WED = new Date(2026, 9, 21, 10);   // Wednesday 21 Oct 2026
@@ -62,11 +63,21 @@ describe("buildWeek: the weekend and other weeks", () => {
     expect(["fri", "sat", "sun"].map(t => where(b, t))).toEqual(["Sat*", "Sat", "Sun"]);
     expect(b.days.find(c => c.today)?.day).toBe("Sat");
   });
-  it("next week shown: its cards in their columns, carried cards and this week's cards absent, later ones in the tray", () => {
+  it("next week shown: its cards in their columns, carried cards and this week's cards absent, the tray holds only undated cards", () => {
     const cs = [card("late", { scheduled: "2026-10-20" }), card("this fri", { scheduled: "2026-10-23" }), card("next tue", { scheduled: "2026-10-27" }), card("in two weeks", { scheduled: "2026-11-03" }), card("backlog", {})];
     const b = buildWeek(cs, head, opts({ week: new Date(2026, 9, 28) }));
-    expect(cs.map(c => where(b, c.title))).toEqual(["-", "-", "Tue", "tray [Tue 3 Nov]", "tray"]);
+    expect(cs.map(c => where(b, c.title))).toEqual(["-", "-", "Tue", "-", "tray"]);
     expect(b.days.some(c => c.past || c.today)).toBe(false);
+  });
+  it("away from this week the tray lists only undated cards; this week's tray is unchanged; a drop on the tray clears the date", () => {
+    const cs = [card("backlog", {}), card("this fri", { scheduled: "2026-10-23" }), card("sat", { scheduled: "2026-10-24" }), card("later", { scheduled: "2026-11-10" }), card("old", { scheduled: "2026-10-14" })];
+    const names = (b: ReturnType<typeof buildWeek>) => b.tray.map(c => c.title);
+    expect(names(buildWeek(cs, head, opts()))).toEqual(["backlog", "sat", "later"]);
+    expect(names(buildWeek(cs, head, opts({ week: new Date(2026, 9, 12) })))).toEqual(["backlog"]);
+    expect(names(buildWeek(cs, head, opts({ week: new Date(2026, 9, 28) })))).toEqual(["backlog"]);
+    expect(names(buildWeek(cs, head, opts({ week: new Date(2026, 10, 9) })))).toEqual(["backlog"]);
+    const r = dropPatch({ kind: "todo", scheduled: "2026-10-23" }, null, new Date(2026, 9, 19, 10));
+    expect(r).toMatchObject({ patch: { remove: expect.arrayContaining(["scheduled"]) } });
   });
   it("last week shown: finished cards of that week, no open cards, every column past", () => {
     const cs = [card("done thu", { done: true, done_on: "2026-10-15" }), card("late", { scheduled: "2026-10-14" })];
