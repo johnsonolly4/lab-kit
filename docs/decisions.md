@@ -239,3 +239,57 @@ Built to be taken out cleanly if testing in Obsidian shows they do not work (use
 - 2026-10-20 (owner, chat, N2g tray in other weeks, follow-up): weekend-dated cards (Saturday or Sunday) with Show weekend off CAN show in the Backlog tray in other weeks (rare case), with the same date pill as in this week; every other dated card stays in its own week only.
 - 2026-10-20 (owner, via the Refpane session, route b): the button bar accepts `cmd:<command id>` ids that run any Obsidian command (label and icon from the command, a missing command shows the usual unknown-id line), so other plugins' commands can be options on the Home page.
 - 2026-10-20 (owner, chat, plan map big project): stay with M1 for now: the open-work graph (open to-dos only, name chips with real arrows, no new field needed; `docs/plans/plan-map-big-project-examples.md`). M3 (progress table) and M2 (lanes) are parked: they need a stream (workstream) on every to-do. The owner's pins: M4 is more a dashboard than a plan (could live on the Home page or project hub as a block); M3 could be a print from the projects hub or a Home block; M1 pins ask about colours, many unassigned to-dos, and where Experiment and other properties show. Being answered by the `planmap-research` session; nothing built.
+- 2026-10-20 (owner board 5; numbers are the board's questions; each line is "owner board 5" unless noted). 1: yes, add a sixth switch for My snippets (being built by another agent).
+- 2026-10-20 (owner board 5) 2: experiment lookup by number or date, Exp. Class, project, chemical, outcome or result, and free text (all).
+- 2026-10-20 (owner board 5) 3: the list shows Ended (Exp. End); what else shows depends on the view: the summary board = status / projects / type split, the list / detail view needs more.
+- 2026-10-20 (owner board 5) 4: B, a closed experiment stays 30 days as now and also appears in the completed view.
+- 2026-10-20 (owner board 5) 5: A, a table with saved filters for completed work, cards for running; the owner adds: a Bases table, but it must look visually appealing like the rest of the plugin (a planning agent writes this up).
+- 2026-10-20 (owner board 5) 6: push of the branches: NOT yet.
+- 2026-10-20 (owner board 5) 7: Manage kit files border: the owner cannot see it now, so closed and dropped.
+- 2026-10-20 (owner board 5) 8: N4 Phase 3 wording: keep all.
+- 2026-10-20 (owner board 5) 9: N4 Phase 4 wording: keep all.
+- 2026-10-20 (owner board 5) 10: A, a footer in the missing-property window follows the button: "Enter saves · Esc cancels".
+- 2026-10-20 (owner board 5) 11: A, a short red line under a non-mass Actual: "Not a mass: use g or mg."
+- 2026-10-20 (owner board 5) 12: B, the missing-purity window offers Purity or Concentration; the owner wants it easy to swap between them, maybe with icons (look: needs a picture first, nothing built).
+- 2026-10-20 (owner board 5) 13: keep all N4 Phase 5 wording.
+- 2026-10-20 (owner board 5) 14: keep the small-acid warning as built; the owner asks for a report button for these features built into the plugin (new BACKLOG item "Report a problem / feedback button in the plugin"; check what exists: the Lab Kit Feedback note; plan later).
+- 2026-10-20 (owner board 5) 15: no answer (the owner could not tell which; being explained in chat).
+- 2026-10-20 (owner board 5) 16: A, keep the chips as in the picture.
+- 2026-10-20 (owner board 5) 17: old volume form: no answer; the owner expected a quick swap from the by-mass snippet (a Method swap between by mass / by volume inside the window); to be discussed.
+- 2026-10-20 (owner board 5) 18: A, fold the furthest steps into one row "+N more steps: 3 late, 1 waiting".
+- 2026-10-20 (owner board 5) 19: A, keep the 5 most urgent; the last chip reads "+N more in this step".
+- 2026-10-20 (owner board 5) 20: A, always the slide shape 1920 x 1080.
+- 2026-10-20 (owner board 5) 21: A, automatic switch only, with a one-line note in the window saying which picture was drawn.
+- 2026-10-20 (owner board 5) 22: A, a second line "experiment · Status"; a late-and-waiting chip shows late, and the key says "late wins".
+- 2026-10-20 (owner board 5) 23: A, Recipe and RAFT become live blocks like Solution prep. ADDED requirement: the calculation must be preserved within the .md file so it is not Obsidian- or plugin-dependent (flat text, recoverable).
+- 2026-10-20 (owner board 5) 24: A, a Combined results live block that looks values up each time.
+- 2026-10-20 (owner board 5) 25: A, the NMR, GPC, DLS and Methods-folder tables stay calc fill-in tables; only the code moves into the plugin.
+- 2026-10-20 (owner board 5) 26: B, on closing, also write a plain table of the computed targets under each block; the owner adds: review how the export (PDF) looks anyway (BACKLOG item).
+- 2026-10-20 (owner board 5) 27: B, note properties first, the questions in a removable lab-template block (provisional); the owner asked which of A or B is easier for someone to edit or to make a new template themselves (being explained in chat).
+- 2026-10-20 (owner board 5) 28: no answer; the owner asks how folder templates / the board's New affect Obsidian's built-in buttons or Notebook Navigator (being explained).
+- 2026-10-20 (owner board 5) 29: no answer, but: nobody else edits templates yet, so just replace edited kit templates; Tidy (at least for the next update) should clear out old files and settings made by older versions.
+- 2026-10-20 (owner board 5) 30: A, an opt-in Tidy rule moves old scripts to Obsidian's trash (backup first) once nothing calls them.
+- 2026-10-20 (owner board 5) 31: A, keep your folders; new vaults use Extras/Templates and Extras/scripts without asking Templater; plus clean up any vault made with the existing version (Tidy).
+- 2026-10-20 (owner board 5) 32: B, a later opt-in "Convert to live block" per table (backup first); only affects the owner.
+- 2026-10-20 (owner board 5) 33: A, a dated SVG picture plus parts tables (rig N1).
+- 2026-10-20 (owner board 5) 34: A, a history folder beside the rig note (N2).
+- 2026-10-20 (owner board 5) 35: A, a snapshot with a lab note or "Save snapshot…"; the block shows "changed since" (N3).
+- 2026-10-20 (owner board 5) 36: A, Obsidian's own rule, always fits (N4).
+- 2026-10-20 (owner board 5) 37: A, drag in the Figure… window (N5).
+- 2026-10-20 (owner board 5) 38: TC1 D: option B now, C (Lab Kit's own theme) later if B is not enough.
+- 2026-10-20 (owner board 5) 39: TC2 no answer, but: the Lab Kit accent colour should be the default accent set in Obsidian's settings.
+- 2026-10-20 (owner board 5) 40: TC3 off by default.
+- 2026-10-20 (owner board 5) 41: TC4 no answer (the owner did not understand the scope; being explained).
+- 2026-10-20 (owner board 5) 42: TC5 fix the callout colours now under any option (S4).
+- 2026-10-20 (owner board 5) 43: TC6 Lab Kit's own window corners follow Obsidian's or the theme's window corner. A design-standard change: needs a picture before building; recorded as a decision to plan, nothing built.
+- 2026-10-20 (owner board 5) 44: TC7 not now.
+- 2026-10-20 (owner board 5) 45: keep all I19 choices as built; the owner adds: the tutorial and docs must be clear that only the live queries (generated lists) are frozen, not the text.
+- 2026-10-20 (owner board 5) 46: add a setting to switch the automatic freeze off (being built).
+- 2026-10-20 (owner board 5) 47: keep the board week row look.
+- 2026-10-20 (owner board 5) 48: no answer; the owner asks "Why is Check setup doing that?" about the Close-again / closed-note rows in Check setup (being explained).
+- 2026-10-20 (owner board 5) 49: no answer; the owner asks where the export folder (Close experiment PDF folders) is set: it must differ per device (Windows vs Mac), device by device (being checked by another agent).
+- 2026-10-20 (owner board 5) 50: no answer; the owner did not understand the Change icon question (being explained).
+- 2026-10-20 (owner board 5) 51: A, hide the Alt+S picker close X (the plugin only works on new Obsidian anyway).
+- 2026-10-20 (owner board 5) 52: keep the Links follow renames and waiting-on wording.
+- 2026-10-20 (owner board 5) 53: plan-map top five: ideas 1, 3 and 4 first, then 2.
+- 2026-10-20 (owner board 5): board 5 answers recorded; open: 15, 17, 28, 41, 48, 49, 50 (explained in chat, re-ask later).
