@@ -103,18 +103,18 @@ describe("real kit manifest", () => {
   const real = embeddedKit() as EmbeddedKit;
   // The Excel converter, and the files that wait for a folder setting (chemical database, lab book base, rig template)
   const legacy = ["excel_to_calc.py", "Chemical database template.md", "Chemical database.base", "Lab book base.base", "Rig template.md"];
-  it("describes every file, and only the 14 snippets, the Excel converter and the folder-setting files can be switched off", () => {
+  it("describes every file, and only the 11 snippets, the Excel converter and the folder-setting files can be switched off", () => {
     for (const f of real.manifest.files) expect(f.desc?.length ?? 0, f.src).toBeGreaterThan(5);
     const optional = real.manifest.files.filter(f => f.optional).map(f => f.dest);
-    expect(optional).toHaveLength(19);
-    expect(optional.filter(d => d.startsWith("Snippets/"))).toHaveLength(14);
+    expect(optional).toHaveLength(16);
+    expect(optional.filter(d => d.startsWith("Snippets/"))).toHaveLength(11);
     expect(optional.filter(d => !d.startsWith("Snippets/")).sort()).toEqual([...legacy].sort());
   });
   it("planning with every optional file off installs the core and none of the snippets or older files", async () => {
     const v = memVault();
     const off = new Set(real.manifest.files.filter(f => f.optional).map(f => f.id));
     const plan = await planManaged(v, real, null, roles, null, null, off);
-    expect(plan.filter(p => p.action === "off")).toHaveLength(19);
+    expect(plan.filter(p => p.action === "off")).toHaveLength(16);
     await applyManaged(v, real, plan, null, opts);
     expect(v.files["Templates/Insert snippet.md"]).toBeDefined();
     expect(Object.keys(v.files).some(f => f.startsWith("Templates/Snippets/"))).toBe(false);

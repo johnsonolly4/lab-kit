@@ -9,8 +9,10 @@
 //   // icon: flask-round        (Lucide name, see lucide.dev)
 //   // desc: one-line description
 // A snippet can also start with a header between --- lines
-// (title, icon, desc, fields) and use {{tokens}} in its text:
-// the Lab Kit plugin then asks the fields and fills it in.
+// (title, icon, desc, group, fields) and use {{tokens}} in its
+// text: the Lab Kit plugin then asks the fields and fills it in.
+// A header with run: instead of fields (run: solution) runs
+// that calculator of Lab Kit.
 // The number at the start of the file name sets the order.
 // Notes in the Methods folder (Settings → Lab Kit) are added
 // after them, one entry per method.
@@ -24,7 +26,8 @@ const files = app.vault.getMarkdownFiles()
 // Token templates are read and filled by the Lab Kit plugin (a snippet without a header is inserted as it is)
 const kitSnippets = app.plugins?.plugins?.["lab-kit"]?.snippets;
 
-const methods = (await tp.user?.labMethods?.().menuEntries(app)) ?? [];
+// With the plugin's menu, NMR, GPC and DLS are listed here (the old stub files 07-09 are gone); a snippet header may say `run:` and `group:`
+const methods = (await tp.user?.labMethods?.().menuEntries(app, { builtins: !!kitSnippets?.menu })) ?? [];
 
 if (!files.length && !methods.length) {
   new Notice(`No snippets found in ${snippetFolder}`);
@@ -37,6 +40,7 @@ if (!files.length && !methods.length) {
       name: meta?.title || f.basename.replace(/^\d+\s*[-.]?\s*/, ""),
       icon: meta ? meta.icon?.trim() : text.match(/^\/\/\s*icon:\s*(.+)$/m)?.[1]?.trim(),
       desc: meta ? meta.desc?.trim() : text.match(/^\/\/\s*desc:\s*(.+)$/m)?.[1]?.trim(),
+      group: meta?.group,
       value: f,
       token: !!meta
     });

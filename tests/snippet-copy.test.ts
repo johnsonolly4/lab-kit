@@ -60,11 +60,45 @@ describe("renderCopy", () => {
   });
 });
 
+describe("snippetKey", () => {
+  it("reads the key from the old stub body and from a run: header", () => {
+    assert.strictEqual(snippetKey('<%*\ntR += await tp.user.labSnippets(tp, "raft");\n%>'), "raft");
+    assert.strictEqual(snippetKey("---\ntitle: T\nrun: solution\n---\n"), "solution");
+    assert.strictEqual(snippetKey("---\ntitle: T\nrun: \"results\"\n---\nbody"), "results");
+    assert.strictEqual(snippetKey("---\ntitle: T\nfields: []\n---\nrun: nope\n"), null);
+    assert.strictEqual(snippetKey("plain\n"), null);
+  });
+  it("the kit's calculators name their keys in the header", () => {
+    const dir = "kits/lab/Templates/Snippets/";
+    const keys = { "01 Solution prep": "solution", "02 Recipe by equivalents": "recipe", "03 RAFT recipe generator": "raft", "10 Combined results": "results" };
+    for (const [f, k] of Object.entries(keys)) assert.strictEqual(snippetKey(readFileSync(`${dir}${f}.md`, "utf8")), k, f);
+  });
+});
+
+describe("run: headers of the kit's calculators", () => {
+  it("keep each snippet's title, icon and description from the old stub, and name their group and key", () => {
+    const dir = "kits/lab/Templates/Snippets/";
+    const want: Record<string, object> = {
+      "01 Solution prep": { title: "Solution prep", icon: "test-tube", desc: "Solutes and solvents with MW from their notes, targets by concentration or ratio, added in g or mL", group: "Make up", run: "solution" },
+      "02 Recipe by equivalents": { title: "Recipe by equivalents", icon: "flask-round", desc: "Eq. relative to any reagent, solvent makes up the rest, wt%", group: "Make up", run: "recipe" },
+      "03 RAFT recipe generator": { title: "RAFT recipe generator", icon: "flask-conical", desc: "Monomer mass, DP, CTA:initiator, solids → every mass and Mn", group: "Make up", run: "raft" },
+      "10 Combined results": { title: "Combined results", icon: "table", desc: "One row per sample with NMR, GPC and DLS values pulled in", group: "Characterise", run: "results" },
+    };
+    for (const [f, h] of Object.entries(want)) {
+      const p = parseTemplate(readFileSync(`${dir}${f}.md`, "utf8"), miniYaml);
+      assert.deepStrictEqual(p?.header, { ...h, fields: [] }, f);
+      assert.strictEqual(p?.body, "", f);
+    }
+  });
+});
+
 describe("isStubSnippet", () => {
   it("is true for the stubs that call labSnippets.js and false for token templates, which the settings window can open", () => {
     const dir = "kits/lab/Templates/Snippets/";
     assert.ok(isStubSnippet(readFileSync(dir + "01 Solution prep.md", "utf8")));
-    assert.ok(isStubSnippet(readFileSync(dir + "07 NMR samples.md", "utf8")));
+    for (const f of ["02 Recipe by equivalents", "03 RAFT recipe generator", "10 Combined results"]) assert.ok(isStubSnippet(readFileSync(`${dir}${f}.md`, "utf8")), f);
+    // the old `<%*` form (07-09, and 01-03 / 10 before 1.5) is still a stub
+    assert.ok(isStubSnippet('<%*\n// icon: magnet\ntR += await tp.user.labSnippets(tp, "nmr");\n%>'));
     for (const f of ["04 Variant naming matrix", "05 Sample list", "06 Sampling timetable", "11 Flow column prep", "12 Residence times", "13 Blank calc table"]) {
       assert.ok(!isStubSnippet(readFileSync(`${dir}${f}.md`, "utf8")), f);
     }

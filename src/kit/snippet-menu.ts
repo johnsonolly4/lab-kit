@@ -21,6 +21,9 @@ const KIT_GROUPS: Record<string, (typeof GROUPS)[number]> = {
 };
 
 const isMethod = (it: MenuItem): boolean => !!it.value && typeof it.value === "object" && "method" in it.value;
+/** NMR, GPC and DLS (labMethods.js `builtins`): listed ahead of the other entries of their group, where their stub files 07-09 used to stand. */
+const BUILTIN_METHODS = ["nmr", "gpc", "dls"];
+const isBuiltin = (it: MenuItem): boolean => isMethod(it) && BUILTIN_METHODS.includes(String((it.value as { method: unknown }).method));
 
 /** The group an entry is shown under: a Methods-folder method is Characterise, a header's `group:` when it names one of the groups, a kit snippet its group, anything else My snippets. */
 export function groupOf(it: MenuItem): string {
@@ -37,6 +40,7 @@ export function menuSections(items: MenuItem[], recent: string[]): MenuSection[]
   const out: MenuSection[] = rec.length ? [{ heading: RECENT_HEADING, items: rec }] : [];
   for (const g of [...GROUPS, OWN_GROUP]) {
     const inGroup = items.filter(it => groupOf(it) === g);
+    inGroup.sort((a, b) => Number(isBuiltin(b)) - Number(isBuiltin(a)));   // stable: the rest keep their order
     if (inGroup.length) out.push({ heading: g, items: inGroup });
   }
   return out;

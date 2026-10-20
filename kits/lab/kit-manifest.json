@@ -169,7 +169,7 @@
       "role": "templates",
       "path": "Insert snippet.md",
       "version": "1.4.1",
-      "sha256": "4a1ff371715fcb8982bb0e5f24df7665621dfcba7d41bb2ff4502a16d72f65cc",
+      "sha256": "17ebbc1b2cfab19f1cbe46eeb3a23f75248506bc18a15bd204a46dbdcf042c72",
       "renamedFrom": [],
       "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
     },
@@ -203,8 +203,8 @@
       "src": "Templates/Snippets/01 Solution prep.md",
       "role": "templates",
       "path": "Snippets/01 Solution prep.md",
-      "version": "0.4.9",
-      "sha256": "a9c3a24fd4e70bd7bc95b9b8f720b9550bea00d25e69de82d345f5206136e4f0",
+      "version": "1.4.1",
+      "sha256": "00874266d3f8dc2e84673b5aaf0f06e55ad5877a485a0f1777e0e676b3db5893",
       "renamedFrom": [],
       "desc": "Solutes and solvents with MW from their notes, targets by concentration or ratio, added in g or mL",
       "optional": true
@@ -215,8 +215,8 @@
       "src": "Templates/Snippets/02 Recipe by equivalents.md",
       "role": "templates",
       "path": "Snippets/02 Recipe by equivalents.md",
-      "version": "0.3.0",
-      "sha256": "cfc3f5db4de63c6e8ace7d71fb29426cf67e7cc2f574eaebeddff76518f801f4",
+      "version": "1.4.1",
+      "sha256": "51f7f117af13c7ebfeab57956721e6a7a59f021c038269adc9a285b70598ede9",
       "renamedFrom": [],
       "desc": "Eq. relative to any reagent, solvent makes up the rest, wt%",
       "optional": true
@@ -227,8 +227,8 @@
       "src": "Templates/Snippets/03 RAFT recipe generator.md",
       "role": "templates",
       "path": "Snippets/03 RAFT recipe generator.md",
-      "version": "0.3.0",
-      "sha256": "cfd716ae5d5ab2beb2a8dbace2597ca6559fcebcd6ead60926e5106384480e02",
+      "version": "1.4.1",
+      "sha256": "30c0cccc9bf1541ccf1a96a07a9c84429776713f1f6180f278186eb7fd75a05c",
       "renamedFrom": [],
       "desc": "Monomer mass, DP, CTA:initiator, solids → every mass and Mn",
       "optional": true
@@ -270,49 +270,13 @@
       "optional": true
     },
     {
-      "id": "tpl-snippets-07-nmr-samples-md",
-      "kind": "template",
-      "src": "Templates/Snippets/07 NMR samples.md",
-      "role": "templates",
-      "path": "Snippets/07 NMR samples.md",
-      "version": "0.3.0",
-      "sha256": "0ba238370ecd25e5ba3633f297c5ac081e0b8b44f2b49661170a6580226d0002",
-      "renamedFrom": [],
-      "desc": "Sample / solvent / method / conversion, dataset, checklist · tags NMR",
-      "optional": true
-    },
-    {
-      "id": "tpl-snippets-08-gpc-samples-md",
-      "kind": "template",
-      "src": "Templates/Snippets/08 GPC samples.md",
-      "role": "templates",
-      "path": "Snippets/08 GPC samples.md",
-      "version": "0.3.0",
-      "sha256": "95ae37a5fadc8d58a6e498156de257d7aad106a253ea1856e15f3af001159e7b",
-      "renamedFrom": [],
-      "desc": "Sample / eluent / Mn / Mw / Đ, checklist · tags GPC",
-      "optional": true
-    },
-    {
-      "id": "tpl-snippets-09-dls-samples-md",
-      "kind": "template",
-      "src": "Templates/Snippets/09 DLS samples.md",
-      "role": "templates",
-      "path": "Snippets/09 DLS samples.md",
-      "version": "0.3.0",
-      "sha256": "65137c02685fc9a8deb34506b939a6adce31ce336424ba26f79a29eda40e92a3",
-      "renamedFrom": [],
-      "desc": "Sample / solvent / temperature / Dh / PDI, checklist · tags DLS",
-      "optional": true
-    },
-    {
       "id": "tpl-snippets-10-combined-results-md",
       "kind": "template",
       "src": "Templates/Snippets/10 Combined results.md",
       "role": "templates",
       "path": "Snippets/10 Combined results.md",
-      "version": "0.3.0",
-      "sha256": "1185d31957e3ce356b1037a22276aa6d74cb58471458b51e21e93ddbc0fd5808",
+      "version": "1.4.1",
+      "sha256": "68f426c80e971b3984abe9053d24769b14d4187cb7719aa0fd5c18a4c56bc0ce",
       "renamedFrom": [],
       "desc": "One row per sample with NMR, GPC and DLS values pulled in",
       "optional": true
@@ -383,8 +347,8 @@
       "src": "Extras/scripts/templater/labMethods.js",
       "role": "userScripts",
       "path": "labMethods.js",
-      "version": "0.4.9",
-      "sha256": "a0b311fe65da80bc14d0b254cb4b1876675cfdd447bfd85a4095ccd00881f131",
+      "version": "1.4.1",
+      "sha256": "d28dd1c6a4c8818e8b563a02801f1e34f33f91f2aef5b357bf4b28af9a4f6e5b",
       "renamedFrom": [],
       "desc": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)"
     },
@@ -424,6 +388,9 @@
     "script-hazards-view-js",
     "script-lab-config-json",
     "script-lab-header-view-js",
-    "tpl-snippets-14-analysis-table-md"
+    "tpl-snippets-14-analysis-table-md",
+    "tpl-snippets-07-nmr-samples-md",
+    "tpl-snippets-08-gpc-samples-md",
+    "tpl-snippets-09-dls-samples-md"
   ]
 }

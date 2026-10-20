@@ -102,15 +102,15 @@ function builtins() {
   const base = { icon: "", machines: [], defaultMachine: "", machineRefs: [], defaultMachineRef: "", builtin: true, dataset: false,
     checklist: DEFAULT_CHECKLIST.slice(), sampleIdx: 0, resultsDefault: false };
   return [
-    { ...base, key: "nmr", name: "NMR", title: "NMR samples", icon: "magnet", tag: "NMR", dataset: true, sampleIdx: 1,
+    { ...base, key: "nmr", name: "NMR", title: "NMR samples", desc: "Sample / solvent / method / conversion, dataset, checklist · tags NMR", icon: "magnet", tag: "NMR", dataset: true, sampleIdx: 1,
       columns: [col("Run #", { auto: true }), col("Sample"), col("Solvent", { key: "solvent", def: "CDCl3" }), col("Method", { key: "method", def: "1H" }),
         col("Conversion (%)"), col("Notes")],
       results: ["Conversion (%)"], resultsLabel: "NMR conversion", resultsDefault: true },
-    { ...base, key: "gpc", name: "GPC", title: "GPC samples", icon: "line-chart", tag: "GPC",
+    { ...base, key: "gpc", name: "GPC", title: "GPC samples", desc: "Sample / eluent / Mn / Mw / Đ, checklist · tags GPC", menuIcon: "line-chart, chart-line", icon: "line-chart", tag: "GPC",
       columns: [col("Sample"), col("Eluent", { key: "eluent", def: "THF" }), col("Mn (g/mol)"), col("Mw (g/mol)"),
         col("Đ", { formula: '=IFERROR({Mw (g/mol)}/{Mn (g/mol)}, "")' }), col("Notes")],
       results: ["Mn (g/mol)", "Mw (g/mol)", "Đ"], resultsLabel: "GPC Mn, Mw, Đ", resultsDefault: true },
-    { ...base, key: "dls", name: "DLS", title: "DLS samples", icon: "sparkles", tag: "DLS",
+    { ...base, key: "dls", name: "DLS", title: "DLS samples", desc: "Sample / solvent / temperature / Dh / PDI, checklist · tags DLS", icon: "sparkles", tag: "DLS",
       columns: [col("Sample"), col("Solvent", { key: "solvent", label: "Solvent / dispersant", def: "Water" }),
         col("Temp (°C)", { key: "temp", label: "Temperature (°C)", def: "25" }), col("Dh (nm)"), col("PDI"), col("Notes")],
       results: ["Dh (nm)", "PDI"], resultsLabel: "DLS Dh, PDI" },
@@ -154,13 +154,13 @@ function loadMethods(app, folder, fromPath = "") {
   return [...first.map(k => out.get(k)), ...rest];
 }
 
-/** Alt+S menu entries for the methods that have no snippet file (the folder's other notes): { key, name, icon, desc }. Reads the Methods folder from the plugin settings. */
-async function menuEntries(app) {
+/** Alt+S menu entries: { key, name, icon, desc }. The Methods folder's notes; with `{ builtins: true }` NMR, GPC and DLS first (the Lab Kit menu lists them itself, without the old stub files; a note of the same name replaces one). Reads the Methods folder from the plugin settings. */
+async function menuEntries(app, { builtins: withBuiltins = false } = {}) {
   let folder = "";
   try { folder = JSON.parse(await app.vault.adapter.read(`${app.vault.configDir ?? ".obsidian"}/plugins/lab-kit/data.json`))?.kit?.methodsFolder ?? ""; } catch (e) { /* no settings yet */ }
-  return loadMethods(app, folder).filter(m => !BUILTIN_KEYS.includes(m.key)).map(m => ({
-    key: m.key, name: m.title, icon: m.icon,
-    desc: `Sample table for ${m.name}` + (m.machines.length ? ` · ${m.machines.map(x => x.name).join(", ")}` : ""),
+  return loadMethods(app, folder).filter(m => withBuiltins || !BUILTIN_KEYS.includes(m.key)).map(m => ({
+    key: m.key, name: m.title, icon: m.menuIcon ?? m.icon,
+    desc: m.builtin && m.desc ? m.desc : `Sample table for ${m.name}` + (m.machines.length ? ` · ${m.machines.map(x => x.name).join(", ")}` : ""),
   }));
 }
 

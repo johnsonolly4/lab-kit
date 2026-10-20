@@ -1,5 +1,6 @@
 // The Alt+S menu's contents (pure): groups, section order, Recent, search ranking (docs/plans/snippet-menu.md Phase 1).
 import { describe, it, expect } from "vitest";
+import { createRequire } from "node:module";
 import { groupOf, iconNames, menuSections, pushRecent, searchItems, type MenuItem } from "../src/kit/snippet-menu";
 
 const kit = ["Solution prep", "Recipe by equivalents", "RAFT recipe generator", "Variant naming matrix", "Sample list", "Sampling timetable",
@@ -53,5 +54,28 @@ describe("snippet menu", () => {
   it("icons: the Snippet icons setting first, then the snippet's own (comma lists allowed)", () => {
     expect(iconNames({ name: "Rig", icon: "waves, git-branch", value: 1 }, { Rig: "pipette" })).toEqual(["pipette", "waves", "git-branch"]);
     expect(iconNames({ name: "Rig", value: 1 }, {})).toEqual([]);
+  });
+});
+
+describe("built-in methods in the menu (labMethods.js menuEntries)", () => {
+  const labMethods = createRequire(import.meta.url)("../kits/lab/Extras/scripts/templater/labMethods.js");
+  const app = { vault: { adapter: { read: async () => { throw new Error("no settings"); } }, getFolderByPath: () => null } };
+
+  it("without the flag the built-ins are left out; with it NMR, GPC and DLS come first, with the old stubs' icon and description", async () => {
+    expect(await labMethods.menuEntries(app)).toEqual([]);
+    const e = await labMethods.menuEntries(app, { builtins: true });
+    expect(e.map((x: { name: string }) => x.name)).toEqual(["NMR samples", "GPC samples", "DLS samples"]);
+    expect(e.map((x: { key: string }) => x.key)).toEqual(["nmr", "gpc", "dls"]);
+    expect(e.map((x: { icon: string }) => x.icon)).toEqual(["magnet", "line-chart, chart-line", "sparkles"]);
+    expect(e[0].desc).toBe("Sample / solvent / method / conversion, dataset, checklist · tags NMR");
+    expect(e[1].desc).toBe("Sample / eluent / Mn / Mw / Đ, checklist · tags GPC");
+    expect(e[2].desc).toBe("Sample / solvent / temperature / Dh / PDI, checklist · tags DLS");
+  });
+  it("in the menu they stand ahead of Combined results and the other methods, in Characterise", async () => {
+    const e = await labMethods.menuEntries(app, { builtins: true });
+    const built: MenuItem[] = e.map((m: { key: string; name: string }) => ({ name: m.name, value: { method: m.key } }));
+    const files: MenuItem[] = [{ name: "Sample list", value: "f5" }, { name: "Combined results", group: "Characterise", value: "f10" }];
+    const s = menuSections([...files, { name: "UV-vis", value: { method: "uv-vis" } }, ...built], []);
+    expect(s.find(x => x.heading === "Characterise")!.items.map(i => i.name)).toEqual(["NMR samples", "GPC samples", "DLS samples", "Combined results", "UV-vis"]);
   });
 });
