@@ -1,5 +1,5 @@
 // The Alt+S menu's contents (pure): which group a snippet is in, the sections in order, Recent, and the search. The window is snippet-menu-ui.ts.
-// Plan: docs/plans/snippet-menu.md Phase 1. Until snippet headers carry `group:` (Phase 4) the kit snippets are grouped by name here.
+// Plan: docs/plans/snippet-menu.md Phases 1 and 4. The group of a snippet is its header's `group:`.
 
 /** One menu entry, as Insert snippet.md lists it: a Snippets-folder note or a Methods-folder method (`value.method`). */
 export interface MenuItem { name: string; icon?: string; desc?: string; /** The header's `group:`. */ group?: string; /** An old-form stub file: the calculator key it runs. */ oldStub?: string; value: unknown }
@@ -11,15 +11,6 @@ export const OWN_GROUP = "My snippets";
 export const RECENT_HEADING = "Recent";
 export const RECENT_MAX = 3;
 
-/** The kit snippets by the name the menu shows (file name without its number, or the header's title). */
-const KIT_GROUPS: Record<string, (typeof GROUPS)[number]> = {
-  "solution prep": "Make up", "recipe by equivalents": "Make up", "raft recipe generator": "Make up",
-  "sample list": "Samples", "sampling timetable": "Samples", "variant naming matrix": "Samples",
-  "nmr samples": "Characterise", "gpc samples": "Characterise", "dls samples": "Characterise", "combined results": "Characterise",
-  "rig": "Flow", "flow column prep": "Flow", "residence times": "Flow",
-  "blank calc table": "Tables",
-};
-
 const isMethod = (it: MenuItem): boolean => !!it.value && typeof it.value === "object" && "method" in it.value;
 /** NMR, GPC and DLS (labMethods.js `builtins`): listed ahead of the other entries of their group, where their stub files 07-09 used to stand. */
 const BUILTIN_METHODS = ["nmr", "gpc", "dls"];
@@ -29,12 +20,17 @@ const isBuiltin = (it: MenuItem): boolean => isMethod(it) && BUILTIN_METHODS.inc
 export const hideShadowedStubs = (items: MenuItem[]): MenuItem[] =>
   items.filter(it => !it.oldStub || !items.some(m => isMethod(m) && (m.value as { method: unknown }).method === it.oldStub));
 
-/** The group an entry is shown under: a Methods-folder method is Characterise, a header's `group:` when it names one of the groups, a kit snippet its group, anything else My snippets. */
+/** The group an entry is shown under: a Methods-folder method is Characterise, otherwise the header's `group:` when it names one of the groups; no group, or any other text, is My snippets. */
 export function groupOf(it: MenuItem): string {
   if (isMethod(it)) return "Characterise";
-  const named = GROUPS.find(g => g.toLowerCase() === (it.group ?? "").trim().toLowerCase());
-  if (named) return named;
-  return KIT_GROUPS[it.name.trim().toLowerCase()] ?? OWN_GROUP;
+  return GROUPS.find(g => g.toLowerCase() === (it.group ?? "").trim().toLowerCase()) ?? OWN_GROUP;
+}
+
+/** The entries left after the groups switched off under Settings → Snippets are dropped (menu, search and Recent all read this list). `off` holds group names as the settings show them. */
+export function visibleItems(items: MenuItem[], off: readonly string[]): MenuItem[] {
+  if (!off.length) return items;
+  const hidden = new Set(off.map(g => g.trim().toLowerCase()));
+  return items.filter(it => !hidden.has(groupOf(it).toLowerCase()));
 }
 
 /** The sections with an empty search box: Recent (newest first, only names still listed), then each group that has entries, in the order of `items`. */

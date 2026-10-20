@@ -2,6 +2,7 @@
 title: Flow column prep
 icon: cylinder, database
 desc: Column weighing → bead mass → reactor volume
+group: Flow
 fields:
   - key: id
     label: Table id

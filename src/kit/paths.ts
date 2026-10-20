@@ -27,6 +27,8 @@ export interface KitData {
   seenChangelog: string; initials: string; snippetIcons: Record<string, string>;
   /** The Alt+S menu's Recent section: the last snippets picked, by name, newest first (snippet-menu.ts). */
   snippetRecent: string[];
+  /** Groups of the Alt+S menu switched off under Settings → Snippets, by name (Make up, Samples…). Hidden from the menu, its search and Recent only; no file is removed. */
+  snippetGroupsOff: string[];
   /** Built-in kits (embedded in the plugin), by kit id: installed files, folders, files switched off. */
   kits: Record<string, KitSlot>;
   /** Close experiment: absolute folders on this device that get a PDF of the closed note (desktop only; empty = Close experiment asks for one first). */
@@ -112,7 +114,7 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
 /** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
 export const RIGS_DEFAULT = "03 Lab Book/Rigs";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -136,6 +138,7 @@ export function kitLoad(saved: unknown): KitData {
   if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
   kit.snippetIcons = { ...kit.snippetIcons };
   kit.snippetRecent = Array.isArray(kit.snippetRecent) ? kit.snippetRecent.filter(n => typeof n === "string") : [];
+  kit.snippetGroupsOff = Array.isArray(kit.snippetGroupsOff) ? kit.snippetGroupsOff.filter(n => typeof n === "string") : [];
   kit.closePdfFolders = Array.isArray(kit.closePdfFolders) ? kit.closePdfFolders.filter(f => typeof f === "string" && f.trim()).map(f => f.trim()) : [];
   kit.boardColours = { enabled: kit.boardColours?.enabled !== false, colours: { ...(kit.boardColours?.colours ?? {}) } };
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));

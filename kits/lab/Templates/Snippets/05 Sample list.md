@@ -2,6 +2,7 @@
 title: Sample list
 icon: list
 desc: Untimed list of sample codes, typed or generated
+group: Samples
 fields:
   - key: codes
     label: Sample codes

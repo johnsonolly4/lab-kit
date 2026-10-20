@@ -6,6 +6,7 @@ import { openEntry } from "../planning/entry-window";
 import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
 import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
 import { chemicalClasses } from "./snippet-env";
+import { groupToggleRows } from "./snippet-settings";
 import { prop, toList } from "../frontmatter";
 import { hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
 import type { FolderGuardActions } from "./folder-guard";
@@ -291,18 +292,6 @@ class KitSettingTab extends PluginSettingTab {
             t.setValue(kit.chemicalFolder).onChange(async v => { kit.chemicalFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
           });
         } },
-      { name: "Methods folder", desc: "The folder of your analysis method notes (one note per method, with its columns and machines). The Alt+S analysis snippets then offer them next to the built-in NMR, GPC and DLS. Empty: only the built-in methods. A folder that does not exist yet is created.",
-        render: b => {
-          b.addText(t => {
-            wideBox(b, t, this.app);
-            t.setValue(kit.methodsFolder).onChange(async v => { kit.methodsFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
-            // once the box is left (not on every key): a folder that does not exist yet is created
-            t.inputEl.addEventListener("change", () => {
-              const path = kit.methodsFolder;
-              if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
-            });
-          });
-        } },
       { name: "Rigs folder", desc: `The folder of your rig notes (one note per flow rig, with its parts tables and diagram). New rig creates notes here from the Rig template. Empty: ${RIGS_DEFAULT}. A folder that does not exist yet is created.`,
         render: b => {
           b.addText(t => {
@@ -318,12 +307,27 @@ class KitSettingTab extends PluginSettingTab {
       ...this.header.rootRows(),
       { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
-      { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
-        render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
       ...this.closeFolderRows(),
       planning.progress,
       { type: "page", name: "Board colours", items: builtIn.boards },
       ...(snippets.length ? [{ type: "page" as const, name: "Snippet icons", items: snippets }] : [])
+    ];
+    const snippetGroup: SettingGroupItem[] = [
+      { name: "Methods folder", desc: "The folder of your analysis method notes (one note per method, with its columns and machines). The Alt+S analysis snippets then offer them next to the built-in NMR, GPC and DLS. Empty: only the built-in methods. A folder that does not exist yet is created.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.methodsFolder).onChange(async v => { kit.methodsFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+            // once the box is left (not on every key): a folder that does not exist yet is created
+            t.inputEl.addEventListener("change", () => {
+              const path = kit.methodsFolder;
+              if (path) void ensureFolder(this.app.vault, path).then(made => { if (made) new Notice(`Created the folder ${path}`); }).catch(() => new Notice(`Could not create the folder ${path}`));
+            });
+          });
+        } },
+      { name: "Only suggest chemicals of the asked class", desc: "A form field can ask for one Chemical class, for example solvent. On: it lists only chemicals whose Chemical class property has that class. Off: those chemicals come first, then all the others.",
+        render: b => { b.addToggle(t => t.setValue(kit.chemClassOnly).onChange(async v => { kit.chemClassOnly = v; await this.ctl.save(); })); } },
+      ...groupToggleRows(kit, () => this.ctl.save())
     ];
     const planningOn = !!kit.kits[PLANNING_KIT]?.enabled;
     const changed = changedPlanningFolders(kit.planningFolders);
@@ -331,6 +335,7 @@ class KitSettingTab extends PluginSettingTab {
       { type: "group", heading: "Updates", items: builtIn.updates },
       { type: "group", heading: "Setup", items: builtIn.setup },
       { type: "group", heading: "Lab notebook", items: notebook },
+      { type: "group", heading: "Snippets", items: snippetGroup },
       ...this.header.definitions(),
       ...(planningOn ? [{ type: "group" as const, heading: "Planning", items: [...planning.options,
         { type: "page" as const, name: `Planning folders · ${changed ? `${changed} of ${Object.keys(kit.planningFolders).length} changed` : "all default"}`, items: planning.folders }] }] : [])

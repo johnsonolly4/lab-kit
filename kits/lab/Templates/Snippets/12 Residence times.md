@@ -2,6 +2,7 @@
 title: Residence times
 icon: waves
 desc: Flow rate for each residence time from a reactor volume
+group: Flow
 required: rts
 fields:
   - key: volume

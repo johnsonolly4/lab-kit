@@ -2,6 +2,7 @@
 title: Sampling timetable
 icon: timer
 desc: Codes per time point with target clock times
+group: Samples
 required: times
 fields:
   - key: times

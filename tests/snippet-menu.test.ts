@@ -1,12 +1,16 @@
 // The Alt+S menu's contents (pure): groups, section order, Recent, search ranking (docs/plans/snippet-menu.md Phase 1).
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
-import { groupOf, hideShadowedStubs, iconNames, menuSections, pushRecent, searchItems, type MenuItem } from "../src/kit/snippet-menu";
+import { readdirSync, readFileSync } from "node:fs";
+import { groupOf, hideShadowedStubs, iconNames, menuSections, pushRecent, searchItems, visibleItems, type MenuItem } from "../src/kit/snippet-menu";
 
 const kit = ["Solution prep", "Recipe by equivalents", "RAFT recipe generator", "Variant naming matrix", "Sample list", "Sampling timetable",
   "NMR samples", "GPC samples", "DLS samples", "Combined results", "Flow column prep", "Residence times", "Blank calc table", "Rig"];
 const descs: Record<string, string> = { "GPC samples": "Sample / eluent / Mn / Mw / Đ, checklist · tags GPC", "Combined results": "One row per sample with NMR, GPC and DLS values pulled in" };
-const items: MenuItem[] = kit.map(name => ({ name, desc: descs[name], value: name }));
+// the group each kit snippet's header carries (checked against the files below)
+const kitGroup: Record<string, string> = { "Solution prep": "Make up", "Recipe by equivalents": "Make up", "RAFT recipe generator": "Make up", "Variant naming matrix": "Samples", "Sample list": "Samples", "Sampling timetable": "Samples",
+  "NMR samples": "Characterise", "GPC samples": "Characterise", "DLS samples": "Characterise", "Combined results": "Characterise", "Flow column prep": "Flow", "Residence times": "Flow", "Rig": "Flow", "Blank calc table": "Tables" };
+const items: MenuItem[] = kit.map(name => ({ name, desc: descs[name], group: kitGroup[name], value: name }));
 const method: MenuItem = { name: "UV-vis", desc: "Absorbance", value: { method: "uv-vis" } };
 const mine: MenuItem = { name: "Solution prep (mine)", value: "mine" };
 
@@ -21,11 +25,31 @@ describe("snippet menu", () => {
     expect(groupOf(method)).toBe("Characterise");
     expect(groupOf(mine)).toBe("My snippets");
   });
-  it("a header's group wins over the built-in map when it names one of the groups; any other group text is My snippets", () => {
+  it("the header's group decides (no built-in name map): a name alone is My snippets, a group that is not one of the five is My snippets", () => {
     expect(groupOf({ name: "Solution prep", group: "Tables", value: 1 })).toBe("Tables");
     expect(groupOf({ name: "Anything", group: " samples ", value: 1 })).toBe("Samples");
-    expect(groupOf({ name: "Solution prep", group: "Unknown", value: 1 })).toBe("Make up");
-    expect(groupOf({ name: "Mine", group: "Unknown", value: 1 })).toBe("My snippets");
+    expect(groupOf({ name: "Solution prep", group: "Unknown", value: 1 })).toBe("My snippets");
+    expect(groupOf({ name: "Solution prep", value: 1 })).toBe("My snippets");
+  });
+  it("the kit files' own headers put each snippet in the agreed group", () => {
+    const dir = "kits/lab/Templates/Snippets";
+    const files = readdirSync(dir).filter(f => f.endsWith(".md"));
+    expect(files.length).toBe(11);
+    for (const f of files) {
+      const head = readFileSync(`${dir}/${f}`, "utf8").split("\n---")[0];
+      const title = /^title: (.+)$/m.exec(head)![1].trim();
+      const group = /^group: (.+)$/m.exec(head)?.[1].trim();
+      expect(group, f).toBe(kitGroup[title]);
+    }
+  });
+  it("switched-off groups are skipped by the menu, the search and Recent", () => {
+    const shown = visibleItems([...items, method, mine], ["Characterise", "tables"]);
+    expect(shown.some(i => ["NMR samples", "Combined results", "Blank calc table"].includes(i.name))).toBe(false);
+    expect(shown).toContain(mine);
+    expect(menuSections(shown, ["GPC samples", "Rig"])[0].items.map(i => i.name)).toEqual(["Rig"]);
+    expect(menuSections(shown, []).map(s => s.heading)).toEqual(["Make up", "Samples", "Flow", "My snippets"]);
+    expect(searchItems(shown, "samp").map(i => i.name)).toEqual(["Sample list", "Sampling timetable"]);
+    expect(visibleItems(items, [])).toBe(items);
   });
   it("sections: groups in the fixed order, file order inside a group, My snippets last and only when not empty", () => {
     const s = menuSections([...items, method], []);

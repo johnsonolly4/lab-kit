@@ -2,6 +2,7 @@
 title: Variant naming matrix
 icon: grid-3x3, layout-grid
 desc: Rows × columns → sample codes; Copy gives one column
+group: Samples
 required: rows
 fields:
   - key: rows

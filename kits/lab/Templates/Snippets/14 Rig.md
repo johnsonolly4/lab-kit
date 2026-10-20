@@ -2,6 +2,7 @@
 title: Rig
 icon: workflow
 desc: Link the flow rig, draw its diagram, and copy its setup to the bottom of the note
+group: Flow
 required: rig
 set:
   Rig: "[[{{rig}}]]"

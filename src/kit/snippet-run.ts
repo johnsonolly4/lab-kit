@@ -7,7 +7,7 @@ import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Ch
 import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, oldStub, parseTemplate, type ParsedTemplate, type TemplateField } from "./snippet-template";
 import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
-import { hideShadowedStubs, pushRecent, type MenuItem } from "./snippet-menu";
+import { hideShadowedStubs, pushRecent, visibleItems, type MenuItem } from "./snippet-menu";
 import { openSnippetMenu } from "./snippet-menu-ui";
 import type { FormField, FormFn } from "./snippet-form";
 
@@ -38,7 +38,7 @@ export class SnippetTemplates {
 
   /** The Alt+S menu (Insert snippet.md calls it in place of labPick.js): the picked entry's `value`, or null. Remembers the pick for Recent. */
   async menu(all: MenuItem[]): Promise<unknown> {
-    const items = hideShadowedStubs(all);
+    const items = visibleItems(hideShadowedStubs(all), this.kit().snippetGroupsOff ?? []);
     const kit = this.kit();
     const names = new Set(items.map(it => it.name));
     const recent = (kit.snippetRecent ?? []).filter(n => names.has(n));

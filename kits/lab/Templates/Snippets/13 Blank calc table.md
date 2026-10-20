@@ -2,6 +2,7 @@
 title: Blank calc table
 icon: calculator
 desc: Your own columns and rows
+group: Tables
 required: cols
 fields:
   - key: cols
