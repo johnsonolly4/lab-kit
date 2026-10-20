@@ -13,6 +13,8 @@ import { toggleDoneWithUndo } from "./undo-notice";
 import { drawDone } from "./board-done";
 import { drawHeadAdd } from "./board-head";
 import { drawWeekRow, weekAt } from "./board-week-nav";
+import { lateTarget, type LateAction, type Move } from "./board-close";
+import { openCloseWeek, openLateCards } from "./board-close-ui";
 
 export const BOARD_VIEW = "lab-kit-board";
 /** Per-device (this vault's local storage, not synced): the tray is folded to one bar. */
@@ -75,7 +77,11 @@ class BoardView extends BasesView {
 
     const root = this.root = this.el.createDiv({ cls: "lk-board" });
     root.toggleClass("is-narrow", this.narrow());
-    drawWeekRow(root, board.monday, this.offset, step => { this.offset = step === 0 ? 0 : this.offset + step; this.pick = ""; this.draw(); });
+    drawWeekRow(root, board.monday, this.offset, step => { this.offset = step === 0 ? 0 : this.offset + step; this.pick = ""; this.draw(); }, {
+      late: this.offset === 0 ? board.days.reduce((n, d) => n + d.open.filter(c => c.carried).length, 0) : 0,
+      onLate: btn => openLateCards(this.app, btn, cards, new Date(), (c, a) => this.lateAct(c, a)),
+      onClose: btn => openCloseWeek(this.app, btn, cards, new Date(), moves => this.closeWeek(moves)),
+    });
     const names = board.days.map(d => d.day);
     if (!names.includes(this.pick)) this.pick = board.days.find(d => d.today)?.day ?? names[0] ?? "";
     const tabs = root.createDiv({ cls: "lk-board-tabs", attr: { role: "tablist", "aria-label": "Days" } });
@@ -196,12 +202,29 @@ class BoardView extends BasesView {
   private drop(path: string, key: string): void {
     const target = key === TRAY_KEY ? null : parseDay(key);
     if (key !== TRAY_KEY && !target) return;
+    void this.moveTo(path, target);
+  }
+
+  /** The write of a drop on `target` (a date, null = the Backlog): the same for a drag, Late cards and Close the week. */
+  private async moveTo(path: string, target: Date | null): Promise<void> {
     const f = this.app.vault.getFileByPath(path);
     if (!f) return;
     const r = dropPatch(this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}, target, new Date());
     if (!r) return;
     if ("refused" in r) { new Notice(`${datePill(target!)} has passed: drop on today or a later day.`); return; }
-    void this.write(path, x => applyPatch(x, r.patch));
+    await this.write(path, x => applyPatch(x, r.patch));
+  }
+
+  /** A Late cards button: a drop on today / tomorrow / next Monday / the Backlog, or a tick (with the Undo notice). */
+  private async lateAct(c: WeekCard, a: LateAction): Promise<void> {
+    const to = lateTarget(a, new Date());
+    if (to === undefined) { this.toggleDone(c.path); return; }
+    await this.moveTo(c.path, to);
+  }
+
+  /** `Move N` in Close the week. */
+  private async closeWeek(moves: Move[]): Promise<void> {
+    for (const m of moves) await this.moveTo(m.path, m.to);
   }
 
   /** The to-do engine stamps `done_on` (tickPatch); a tick gets the Undo notice (undo-notice.ts). */

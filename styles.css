@@ -518,6 +518,24 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-board .lk-board-weekbtn { flex: none; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; height: 24px; min-height: 0; padding: 0 8px; font-size: var(--font-ui-small); line-height: 1; color: var(--text-muted); background: none; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); box-shadow: none; }
 .lk-board .lk-board-weekbtn.is-prev, .lk-board .lk-board-weekbtn.is-next { width: 24px; padding: 0; border-radius: var(--lk-radius-pill); corner-shape: round; }
 .lk-board .lk-board-weekbtn:hover { color: var(--text-accent); border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
+.lk-board-weekacts { display: flex; align-items: center; gap: 6px; flex: none; }
+.lk-board .lk-board-latechip { display: inline-flex; align-items: center; height: 24px; min-height: 0; padding: 0 10px; font-size: var(--font-ui-small); border-radius: var(--lk-radius-pill); corner-shape: round; }
+.lk-board.is-narrow .lk-board-weekrow { flex-wrap: wrap; }
+.lk-board.is-narrow .lk-board-weekacts { flex: 1 0 100%; padding-left: 4px; }
+/* Close the week and Late cards: the entry window's look (.vt-entry); a list box with row lines, small buttons at the control corner. */
+.lk-close-summary { margin: 0 0 8px; }
+.lk-close-choices { display: flex; flex-direction: column; gap: 4px; margin: 0 0 10px; }
+.lk-close-choice, .lk-close-row { display: flex; align-items: center; gap: 8px; }
+.lk-close-list { max-height: 40vh; overflow-y: auto; margin: 0 0 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); }
+.lk-close-list:empty { display: none; }
+.lk-close-row, .lk-close-late { padding: 6px 10px; }
+.lk-close-row + .lk-close-row, .lk-close-late + .lk-close-late { border-top: 1px solid var(--background-modifier-border); }
+.lk-close-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lk-close-when { flex: none; color: var(--text-muted); font-size: var(--font-ui-smaller); }
+.lk-close-text { display: flex; align-items: baseline; gap: 8px; }
+.lk-close-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.modal .lk-close-btn { height: 24px; min-height: 0; padding: 0 10px; font-size: var(--font-ui-small); background: none; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); box-shadow: none; }
+.modal .lk-close-btn:hover:not(:disabled) { color: var(--text-accent); border-color: var(--interactive-accent); background: var(--background-modifier-hover); }
 .lk-board-days { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .lk-board-days.has-weekend { grid-template-columns: repeat(7, minmax(0, 1fr)); }
 .lk-board-col, .lk-board-tray { background: var(--background-secondary); border-radius: var(--lk-radius-card); padding: 10px; }

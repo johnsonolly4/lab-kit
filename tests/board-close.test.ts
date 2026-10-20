@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { weekCardOf } from "../src/planning/board-card";
 import { closeList, closeWeekPlan, lateCards, lateTarget, nextMonday, type Move } from "../src/planning/board-close";
 import { dropPatch, ymd, type TodoFm } from "../src/planning/todo";
+import { drawWeekRow } from "../src/planning/board-week-nav";
 
 const FRI = new Date(2026, 9, 23, 16);   // Friday 23 Oct 2026
 const WED = new Date(2026, 9, 21, 10);
@@ -78,5 +79,33 @@ describe("Late cards", () => {
       return r && "patch" in r ? (r.patch.set.scheduled as string | undefined) ?? "" : null;
     };
     expect(["today", "tomorrow", "nextweek", "backlog", "done"].map(a => m(a as never))).toEqual(["2026-10-21", "2026-10-22", "2026-10-26", "", undefined]);
+  });
+});
+
+describe("the top row buttons", () => {
+  /** A recording element: every child (any depth) lands in `all`. */
+  function fake() {
+    const all: { cls: string; text: string; on: Record<string, (e: unknown) => void> }[] = [];
+    const mk = (o: { cls?: string; text?: string }) => {
+      const k = { cls: o.cls ?? "", text: o.text ?? "", on: {} as Record<string, (e: unknown) => void>, addEventListener(ev: string, fn: (e: unknown) => void) { k.on[ev] = fn; }, createDiv: (p: { cls?: string }) => mk(p), createEl: (_t: string, p: { cls?: string; text?: string }) => mk(p), createSpan: (p: { cls?: string; text?: string }) => mk(p) };
+      all.push(k); return k;
+    };
+    return { all, root: mk({}) };
+  }
+  it("shows `3 carried over` and `Close the week…`, each calling back with its own button", () => {
+    const f = fake(), got: string[] = [];
+    drawWeekRow(f.root as never, new Date(2026, 9, 19), 0, () => {}, { late: 3, onLate: () => got.push("late"), onClose: () => got.push("close") });
+    const texts = f.all.map(k => k.text).filter(Boolean);
+    expect(texts).toContain("3 carried over");
+    expect(texts).toContain("Close the week…");
+    for (const k of f.all.filter(k => k.text === "3 carried over" || k.text === "Close the week…")) k.on.click({ stopPropagation: () => {} });
+    expect(got).toEqual(["late", "close"]);
+  });
+  it("no chip when nothing is late; Close the week… is always there", () => {
+    const f = fake();
+    drawWeekRow(f.root as never, new Date(2026, 9, 19), 0, () => {}, { late: 0, onLate: () => {}, onClose: () => {} });
+    const texts = f.all.map(k => k.text);
+    expect(texts.some(t => t.includes("carried over"))).toBe(false);
+    expect(texts).toContain("Close the week…");
   });
 });
