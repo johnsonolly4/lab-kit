@@ -75,7 +75,7 @@ Alt+S opens one Lab Kit menu in the entry-window look, grouped and recently-used
 | Tables | Blank calc table |
 
 ### Phase 2 — Forms in the new look
-- **BUILT 2026-10-20 (N1b, commit a411424), not seen in Obsidian:** `src/kit/snippet-form.ts` + `.lk-form-*` in `styles.css`; token templates ask through it (`SnippetTemplates` 4th constructor argument, `main.ts`); toggles and selects of 2-3 options are pills, more a dropdown; the helpers are tested against `labForm.js` on the same inputs (`tests/snippet-form.test.ts`). NOT done: handing the form to `labSnippets.js` code snippets (Solution prep, Rig…) as `tp.user.labForm` (they run on Templater's `tp` from `Insert snippet.md`; needs a one-line change there), `when:` hiding (waits for I23 f), obsidian-check of the forms.
+- **BUILT 2026-10-20 (N1b, commit a411424), not seen in Obsidian:** `src/kit/snippet-form.ts` + `.lk-form-*` in `styles.css`; token templates ask through it (`SnippetTemplates` 4th constructor argument, `main.ts`); toggles and selects of 2-3 options are pills, more a dropdown; the helpers are tested against `labForm.js` on the same inputs (`tests/snippet-form.test.ts`). Handing the form to the `labSnippets.js` code snippets came with Phase 6 (see "Form audit 2026-10-20" below: all 15 entries ask through it). NOT done: `when:` hiding (waits for I23 f), obsidian-check of the forms.
 - Depends on: Phase 1.
 - Files: new `src/kit/snippet-form.ts` (window with the same field contract as `labForm.js`: text, number, textarea, toggle, select, heading, `required`, `hint`, `suggest`; `matchNames` / `currentItem` / `replaceItem` ported with their tests), `src/kit/snippet-run.ts` (hands the plugin form to token templates and to `labSnippets.js` as `tp.user.labForm`), `styles.css`, tests.
 - Look: entry-window card; each field a label over a box (control radius); a select with 2–3 options as pills, more as a dropdown; toggles as pills; hint line at the bottom. Fields that only matter for one choice (Solution prep: Total concentration, its unit, Ratio between solutes, Ratio numbers only when Targets = ratio split) are hidden until chosen **only if the owner says so** (I23 f); the scripts would mark them with `when: { mode: "total" }`, ignored by `labForm.js`.
@@ -113,6 +113,31 @@ Alt+S opens one Lab Kit menu in the entry-window look, grouped and recently-used
 - Note: the scripts still live in the vault and must sync; only Templater's user-script folder setting stops mattering. Plain snippets that hold `<% %>` Templater code are inserted through Templater when it is there, else with a notice naming the snippet.
 - Done when: the command works with Templater off (test with a fake app; obsidian-check desktop with Templater disabled; obsidian-check --mobile); both hotkeys insert the same text; `hasNode()` false path covered.
 - **BUILT 2026-10-20 (N1e-6; commit bd2e0f8), checked in a throwaway Obsidian (Templater absent; desktop and `--mobile`: menu, a token template and, on desktop, Combined results inserted; console errors []), not by the owner.** As built: `src/kit/snippet-insert.ts` (`insertSnippet`, `snippetTp`, `withScriptGlobals`, `formatNow`) builds its own `tp` (`config.target_file`, `file.title`, `date.now`, `user.labForm` = the plugin form, `user.labMethods`, `user.labSnippets`). The kit scripts are the BUNDLED copies, as in Make my own copy, not the vault copies (the plan said "from the vault"; the bundle needs no eval, works on the phone and in the store review; an edited vault copy of `labSnippets.js` / `labMethods.js` is no longer used by Alt+S). `KitController.insertSnippet(editor)` in `ui.ts` (command `lab-kit:insert-snippet`, `editor.replaceSelection`). `Insert snippet.md` is one `app.commands.executeCommandById("lab-kit:insert-snippet")` call. A plain snippet with `<% %>` goes through Templater when it is there, else a notice names it. `hotkey-check.ts` took either command since Phase 1. The old test of the template's own code moved to `tests/snippet-insert.test.ts`. Not done, waiting for the owner: BACKLOG "I23 Phase 6 leftovers" (Set up and Check setup still add / check Templater's Insert snippet hotkey; Templater user-scripts row wording).
+
+## Form audit 2026-10-20
+Question from the owner (chat, 2026-10-20): do ALL the snippets in Alt+S ask through the plugin's own form? Answer: **yes, all 15 entries, with Templater absent** (measured by `tests/snippet-form-audit.test.ts`: the kit's 11 Snippets-folder files read from disk and run through `insertSnippet` with Templater off, a recording fake as the plugin form; one test per row). Nothing needed fixing. Not seen in Obsidian: the look of each form (BACKLOG "I23 Phase 2 leftovers" (1)); the audit shows which function is asked, not what it looks like. Known answers 0005 Mn = 19990.14 and 0011 = 1.7591 mL still pass (`tests/snippets.test.ts:149,203`).
+
+How the plugin form gets there: the Lab Kit command passes `form: openSnippetForm(this.app)` (`src/kit/ui.ts:485`), `insertSnippet` builds a `tp` whose `user.labForm` is that form (`src/kit/snippet-insert.ts:44`), so `labSnippets.js` and `labMethods.js` (`form = tp.user.labForm(...)`, `labSnippets.js:19`) reach it; token templates ask through `SnippetTemplates.form` (set at `src/main.ts:37`, used at `src/kit/snippet-run.ts:151`, where Templater's `labForm` is only the fallback when no form was passed: tests and old setups, never Alt+S).
+
+| Menu entry | Kind | Where it asks (file:line) | Form title | Test (`tests/snippet-form-audit.test.ts`) | Plugin form? |
+|---|---|---|---|---|---|
+| Solution prep (01) | `run: solution` | `labSnippets.js:228` | Solution prep | `Solution prep: opens the plugin form…` | yes |
+| Recipe by equivalents (02) | `run: recipe` | `labSnippets.js:275` | Recipe by equivalents | `Recipe by equivalents: …` | yes |
+| RAFT recipe generator (03) | `run: raft` | `labSnippets.js:311` | RAFT recipe generator | `RAFT recipe generator: …` | yes |
+| Variant naming matrix (04) | token template | `snippet-run.ts:151` | Variant naming matrix | `Variant naming matrix: …` | yes |
+| Sample list (05) | token template | `snippet-run.ts:151` | Sample list | `Sample list: …` | yes |
+| Sampling timetable (06) | token template | `snippet-run.ts:151` | Sampling timetable | `Sampling timetable: …` | yes |
+| Combined results (10) | `run: results` | `labSnippets.js:361` | Combined results table | `Combined results: …` | yes |
+| Flow column prep (11) | token template | `snippet-run.ts:151` | Flow column prep | `Flow column prep: …` | yes |
+| Residence times (12) | token template | `snippet-run.ts:151` | Residence times | `Residence times: …` | yes |
+| Blank calc table (13) | token template | `snippet-run.ts:151` | Blank calc table | `Blank calc table: …` | yes |
+| Rig (14) | token template (`suggest: notes`) | `snippet-run.ts:151` | Rig | `Rig: …` | yes |
+| NMR samples | built-in method | `labSnippets.js:178` (`methodForm`, from `:344`) | NMR samples | `NMR samples: …` | yes |
+| GPC samples | built-in method | `labSnippets.js:178` (from `:345`) | GPC samples | `GPC samples: …` | yes |
+| DLS samples | built-in method | `labSnippets.js:178` (from `:346`) | DLS samples | `DLS samples: …` | yes |
+| Methods-folder methods (one per note; test with Mass spec) | `method:<key>` | `labSnippets.js:178` (from `:349`) | the method's title | `Mass spec samples: …` | yes |
+
+Not on the plugin form, by design: a plain snippet of your own that holds `<% %>` Templater code runs through Templater when it is there (else a notice), and asks whatever its own code asks (`snippet-insert.ts`, test `a plain snippet with Templater code…` in `tests/snippet-insert.test.ts`). The old copies `labForm.js` / `labPick.js` stay in the kit for old vault copies; Alt+S does not call them.
 
 ## Verification
 - Byte-for-byte: every kit snippet's output before and after (existing scenario tests plus new ones for the `run:` path).
