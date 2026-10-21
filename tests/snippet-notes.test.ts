@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { makeEnv } from "../src/kit/snippet-env";
 import { appendEdits, applyEdits, noteEdits, propertyEdit } from "../src/kit/snippet-note";
-import { TemplateError, fillParts, fillTemplate, parseTemplate } from "../src/kit/snippet-template";
+import { TemplateError, fillParts, fillTemplate, parseTemplate, rigSnapshotFields } from "../src/kit/snippet-template";
 import { readRig } from "../src/rig/parts";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 
@@ -62,6 +62,19 @@ describe("engine: rig tokens, note-prop and #append", () => {
     expect(heading("Rig A")).toMatchObject({ heading: "Flow platform setup", level: 1 });
     expect(heading("", '{{#append "Setup" from rig.Heading}}')).toMatchObject({ heading: "Setup", level: 2 });
     expect(() => heading("Rig A", '{{#append "# H" from nope.Heading}}')).toThrow(/not a field/);
+  });
+  it("rig-snapshot is the link to the snapshot the runner took, rig-snapshot-date its date; nothing for an empty answer", () => {
+    const snap = { ...notes, snapshot: (n: string) => (n === "Rig A" ? { link: "[[Rig A 2026-10-21.svg]]", date: "2026-10-21" } : null) };
+    const fillS = (body: string, rig = "Rig A") => fillParts(body, { rig }, makeEnv("", "ABC0016-", () => "", snap)).text;
+    expect(fillS("!{{rig-snapshot:rig}}\n*{{rig-snapshot-date:rig}}*")).toBe("![[Rig A 2026-10-21.svg]]\n*2026-10-21*");
+    expect(fillS("[{{rig-snapshot:rig}}{{rig-snapshot-date:rig}}]", "")).toBe("[]");
+    expect(() => fillS("{{rig-snapshot:rig}}", "Empty")).toThrow(/"Empty" has no parts table/);
+    expect(() => fillS("{{rig-snapshot:other}}")).toThrow(/not a field/);
+    expect(() => fill("{{rig-snapshot:rig}}")).toThrow(/no snapshot of "Rig A"/i);   // an env without snapshots never writes an empty embed
+  });
+  it("rigSnapshotFields: the fields a template takes snapshots of, once each, in the body or the set values", () => {
+    expect(rigSnapshotFields(["a {{rig-snapshot:rig}} {{rig-snapshot-date:rig}}", '"{{ rig-snapshot:rig2 }}"', "{{rig-diagram:x}}"])).toEqual(["rig", "rig2"]);
+    expect(rigSnapshotFields(["{{rig-diagram:rig}}"])).toEqual([]);
   });
   it("an empty answer gives nothing; a note without a parts table is an error", () => {
     expect(fill("[{{rig-tables:rig}}{{rig-diagram:rig}}{{note-prop:rig.Tubing}}]", "").text).toBe("[]");

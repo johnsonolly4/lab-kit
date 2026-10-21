@@ -48,7 +48,7 @@ show: todo-bar
 /** The engine reads nothing from the vault for this template. */
 const NO_ENV: TemplateEnv = {
   prefix: "", nextFreeIndex: () => 0, uniqueTable: b => b, tableRows: () => 0, noteProperty: () => "", noteText: () => "",
-  rigTables: () => "", rigDiagram: () => "", rigSummary: () => "",
+  rigTables: () => "", rigDiagram: () => "", rigSnapshot: () => ({ link: "", date: "" }), rigSummary: () => "",
 };
 
 /** `YYYY-MM-DD` of `d` in local time (Templater's `tp.date.now("YYYY-MM-DD")`). */
