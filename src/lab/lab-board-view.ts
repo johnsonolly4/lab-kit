@@ -107,7 +107,7 @@ class LabBoardView extends BasesView {
     this.pick = pickColumn(cols, this.pick);
     const tabs = host.createDiv({ cls: "lk-board-tabs", attr: { role: "tablist", "aria-label": "Status" } });
     for (const c of cols) {
-      const t = tabs.createEl("button", { cls: c.key === this.pick ? "lk-board-tab is-on" : "lk-board-tab", attr: { type: "button", role: "tab", "aria-selected": String(c.key === this.pick) } });
+      const t = tabs.createEl("button", { cls: c.key === this.pick ? "lk-board-tab is-on" : "lk-board-tab", attr: { type: "button", role: "tab", "aria-selected": String(c.key === this.pick), title: c.label } });
       if (c.key !== OTHER) t.dataset.drop = c.key;   // Other is not a Status to write: no drop
       t.createSpan({ cls: "lk-board-name", text: c.label });
       t.createSpan({ cls: "lk-board-count", text: String(c.rows.length) });

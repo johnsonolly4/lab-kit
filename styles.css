@@ -641,6 +641,8 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-lab-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .lk-lab-cols { display: grid; grid-template-columns: repeat(var(--lk-lab-n, 3), minmax(0, 1fr)); gap: 10px; }
 .lk-board.is-narrow .lk-lab-cols { grid-template-columns: minmax(0, 1fr); }
+/* A status tab label too long for its tab is cut with "…", no wrapping (owner 2026-10-21); the full label is the tab's title */
+.lk-board.lk-lab .lk-board-tab .lk-board-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lk-lab-card:hover { border-color: var(--interactive-accent); }
 .lk-lab-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; min-width: 0; }
 .lk-lab-chems { font-size: var(--font-ui-smaller); color: var(--text-muted); }
