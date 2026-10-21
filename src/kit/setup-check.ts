@@ -2,7 +2,7 @@
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
 import type { ZotlitScan } from "./zotlit";
-import { RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
+import { METHODS_DEFAULT, RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
 import type { ClosedScan } from "../close/scan";
@@ -86,8 +86,6 @@ export interface SetupState {
   scripts?: { name: string; kit: "lab" | "planning"; exists: boolean }[];
   /** The homepage note's `obsidianUIMode` (Force note view mode reads it); null when the note isn't there. */
   homepageMode?: string | null;
-  /** Path of the installed Insert snippet template; null when the lab kit isn't installed. */
-  menu: string | null;
   /** Kit installed (has tracked files), per kit. */
   installed: { lab: boolean; planning: boolean };
   /** The kits' CSS snippets; `enabled` undefined when Obsidian can't tell. */
@@ -167,9 +165,6 @@ export function setupSummary(items: SetupItem[]): string {
   const n = items.filter(it => { const s = setupRowState(it); return s === "missing" || s === "todo"; }).length;
   return n ? `${n} ${n === 1 ? "thing" : "things"} to do.` : "Everything the kits need is in place.";
 }
-
-/** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
-export const METHODS_DEFAULT = "Extras/methods";
 
 const names1 = (list: unknown[], one: string, many: string): string => list.length === 1 ? one : many;
 
@@ -287,8 +282,8 @@ export function checkSetup(s: SetupState): SetupItem[] {
       ["user-scripts", "Templater user scripts folder", !!t.userScriptsFolder.trim()],
     ];
     for (const [id, label, ok] of items) {
-      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
-        fix: ok || !s.menu ? undefined : { kind: "templater" } });
+      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.installed.lab ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
+        fix: ok || !s.installed.lab ? undefined : { kind: "templater" } });
     }
     for (const sc of s.scripts ?? []) {
       if (!kitOn(sc.kit)) continue;

@@ -7,6 +7,7 @@ import { firstSeries } from "../planning/meetings";
 import { normalisePatch, parseDay, type TodoPatch } from "../planning/todo";
 import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
 import { normaliseDate } from "./exp-end";
+import { kitIsBackup } from "./paths";
 import { headerIcon } from "./icon-list";
 import { withIcon } from "./snippet-icon";
 import { oldStub } from "./snippet-template";
@@ -69,6 +70,8 @@ export interface TidyContext {
   fillFolders?: string[];
   /** I2: every note is read, for kept kit queries and your own queries that read the old to-do `day`. Missing = those rules are off. */
   todoQueries?: boolean;
+  /** Empty folders the kit no longer makes (`Extras/attachments`, CI2): the old-kit-files rule offers them. Missing = none. */
+  emptyOldFolders?: string[];
 }
 
 /** A Meta Bind button action as saved (`type` plus its own fields). */
@@ -99,6 +102,8 @@ export interface TidyChange {
   body?: boolean;
   /** The file goes to Obsidian's trash (the user's own trash setting decides where); `before` / `after` are empty. A copy goes to the backups folder first. */
   trash?: boolean;
+  /** With `trash`: `path` is an empty folder (nothing to back up; skipped if it holds a file by then). */
+  folder?: boolean;
   /** A plugin setting rather than a note: `path` is the label shown, `before` / `after` the lines shown. */
   setting?: TidySetting;
 }
@@ -269,6 +274,13 @@ function isHubName(path: string): boolean {
 }
 
 /** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js, and for the to-do query rules.) */
+/** Kit files no longer shipped (2026-10-21, CI2) that the old-kit-files rule offers to trash; labForm.js only while no note calls the kit's Templater scripts. */
+const OLD_KIT_FILE = /(^|\/)(labPick|labForm)\.js$/;
+/** A note that runs the kit's Templater scripts (a template of your own): labForm.js stays while one does. */
+const CALLS_KIT_SCRIPTS = /tp\.user\.(labSnippets|labForm)\b/;
+/** A labForm.js is there: the scan reads every note, to see whether one still calls the kit's Templater scripts. */
+export const readsAllForOldScripts = (paths: string[]): boolean => paths.some(p => /(^|\/)labForm\.js$/.test(p) && !kitIsBackup(p));
+
 export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
   if (!isNote(path) || hidden(path)) return false;
   return readAll || !!ctx.todoQueries || readForRules(path, ctx) || (!!ctx.snippetsFolder && parentOf(path) === ctx.snippetsFolder.replace(/\/+$/, ""));
@@ -629,6 +641,17 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     }
     if (stubs.changes.length) groups.push(stubs);
   }
+
+  // Kit files no longer shipped (CI2): labPick.js (nothing calls it), labForm.js (only while no note calls the kit's Templater scripts), an empty Extras/attachments. Opt-in.
+  const oldFiles: TidyGroup = { id: "old-kit-files", title: "Old kit files nothing uses", detail: "The kit no longer installs labPick.js, labForm.js or an empty Extras/attachments folder: Alt+S uses the plugin's own menu and form. Moved to Obsidian's trash (you can get them back). Not ticked until you tick it; each file is copied to the backups folder first.", changes: [], optIn: true };
+  const callers = notes.filter(n => CALLS_KIT_SCRIPTS.test(n.text ?? ""));
+  for (const f of files) {
+    if (!OLD_KIT_FILE.test(f.path) || hidden(f.path) || kitIsBackup(f.path)) continue;
+    if (f.path.endsWith("labForm.js") && callers.length) { skipped.items.push({ path: f.path, note: `kept: ${callers[0].path}${callers.length > 1 ? ` and ${callers.length - 1} more call` : " calls"} the kit's Templater scripts` }); continue; }
+    oldFiles.changes.push({ path: f.path, before: "", after: "", trash: true });
+  }
+  for (const folder of ctx.emptyOldFolders ?? []) oldFiles.changes.push({ path: folder, before: "", after: "", trash: true, folder: true, note: "empty folder" });
+  if (oldFiles.changes.length) groups.push(oldFiles);
 
   // Snippets: icons saved under the old Settings → Snippet icons page go into each snippet's header (`icon:`). Opt-in; a note is backed up first.
   const savedIcons = Object.entries(ctx.snippetIcons ?? {}).map(([name, icon]) => [name.trim(), icon.trim()] as const).filter(([name, icon]) => name && icon);

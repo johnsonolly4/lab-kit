@@ -16,8 +16,8 @@ import { insertSnippet } from "./snippet-insert";
 import { openSnippetForm } from "./snippet-form";
 import { menuIcons } from "./snippet-icon-ui";
 import type { SnippetTemplates } from "./snippet-run";
-import labSnippets from "../../kits/lab/Extras/scripts/templater/labSnippets.js";
-import labMethods from "../../kits/lab/Extras/scripts/templater/labMethods.js";
+import labSnippets from "./bundled/labSnippets.js";
+import labMethods from "./bundled/labMethods.js";
 import type { FolderGuardActions } from "./folder-guard";
 import { runCloseCommand } from "../close/ui";
 import { hasNode } from "../platform";
@@ -166,10 +166,9 @@ class KitSettingTab extends PluginSettingTab {
     setup.push({ name: "Find moved folders", desc: "A folder named in these settings that was moved or renamed outside Obsidian: finds where it went. Changes only the settings.",
       render: b => actionRow(b, () => { this.ctl.findMovedFolders(); }) });
     const kitFolders: SettingGroupItem[] = [];
-    kitFolders.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Templates."));
+    kitFolders.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Extras/Templates."));
+    kitFolders.push(folder("snippets", "Snippets folder", "Where the kit's Alt+S snippets go; the menu lists the notes in this folder. Empty: where the kit's snippets already are; in a new vault Extras/Snippets."));
     kitFolders.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
-    kitFolders.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
-      render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });
     setup.push({ type: "page", name: "Kit folders", items: kitFolders });
     setup.push({ type: "page", name: "Folder templates", items: this.folderTemplateRows() });
     const bc = kit.boardColours;
@@ -539,7 +538,7 @@ export class KitController {
   async insertSnippet(editor: Editor): Promise<void> {
     if (!this.snippets) return;
     this.snippets.icons = menuIcons(this.app, this.managed);
-    const snippetFolder = `${kitJoin(this.managed.templatesFolder(), "Snippets")}`;
+    const snippetFolder = this.managed.snippetsFolder();
     try {
       await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app, () => this.kit.snippetFormsAtCursor), scripts: { labSnippets, labMethods }, snippetFolder,
         templaterInsert: hasTemplater(this.app) ? f => templaterInsert(this.app, f) : null }, editor);

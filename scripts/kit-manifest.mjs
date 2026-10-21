@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "
 import { join, relative, sep } from "path";
 import { KITS, sha256 } from "./embed-kit.mjs";
 
-const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", scripts: "script", userScripts: "script", labBase: "note", chemicalBase: "note" };
+const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", snippets: "template", scripts: "script", userScripts: "script", labBase: "note", chemicalBase: "note" };
 const PREFIX = { snippet: "snip", template: "tpl", script: "script", note: "note" };
 
 /* ---- Per kit: which source folder holds which role, and the one-line descriptions ---- */
@@ -14,19 +14,15 @@ const LAB_ROLE_BY_PREFIX = [
   [".obsidian/snippets/", "cssSnippets"],
   ["Extras/scripts/templater/", "userScripts"],
   ["Extras/scripts/", "scripts"],
+  ["Snippets/", "snippets"],
   ["Templates/", "templates"],
   ["03 Lab Book/", "labBase"],
   ["05 Chemicals/", "chemicalBase"],
 ];
-// One line per kit file, shown in Manage kit files. Snippets (Templates/Snippets/) use their own "// desc:" line.
+// One line per kit file, shown in Manage kit files. Snippets (Snippets/) use their own "// desc:" line.
 const LAB_DESC = {
   ".obsidian/snippets/scrolling-mermaid.css": "Lets wide Mermaid diagrams scroll sideways inside a note",
   "Extras/scripts/excel_to_calc.py": "Command-line tool that turns an Excel file into calc tables",
-  "Extras/scripts/templater/labForm.js": "The pop-up form every snippet uses",
-  "Extras/scripts/templater/labMethods.js": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)",
-  "Extras/scripts/templater/labPick.js": "The searchable snippet menu with icons",
-  "Extras/scripts/templater/labSnippets.js": "The code behind every snippet",
-  "Templates/Insert snippet.md": "The Alt+S menu: lists the snippets and inserts the one you pick",
   "Templates/Lab Book Template.md": "New experiment note: number, hazards, data folder button and sections",
   "Templates/Chemical database template.md": "New chemical note: names, class, hazards, CAS number, MW and physical data",
   "Templates/Rig template.md": "New rig note: tubing, control, the diagram and the parts tables (pumps, reactor line, analysis)",
@@ -37,11 +33,11 @@ const CONFIG = {
   lab: {
     roleByPrefix: LAB_ROLE_BY_PREFIX, desc: LAB_DESC,
     // Snippets carry their own "// desc:" line and can be switched off; so can the Excel converter (not part of the plugin itself)
-    optionalPrefix: "Templates/Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py", "Templates/Chemical database template.md", "Templates/Rig template.md", "03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
+    optionalPrefix: "Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py", "Templates/Chemical database template.md", "Templates/Rig template.md", "03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // policy "keep": installed once, never updated (notes that become the user's own)
     keepFiles: new Set(["03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // "needs": the setting (kit data key) that must be set for the file to be installed; empty = treated as switched off
-    needs: { "Templates/Chemical database template.md": "chemicalFolder", "Templates/Rig template.md": "rigsFolder", "Templates/Snippets/14 Rig.md": "rigsFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
+    needs: { "Templates/Chemical database template.md": "chemicalFolder", "Templates/Rig template.md": "rigsFolder", "Snippets/14 Rig.md": "rigsFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
   },
 };
 // Planning kit: the planning suite (homepage, to-do board, planning notes, templates, Actions, vtAsk.js, theme). Source:

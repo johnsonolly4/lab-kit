@@ -293,7 +293,13 @@ describe("layout folders at install (Phase 6c)", () => {
   });
 
   it("lab note folders only when set", () => {
-    expect(labFolders({ labFolder: "03 Lab Book/Notes", chemicalFolder: "" }).map(f => f.path)).toEqual(["03 Lab Book/Notes"]);
+    expect(labFolders({ labFolder: "03 Lab Book/Notes", chemicalFolder: "", rigsFolder: "", methodsFolder: "" }).map(f => f.path)).toEqual(["03 Lab Book/Notes"]);
+  });
+
+  it("a new vault's first install makes Rigs and Methods under 03 Lab Book (CI3); a vault saved before keeps an empty Methods folder", () => {
+    expect(labFolders(kitLoad(undefined)).map(f => f.path)).toEqual(["03 Lab Book/Notes", "05 Chemicals/Chemicals", "03 Lab Book/Rigs", "03 Lab Book/Methods"]);
+    expect(kitLoad({ labFolder: "L", initials: "ABC" }).methodsFolder).toBe("");
+    expect(kitLoad({ labFolder: "L", methodsFolder: "My methods" }).methodsFolder).toBe("My methods");
   });
 });
 

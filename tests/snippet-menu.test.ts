@@ -32,7 +32,7 @@ describe("snippet menu", () => {
     expect(groupOf({ name: "Solution prep", value: 1 })).toBe("My snippets");
   });
   it("the kit files' own headers put each snippet in the agreed group", () => {
-    const dir = "kits/lab/Templates/Snippets";
+    const dir = "kits/lab/Snippets";
     const files = readdirSync(dir).filter(f => f.endsWith(".md"));
     expect(files.length).toBe(11);
     for (const f of files) {
@@ -82,7 +82,7 @@ describe("snippet menu", () => {
 });
 
 describe("built-in methods in the menu (labMethods.js menuEntries)", () => {
-  const labMethods = createRequire(import.meta.url)("../kits/lab/Extras/scripts/templater/labMethods.js");
+  const labMethods = createRequire(import.meta.url)("../src/kit/bundled/labMethods.js");
   const app = { vault: { adapter: { read: async () => { throw new Error("no settings"); } }, getFolderByPath: () => null } };
 
   it("without the flag the built-ins are left out; with it NMR, GPC and DLS come first, with the old stubs' icon and description", async () => {

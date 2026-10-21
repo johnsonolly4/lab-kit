@@ -1,13 +1,13 @@
 // Tidy up notes window: the scan's result as a before (left) / after (right) split view, one tick box per rule, an "Only reported" group, Copy report.
 // Nothing is written until: the backup box is ticked, Change notes… is pressed and the second window is confirmed (Phase 7b).
 import { Modal, Notice, type App } from "obsidian";
-import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitParent, kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
+import { PLANNING_FOLDER_DEFAULTS, kitParent,kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { tokenFillFolders } from "./note-fill-ui";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { batchChanges, changeKey, datedTodos, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { batchChanges, changeKey, datedTodos, countRows, diffRows, foldRows, readsAllForOldScripts,pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, removeTemplaterFolderTemplates, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
@@ -46,7 +46,7 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
       return setTemplaterPath(app, c.target, c.key, c.from as string, c.to as string);
     },
     create: async (p, text) => { await ensureFolder(app.vault, kitParent(p)); await app.vault.create(p, text); },
-    trash: async p => { const f = file(p); if (f) await app.fileManager.trashFile(f); },
+    trash: async p => { const f = app.vault.getAbstractFileByPath(p); if (f) await app.fileManager.trashFile(f); },   // a file, or an empty folder (old-kit-files rule)
     rename: async (from, to) => {
       const f = app.vault.getAbstractFileByPath(from);
       if (!f) return;
@@ -70,6 +70,9 @@ function hubTemplates(host: TidyHost): TidyContext["hubTemplates"] {
   return out.project && out.topic && out.series ? out : undefined;
 }
 
+/** Folders the kit made empty at install until 2026-10-21 and no longer makes (CI2). */
+const OLD_KIT_FOLDERS = ["Extras/attachments"];
+
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
 export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App, kitSnippets?: string[], fillFolders?: string[]): TidyContext {
   const planningOn = !!host.planning?.slot.enabled;
@@ -81,7 +84,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     contractFolders: planningOn ? [...new Set(contract)] : [],
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
-    snippetsFolder: kitJoin(host.managed.templatesFolder(), "Snippets"),
+    snippetsFolder: host.managed.snippetsFolder(),
     snippetIcons: host.kit.snippetIcons,
     kitSnippets,
     fillFolders,
@@ -93,6 +96,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
     todoQueries: planningOn || undefined,
+    emptyOldFolders: app ? OLD_KIT_FOLDERS.filter(p => app.vault.getFolderByPath(p)?.children.length === 0) : undefined,
     freeze: planningOn && app ? path => { const f = app.vault.getFileByPath(path); return f ? freezeDataFor(app, host.kit, f) : null; } : undefined,
   };
 }
@@ -100,7 +104,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
 /** Reads the vault (only the notes the scan needs). Writes nothing. */
 async function readVault(app: App, ctx: TidyContext): Promise<TidyFile[]> {
   const paths = app.vault.getFiles().map(f => f.path);
-  const readAll = paths.some(p => /(^|\/)view\.js$/.test(p));
+  const readAll = paths.some(p => /(^|\/)view\.js$/.test(p)) || readsAllForOldScripts(paths);
   return Promise.all(paths.map(async path => {
     const f = wantsText(path, ctx, readAll) ? app.vault.getFileByPath(path) : null;
     return { path, text: f ? await app.vault.cachedRead(f) : undefined };
@@ -138,7 +142,7 @@ export class TidyNotesModal extends Modal {
 
   /** Reads the vault and scans it. */
   private async load(): Promise<void> {
-    this.kitSnippets = (await this.host.managed.plan()).filter(i => i.file.dest.startsWith("Snippets/") && (i.action === "up-to-date" || i.action === "fast-forward")).map(i => i.dest);
+    this.kitSnippets = (await this.host.managed.plan()).filter(i => i.file.role === "snippets" &&(i.action === "up-to-date" || i.action === "fast-forward")).map(i => i.dest);
     const planningOn = !!this.host.planning?.slot.enabled;
     this.fillFolders = await tokenFillFolders(this.app, { kit: () => this.host.kit, planningOn: () => planningOn, templateFolders: () => [...(planningOn && this.host.planning ? [this.host.planning.templatesFolder()] : []), this.host.managed.templatesFolder()] });
     this.files = await readVault(this.app, tidyContext(this.host, this.answers, this.app, this.kitSnippets, this.fillFolders));

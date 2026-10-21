@@ -84,6 +84,14 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
 
   for (const c of changes.filter(x => x.trash)) {   // a copy to the backups folder, then the trash
     try {
+      if (c.folder) {   // an empty folder: nothing to copy; one that holds a file by now is left alone
+        if (!io.exists(c.path)) { out.skipped.push({ path: c.path, why: "the folder is gone" }); continue; }
+        if (io.filesIn(c.path).length) { out.skipped.push({ path: c.path, why: "the folder is not empty any more" }); continue; }
+        if (!io.trash) { out.skipped.push({ path: c.path, why: "this vault cannot move files to the trash" }); continue; }
+        await io.trash(c.path);
+        out.trashed.push(c.path);
+        continue;
+      }
       const text = await io.read(c.path);
       if (text === null) { out.skipped.push({ path: c.path, why: "the file is gone" }); continue; }
       if (!io.trash) { out.skipped.push({ path: c.path, why: "this vault cannot move files to the trash" }); continue; }

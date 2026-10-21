@@ -107,8 +107,8 @@ describe("real kit manifest", () => {
     for (const f of real.manifest.files) expect(f.desc?.length ?? 0, f.src).toBeGreaterThan(5);
     const optional = real.manifest.files.filter(f => f.optional).map(f => f.dest);
     expect(optional).toHaveLength(16);
-    expect(optional.filter(d => d.startsWith("Snippets/"))).toHaveLength(11);
-    expect(optional.filter(d => !d.startsWith("Snippets/")).sort()).toEqual([...legacy].sort());
+    expect(real.manifest.files.filter(f => f.optional && f.role === "snippets")).toHaveLength(11);
+    expect(real.manifest.files.filter(f => f.optional && f.role !== "snippets").map(f => f.dest).sort()).toEqual([...legacy].sort());
   });
   it("planning with every optional file off installs the core and none of the snippets or older files", async () => {
     const v = memVault();
@@ -116,8 +116,8 @@ describe("real kit manifest", () => {
     const plan = await planManaged(v, real, null, roles, null, null, off);
     expect(plan.filter(p => p.action === "off")).toHaveLength(16);
     await applyManaged(v, real, plan, null, opts);
-    expect(v.files["Templates/Insert snippet.md"]).toBeDefined();
-    expect(Object.keys(v.files).some(f => f.startsWith("Templates/Snippets/"))).toBe(false);
+    expect(v.files["Templates/Lab Book Template.md"]).toBeDefined();
+    expect(Object.keys(v.files).some(f => f.startsWith("Snippets/"))).toBe(false);
   });
 });
 
@@ -132,24 +132,41 @@ describe("folder layout", () => {
   });
   const tplSettings = { templates_folder: "Templater/Templates", user_scripts_folder: "Templater/Scripts" };
 
-  it("a new vault uses a Lab Kit / lab-kit folder inside Templater's own folders (issue #34); other scripts in Extras/scripts/lab-kit", () => {
+  it("a new vault uses Templater's templates folder and a lab-kit folder inside its scripts folder (issue #34); snippets in Extras/Snippets (CI1); other scripts in Extras/scripts/lab-kit", () => {
     const r = kitDetectRoles(vault([], tplSettings), null, {});
-    expect(r.templates).toBe("Templater/Templates/Lab Kit");
+    expect(r.templates).toBe("Templater/Templates");
+    expect(r.snippets).toBe("Extras/Snippets");
     expect(r.userScripts).toBe("Templater/Scripts/lab-kit");
     expect(r.scripts).toBe("Extras/scripts/lab-kit");
   });
 
   it("without Templater folders: the folder contract under Extras/", () => {
     const r = kitDetectRoles(vault([], {}), null, {});
-    expect(r.templates).toBe("Extras/Templates/Lab Kit");
+    expect(r.templates).toBe("Extras/Templates");
+    expect(r.snippets).toBe("Extras/Snippets");
     expect(r.userScripts).toBe("Extras/scripts/templater/lab-kit");
     expect(r.scripts).toBe("Extras/scripts/lab-kit");
   });
 
   it("follows the files the kit already installed, not Templater's folders", () => {
-    const r = kitDetectRoles(vault([], tplSettings), null, { templates: "Old/Place", userScripts: "Old/Scripts" });
+    const r = kitDetectRoles(vault([], tplSettings), null, { templates: "Old/Place", userScripts: "Old/Scripts", snippets: "Old/Snips" });
     expect(r.templates).toBe("Old/Place");
     expect(r.userScripts).toBe("Old/Scripts");
+    expect(r.snippets).toBe("Old/Snips");
+  });
+
+  it("a vault installed before 2026-10-21 keeps its snippets next to the templates (CI1: existing vaults keep their folders)", () => {
+    expect(kitDetectRoles(vault([], {}), null, { templates: "Extras/Templates/Lab Kit" }, true).snippets).toBe("Extras/Templates/Lab Kit/Snippets");
+    expect(kitDetectRoles(vault(["Mine/Insert snippet.md"], {}), null, {}).snippets).toBe("Mine/Snippets");
+    // KitManaged.roles() always passes a record (version "0" in a new vault): a record alone is no sign of an old install (a bug the clean-install run caught)
+    expect(kitDetectRoles(vault([], {}), { version: "0", files: {}, installedAt: "", roles: {} }, {}).snippets).toBe("Extras/Snippets");
+    expect(kitDetectRoles(vault([], {}), null, { templates: "Extras/Templates" }).snippets).toBe("Extras/Snippets");   // installed after: every snippet switched off
+  });
+
+  it("finds the templates by Lab Book Template.md and the scripts by labSnippets.js when the old anchors are gone", () => {
+    const r = kitDetectRoles(vault(["Mine/Lab Book Template.md", "Templater/Scripts/kit/labSnippets.js"], tplSettings), null, {});
+    expect(r.templates).toBe("Mine");
+    expect(r.userScripts).toBe("Templater/Scripts/kit");
   });
 
   it("follows an existing Insert snippet.md / labForm.js (hand-installed or from the folder updater)", () => {
@@ -209,7 +226,7 @@ describe("backup copies are not kit files", () => {
       plugins: { plugins: { "templater-obsidian": { settings: { user_scripts_folder: bad, templates_folder: "Extras/kit-backups/2026-10-04T17-21-03-991Z/Templates" } } } } };
     const r = kitDetectRoles(none, null, {});
     expect(r.userScripts).toBe("Extras/scripts/templater/lab-kit");
-    expect(r.templates).toBe("Extras/Templates/Lab Kit");
+    expect(r.templates).toBe("Extras/Templates");
   });
 
   it("a path an older version recorded inside a backup is not trusted", () => {

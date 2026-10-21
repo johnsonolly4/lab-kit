@@ -13,7 +13,7 @@ import { withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, isCssSnipp
 import { ensureFolder } from "./ensure-folder";
 import { makeMyCopy } from "./snippet-copy-ui";
 import { canCopy, isStubSnippet, isTokenTemplate, snippetKey } from "./snippet-copy";
-import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
+import { LAB_KIT, OLD_MENU_ID, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Names of the settings a kit file can need (`needs` in kit-manifest.json), as the settings tab shows them. */
 const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder", rigsFolder: "Rigs folder" };
@@ -48,11 +48,13 @@ export class KitManaged {
       return { ...planningRoles(this.app, tracked, pf, this.host.kit.labFolder), ...ownOther };
     }
     // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
-    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked), ...own };
+    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked, !!slot.managed?.files[OLD_MENU_ID] || !!old), ...own };
   }
 
-  /** Where the templates (Insert snippet.md, Snippets/) are: the Alt+S menu scans the Snippets folder next to it. */
+  /** Where the kit's note templates are (Lab Book Template, Chemical database template, Rig template). */
   templatesFolder(): string { return this.roles().templates; }
+  /** Where the Alt+S snippets are: the menu lists the notes directly in it (`Extras/Snippets` in a new vault, `<templates>/Snippets` in an older one). */
+  snippetsFolder(): string { return this.roles().snippets ?? ""; }
 
   isOff(id: string): boolean { return this.offIds().has(id); }
   /** Switched off by you, or waiting for a folder setting (`needs`) that is empty. */
@@ -371,8 +373,7 @@ export class KitManaged {
     if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
     try {
       const roles = this.roles();
-      const menu = kitJoin(roles.templates, "Insert snippet.md");
-      if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
+      if (!this.installedVersion) { new Notice("The kit isn't installed yet. Install it first."); return; }
       const done: string[] = [];
       const settings: SettingChange[] = [];
       const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake
@@ -718,7 +719,7 @@ class KitFilesSection {
       if (it.action === "detached") button("Re-attach", () => void this.run(() => this.managed.detach(id, false)));
       else if (!it.untracked && it.action !== "off") button("Detach", () => void this.run(() => this.managed.detach(id, true)));
       // A code snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so those rows have no Open button (token templates do)
-      const isSnippet = it.file.dest.startsWith("Snippets/");
+      const isSnippet = it.file.role === "snippets";
       if (isSnippet && (canCopy(snippetKey(it.text)) || isTokenTemplate(it.text, parseYaml)) && this.app.vault.getFileByPath(it.dest)) {
         button("Make my own copy", () => void makeMyCopy(this.app, it.dest).then(() => this.refresh()));
       }

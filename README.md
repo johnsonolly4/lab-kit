@@ -156,16 +156,16 @@ The kits expect these folders. Each is a setting; empty means the default below,
 |---|---|---|
 | `03 Lab Book/Notes` | lab kit: experiment notes | Lab notes folder |
 | `05 Chemicals/Chemicals` | lab kit: chemical notes | Chemical folder |
-| Methods folder (empty until set) | lab kit: analysis methods | Methods folder |
-| Rigs folder (`03 Lab Book/Rigs` unless you set another; Check setup's Fix creates it) | lab kit: rig notes | Rigs folder |
+| `03 Lab Book/Methods` (a new vault; a vault set up before 2026-10-21 keeps an empty setting until you set it) | lab kit: analysis methods | Methods folder |
+| `03 Lab Book/Rigs` | lab kit: rig notes | Rigs folder |
 | Figures folder (empty: the rig note's own folder; made when first saved to) | lab kit: rig figure SVG and PNG files | Figures folder |
 | `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
 | `02 Projects` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
 | `99 Archive` (made when first needed) | planning kit | Planning folders |
-| `Extras/` (templates, scripts, fonts) | both kits | Setup → Kit folders |
+| `Extras/Templates` (note templates) · `Extras/Snippets` (Alt+S snippets) · `Extras/scripts` | both kits | Setup → Kit folders |
 
-A new vault can get this layout, the plugin list and the Templater settings from the generated starter (see Development).
+The kit's first install makes these folders (a vault set up before keeps its own: an older vault has its snippets in `<templates>/Snippets`). The generated starter (see Development) holds only the Obsidian settings, the plugin list and the install scripts.
 
 ## Settings
 Settings → Lab Kit is searchable and grouped. A name in bold with several settings after it in brackets is a sub-menu: a row that opens its own page.

@@ -9,7 +9,7 @@ const row = (status: HotkeyRow["status"], recommended = "Alt+S"): HotkeyRow => (
 
 describe("window look", () => {
   it("the old lab-kit-setup-* class names are gone from src and styles.css", () => {
-    const files = ["styles.css", ...readdirSync("src/kit").map(f => `src/kit/${f}`)];
+    const files = ["styles.css", ...readdirSync("src/kit").filter(f => f.endsWith(".ts")).map(f => `src/kit/${f}`)];
     for (const f of files) expect(readFileSync(f, "utf8"), f).not.toMatch(/lab-kit-setup-/);
   });
 

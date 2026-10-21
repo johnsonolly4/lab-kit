@@ -2,8 +2,8 @@
 // Works on mobile: the kit scripts come from the bundle, nothing is evaluated and no Node API is used.
 import { Notice, normalizePath, parseYaml, type App } from "obsidian";
 import { ask } from "../planning/ask";
-import labSnippets from "../../kits/lab/Extras/scripts/templater/labSnippets.js";
-import labMethods from "../../kits/lab/Extras/scripts/templater/labMethods.js";
+import labSnippets from "./bundled/labSnippets.js";
+import labMethods from "./bundled/labMethods.js";
 import { canCopy, copyTokenTemplate, defaultCopyName, isTokenTemplate, makeSnippetCopy, snippetKey, type HeadlessTp } from "./snippet-copy";
 
 /** Asks for the copy's name and saves the copy next to the kit snippet; a Notice says what was made. Returns the copy's path (null when cancelled or it failed). */

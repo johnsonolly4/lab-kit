@@ -4,7 +4,7 @@ import { tidyContext, type TidyHost } from "../src/kit/tidy-ui";
 import { KIT_DEFAULTS, PLANNING_FOLDER_DEFAULTS } from "../src/kit/paths";
 import { scan } from "../src/kit/tidy";
 
-const bundle = { bundle: { manifest: { migrations: [] } }, templatesFolder: () => "Extras/Templates" };
+const bundle = { bundle: { manifest: { migrations: [] } }, templatesFolder: () => "Extras/Templates", snippetsFolder: () => "Extras/Snippets" };
 const host = (planningOn: boolean): TidyHost => ({
   kit: { ...KIT_DEFAULTS, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } },
   managed: bundle,
@@ -31,7 +31,7 @@ describe("tidyContext contract folders", () => {
 });
 
 describe("tidyContext snippets folder", () => {
-  it("is the Snippets folder of the lab kit's templates", () => {
-    expect(tidyContext(host(false)).snippetsFolder).toBe("Extras/Templates/Snippets");
+  it("is the lab kit's snippets folder", () => {
+    expect(tidyContext(host(false)).snippetsFolder).toBe("Extras/Snippets");
   });
 });
