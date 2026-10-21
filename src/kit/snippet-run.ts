@@ -4,7 +4,7 @@ import { Notice, TFile, TFolder, parseYaml, type App } from "obsidian";
 import { text } from "../calc/engine";
 import { prop, toList } from "../frontmatter";
 import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "./snippet-env";
-import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, oldStub, parseTemplate, rigSnapshotFields, type ParsedTemplate, type TemplateField } from "./snippet-template";
+import { TemplateError, codesFromKey, answerOf, defaultAnswers, fillParts, formValue, fillTemplate, isCancelled, oldStub, parseTemplate, rigSnapshotFields, type ParsedTemplate, type TemplateField } from "./snippet-template";
 import { saveSnapshot } from "../rig/snapshot-io";
 import { readSnapshotMeta } from "../rig/snapshot";
 import { noteEdits } from "./snippet-note";
@@ -161,7 +161,8 @@ export class SnippetTemplates {
       const title = header.title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "");
       const got = await ask(title, header.fields.flatMap(f => {
         const isCodes = f.suggest === "codes";
-        const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: isCodes && parts.prefill ? parts.prefill : defaults[f.key],
+        const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type === "list" ? "text" : f.type, value: formValue(f, isCodes && parts.prefill ? parts.prefill : defaults[f.key]),
+          ...(f.options ? { options: f.options } : {}),
           ...(f.mandatory ? { required: true } : {}),
           ...(f.suggest === "chemicals" ? { suggest: classFilter(chems, f.classes, kit.chemClassOnly) } : {}),
           ...(f.suggest === "notes" ? { suggest: listed.get(f.key)!.map(n => ({ name: n.basename, aliases: [] })) } : {}) };
@@ -171,7 +172,7 @@ export class SnippetTemplates {
       if (!got) return "";
       const answers: Record<string, string> = {};
       for (const f of header.fields) {
-        const box = text(got[f.key]).trim();
+        const box = answerOf(f, got[f.key]);
         answers[f.key] = f.suggest === "codes" ? resolveCodes(sources, parts.prefill, box, text(got[codesFromKey(f.key)]) || undefined) : box;
       }
       if (isCancelled(header, answers)) return "";

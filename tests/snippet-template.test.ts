@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import {
-  TemplateError, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, oldStub, type TemplateEnv,
+  TemplateError, answerOf, formValue, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, oldStub, type TemplateEnv,
 } from "../src/kit/snippet-template";
 import { makeEnv } from "../src/kit/snippet-env";
 import { miniYaml, runToken } from "./token-snippets";
@@ -135,6 +135,32 @@ describe("parseTemplate", () => {
     const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "n", label: "N", type: "number", value: 6 }] }));
     assert.strictEqual(p?.header.fields[0].value, "6");
   });
+  it("new question types: toggle, select (texts or value / label), list, unit, wide, help", () => {
+    const p = parseTemplate("---\nx: 1\n---\nb", () => ({ fields: [
+      { key: "t", type: "toggle", value: true },
+      { key: "s", type: "select", options: ["A", { value: "b", label: "Bee" }], value: "b" },
+      { key: "l", type: "list", weights: "fraction", suggest: "chemicals", wide: true },
+      { key: "n", type: "number", unit: "g", help: "More words", hint: "short" },
+    ] }))!;
+    const [t, s, l, n] = p.header.fields;
+    assert.deepStrictEqual([t.type, t.value], ["toggle", "true"]);
+    assert.deepStrictEqual(s.options, [{ value: "A" }, { value: "b", label: "Bee" }]);
+    assert.strictEqual(s.value, "b");
+    assert.deepStrictEqual([l.type, l.weights, l.suggest, l.wide], ["list", "fraction", "chemicals", true]);
+    assert.deepStrictEqual([n.unit, n.help, n.hint], ["g", "More words", "short"]);
+  });
+  it("new question types as tokens: toggle yes or empty for #if, list A, B for #each", () => {
+    const f = (type: "toggle" | "list") => ({ key: "k", label: "K", type, value: "" });
+    assert.strictEqual(formValue(f("toggle"), "yes"), true);
+    assert.strictEqual(formValue(f("toggle"), ""), false);
+    assert.strictEqual(formValue(f("list"), "a"), "a");
+    assert.strictEqual(answerOf(f("toggle"), true), "yes");
+    assert.strictEqual(answerOf(f("toggle"), false), "");
+    assert.strictEqual(answerOf(f("list"), " A ,B\nC "), "A, B, C");
+    assert.strictEqual(fill("{{#if k}}on{{else}}off{{/if}}", { k: answerOf(f("toggle"), true) }), "on");
+    assert.strictEqual(fill("{{#if k}}on{{else}}off{{/if}}", { k: answerOf(f("toggle"), false) }), "off");
+    assert.strictEqual(fill("{{#each k}}[{{.}}]{{/each}}", { k: answerOf(f("list"), "A,B") }), "[A][B]");
+  });
   it("rejects a bad header with a clear error", () => {
     const parse = (obj: unknown) => parseTemplate("---\nx: 1\n---\nb", () => obj);
     assert.throws(() => parseTemplate("---\nx\n---\nb", () => { throw new Error("bad indent"); }), /not valid YAML: bad indent/);
@@ -143,6 +169,16 @@ describe("parseTemplate", () => {
     assert.throws(() => parse({ fields: [{ key: "a" }, { key: "a" }] }), /used twice/);
     assert.throws(() => parse({ fields: [{ key: "code" }] }), /reserved/);
     assert.throws(() => parse({ fields: [{ key: "a", type: "color" }] }), /unknown type/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "color" }] }), /use text, number, textarea, toggle, select, list/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select" }] }), /needs options/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: "x" }] }), /needs options/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: [{ label: "L" }] }] }), /option 1 needs a text/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: ["x", "x"] }] }), /listed twice/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: ["x"], value: "y" }] }), /not one of the options/);
+    assert.throws(() => parse({ fields: [{ key: "a", options: ["x"] }] }), /options needs type: select/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "list", weights: "mass" }] }), /weights: fraction needs type: list/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "text", unit: "g" }] }), /unit needs type: number/);
+    assert.throws(() => parse({ fields: [{ key: "a", wide: "yes" }] }), /wide must be true or false/);
     assert.throws(() => parse({ fields: [{ key: "a" }], required: "b" }), /not one of the fields/);
     assert.throws(() => parse({ fields: [{ key: "a", mandatory: "yes" }] }), /mandatory must be true or false/);
   });
