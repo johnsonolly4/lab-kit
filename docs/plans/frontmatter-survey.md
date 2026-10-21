@@ -202,6 +202,8 @@ Not covered: the owner's own vault (never read), the mobile app, Obsidian versio
 
 So one name holds a list on some notes and text on others: the mismatch measured in §2.
 
+**Answered: FM6b (a)**, `closed_pdf` is always a list and stays empty while the PDF is pending (owner, chat 2026-10-21, "This", relayed by the custom-blocks plan session). The options as asked:
+
 **FM6b: which shape?**
 - **(a, rec) Always a list, empty while the PDF is pending.**
   - Close writes `closed_pdf: []` when no PDF was made. Make PDF fills it.
