@@ -79,6 +79,28 @@ Research only, no code changed. Asked by the owner on 2026-10-21: snippet questi
 | `updated` | Vault spec | file | nothing | date |
 | Literature (ZotLit settings, Vault spec rows 201-213): `kind`, `Type`, `Title`, `aliases`, `Year`, `Authors`, `Zotero Tags`, `Collections`, `citekey`, `URL`, `DOI`, `imported`, `cssclasses` | literature notes | ZotLit | `src/planning/lists.ts:102-147,276` (`Title`, `imported`, `Collections`; `takeaway` is an inline field) | text / list / date |
 
+### Chemical notes: names proposed by the chemical-database plan (not built)
+Source: `docs/plans/chemical-database-components.md` on branch `claude/practical-bassi-12414a` (commit 1ca619c), relayed by that session on 2026-10-21. No existing name is renamed there. All its new names follow the owner's FM2 / FM8 / FM9 answers.
+
+| Property | Status | Value type | Clash check (against every name in this survey, ignoring capitals) |
+|---|---|---|---|
+| `Components` | core proposal (CD1 a) | list of links (`"[[C]]"`) | none |
+| `Component amounts` | core proposal (CD1 a) | list of texts (`22 %`, `30 ppm`, `0.02 mol/L`, `rest`), item n goes with `Components` item n | none |
+| `SDS` | only if picked (CD13) | link | none |
+| `Storage class` | only if picked | text | none (differs from `Chemical class`) |
+| `10 h half-life temperature`, `Activation energy`, `ln A`, `Efficiency`, `Tg of homopolymer` | only if picked | number | none |
+| `Monomer class`, `RAFT agent class` | only if picked | text | none |
+| `Volatile` | only if picked | checkbox | none |
+
+- No `Kind` on chemical notes (FM2 is met). Mixture vs substance is worked out from the properties, not stored. A stock solution goes in `Chemical class`, as today.
+- All the proposed names are Title Case words, which fits FM9 (a) (interpretation).
+
+That session also measured these in a throwaway Obsidian 1.14.4 (reported by it, not repeated here):
+- a list item `"[[C]] 22 %"` is not a link (no front-matter link, not updated on rename);
+- a list of links, a nested map value and a Markdown table in the body are updated on rename;
+- a list of numbers `[22, 5]` gets the type Unknown, while a list of texts gets List;
+- on a rename, Obsidian rewrites the whole front matter and drops the quotes.
+
 ### Literature notes (ZotLit, refpane)
 Source: the kit's `ZOTLIT_FIELDS` (`src/kit/zotlit.ts:9-23`, code). The refpane session reported its template (refpane `my_work/notes/options/19_refpane_note_template.md`, my_work commit 3acc3e8, relayed 2026-10-21). That template writes the same 13 fields unchanged and adds no property of its own; Refpane's data sits in a live `refpane` code block.
 
