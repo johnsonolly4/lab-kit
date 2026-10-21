@@ -6,6 +6,7 @@ group: Flow
 required: rig
 set:
   Rig: "[[{{rig}}]]"
+  Rig snapshot: "{{rig-snapshot:rig}}"
 fields:
   - key: rig
     label: Rig
@@ -16,11 +17,13 @@ fields:
 
 [[{{rig}}]]
 
-{{rig-diagram:rig}}
+!{{rig-snapshot:rig}}
+*Snapshot of {{rig}}, {{rig-snapshot-date:rig}}*
 
 {{rig-summary:rig}}
 {{#append "# Flow platform setup" from rig.Setup heading}}
 Rig: [[{{rig}}]]
+Snapshot: {{rig-snapshot:rig}}
 {{note-line:rig.Tubing}}
 {{note-line:rig.Control}}
 

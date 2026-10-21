@@ -50,21 +50,26 @@ const tp = (answers: Record<string, unknown> | null): SnippetTp => ({
 
 const NOTE = "---\nStatus: Planned\n---\n# Apparatus\n\n# Results\n";
 const DIAGRAM = `${F}mermaid\n${readRig(RIG).mermaid}\n${F}`;
+const A1 = "[[Rigs/Rig A history/Rig A 2026-10-21.svg]]";
+const SNAPSHOT = `!${A1}\n*Snapshot of Rig A, 2026-10-21*`;
+const day = (d: number) => vi.setSystemTime(new Date(2026, 9, d, 12));
 
-beforeEach(() => { Notice.messages.length = 0; });
+beforeEach(() => { Notice.messages.length = 0; vi.useFakeTimers({ toFake: ["Date"] }); day(21); });
+afterEach(() => { vi.useRealTimers(); });
 
 describe("the shipped Rig snippet", () => {
-  it("puts the link and the diagram at the cursor, sets Rig, and adds Flow platform setup at the end", async () => {
+  it("puts the link, the snapshot and its caption at the cursor, sets Rig and Rig snapshot, and adds Flow platform setup at the end", async () => {
     const { st, doc } = setup({ note: NOTE });
     const out = await st.run(tp({ rig: "Rig A" }), file("S/t.md"));
-    expect(out).toBe(`\n[[Rig A]]\n\n${DIAGRAM}\n`);   // starts with an empty line (user): the diagram renders when the note is opened
-    expect(doc.text.startsWith('---\nStatus: Planned\nRig: "[[Rig A]]"\n---\n# Apparatus\n\n# Results\n\n# Flow platform setup\nRig: [[Rig A]]\nTubing: PFA 0.75 mm\nControl: made-up 1.0\n\n## Pumps\n| ID |')).toBe(true);
+    expect(out).toBe(`\n[[Rig A]]\n\n${SNAPSHOT}\n`);   // starts with an empty line (user)
+    expect(out + doc.text).not.toContain(`${F}mermaid`);   // no Mermaid block, so no Mermaid question (rig block plan Phase 5)
+    expect(doc.text.startsWith(`---\nStatus: Planned\nRig: "[[Rig A]]"\nRig snapshot: "${A1}"\n---\n# Apparatus\n\n# Results\n\n# Flow platform setup\nRig: [[Rig A]]\nSnapshot: ${A1}\nTubing: PFA 0.75 mm\nControl: made-up 1.0\n\n## Pumps\n| ID |`)).toBe(true);
     expect(Notice.messages).toEqual([]);
   });
   it("a batch rig: its own section heading, no Tubing or Control lines, no blank gap, and the vessel tables", async () => {
     const { st, doc } = setup({ note: NOTE });
     await st.run(tp({ rig: "Batch" }), file("S/t.md"));
-    expect(doc.text).toContain("# Results\n\n# Batch setup\nRig: [[Batch]]\n\n## Vessel\n| ID | Part |");
+    expect(doc.text).toContain("# Results\n\n# Batch setup\nRig: [[Batch]]\nSnapshot: [[Rigs/Batch history/Batch 2026-10-21.svg]]\n\n## Vessel\n| ID | Part |");
     expect(doc.text).not.toContain("Flow platform setup");
     expect(doc.text).not.toContain("Tubing:");
   });
@@ -110,29 +115,29 @@ describe("Rig snippet: Summary table", () => {
     expect(readRig(withSummary).mermaid).toBe(readRig(RIG).mermaid);
     expect(readRig(withSummary).tables).toHaveLength(readRig(RIG).tables.length);
   });
-  it("the snippet puts it under the diagram and not again among the bottom tables", async () => {
+  it("the snippet puts it under the snapshot and not again among the bottom tables", async () => {
     const { st, doc } = setup({ note: NOTE, rig: withSummary });
     const out = await st.run(tp({ rig: "Rig A" }), file("S/t.md"));
-    expect(out).toContain(`${DIAGRAM}\n\n${SUMMARY}\n`);
+    expect(out).toContain(`${SNAPSHOT}\n\n${SUMMARY}\n`);
     expect(doc.text).not.toContain(SUMMARY);   // the bottom section (written into the note) has the parts tables only
   });
   it("a rig without a Summary table inserts nothing extra", async () => {
     const { st, doc } = setup({ note: NOTE });
     const out = await st.run(tp({ rig: "Rig A" }), file("S/t.md"));
     expect(out).not.toContain("| Item |");
-    expect(out).toBe(`\n[[Rig A]]\n\n${DIAGRAM}\n`);
+    expect(out).toBe(`\n[[Rig A]]\n\n${SNAPSHOT}\n`);
   });
 });
 
 // Rig block plan Phase 5 (docs/plans/rig-block-no-mermaid.md): {{rig-snapshot:rig}} takes a dated SVG snapshot of the rig (or reuses the latest equal one) and links it.
 describe("{{rig-snapshot}}: the lab note links a dated snapshot of the rig", () => {
+  it("the shipped Rig snippet is this template, with the Summary and Tubing / Control lines", () => {
+    for (const part of ["!{{rig-snapshot:rig}}\n*Snapshot of {{rig}}, {{rig-snapshot-date:rig}}*\n", 'Rig snapshot: "{{rig-snapshot:rig}}"', "Rig: [[{{rig}}]]\nSnapshot: {{rig-snapshot:rig}}\n"]) expect(SHIPPED).toContain(part);
+    expect(SHIPPED).not.toContain("rig-diagram");
+  });
   const SNAP_T = `---\n${JSON.stringify({ title: "Rig", set: { Rig: "[[{{rig}}]]", "Rig snapshot": "{{rig-snapshot:rig}}" }, required: "rig", fields: [{ key: "rig", label: "Rig", suggest: "notes", folder: "rigsFolder" }] })}\n---\n`
     + '\n[[{{rig}}]]\n\n!{{rig-snapshot:rig}}\n*Snapshot of {{rig}}, {{rig-snapshot-date:rig}}*\n{{#append "# Flow platform setup" from rig.Setup heading}}\nRig: [[{{rig}}]]\nSnapshot: {{rig-snapshot:rig}}\n\n{{rig-tables:rig}}\n{{/append}}\n';
-  const A1 = "[[Rigs/Rig A history/Rig A 2026-10-21.svg]]";
   const OLD = readFileSync("tests/fixtures/rigs/saved/lab-note-mermaid-v1.md", "utf8");
-  const day = (d: number) => vi.setSystemTime(new Date(2026, 9, d, 12));
-  beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); day(21); });
-  afterEach(() => { vi.useRealTimers(); });
 
   it("Alt+S → Rig: the embed and caption at the cursor, the Rig snapshot property, the Snapshot line and tables, no mermaid", async () => {
     const { st, doc, v } = setup({ note: NOTE, template: SNAP_T });

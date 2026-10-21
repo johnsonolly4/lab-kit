@@ -49,10 +49,16 @@ function setup(pick: string) {
       cachedRead: async (f: TFile) => (f === rigNote ? RIG : texts.get(f.path) ?? ""),
       adapter: { read: async () => JSON.stringify({ kit: { initials: "ABC", methodsFolder: "Methods" } }) },
       getFolderByPath: (p: string) => (p === "Methods" ? { children: [methodNote] } : p === "Rigs" ? rigs : null),
+      // the Rig snippet takes a snapshot of the rig (src/rig/snapshot-io.ts): a new file and a history row
+      read: async (f: TFile) => (f === rigNote ? RIG : texts.get(f.path) ?? ""),
+      getAbstractFileByPath: (p: string) => (texts.has(p) ? new TFile({ path: p, basename: p.split("/").pop()!.replace(/\.[^.]*$/, ""), extension: p.split(".").pop() }) : null),
+      createFolder: async () => { /* folders are implied by the paths */ },
+      create: async (p: string, text: string) => { texts.set(p, text); return new TFile({ path: p, basename: p.split("/").pop()!.replace(/\.[^.]*$/, ""), extension: "svg" }); },
+      process: async () => { /* the rig note's history row is tested in snippet-rig.test.ts */ },
     },
     workspace: { activeEditor: { editor: { getValue: () => "", getCursor: () => ({ line: 0, ch: 0 }), offsetToPos: (o: number) => ({ line: 0, ch: o }), replaceRange: () => { /* the rig also writes properties */ } } }, getActiveFile: () => ({ basename: "0016 - Test", path: "0016 - Test.md" }) },
     metadataCache: { getFileCache: () => ({ frontmatter: MASS_SPEC }), getFirstLinkpathDest: () => null },
-    fileManager: { processFrontMatter: async () => { /* not under test */ } },
+    fileManager: { processFrontMatter: async () => { /* not under test */ }, generateMarkdownLink: (f: TFile) => `[[${f.path}]]` },
   };
   const kit = { ...KIT_DEFAULTS, initials: "ABC", rigsFolder: "Rigs" } as KitData;
   // The plugin's form, as a recording fake: every field answered with its default (a required text field gets a value so the snippet goes on).
