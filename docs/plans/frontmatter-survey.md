@@ -170,10 +170,7 @@ No store users have notes yet (owner, 2026-10-21), so renames are cheap now: a T
 - **FM5 `meeting: false`:** clearing the meeting chip writes `false` (`src/planning/todo-bar.ts:51`), so the property's inferred type can become Checkbox and links then show a mismatch.
   - (a, rec) clear it by removing the property (or `null`, as `blocks.ts:250` already does).
   - (b) leave as is.
-- **FM6 `closed_pdf` list or `pending`:**
-  - (a, rec) keep the values and have Close experiment set the type to List once (like `Chemical class`), where `pending` shows as one item with no warning.
-  - (b) write `pending` as a separate checkbox `closed_pdf_pending`.
-  - (c) leave as is.
+- **FM6 `closed_pdf` list or `pending`:** decided, it gets fixed (owner, chat 2026-10-21). The shape is asked in §6 (FM6b).
 - **FM7 `Outcome` and `Result` on lab notes:** the template writes `Outcome`; the lab board and base also show `Result`, which nothing writes; `Result` is also the to-do `result` (same property).
   - (a, rec) ask which one the lab board should show, then drop the other from the board and base.
   - (b) keep both, and document `Result` in the Vault spec.
@@ -190,6 +187,53 @@ No store users have notes yet (owner, 2026-10-21), so renames are cheap now: a T
   - (b) rename the snippet keys to `menu-title` / `menu-icon` (also unlike the method notes' `Title`/`Icon`).
 
 Not covered: the owner's own vault (never read), the mobile app, Obsidian versions other than 1.14.4, other plugins than those listed, and whether Front Matter Title / Notebook Navigator are installed in the owner's vault.
+
+## 6. Decided fix: `closed_pdf` is always a list
+
+**Decision:** the `closed_pdf` type clash "needs to be fixed" (owner, chat 2026-10-21).
+
+**Today** (code):
+- Close experiment writes `closed_pdf` as the list of saved PDF names, or as the text `pending` when no PDF was made: on a phone, or when the PDF could not be made (`src/close/commands.ts:93`).
+- Make PDF (Check setup) later replaces it with the list (`:117`).
+- Reopen moves a list to `closed_pdf_old` and drops `pending` (`:131-133`).
+- `isClosed` counts a filled `closed_pdf`, `pending` included (`src/close/mark.ts:43-45`).
+- Check setup's "closed without a PDF" row is the notes whose value is `pending` (`src/close/scan.ts:29`, shown by `src/kit/setup-check.ts:382-390`).
+- Close always writes `closed_hash` as well (`commands.ts:92`).
+
+So one name holds a list on some notes and text on others: the mismatch measured in §2.
+
+**FM6b: which shape?**
+- **(a, rec) Always a list, empty while the PDF is pending.**
+  - Close writes `closed_pdf: []` when no PDF was made. Make PDF fills it.
+  - "Pending" = formally closed and `closed_pdf` empty or missing.
+  - No new property, and the type is always List.
+  - `closed_hash` (always written) still marks the note as closed.
+  - In the Properties pane, a pending note shows an empty `closed_pdf` list; Check setup names it as today.
+- **(b) Always a list, plus a separate checkbox `closed_pdf_pending: true`** while no PDF exists.
+  - Easier to read in the Properties pane.
+  - Costs one more property name.
+  - The new name must be added to `MARK_LINE` in `src/close/mark.ts:6`. Otherwise the line counts as an edit to the note, and every pending note is reported as "edited after closing".
+- **(c) Keep the word: `closed_pdf: [pending]`** (a one-item list).
+  - The type is consistent.
+  - But a magic word still sits among the file names; a PDF called `pending` would be misread.
+
+**Files that change (for (a))**:
+| File | Change |
+|---|---|
+| `src/close/commands.ts:93` | `f.closed_pdf = files` (an empty list when none) instead of `PENDING` |
+| `src/close/commands.ts:99-100` | notices unchanged (they already say "pending" in words) |
+| `src/close/commands.ts:131-133` | Reopen: copy to `closed_pdf_old` only a non-empty list (old notes: not `pending` either) |
+| `src/close/commands.ts:14` | keep `PENDING` only to read notes closed before the change |
+| `src/close/mark.ts:43-45` | `isClosed`: `closed_hash` filled, or `closed_pdf` a non-empty list, or the old text `pending`; update the comment |
+| `src/close/scan.ts:16,29` | `noPdf`: closed and `closed_pdf` empty, missing, or the old text `pending` |
+| `src/kit/setup-check.ts:382-390` | no change (reads `noPdf`) |
+| `src/kit/tidy.ts` | optional Tidy group "Lab notes: closed_pdf pending becomes an empty list", like `exp-end` at `:344` (only for notes closed during testing; no store users have any) |
+| `tests/close-commands.test.ts` (9 `pending` uses), `tests/close-scan.test.ts` (9), `tests/close-mark.test.ts` (3), `tests/fixtures/lab-board.ts` (1) | new expectations; one test each that an old `pending` note still reads as closed and pending; a test that the hash of a note with `closed_pdf: []` equals that of the same note without the line (`MARK_LINE` already drops it) |
+| Docs: `docs/plans/close-experiment.md`, `docs/architecture.md`, `docs/obsidian-test-checklist.md`, `docs/changelog.md`, a `docs/decisions.md` line, Vault spec lab-entry table | describe `closed_pdf` as a list, empty while pending |
+
+Extra for (b): `src/close/mark.ts:6` (`MARK_LINE`) and every row above, with `closed_pdf_pending` in place of the empty list.
+
+Not checked: how Obsidian 1.14.4 draws `closed_pdf: []` in the Properties pane (expected: an empty list field), and whether an empty list keeps the List type when it is the only value of that name in the vault. Check both in a throwaway Obsidian when building.
 
 ## Appendix: probe (re-runnable)
 Notes in a scratch folder: the 11 files of `kits/lab/Templates/Snippets/`, plus small notes copying the template front matter (a lab note with `Result` and `closed_pdf: pending`, a closed lab note with `closed_pdf` as a list, a chemical, a daily note with `Type` as a list, a to-do with `project` text, `meeting: false` and `result`, a meeting note with `project` as a list, a literature note with `Title`, and a method note with `Title`, `Icon`, `Tag`, `Columns`, `Results`). Then `node scripts/obsidian-check.mjs start --notes <folder>` and `eval --file`:
