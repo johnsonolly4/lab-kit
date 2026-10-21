@@ -112,6 +112,11 @@ describe("the Day chip (I2 Phase 5, Mon 19 Oct)", () => {
     expect(todoValues({ day: "Thu" }).scheduled).toBe("");
     expect(todoValues({ scheduled: "soon" }).scheduled).toBe("");
   });
+  it("icons (owner board 6): Day is `calendar`, Due is `calendar-check`", () => {
+    const f = todoFields([], []);
+    expect(f.find(x => x.key === "scheduled")?.icon).toBe("calendar");
+    expect(f.find(x => x.key === "due")?.icon).toBe("calendar-check");
+  });
   it("readDayText: words, backlog and empty clear, a past day is refused, nonsense is null", () => {
     expect(readDayText("next tue", MON)).toEqual({ date: "2026-10-27" });
     expect(readDayText("tue", MON)).toEqual({ date: "2026-10-20" });

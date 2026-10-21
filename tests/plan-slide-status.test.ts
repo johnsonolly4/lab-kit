@@ -85,6 +85,14 @@ describe("statusLines on the made-up RAFT project (today 2026-10-20)", () => {
     expect(raftRow("Run RAFT screen").subs.filter(s => s.done)).toHaveLength(2);
     expect(raftRow("Run RAFT screen").subs).toHaveLength(4);
   });
+  it("due today and tomorrow say (today) / (tomorrow); 2 days is still (in 2 d); a past due date is late (owner board 6)", () => {
+    const T0 = "2026-10-21";
+    const line = (due: string) => statusLines(row([td("A", { due })], "A"), rowsOf([td("A", { due })]), T0).map(l => l.text);
+    expect(line("2026-10-21")).toEqual(["due 21 Oct (today)"]);
+    expect(line("2026-10-22")).toEqual(["due 22 Oct (tomorrow)"]);
+    expect(line("2026-10-23")).toEqual(["due 23 Oct (in 2 d)"]);
+    expect(line("2026-10-20")).toEqual(["late: due 20 Oct"]);
+  });
   it("GPC analysis comes after the two open to-dos, not the finished ones", () => expect(raftLines("GPC analysis")).toEqual(["after Run RAFT screen, Book GPC time"]));
   it("a due date more than 3 days away is muted", () => {
     const l = statusLines(raftRow("NMR end groups"), raft.rows, RAFT_TODAY);

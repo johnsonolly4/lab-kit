@@ -164,6 +164,8 @@
 - [ ] 7c-2: the backups folder has `settings/*.json` with the old values
 
 ## 6i. Test-vault feedback round (2026-10-08; needs `npm run dev`)
+- [ ] To-do chips icons (owner board 6; seen in a throwaway Obsidian, light, not by the owner): on a to-do with Due and Day set, the Due chip shows a calendar with a tick (`calendar-check`) and the Day chip a plain calendar (`calendar`); same in the New to-do window.
+- [ ] Small-project slide due words (owner board 6; seen in a throwaway Obsidian, light, not by the owner): a card due today reads "due … (today)", due tomorrow "(tomorrow)" (cut to "(tomorro…", BACKLOG question), 2 days "(in 2 d)", yesterday "late: due …".
 - [ ] Plan map → Picture for a slide (desktop), a project with a late to-do, a waiting to-do and one due in 3 days: red border and "late: due …", amber "waiting: …", "after X, Y" on a card that cannot start, "due … (in 3 d)" in amber; top right "as of <today>" and "N of M done" with a bar; a key at the bottom listing only the marks shown; Not linked / Later tiles say "late" / "waiting" / "2/4"; Copy picture still pastes into a slide (status marks, plan-map-export Phases 1-2; not seen in Obsidian)
 - [ ] Review update… and Manage kit files: each row starts with a chip (symbol + words, coloured); readable in light, dark and phone width; "Kept…" group title explains itself
 - [ ] 00 Home: the Go to bar shows an icon on each button; the top row's third button is **New lab entry** (flask) and works (Restore kit original on 00 Home, then Check setup → Meta Bind → Fix if the button is missing)
