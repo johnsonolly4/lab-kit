@@ -1,5 +1,6 @@
 // Lab Kit: live ```calc tables, hazard header + built-in kit. See STATUS.md.
 import { openSnippetForm } from "./kit/snippet-form";
+import { registerNoteFill } from "./kit/note-fill-ui";
 import { Plugin } from "obsidian";
 import { CalcRenderer } from "./calc/render";
 import { HeaderRenderer } from "./header/render";
@@ -42,6 +43,10 @@ export default class LabKitPlugin extends Plugin {
     this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor), undefined, () => this.manifest.version);
     this.kit.snippets = this.snippets;
     this.kit.setup();
+    // Self-filling note: a note opened in a folder of Settings → Folder templates is filled by Lab Kit (src/kit/note-fill.ts)
+    const planningOn = (): boolean => !!this.kit.planning?.slot.enabled;
+    registerNoteFill(this, { kit: () => this.kit.kit, planningOn, form: () => openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor),
+      templateFolders: () => [...(planningOn() ? [this.kit.planning!.templatesFolder()] : []), this.kit.managed.templatesFolder()] });
 
     this.calc.register();
     this.registerEditorExtension(calcTextRefs());

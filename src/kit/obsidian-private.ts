@@ -234,6 +234,19 @@ export async function removeTemplaterStartup(app: App, template: string): Promis
   return true;
 }
 
+/** Removes Templater's folder-template rows for these folders and saves. Returns how many were removed (the caller backs the list up first). */
+export async function removeTemplaterFolderTemplates(app: App, folders: string[]): Promise<number> {
+  const tpl = templater(app);
+  const list = tpl?.settings?.folder_templates;
+  if (!tpl?.settings || !list) return 0;
+  const keep = list.filter(e => !folders.includes(e?.folder ?? ""));
+  const removed = list.length - keep.length;
+  if (!removed) return 0;
+  tpl.settings.folder_templates = keep;
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+  return removed;
+}
+
 /** Templater's startup templates, folder templates and template hotkeys as paths, or undefined without Templater. */
 export function templaterPaths(app: App): { startup: string[]; folders: { folder: string; template: string }[]; hotkeys: string[] } | undefined {
   const st = templater(app)?.settings;
