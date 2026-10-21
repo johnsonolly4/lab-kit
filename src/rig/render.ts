@@ -88,7 +88,7 @@ class RigView extends MarkdownRenderChild {
       save.addEventListener("click", () => { openSnapshotWindow(app, this.sourcePath, this.owner.version(), save, () => { this.owner.refreshFile(this.sourcePath); }); });
     }
     if (snap?.date && snap.changed) box.createDiv({ cls: "vt-muted lab-kit-rig-changed", text: `Changed since the last snapshot (${snap.date})` });
-    const problems = [...rig.problems, ...(snap?.problems ?? [])];
+    const problems = [...rig.problems, ...(made?.problems ?? []), ...(snap?.problems ?? [])];
     if (problems.length) {
       const list = box.createEl("ul", { cls: "lab-kit-rig-problems lab-kit-warn" });
       for (const p of problems) list.createEl("li", { text: p });

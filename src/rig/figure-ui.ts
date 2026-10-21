@@ -1,11 +1,13 @@
 // The rig figure window: a preview of the figure, its size on paper, Save SVG (every device) and Save PNG (desktop only).
 // The figure itself is made in figure-svg.ts, the numbers and names in figure-export.ts. Plan: docs/plans/rig-figure.md, Phase 4.
+// Hand layout (docs/plans/rig-block-no-mermaid.md, Phase 6): drag a part in the preview, Reset to automatic, Save layout writes the ```rig-layout block.
 import { Modal, Notice, Platform, Setting, TFile, normalizePath, type App } from "obsidian";
 import { cardWindow } from "../kit/window-look";
 import { ensureFolder } from "../kit/ensure-folder";
 import { figuresTarget, kitJoin } from "../kit/paths";
 import { figureFileName, heightMm, pngSize, savedNote, sizeLine } from "./figure-export";
 import { makeFigure, type Made } from "./figure-make";
+import { GRID, dropAt, findLayout, partAt, setLayoutInNote, toFigure, writeLayout, type Places, type Pos } from "./layout";
 
 /** Width and dpi the window remembers while Obsidian is open. */
 const choice = { widthMm: 400, dpi: 300 };
@@ -30,18 +32,27 @@ async function makePng(svg: string, width: number, height: number): Promise<{ by
 /** Opens the figure window for a rig note, under `anchor` (the button that was clicked) with no dimmed background; in the middle, dimmed, without one. */
 export async function openFigureWindow(app: App, notePath: string, figuresFolder: string, anchor: HTMLElement | null): Promise<void> {
   const file = app.vault.getAbstractFileByPath(notePath);
-  const made = file instanceof TFile ? makeFigure(await app.vault.cachedRead(file)) : null;
+  const text = file instanceof TFile ? await app.vault.cachedRead(file) : "";
+  const made = file instanceof TFile ? makeFigure(text) : null;
   if (!(file instanceof TFile) || !made) { new Notice("This rig has no parts to draw yet."); return; }
   const r = Platform.isDesktop ? anchor?.getBoundingClientRect() : undefined;
-  new FigureModal(app, file, made, figuresFolder, r?.width ? { left: r.left, bottom: r.bottom } : null).open();
+  new FigureModal(app, file, text, made, figuresFolder, r?.width ? { left: r.left, bottom: r.bottom } : null).open();
 }
 
 class FigureModal extends Modal {
   private previewUrl = "";
   private line!: HTMLElement;
   private pngButton: HTMLButtonElement | null = null;
+  private preview!: HTMLImageElement;
+  private hint!: HTMLElement;
+  /** The places shown, once a part was dragged or Reset pressed (null: as the note's block says); and how many parts were moved since the last save. */
+  private places: Places | null = null;
+  private moved = new Set<string>();
+  private reset = false;
+  private drag: { id: string; start: Pos; at: { x: number; y: number }; k: number; size: { w: number; h: number } } | null = null;
+  private frame = 0;
 
-  constructor(app: App, private file: TFile, private made: Made, private figuresFolder: string, private anchor: { left: number; bottom: number } | null) { super(app); }
+  constructor(app: App, private file: TFile, private text: string, private made: Made, private figuresFolder: string, private anchor: { left: number; bottom: number } | null) { super(app); }
 
   onOpen(): void {
     cardWindow(this);
@@ -56,8 +67,18 @@ class FigureModal extends Modal {
     this.setTitle("Rig figure");
     const { contentEl } = this;
     this.previewUrl = URL.createObjectURL(new Blob([this.made.svg], { type: "image/svg+xml" }));
-    contentEl.createEl("img", { cls: "lab-kit-figure-preview", attr: { alt: "Preview of the rig figure", src: this.previewUrl } });
+    this.preview = contentEl.createEl("img", { cls: "lab-kit-figure-preview lab-kit-figure-drag", attr: { alt: "Preview of the rig figure", src: this.previewUrl } });
     if (this.made.missing.length) contentEl.createDiv({ cls: "vt-muted", text: `Drawn as a plain box (kind not known): ${this.made.missing.join(", ")}.` });
+    this.hint = contentEl.createDiv({ cls: "lab-kit-figure-size" });
+    const row = contentEl.createDiv({ cls: "lab-kit-figure-layout" });
+    const resetButton = row.createEl("button", { text: "Reset to automatic" });
+    const saveButton = row.createEl("button", { text: "Save layout" });
+    if (this.made.layout.writable) {
+      this.preview.addEventListener("pointerdown", this.down);
+      resetButton.addEventListener("click", () => { this.places = new Map(); this.moved.clear(); this.reset = true; this.redraw(); });
+      saveButton.addEventListener("click", () => { void this.saveLayout(); });
+    } else { resetButton.disabled = saveButton.disabled = true; }
+    this.showHint();
 
     new Setting(contentEl).setName("Width on paper (mm)").setDesc("The SVG has no size of its own on paper; this sets the PNG.").addText(t => { t.inputEl.type = "number"; t.inputEl.min = "1"; t.setValue(String(choice.widthMm)).onChange(v => { choice.widthMm = Number(v); this.update(); }); });
     new Setting(contentEl).setName("Resolution (dpi)").addText(t => { t.inputEl.type = "number"; t.inputEl.min = "1"; t.setValue(String(choice.dpi)).onChange(v => { choice.dpi = Number(v); this.update(); }); });
@@ -97,10 +118,90 @@ class FigureModal extends Modal {
     } catch (e) { new Notice(`Could not save the ${ext.toUpperCase()}: ${e instanceof Error ? e.message : "see the developer console."}`); console.error("Lab Kit rig figure", e); }
   }
 
+  private showHint(saved = false): void {
+    if (!this.made.layout.writable) { this.hint.setText("The layout block is from a newer version of the plugin: update the plugin to move parts."); return; }
+    const n = this.moved.size;
+    this.hint.setText(saved ? "Layout saved in the note."
+      : this.reset && !n ? "Drag a part to move it. Automatic layout, not saved."
+      : n ? `Drag a part to move it. ${n} ${n === 1 ? "part" : "parts"} moved, not saved.` : "Drag a part to move it.");
+  }
+
+  /** Draws the figure for the places shown now; the grid dots only while a part is dragged. */
+  private redraw(): void {
+    const made = makeFigure(this.text, this.places ?? undefined, this.drag ? GRID : undefined);
+    if (!made) return;
+    this.made = made;
+    const old = this.previewUrl;
+    this.previewUrl = URL.createObjectURL(new Blob([made.svg], { type: "image/svg+xml" }));
+    this.preview.src = this.previewUrl;
+    if (old) URL.revokeObjectURL(old);
+    this.update();
+    this.showHint();
+  }
+
+  private down = (e: PointerEvent): void => {
+    const r = this.preview.getBoundingClientRect();
+    const p = toFigure(r, this.made.width, this.made.height, e.clientX, e.clientY);
+    const id = partAt(this.made.boxes, p.x, p.y);
+    const box = this.made.boxes.find(b => b.id === id);
+    if (!id || !box) return;
+    e.preventDefault();
+    if (!this.places?.size) this.places = new Map(this.made.places);   // the first drag (also after Reset) pins every part where it is drawn (owner, 3a)
+    this.drag = { id, start: this.places.get(id) ?? { x: box.x, y: box.y }, at: { x: e.clientX, y: e.clientY }, k: Math.min(r.width / this.made.width, r.height / this.made.height) || 1, size: box };
+    this.preview.setPointerCapture(e.pointerId);
+    this.preview.addEventListener("pointermove", this.move);
+    this.preview.addEventListener("pointerup", this.up);
+    this.preview.addEventListener("pointercancel", this.up);
+    this.redraw();
+  };
+
+  private move = (e: PointerEvent): void => {
+    const d = this.drag;
+    if (!d || !this.places) return;
+    const to = dropAt(d.start, (e.clientX - d.at.x) / d.k, (e.clientY - d.at.y) / d.k, d.size);
+    const was = this.places.get(d.id);
+    if (was && was.x === to.x && was.y === to.y) return;
+    this.places.set(d.id, to);
+    this.moved.add(d.id);
+    window.cancelAnimationFrame(this.frame);
+    this.frame = window.requestAnimationFrame(() => this.redraw());
+  };
+
+  private up = (): void => {
+    this.preview.removeEventListener("pointermove", this.move);
+    this.preview.removeEventListener("pointerup", this.up);
+    this.preview.removeEventListener("pointercancel", this.up);
+    this.drag = null;
+    window.cancelAnimationFrame(this.frame);
+    this.redraw();
+  };
+
+  /** Writes the places shown into the note's ```rig-layout block (a new block goes under the ```rig block); the rig block redraws from the note. */
+  private async saveLayout(): Promise<void> {
+    if (!this.places) return;   // nothing moved or reset since the window opened
+    const places = this.places;
+    try {
+      let written = false;
+      await this.app.vault.process(this.file, text => {
+        const block = findLayout(text);
+        if (!block && !places.size) return text;   // Reset with no block: nothing to write
+        const managed = [...(makeFigure(text, new Map())?.places.keys() ?? [])];
+        const body = writeLayout(block?.body ?? null, places, managed);
+        if (body === null) return text;
+        written = true;
+        this.text = setLayoutInNote(text, body);
+        return this.text;
+      });
+      this.moved.clear(); this.reset = false;
+      this.showHint(written || !places.size);
+    } catch (e) { new Notice(`Could not save the layout: ${e instanceof Error ? e.message : "see the developer console."}`); console.error("Lab Kit rig layout", e); }
+  }
+
   private outside = (e: MouseEvent): void => { if (!this.modalEl.contains(e.target as Node)) this.close(); };
 
   onClose(): void {
     document.removeEventListener("mousedown", this.outside, true);
+    window.cancelAnimationFrame(this.frame);
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
     this.previewUrl = "";
     this.contentEl.empty();

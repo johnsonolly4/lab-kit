@@ -1,17 +1,24 @@
 // Rig figure: the SVG text of a laid-out figure (symbols, lines, labels). Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. Colour and control lines come in Phase 3.
-import { LANE, type FigEdge, type Figure, type FigNode } from "./figure";
+import { COL_W, LANE, MARGIN, ROW_H, type FigEdge, type Figure, type FigNode } from "./figure";
 import { COMPUTER, ovenAround, symbolFor, type Point, type RigSymbol } from "./symbols";
 
 export interface FigureSvgOptions {
   title?: string;
   /** Colour of the lines the computer sends to the parts, and of the lines that bring data back. */
   controlColor?: string; dataColor?: string;
+  /** Grid dots this many units apart over the white ground: only in the Figure… window while a part is dragged, never in a saved file. */
+  grid?: number;
 }
+/** A part's symbol as drawn (centre and size, figure units); `host` is the part an attached one sits with. The Figure… window drags these. */
+export interface PartBox { id: string; host: string; x: number; y: number; w: number; h: number }
 export interface FigureSvg {
   svg: string;
   /** IDs of the parts drawn as a plain box because their kind is unknown. */
   missing: string[];
+  /** The size of the drawing (its viewBox). */
+  width: number; height: number;
+  boxes: PartBox[];
 }
 
 const INK = "#000000";
@@ -102,8 +109,10 @@ function controlSvg(fig: Figure, placed: Map<string, Placed>, colours: { control
     const p = placed.get(c.part);
     if (!p) return [];
     const shift = both.has(c.part) ? (c.dir === "control" ? -10 : 10) : 0;
-    const column = fig.nodes.filter(m => m.layer === p.node.layer && !m.host);
-    const blocked = fig.nodes.some(m => m.layer === p.node.layer && m.y < p.node.y);
+    // a column = the parts drawn within half a column of it (the automatic layout's own columns; a part moved by hand joins the one it is in)
+    const near = (m: FigNode): boolean => Math.abs(m.x - p.node.x) < COL_W / 2;
+    const column = fig.nodes.filter(m => near(m) && !m.host);
+    const blocked = fig.nodes.some(m => m !== p.node && near(m) && m.y < p.node.y);
     if (!blocked) return [{ c, tx: p.node.x + shift, ty: p.node.y + p.sym.top.y, side: false, endX: 0, sideY: 0 }];
     const left = Math.min(...column.map(m => m.x - placed.get(m.id)!.sym.w / 2));
     return [{ c, tx: left - 24 - (c.dir === "data" ? 8 : 0), ty: p.node.y, side: true, endX: p.node.x - p.sym.w / 2, sideY: p.node.y + (shift || -12) }];
@@ -137,6 +146,25 @@ function computerSvg(fig: Figure): string {
     + `<text x="${n1(c.x + COMPUTER.w / 2 + 10)}" y="${n1(c.y + 5)}" font-size="16" font-weight="700" fill="${INK}" stroke="none">${esc(c.label)}</text>`;
 }
 
+/**
+ * The frame's height: the layout keeps a whole row under a part for each part attached to it, but draws a plate or stirrer touching it (owner, 2026-10-21:
+ * trim that band). So the frame ends a margin under the lowest part in the flow (its row, as before) or the lowest attached part as drawn, whichever is lower.
+ * A figure with a return line keeps its height: the return runs along the bottom.
+ */
+function fitHeight(fig: Figure, placed: Map<string, Placed>, ovens: Map<string, number>): number {
+  if (!fig.nodes.some(n => n.host) || fig.edges.some(e => e.back)) return fig.height;
+  const low = fig.nodes.map(n => {
+    const { node, sym } = placed.get(n.id)!;
+    if (!n.host) return Math.max(node.y + ROW_H / 2, node.y + sym.bottom.y + 41);   // its row, or deeper when the symbol hangs low (a vial) with its label under it
+    if (sym.name === "oven" && ovens.has(n.host)) return node.y + sym.bottom.y + 41;   // label under the oven
+    return Math.max(node.y + sym.h / 2, node.y + 21);   // label to the right: ID, then the detail line
+  });
+  return Math.min(fig.height, Math.ceil(Math.max(...low) + MARGIN));
+}
+
+const gridSvg = (g: number | undefined, w: number, h: number): string => !g ? ""
+  : `<defs><pattern id="lk-grid" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="1.6" fill="#a8a8b3"/></pattern></defs><rect width="${w}" height="${h}" fill="url(#lk-grid)"/>`;
+
 /** The SVG of a figure: black line art on white, one symbol and label per part, lines ending on the symbols' connection points. */
 export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const placed = new Map<string, Placed>(fig.nodes.map(node => [node.id, { node, sym: symbolFor(node.kind, node.detail) }]));
@@ -159,6 +187,8 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
     const a = above && placed.get(above.id);
     if (a) p.node = { ...n, y: a.node.y + a.sym.bottom.y - p.sym.top.y };
   }
+
+  const height = fitHeight(fig, placed, ovens);
 
   const lines: string[] = [], dots: string[] = [];
   const merges = new Map<string, number>();
@@ -186,10 +216,11 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const drawn = parts.map(p => { const n = (seen.get(p.sym.name) ?? 0) + 1; seen.set(p.sym.name, n); return { p, svg: symbolSvg(p, n) }; });
   const isOven = (d: { p: Placed }): boolean => d.p.sym.name === "oven" && ovens.has(d.p.node.host);
   const title = opts.title ? `<text x="20" y="28" font-size="20" font-weight="700">${esc(opts.title)}</text>` : "";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${fig.height}" width="${fig.width}" height="${fig.height}" font-family="${FONT}" fill="${INK}">`
-    + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${height}" width="${fig.width}" height="${height}" font-family="${FONT}" fill="${INK}">`
+    + `<rect width="${fig.width}" height="${height}" fill="#ffffff"/>${gridSvg(opts.grid, fig.width, height)}${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
     + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
     + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id), returnFrom.has(p.node.id))).join("")}</g></svg>`;
-  return { svg, missing };
+  const boxes = parts.map(p => ({ id: p.node.id, host: p.node.host, x: p.node.x, y: p.node.y, w: p.sym.w, h: p.sym.h }));
+  return { svg, missing, width: fig.width, height, boxes };
 }

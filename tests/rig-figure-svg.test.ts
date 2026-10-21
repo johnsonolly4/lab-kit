@@ -1,5 +1,6 @@
 // Rig figure Phase 2: symbols and the SVG writer (src/rig/symbols.ts, src/rig/figure-svg.ts). Fictional rigs only.
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
 import { readRig, controlLabel, PART_KINDS } from "../src/rig/parts";
 import { buildFigure } from "../src/rig/figure";
 import { figureSvg } from "../src/rig/figure-svg";
@@ -279,5 +280,22 @@ describe("an SVG other tools can read (Phase 4)", () => {
     const f = buildFigure(r.parts, r.links, { computer: controlLabel("---\nControl: Lab PC 2\n---\n") || undefined });
     expect(f.computer?.label).toBe("Lab PC 2");
     expect(figureSvg(f).svg).toContain(">Lab PC 2</text>");
+  });
+});
+
+describe("the frame fits the drawing (owner, 2026-10-21: trim the empty band under a heated part)", () => {
+  const sizes: Record<string, [number, number]> = {
+    "batch-vessel": [440, 218], "inline-analysis": [320, 207], "inline-analysis-one-table": [320, 207], "single-tubular": [320, 249],
+    "sampling-valve": [320, 320], "telescoped-cascade": [320, 320], "two-pumps-mixer": [320, 320],
+  };
+  for (const [name, [layout, drawn]] of Object.entries(sizes)) it(`${name}: ${layout} → ${drawn}, every label and symbol inside`, () => {
+    const text = readFileSync(`tests/fixtures/rigs/${name}.md`, "utf8");
+    const r = readRig(text);
+    const f = buildFigure(r.parts, r.links, { computer: controlLabel(text) || undefined });
+    const s = figureSvg(f);
+    expect([f.height, s.height]).toEqual([layout, drawn]);
+    expect(s.svg).toContain(`viewBox="0 0 ${f.width} ${drawn}"`);
+    for (const m of s.svg.matchAll(/<text [^>]*y="(-?[\d.]+)"/g)) expect(Number(m[1]) + 4).toBeLessThan(drawn);
+    for (const b of s.boxes) expect(b.y + b.h / 2).toBeLessThan(drawn);
   });
 });
