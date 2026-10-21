@@ -19,6 +19,11 @@ const FORMAT = /^\s*format:\s*(\d+)\s*$/;
 const NOTE = /^\s*([%#].*)?$/;   // blank, or a note the user typed
 
 const bare = (l: string): string => l.replace(/\r$/, "");
+/** The block's format line: the first line that is not blank or a note, when it reads "format: N" (a note may sit above it). */
+const formatOf = (lines: string[]): RegExpExecArray | null => {
+  const first = lines.find(l => !NOTE.test(bare(l)));
+  return first !== undefined ? FORMAT.exec(bare(first)) : null;
+};
 
 /** The first ```rig-layout block of a note: its lines (each with any "\r" it had) between the fences, and where they are. Null when there is none. */
 export function findLayout(text: string): { body: string; open: number; close: number } | null {
@@ -44,8 +49,7 @@ const partOf = (id: string, ids: string[]): string => ids.find(p => p.toLowerCas
 /** Reads a block's lines against the rig's part IDs. */
 export function readLayout(body: string, ids: string[]): Layout {
   const lines = body.split("\n").map(bare);
-  const first = lines.find(l => l.trim());
-  const f = first !== undefined ? FORMAT.exec(first) : null;
+  const f = formatOf(lines);
   if (f && Number(f[1]) > LAYOUT_FORMAT) {
     return { status: "newer", fixed: new Map(), problems: [`The rig-layout block was made with a newer Lab Kit (format ${f[1]}): update the plugin. The figure is drawn automatically.`] };
   }
@@ -71,8 +75,7 @@ export function writeLayout(body: string | null, places: Places, managed: string
   if (body === null) return [`format: ${LAYOUT_FORMAT}`, ...[...places].map(([id, p]) => line(id, p))].join("\n");
   const lines = body.split("\n");
   const eol = lines.length && lines[0].endsWith("\r") ? "\r" : "";
-  const first = lines.find(l => bare(l).trim());
-  const f = first !== undefined ? FORMAT.exec(bare(first)) : null;
+  const f = formatOf(lines);
   if (f && Number(f[1]) > LAYOUT_FORMAT) return null;
   const done = new Set<string>();
   const out: string[] = f ? [] : [`format: ${LAYOUT_FORMAT}${eol}`];

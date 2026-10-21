@@ -84,6 +84,14 @@ describe("the block text", () => {
     expect(writeLayout("format: 2\nP1: 140, 100", pos({ P1: [0, 0] }), IDS)).toBeNull();
   });
 
+  it("a note line above the format line: Reset + Save keeps one format line, and a newer format under it is still found", () => {
+    const body = "% my note\nformat: 1\nP1: 140, 100";
+    expect(writeLayout(body, new Map(), IDS)).toBe("% my note\nformat: 1");
+    expect(writeLayout(body, pos({ P1: [160, 100] }), IDS)).toBe("% my note\nformat: 1\nP1: 160, 100");
+    expect(readLayout("\n% my note\n# more\nformat: 2\nP1: 140, 100", IDS).status).toBe("newer");
+    expect(writeLayout("% my note\nformat: 2\nP1: 140, 100", pos({ P1: [0, 0] }), IDS)).toBeNull();
+  });
+
   it("a block without a format line is read as format 1; writing adds the line", () => {
     expect(readLayout("P1: 1, 2", IDS).status).toBe("ok");
     expect(writeLayout("P1: 1, 2", pos({ P1: [3, 4] }), IDS)).toBe("format: 1\nP1: 3, 4");
