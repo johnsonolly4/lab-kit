@@ -1,6 +1,7 @@
 // Rig figure: the SVG text of a laid-out figure (symbols, lines, labels). Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. Colour and control lines come in Phase 3.
 import { COL_W, LANE, MARGIN, ROW_H, type FigEdge, type Figure, type FigNode } from "./figure";
+import type { Pack } from "./packs";
 import { COMPUTER, ovenAround, symbolFor, type Point, type RigSymbol } from "./symbols";
 
 export interface FigureSvgOptions {
@@ -9,6 +10,8 @@ export interface FigureSvgOptions {
   controlColor?: string; dataColor?: string;
   /** Grid dots this many units apart over the white ground: only in the Figure… window while a part is dragged, never in a saved file. */
   grid?: number;
+  /** The module pack whose symbols replace the generic ones (copied into the SVG, so the file does not need the pack). */
+  pack?: Pack | null;
 }
 /** A part's symbol as drawn (centre and size, figure units); `host` is the part an attached one sits with. The Figure… window drags these. */
 export interface PartBox { id: string; host: string; x: number; y: number; w: number; h: number }
@@ -74,7 +77,7 @@ function labelSvg(p: Placed, above: boolean, half = p.sym.h / 2, returns = false
     return `<text x="${x}" y="${n1(node.y + (detail ? 0 : 5))}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 17)}" font-size="13">${esc(detail)}</text>` : "");
   }
-  if (node.kind === "Mixer" || returns) {   // streams run into a tee from above and below, and a return line leaves a part's underside, so the label sits to the lower right
+  if ((node.kind === "Mixer" && !sym.name.startsWith("pack-")) || returns) {   // streams run into a tee from above and below, and a return line leaves a part's underside, so the label sits to the lower right (a pack symbol has a size of its own: label under it)
     const x = n1(node.x + 12);
     return `<text x="${x}" y="${n1(node.y + 24)}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 41)}" font-size="13">${esc(detail)}</text>` : "");
@@ -167,7 +170,7 @@ const gridSvg = (g: number | undefined, w: number, h: number): string => !g ? ""
 
 /** The SVG of a figure: black line art on white, one symbol and label per part, lines ending on the symbols' connection points. */
 export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
-  const placed = new Map<string, Placed>(fig.nodes.map(node => [node.id, { node, sym: symbolFor(node.kind, node.detail) }]));
+  const placed = new Map<string, Placed>(fig.nodes.map(node => [node.id, { node, sym: symbolFor(node.kind, node.detail, opts.pack) }]));
   const missing = fig.nodes.filter(n => !n.kind).map(n => n.id);
   const returnFrom = new Set(fig.edges.filter(e => e.back).map(e => e.from));
   const hosts = new Set(fig.nodes.map(n => n.host).filter(Boolean));

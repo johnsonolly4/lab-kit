@@ -70,6 +70,8 @@ export interface KitData {
   rigsFolder: string;
   /** Vault folder where the rig figure's SVG and PNG are saved. Empty = the rig note's own folder. */
   figuresFolder: string;
+  /** Vault folder of the rig figure's module pack (symbol files + Pack list.md). Empty = the generic symbols. */
+  modulePackFolder: string;
   /** Lab Kit's own folder → template list for new notes (Settings → Folder templates; the template is a file name in the kit's templates folder). null = today's rows: Daily notes, To-dos (planning kit on), Lab notes, Chemical folder. */
   folderTemplates: { folder: string; file: string }[] | null;
   /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
@@ -126,7 +128,7 @@ export const RIGS_DEFAULT = "03 Lab Book/Rigs";
 /** The Methods folder of a new vault (CI3, 2026-10-21: made at install next to Rigs). A vault saved before keeps what it had (empty = only NMR, GPC, DLS). */
 export const METHODS_DEFAULT = "03 Lab Book/Methods";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, freezeAuto: true, styleAllNotes: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: METHODS_DEFAULT, rigsFolder: RIGS_DEFAULT, figuresFolder: "", folderTemplates: null, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, freezeAuto: true, styleAllNotes: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: METHODS_DEFAULT, rigsFolder: RIGS_DEFAULT, figuresFolder: "", modulePackFolder: "", folderTemplates: null, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -151,6 +153,7 @@ export function kitLoad(saved: unknown): KitData {
   kit.dueCountdown = kit.dueCountdown === "off" ? "off" : "all";   // the old "marked" (it read `countdown: true`, dropped in I2) and anything unknown: all
   if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
   if (typeof kit.figuresFolder !== "string") kit.figuresFolder = "";
+  if (typeof kit.modulePackFolder !== "string") kit.modulePackFolder = "";
   kit.folderTemplates = Array.isArray(kit.folderTemplates)
     ? kit.folderTemplates.filter(r => r && typeof r.folder === "string" && typeof r.file === "string").map(r => ({ folder: r.folder.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, ""), file: r.file.trim() }))
     : null;

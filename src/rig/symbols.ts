@@ -1,6 +1,7 @@
 // Rig figure: the generic part symbols, drawn from scratch as plain line art. Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. A module pack (Phase 6) will supply symbols of the same shape.
 import type { PartKind } from "./parts";
+import { packSymbol, type Pack } from "./packs";
 
 export interface Point { x: number; y: number }
 /** A symbol: `body` is SVG in local coordinates centred on (0, 0) (black line art; the writer sets stroke and fill). The four points are where lines meet it. */
@@ -56,8 +57,10 @@ const PUMP_BY_DETAIL: [RegExp, string][] = [[/syringe/, "syringe"]];
 const HEATER_BY_DETAIL: [RegExp, string][] = [[/oven|jacket/, "oven"]];
 const OUTLET_BY_DETAIL: [RegExp, string][] = [[/waste/, "waste"]];
 
-/** The symbol for a part. A kind that is not known gets the plain box (the writer lists such parts as missing). */
-export function symbolFor(kind: PartKind | "", detail: string): RigSymbol {
+/** The symbol for a part: the module pack's, when the pack has one for it, else the generic one. A kind that is not known gets the plain box (the writer lists such parts as missing). */
+export function symbolFor(kind: PartKind | "", detail: string, pack?: Pack | null): RigSymbol {
+  const mine = packSymbol(pack, kind, detail);
+  if (mine) return mine;
   const d = detail.toLowerCase();
   const by = (table: [RegExp, string][], fallback: string): RigSymbol => SYMBOLS[table.find(([re]) => re.test(d))?.[1] ?? fallback];
   switch (kind) {

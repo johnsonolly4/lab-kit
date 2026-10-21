@@ -38,6 +38,7 @@ import { ClearBackupsModal } from "./backups-ui";
 import { BOARD_STATUSES } from "./board-colours";
 import { TidyNotesModal } from "./tidy-ui";
 import { actionRow, wideBox } from "./settings-box";
+import { checkPack } from "../rig/packs-io";
 import { ensureFolder } from "./ensure-folder";
 import { followRename } from "./managed";
 import { WhatsNewModal, latestSection, sectionHeading } from "../whatsnew";
@@ -296,6 +297,14 @@ class KitSettingTab extends PluginSettingTab {
             });
           });
         } },
+      { name: "Module pack folder", desc: "Optional. A folder with your own rig symbols (SVG or PNG files) and a Pack list.md table that says which part each one is for. Empty: the built-in symbols. Check module pack lists what is missing or unreadable.",
+        render: b => {
+          b.addText(t => {
+            wideBox(b, t, this.app);
+            t.setValue(kit.modulePackFolder).onChange(async v => { kit.modulePackFolder = v.trim() ? normalizePath(v.trim()) : ""; await this.ctl.save(); });
+          });
+          b.addButton(x => x.setButtonText("Check module pack").onClick(() => void checkPack(this.app)));
+        } },
       ...this.header.rootRows(),
       { name: "Molecular weight property", desc: "The property in a chemical note that holds its molecular weight, used by MW(). Empty: MW, Mr, Molecular weight and a few similar names are tried.",
         render: b => { b.addText(t => wideBox(b, t).setValue(kit.mwProperty).onChange(async v => { kit.mwProperty = v.trim(); await this.ctl.save(); })); } },
@@ -442,7 +451,7 @@ export class KitController {
         const to = followFolderRename(pf[role], oldPath, file.path);
         if (to) { pf[role] = to; changed = foldersMoved = true; }
       }
-      for (const key of ["labFolder", "chemicalFolder", "methodsFolder", "rigsFolder", "figuresFolder"] as const) {
+      for (const key of ["labFolder", "chemicalFolder", "methodsFolder", "rigsFolder", "figuresFolder", "modulePackFolder"] as const) {
         const to = this.kit[key] ? followFolderRename(this.kit[key], oldPath, file.path) : null;
         if (to) { this.kit[key] = to; changed = foldersMoved = true; }
       }

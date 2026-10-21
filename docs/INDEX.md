@@ -18,6 +18,7 @@
 | How chemical and hazard data is stored (for a CoSHH / risk assessment tool), with example notes | `docs/coshh-data/` |
 | What each version changed | `docs/changelog.md` |
 | How the user works with the plugin | `docs/tutorial.md`, `README.md` |
+| Drawing your own rig symbols (module pack) | `docs/rig-pack-symbol.md` |
 | Snippet, calc block and method note syntax (tokens, `codes:`) | `docs/snippet-syntax.md` |
 | User setup (Claude Code + vault) | `GETTING-STARTED.md` |
 | The new-vault starter (`npm run starter`) | `src/kit/starter.ts`, `GETTING-STARTED.md` |
