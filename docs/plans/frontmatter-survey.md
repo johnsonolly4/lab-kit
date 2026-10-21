@@ -97,7 +97,9 @@ Source: the kit's `ZOTLIT_FIELDS` (`src/kit/zotlit.ts:9-23`, code). The refpane 
 | `imported` | ZotLit (date) | keep | `lists.ts:102,144`, Dataview | date | |
 | `zotero-key` | ZotLit itself, always | — | nothing | text | cannot be renamed (ZotLit docs, as reported by the refpane session; not read here) |
 | `takeaway` | by hand, inline field `[takeaway:: ]` | — | `lists.ts:110,147` | Dataview field, **not a property** | |
-| `refpane-topics`, `refpane-read` | only if the owner picks the refpane plan's non-recommended option 4 | — | — | — | would be kebab-case: a third style (FM9); no clash, even ignoring capitals |
+| `refpane_topics`, `refpane_read` | only if the owner picks the refpane plan's non-recommended option 4 | — | — | — | snake_case, matching the kit's stamps (refpane plan §19.5, my_work commit 592999a); no clash, even ignoring capitals |
+
+The refpane plan (§19.5) assumes the recommended answers FM3 (a), FM9 (a), FM10 (a) and FM11 (a). These are its assumptions, not owner answers yet. Refpane's own reader matches `zotero-key` and `citekey` with exact capitals; making it ignore capitals is a later Refpane step.
 
 **Clash found (code + report):**
 - ZotLit's own default fields include `title`, `related`, `collections` and `citekey` (ZotLit docs `reference/templates/frontmatter.mdx:39-44`, as reported by the refpane session; not read here).
