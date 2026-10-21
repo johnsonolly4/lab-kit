@@ -1,6 +1,6 @@
 // Rig figure: the SVG text of a laid-out figure (symbols, lines, labels). Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. Colour and control lines come in Phase 3.
-import { COL_W, LANE, type FigEdge, type Figure, type FigNode } from "./figure";
+import { COL_W, LANE, MARGIN, ROW_H, type FigEdge, type Figure, type FigNode } from "./figure";
 import { COMPUTER, ovenAround, symbolFor, type Point, type RigSymbol } from "./symbols";
 
 export interface FigureSvgOptions {
@@ -144,6 +144,22 @@ function computerSvg(fig: Figure): string {
     + `<text x="${n1(c.x + COMPUTER.w / 2 + 10)}" y="${n1(c.y + 5)}" font-size="16" font-weight="700" fill="${INK}" stroke="none">${esc(c.label)}</text>`;
 }
 
+/**
+ * The frame's height: the layout keeps a whole row under a part for each part attached to it, but draws a plate or stirrer touching it (owner, 2026-10-21:
+ * trim that band). So the frame ends a margin under the lowest part in the flow (its row, as before) or the lowest attached part as drawn, whichever is lower.
+ * A figure with a return line keeps its height: the return runs along the bottom.
+ */
+function fitHeight(fig: Figure, placed: Map<string, Placed>, ovens: Map<string, number>): number {
+  if (!fig.nodes.some(n => n.host) || fig.edges.some(e => e.back)) return fig.height;
+  const low = fig.nodes.map(n => {
+    const { node, sym } = placed.get(n.id)!;
+    if (!n.host) return Math.max(node.y + ROW_H / 2, node.y + sym.bottom.y + 41);   // its row, or deeper when the symbol hangs low (a vial) with its label under it
+    if (sym.name === "oven" && ovens.has(n.host)) return node.y + sym.bottom.y + 41;   // label under the oven
+    return Math.max(node.y + sym.h / 2, node.y + 21);   // label to the right: ID, then the detail line
+  });
+  return Math.min(fig.height, Math.ceil(Math.max(...low) + MARGIN));
+}
+
 /** The SVG of a figure: black line art on white, one symbol and label per part, lines ending on the symbols' connection points. */
 export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const placed = new Map<string, Placed>(fig.nodes.map(node => [node.id, { node, sym: symbolFor(node.kind, node.detail) }]));
@@ -166,6 +182,8 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
     const a = above && placed.get(above.id);
     if (a) p.node = { ...n, y: a.node.y + a.sym.bottom.y - p.sym.top.y };
   }
+
+  const height = fitHeight(fig, placed, ovens);
 
   const lines: string[] = [], dots: string[] = [];
   const merges = new Map<string, number>();
@@ -193,11 +211,11 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const drawn = parts.map(p => { const n = (seen.get(p.sym.name) ?? 0) + 1; seen.set(p.sym.name, n); return { p, svg: symbolSvg(p, n) }; });
   const isOven = (d: { p: Placed }): boolean => d.p.sym.name === "oven" && ovens.has(d.p.node.host);
   const title = opts.title ? `<text x="20" y="28" font-size="20" font-weight="700">${esc(opts.title)}</text>` : "";
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${fig.height}" width="${fig.width}" height="${fig.height}" font-family="${FONT}" fill="${INK}">`
-    + `<rect width="${fig.width}" height="${fig.height}" fill="#ffffff"/>${title}`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${height}" width="${fig.width}" height="${height}" font-family="${FONT}" fill="${INK}">`
+    + `<rect width="${fig.width}" height="${height}" fill="#ffffff"/>${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
     + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
     + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id), returnFrom.has(p.node.id))).join("")}</g></svg>`;
   const boxes = parts.map(p => ({ id: p.node.id, host: p.node.host, x: p.node.x, y: p.node.y, w: p.sym.w, h: p.sym.h }));
-  return { svg, missing, width: fig.width, height: fig.height, boxes };
+  return { svg, missing, width: fig.width, height, boxes };
 }
