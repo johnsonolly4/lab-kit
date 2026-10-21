@@ -76,6 +76,14 @@ describe("meeting-note: helpers", () => {
     expect(created[0].path).toBe(`${folder}/2026-10-22 Group meeting 3.md`);
     expect(created[0].text).toBe(expectedMeeting(weekly));
   });
+  it("a name taken apart from capitals counts as taken (macOS / Windows disks; owner's to-do test T6, 2026-10-21)", async () => {
+    const files = [`${folder}/2026-10-22 group meeting.md`];
+    const created: { path: string; text: string }[] = [];
+    const vault = { getAbstractFileByPath: (p: string) => (files.includes(p) ? {} : null), getFolderByPath: (p: string) => (p === folder ? { children: files.map(path => ({ path })) } : null),
+      create: async (path: string, text: string) => { created.push({ path, text }); return { path }; } };
+    await createMadeNote(vault as never, MEETING_TEMPLATE, miniYaml, meetingAnswers({ ...weekly, folder }), NOW, "", "");
+    expect(created[0].path).toBe(`${folder}/2026-10-22 Group meeting 2.md`);
+  });
   it("a template of your own without name or folder in its header: the date and label, and the series' folder", async () => {
     const own = "---\nmake: note\n---\n---\nkind: meeting\nseries: \"[[{{series}}]]\"\n---\nMine {{note-name}}\n";
     const created: { path: string; text: string }[] = [];

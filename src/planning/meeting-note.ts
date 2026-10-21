@@ -5,6 +5,7 @@ import type { TFile, Vault } from "obsidian";
 import { noteFromTemplate, type MadeNote } from "../kit/note-template";
 import { parseTemplate } from "../kit/snippet-template";
 import type { Series } from "./meetings";
+import { nameTaken } from "./todo-note";
 
 /** The bundled Meeting.md (a regular series). */
 export const MEETING_TEMPLATE = `---
@@ -242,7 +243,8 @@ export function createMadeNote(vault: Vault, template: string, parseYaml: (yaml:
   const first = madeNote(template, parseYaml, answers, now, fallbackName, fallbackFolder);
   let name = first.name, n = 2;
   const path = (): string => `${first.folder}/${name}.md`;
-  if (unique) while (vault.getAbstractFileByPath(path())) name = `${first.name} ${n++}`;
+  const taken = nameTaken(vault, first.folder);   // ignores capitals, as the disk does (owner's to-do test T6, 2026-10-21)
+  if (unique) while (taken(name)) name = `${first.name} ${n++}`;
   // a template that writes {{note-name}} gets the name the note really has
   const text = name === first.name ? first.text : madeNote(template, parseYaml, answers, now, fallbackName, fallbackFolder, name).text;
   return vault.create(path(), text);
