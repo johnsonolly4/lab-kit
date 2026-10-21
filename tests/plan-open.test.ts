@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { readPlan } from "../src/planning/plan";
 import { layoutPlan } from "../src/planning/plan-map";
-import { CHIP_CAP, COUNT_H, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, openBudget, openGeometry, openModel, rowHeights } from "../src/planning/plan-open";
+import { CHIP_CAP, COUNT_H, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, moreLines, openBudget, openGeometry, openModel, rowHeights } from "../src/planning/plan-open";
 import type { MapGeometry } from "../src/planning/plan-map";
 import type { FoldedOpen, OpenModel } from "../src/planning/plan-open";
 import type { OpenChip } from "../src/planning/plan-open";
@@ -231,7 +231,7 @@ describe("openGeometry: chips down, arrows through lanes (M1-3; numbers in docs/
   type Box = { x: number; y: number; w: number; h: number };
   const boxes = (f: FoldedOpen, g: MapGeometry): Map<string, Box> => {
     const h = new Map<string, number>();
-    for (const s of f.steps) { for (const c of s.chips) h.set(c.path, chipSize(c, f.places).height); if (s.more) h.set(moreId(s.step), COUNT_H); }
+    for (const s of f.steps) { for (const c of s.chips) h.set(c.path, chipSize(c, f.places).height); if (s.more) h.set(moreId(s.step), 2 * 10 + moreLines(s.more.text, f.places).length * 28); }
     if (f.fold) h.set(FOLD_ID, COUNT_H);
     return new Map([...g.pos].map(([p, q]) => [p, { ...q, w: f.width, h: h.get(p)! }]));
   };

@@ -9,14 +9,15 @@ import { CHAR_W, DEFAULT_AHEAD, slideModel, slideSvg, statusOf, wrap } from "./p
 export type OpenStatus = "late" | "waiting" | "ready" | "later";
 /** The picture is always 1920 × 1080 (owner, Q3 a). Across: margin, the step labels ("can start", "then +1"), places with gaps between (the prototype `gen-big.ts` m1). */
 export const OPEN_W = 1920, OPEN_H = 1080;
-const MARGIN = 48, LABEL_W = 150, PLACE_GAP = 24;
+export const MARGIN = 48, LABEL_W = 150, PLACE_GAP = 24;
 /** Every text on a chip, and every other text of the picture, is this size: never under `MIN_READABLE`. */
 export const OPEN_FONT = 22;
 /** Most places across (owner, Q2 a: a step with more chips keeps the 5 most urgent and a "+N more in this step" chip). */
 export const CHIP_CAP = 6;
 /** A chip line holds at least this many characters (6 places). */
 export const MIN_CHARS = 17;
-const LINE_H = 28, PAD_X = 20, PAD_Y = 10, SUB_GAP = 6, NAME_LINES = 2, SUB_LINES = 4;
+export const LINE_H = 28, PAD_X = 20, PAD_Y = 10, SUB_GAP = 6;
+const NAME_LINES = 2, SUB_LINES = 4;
 /** The second line is cut to this many characters: about one line of a chip 259 px wide at 22 px (6 places; plan "Why the fold rule is needed"). */
 export const SECOND_LINE_MAX = 17;
 
@@ -26,6 +27,8 @@ export interface OpenChip {
   step: number; place: number;
   /** "experiment · Status", cut with "…"; only on late, waiting and can-start chips with an experiment, else "". */
   line: string;
+  /** `waiting` is set (also when the chip shows late: late wins, the key says so). */
+  waiting: boolean;
   /** The subtasks, done ones included (they are drawn ticked and struck). */
   subs: PlanRow["subs"];
 }
@@ -63,7 +66,7 @@ export function openModel(plan: Plan, today?: string): OpenModel {
     const status = statusOfRow(r);
     const e = r.experiment;
     const line = e && status !== "later" ? cut(e.status ? `${e.name} · ${e.status}` : e.name, SECOND_LINE_MAX) : "";
-    return { path: r.path, name: r.name, status, step, place, line, subs: r.subs };
+    return { path: r.path, name: r.name, status, step, place, line, waiting: Boolean(r.waiting), subs: r.subs };
   };
 
   // Subtasks of open to-dos stay in, so a link through a subtask still joins two chips; finished to-dos and their subtasks are left out.
@@ -86,6 +89,11 @@ export function openModel(plan: Plan, today?: string): OpenModel {
 
 /** Chip width for `places` columns (capped at `CHIP_CAP`): 259 px at 6. */
 export const chipWidth = (places: number): number => Math.floor((OPEN_W - 2 * MARGIN - LABEL_W - (Math.min(Math.max(1, places), CHIP_CAP) - 1) * PLACE_GAP) / Math.min(Math.max(1, places), CHIP_CAP));
+/** Characters a chip line holds when the picture has `places` columns (17 at 6). */
+export const chipChars = (places: number): number => Math.floor((chipWidth(places) - 2 * PAD_X) / (OPEN_FONT * CHAR_W));
+/** The lines of a "+N more in this step" chip: its text in up to 2 lines, so it is never cut (20 characters do not fit one line of 17). */
+export const moreLines = (text: string, places: number): string[] => wrap(text, chipChars(places), NAME_LINES);
+const moreHeight = (text: string, places: number): number => 2 * PAD_Y + moreLines(text, places).length * LINE_H;
 export interface ChipSize {
   width: number; height: number;
   /** Characters a line holds; text is not measured (same average width as plan-slide). */
@@ -96,7 +104,7 @@ export interface ChipSize {
 /** The size and the text lines of one chip when the picture has `places` columns. */
 export function chipSize(c: OpenChip, places: number): ChipSize {
   const width = chipWidth(places);
-  const chars = Math.floor((width - 2 * PAD_X) / (OPEN_FONT * CHAR_W));
+  const chars = chipChars(places);
   const name = wrap(c.name, chars, NAME_LINES);
   const line = cut(c.line, chars);
   const shown = c.subs.length > SUB_LINES ? c.subs.slice(0, SUB_LINES - 1) : c.subs;
@@ -113,7 +121,8 @@ export function rowHeights(chips: OpenChip[], places: number): number[] {
 }
 
 // Fold (owner, Q1 a and Q2 a): what is drawn when the open work does not fit the 1920 × 1080 picture. Room above and below the steps is the prototype's.
-const TOP = 130, KEY_ROOM = 70, LOOSE_H = 110, STEP_GAP = 36, LOOSE_MAX_W = 320, LOOSE_GAP = 14, COUNT_W = 440;
+export const TOP = 130, KEY_ROOM = 70, LOOSE_H = 110, STEP_GAP = 36, LOOSE_GAP = 14;
+const LOOSE_MAX_W = 320, COUNT_W = 440;
 /** Height of the count row under the drawn steps and of a "+N more" chip: one line. */
 export const COUNT_H = 2 * PAD_Y + LINE_H;
 /** Ids of the stand-ins arrows may end at: a step's "+N more in this step" chip, and the count row of the folded steps. */
@@ -125,7 +134,7 @@ export interface FoldStep {
   step: number;
   /** The chips drawn, places re-numbered from 0 when the picture has more than `CHIP_CAP` places. */
   chips: OpenChip[];
-  /** The "+N more in this step" chip, in place 5 (null when every chip of the step is drawn). */
+  /** The "+N more in this step" chip, in place 5 (null when every chip of the step is drawn); as tall as its text in 2 lines (`moreLines`). */
   more: FoldCount | null;
   height: number;
 }
@@ -172,7 +181,7 @@ export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOp
     for (const c of chips) where.set(c.path, c.path);
     for (const c of hidden) where.set(c.path, moreId(k));
     const more = hidden.length ? { ...countOf(hidden, () => ""), text: `+${hidden.length} more in this step` } : null;
-    all.push({ step: k, chips, more, height: Math.max(0, ...chips.map(c => chipSize(c, places).height), more ? COUNT_H : 0) });
+    all.push({ step: k, chips, more, height: Math.max(0, ...chips.map(c => chipSize(c, places).height), more ? moreHeight(more.text, places) : 0) });
   }
 
   const used = (n: number): number => all.slice(0, n).reduce((h, s) => h + s.height, 0) + Math.max(0, n - 1) * STEP_GAP;
@@ -218,7 +227,7 @@ export function openGeometry(folded: FoldedOpen): MapGeometry {
   const cards: { path: string; step: number; place: number }[] = [], heights = new Map<string, number>();
   for (const s of folded.steps) {
     for (const c of s.chips) { cards.push({ path: c.path, step: s.step, place: c.place }); heights.set(c.path, chipSize(c, folded.places).height); }
-    if (s.more) { cards.push({ path: moreId(s.step), step: s.step, place: CHIP_CAP - 1 }); heights.set(moreId(s.step), COUNT_H); }
+    if (s.more) { cards.push({ path: moreId(s.step), step: s.step, place: CHIP_CAP - 1 }); heights.set(moreId(s.step), moreHeight(s.more.text, folded.places)); }
   }
   if (folded.fold) { cards.push({ path: FOLD_ID, step: folded.steps.length, place: 0 }); heights.set(FOLD_ID, COUNT_H); }
   return mapGeometry({ cards, arrows: folded.arrows, startStep: 0 }, 0, "down", undefined, { width: folded.width, height: COUNT_H, heights, stepGap: STEP_GAP, placeGap: PLACE_GAP, pad: 0, laneLines: LANE_LINES });

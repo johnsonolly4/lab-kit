@@ -2,8 +2,10 @@
 import { describe, it, expect } from "vitest";
 import { layoutPlan } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
-import { MIN_READABLE, slideModel, slideSvg } from "../src/planning/plan-slide";
+import { MIN_READABLE, openSvg, slideModel, slideSvg } from "../src/planning/plan-slide";
+import { foldOpen, openGeometry, openModel } from "../src/planning/plan-open";
 import type { NoteRec } from "../src/planning/lists";
+import { BIG_HUB, BIG_TITLE, BIG_TODAY, BIG_TODOS } from "./fixtures/plan-big";
 
 const T = "00 Planning/To-dos/";
 const note = (path: string, fm: Record<string, unknown> = {}): NoteRec =>
@@ -121,5 +123,103 @@ describe("slideSvg", () => {
     const plain = slideSvg(slideModel(map([td("Two"), td("Eight", { after: "[[Two]]" })]), { kind: "whole" }), { title: "Alpha" });
     const withSubs = slideSvg(model, { title: "Alpha" });
     expect(withSubs.minText).toBeLessThanOrEqual(plain.minText);   // the strips are scaled with the cards, so the reported smallest text still counts them
+  });
+});
+
+describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-export.md Phase M1-4)", () => {
+  const T2 = "00 Planning/To-dos/";
+  const bigTd = (name: string, fm: Record<string, unknown> = {}): NoteRec => note(`${T2}${name}.md`, { kind: "todo", project: `[[${BIG_TITLE}]]`, ...fm });
+  const extra = Array.from({ length: 30 }, (_, i) => bigTd(`Misc task ${i + 1}`));
+  const open = (todos: NoteRec[], today = BIG_TODAY) => openModel(readPlan(todos, BIG_HUB), today);
+  const draw = (todos: NoteRec[]) => openSvg(open(todos), { title: BIG_TITLE, today: BIG_TODAY });
+  type Box = { x: number; y: number; w: number; h: number };
+  /** Every positioned rect but the background and the progress bar (the key's marks sit in groups and have no x). */
+  const rects = (svg: string): Box[] => [...svg.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"[^>]*\/>/g)]
+    .map(m => ({ x: Number(m[1]), y: Number(m[2]), w: Number(m[3]), h: Number(m[4]) })).filter(b => b.h !== 14);
+  const overlap = (a: Box, b: Box): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+  const keyTop = 1080 - 48 - 24;
+  const fixture = draw(BIG_TODOS);
+
+  it("the fixture: 1920 × 1080, every text 22 px or more, 16 arrows, 18 boxes (14 chips in 4 steps, the count row, 3 loose)", () => {
+    expect(fixture.svg).toContain('viewBox="0 0 1920 1080"');
+    expect(fixture.minText).toBeGreaterThanOrEqual(MIN_READABLE);
+    expect(fixture.tooSmall).toBe(false);
+    const sizes = [...fixture.svg.matchAll(/font-size="([\d.]+)"/g)].map(m => Number(m[1]));
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(MIN_READABLE);
+    const f = foldOpen(open(BIG_TODOS));
+    expect(count(fixture.svg, 'marker-end="url(#head)"')).toBe(openGeometry(f).curves.length);
+    expect(openGeometry(f).curves).toHaveLength(16);
+    expect(rects(fixture.svg)).toHaveLength(14 + 1 + 3);   // 14 chips in 4 steps, the count row, 3 loose chips
+    expect(fixture.svg).toContain("+5 more steps: 1 waiting");
+    expect(fixture.svg).toContain("Not linked to other open work (3):");
+    expect(fixture.svg).toContain(">can start<");
+    expect(fixture.svg).toContain(">then +3<");
+    expect(fixture.svg).toContain("35 of 59 done");
+    expect(fixture.svg).toContain("as of Tue 20 Oct 2026");
+  });
+  it("nothing overlaps: boxes apart, steps under the header, the loose row under the steps, everything above the key", () => {
+    for (const pic of [fixture, draw([...BIG_TODOS, ...extra])]) {
+      const b = rects(pic.svg);
+      for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) expect(overlap(b[i], b[j]), JSON.stringify([b[i], b[j]])).toBe(false);
+      for (const r of b) { expect(r.y).toBeGreaterThanOrEqual(130); expect(r.y + r.h).toBeLessThanOrEqual(keyTop); expect(r.x + r.w).toBeLessThanOrEqual(1920 - 48); expect(r.x).toBeGreaterThanOrEqual(48); }
+      const label = Number(/<text x="48" y="([\d.]+)"[^>]*>Not linked to other open work/.exec(pic.svg)![1]);
+      const steps = b.filter(r => r.y < label);
+      expect(Math.max(...steps.map(r => r.y + r.h))).toBeLessThanOrEqual(label - 22);
+      expect(b.filter(r => r.y > label).every(r => r.y >= label + 6)).toBe(true);
+    }
+  });
+  it("30 extra loose to-dos: 5 loose chips and the +28 count chip, text still 22 px", () => {
+    const pic = draw([...BIG_TODOS, ...extra]);
+    expect(pic.minText).toBeGreaterThanOrEqual(MIN_READABLE);
+    expect(pic.svg).toContain("+28 more not linked");
+    expect(pic.svg).toContain("Not linked to other open work (33):");
+    expect(rects(pic.svg)).toHaveLength(14 + 1 + 5 + 1);
+  });
+  it("a chip with 12 subtasks shows 3 and +9 more (done struck); a 120-character name is cut on 2 lines; text 22 px", () => {
+    const long = "A very long to-do name ".repeat(6).slice(0, 120);
+    const subs = Array.from({ length: 12 }, (_, i) => bigTd(`Sub ${"ABCDEFGHIJKL"[i]}`, { sub: "[[Twelve]]", ...(i === 0 ? { done: true } : {}) }));
+    const kids = ["K1", "K2", "K3", "K4", "K5"].map(k => bigTd(k, { after: ["[[Twelve]]"] }));   // 6 places: the long name sits in a 259 px chip
+    const pic = draw([bigTd("Twelve"), bigTd(long, { after: ["[[Twelve]]"] }), ...kids, ...subs]);
+    expect(pic.minText).toBeGreaterThanOrEqual(MIN_READABLE);
+    expect(pic.svg).toContain("✓ Sub A");
+    expect(pic.svg).toContain("○ Sub C");
+    expect(pic.svg).not.toContain("Sub D<");
+    expect(pic.svg).toContain("+9 more");
+    expect(count(pic.svg, 'text-decoration="line-through"')).toBe(1);
+    expect(pic.svg).not.toContain(long);
+    expect(pic.svg).toContain("…");
+    const b = rects(pic.svg);
+    for (let i = 0; i < b.length; i++) for (let j = i + 1; j < b.length; j++) expect(overlap(b[i], b[j])).toBe(false);
+  });
+  it("texts are escaped (title, names, subtasks, the second line)", () => {
+    const pic = openSvg(open([bigTd("A <b> & \"c\""), bigTd("Then 'd'", { after: ['[[A <b> & "c"]]'] })]), { title: "Q&A <x>", today: BIG_TODAY });
+    expect(pic.svg).toContain("Q&amp;A &lt;x&gt;");
+    expect(pic.svg).toContain("A &lt;b&gt; &amp; &quot;c&quot;");
+    expect(pic.svg).toContain("Then &#39;d&#39;");
+    expect(pic.svg).not.toContain("<b>");
+    expect(pic.svg).not.toContain("<x>");
+  });
+  it("the key lists only the marks used and says late and waiting in words; with a late-and-waiting chip it says late wins (Q5 a)", () => {
+    expect(fixture.svg).toContain(">late (wins over waiting)<");
+    expect(fixture.svg).toContain(">waiting on someone<");
+    expect(fixture.svg).toContain(">can start<");
+    expect(fixture.svg).toContain(">waits for an earlier step<");
+    expect(fixture.svg).not.toContain(">done<");   // finished work is only the header's count
+    const plain = openSvg(open([bigTd("One"), bigTd("Two", { after: ["[[One]]"] })]), { title: "x", today: BIG_TODAY }).svg;
+    expect(plain).toContain(">waits for an earlier step<");
+    expect(plain).not.toContain(">late<");
+    expect(plain).not.toContain("waiting on someone");
+    const lateOnly = openSvg(open([bigTd("One", { due: "2026-10-01" }), bigTd("Two", { after: ["[[One]]"], waiting: "Sam" })]), { title: "x", today: BIG_TODAY }).svg;
+    expect(lateOnly).toContain(">late<");
+    expect(lateOnly).toContain(">waiting on someone<");
+  });
+  it("chip borders: late and waiting in their colours, can start blue, later dashed grey; a late-and-waiting chip is drawn late; no corner dot", () => {
+    expect(fixture.svg).toMatch(/stroke="#b3124f"[^>]*\/><text[^>]*>Book GPC time for<\/text>/);
+    expect(fixture.svg).not.toMatch(/stroke="#c77700"[^>]*\/><text[^>]*>Book GPC time for<\/text>/);
+    expect(fixture.svg).toContain('stroke="#1f6feb"');
+    const wait = openSvg(open([bigTd("One", { waiting: "Sam" }), bigTd("Two", { after: ["[[One]]"] })]), { title: "x", today: BIG_TODAY }).svg;
+    expect(wait).toMatch(/stroke="#c77700"[^>]*\/><text[^>]*>One<\/text>/);
+    expect(fixture.svg).toContain('stroke-dasharray="6 4"');
+    expect(fixture.svg).not.toContain("<circle");
   });
 });

@@ -3,6 +3,8 @@
 import type { PlanRow } from "./plan";
 import { CARD_H, CARD_W, mapGeometry, subsLabel } from "./plan-map";
 import type { MapArrow, MapCard, PlanMap } from "./plan-map";
+import { COUNT_H, FOLD_ID, KEY_ROOM, LABEL_W, LINE_H, LOOSE_GAP, LOOSE_H, OPEN_FONT, OPEN_H, OPEN_W, PAD_X, PAD_Y, SUB_GAP, TOP, chipSize, foldOpen, moreId, moreLines, openGeometry } from "./plan-open";
+import type { OpenChip, OpenModel, OpenStatus } from "./plan-open";
 
 /** How a to-do stands today. Late (open, due date passed) wins over waiting (open, `waiting` set); a to-do with something unfinished before it is blocked. */
 export type RowStatus = "done" | "late" | "waiting" | "ready" | "blocked";
@@ -225,8 +227,8 @@ function tilesSvg(rows: PlanRow[], left: number, top: number, cols: number, maxR
   }).join("");
 }
 
-/** The key at the bottom: one entry for each mark that appears in the picture. */
-function keySvg(used: Set<RowStatus>, x0: number, y: number): string {
+/** The key at the bottom: one entry for each mark that appears in the picture. `labels` replaces an entry's words. */
+function keySvg(used: Set<RowStatus>, x0: number, y: number, labels: Partial<Record<RowStatus, string>> = {}): string {
   const items: [RowStatus, string, string][] = [
     ["done", `<rect width="34" height="22" rx="5" fill="${TILE}" stroke="${LINE}"/><text x="9" y="17" font-size="16" fill="${MUTED}">✓</text>`, "done"],
     ["ready", `<rect width="34" height="22" rx="5" fill="#fff" stroke="${ACCENT}" stroke-width="3"/>`, "can start"],
@@ -236,8 +238,9 @@ function keySvg(used: Set<RowStatus>, x0: number, y: number): string {
   ];
   let x = x0;
   const out: string[] = [];
-  for (const [st, mark, label] of items) {
+  for (const [st, mark, word] of items) {
     if (!used.has(st)) continue;
+    const label = labels[st] ?? word;
     out.push(`<g transform="translate(${x} ${y})">${mark}<text x="44" y="19" font-size="${KEY_FONT}" fill="${MUTED}">${label}</text></g>`);
     x += 44 + Math.ceil(label.length * KEY_FONT * CHAR_W) + 36;
   }
@@ -270,20 +273,10 @@ export function slideSvg(model: SlideModel, opts: SlideOptions): SlidePicture {
   const parts: string[] = [];
   let minText = 44;
   const note = (n: number): void => { minText = Math.min(minText, n); };
-  // Header: the title, and on the right the "as of" date and the progress of the top-level to-dos.
   const top = model.all.filter(r => r.parent === null);
-  const doneN = top.filter(r => r.done).length;
-  const count = top.length ? `${doneN} of ${top.length} done` : "";
-  const rightW = count ? BAR_W + 12 + Math.ceil(count.length * 22 * CHAR_W) : today ? Math.ceil(asOfDate(today).length * 22 * CHAR_W) + 60 : 0;
-  parts.push(`<text x="${MARGIN}" y="${MARGIN + 40}" font-size="44" font-weight="700" fill="${INK}">${esc(cut(opts.title, Math.max(8, Math.floor((inner - (rightW ? rightW + 24 : 0)) / (44 * CHAR_W)))))}</text>`);
-  if (today) { note(22); parts.push(`<text x="${W - MARGIN}" y="${MARGIN + 10}" font-size="22" text-anchor="end" fill="${MUTED}">as of ${esc(asOfDate(today))}</text>`); }
-  if (count) {
-    note(22);
-    const bx = W - MARGIN - BAR_W;
-    parts.push(`<rect x="${bx}" y="${MARGIN + 24}" width="${BAR_W}" height="14" rx="7" fill="${TILE}"/>`
-      + (doneN ? `<rect x="${bx}" y="${MARGIN + 24}" width="${Math.max(14, Math.round(BAR_W * doneN / top.length))}" height="14" rx="7" fill="${OK}"/>` : "")
-      + `<text x="${bx - 12}" y="${MARGIN + 38}" font-size="22" text-anchor="end" fill="${INK}">${count}</text>`);
-  }
+  if (today) note(22);
+  if (top.length) note(22);
+  parts.push(headerSvg(opts.title, today, top.filter(r => r.done).length, top.length, W));
   let y = MARGIN + TITLE_H;
   const section = (s: typeof sections[number], at: number): number => {
     note(LABEL_FONT); note(TILE_FONT);
@@ -310,9 +303,98 @@ export function slideSvg(model: SlideModel, opts: SlideOptions): SlidePicture {
   for (const s of after) y = section(s, y + GAP);
   if (keyOn) { note(KEY_FONT); parts.push(keySvg(used, MARGIN, H - MARGIN - 24)); }
 
-  const defs = `<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${LINE}"/></marker></defs>`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}">`
-    + `<rect width="${W}" height="${H}" fill="#ffffff"/>${defs}${parts.join("")}</svg>`;
   const min = Math.round(minText * 10) / 10;
-  return { svg, minText: min, tooSmall: min < MIN_READABLE };
+  return { svg: svgDoc(W, H, parts.join("")), minText: min, tooSmall: min < MIN_READABLE };
+}
+
+/** The whole SVG: white page, the arrow head, then `body`. */
+const svgDoc = (W: number, H: number, body: string): string => {
+  const defs = `<defs><marker id="head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="${LINE}"/></marker></defs>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}">`
+    + `<rect width="${W}" height="${H}" fill="#ffffff"/>${defs}${body}</svg>`;
+};
+
+/** The header of both pictures: the title, and on the right the "as of" date and "N of M done" (top-level to-dos) with a bar. */
+function headerSvg(title: string, today: string | undefined, doneN: number, total: number, W: number): string {
+  const inner = W - 2 * MARGIN;
+  const count = total ? `${doneN} of ${total} done` : "";
+  const rightW = count ? BAR_W + 12 + Math.ceil(count.length * 22 * CHAR_W) : today ? Math.ceil(asOfDate(today).length * 22 * CHAR_W) + 60 : 0;
+  const out = [`<text x="${MARGIN}" y="${MARGIN + 40}" font-size="44" font-weight="700" fill="${INK}">${esc(cut(title, Math.max(8, Math.floor((inner - (rightW ? rightW + 24 : 0)) / (44 * CHAR_W)))))}</text>`];
+  if (today) out.push(`<text x="${W - MARGIN}" y="${MARGIN + 10}" font-size="22" text-anchor="end" fill="${MUTED}">as of ${esc(asOfDate(today))}</text>`);
+  if (count) {
+    const bx = W - MARGIN - BAR_W;
+    out.push(`<rect x="${bx}" y="${MARGIN + 24}" width="${BAR_W}" height="14" rx="7" fill="${TILE}"/>`
+      + (doneN ? `<rect x="${bx}" y="${MARGIN + 24}" width="${Math.max(14, Math.round(BAR_W * doneN / total))}" height="14" rx="7" fill="${OK}"/>` : "")
+      + `<text x="${bx - 12}" y="${MARGIN + 38}" font-size="22" text-anchor="end" fill="${INK}">${count}</text>`);
+  }
+  return out.join("");
+}
+
+const OPEN_STROKE: Record<OpenStatus, string> = { late: LATE, waiting: WAIT, ready: ACCENT, later: LINE };
+const OPEN_KEY: Record<OpenStatus, RowStatus> = { late: "late", waiting: "waiting", ready: "ready", later: "blocked" };
+
+/** The open-work picture of a big project (M1, docs/plans/plan-map-export.md): the open to-dos as chips, steps top to bottom with arrows, the loose row, the key; finished work is only the header's count.
+ *  Always 1920 × 1080 (owner, Q3 a); every text is 22 px, so `minText` is 22 by construction. A chip's border carries its status (late wins over waiting; dashed: waits for an earlier step); no corner dot. */
+export function openSvg(model: OpenModel, opts: SlideOptions): SlidePicture {
+  const W = OPEN_W, H = OPEN_H, F = OPEN_FONT;
+  const today = opts.today && asOfDate(opts.today) ? opts.today : undefined;
+  const f = foldOpen(model), geo = openGeometry(f);
+  const x0 = MARGIN + LABEL_W, y0 = TOP;
+  const used = new Set<RowStatus>();
+  let lateWins = false;
+  const text = (x: number, y: number, s: string, fill = INK, more = ""): string => `<text x="${x}" y="${y}" font-size="${F}" fill="${fill}"${more}>${esc(s)}</text>`;
+  const base = (top: number, i: number): number => top + PAD_Y + 21 + i * LINE_H;   // baseline of line i of a box
+  const chipBox = (c: OpenChip, x: number, y: number, w: number, h: number): string => {
+    used.add(OPEN_KEY[c.status]);
+    if (c.waiting) used.add("waiting");
+    if (c.status === "late" && c.waiting) lateWins = true;
+    const later = c.status === "later";
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="#ffffff" stroke="${OPEN_STROKE[c.status]}" stroke-width="${later ? 1.5 : 3}"${later ? ' stroke-dasharray="6 4"' : ""}/>`;
+  };
+  const countBox = (x: number, y: number, lines: string[], w: number): string =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${2 * PAD_Y + lines.length * LINE_H}" rx="10" fill="${TILE}" stroke="${LINE}" stroke-width="1.5"/>`
+    + lines.map((l, i) => text(x + PAD_X, base(y, i), l, INK, ' font-weight="700"')).join("");
+  const widthOf = (s: string): number => Math.ceil(s.length * F * CHAR_W) + 2 * PAD_X;
+
+  const parts = [headerSvg(opts.title, today, model.counts.done, model.counts.total, W)];
+  // Step labels in the room left of the chips, level with the first line of the step's top chip.
+  for (const s of f.steps) {
+    const ys = s.chips.map(c => geo.pos.get(c.path)!.y);
+    if (ys.length) parts.push(text(MARGIN, base(y0 + Math.min(...ys), 0), s.step === 0 ? "can start" : `then +${s.step}`, MUTED));
+  }
+  parts.push(`<g transform="translate(${x0} ${y0})">${geo.curves.map(c => `<path d="${c.d}" fill="none" stroke="${LINE}" stroke-width="2.5" marker-end="url(#head)"/>`).join("")}</g>`);
+  for (const s of f.steps) {
+    for (const c of s.chips) {
+      const p = geo.pos.get(c.path)!, size = chipSize(c, f.places);
+      const x = x0 + p.x, y = y0 + p.y;
+      const out = [chipBox(c, x, y, size.width, size.height), ...size.name.map((l, i) => text(x + PAD_X, base(y, i), l, INK, ' font-weight="700"'))];
+      if (size.line) out.push(text(x + PAD_X, base(y, size.name.length), size.line, MUTED));
+      if (size.subs.length) {
+        const top = y + PAD_Y + (size.name.length + (size.line ? 1 : 0)) * LINE_H + SUB_GAP;
+        out.push(`<line x1="${x + PAD_X}" y1="${top - SUB_GAP / 2}" x2="${x + size.width - PAD_X}" y2="${top - SUB_GAP / 2}" stroke="${TILE}" stroke-width="2"/>`);
+        size.subs.forEach((l, i) => out.push(text(x + PAD_X, top + 21 + i * LINE_H, l.text, l.done || l.more ? MUTED : INK, l.done ? ' text-decoration="line-through"' : "")));
+      }
+      parts.push(out.join(""));
+    }
+    if (s.more) { const p = geo.pos.get(moreId(s.step))!; parts.push(countBox(x0 + p.x, y0 + p.y, moreLines(s.more.text, f.places), f.width)); }
+  }
+  // The count row of the folded steps: arrows end at the top of its first place; the box is as wide as its text.
+  if (f.fold) { const p = geo.pos.get(FOLD_ID)!; parts.push(countBox(x0 + p.x, y0 + p.y, [f.fold.text], Math.max(f.width, widthOf(f.fold.text)))); }
+
+  // The loose row, between the steps' room and the key.
+  if (model.loose.length) {
+    const top = H - KEY_ROOM - LOOSE_H;
+    parts.push(text(MARGIN, top + 28, `Not linked to other open work (${model.loose.length}):`, MUTED));
+    const y = top + 40;
+    let x = MARGIN;
+    f.loose.chips.forEach((c, i) => {
+      const w = f.loose.widths[i];
+      parts.push(chipBox(c, x, y, w, COUNT_H) + text(x + PAD_X, base(y, 0), cut(c.name, Math.floor((w - 2 * PAD_X) / (F * CHAR_W))), INK, ' font-weight="700"'));
+      x += w + LOOSE_GAP;
+    });
+    if (f.loose.more) parts.push(countBox(x, y, [f.loose.more.text], widthOf(f.loose.more.text)));
+  }
+  if (used.size) parts.push(keySvg(used, MARGIN, H - MARGIN - 24, lateWins ? { late: "late (wins over waiting)" } : {}));
+  const min = Math.min(F, KEY_FONT, 22);
+  return { svg: svgDoc(W, H, parts.join("")), minText: min, tooSmall: min < MIN_READABLE };
 }
