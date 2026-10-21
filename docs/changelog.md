@@ -1,6 +1,7 @@
 # Lab notebook kit: changelog
 
 ## Unreleased
+- **Alt+S method tables add the method's tag again** (plugin; F1 in `docs/plans/methods-and-syntax-reference.md`, owner MS4 a, 2026-10-21; unit tests): since Alt+S runs without Templater, inserting NMR, GPC, DLS or a method of your own did not add its Tag (NMR, GPC, TGA…) to the note's `tags`. It does again, as with Templater: the tag is added once, after the table is inserted, and tags already there stay.
 - **To-do chips: Day uses the `calendar` icon, Due the `calendar-check` icon** (plugin; owner board 6, 2026-10-21; checked in a throwaway Obsidian, light, not by you): the two icons are swapped in the New to-do window and the in-note chip bar.
 - **Small-project slide says "(today)" / "(tomorrow)"** (plugin; owner board 6, 2026-10-21; checked in a throwaway Obsidian, light, not by you): a card due today reads "due 21 Oct (today)", due tomorrow "(tomorrow)" instead of "(in 0 d)" / "(in 1 d)"; 2 to 3 days still read "(in N d)". Known: "(tomorrow)" is cut to "(tomorro…" on a card (BACKLOG question).
 - **Lab board: long status tab labels are cut with "…" in narrow panes** (plugin; owner chat 2026-10-21, answer a; checked in a throwaway Obsidian 1.14.4 at 400 px with four tabs, light and dark, not by you): with an Other column, "Processing results" no longer runs past its tab; a label too long for its tab stays on one line and ends with "…". Hovering a tab shows the full label. The to-do board's tabs are unchanged.
