@@ -146,7 +146,7 @@ export interface FoldedOpen {
   steps: FoldStep[];
   /** The count row "+N more steps: k late, w waiting"; `chips` is how many open to-dos it stands for. */
   fold: (FoldCount & { chips: number }) | null;
-  /** Between drawn chips, a step's more chip (`moreId`) and the count row (`FOLD_ID`); at most one arrow per pair. */
+  /** Between drawn chips and a step's more chip (`moreId`); none into the count row (owner, option D); at most one arrow per pair. */
   arrows: MapArrow[];
   /** The loose row: chips that fit on one line (with their widths), then the count chip. */
   loose: { chips: OpenChip[]; widths: number[]; more: FoldCount | null };
@@ -198,7 +198,7 @@ export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOp
   const arrows: MapArrow[] = [], seen = new Set<string>();
   for (const a of model.arrows) {
     const from = where.get(a.from), to = where.get(a.to);
-    if (!from || !to || from === to || seen.has(from + "→" + to)) continue;
+    if (!from || !to || from === to || to === FOLD_ID || seen.has(from + "→" + to)) continue;   // none into the count row (owner, option D)
     seen.add(from + "→" + to);
     arrows.push(from === a.from && to === a.to && a.via ? { from, to, via: a.via } : { from, to });
   }

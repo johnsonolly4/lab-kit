@@ -191,13 +191,12 @@ describe("foldOpen: what is drawn in 1920 × 1080 (M1-2; known answers in docs/p
     expect(f.fold).toBeNull();
     expect(f.arrows).toHaveLength(big.arrows.length);
   });
-  it("arrows into folded work end at the count row, one per chip", () => {
+  it("no arrow ends at the count row: arrows only between drawn chips (owner, arrows option D, 2026-10-21)", () => {
     const f = foldOpen(big);
     const drawn = new Set(f.steps.flatMap(s => s.chips.map(c => c.path)));
-    for (const a of f.arrows) { expect(drawn.has(a.from)).toBe(true); expect(drawn.has(a.to) || a.to === FOLD_ID).toBe(true); }
-    const into = f.arrows.filter(a => a.to === FOLD_ID).map(a => a.from);
-    expect(into.length).toBeGreaterThan(0);
-    expect(new Set(into).size).toBe(into.length);
+    for (const a of f.arrows) { expect(drawn.has(a.from)).toBe(true); expect(drawn.has(a.to)).toBe(true); }
+    expect(f.arrows.some(a => a.to === FOLD_ID || a.from === FOLD_ID)).toBe(false);
+    expect(f.arrows).toHaveLength(12);
   });
   it("loose row: as many chips as fit on one line, then the count chip (30 extra loose to-dos: 6 and +27)", () => {
     const many = openModel(readPlan([...BIG_TODOS, ...extra], BIG_HUB), BIG_TODAY);
@@ -262,12 +261,10 @@ describe("openGeometry: chips down, arrows through lanes (M1-3; numbers in docs/
     expect(g.pos.get(FOLD_ID)).toEqual({ x: 0, y: 194 + 76 + 166 + 76 + 4 * 36 });
     expect(g.curves).toHaveLength(f.arrows.length);
   });
-  it("an arrow into the count row ends at its top edge", () => {
+  it("the count row is placed but no arrow goes into it (option D)", () => {
     const f = foldOpen(big), g = openGeometry(f);
-    const into = g.curves.filter(c => c.to === FOLD_ID);
-    expect(into.length).toBeGreaterThan(0);
-    const top = g.pos.get(FOLD_ID)!;
-    for (const c of into) expect(c.samples.at(-1)).toEqual({ x: top.x + f.width / 2, y: top.y });
+    expect(g.pos.get(FOLD_ID)).toBeTruthy();
+    expect(g.curves.filter(c => c.to === FOLD_ID)).toEqual([]);
   });
   it("no sampled point of any arrow lies inside a chip it does not start or end at (folded, all 9 steps, without subtasks)", () => {
     for (const f of [foldOpen(big), foldOpen(big, 5000), foldOpen({ ...big, chips: big.chips.map(c => ({ ...c, subs: [] })) })]) expect(crossings(f, openGeometry(f))).toEqual([]);
@@ -285,7 +282,7 @@ describe("openGeometry: chips down, arrows through lanes (M1-3; numbers in docs/
     expect(sharedLanes(folded)).toBe(0);
     // the fixture needs no routing: every arrow joins neighbouring steps or runs past no chip
     expect([all9.curves.filter(c => c.routed).length, all9.curves.length]).toEqual([0, 23]);
-    expect([folded.curves.filter(c => c.routed).length, folded.curves.length]).toEqual([0, 16]);
+    expect([folded.curves.filter(c => c.routed).length, folded.curves.length]).toEqual([0, 12]);
     expect(all9.height).toBe(1276);   // all 9 steps: taller than the 770 px budget, which is why the fold draws 4
   });
   it("many arrows skipping steps in one column: each routed through a lane on a line of its own, crossing no chip", () => {

@@ -140,7 +140,7 @@ describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-e
   const keyTop = 1080 - 48 - 24;
   const fixture = draw(BIG_TODOS);
 
-  it("the fixture: 1920 × 1080, every text 22 px or more, 16 arrows, 18 boxes (14 chips in 4 steps, the count row, 3 loose)", () => {
+  it("the fixture: 1920 × 1080, every text 22 px or more, 12 arrows (none into the count row, option D), 18 boxes (14 chips in 4 steps, the count row, 3 loose)", () => {
     expect(fixture.svg).toContain('viewBox="0 0 1920 1080"');
     expect(fixture.minText).toBeGreaterThanOrEqual(MIN_READABLE);
     expect(fixture.tooSmall).toBe(false);
@@ -148,7 +148,7 @@ describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-e
     expect(Math.min(...sizes)).toBeGreaterThanOrEqual(MIN_READABLE);
     const f = foldOpen(open(BIG_TODOS));
     expect(count(fixture.svg, 'marker-end="url(#head)"')).toBe(openGeometry(f).curves.length);
-    expect(openGeometry(f).curves).toHaveLength(16);
+    expect(openGeometry(f).curves).toHaveLength(12);
     expect(rects(fixture.svg)).toHaveLength(14 + 1 + 3);   // 14 chips in 4 steps, the count row, 3 loose chips
     expect(fixture.svg).toContain("+5 more steps: 1 waiting");
     expect(fixture.svg).toContain("Not linked to other open work (3):");
