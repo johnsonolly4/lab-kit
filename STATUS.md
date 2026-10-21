@@ -2,6 +2,38 @@
 _Updated: 2026-10-21 (code review plan, `docs/plans/code-review.md`; Templater before release). Before: 2026-10-21 (plan map Phase 3, plan-picture block). Before: 2026-10-21 (plan map M1-5). Before: 2026-10-21 (plan map M1-4). Before: 2026-10-21 (plan map M1-3). Before: 2026-10-21 (lab board narrow tab cut). Before: 2026-10-21 (plan map M1-2). Before: 2026-10-21 (plan map M1-1). Before: 2026-10-20 (overnight parts 1-2: I23 Phases 4-6, S1-S6, N4 Phases 1-3, I19 day-after freeze, plans). Before: N1c (I23 Phase 3). Before: N1b (I23 Phase 2, question window). Before: N3d (I24 Phase 4, Check setup rows). Before: N3c (I24 Phase 3, Close / Reopen). Before: N3b (I24 Phase 2, PDF). Before: N3a (I24 re-cut + Phase 1). Before: N2i (I2 Phase 9, docs). Before: N2h (Close the week). 2026-10-20 (N2g: week arrows). 2026-10-20 (N2e2: day-header `+`). Before: 2026-10-20 (N2f2: chip-bar tick, unfoldable `N done`). Before: 2026-10-19 by Opus 5.5 (N2f: I2 Phase 6, Undo notice on ticks). Before: 2026-10-19 by Sonnet 5.5 (N2e: I2 Phase 5, date words). Before: 2026-10-19 by Opus 5.5 (N2d: I2 Phase 4). Before: 2026-10-19 by Opus 5.5 (N2c: I2 Phase 3). Earlier: 2026-10-19 (N2b: I2 Phase 2). Cap 40 lines. History lives in git and `docs/changelog.md`, not here._
 
 **Version:** 1.4.1 beta (plugin + kit; moves only at `/release`; TypeScript in `src/`)
+
+## Roadmap (2026-10-22, orchestrator; START HERE)
+**State:** `overnight/2026-10-19` clean, tests 2259, lint 0 errors / 5 warnings, nothing pushed (≈570 commits ahead of `main`). Merged 2026-10-21: Templater replacement P0-P5, P8, P9; custom live blocks C1, C2; SLOPE / INTERCEPT / RSQ / STDEV; literature clean-up (literature now belongs to refpane); kit audit + new folder layout (CI1-CI4); rig module packs; fixes (New to-do + meeting capitals, board drag ghost, no deck button on series hubs, own templates with Templater code never run). Side-session notes copied to `my_work/notes/handover-2026-10-22/`. Up to 3 side sessions at once; every brief starts with `git merge --ff-only refs/heads/overnight/2026-10-19` (worktrees are cut from `main`).
+
+**1. Ask the owner first (one board page, `/` owner-board form; record answers in BACKLOG + `docs/decisions.md`):**
+- Rig line routing Q1-Q4 (plan + measurement on branch `claude/gallant-nightingale-60375f`, 2 commits, not merged; page `my_work/mockups/rig-line-routing-feedback/page.html` in that worktree; BACKLOG "Rig line routing"): Q1 crossings (b, rec, plain), Q2 control lines (c, rec, bus, frame per rig), Q3 attached labels (a, rec, one line each), Q4 label vs line (a, rec, move the label). Merge the branch after the answers.
+- Private rig pack review (`my_work/private/rig-pack/sheet.html`, review page `my_work/private/rig-pack/review/feedback/page.html`; session "Private rig pack" may still be working): the owner's notes, and note 21 that needs a plugin change (read the session's last report).
+- Test cards not yet done (pages in `my_work/mockups/`): `test-card-p5-lab.html` (L1-L9), `test-card-rig-pack.html` (R1-R7, needs your own pack folder), `test-card-p4-meetings.html` M4 only; the board drag retry (copy under the cursor with the sidebar open); the board screenshot comment page `my_work/mockups/board-screenshot-2026-10-21/feedback-standalone/page.html`.
+- Lab board LB4: show the nicer row detail strip (picture first).
+
+**2. Build queue before the release (in order; cards of up to 3 at once):**
+1. Close-experiment PDF Phase 1, the four PDF bugs (hand-over `my_work/notes/handover-2026-10-22/close-pdf-build-handover.md` + `close-pdf-look-decisions.md`; its starter prompt is at the end of the hand-over), then Phases 2-6.
+2. Templater P6 (project hub, project note, concept, topic hub), then P12, P13 (Recipe = C8, Results stays built in).
+3. Custom live blocks C3-C8 (+ CF looks page, C10 docs); the `lk-` block rename lands before C6 (its own plan).
+4. Rig line routing phases 2-8 after Q1-Q4.
+5. Property rename to snake_case (FM9): plan + build; Lab Kit reads refpane's literature names only (paper_title, item_type, zotero_tags, collections…); ZotLit Fix / field management removed in the same release as refpane's (refpane rows 72, 76, 87).
+6. Board 7 follow-ups (BACKLOG "Owner board 7 follow-ups"): drop to-do `result`; macro-CTA from Chemical class; `project` as a list; `meeting: false` → remove; Outcome instead of Result on the lab board.
+7. Lab board before release: Summary tiles (S-A), Completed side list (C-B), "Closed in the last 30 days" (R-A).
+8. Chemical notes: components reader (CD-A), then the K-A view (full-text H phrases, standard property order). Data format for a CoSHH tool: `docs/coshh-data/`.
+9. Refpane hand-over (waits on refpane; liaison session `local_aec042c6-ee1c-49e0-a8d4-566d63cb7d30`): `refpane` blocks drawn empty while refpane is absent (option a), then swap Home / meeting / Literature / Projects overview / Project hub boxes for refpane blocks.
+10. Plan-map Phase 4 docs (the prompt further down, under "Next build").
+11. Whole-plugin code review R0-R8 (`docs/plans/code-review.md`) and its fixes; owner's release trial; smoke; `/release`.
+Later (not this release): lab plots, dashboards look refresh (match refpane), custom definitions for users (CQ12 switch), recipe by steps, RAFT agent warning, pre-mix solver.
+
+**Next prompt:**
+```
+Read CLAUDE.md, then STATUS.md (only "Roadmap (2026-10-22)"), docs/decisions.md (last 40 lines) and from BACKLOG.md only "Questions for the owner" headings (search; never read BACKLOG whole). You are the orchestrator for this session: do not build code yourself.
+1. Ask the owner the questions in Roadmap step 1 on one owner-board page (my_work/mockups/owner-board-8.html, plain words, pictures from the pages named there, suggested answers ticked, Copy my answers), sent with SendUserFile; wait for the answers; record them in BACKLOG and docs/decisions.md; merge claude/gallant-nightingale-60375f if the owner says so (check after).
+2. Then propose the next builds from Roadmap step 2 as session cards (up to 3 at once, non-overlapping files; each brief starts with git merge --ff-only refs/heads/overnight/2026-10-19), starting with the PDF Phase 1 bugs, Templater P6 and C3. Check each finished branch yourself (python3 scripts/check.py in its worktree) and merge only on the owner's "merge".
+3. Report each check as numbers or PASS/PARTIAL/FAIL. Keep STATUS.md's Roadmap current.
+```
+Model: Opus (orchestration and owner questions; builds in Sonnet sessions).
 ## Now (2026-10-20)
 All work of 19-20 Oct is on the LOCAL integration branch `overnight/2026-10-19` (backup `backup/overnight-2026-10-19`; 100+ commits ahead of `main` after N2c, tests 1362, lint 0 errors / 5 warnings), plus `feat/rig-figure` (rig Phases 1-4 + feedback fixes; backup `backup/feat-rig-figure`). NOTHING is pushed or merged to `main`: push / PR need the owner. This checkout's `chore/my-work-layout` is older: start new work from `overnight/2026-10-19`.
 - 2026-10-20: `feat/rig-figure` (rig figure Phases 1-4 + feedback fixes) is merged into this branch (plan `docs/plans/rig-block-no-mermaid.md` Phase 0; backup `backup/pre-rig-merge-2026-10-20`); not pushed.
