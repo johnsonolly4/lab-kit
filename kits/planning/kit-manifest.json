@@ -159,7 +159,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.4.1",
-      "sha256": "052b608212ba01d03c81bc539f91a8bea2aef03d9138cb473701ab875a989ce8",
+      "sha256": "65fbebe6b3b71914f264d28d9240296d850290549f447a61f7f51bd2a3bae4fc",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -335,7 +335,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "1.4.1",
-      "sha256": "504277d35b954aa27aadb42a64889fc75db9f75d56ff6932928e6870df2ca67d",
+      "sha256": "7fc24af9446f78558fda90a6da71aeeb5454813b45c4d5081cbc817f6de53761",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },
