@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { COL_W, MARGIN, ROW_H, buildFigure } from "../src/rig/figure";
 import { makeFigure } from "../src/rig/figure-make";
-import { GRID, LAYOUT_FORMAT, findLayout, readLayout, setLayoutInNote, snap, writeLayout } from "../src/rig/layout";
+import { GRID, LAYOUT_FORMAT, dropAt, findLayout, partAt, readLayout, setLayoutInNote, snap, toFigure, writeLayout } from "../src/rig/layout";
 import { readRig } from "../src/rig/parts";
 import { readSnapshotMeta, rigRecord, snapshotSvg } from "../src/rig/snapshot";
 
@@ -151,5 +151,34 @@ describe("the figure with fixed places", () => {
     expect(rec.layout).toBe(findLayout(SAVED)!.body.split("\n").map(l => l.trim()).join("\n"));
     const read = readSnapshotMeta(snapshotSvg(makeFigure(SAVED)!.svg, { rig: "Saved", date: "2026-10-21", version: "x", record: rec }));
     expect(read.status === "ok" && read.meta.record.layout).toContain("P2 :  240,280");
+  });
+});
+
+describe("dragging in the Figure… window", () => {
+  const m = makeFigure(readFileSync(DIR + "single-tubular.md", "utf8"))!;
+
+  it("finds the part under the pointer; the heater under the coil counts as the coil; empty ground is nothing", () => {
+    const r1 = m.boxes.find(b => b.id === "R1")!, h1 = m.boxes.find(b => b.host === "R1")!;
+    expect(partAt(m.boxes, r1.x, r1.y)).toBe("R1");
+    expect(partAt(m.boxes, h1.x, h1.y + h1.h / 2)).toBe("R1");
+    expect(partAt(m.boxes, 5, 5)).toBe("");
+  });
+
+  it("maps the page to figure units through the letterboxing of object-fit: contain", () => {
+    // a 880 × 249 figure in a 440 × 200 box: half size, 37.75 px empty above and below
+    const rect = { left: 100, top: 50, width: 440, height: 200 };
+    expect(toFigure(rect, 880, 249, 100, 50 + 37.75)).toEqual({ x: 0, y: 0 });
+    expect(toFigure(rect, 880, 249, 540, 50 + 37.75 + 124.5)).toEqual({ x: 880, y: 249 });
+  });
+
+  it("drops on the 20-unit grid and keeps the symbol off the top and left edges", () => {
+    expect(dropAt({ x: 340, y: 100 }, 27, -9, { w: 84, h: 44 })).toEqual({ x: 360, y: 100 });
+    expect(dropAt({ x: 340, y: 100 }, -1000, -1000, { w: 84, h: 44 })).toEqual({ x: 60, y: 40 });
+  });
+
+  it("the grid dots are drawn only when asked (while dragging), never in the figure that is saved", () => {
+    const text = readFileSync(DIR + "single-tubular.md", "utf8");
+    expect(makeFigure(text, undefined, GRID)!.svg).toContain('<pattern id="lk-grid" width="20" height="20"');
+    expect(m.svg).not.toContain("lk-grid");
   });
 });

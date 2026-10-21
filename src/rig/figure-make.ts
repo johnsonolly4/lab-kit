@@ -15,8 +15,8 @@ export interface Made {
   layout: { body: string | null; writable: boolean };
 }
 
-/** The figure of a rig note's text, or null when it has no parts to draw. `places` (the Figure… window's) wins over the note's block; an empty map = automatic. */
-export function makeFigure(text: string, places?: Places): Made | null {
+/** The figure of a rig note's text, or null when it has no parts to draw. `places` (the Figure… window's) wins over the note's block; an empty map = automatic. `grid`: dots while dragging. */
+export function makeFigure(text: string, places?: Places, grid?: number): Made | null {
   const rig = readRig(text);
   if (!rig.parts.length) return null;
   const block = findLayout(text);
@@ -25,7 +25,7 @@ export function makeFigure(text: string, places?: Places): Made | null {
   const fig = buildFigure(rig.parts, rig.links, { computer: controlLabel(text) || undefined, fixed });
   const problems = [...(read?.problems ?? [])];
   for (const n of fig.nodes) if (n.host && read?.fixed.has(n.id)) problems.push(`${n.id} sits with ${n.host}: its layout line is not used (move ${n.host}).`);
-  const { svg, missing, width, height, boxes } = figureSvg(fig);
+  const { svg, missing, width, height, boxes } = figureSvg(fig, { grid });
   const now: Places = new Map(fig.nodes.filter(n => !n.host).map(n => [n.id, { x: n.x, y: n.y }]));
   return { svg, width, height, missing, problems, places: now, boxes, layout: { body: block?.body ?? null, writable: read?.status !== "newer" } };
 }

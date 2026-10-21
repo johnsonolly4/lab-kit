@@ -7,6 +7,8 @@ export interface FigureSvgOptions {
   title?: string;
   /** Colour of the lines the computer sends to the parts, and of the lines that bring data back. */
   controlColor?: string; dataColor?: string;
+  /** Grid dots this many units apart over the white ground: only in the Figure… window while a part is dragged, never in a saved file. */
+  grid?: number;
 }
 /** A part's symbol as drawn (centre and size, figure units); `host` is the part an attached one sits with. The Figure… window drags these. */
 export interface PartBox { id: string; host: string; x: number; y: number; w: number; h: number }
@@ -160,6 +162,9 @@ function fitHeight(fig: Figure, placed: Map<string, Placed>, ovens: Map<string, 
   return Math.min(fig.height, Math.ceil(Math.max(...low) + MARGIN));
 }
 
+const gridSvg = (g: number | undefined, w: number, h: number): string => !g ? ""
+  : `<defs><pattern id="lk-grid" width="${g}" height="${g}" patternUnits="userSpaceOnUse"><circle cx="0" cy="0" r="1.6" fill="#a8a8b3"/></pattern></defs><rect width="${w}" height="${h}" fill="url(#lk-grid)"/>`;
+
 /** The SVG of a figure: black line art on white, one symbol and label per part, lines ending on the symbols' connection points. */
 export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const placed = new Map<string, Placed>(fig.nodes.map(node => [node.id, { node, sym: symbolFor(node.kind, node.detail) }]));
@@ -212,7 +217,7 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
   const isOven = (d: { p: Placed }): boolean => d.p.sym.name === "oven" && ovens.has(d.p.node.host);
   const title = opts.title ? `<text x="20" y="28" font-size="20" font-weight="700">${esc(opts.title)}</text>` : "";
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${fig.width} ${height}" width="${fig.width}" height="${height}" font-family="${FONT}" fill="${INK}">`
-    + `<rect width="${fig.width}" height="${height}" fill="#ffffff"/>${title}`
+    + `<rect width="${fig.width}" height="${height}" fill="#ffffff"/>${gridSvg(opts.grid, fig.width, height)}${title}`
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
     + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
     + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id), returnFrom.has(p.node.id))).join("")}</g></svg>`;

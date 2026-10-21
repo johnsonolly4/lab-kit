@@ -1,6 +1,8 @@
 // The ```rig-layout block of a rig note: where parts were placed by hand, as plain lines ("format: 1", then "ID: x, y" in figure units). Pure (no Obsidian runtime).
 // Lines Lab Kit did not write are kept: a note line, a line it cannot read, a line naming a part that is gone (listed as a problem, never dropped).
 // Plan: docs/plans/rig-block-no-mermaid.md, Phase 6. Format version 1; a reader for every older version stays (tests/fixtures/rigs/saved/).
+import type { PartBox } from "./figure-svg";
+
 export const LAYOUT_FORMAT = 1;
 /** The snap grid in figure units (owner, 2026-10-21: 20). Columns are 200 apart, rows 120. */
 export const GRID = 20;
@@ -99,4 +101,23 @@ export function setLayoutInNote(text: string, body: string): string {
   const close = open < 0 ? -1 : lines.findIndex((l, i) => i > open && FENCE_CLOSE.test(bare(l)));
   if (close >= 0) return [...lines.slice(0, close + 1), eol, ...block, ...lines.slice(close + 1)].join("\n");
   return text.replace(/\s*$/, "") + `${eol}\n${eol}\n` + block.join("\n") + `${eol}\n`;
+}
+
+/** The part under a point (figure units), "" for none. A part attached to a host counts as its host: it moves with it. */
+export function partAt(boxes: PartBox[], x: number, y: number, pad = 6): string {
+  const hit = boxes.find(b => Math.abs(x - b.x) <= b.w / 2 + pad && Math.abs(y - b.y) <= b.h / 2 + pad && !b.host)
+    ?? boxes.find(b => Math.abs(x - b.x) <= b.w / 2 + pad && Math.abs(y - b.y) <= b.h / 2 + pad);
+  return hit ? (hit.host || hit.id) : "";
+}
+
+/** A point on the page in figure units, for an <img> of a `w` × `h` figure shown with object-fit: contain inside `rect`. */
+export function toFigure(rect: { left: number; top: number; width: number; height: number }, w: number, h: number, cx: number, cy: number): Pos {
+  const k = Math.min(rect.width / w, rect.height / h) || 1;
+  return { x: (cx - rect.left - (rect.width - w * k) / 2) / k, y: (cy - rect.top - (rect.height - h * k) / 2) / k };
+}
+
+/** Where a dragged part lands: its start moved by the drag, on the grid, its symbol kept off the top and left edges. */
+export function dropAt(start: Pos, dx: number, dy: number, size: { w: number; h: number }): Pos {
+  const keep = (v: number, half: number): number => Math.max(snap(v), Math.ceil((half + 10) / GRID) * GRID);
+  return { x: keep(start.x + dx, size.w / 2), y: keep(start.y + dy, size.h / 2) };
 }
