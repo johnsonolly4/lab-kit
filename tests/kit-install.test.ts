@@ -11,12 +11,15 @@ import { readRig } from "../src/rig/parts";
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
 const real = embeddedKit() as EmbeddedKit;
+// The planning kit ships the one Templater user script (vtAsk.js); the lab kit has none since 2026-10-21
+const planningKit = embeddedKit(new URL("../kits/planning", import.meta.url).pathname) as EmbeddedKit;
 const bare: EmbeddedKit = { manifest: { schema: 1, kitVersion: "1.0.0", files: [], removed: [] }, contents: {} };
 
 describe("first install options", () => {
-  it("the real kit carries its CSS snippet and Templater settings into main.js", () => {
+  it("the real kits carry their CSS snippet and Templater settings into main.js", () => {
     expect(real.manifest.enableCss).toContain("scrolling-mermaid.css");
-    expect(real.manifest.templater?.userScripts).toBe(true);
+    expect(real.manifest.templater?.userScripts).toBeUndefined();   // no lab Templater script to place
+    expect(planningKit.manifest.templater?.userScripts).toBe(true);
   });
 
   it("offers the CSS snippet from the kit", () => {
@@ -26,9 +29,10 @@ describe("first install options", () => {
   });
 
   it("offers Templater's folder only when Templater is installed and has none: the folder above lab-kit", () => {
-    expect(firstInstallOptions(real, { installed: true }, "Scripts/lab-kit").templaterFolder).toBe("Scripts");
-    expect(firstInstallOptions(real, { installed: true, folder: "  " }, "Scripts/lab-kit").templaterFolder).toBe("Scripts");
-    expect(firstInstallOptions(real, { installed: true }, "Mine/js").templaterFolder).toBe("Mine/js");
+    expect(firstInstallOptions(planningKit, { installed: true }, "Scripts/vault").templaterFolder).toBe("Scripts");
+    expect(firstInstallOptions(planningKit, { installed: true, folder: "  " }, "Scripts/lab-kit").templaterFolder).toBe("Scripts");
+    expect(firstInstallOptions(planningKit, { installed: true }, "Mine/js").templaterFolder).toBe("Mine/js");
+    expect(firstInstallOptions(real, { installed: true }, "Scripts/lab-kit").templaterFolder).toBeNull();
   });
 
   it("never replaces a folder Templater already has", () => {
@@ -89,7 +93,7 @@ describe("Templater's user scripts folder (issue #34)", () => {
     const kitFolder = trackedRoles(kit, state).userScripts;
     expect(kitFolder).toBe("Extras/scripts/templater/lab-kit");
     expect(v.files["Extras/scripts/templater/lab-kit/labForm.js"]).toBe("form\n");
-    expect(firstInstallOptions(real, { installed: true }, kitFolder).templaterFolder).toBe("Extras/scripts/templater");
+    expect(firstInstallOptions(planningKit, { installed: true }, kitFolder).templaterFolder).toBe("Extras/scripts/templater");
     expect(templaterScriptsAction("", kitFolder)).toEqual({ kind: "set", folder: "Extras/scripts/templater" });
     expect(templaterScriptsAction("Extras/scripts/templater", kitFolder)).toEqual({ kind: "ok" });
   });

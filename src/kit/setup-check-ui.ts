@@ -29,8 +29,6 @@ export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitMan
 /** Reads the vault, Templater and Obsidian into the plain state checkSetup works on. */
 export function readSetupState(app: App, host: SetupHost): SetupState {
   const lab = host.managed, planning = host.planning, planningOn = !!planning?.slot.enabled;
-  const menu = kitJoin(lab.templatesFolder(), "Insert snippet.md");
-  const menuFile = app.vault.getFileByPath(menu) ? menu : null;
   const css = [...(lab.bundle.manifest.enableCss ?? []), ...(planningOn ? planning?.bundle.manifest.enableCss ?? [] : [])]
     .map(name => ({ name: name.replace(/\.css$/, ""), enabled: isCssSnippetEnabled(app, name) }));
   const pf = host.kit.planningFolders, folderTemplates = planningFolderTemplates(pf);
@@ -76,7 +74,6 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
       folderTemplates: templaterFolderTemplates(app),
       matchingMode: templaterMatchingMode(app), startupTemplates: templaterStartupTemplates(app),
     },
-    menu: menuFile,
     installed: { lab: !!lab.installedVersion, planning: !!planning?.installedVersion },
     css,
     folders: [...new Set(folders)].map(path => ({ path, exists: !!app.vault.getFolderByPath(path), setting: settingFolders.includes(path) })),

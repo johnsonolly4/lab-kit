@@ -12,7 +12,6 @@ const state = (o: Partial<SetupState> = {}): SetupState => ({
   plugins: new Set(["templater-obsidian", "dataview", "table-editor-obsidian"]),
   planning: false,
   templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
-  menu: MENU,
   installed: { lab: true, planning: false },
   css: [{ name: "scrolling-mermaid", enabled: true }],
   folders: [{ path: "03 Lab Book/Notes", exists: true }],
@@ -39,7 +38,7 @@ describe("check setup (Phase 6)", () => {
 
   it("a fresh vault: missing plugin, kit not installed, empty Templater folders, snippet off, folder missing", () => {
     const r = byId(state({
-      plugins: new Set(["templater-obsidian"]), installed: { lab: false, planning: false }, menu: null,
+      plugins: new Set(["templater-obsidian"]), installed: { lab: false, planning: false },
       templater: { templatesFolder: "", userScriptsFolder: "", folderTemplates: [] },
       css: [{ name: "scrolling-mermaid", enabled: false }], folders: [{ path: "03 Lab Book/Notes", exists: false }],
     }));

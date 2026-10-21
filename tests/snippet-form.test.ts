@@ -6,7 +6,7 @@ import { formFooter, followUps, currentItem, matchNames, missingRequired, replac
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 
-const old = createRequire(import.meta.url)("../kits/lab/Extras/scripts/templater/labForm.js");
+const old = createRequire(import.meta.url)("./fixtures/old-scripts/labForm.js");
 
 describe("plugin form helpers = labForm.js", () => {
   const entries = [

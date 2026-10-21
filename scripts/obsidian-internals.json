@@ -259,15 +259,6 @@
    "note": "Group heading row (kit theme)"
   },
   {
-   "name": "commands",
-   "kind": "member",
-   "files": [
-    "kits/lab/Templates/Insert snippet.md"
-   ],
-   "risk": "medium",
-   "note": "app.commands: execute / list commands by id; the Alt+S template also reads it (audit medium: Insert snippet.md)"
-  },
-  {
    "name": "metadataTypeManager",
    "kind": "member",
    "files": [

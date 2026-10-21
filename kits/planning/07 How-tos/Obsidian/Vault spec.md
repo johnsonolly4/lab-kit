@@ -36,7 +36,7 @@ show: back-to-hub
 | `06 Knowledge/` | Concepts and theory, by topic subfolder. Index: [[Knowledge index]]. |
 | `07 How-tos/` | Procedures and software tips, by topic subfolder. Index: [[How-tos index]]. |
 | `08 Meetings/` | The [[Meetings]] hub, then one folder per meeting series with its hub note and meeting notes (one-off meetings in `One-off`). |
-| `Extras/` | Templates, scripts, attachments. The kit's own files here are managed by Lab Kit (Settings > Lab Kit > Manage files). |
+| `Extras/` | Templates and scripts. The kit's own files here are managed by Lab Kit (Settings > Lab Kit > Manage files). |
 | `99 Archive/` | Anything finished or retired. Never deleted outright. |
 
 These are the default names. Each folder is a setting (Settings > Lab Kit > Planning > Planning folders, and Lab notebook for the Lab notes, Chemical and Rigs folders); rename a folder inside Obsidian and its setting follows.

@@ -371,8 +371,7 @@ export class KitManaged {
     if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
     try {
       const roles = this.roles();
-      const menu = kitJoin(roles.templates, "Insert snippet.md");
-      if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
+      if (!this.installedVersion) { new Notice("The kit isn't installed yet. Install it first."); return; }
       const done: string[] = [];
       const settings: SettingChange[] = [];
       const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake

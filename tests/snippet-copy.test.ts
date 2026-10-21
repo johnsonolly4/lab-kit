@@ -8,8 +8,8 @@ import { parseTemplate } from "../src/kit/snippet-template";
 import { miniYaml, shippedTemplate } from "./token-snippets";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../src/kit/bundled/labSnippets.js");
+const labMethods = require("../src/kit/bundled/labMethods.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 const TODAY = new Date(2026, 9, 9);

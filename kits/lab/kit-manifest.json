@@ -158,17 +158,6 @@
       "needs": "chemicalFolder"
     },
     {
-      "id": "tpl-insert-snippet-md",
-      "kind": "template",
-      "src": "Templates/Insert snippet.md",
-      "role": "templates",
-      "path": "Insert snippet.md",
-      "version": "1.4.1",
-      "sha256": "ca9949febc06e460a513338bff89543e1835d138213e62d3e71ba1aa27b27eff",
-      "renamedFrom": [],
-      "desc": "The Alt+S menu: lists the snippets and inserts the one you pick"
-    },
-    {
       "id": "tpl-lab-book-template-md",
       "kind": "template",
       "src": "Templates/Lab Book Template.md",
@@ -324,55 +313,8 @@
       "desc": "Link the flow rig, draw its diagram, and copy its setup to the bottom of the note",
       "optional": true,
       "needs": "rigsFolder"
-    },
-    {
-      "id": "script-labform-js",
-      "kind": "script",
-      "src": "Extras/scripts/templater/labForm.js",
-      "role": "userScripts",
-      "path": "labForm.js",
-      "version": "1.4.1",
-      "sha256": "0baca2e52b7f6b6b27598cf8269462305df89babe2a623714147745e4e9e53ae",
-      "renamedFrom": [],
-      "desc": "The pop-up form every snippet uses"
-    },
-    {
-      "id": "script-labmethods-js",
-      "kind": "script",
-      "src": "Extras/scripts/templater/labMethods.js",
-      "role": "userScripts",
-      "path": "labMethods.js",
-      "version": "1.4.1",
-      "sha256": "d28dd1c6a4c8818e8b563a02801f1e34f33f91f2aef5b357bf4b28af9a4f6e5b",
-      "renamedFrom": [],
-      "desc": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)"
-    },
-    {
-      "id": "script-labpick-js",
-      "kind": "script",
-      "src": "Extras/scripts/templater/labPick.js",
-      "role": "userScripts",
-      "path": "labPick.js",
-      "version": "1.4.1",
-      "sha256": "fbcf73d73ecd3373d84117a707450e2bd5d4c0f180c9ca2de00d222d385ba4a3",
-      "renamedFrom": [],
-      "desc": "The searchable snippet menu with icons"
-    },
-    {
-      "id": "script-labsnippets-js",
-      "kind": "script",
-      "src": "Extras/scripts/templater/labSnippets.js",
-      "role": "userScripts",
-      "path": "labSnippets.js",
-      "version": "1.4.1",
-      "sha256": "4da5db49a93c831500607bf16fb4eafcca369e4382e43f1565d485945c2df97a",
-      "renamedFrom": [],
-      "desc": "The code behind every snippet"
     }
   ],
-  "templater": {
-    "userScripts": true
-  },
   "enableCss": [
     "scrolling-mermaid.css"
   ],
@@ -386,6 +328,11 @@
     "tpl-snippets-14-analysis-table-md",
     "tpl-snippets-07-nmr-samples-md",
     "tpl-snippets-08-gpc-samples-md",
-    "tpl-snippets-09-dls-samples-md"
+    "tpl-snippets-09-dls-samples-md",
+    "script-labform-js",
+    "script-labpick-js",
+    "script-labsnippets-js",
+    "script-labmethods-js",
+    "tpl-insert-snippet-md"
   ]
 }

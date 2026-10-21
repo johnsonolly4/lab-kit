@@ -5,8 +5,8 @@ import { createRequire } from "node:module";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../src/kit/bundled/labSnippets.js");
+const labMethods = require("../src/kit/bundled/labMethods.js");
 import { isTokenSnippet, runToken } from "./token-snippets";
 
 const table = (name: string, codes: string[]) =>

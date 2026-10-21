@@ -9,8 +9,8 @@ import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 import type { FormField } from "../src/kit/snippet-form";
 
 const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
+const labSnippets = require("../src/kit/bundled/labSnippets.js");
+const labMethods = require("../src/kit/bundled/labMethods.js");
 
 const FOLDER = "Templates/Snippets";
 const snip = (name: string, text: string) => ({ file: new TFile({ path: `${FOLDER}/${name}.md`, basename: name }), text });

@@ -219,9 +219,11 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
   const scriptsFound = find("excel_to_calc.py");
   const scripts = tracked.scripts ?? remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : LAB_LAYOUT.scripts);
-  const menu = find("Insert snippet.md");
+  // Anchors in a vault the kit has no record for: Insert snippet.md and labForm.js (no longer shipped, 2026-10-21) are still found in older vaults
+  const menu = find("Insert snippet.md") ?? find("Lab Book Template.md");
   const userFolder = kitJoin(tpl.user_scripts_folder.trim().replace(/\\/g, "/"));
-  const formScript = find("labForm.js", f => !userFolder || f.path.startsWith(userFolder + "/"));
+  const inUserFolder = (f: (typeof files)[number]): boolean => !userFolder || f.path.startsWith(userFolder + "/");
+  const formScript = find("labSnippets.js", inUserFolder) ?? find("labForm.js", inUserFolder);
   return {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
@@ -273,7 +275,6 @@ export function planningFolders(roles: Roles, zotlit: boolean): KitFolder[] {
     { path: roles.knowledge, desc: "Concept notes, one folder per topic." },
     { path: roles.howtos, desc: "How-to notes, one folder per topic." },
     { path: roles.meetings, desc: "Meeting series and their notes." },
-    { path: "Extras/attachments", desc: "Pasted images and files." },
   ];
   return list.filter(f => f.path);
 }

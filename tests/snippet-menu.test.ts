@@ -82,7 +82,7 @@ describe("snippet menu", () => {
 });
 
 describe("built-in methods in the menu (labMethods.js menuEntries)", () => {
-  const labMethods = createRequire(import.meta.url)("../kits/lab/Extras/scripts/templater/labMethods.js");
+  const labMethods = createRequire(import.meta.url)("../src/kit/bundled/labMethods.js");
   const app = { vault: { adapter: { read: async () => { throw new Error("no settings"); } }, getFolderByPath: () => null } };
 
   it("without the flag the built-ins are left out; with it NMR, GPC and DLS come first, with the old stubs' icon and description", async () => {

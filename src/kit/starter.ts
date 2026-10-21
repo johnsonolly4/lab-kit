@@ -19,13 +19,6 @@ const json = (v: unknown): string => JSON.stringify(v, null, 2) + "\n";
 /** Plugin ids the starter installs and turns on: Lab Kit itself, then every plugin the setup check needs (optional ones are left to the user). */
 export const starterPlugins = (): string[] => [PLUGIN_ID, ...SETUP_PLUGINS.filter(p => !p.optional).map(p => p.id)];
 
-/** The Insert snippet template's vault path (the lab kit's default layout). */
-export function starterMenu(lab: EmbeddedKit): string {
-  const f = lab.manifest.files.find(x => x.dest.endsWith("Insert snippet.md"));
-  if (!f) throw new Error("lab kit has no Insert snippet.md");
-  return kitJoin(LAB_LAYOUT.templates, LAB_LAYOUT.templatesSub, f.dest);
-}
-
 /** `CONFIG`: the new vault's configuration folder (Obsidian's default is `.obsidian`). */
 export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
   const lab = kits.find(k => k.manifest.id === "lab"), planning = kits.find(k => k.manifest.id === "planning");

@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { applyManaged, offIds, planManaged, trackedRoles, type EmbeddedKit, type ManagedAdapter } from "../src/kit/managed";
 import { KIT_DEFAULTS, LAB_LAYOUT, PLANNING_FOLDER_DEFAULTS, kitDetectRoles, kitFolderRoles, kitJoin, planningRoles, todoFolder } from "../src/kit/paths";
 import { SETUP_PLUGINS, checkSetup, labFolderTemplates, planningFolderTemplates, type SetupState } from "../src/kit/setup-check";
-import { buildStarter, starterMenu, starterPlugins } from "../src/kit/starter";
+import { buildStarter, starterPlugins } from "../src/kit/starter";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKits } from "../scripts/embed-kit.mjs";
 
@@ -46,8 +46,6 @@ describe("new-vault starter (Phase 8)", () => {
     const planItems = await planManaged(v, planning, null, planRoles, null, null, offIds(planning, {}, {}));
     await applyManaged(v, planning, planItems, null, opts);
 
-    const menu = starterMenu(lab);
-    expect(v.files[menu], "Insert snippet.md installed where the starter points").toBeDefined();
     expect(Object.keys(labOut.state.files).length).toBeGreaterThan(0);
     for (const f of labFolderTemplates(KIT_DEFAULTS.labFolder)) expect(v.files[kitJoin(tpl.templates_folder, LAB_LAYOUT.templatesSub, f.file)], f.file).toBeDefined();
     for (const f of planningFolderTemplates(PLANNING_FOLDER_DEFAULTS)) expect(v.files[kitJoin(tpl.templates_folder, f.file)], f.file).toBeDefined();
@@ -68,7 +66,6 @@ describe("new-vault starter (Phase 8)", () => {
         const name = f.dest.split("/").pop()!.replace(/\.js$/, "");
         return { name, kit: k.manifest.id as "lab" | "planning", exists: Object.keys(v.files).some(p => p.endsWith(`/${name}.js`)) };
       })),
-      menu: v.files[menu] !== undefined ? menu : null,
       installed: { lab: true, planning: true },
       css: css.map(name => ({ name, enabled: (read(".obsidian/appearance.json").enabledCssSnippets as string[]).includes(name) })),
       folders: [KIT_DEFAULTS.labFolder, KIT_DEFAULTS.chemicalFolder, ...Object.entries(PLANNING_FOLDER_DEFAULTS).filter(([r]) => r !== "archive").map(([, f]) => f),
@@ -79,7 +76,7 @@ describe("new-vault starter (Phase 8)", () => {
       ],
     };
     const items = checkSetup(state);
-    expect(items.filter(i => i.id.startsWith("script:")).length).toBe(5);
+    expect(items.filter(i => i.id.startsWith("script:")).length).toBe(1);   // vtAsk.js; the lab kit ships no Templater script (2026-10-21)
     expect(items.length).toBeGreaterThan(25);
     const red = items.filter(i => !i.ok && !i.optional && !i.warn);
     expect(red.map(i => `${i.id}: ${i.detail}`)).toEqual([]);

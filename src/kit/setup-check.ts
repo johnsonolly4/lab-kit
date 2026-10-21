@@ -86,8 +86,6 @@ export interface SetupState {
   scripts?: { name: string; kit: "lab" | "planning"; exists: boolean }[];
   /** The homepage note's `obsidianUIMode` (Force note view mode reads it); null when the note isn't there. */
   homepageMode?: string | null;
-  /** Path of the installed Insert snippet template; null when the lab kit isn't installed. */
-  menu: string | null;
   /** Kit installed (has tracked files), per kit. */
   installed: { lab: boolean; planning: boolean };
   /** The kits' CSS snippets; `enabled` undefined when Obsidian can't tell. */
@@ -287,8 +285,8 @@ export function checkSetup(s: SetupState): SetupItem[] {
       ["user-scripts", "Templater user scripts folder", !!t.userScriptsFolder.trim()],
     ];
     for (const [id, label, ok] of items) {
-      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
-        fix: ok || !s.menu ? undefined : { kind: "templater" } });
+      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.installed.lab ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
+        fix: ok || !s.installed.lab ? undefined : { kind: "templater" } });
     }
     for (const sc of s.scripts ?? []) {
       if (!kitOn(sc.kit)) continue;

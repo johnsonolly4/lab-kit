@@ -116,7 +116,7 @@ describe("real kit manifest", () => {
     const plan = await planManaged(v, real, null, roles, null, null, off);
     expect(plan.filter(p => p.action === "off")).toHaveLength(16);
     await applyManaged(v, real, plan, null, opts);
-    expect(v.files["Templates/Insert snippet.md"]).toBeDefined();
+    expect(v.files["Templates/Lab Book Template.md"]).toBeDefined();
     expect(Object.keys(v.files).some(f => f.startsWith("Templates/Snippets/"))).toBe(false);
   });
 });
