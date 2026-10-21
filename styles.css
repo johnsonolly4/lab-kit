@@ -297,6 +297,12 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
    smallest width (--lk-rig-min, set per figure so labels stay about 9 px), then slides sideways (owner Q3) */
 .lab-kit-rig-diagram { overflow-x: auto; background: #fff; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); }
 .lab-kit-rig-img { display: block; width: 100%; min-width: var(--lk-rig-min, 0); height: auto; }
+/* Export to PDF: the whole figure shrinks to the page width (no smallest width, no slide) and the Figure… / Save snapshot… buttons are left out (owner, rig check Q2 a) */
+@media print {
+  .lab-kit-rig-diagram { overflow: visible; }
+  .lab-kit-rig-img { min-width: 0; }
+  .lab-kit-rig-figure { display: none; }
+}
 
 /* Picture for a slide window (src/planning/plan-slide-ui.ts): the preview is always on white, like the picture */
 .lab-kit-figure-preview { display: block; width: 100%; max-height: 40vh; object-fit: contain; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: #fff; margin: 8px 0; }
