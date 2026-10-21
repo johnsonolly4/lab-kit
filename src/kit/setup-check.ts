@@ -2,7 +2,7 @@
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
 import type { ZotlitScan } from "./zotlit";
-import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
+import { RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
 import type { ClosedScan } from "../close/scan";
@@ -21,6 +21,10 @@ export const labFolderTemplates = (labFolder: string, chemicalFolder = ""): { fo
   ...(labFolder.trim() ? [{ folder: labFolder.trim(), file: "Lab Book Template.md" }] : []),
   ...(chemicalFolder.trim() ? [{ folder: chemicalFolder.trim(), file: "Chemical database template.md" }] : []),
 ];
+
+/** Lab Kit's folder → template rows (`kit.folderTemplates`): the saved list, else today's rows (the planning rows only while the planning kit is on). */
+export const folderTemplateRows = (kit: Pick<KitData, "folderTemplates" | "labFolder" | "chemicalFolder" | "planningFolders">, planningOn: boolean): { folder: string; file: string }[] =>
+  kit.folderTemplates ?? [...(planningOn ? planningFolderTemplates(kit.planningFolders) : []), ...labFolderTemplates(kit.labFolder, kit.chemicalFolder)];
 
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [
@@ -107,9 +111,15 @@ export interface SetupState {
   dataviewInline?: boolean | null;
   /** The type Obsidian has assigned to each property of `PROPERTY_TYPES` (null = none assigned); null when it can't be read; undefined = no rows. */
   propertyTypes?: Record<string, string | null> | null;
+  /** Lab Kit's own folder templates (Settings → Folder templates) and the notes whose front matter mixes a template header with their own keys; undefined until scanned (no rows). */
+  fill?: FillScan;
   /** Lab notes closed with Close experiment (see `scanClosed`); `canPdf`: this device can make a PDF. undefined until scanned (no rows). */
   closed?: ClosedScan & { canPdf: boolean };
 }
+
+/** One Lab Kit folder-template row as the Check setup rows see it. `kind`: what the template file is (a token template Lab Kit fills, a Templater template Templater still runs, or not there). */
+export interface FillScanRow { folder: string; file: string; folderExists: boolean; kind: "token" | "templater" | "missing"; templaterRow: boolean }
+export interface FillScan { rows: FillScanRow[]; mixed: string[] }
 
 export type SetupFix =
   | { kind: "plugin"; id: string }
@@ -119,6 +129,7 @@ export type SetupFix =
   | { kind: "folder"; path: string }
   | { kind: "find-moved" }
   | { kind: "folder-template"; folder: string; template: string }
+  | { kind: "fill-move"; folders: string[] }
   | { kind: "settings" }
   | { kind: "methods-folder"; path: string }
   | { kind: "rigs-folder"; path: string }
@@ -397,6 +408,8 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: c.enabled === false ? { kind: "css", names: [c.name] } : undefined });
   }
 
+  if (s.fill) out.push(...fillRows(s.fill));
+
   // A settings folder that is missing after the install was most likely moved outside Obsidian: look for it rather than make it again
   const installed = s.installed.lab || s.installed.planning;
   for (const f of s.folders) {
@@ -406,6 +419,26 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: f.exists ? undefined : moved ? { kind: "find-moved" } : { kind: "folder", path: f.path } });
   }
 
+  return out;
+}
+
+/**
+ * Rows for Lab Kit's own folder templates. One row confirms the folders (each: folder there, template there, who fills it); a Fix removes
+ * Templater's row for the folders whose template Lab Kit now fills itself. A second row lists mixed notes, which are never guessed.
+ */
+export function fillRows(f: FillScan): SetupItem[] {
+  const out: SetupItem[] = [];
+  if (f.rows.length) {
+    const line = (r: FillScanRow): string => `${r.folder || "(no folder)"} → ${r.file || "(no file)"}: ${!r.file ? "no template file named" : r.kind === "missing" ? "template file not found" : r.kind === "token" ? (r.templaterRow ? "filled by Lab Kit; Templater has a row too" : "filled by Lab Kit") : (r.templaterRow ? "Templater fills it" : "Templater template, no Templater row for this folder")}${r.folderExists ? "" : "; folder not found"}`;
+    const bad = f.rows.filter(r => !r.folderExists || r.kind === "missing" || (r.kind === "templater" && !r.templaterRow));
+    const move = f.rows.filter(r => r.kind === "token" && r.templaterRow).map(r => r.folder);
+    out.push({ id: "fill:rows", group: "Folder templates", label: "Folder templates run by Lab Kit", ok: !bad.length && !move.length, warn: true,
+      detail: `${f.rows.map(line).join(". ")}.${move.length ? " Fix removes Templater's row for the folders Lab Kit fills itself (a copy of Templater's list is saved first)." : ""}`,
+      fix: move.length ? { kind: "fill-move", folders: move } : undefined });
+  }
+  if (f.mixed.length) out.push({ id: "fill:mixed", group: "Folder templates", label: "Notes with a template header mixed into their properties", ok: false, warn: true,
+    detail: `${f.mixed.length} ${f.mixed.length === 1 ? "note" : "notes"} (${f.mixed.slice(0, 5).join(", ")}${f.mixed.length > 5 ? ", …" : ""}). Lab Kit does not fill or change them: tidy the properties by hand.`,
+    fix: { kind: "open-note", path: f.mixed[0] } });
   return out;
 }
 

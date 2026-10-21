@@ -1,11 +1,14 @@
 // Check setup window (Phase 6): reads the vault and Obsidian into a SetupState, lists checkSetup's items, and runs each Fix after a confirmation.
-import { Modal, Notice, Platform, type App, type EventRef } from "obsidian";
-import { kitJoin, type KitData, type PlanningRole } from "./paths";
+import { Modal, Notice, Platform, parseYaml, type App, type EventRef } from "obsidian";
+import { kitEnsureDir, kitJoin, kitParent, type KitData, type PlanningRole } from "./paths";
+import { kitBackupPath } from "./managed";
+import { mixedNotes, rowTemplateText } from "./note-fill-ui";
+import { parseTemplate } from "./snippet-template";
 import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, alwaysUpdateLinks, setAlwaysUpdateLinks, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
-  templaterMatchingMode, templaterStartupTemplates, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData,
+  templaterMatchingMode, templaterStartupTemplates, removeTemplaterFolderTemplates, settingSnapshot, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData,
   corePluginsOn, dailyNotesOptions, dataviewInlineQueries, propertyTypes, setPropertyType } from "./obsidian-private";
 import { zotlitApply, zotlitScan, type ZotlitScan } from "./zotlit";
 import { deckPath } from "../planning/actions";
@@ -18,7 +21,7 @@ import { closeHostFor, scanLabNotes } from "../close/ui";
 import { closeExperiment, makeClosedPdf } from "../close/commands";
 import type { ClosedScan } from "../close/scan";
 import { cardWindow, winFoot, winIntro, winRow, winSummary } from "./window-look";
-import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
+import { CORE_PLUGINS, PROPERTY_TYPES, checkSetup, differingButtons, orderSetupItems, setupRowState, setupSummary, labFolderTemplates, planningFolderTemplates, folderTemplateRows, type FillScan, type SetupFix, type SetupItem, type SetupState } from "./setup-check";
 
 /** What the check-setup window needs from the plugin. */
 export interface SetupHost { kit: KitData; managed: KitManaged; planning: KitManaged | null; header: HeaderSettings; pluginId: string; save(): Promise<void>; findMoved(): ClosingModal | void; /** Review update… and Manage files…: one window for both kits when the planning kit is on. */ review(): ClosingModal; manage(): ClosingModal }
@@ -94,6 +97,7 @@ export class SetupCheckModal extends Modal {
   private types: SetupState["propertyTypes"];
   private zotlit: ZotlitScan | null = null;
   private closed: ClosedScan | undefined;
+  private fill: FillScan | undefined;
   /** Notes Close / Make PDF is writing: Obsidian updates its copy of their properties a moment after the write, so the list redraws when it has. */
   private writing = new Set<string>();
   private changed: EventRef | null = null;
@@ -106,7 +110,7 @@ export class SetupCheckModal extends Modal {
 
   /** Reads again what needs files read (kept files, kit files, ZotLit's settings), then redraws. */
   private async refresh(): Promise<void> {
-    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(), this.loadClosed(),
+    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(), this.loadClosed(), this.loadFill(),
       (async () => { this.types = this.host.planning?.slot.enabled ? await propertyTypes(this.app, PROPERTY_TYPES.map(p => p.name)) : undefined; })()]);
     if (this.contentEl.isConnected) this.render();
   }
@@ -131,6 +135,23 @@ export class SetupCheckModal extends Modal {
   /** The lab notes closed with Close experiment, sorted into the cases the rows report (reads each closed note to compare its hash). */
   private async loadClosed(): Promise<void> {
     try { this.closed = await scanLabNotes(this.app, this.host.kit); } catch (e) { console.error(e); }
+  }
+
+  /** Lab Kit's folder templates: each row's folder, template file and Templater row, and the mixed notes. */
+  private async loadFill(): Promise<void> {
+    try {
+      const planningOn = !!this.host.planning?.slot.enabled, kit = this.host.kit;
+      const folders = [...(planningOn && this.host.planning ? [this.host.planning.templatesFolder()] : []), this.host.managed.templatesFolder()];
+      const tpl = templaterFolderTemplates(this.app).map(e => e.folder);
+      const rows = await Promise.all(folderTemplateRows(kit, planningOn).map(async r => {
+        const text = r.file.trim() ? await rowTemplateText(this.app, folders, r.file) : null;
+        let token = false;
+        try { token = !!text && parseTemplate(text, parseYaml)?.header.make === "note"; } catch { token = false; }
+        const t = tpl.some(f => f === r.folder || r.folder.startsWith(f + "/"));
+        return { folder: r.folder, file: r.file, folderExists: !!r.folder && !!this.app.vault.getFolderByPath(r.folder), kind: text === null ? "missing" as const : token ? "token" as const : "templater" as const, templaterRow: t };
+      }));
+      this.fill = { rows, mixed: await mixedNotes(this.app, { kit: () => kit, planningOn: () => planningOn }) };
+    } catch (e) { console.error(e); }
   }
 
   /** The folders the kit's Set up ZotLit checklist names, from the planning folders setting and the templates folder. */
@@ -161,7 +182,7 @@ export class SetupCheckModal extends Modal {
     el.addClass("lab-kit-win");
     cardWindow(this);
     this.setTitle("Check setup");
-    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit, closed: this.closed && { ...this.closed, canPdf: hasNode() } });
+    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit, closed: this.closed && { ...this.closed, canPdf: hasNode() }, fill: this.fill });
     winIntro(el, "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one.");
     winSummary(el, setupSummary(items));
     for (const it of orderSetupItems(items)) {
@@ -227,6 +248,14 @@ export class SetupCheckModal extends Modal {
         apply: async () => { this.writing = new Set(fix.paths); for (const path of fix.paths) { const file = this.app.vault.getFileByPath(path); if (file) await makeClosedPdf(closeHostFor(this.app, this.host.kit, this.host.header, file)); } } });
         await this.refresh(); return;
       case "folder": await confirm({ name: "Create the folder", desc: fix.path, apply: () => ensureFolder(this.app.vault, fix.path) }); break;
+      case "fill-move": await confirm({ name: "Take Templater's folder templates for these folders", desc: `${fix.folders.join(", ")}. Lab Kit fills new notes there itself, so Templater's row is removed. A copy of Templater's folder-template list is saved in the backup folder first.`,
+        apply: async () => {
+          const to = kitBackupPath({ backups: lab.roles().backups, stamp: new Date().toISOString() }, "settings/templater-folder.json");
+          await kitEnsureDir(this.app.vault.adapter, kitParent(to));
+          await this.app.vault.adapter.write(to, settingSnapshot(this.app, "templater-folder"));
+          const n = await removeTemplaterFolderTemplates(this.app, fix.folders);
+          new Notice(`Removed ${n} Templater folder ${n === 1 ? "template" : "templates"}. Backup: ${to}`, 10000);
+        } }); await this.refresh(); return;
       case "folder-template": await confirm({ name: "Add a Templater folder template", desc: `${fix.folder} → ${fix.template}. Folder templates only run with Templater's "Trigger Templater on new file creation" on (Templater keeps that per device: turn it on in its settings).`,
         apply: () => addTemplaterFolderTemplate(this.app, fix.folder, fix.template) }); break;
     }

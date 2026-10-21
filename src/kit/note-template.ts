@@ -9,6 +9,8 @@ export interface NoteEnv {
   now?: Date;
   /** The folder of a template whose header names none (where the empty note sits). */
   folder?: string;
+  /** The name of a note that already exists (the self-filling note): `{{note-name}}` reads it instead of the header's `name`. */
+  noteName?: string;
   /** What the tokens read from the vault (other notes' properties, rigs); a template that reads nothing leaves it out. */
   vault?: Partial<TemplateEnv>;
 }
@@ -30,7 +32,7 @@ export function noteFromTemplate(text: string, answers: Record<string, string>, 
   if (isCancelled(header, all)) throw new TemplateError(`Nothing to make: "${header.required}" is empty.`);
   const name = fillParts(header.name ?? "", all, tokens).text.trim();
   const folder = fillParts(header.folder ?? "", all, tokens).text.trim() || env.folder || "";
-  const made = fillParts(body, all, { ...tokens, noteName: name, folder });
+  const made = fillParts(body, all, { ...tokens, noteName: env.noteName ?? name, folder });
   if (made.appends.length) throw new TemplateError("{{#append}} does not work in a note template.");
   return { name, folder, text: made.text };
 }
