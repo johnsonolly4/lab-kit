@@ -95,7 +95,7 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(isBlankBoardNote("---\nkind: todo\n---\n")).toBe(false);
   });
   it("the template carries the same rule and only trashes inside the to-dos folder", () => {
-    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
     expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^(?:day:|scheduled:|[\\w .-]+:\\s*$)/.test(l.trim()))");
     expect(tpl).toContain("f.path.startsWith(`${folder}/`) && rest.trim() === \"\"");
     expect(tpl).toContain("app.fileManager.trashFile(f)");
@@ -130,7 +130,7 @@ describe("todoFileName (I12: the to-do is made under its final name)", () => {
     expect(todoFileName("Plan", n => used.has(n))).toBe("Plan 3");
   });
   it("the To-do template builds the same name and does not move a note that already has it", () => {
-    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
     expect(tpl).toContain(String.raw`text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80)`);
     expect(tpl).toContain("if (here !== `${folder}/${name}.md`) { await tp.file.move(");
     expect(todoFileName("a#b[c]^d|e", none)).toBe("a-b-c--d-e");

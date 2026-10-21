@@ -31,7 +31,7 @@ describe("ensurePropertyType", () => {
 
 describe("planning templates", () => {
   it("set property types only through window.vtEnsureType", () => {
-    for (const [f, names] of [["To-do.md", ["due", "priority"]], ["Project hub.md", ["deadline"]]] as const) {
+    for (const [f, names] of [["Project hub.md", ["deadline"]]] as const) {
       const s = readFileSync(`kits/planning/Extras/Templates/${f}`, "utf8");
       expect(s).not.toContain("metadataTypeManager");
       for (const n of names) expect(s).toContain(`window.vtEnsureType?.("${n}"`);

@@ -197,9 +197,9 @@ describe("noteFromTemplate", () => {
   });
 });
 
-/* ---------- the spike's To-do cases, through a token-format To-do.md ---------- */
+/* ---------- the spike's To-do cases, through the kit's token-format To-do.md (Phase 3; the Templater version is tests/fixtures/templates/old/To-do.md) ---------- */
 
-const TODO_FIXTURE = readFileSync("tests/fixtures/templates/To-do.md", "utf8");
+const TODO_FIXTURE = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
 const TODAY = new Date(2026, 9, 19);   // Mon 2026-10-19, local
 const base: TodoAnswer = { text: "Buy vials", project: "", meeting: "", due: "", priority: "", experiment: "", waiting: "" };
 

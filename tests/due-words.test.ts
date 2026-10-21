@@ -68,7 +68,7 @@ describe("due words: the script and the plugin's copy agree", () => {
 });
 
 describe("To-do template", () => {
-  const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+  const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
   it("asks nothing when the plugin's entry window handed the values over (window.vtTodo), and writes the chip bar block", () => {
     expect(tpl).toContain("let preset = window.vtTodo;");
     expect(tpl).toContain("window.vtEntryTodo(scheduled || undefined)")

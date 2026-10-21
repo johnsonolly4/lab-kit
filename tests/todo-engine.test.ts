@@ -169,7 +169,7 @@ describe("due-date countdown", () => {
 describe("To-do template due date and countdown", () => {
   it("asks for a due date (Esc cancels), no countdown question or property (one setting for all, I2), writes due only when set as a date property", async () => {
     const { readFileSync } = await import("fs");
-    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
     expect(tpl).toContain('d === null) { await trashIfBlank(); throw new Error("Cancelled');
     expect(tpl).not.toContain("Countdown on the board card?");
     expect(tpl).not.toMatch(/countdown/i);
