@@ -213,7 +213,10 @@ export function kitFolderRoles(kit: Pick<KitData, "labFolder" | "chemicalFolder"
 /** Where the lab kit goes in a vault with no kit files yet (the folder contract). */
 export const LAB_LAYOUT = { templates: "Extras/Templates", snippets: "Extras/Snippets", userScripts:"Extras/scripts/templater", userScriptsSub: "lab-kit", scripts: "Extras/scripts/lab-kit" };
 
-/** Id of Insert snippet.md, a core lab kit file until 2026-10-21: an install record that has it was made with the old layout (snippets in `<templates>/Snippets`). */
+/**
+ * Id of Insert snippet.md, a core lab kit file until 2026-10-21: an install record that has it was made with the old layout (snippets in `<templates>/Snippets`).
+ * `oldInstall` (kitDetectRoles): that record, or the old folder updater's record. Not `record` itself: KitManaged.roles() always passes one.
+ */
 export const OLD_MENU_ID = "tpl-insert-snippet-md";
 
 export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>, oldInstall = false): Roles {
@@ -232,8 +235,8 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   const inUserFolder = (f: (typeof files)[number]): boolean => !userFolder || f.path.startsWith(userFolder + "/");
   const formScript = find("labSnippets.js", inUserFolder) ?? find("labForm.js", inUserFolder);
   const templates = tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || LAB_LAYOUT.templates));
-  // Snippets sat in `<templates>/Snippets` until 2026-10-21: a vault installed before (`oldInstall`, the old updater's record, or Insert snippet.md found) keeps them there
-  const hasKit = oldInstall || !!record || !!find("Insert snippet.md");
+  // Snippets sat in `<templates>/Snippets` until 2026-10-21: a vault installed before (`oldInstall`, or Insert snippet.md found) keeps them there
+  const hasKit = oldInstall || !!find("Insert snippet.md");
   return {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,

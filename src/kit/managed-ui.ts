@@ -48,7 +48,7 @@ export class KitManaged {
       return { ...planningRoles(this.app, tracked, pf, this.host.kit.labFolder), ...ownOther };
     }
     // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
-    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked, !!slot.managed?.files[OLD_MENU_ID]), ...own };
+    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked, !!slot.managed?.files[OLD_MENU_ID] || !!old), ...own };
   }
 
   /** Where the kit's note templates are (Lab Book Template, Chemical database template, Rig template). */

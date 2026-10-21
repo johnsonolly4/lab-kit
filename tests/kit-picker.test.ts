@@ -158,7 +158,8 @@ describe("folder layout", () => {
   it("a vault installed before 2026-10-21 keeps its snippets next to the templates (CI1: existing vaults keep their folders)", () => {
     expect(kitDetectRoles(vault([], {}), null, { templates: "Extras/Templates/Lab Kit" }, true).snippets).toBe("Extras/Templates/Lab Kit/Snippets");
     expect(kitDetectRoles(vault(["Mine/Insert snippet.md"], {}), null, {}).snippets).toBe("Mine/Snippets");
-    expect(kitDetectRoles(vault([], {}), { version: "0.4.5", files: {}, installedAt: "", roles: {} }, {}).snippets).toBe("Extras/Templates/Snippets");
+    // KitManaged.roles() always passes a record (version "0" in a new vault): a record alone is no sign of an old install (a bug the clean-install run caught)
+    expect(kitDetectRoles(vault([], {}), { version: "0", files: {}, installedAt: "", roles: {} }, {}).snippets).toBe("Extras/Snippets");
     expect(kitDetectRoles(vault([], {}), null, { templates: "Extras/Templates" }).snippets).toBe("Extras/Snippets");   // installed after: every snippet switched off
   });
 
