@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, it, vi } from "vitest";
 import assert from "node:assert";
-import { TODO_TEMPLATE, columnEntry, createTodoNote, isoDay, startDate, todoNoteText, todoTemplate, type TodoAnswer } from "../src/planning/todo-note";
+import { TODO_TEMPLATE, columnEntry, createTodoNote, isoDay, nameTaken, startDate, todoNoteText, todoTemplate, type TodoAnswer } from "../src/planning/todo-note";
 import { miniYaml } from "./token-snippets";
 
 const TODAY = new Date(2026, 9, 19);   // Mon 2026-10-19, local
@@ -141,6 +141,16 @@ describe("todo-note: create", () => {
     await createTodoNote(v2, "00 Planning/To-dos", TODO_TEMPLATE, miniYaml, base, undefined, TODAY);
     assert.equal(m2[0][0], "00 Planning/To-dos/Buy vials 2.md");
     assert.equal(m2[0][1], expected({}));
+  });
+  it("a name taken apart from capitals counts as taken (macOS / Windows disks; owner's test T6, 2026-10-21)", async () => {
+    const files = ["00 Planning/To-dos/test to do.md"];
+    const made: [string, string][] = [];
+    const v = { getAbstractFileByPath: (p: string) => files.includes(p) ? {} : null,
+      getFolderByPath: (p: string) => p === "00 Planning/To-dos" ? { children: files.map(path => ({ path })) } : null,
+      create: async (p: string, d: string) => { made.push([p, d]); return {}; } } as never;
+    await createTodoNote(v, "00 Planning/To-dos", TODO_TEMPLATE, miniYaml, { ...base, text: "Test to do" }, undefined, TODAY);
+    assert.equal(made[0][0], "00 Planning/To-dos/Test to do 2.md");
+    assert.equal(nameTaken(v, "00 Planning/To-dos", "00 Planning/To-dos/test to do.md")("Test to do"), false);   // the note being renamed does not count
   });
   it("isoDay is local and zero-padded", () => { assert.equal(isoDay(new Date(2026, 0, 5)), "2026-01-05"); });
 });

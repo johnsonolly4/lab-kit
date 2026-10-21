@@ -108,8 +108,23 @@ export function todoNoteText(template: string, parseYaml: (yaml: string) => unkn
   return noteFromTemplate(template, todoAnswers(a, day, today, after), { parseYaml, now: today }).text;
 }
 
+/**
+ * Whether the note `<folder>/<name>.md` is taken, ignoring capitals: macOS and Windows disks treat "Test.md" and "test.md" as one file, so
+ * `vault.create` fails with "File already exists" although Obsidian's exact lookup says the name is free (owner's test 2026-10-21, T6).
+ * `except` is a path that does not count (the note being renamed).
+ */
+export function nameTaken(vault: Pick<Vault, "getAbstractFileByPath"> & Partial<Pick<Vault, "getFolderByPath">>, folder: string, except?: string): (name: string) => boolean {
+  return name => {
+    const path = `${folder}/${name}.md`;
+    if (path === except) return false;
+    if (vault.getAbstractFileByPath(path)) return true;
+    const low = path.toLowerCase();
+    return (vault.getFolderByPath?.(folder)?.children ?? []).some(f => f.path !== except && f.path.toLowerCase() === low);
+  };
+}
+
 /** Makes the to-do in `folder` (which exists) under the name rule of `todoFileName`; returns the file. */
 export function createTodoNote(vault: Vault, folder: string, template: string, parseYaml: (yaml: string) => unknown, a: TodoAnswer, day: string | undefined, today: Date, after = ""): Promise<TFile> {
-  const name = todoFileName(a.text, n => !!vault.getAbstractFileByPath(`${folder}/${n}.md`));
+  const name = todoFileName(a.text, nameTaken(vault, folder));
   return vault.create(`${folder}/${name}.md`, todoNoteText(template, parseYaml, a, day, today, after));
 }

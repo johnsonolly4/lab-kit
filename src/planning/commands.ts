@@ -24,7 +24,7 @@ import { addResult } from "./result";
 import { freezeDue, freezeFile } from "./freeze-note";
 import { linkInOrder } from "./sequence";
 import { dayOf, parseDay, ymd } from "./todo";
-import { columnEntry, createTodoNote, todoAnswers, todoTemplate, type TodoAnswer } from "./todo-note";
+import { columnEntry, createTodoNote, nameTaken, todoAnswers, todoTemplate, type TodoAnswer } from "./todo-note";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -167,7 +167,7 @@ export class PlanningCommands {
         await this.ensureTodoTypes();
         const file = this.app.vault.getFileByPath(ctx.path), folder = ctx.path.includes("/") ? ctx.path.slice(0, ctx.path.lastIndexOf("/")) : "";
         if (!file) return;
-        const name = todoFileName(answers.text ?? "", n => `${folder}/${n}.md` !== ctx.path && !!this.app.vault.getAbstractFileByPath(`${folder}/${n}.md`));
+        const name = todoFileName(answers.text ?? "", nameTaken(this.app.vault, folder, ctx.path));
         if (`${folder}/${name}.md` !== ctx.path) await this.app.fileManager.renameFile(file, `${folder}/${name}.md`);
       },
       cancelled: async ctx => {
