@@ -4,6 +4,7 @@ import type { App, TFile } from "obsidian";
 import { kitJoin, todoFolder, type KitData } from "../kit/paths";
 import { dueToFreeze, freezeMeeting, frozenOn, meetingFreezeLists, raisedStamp, RAISED, type FreezeData } from "./freeze";
 import { inFolder, linkTarget, meetingWindow, type NoteRec } from "./lists";
+import { readPlan } from "./plan";
 import { firstSeries } from "./meetings";
 import { ymd } from "./todo";
 
@@ -28,6 +29,10 @@ export function freezeDataFor(app: App, kit: KitData, file: TFile): FreezeData |
     todos: inside(todoFolder(f)),
     literature: app.vault.getFolderByPath(f.literature) ? inside(f.literature) : undefined,
     hub, isFirst: !!hub && firstSeries(hubs)?.name === hub.name,
+    planOf: link => {   // a plan-picture block's project: its plan, when the link finds a project hub
+      const t = app.metadataCache.getFirstLinkpathDest(link, file.path), rec = t ? recOf(app, t) : null;
+      return rec?.fm.kind === "project" ? readPlan(inside(todoFolder(f)), rec, lab && app.vault.getFolderByPath(lab) ? inside(lab) : undefined) : null;
+    },
   }, new Date());
 }
 
@@ -42,7 +47,7 @@ export async function freezeFile(app: App, kit: KitData, file: TFile, today: Dat
   const data = freezeDataFor(app, kit, file);
   const date = meetingWindow(app.metadataCache.getFileCache(file)?.frontmatter ?? {})?.date;
   if (!data || !date) return { done: false, why: "no-window" };
-  await app.vault.process(file, cur => freezeMeeting(cur, data.lists, ymd(today)) ?? cur);
+  await app.vault.process(file, cur => freezeMeeting(cur, data.lists, ymd(today), data.pictures) ?? cur);
   for (const t of data.flagged) {
     const todo = app.vault.getFileByPath(t.path);
     if (todo) await app.fileManager.processFrontMatter(todo, (fm: Record<string, unknown>) => { const s = raisedStamp(fm[RAISED], date); if (s) fm[RAISED] = s; });

@@ -511,7 +511,7 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
         if (!data) { skipped.items.push({ path: n.path, note: "meeting note without since and date properties: not frozen" }); continue; }
         const s = split(disk.get(n.path) ?? "");
         if (!s) continue;
-        const body = freezeBody(s.body, data.lists);
+        const body = freezeBody(s.body, data.lists, data.pictures);
         fz.changes.push({ path: n.path, before: s.fm.join("\n"), after: [...s.fm, line(FROZEN, mt.today)].join("\n") });
         if (body !== s.body) fz.changes.push({ path: n.path, before: s.body, after: body, body: true });
         for (const t of data.flagged) {

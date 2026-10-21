@@ -2,6 +2,8 @@
 // Pure (no Obsidian runtime). Plan: docs/plans/freeze-meeting-notes.md.
 import { dayMonth, isOpenTodo, linkTarget, meetingDone, meetingExperiments, meetingPapers, meetingWindow, waitingOn, type ListLine, type NoteRec } from "./lists";
 import { flaggedFor } from "./meetings";
+import type { Plan } from "./plan";
+import { statusLines } from "./plan-slide";
 import { parseDay } from "./todo";
 
 /** The lists of a meeting note as plain markdown lines (no callout prefix), by what the block shows: `meeting-experiments`, `meeting-done`, `meeting-papers`, `waiting`, `meeting-flagged`. A missing key leaves that block as it is. */
@@ -39,9 +41,20 @@ export function flaggedLines(todos: NoteRec[], hub: NoteRec, isFirst: boolean, d
   });
 }
 
-/** What a meeting note's lists hold at freeze time. `lab`, `literature` undefined = that folder is missing: its block is left alone. */
-export interface FreezeSource { fm: Record<string, unknown>; lab?: NoteRec[]; todos: NoteRec[]; literature?: NoteRec[]; hub: NoteRec | null; isFirst: boolean }
-export interface FreezeData { lists: FreezeLists; flagged: NoteRec[] }
+/** A `plan-picture` block frozen (plan-map Phase 3, Q5 a): the project's open to-dos that are late or waiting, with that status, late first, then by name (as of `today`, the meeting's date). */
+export function pictureFreezeLines(plan: Plan, today: string): string[] {
+  const lines = plan.rows.filter(r => !r.parent && !r.done)
+    .map(r => ({ r, marks: statusLines(r, plan.rows, today).filter(l => l.tone === "late" || l.tone === "waiting") }))
+    .filter(x => x.marks.length)
+    .sort((a, b) => Number(b.marks[0].tone === "late") - Number(a.marks[0].tone === "late") || a.r.name.localeCompare(b.r.name))
+    .map(x => lineMarkdown({ path: x.r.path, text: x.r.name, badges: x.marks.map(m => ({ text: m.text, cls: "" })) }));
+  return lines.length ? lines : ["Nothing is late or waiting."];
+}
+
+/** What a meeting note's lists hold at freeze time. `lab`, `literature` undefined = that folder is missing: its block is left alone. `planOf` finds the plan of the project a `plan-picture` block names (null: not a project hub). */
+export interface FreezeSource { fm: Record<string, unknown>; lab?: NoteRec[]; todos: NoteRec[]; literature?: NoteRec[]; hub: NoteRec | null; isFirst: boolean; planOf?: (link: string) => Plan | null }
+/** `pictures`: the list for a `plan-picture` block by the project it names; null leaves the block. */
+export interface FreezeData { lists: FreezeLists; flagged: NoteRec[]; pictures?: (link: string) => string[] | null }
 
 /** The frozen lists (every one, not capped) and the to-dos to stamp; null when the note has no since and date. */
 export function meetingFreezeLists(src: FreezeSource, today: Date): FreezeData | null {
@@ -55,33 +68,38 @@ export function meetingFreezeLists(src: FreezeSource, today: Date): FreezeData |
   lists.waiting = groups.length ? groups.flatMap(g => [`**${g.who}**`, ...g.lines.map(lineMarkdown)]) : ["Nothing is waiting."];
   const flagged = src.hub ? flaggedFor(src.todos.filter(isOpenTodo), src.hub, src.isFirst) : [];
   lists["meeting-flagged"] = listOf(src.hub ? flaggedLines(src.todos, src.hub, src.isFirst, w.date) : [], FLAGGED_EMPTY);
-  return { lists, flagged };
+  const planOf = src.planOf;
+  return { lists, flagged, pictures: planOf ? link => { const plan = planOf(link); return plan ? pictureFreezeLines(plan, w.date) : null; } : undefined };
 }
 
 const OPEN = /^((?:>[ \t]?)*)(`{3,})(vault-card|dataview)[ \t]*$/;
 const CLOSE = /^(?:>[ \t]?)*`{3,}[ \t]*$/;
 const unprefix = (l: string): string => l.replace(/^(?:>[ \t]?)*/, "");
 
-/** Which generated list a code block is: a `show:` block, or the old Flagged Dataview query; null for anything else. */
+/** Which generated list a code block is: a `show:` block, `plan-picture:<project>` for a plan picture naming its project, or the old Flagged Dataview query; null for anything else. */
 function blockKind(lang: string, lines: string[]): string | null {
   if (lang === "vault-card") {
     const show = lines.map(l => /^\s*show:\s*(\S+)/i.exec(unprefix(l))?.[1]?.toLowerCase()).find(Boolean);
+    if (show === "plan-picture") { const project = linkTarget(lines.map(l => /^\s*project\s*:\s*(.*?)\s*$/i.exec(unprefix(l))?.[1]).find(Boolean)); return project ? `${PICTURE}${project}` : null; }
     return show && BLOCKS.includes(show) ? show : null;
   }
   const q = lines.map(unprefix).join("\n");
   return /\bkind\s*=\s*"todo"/.test(q) && /\bmeeting\s*=/.test(q) ? "meeting-flagged" : null;
 }
 
-/** The page with each generated block (inside a callout or not) replaced by its list; the lines outside the blocks are copied as they are. */
-export function freezeBody(body: string, lists: FreezeLists): string {
+const PICTURE = "plan-picture:";
+
+/** The page with each generated block (inside a callout or not) replaced by its list (a plan picture by `pictures` of its project); the lines outside the blocks are copied as they are. */
+export function freezeBody(body: string, lists: FreezeLists, pictures?: (link: string) => string[] | null): string {
   const src = body.split("\n"), out: string[] = [];
   for (let i = 0; i < src.length; i++) {
     const open = OPEN.exec(src[i]);
     let end = -1;
     if (open) for (let j = i + 1; j < src.length; j++) if (CLOSE.test(src[j])) { end = j; break; }
     const kind = open && end > i ? blockKind(open[3], src.slice(i + 1, end)) : null;
-    if (open && end > i && kind && lists[kind]) {
-      out.push(...lists[kind].map(l => `${open[1]}${l}`));
+    const list = kind?.startsWith(PICTURE) ? pictures?.(kind.slice(PICTURE.length)) : kind ? lists[kind] : null;
+    if (open && end > i && list) {
+      out.push(...list.map(l => `${open[1]}${l}`));
       i = end;
     } else out.push(src[i]);
   }
@@ -109,10 +127,10 @@ export function frozenOn(text: string): string {
 }
 
 /** The note frozen: its blocks as plain lists and `frozen: <today>` at the end of the properties. Null when it is not a meeting note or is frozen already (a frozen note is never frozen again). */
-export function freezeMeeting(text: string, lists: FreezeLists, today: string): string | null {
+export function freezeMeeting(text: string, lists: FreezeLists, today: string, pictures?: (link: string) => string[] | null): string | null {
   if (!isFreezable(text)) return null;
   const crlf = text.includes("\r\n"), t = text.replace(/\r\n/g, "\n"), p = parts(t)!;
-  const out = ["---", ...p.head, `${FROZEN}: ${today}`, freezeBody(p.body, lists)].join("\n");
+  const out = ["---", ...p.head, `${FROZEN}: ${today}`, freezeBody(p.body, lists, pictures)].join("\n");
   return crlf ? out.replace(/\n/g, "\r\n") : out;
 }
 

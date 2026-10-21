@@ -1,7 +1,9 @@
 // I19 / I20: freezing a meeting note (src/planning/freeze.ts), against a fixture note.
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
-import { flaggedLines, freezeBody, freezeMeeting, frozenOn, dueToFreeze, lineMarkdown, meetingDay, meetingFreezeLists, raisedStamp, type FreezeData, type FreezeLists } from "../src/planning/freeze";
+import { flaggedLines, freezeBody, freezeMeeting, frozenOn, dueToFreeze, lineMarkdown, meetingDay, meetingFreezeLists, pictureFreezeLines, raisedStamp, type FreezeData, type FreezeLists } from "../src/planning/freeze";
+import { readPlan } from "../src/planning/plan";
+import { BIG_HUB, BIG_TITLE, BIG_TODAY, BIG_TODOS } from "./fixtures/plan-big";
 import { scan, selectChanges, wantsText, type TidyContext } from "../src/kit/tidy";
 import { applyTidy } from "../src/kit/tidy-apply";
 import type { NoteRec } from "../src/planning/lists";
@@ -192,5 +194,34 @@ describe("Meeting template (I20)", () => {
     expect(t).toContain("show: meeting-flagged");
     expect(t).not.toContain("dataview");
     expect(freezeBody("> > ```vault-card\n> > show: meeting-flagged\n> > ```", { "meeting-flagged": ["- [[A]]"] })).toBe("> > - [[A]]");
+  });
+});
+
+describe("plan-picture block in a frozen meeting note (plan-map Phase 3, Q5 a)", () => {
+  const plan = readPlan(BIG_TODOS, BIG_HUB);
+  const FIXTURE = [
+    "- [[Book GPC time for diblocks]] · late: due 15 Oct · waiting: facility reply",
+    "- [[Kinetics repeat at 80 C]] · late: due 14 Oct",
+    "- [[SAXS beamtime proposal]] · waiting: panel decision",
+    "- [[Supervisor review of draft]] · waiting: supervisor",
+  ];
+  it("the fixture's late and waiting to-dos, late first, then by name", () => {
+    expect(pictureFreezeLines(plan, BIG_TODAY)).toEqual(FIXTURE);
+  });
+  it("nothing late or waiting: one line saying so", () => {
+    const calm = readPlan(BIG_TODOS.map(t => ({ ...t, fm: { ...t.fm, due: undefined, waiting: undefined } })), BIG_HUB);
+    expect(pictureFreezeLines(calm, BIG_TODAY)).toEqual(["Nothing is late or waiting."]);
+  });
+  const note = ["## Plan", "> [!note] Plan", "> ```vault-card", "> show: plan-picture", `> project: [[${BIG_TITLE}]]`, "> ```", "after"].join("\n");
+  it("freezeBody puts the list where the block was (callout prefix kept); a project it cannot find leaves the block", () => {
+    const pictures = (link: string): string[] | null => link === BIG_TITLE ? pictureFreezeLines(plan, BIG_TODAY) : null;
+    expect(freezeBody(note, {}, pictures)).toBe(["## Plan", "> [!note] Plan", ...FIXTURE.map(l => `> ${l}`), "after"].join("\n"));
+    expect(freezeBody(note.replace(BIG_TITLE, "Nope"), {}, pictures)).toBe(note.replace(BIG_TITLE, "Nope"));
+    expect(freezeBody(note, {})).toBe(note);
+  });
+  it("meetingFreezeLists gives the pictures from the plan of the named hub", () => {
+    const data = meetingFreezeLists({ fm: { since: "2026-10-13", date: "2026-10-20" }, todos: BIG_TODOS, hub: null, isFirst: false, planOf: link => link === BIG_TITLE ? plan : null }, new Date(`${BIG_TODAY}T12:00:00`))!;
+    expect(data.pictures?.(BIG_TITLE)).toEqual(FIXTURE);
+    expect(data.pictures?.("Nope")).toBeNull();
   });
 });
