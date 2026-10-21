@@ -68,7 +68,7 @@ title: Stock solution
 ````
 
 - **Formulas** start with an equals sign and use Excel syntax. Row 1 is the header, so the first data row is row 2. Other tables in the note are reached by name (`sol1!D2`, `SUM(sol1!D2:D4)`).
-- **Functions:** `SUM AVERAGE MIN MAX COUNT COUNTA PRODUCT SUMPRODUCT ROUND ROUNDUP ROUNDDOWN INT ABS SQRT POWER EXP LN LOG LOG10 MOD PI IF IFERROR AND OR NOT CONCAT MATCH INDEX XLOOKUP CLOCK MW PROP`. `MW("DCM")` reads the molecular weight from a chemical note, `PROP("PABTC", "Density")` any property, `CLOCK("10:30", 90)` gives a clock time 90 minutes later.
+- **Functions:** `SUM AVERAGE STDEV SLOPE INTERCEPT RSQ MIN MAX COUNT COUNTA PRODUCT SUMPRODUCT ROUND ROUNDUP ROUNDDOWN INT ABS SQRT POWER EXP LN LOG LOG10 MOD PI IF IFERROR AND OR NOT CONCAT MATCH INDEX XLOOKUP CLOCK MW PROP`. `MW("DCM")` reads the molecular weight from a chemical note, `PROP("PABTC", "Density")` any property, `CLOCK("10:30", 90)` gives a clock time 90 minutes later.
 - **Editing:** click a cell, type, **Enter** or **Tab** to save, **Esc** to throw it away. **+ Row** adds a row and copies the formulas down; right-click a row to insert or delete one. References update like Excel, including those in other tables.
 - **Colours:** plain = typed, blue = calculated, amber = "needs …" (an input is missing, it tells you which), red = a real problem (hover for the reason).
 - **Copy** puts the table on the clipboard for Excel or Origin; **A1** shows cell addresses.
