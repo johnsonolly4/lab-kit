@@ -142,6 +142,9 @@ export class NoteFiller {
   private done = new Set<string>();
   constructor(private host: FillHost) {}
 
+  /** The note at `path` is gone or was renamed: a new note made under that name (the explorer always makes "Untitled") is filled again. */
+  forget(path: string): void { this.done.delete(path); }
+
   /** Called for `file-open` and `modify`. Resolves to what was decided (tests read it). */
   async check(path: string): Promise<FillDecision> {
     if (this.done.has(path)) return { action: "skip", reason: "done" };

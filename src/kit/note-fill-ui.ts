@@ -79,6 +79,8 @@ export function registerNoteFill(plugin: Plugin, d: NoteFillDeps): NoteFiller {
   const run = (f: TFile | null): void => { if (f && f.extension === "md" && rowFor(host.rows(), f.path)) filler.check(f.path).catch(e => console.error(e)); };
   plugin.registerEvent(app.workspace.on("file-open", f => run(f)));
   plugin.registerEvent(app.vault.on("modify", f => { if (f instanceof TFile && f.path === app.workspace.getActiveFile()?.path) run(f); }));
+  plugin.registerEvent(app.vault.on("rename", (_f, oldPath) => filler.forget(oldPath)));
+  plugin.registerEvent(app.vault.on("delete", f => filler.forget(f.path)));
   return filler;
 }
 

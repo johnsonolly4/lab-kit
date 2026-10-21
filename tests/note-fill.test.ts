@@ -143,6 +143,16 @@ describe("the runner on a vault event stream", () => {
     assert.equal(v.asked, 1);
     assert.deepEqual(v.writes, [P]);
   });
+  it("a note renamed or deleted is forgotten: the next \"Untitled\" made under that name is asked again", async () => {
+    const v = new FakeVault();
+    v.files.set(P, "");
+    await v.open(P);
+    assert.equal(v.asked, 1);
+    v.filler.forget(P);
+    v.files.set(P, "");
+    await v.open(P);
+    assert.equal(v.asked, 2);
+  });
   it("a cancelled form leaves the note as it is and is not asked again", async () => {
     const v = new FakeVault();
     v.answer = null;
