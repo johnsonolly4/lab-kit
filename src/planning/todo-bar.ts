@@ -106,8 +106,8 @@ export function todoFields(projects: string[], series: string[], experiments?: {
   return [
     projectField(projects),
     { key: "meeting", name: "Meeting", icon: "users", kind: "pick", prompt: "Raise at which meeting?", options: [none("(none)"), ...series.map(p => ({ label: p, value: p }))] },
-    { key: "due", name: "Due", icon: "calendar", kind: "date", prompt: "Due date? (fri, 15 nov, 15/11, in 3 days; empty clears)" },
-    { key: "scheduled", name: "Day", icon: "calendar-check", kind: "date", day: true, prompt: "Which day? (tue, next tue, 27 oct; backlog clears)" },
+    { key: "due", name: "Due", icon: "calendar-check", kind: "date", prompt: "Due date? (fri, 15 nov, 15/11, in 3 days; empty clears)" },
+    { key: "scheduled", name: "Day", icon: "calendar", kind: "date", day: true, prompt: "Which day? (tue, next tue, 27 oct; backlog clears)" },
     { key: "priority", name: "Priority", icon: "flag", kind: "pick", prompt: "Priority? (1 = high, 3 = low)", options: [none("No priority"), ...PRIORITY_LABELS.map((label, i) => ({ label, value: i + 1 }))] },
     ...(experiments ? [{ key: "experiment", name: "Experiment", icon: "flask-conical", kind: "pick" as const, prompt: "Experiment?", options: [none("(none)"), ...experiments] }] : []),
     { key: "waiting", name: "Waiting", icon: "hourglass", kind: "text", prompt: "Waiting on whom or what? (empty clears)" },
