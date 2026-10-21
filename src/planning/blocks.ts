@@ -450,7 +450,7 @@ class BlockView extends MarkdownRenderChild {
         title.createSpan({ cls: "vt-muted lab-kit-plan-picture-asof", text: `as of ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` });
         if (hasNode()) {   // Copy picture and the window: desktop only (PNG on the clipboard)
           const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
-          const copy = title.createEl("button", { cls: "lab-kit-plan-picture-copy", text: "Copy picture" });
+          const copy = title.createEl("button", { cls: "vt-map-dir lab-kit-plan-picture-copy", text: "Copy picture" });
           copy.addEventListener("mousedown", stop);
           copy.addEventListener("click", e => { stop(e); copyPng(picture.svg).then(() => { new Notice("Picture copied: paste it into your slide."); }, (err: unknown) => { new Notice(`Could not copy the picture: ${err instanceof Error ? err.message : "the clipboard refused it."}`); }); });
           const shot = title.createEl("button", { cls: "vt-map-dir vt-map-slide", attr: { "aria-label": "Picture for a slide", title: "Open the picture window" } });

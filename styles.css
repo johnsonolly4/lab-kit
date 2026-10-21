@@ -305,6 +305,13 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lab-kit-rig-changed { margin-top: 6px; font-size: var(--font-ui-small); }
 .lab-kit-slide-preview { display: block; width: 100%; height: auto; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: #fff; margin: 8px 0; }
 .lab-kit-hidden { display: none; }
+/* Plan picture block (show: plan-picture, src/planning/blocks.ts): the slide picture, view only, framed like the window's preview; on a phone at its natural size (22 px text = 22 CSS px) in a box that scrolls both ways */
+.lab-kit-plan-picture { margin: 8px 0; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); background: #fff; overflow: hidden; }
+.lab-kit-plan-picture img { display: block; width: 100%; height: auto; }
+.is-phone .lab-kit-plan-picture { overflow: auto; max-height: 70vh; }
+.is-phone .lab-kit-plan-picture img { width: 1920px; max-width: none; }
+.lab-kit-plan-picture-asof { margin-left: 8px; font-weight: normal; font-size: var(--font-ui-small); }
+.lab-kit-plan-picture-copy { cursor: pointer; }
 
 /* ---- Plan map (src/planning/plan-map-render.ts, blocks.ts, plan-slide-ui.ts) ----
    Colours read the vault theme's --vt-* variables when the snippet is on, else Obsidian's own.
