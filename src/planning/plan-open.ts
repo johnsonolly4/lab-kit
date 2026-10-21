@@ -111,3 +111,101 @@ export function rowHeights(chips: OpenChip[], places: number): number[] {
   for (const c of chips) out[c.step] = Math.max(out[c.step] ?? 0, chipSize(c, places).height);
   return Array.from(out, h => h ?? 0);
 }
+
+// Fold (owner, Q1 a and Q2 a): what is drawn when the open work does not fit the 1920 × 1080 picture. Room above and below the steps is the prototype's.
+const TOP = 130, KEY_ROOM = 70, LOOSE_H = 110, STEP_GAP = 36, LOOSE_MAX_W = 320, LOOSE_GAP = 14, COUNT_W = 440;
+/** Height of the count row under the drawn steps and of a "+N more" chip: one line. */
+export const COUNT_H = 2 * PAD_Y + LINE_H;
+/** Ids of the stand-ins arrows may end at: a step's "+N more in this step" chip, and the count row of the folded steps. */
+export const moreId = (step: number): string => `+more:${step}`;
+export const FOLD_ID = "+fold";
+
+export interface FoldCount { n: number; late: number; waiting: number; text: string }
+export interface FoldStep {
+  step: number;
+  /** The chips drawn, places re-numbered from 0 when the picture has more than `CHIP_CAP` places. */
+  chips: OpenChip[];
+  /** The "+N more in this step" chip, in place 5 (null when every chip of the step is drawn). */
+  more: FoldCount | null;
+  height: number;
+}
+export interface FoldedOpen {
+  /** Columns drawn (at most `CHIP_CAP`) and the chip width for them. */
+  places: number; width: number;
+  steps: FoldStep[];
+  /** The count row "+N more steps: k late, w waiting"; `chips` is how many open to-dos it stands for. */
+  fold: (FoldCount & { chips: number }) | null;
+  /** Between drawn chips, a step's more chip (`moreId`) and the count row (`FOLD_ID`); at most one arrow per pair. */
+  arrows: MapArrow[];
+  /** The loose row: chips that fit on one line (with their widths), then the count chip. */
+  loose: { chips: OpenChip[]; widths: number[]; more: FoldCount | null };
+  /** Height the drawn steps, their gaps and the count row take. */
+  height: number;
+  /** drawn + inStep + folded + looseMore = open. */
+  counts: { open: number; drawn: number; inStep: number; folded: number; looseMore: number };
+}
+
+/** Room for the steps: the picture less the header, the key and (when there are loose to-dos) the loose row. */
+export const openBudget = (model: OpenModel): number => OPEN_H - TOP - KEY_ROOM - (model.loose.length ? LOOSE_H : 0);
+
+/** How many, how many late and waiting, and the text: `head(n)` then ": 3 late, 1 waiting" (`paren`: " (3 late, 1 waiting)"); counts of 0 are left out. */
+const countOf = (chips: OpenChip[], head: (n: number) => string, paren = false): FoldCount => {
+  const n = chips.length, late = chips.filter(c => c.status === "late").length, waiting = chips.filter(c => c.status === "waiting").length;
+  const marks = [late ? `${late} late` : "", waiting ? `${waiting} waiting` : ""].filter(Boolean).join(", ");
+  return { n, late, waiting, text: head(n) + (marks ? (paren ? ` (${marks})` : `: ${marks}`) : "") };
+};
+
+/** What of `model` is drawn within `budget` px of steps: steps from the top while they fit (the first always), the rest one count row; at most 6 places a step; the loose row on one line. */
+export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOpen {
+  const places = Math.min(model.counts.places, CHIP_CAP), width = chipWidth(places);
+  const repack = model.counts.places > CHIP_CAP;
+  const where = new Map<string, string>();   // path → the id its arrows go to
+  const all: FoldStep[] = [];
+  for (let k = 0; k < model.counts.steps; k++) {
+    const mine = model.chips.filter(c => c.step === k).sort((a, b) => a.place - b.place);
+    let keep = mine, hidden: OpenChip[] = [];
+    if (mine.length > CHIP_CAP) {
+      const urgent = new Set([...mine].sort((a, b) => RANK[a.status] - RANK[b.status] || a.place - b.place).slice(0, CHIP_CAP - 1));
+      keep = mine.filter(c => urgent.has(c)); hidden = mine.filter(c => !urgent.has(c));
+    }
+    const chips = repack ? keep.map((c, i) => ({ ...c, place: i })) : keep;
+    for (const c of chips) where.set(c.path, c.path);
+    for (const c of hidden) where.set(c.path, moreId(k));
+    const more = hidden.length ? { ...countOf(hidden, () => ""), text: `+${hidden.length} more in this step` } : null;
+    all.push({ step: k, chips, more, height: Math.max(0, ...chips.map(c => chipSize(c, places).height), more ? COUNT_H : 0) });
+  }
+
+  const used = (n: number): number => all.slice(0, n).reduce((h, s) => h + s.height, 0) + Math.max(0, n - 1) * STEP_GAP;
+  let shown = all.length;
+  if (used(shown) > budget) { shown = all.length - 1; while (shown > 1 && used(shown) + STEP_GAP + COUNT_H > budget) shown--; }
+  const steps = all.slice(0, shown);
+  const foldedChips = model.chips.filter(c => c.step >= shown);
+  for (const c of foldedChips) where.set(c.path, FOLD_ID);
+  const k = all.length - shown;
+  const fold = k > 0 ? { ...countOf(foldedChips, () => `+${k} more ${k === 1 ? "step" : "steps"}`), chips: foldedChips.length } : null;
+
+  const arrows: MapArrow[] = [], seen = new Set<string>();
+  for (const a of model.arrows) {
+    const from = where.get(a.from), to = where.get(a.to);
+    if (!from || !to || from === to || seen.has(from + "→" + to)) continue;
+    seen.add(from + "→" + to);
+    arrows.push(from === a.from && to === a.to && a.via ? { from, to, via: a.via } : { from, to });
+  }
+
+  // The loose row: chips one line high, as wide as their name (at most LOOSE_MAX_W); when not all fit, room is kept for the count chip.
+  const inner = OPEN_W - 2 * MARGIN, perChar = OPEN_FONT * CHAR_W;
+  const looseW = (c: OpenChip): number => Math.min(LOOSE_MAX_W, Math.ceil(c.name.length * perChar) + 2 * PAD_X);
+  const fits = (room: number): number => { let x = 0, n = 0; for (const c of model.loose) { if (x + looseW(c) > room) break; x += looseW(c) + LOOSE_GAP; n++; } return n; };
+  const nLoose = fits(inner) === model.loose.length ? model.loose.length : fits(inner - COUNT_W - LOOSE_GAP);
+  const rest = model.loose.slice(nLoose);
+  const looseMore = rest.length ? countOf(rest, n => `+${n} more not linked`, true) : null;
+
+  const drawnSteps = steps.reduce((n, s) => n + s.chips.length, 0);
+  const inStepShown = steps.reduce((n, s) => n + (s.more?.n ?? 0), 0);
+  return {
+    places, width, steps, fold, arrows,
+    loose: { chips: model.loose.slice(0, nLoose), widths: model.loose.slice(0, nLoose).map(looseW), more: looseMore },
+    height: used(shown) + (fold ? STEP_GAP + COUNT_H : 0),
+    counts: { open: model.counts.open, drawn: drawnSteps + nLoose, inStep: inStepShown, folded: foldedChips.length, looseMore: rest.length },
+  };
+}

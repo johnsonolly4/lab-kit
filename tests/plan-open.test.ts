@@ -1,7 +1,8 @@
 // The open-work model of a big project (src/planning/plan-open.ts): open chips in steps, loose row, counts. Known answers: docs/plans/plan-map-export.md "Big projects".
 import { describe, it, expect } from "vitest";
 import { readPlan } from "../src/planning/plan";
-import { CHIP_CAP, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, openModel, rowHeights } from "../src/planning/plan-open";
+import { CHIP_CAP, FOLD_ID, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, openBudget, openModel, rowHeights } from "../src/planning/plan-open";
+import type { FoldedOpen, OpenModel } from "../src/planning/plan-open";
 import type { OpenChip } from "../src/planning/plan-open";
 import { MIN_READABLE } from "../src/planning/plan-slide";
 import type { NoteRec } from "../src/planning/lists";
@@ -141,5 +142,85 @@ describe("chipSize: chip width from places, height from content (M1-2)", () => {
   it("a row is as tall as its tallest chip", () => {
     const h = rowHeights([chip(), chip({ subs: subs(3), place: 1 }), chip({ step: 1 })], 6);
     expect(h).toEqual([chipSize(chip({ subs: subs(3) }), 6).height, chipSize(chip(), 6).height]);
+  });
+});
+
+describe("foldOpen: what is drawn in 1920 × 1080 (M1-2; known answers in docs/plans/plan-map-export.md)", () => {
+  const bare = (m: OpenModel): OpenModel => ({ ...m, chips: m.chips.map(c => ({ ...c, subs: [] })) });
+  const addsUp = (m: OpenModel, f: FoldedOpen): void => {
+    const { open, drawn, inStep, folded, looseMore } = f.counts;
+    expect(drawn + inStep + folded + looseMore).toBe(open);
+    expect(f.steps.reduce((n, s) => n + s.chips.length + (s.more?.n ?? 0), 0) + (f.fold?.chips ?? 0)).toBe(m.chips.length);
+    expect(f.loose.chips.length + (f.loose.more?.n ?? 0)).toBe(m.loose.length);
+  };
+  const T2 = "00 Planning/To-dos/";
+  const extra = Array.from({ length: 30 }, (_, i) => note(`${T2}Misc task ${i + 1}.md`, { kind: "todo", project: "[[Block copolymer library]]" }));
+  it("the fixture: 4 of 9 steps drawn with its subtasks, 6 without; the rest is one count row", () => {
+    const f = foldOpen(big), g = foldOpen(bare(big));
+    expect(openBudget(big)).toBe(770);
+    expect(f.steps.map(s => s.step)).toEqual([0, 1, 2, 3]);
+    expect(f.fold).toMatchObject({ n: 7, chips: 7, late: 0, waiting: 1, text: "+5 more steps: 1 waiting" });
+    expect(g.steps).toHaveLength(6);
+    expect(g.fold?.text).toBe("+3 more steps: 1 waiting");
+    expect(f.height).toBeLessThanOrEqual(770);
+    expect(g.height).toBeLessThanOrEqual(770);
+    expect(f.places).toBe(6);
+    expect(f.width).toBe(259);
+  });
+  it("subtasks make rows taller, so the project with them folds earlier", () => {
+    expect(foldOpen(big).steps.length).toBeLessThan(foldOpen(bare(big)).steps.length);
+  });
+  it("drawn + counted = open, for the steps and the loose row", () => {
+    addsUp(big, foldOpen(big));
+    addsUp(bare(big), foldOpen(bare(big)));
+    const many = openModel(readPlan([...BIG_TODOS, ...extra], BIG_HUB), BIG_TODAY);
+    addsUp(many, foldOpen(many));
+    for (const b of [0, 100, 300, 2000]) addsUp(big, foldOpen(big, b));
+  });
+  it("the first step is always drawn, however small the budget", () => {
+    const f = foldOpen(big, 0);
+    expect(f.steps.map(s => s.step)).toEqual([0]);
+    expect(f.fold?.text).toBe("+8 more steps: 2 waiting");   // both late ones are in step 0 or loose
+  });
+  it("everything fits: no count row", () => {
+    const f = foldOpen(big, 5000);
+    expect(f.steps).toHaveLength(9);
+    expect(f.fold).toBeNull();
+    expect(f.arrows).toHaveLength(big.arrows.length);
+  });
+  it("arrows into folded work end at the count row, one per chip", () => {
+    const f = foldOpen(big);
+    const drawn = new Set(f.steps.flatMap(s => s.chips.map(c => c.path)));
+    for (const a of f.arrows) { expect(drawn.has(a.from)).toBe(true); expect(drawn.has(a.to) || a.to === FOLD_ID).toBe(true); }
+    const into = f.arrows.filter(a => a.to === FOLD_ID).map(a => a.from);
+    expect(into.length).toBeGreaterThan(0);
+    expect(new Set(into).size).toBe(into.length);
+  });
+  it("loose row: as many chips as fit on one line, then the count chip (30 extra loose to-dos: 5 and +28)", () => {
+    const many = openModel(readPlan([...BIG_TODOS, ...extra], BIG_HUB), BIG_TODAY);
+    const f = foldOpen(many);
+    expect(f.loose.chips).toHaveLength(5);
+    expect(f.loose.more?.text).toBe("+28 more not linked");
+    expect(foldOpen(big).loose.chips).toHaveLength(3);
+    expect(foldOpen(big).loose.more).toBeNull();
+    expect(model([td("Late", { due: "2026-10-01" }), ...Array.from({ length: 12 }, (_, i) => td(`Long loose to-do name number ${i}`))]).loose.length).toBe(13);
+    const late = foldOpen(model([...Array.from({ length: 12 }, (_, i) => td(`Long loose to-do name number ${i}`)), td("Zz late", { due: "2026-10-01" }), td("Zz wait late", { due: "2026-10-01" })]));
+    expect(late.loose.chips.slice(0, 2).map(c => c.name)).toEqual(["Zz late", "Zz wait late"]);
+    expect(late.loose.more?.text).toMatch(/^\+\d+ more not linked$/);
+  });
+  it("more than 6 places: a step keeps its 5 most urgent and a +N more in this step chip; arrows to the hidden end there", () => {
+    const kids = ["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8"];
+    const m = model([td("Root"), ...kids.map((k, i) => td(k, { after: ["[[Root]]"], ...(i >= 6 ? { due: "2026-10-01" } : {}) })), td("Tail", { after: ["[[K1]]"] })]);
+    expect(m.counts.places).toBe(8);
+    const f = foldOpen(m, 5000);
+    expect(f.places).toBe(CHIP_CAP);
+    const s1 = f.steps[1];
+    expect(s1.chips).toHaveLength(5);
+    expect(s1.chips.map(c => c.name)).toEqual(expect.arrayContaining(["K7", "K8"]));   // the late ones are kept
+    expect(s1.chips.map(c => c.place)).toEqual([0, 1, 2, 3, 4]);
+    expect(s1.more).toMatchObject({ n: 3, text: "+3 more in this step" });
+    expect(f.arrows.filter(a => a.to === moreId(1))).toHaveLength(1);
+    addsUp(m, f);
+    for (const s of f.steps) for (const c of s.chips) expect(chipSize(c, f.places).chars).toBeGreaterThanOrEqual(MIN_CHARS);
   });
 });
