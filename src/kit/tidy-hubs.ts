@@ -5,12 +5,15 @@ import { goalOf } from "../planning/lists";
 
 export type HubKind = "project" | "topic" | "series";
 
-/** The page of a hub template: after the Templater header and the properties, with `<% vt.folder %>` filled in. Trimmed. */
+/** The page of a hub template: after the Templater header (or the token header) and the properties, with `<% vt.folder %>` / `{{folder}}` filled in. Trimmed. */
 export function templatePage(template: string, folder: string): string {
   const t = template.replace(/\r\n/g, "\n");
-  const afterHeader = t.includes("-%>\n") ? t.slice(t.indexOf("-%>\n") + 4) : t;
+  let afterHeader = t.includes("-%>\n") ? t.slice(t.indexOf("-%>\n") + 4) : t;
+  // a token template (`make: note`, Phase 4) starts with its own header block, then the note's properties
+  const head = /^---\n(?:(?!---\n)[\s\S])*?\nmake: note\n[\s\S]*?\n---\n/.exec(afterHeader);
+  if (head) afterHeader = afterHeader.slice(head[0].length);
   const m = /^---\n[\s\S]*?\n---\n/.exec(afterHeader);
-  return (m ? afterHeader.slice(m[0].length) : afterHeader).replace(/<%\s*vt\.folder\s*%>/g, folder).trim();
+  return (m ? afterHeader.slice(m[0].length) : afterHeader).replace(/<%\s*vt\.folder\s*%>|\{\{\s*folder\s*\}\}/g, folder).trim();
 }
 
 const CARD_BLOCK = /```vault-card\n[\s\S]*?\n```\n?/g;

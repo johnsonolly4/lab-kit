@@ -266,8 +266,8 @@
       "src": "Extras/Templates/Meeting series.md",
       "role": "templates",
       "path": "Meeting series.md",
-      "version": "1.0.1",
-      "sha256": "2faa696008cbf00e4c3879d96b3efca60470c7b1f0ae9306d2b740127d8d4923",
+      "version": "1.4.1",
+      "sha256": "6fb7c401e12eda6bf18134c0cbf23e3e1bf9154a3bb4024c73cf462d54e90808",
       "renamedFrom": [],
       "desc": "New meeting series: its hub note"
     },
@@ -278,7 +278,7 @@
       "role": "templates",
       "path": "Meeting.md",
       "version": "1.4.1",
-      "sha256": "23d63f12aba78152d18f72e03e3e0d8fb94bba5471920189ba7c88c5667794b5",
+      "sha256": "214ae3a1fea3a90fb431951e74b7bf4dd4c044bb08432dadcc8beac6237fc7a8",
       "renamedFrom": [
         "Weekly meeting.md"
       ],
@@ -323,8 +323,8 @@
       "src": "Extras/Templates/One-off meeting.md",
       "role": "templates",
       "path": "One-off meeting.md",
-      "version": "1.0.1",
-      "sha256": "e9109533cd3f47d367bc428a6e28aa7f89271147a756225fc898fc0920bb8686",
+      "version": "1.4.1",
+      "sha256": "1e659afb58f3cbbf70961e34b9f79da1317e7d723c778f6a0fa5f2fb615f6b98",
       "renamedFrom": [],
       "desc": "New one-off meeting note (a smaller meeting note: To discuss, Flagged, Notes)"
     },

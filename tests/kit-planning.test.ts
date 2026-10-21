@@ -350,10 +350,11 @@ describe("Phase 5b: the kit's meeting series", () => {
     expect(home).not.toContain("lab-kit:open-deck");
   });
 
-  it("the meeting template reads the hand-over and links its series; the homepage has the next-meetings card", () => {
+  it("the meeting template is a token template that links its series; the homepage has the next-meetings card", () => {
     const tpl = text("kits/planning/Extras/Templates/Meeting.md");
-    expect(tpl).toContain("window.vtMeeting");
-    expect(tpl).toContain('series: "[[<% series %>]]"');
+    expect(tpl).toContain("make: note");
+    expect(tpl).toContain('series: "[[{{series}}]]"');
+    expect(tpl).not.toContain("<%");
     expect(tpl).not.toContain("dur(7 days)");   // the window is "since the last meeting of the series"
     expect(text("kits/planning/00 Home.md")).toContain("show: next-meetings");
   });
