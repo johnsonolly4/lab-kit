@@ -177,7 +177,7 @@ Order check: 0 measures; 1-2 build the engine and the self-filling path that eve
 - Done when: items 1-5 above answered with measured / not measured; Q5 and Q6 recommendations confirmed or changed from the numbers.
 - New dependencies: none.
 
-### Phase 1 — Engine: note templates and the missing tokens
+### Phase 1 — Engine: note templates and the missing tokens — BUILT 2026-10-21 (engine only, nothing wired; tests 2016 → 2067 (+51 in `tests/note-template.test.ts`), lint 0 errors, 5 warnings as before; the 28 scenarios of `tests/snippet-template.test.ts` and the 0005 / 0011 guards pass unchanged; leftovers in BACKLOG "Templater replacement Phases 0-1 leftovers")
 - Depends on: Phase 0, Q5.
 - Files: `src/kit/snippet-template.ts` (`make: note` header, `{{today}}`, `{{date:…}}`, `{{json:…}}`, `{{#if x != ""}}`, `{{note-name}}`, `{{folder}}`), `src/kit/snippet-env.ts`, new `src/kit/note-template.ts` (pure `noteFromTemplate(text, answers, env)` → `{ name, folder, text }`), tests `tests/note-template.test.ts`; `docs/snippet-syntax.md` (new tokens).
 - Done when: every new token has tests (edge cases: empty answer, bad date, a JSON string with quotes and newlines); the spike's 13 To-do cases pass through `noteFromTemplate` on a token-format `To-do.md` fixture byte for byte; the six token snippets' 28 scenarios unchanged; 0005 / 0011 guards; check PASS. Nothing wired.
