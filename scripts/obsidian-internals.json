@@ -14,6 +14,24 @@
    "note": "Bases view container; board colours, the done circle and card styling hang off it (audit high row 2)"
   },
   {
+   "name": "bases-header",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "low",
+   "note": "Bases toolbar row (view button, Sort, Filter, ...); the lab board's Hide toolbar hides it (src/lab/lab-board-view.ts). If renamed, the toolbar just shows"
+  },
+  {
+   "name": "bases-search-row",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "low",
+   "note": "Bases toolbar search row; hidden with the toolbar by the lab board's Hide toolbar. If renamed, it just shows"
+  },
+  {
    "name": "bases-kanban-column",
    "kind": "selector",
    "files": [

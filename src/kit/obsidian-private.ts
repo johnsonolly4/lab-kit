@@ -58,12 +58,12 @@ export const hasTemplater = (app: App): boolean => !!templater(app);
 export const templaterTemplatesFolder = (app: App): string | undefined => templater(app)?.settings?.templates_folder;
 export const templaterUserScriptsFolder = (app: App): string | undefined => templater(app)?.settings?.user_scripts_folder;
 
-/** Creates a note from `template` in `folder` with Templater and opens it (unless `open` is false). False when this Templater has no such function (private API). */
-export async function templaterCreateNote(app: App, template: TFile, folder: TFolder, open = true, filename?: string): Promise<boolean> {
+/** Creates a note from `template` in `folder` with Templater and opens it (unless `open` is false). The new note (true when this Templater does not return it); false when this Templater has no such function (private API). */
+export async function templaterCreateNote(app: App, template: TFile, folder: TFolder, open = true, filename?: string): Promise<TFile | boolean> {
   const create = templater(app)?.templater?.create_new_note_from_template;
   if (typeof create !== "function") return false;
-  await create.call(templater(app)?.templater, template, folder, filename, open);
-  return true;
+  const made = (await create.call(templater(app)?.templater, template, folder, filename, open)) as TFile | undefined;
+  return made ?? true;
 }
 
 /** Runs `template` with Templater and inserts the result at the cursor of the open note (Templater's own "Insert template"). False when this Templater has no such function (private API). */

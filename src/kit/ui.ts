@@ -467,9 +467,9 @@ export class KitController {
   /**
    * New lab entry: the entry window (title, an Exp. Class chip, and a Copy of chip), then a note from the Lab Book Template in the Lab notes folder (created if
    * missing), made and opened by Templater. With a note chosen in Copy of it is a clone of that note instead (`cloneLabNote`). `clone`: Clone experiment, which needs
-   * a note to copy and starts with the open lab note chosen.
+   * a note to copy and starts with the open lab note chosen. `status`: the lab board's column the `+` belongs to; the new note gets that Status once it is made.
    */
-  async newLabEntry(options: { clone?: boolean } = {}): Promise<void> {
+  async newLabEntry(options: { clone?: boolean; status?: string } = {}): Promise<void> {
     const tracked = this.managed.stateOf(LAB_TEMPLATE_ID)?.path;
     const template = [tracked, kitJoin(this.managed.templatesFolder(), "Lab Book Template.md")]
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
@@ -485,7 +485,7 @@ export class KitController {
     const expClass = String(answer.values.expClass ?? "");
     const source = notes.find(f => f.path === answer.values.copyOf) ?? null;
     const title = labEntryTitle(answer.title, source ? { basename: source.basename, path: source.path, classes: [] } : null);
-    if (source) { await this.cloneInto(source, notes, title, expClass); return; }
+    if (source) { await this.cloneInto(source, notes, title, expClass, options.status); return; }
     const w = window as unknown as { labKitPresetTitle?: string; labKitPresetClass?: string };
     try {
       await ensureFolder(this.app.vault, target.folder);
@@ -493,7 +493,9 @@ export class KitController {
       if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
       w.labKitPresetTitle = title;   // the template reads and clears it (as the to-do template does for projects)
       w.labKitPresetClass = expClass;
-      if (!(await templaterCreateNote(this.app, template, folder))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+      const made = await templaterCreateNote(this.app, template, folder);
+      if (!made) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+      else if (made instanceof TFile && options.status) await this.setStatus(made, options.status);
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
     finally { delete w.labKitPresetTitle; delete w.labKitPresetClass; }
   }
@@ -563,7 +565,12 @@ export class KitController {
   async cloneExperiment(): Promise<void> { await this.newLabEntry({ clone: true }); }
 
   /** Copies `source` into a new numbered lab note named `title`, renumbering its sample codes; `expClass` (when not empty) replaces its Exp. Class. Opens it. */
-  private async cloneInto(source: TFile, notes: TFile[], title: string, expClass: string): Promise<void> {
+  /** The lab board's column `+`: the new note's Status (the template wrote Planned). */
+  private async setStatus(file: TFile, status: string): Promise<void> {
+    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { if (fm.Status !== status) fm.Status = status; });
+  }
+
+  private async cloneInto(source: TFile, notes: TFile[], title: string, expClass: string, status?: string): Promise<void> {
     const target = cloneExperimentTarget({ labFolder: this.kit.labFolder, initials: this.kit.initials });
     if ("error" in target) { new Notice(target.error); return; }
     try {
@@ -573,6 +580,7 @@ export class KitController {
       const made = cloneLabNote(await this.app.vault.read(source), { oldPrefix: labPrefix(source.basename)!, newPrefix: `${target.initials}${number}-`, today: localDate(new Date()), clonedFrom: source.basename });
       const file = await this.app.vault.create(path, made.text);
       if (expClass) await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { fm["Exp. Class"] = expClass; });
+      if (status) await this.setStatus(file, status);
       await this.app.workspace.getLeaf(false).openFile(file);
       new Notice(`Cloned ${source.basename}: ${made.recoded} sample code${made.recoded === 1 ? "" : "s"} renumbered. Check the tables before you start.`);
     } catch (e) { console.error(e); new Notice("Clone experiment failed. See the developer console for details."); }

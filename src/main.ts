@@ -12,6 +12,7 @@ import { ymd } from "./planning/todo";
 import { metadataResolved } from "./kit/obsidian-private";
 import { refreshBoards, registerBoardView } from "./planning/board-view";
 import { bridgeOnDelete } from "./planning/after-bridge";
+import { registerLabBoardView } from "./lab/lab-board-view";
 import { PlanningBlocks } from "./planning/blocks";
 import { ProgressWriter } from "./planning/progress";
 import { BoardColours } from "./kit/board-colours";
@@ -51,6 +52,12 @@ export default class LabKitPlugin extends Plugin {
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();
     this.kit.onChanged = () => blocks.refresh();
+
+    // Lab board (own Bases view in the kit's Lab book base): always registered, the lab kit has no start step
+    registerLabBoardView(this, {
+      todoFolder: () => (this.kit.kit.kits[PLANNING_KIT]?.enabled ? todoFolder(this.kit.kit.planningFolders) : null),
+      newLabEntry: status => void this.kit.newLabEntry(status ? { status } : {}),
+    });
 
     new ProgressWriter(this, () => this.kit.kit).start();
     const colours = new BoardColours(this, () => this.kit.kit);
