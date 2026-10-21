@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { readPlan } from "../src/planning/plan";
 import { layoutPlan } from "../src/planning/plan-map";
-import { CHIP_CAP, COUNT_H, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, moreLines, openBudget, openGeometry, openModel, rowHeights } from "../src/planning/plan-open";
+import { ARROW_TAIL, CHIP_CAP, COUNT_H, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, moreLines, openBudget, openGeometry, openModel, rowHeights } from "../src/planning/plan-open";
 import type { MapGeometry } from "../src/planning/plan-map";
 import type { FoldedOpen, OpenModel } from "../src/planning/plan-open";
 import type { OpenChip } from "../src/planning/plan-open";
@@ -110,12 +110,13 @@ describe("openModel: rules", () => {
 describe("chipSize: chip width from places, height from content (M1-2)", () => {
   const chip = (o: Partial<OpenChip> = {}): OpenChip => ({ path: "x.md", name: "Run kinetics at 70 C", status: "ready", step: 0, place: 0, line: "", subs: [], ...o });
   const subs = (n: number, done = 0) => Array.from({ length: n }, (_, i) => ({ path: `s${i}.md`, name: `Subtask ${i + 1}`, done: i < done }));
-  it("no chip is under 17 characters a line, whatever the places (capped at 6)", () => {
-    expect(MIN_CHARS).toBe(17);
+  it("no chip is under 19 characters a line, whatever the places (capped at 6; owner board 6 Q2 a)", () => {
+    expect(MIN_CHARS).toBe(19);
     for (let p = 1; p <= 30; p++) expect(chipSize(chip(), p).chars).toBeGreaterThanOrEqual(MIN_CHARS);
     expect(chipWidth(6)).toBe(259);
     expect(chipWidth(12)).toBe(chipWidth(CHIP_CAP));
-    expect(chipSize(chip(), 6).chars).toBe(17);
+    expect(chipSize(chip(), 6).chars).toBe(19);
+    expect(SECOND_LINE_MAX).toBe(19);
   });
   it("every text is 22 px or more (MIN_READABLE)", () => {
     expect(OPEN_FONT).toBeGreaterThanOrEqual(MIN_READABLE);
@@ -198,11 +199,11 @@ describe("foldOpen: what is drawn in 1920 × 1080 (M1-2; known answers in docs/p
     expect(into.length).toBeGreaterThan(0);
     expect(new Set(into).size).toBe(into.length);
   });
-  it("loose row: as many chips as fit on one line, then the count chip (30 extra loose to-dos: 5 and +28)", () => {
+  it("loose row: as many chips as fit on one line, then the count chip (30 extra loose to-dos: 6 and +27)", () => {
     const many = openModel(readPlan([...BIG_TODOS, ...extra], BIG_HUB), BIG_TODAY);
     const f = foldOpen(many);
-    expect(f.loose.chips).toHaveLength(5);
-    expect(f.loose.more?.text).toBe("+28 more not linked");
+    expect(f.loose.chips).toHaveLength(6);
+    expect(f.loose.more?.text).toBe("+27 more not linked");
     expect(foldOpen(big).loose.chips).toHaveLength(3);
     expect(foldOpen(big).loose.more).toBeNull();
     expect(model([td("Late", { due: "2026-10-01" }), ...Array.from({ length: 12 }, (_, i) => td(`Long loose to-do name number ${i}`))]).loose.length).toBe(13);
@@ -285,7 +286,7 @@ describe("openGeometry: chips down, arrows through lanes (M1-3; numbers in docs/
     // the fixture needs no routing: every arrow joins neighbouring steps or runs past no chip
     expect([all9.curves.filter(c => c.routed).length, all9.curves.length]).toEqual([0, 23]);
     expect([folded.curves.filter(c => c.routed).length, folded.curves.length]).toEqual([0, 16]);
-    expect(all9.height).toBe(1304);   // all 9 steps: taller than the 770 px budget, which is why the fold draws 4
+    expect(all9.height).toBe(1276);   // all 9 steps: taller than the 770 px budget, which is why the fold draws 4
   });
   it("many arrows skipping steps in one column: each routed through a lane on a line of its own, crossing no chip", () => {
     const chain = ["A", "B", "C", "D", "E"];
@@ -297,6 +298,23 @@ describe("openGeometry: chips down, arrows through lanes (M1-3; numbers in docs/
     expect(sharedLanes(g)).toBe(0);
     expect(crossings(f, g)).toEqual([]);
     expect(new Set(g.curves.filter(c => c.routed).map(c => c.samples[13].x))).toEqual(new Set([-12, -9, -15, -6, -18, 1686, 1689]));   // 5 lines left of the one column (0, ±3, ±6), then 2 right of it (one place: chips 1674 px)
+  });
+  it("every arrow ends in a straight drop at least as long as its head, so the head sits on the line (owner board 6, rows 36 px apart)", () => {
+    const chain = ["A", "B", "C", "D"];
+    const m = model([td("Root"), ...chain.map((n, i) => td(n, { after: [i ? `[[${chain[i - 1]}]]` : "[[Root]]", ...(i >= 2 ? ["[[Root]]"] : [])] }))]);
+    for (const f of [foldOpen(big), foldOpen(big, 5000), foldOpen(m, 5000)]) {
+      const g = openGeometry(f);
+      expect(g.curves.length).toBeGreaterThan(0);
+      for (const c of g.curves) {
+        const end = c.samples.at(-1)!, before = c.samples.at(-2)!;
+        expect(before.x).toBe(end.x);
+        expect(end.y - before.y).toBeGreaterThanOrEqual(ARROW_TAIL);
+        expect(c.d.endsWith(` L${end.x} ${end.y}`)).toBe(true);
+      }
+      expect(crossings(f, g)).toEqual([]);
+    }
+    expect(openGeometry(foldOpen(m, 5000)).curves.filter(c => c.routed).length).toBeGreaterThan(0);
+    expect(ARROW_TAIL).toBeGreaterThanOrEqual(15);   // the head: markerWidth 6 × stroke 2.5
   });
   it("a step's more chip sits in the last place, and an arrow into it ends at its top edge", () => {
     const kids = ["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8"];

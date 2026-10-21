@@ -3,7 +3,7 @@
 import type { PlanRow } from "./plan";
 import { CARD_H, CARD_W, mapGeometry, subsLabel } from "./plan-map";
 import type { MapArrow, MapCard, PlanMap } from "./plan-map";
-import { COUNT_H, FOLD_ID, KEY_ROOM, LABEL_W, LINE_H, LOOSE_GAP, LOOSE_H, OPEN_FONT, OPEN_H, OPEN_W, PAD_X, PAD_Y, SUB_GAP, TOP, chipSize, foldOpen, moreId, moreLines, openGeometry } from "./plan-open";
+import { CHIP_CHAR_W, COUNT_H, FOLD_ID, KEY_ROOM, LABEL_W, LINE_H, LOOSE_GAP, LOOSE_H, OPEN_FONT, OPEN_H, OPEN_W, PAD_X, PAD_Y, SUB_GAP, TOP, chipSize, foldOpen, moreId, moreLines, openGeometry } from "./plan-open";
 import type { OpenChip, OpenModel, OpenStatus } from "./plan-open";
 
 /** How a to-do stands today. Late (open, due date passed) wins over waiting (open, `waiting` set); a to-do with something unfinished before it is blocked. */
@@ -389,7 +389,7 @@ export function openSvg(model: OpenModel, opts: SlideOptions): SlidePicture {
     let x = MARGIN;
     f.loose.chips.forEach((c, i) => {
       const w = f.loose.widths[i];
-      parts.push(chipBox(c, x, y, w, COUNT_H) + text(x + PAD_X, base(y, 0), cut(c.name, Math.floor((w - 2 * PAD_X) / (F * CHAR_W))), INK, ' font-weight="700"'));
+      parts.push(chipBox(c, x, y, w, COUNT_H) + text(x + PAD_X, base(y, 0), cut(c.name, Math.floor((w - 2 * PAD_X) / (F * CHIP_CHAR_W))), INK, ' font-weight="700"'));
       x += w + LOOSE_GAP;
     });
     if (f.loose.more) parts.push(countBox(x, y, [f.loose.more.text], widthOf(f.loose.more.text)));

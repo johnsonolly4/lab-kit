@@ -128,6 +128,8 @@ export interface MapSizes {
   stepGap: number; placeGap: number; pad: number;
   /** Separate lines (3 px apart) a lane holds before a routed arrow goes to the next nearest lane with room; none: 3 lines, the 4th arrow reuses the 1st's (the on-screen map as it always was). */
   laneLines?: number;
+  /** A straight run this long into the target's incoming edge, so an arrow head sits on the line where steps are close; none: the curve ends at the edge (the on-screen map as it always was). */
+  tail?: number;
 }
 /** The on-screen map's cards (and option A's). */
 export const CARD_SIZES: MapSizes = { width: CARD_W, height: CARD_H, stepGap: GAP_X, placeGap: GAP_Y, pad: PAD };
@@ -221,12 +223,15 @@ export function mapGeometry(map: Pick<PlanMap, "arrows" | "startStep"> & { cards
     const end = across ? start.x : f.y + rowH[stepOf.get(a.from)!];
     const o = across || end === start.y ? start : { x: start.x, y: end };
     const lead = o === start ? "" : ` L${o.x} ${o.y}`, leadPts = o === start ? [] : [start];
-    const i = across ? { x: t.x, y: t.y + th / 2 } : { x: t.x + W / 2, y: t.y };
-    const k = Math.max(stepGap / 2, Math.abs(alongOf(i) - alongOf(o)) / 2);
+    const edge = across ? { x: t.x, y: t.y + th / 2 } : { x: t.x + W / 2, y: t.y };
+    // With a tail the curve ends `tail` short of the edge and a straight line goes the rest of the way.
+    const i = sizes.tail ? at(alongOf(edge) - sizes.tail, crossOf(edge)) : edge;
+    const tailD = sizes.tail ? ` L${edge.x} ${edge.y}` : "", tailPts = sizes.tail ? [edge] : [];
+    const k = Math.max((stepGap - (sizes.tail ?? 0)) / 2, Math.abs(alongOf(i) - alongOf(o)) / 2);
     const c1 = at(alongOf(o) + k, crossOf(o)), c2 = at(alongOf(i) - k, crossOf(i));
-    const straight = [...leadPts, ...Array.from({ length: 25 }, (_, n) => cubic(o, c1, c2, i, n / 24))];
+    const straight = [...leadPts, ...Array.from({ length: 25 }, (_, n) => cubic(o, c1, c2, i, n / 24)), ...tailPts];
     const skips = stepOf.get(a.to)! - stepOf.get(a.from)! >= 2;
-    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${start.x} ${start.y}${lead} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight, via: a.via }];
+    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${start.x} ${start.y}${lead} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}${tailD}`, routed: false, samples: straight, via: a.via }];
     // Out into the gap after the first card, along the nearest lane between rows, in through the gap before the last card.
     const mid = (crossOf(o) + crossOf(i)) / 2;
     const cap = sizes.laneLines, full = (n: number): boolean => cap !== undefined && (inLane.get(n) ?? 0) >= cap;
@@ -242,8 +247,8 @@ export function mapGeometry(map: Pick<PlanMap, "arrows" | "startStep"> & { cards
     const cor = lane(best) + shift, a0 = alongOf(o), a1 = alongOf(i), g = stepGap * 0.35, q = g / 2;   // out and in at different places of a shared gap, else an arrow leaving and one arriving there look like one bump
     const p1 = at(a0 + g, cor), p2 = at(a1 - g, cor);
     const out1 = at(a0 + q, crossOf(o)), out2 = at(a0 + q, cor), in1 = at(a1 - q, cor), in2 = at(a1 - q, crossOf(i));
-    const d = `M${start.x} ${start.y}${lead} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
-    const samples = [...leadPts, ...Array.from({ length: 13 }, (_, n) => cubic(o, out1, out2, p1, n / 12)), ...line(p1, p2, 12), ...Array.from({ length: 13 }, (_, n) => cubic(p2, in1, in2, i, n / 12))];
+    const d = `M${start.x} ${start.y}${lead} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}${tailD}`;
+    const samples = [...leadPts, ...Array.from({ length: 13 }, (_, n) => cubic(o, out1, out2, p1, n / 12)), ...line(p1, p2, 12), ...Array.from({ length: 13 }, (_, n) => cubic(p2, in1, in2, i, n / 12)), ...tailPts];
     return [{ from: a.from, to: a.to, d, routed: true, samples, via: a.via }];
   });
   const rowsH = rowH.reduce((s, h) => s + h, 0);

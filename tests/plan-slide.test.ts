@@ -154,8 +154,10 @@ describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-e
     expect(fixture.svg).toContain("Not linked to other open work (3):");
     expect(fixture.svg).toContain(">can start<");
     expect(fixture.svg).toContain(">then +3<");
-    expect(fixture.svg).toContain(">Fit rate<");   // chip names break at a space, not mid-word ("Fit rate constant" / "s")
-    expect(fixture.svg).toContain(">constants<");
+    expect(fixture.svg).toContain(">Chain extend second<");   // chip names break at a space, not mid-word
+    expect(fixture.svg).toContain(">batch<");
+    expect(fixture.svg).toContain(">Fit rate constants<");   // 19 characters a chip line (owner board 6 Q2 a): one line, and the loose chip is whole
+    expect(fixture.svg).toContain(">Kinetics repeat at 80 C<");
     expect(fixture.svg).toContain("35 of 59 done");
     expect(fixture.svg).toContain("as of Tue 20 Oct 2026");
   });
@@ -170,12 +172,12 @@ describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-e
       expect(b.filter(r => r.y > label).every(r => r.y >= label + 6)).toBe(true);
     }
   });
-  it("30 extra loose to-dos: 5 loose chips and the +28 count chip, text still 22 px", () => {
+  it("30 extra loose to-dos: 6 loose chips and the +27 count chip, text still 22 px", () => {
     const pic = draw([...BIG_TODOS, ...extra]);
     expect(pic.minText).toBeGreaterThanOrEqual(MIN_READABLE);
-    expect(pic.svg).toContain("+28 more not linked");
+    expect(pic.svg).toContain("+27 more not linked");
     expect(pic.svg).toContain("Not linked to other open work (33):");
-    expect(rects(pic.svg)).toHaveLength(14 + 1 + 5 + 1);
+    expect(rects(pic.svg)).toHaveLength(14 + 1 + 6 + 1);
   });
   it("a chip with 12 subtasks shows 3 and +9 more (done struck); a 120-character name is cut on 2 lines; text 22 px", () => {
     const long = "A very long to-do name ".repeat(6).slice(0, 120);

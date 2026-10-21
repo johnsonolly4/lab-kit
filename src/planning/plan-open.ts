@@ -3,7 +3,7 @@
 import type { Plan, PlanRow } from "./plan";
 import { layoutPlan, mapGeometry } from "./plan-map";
 import type { MapArrow, MapGeometry, PlanMap } from "./plan-map";
-import { CHAR_W, DEFAULT_AHEAD, slideModel, slideSvg, statusOf, wrap } from "./plan-slide";
+import { DEFAULT_AHEAD, slideModel, slideSvg, statusOf, wrap } from "./plan-slide";
 
 /** How an open chip stands: late wins over waiting, waiting over can start; "later" waits for an earlier step. */
 export type OpenStatus = "late" | "waiting" | "ready" | "later";
@@ -14,12 +14,14 @@ export const MARGIN = 48, LABEL_W = 150, PLACE_GAP = 24;
 export const OPEN_FONT = 22;
 /** Most places across (owner, Q2 a: a step with more chips keeps the 5 most urgent and a "+N more in this step" chip). */
 export const CHIP_CAP = 6;
-/** A chip line holds at least this many characters (6 places). */
-export const MIN_CHARS = 17;
+/** A chip line holds at least this many characters (6 places; owner board 6 Q2 a: about 19). */
+export const MIN_CHARS = 19;
+/** Average character width in em for chip text (names, second lines, subtasks, loose chips): tighter than the rest of the picture (`CHAR_W`), so a 259 px chip holds 19 characters at 22 px. */
+export const CHIP_CHAR_W = 0.52;
 export const LINE_H = 28, PAD_X = 20, PAD_Y = 10, SUB_GAP = 6;
 const NAME_LINES = 2, SUB_LINES = 4;
-/** The second line is cut to this many characters: about one line of a chip 259 px wide at 22 px (6 places; plan "Why the fold rule is needed"). */
-export const SECOND_LINE_MAX = 17;
+/** The second line is cut to this many characters: one line of a chip 259 px wide at 22 px (6 places; plan "Why the fold rule is needed"). */
+export const SECOND_LINE_MAX = MIN_CHARS;
 
 export interface OpenChip {
   path: string; name: string; status: OpenStatus;
@@ -89,8 +91,8 @@ export function openModel(plan: Plan, today?: string): OpenModel {
 
 /** Chip width for `places` columns (capped at `CHIP_CAP`): 259 px at 6. */
 export const chipWidth = (places: number): number => Math.floor((OPEN_W - 2 * MARGIN - LABEL_W - (Math.min(Math.max(1, places), CHIP_CAP) - 1) * PLACE_GAP) / Math.min(Math.max(1, places), CHIP_CAP));
-/** Characters a chip line holds when the picture has `places` columns (17 at 6). */
-export const chipChars = (places: number): number => Math.floor((chipWidth(places) - 2 * PAD_X) / (OPEN_FONT * CHAR_W));
+/** Characters a chip line holds when the picture has `places` columns (19 at 6). */
+export const chipChars = (places: number): number => Math.floor((chipWidth(places) - 2 * PAD_X) / (OPEN_FONT * CHIP_CHAR_W));
 /** The lines of a "+N more in this step" chip: its text in up to 2 lines, so it is never cut (20 characters do not fit one line of 17). */
 export const moreLines = (text: string, places: number): string[] => wrap(text, chipChars(places), NAME_LINES, 0);
 const moreHeight = (text: string, places: number): number => 2 * PAD_Y + moreLines(text, places).length * LINE_H;
@@ -202,7 +204,7 @@ export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOp
   }
 
   // The loose row: chips one line high, as wide as their name (at most LOOSE_MAX_W); when not all fit, room is kept for the count chip.
-  const inner = OPEN_W - 2 * MARGIN, perChar = OPEN_FONT * CHAR_W;
+  const inner = OPEN_W - 2 * MARGIN, perChar = OPEN_FONT * CHIP_CHAR_W;
   const looseW = (c: OpenChip): number => Math.min(LOOSE_MAX_W, Math.ceil(c.name.length * perChar) + 2 * PAD_X);
   const fits = (room: number): number => { let x = 0, n = 0; for (const c of model.loose) { if (x + looseW(c) > room) break; x += looseW(c) + LOOSE_GAP; n++; } return n; };
   const nLoose = fits(inner) === model.loose.length ? model.loose.length : fits(inner - COUNT_W - LOOSE_GAP);
@@ -223,6 +225,8 @@ export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOp
  *  Arrows that skip steps go through the lanes between places; one into a more chip or the count row ends at its top edge. Origin: the first chip's top-left corner (no margin). */
 /** Lines a lane between places holds (0, ±3, ±6 px: 6 px clear of the chips in a 24 px gap) before a routed arrow takes the next lane, so two never share one. */
 const LANE_LINES = 5;
+/** The straight run into a chip before its arrow head: the head is 15 px (markerWidth 6 × stroke 2.5), and the curve in a 36 px step gap runs almost flat (owner board 6). */
+export const ARROW_TAIL = 16;
 export function openGeometry(folded: FoldedOpen): MapGeometry {
   const cards: { path: string; step: number; place: number }[] = [], heights = new Map<string, number>();
   for (const s of folded.steps) {
@@ -230,7 +234,7 @@ export function openGeometry(folded: FoldedOpen): MapGeometry {
     if (s.more) { cards.push({ path: moreId(s.step), step: s.step, place: CHIP_CAP - 1 }); heights.set(moreId(s.step), moreHeight(s.more.text, folded.places)); }
   }
   if (folded.fold) { cards.push({ path: FOLD_ID, step: folded.steps.length, place: 0 }); heights.set(FOLD_ID, COUNT_H); }
-  return mapGeometry({ cards, arrows: folded.arrows, startStep: 0 }, 0, "down", undefined, { width: folded.width, height: COUNT_H, heights, stepGap: STEP_GAP, placeGap: PLACE_GAP, pad: 0, laneLines: LANE_LINES });
+  return mapGeometry({ cards, arrows: folded.arrows, startStep: 0 }, 0, "down", undefined, { width: folded.width, height: COUNT_H, heights, stepGap: STEP_GAP, placeGap: PLACE_GAP, pad: 0, laneLines: LANE_LINES, tail: ARROW_TAIL });
 }
 
 /** Which picture a plan gets (owner, Q4 a: automatic only): the full map (option A, compact) while its smallest text is 22 px or more, else the open work. */
