@@ -929,3 +929,9 @@ Private: never commit the group's symbols or the example figures. One commit per
 - [ ] **F3 rolled-over count on a card** (owner, feedback page 2026-10-19: UNDECIDED). Mock-up: "×3", "carried over 3 days", a "To Backlog?" mini button on the amber card. Ask the owner before building.
 - [ ] **Place to-dos on days by their dependencies** (owner, feedback page 2026-10-19: PARKED). Needs durations on to-dos first; nothing planned.
 - [ ] **Phase 8 leftover (2026-10-21): the Actual input element is still solution-only.** `SolutionView.edit` (`src/solution/render.ts`, `private edit(idx)`) builds the input, Enter / Tab / Esc and the blur save; Phases 9-11 will need the same, so lift it into `src/blocks/` when the first of them is built (needs a second user to shape the interface). The DOM `drawView` rows stay per block.
+
+## Phase C1 leftovers (custom live blocks, 2026-10-21)
+- [ ] `help:` is parsed (`TemplateField.help`, `src/kit/snippet-template.ts` readHeader) but not passed to the form: `FormField` (`src/kit/snippet-form.ts:10`) and `FormWindow.onOpen` (`:146-150`) have no (i) yet. Look goes on the CF feedback page (CQ22 a).
+- [ ] `wide:` and `unit:` are parsed but unused by the window (`snippet-form.ts:145` row loop has no grid; `unit` is for the live-block phases C4+). Nothing shown today.
+- [ ] A `list` with `suggest: chemicals` and `weights: fraction` (`DAAm: 0.7`): not tried; the suggest works per list item (`snippet-form.ts:49` `currentItem`) but the `: 0.7` part was not checked.
+- [ ] Form audit (`tests/snippet-form-audit.test.ts`) lists the kit's shipped snippets only, none uses the new types; the new types are covered in `tests/snippet-template.test.ts` and `tests/snippet-run.test.ts` ("toggle, select and list").
