@@ -19,8 +19,8 @@ describe("nextLabNumber", () => {
   it("ignores another person's initials followed by digits only when they do not start the name", () => {
     expect(nextLabNumber(["XYZ0020 - other"], "ABC")).toBe("0001");
   });
-  it("uses the rule written in the Lab Book Template", () => {
-    const template = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  it("uses the rule written in the old Templater Lab Book Template (kept as a fixture)", () => {
+    const template = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
     expect(template).toContain("const numbered = new RegExp(`^(?:${initials.replace(/[.*+?^${}()|[\\]\\\\]/g, \"\\\\$&\")})?(\\\\d+)`);");
     expect(template).toContain('String(Math.max(0, ...nums) + 1).padStart(4, "0")');
     expect(template).toContain('.replace(/[\\\\/:*?"<>|]/g, "-")');

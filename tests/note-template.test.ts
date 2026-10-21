@@ -93,6 +93,23 @@ describe("{{today}} and {{date:…}}", () => {
   });
 });
 
+describe("{{yaml:key}}", () => {
+  it("is the plain text when it is safe as a property value (letters, digits, space, dot, dash)", () => {
+    for (const v of ["Planned", "Started", "In progress", "Plan 2.1", "re-run"]) assert.equal(made("Status: {{yaml:s}}", { s: v }), `Status: ${v}`);
+  });
+  it("is a JSON string for anything else, and for an empty answer", () => {
+    assert.equal(made("Status: {{yaml:s}}", { s: "Needs: review" }), 'Status: "Needs: review"');
+    assert.equal(made("Status: {{yaml:s}}", { s: 'say "hi"' }), 'Status: "say \\"hi\\""');
+    assert.equal(made("Status: {{yaml:s}}", { s: "a\nb" }), 'Status: "a\\nb"');
+    assert.equal(made("Status: {{yaml:s}}", { s: "Étude" }), 'Status: "Étude"');
+    assert.equal(made("Status: {{yaml:s}}", { s: "  " }), 'Status: ""');
+  });
+  it("works on a loop variable and on an unknown field (error)", () => {
+    assert.equal(made("{{#each xs as x}}{{yaml:x}};{{/each}}", { xs: "a b, c:d" }), 'a b;"c:d";');
+    assert.throws(() => made("{{yaml:nope}}", { a: "1" }), /"nope", which is not a field/);
+  });
+});
+
 describe("{{json:key}}", () => {
   it("quotes and escapes quotes, backslashes and line breaks so the value stays one YAML / JSON string", () => {
     const v = 'He said "hi"\nand\\left\tnow';

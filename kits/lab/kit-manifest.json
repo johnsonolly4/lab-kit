@@ -283,7 +283,7 @@
       "role": "templates",
       "path": "Chemical database template.md",
       "version": "1.4.1",
-      "sha256": "50401fed0ec0518c7e45ed76800b2c60678d750ad567183d27797efc0f5364b5",
+      "sha256": "b21a6359ea93595ba49b581c73fba2e6b37e849dddcfc4466ab54a13955e7d35",
       "renamedFrom": [],
       "desc": "New chemical note: names, class, hazards, CAS number, MW and physical data",
       "optional": true,
@@ -296,7 +296,7 @@
       "role": "templates",
       "path": "Lab Book Template.md",
       "version": "1.4.1",
-      "sha256": "41610cb53639ff938bb16fa2103bf5ebc30e86638b31768c309d8b2575fcf02e",
+      "sha256": "4867da61abc9f8efa109a6e7e8047089ec038552d3a7cd13accb054e6a86f2bb",
       "renamedFrom": [],
       "desc": "New experiment note: number, hazards, data folder button and sections"
     },
