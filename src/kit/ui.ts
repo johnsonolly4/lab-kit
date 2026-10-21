@@ -29,6 +29,7 @@ import { KitManaged, kitName, type ClosingModal } from "./managed-ui";
 import { kitFilesDesc } from "./kit-set";
 import { KitSet } from "./kit-set-ui";
 import { SetupCheckModal } from "./setup-check-ui";
+import { folderTemplateRows } from "./setup-check";
 import { HotkeyCheckModal } from "./hotkey-check-ui";
 import { ClearBackupsModal } from "./backups-ui";
 import { BOARD_STATUSES } from "./board-colours";
@@ -57,6 +58,30 @@ class KitSettingTab extends PluginSettingTab {
         b.addButton(btn => btn.setButtonText("Remove").onClick(async () => { folders.splice(i, 1); await this.ctl.save(); this.update(); }));
       } }));
     return rows;
+  }
+
+  /** Lab Kit's folder → template list (`kit.folderTemplates`): one row per folder; the first change turns today's rows into a saved list, Reset goes back to them. */
+  private folderTemplateRows(): SettingGroupItem[] {
+    const kit = this.ctl.kit, planningOn = !!this.ctl.planning?.slot.enabled;
+    const rows = folderTemplateRows(kit, planningOn);
+    const edit = async (change: (list: { folder: string; file: string }[]) => void): Promise<void> => {
+      const list = (kit.folderTemplates ?? rows).map(r => ({ ...r }));
+      change(list);
+      kit.folderTemplates = list;
+      await this.ctl.save();
+    };
+    const out: SettingGroupItem[] = [{ name: "Folder templates",
+      render: b => {
+        b.addButton(btn => btn.setButtonText("Add folder").onClick(async () => { await edit(l => l.push({ folder: "", file: "" })); this.update(); }));
+        if (kit.folderTemplates) b.addButton(btn => btn.setButtonText("Reset").onClick(async () => { kit.folderTemplates = null; await this.ctl.save(); this.update(); }));
+      } }];
+    rows.forEach((r, i) => out.push({ name: `Folder ${i + 1}`,
+      render: b => {
+        b.addText(t => wideBox(b, t, this.app).setPlaceholder("Folder").setValue(r.folder).onChange(async v => { await edit(l => { l[i].folder = v.trim() ? normalizePath(v.trim()) : ""; }); }));
+        b.addText(t => t.setPlaceholder("Template file").setValue(r.file).onChange(async v => { await edit(l => { l[i].file = v.trim(); }); }));
+        b.addButton(btn => btn.setButtonText("Remove").onClick(async () => { await edit(l => { l.splice(i, 1); }); this.update(); }));
+      } }));
+    return out;
   }
 
   /** The kit rows: the Updates group, the Setup group (checks, the folders the kit's files go to), and the board colour rows (a page of the Lab notebook group). */
@@ -146,6 +171,7 @@ class KitSettingTab extends PluginSettingTab {
     kitFolders.push({ name: "Snippets folder", desc: "Fixed by Obsidian.",
       render: b => { b.addText(t => { wideBox(b, t).setValue(kitJoin(this.app.vault.configDir, "snippets")).setDisabled(true); }); } });
     setup.push({ type: "page", name: "Kit folders", items: kitFolders });
+    setup.push({ type: "page", name: "Folder templates", items: this.folderTemplateRows() });
     const bc = kit.boardColours;
     const boards: SettingGroupItem[] = [];
     boards.push({ name: "Colour board columns", desc: "Colours the columns of kanban boards by status (Planned, Started, Processing results, Closed), so the Lab book board has them without the planning kit.",

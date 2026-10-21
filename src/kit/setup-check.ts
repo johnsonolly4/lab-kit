@@ -2,7 +2,7 @@
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
 import type { ZotlitScan } from "./zotlit";
-import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
+import { RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
 import type { ClosedScan } from "../close/scan";
@@ -21,6 +21,10 @@ export const labFolderTemplates = (labFolder: string, chemicalFolder = ""): { fo
   ...(labFolder.trim() ? [{ folder: labFolder.trim(), file: "Lab Book Template.md" }] : []),
   ...(chemicalFolder.trim() ? [{ folder: chemicalFolder.trim(), file: "Chemical database template.md" }] : []),
 ];
+
+/** Lab Kit's folder → template rows (`kit.folderTemplates`): the saved list, else today's rows (the planning rows only while the planning kit is on). */
+export const folderTemplateRows = (kit: Pick<KitData, "folderTemplates" | "labFolder" | "chemicalFolder" | "planningFolders">, planningOn: boolean): { folder: string; file: string }[] =>
+  kit.folderTemplates ?? [...(planningOn ? planningFolderTemplates(kit.planningFolders) : []), ...labFolderTemplates(kit.labFolder, kit.chemicalFolder)];
 
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [
