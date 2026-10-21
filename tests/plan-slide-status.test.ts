@@ -115,13 +115,18 @@ describe("cards in the SVG", () => {
   const pic = slideSvg(model, { title: "RAFT kinetics", today: RAFT_TODAY });
   it("show late in red, waiting text in amber, after-lines and the due-soon line", () => {
     expect(pic.svg).toContain(">late: due 15 Oct<");
-    expect(pic.svg).toContain(">waiting: facility r…<");   // lines are cut to the card width
+    expect(pic.svg).toContain(">waiting: facility rep…<");   // lines are cut to the card width (22 characters)
     expect(pic.svg).toContain(">due 23 Oct (in 3 d)<");
-    expect(pic.svg).toContain(">after Run RAFT scre…<");
+    expect(pic.svg).toContain(">after Run RAFT screen…<");
     expect(pic.svg).toContain(`stroke="${LATE}" stroke-width="3"`);
     expect(pic.svg).toContain(`fill="${WAIT}" font-weight="700">waiting`);
   });
   it("the card says 2/4 subtasks", () => expect(pic.svg).toContain("2/4 subtasks"));
+  it("a due-tomorrow line shows whole (21 characters); a longer line is cut to 22 with …", () => {
+    const tomorrow = slideSvg(slideModel(layoutPlan(readPlan([td("A", { due: "2026-10-22", waiting: "facility reply expected next week" }), td("B", { after: "[[A]]" })], hub)), { kind: "whole" }), { title: "P", today: "2026-10-21" }).svg;
+    expect(tomorrow).toContain(">due 22 Oct (tomorrow)<");
+    expect(/>([^<]*…)</.exec(tomorrow)![1].length).toBe(22);
+  });
   it("without today there is no late line, no as-of line and no red border", () => {
     const s = slideSvg(model, { title: "RAFT kinetics" }).svg;
     expect(s).not.toContain("late: due");

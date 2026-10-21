@@ -185,7 +185,7 @@ function cardSvg(c: MapCard, x: number, y: number, all: PlanRow[], today?: strin
   const title = wrap((r.done ? "✓ " : "") + r.name, per, 2);
   const text = (ty: number, size: number, fill2: string, s: string, bold = false): string =>
     `<text x="${x + 10}" y="${y + ty}" font-size="${size}" fill="${fill2}"${bold ? ' font-weight="700"' : ""}>${esc(s)}</text>`;
-  const metaN = Math.floor((CARD_W - 20) / (CARD_META * CHAR_W));
+  const metaN = 22;   // meta line characters: "due 22 Oct (tomorrow)" is 150 px of the 170 px text width at 15 px Helvetica (measured 2026-10-21)
   const out = [rect, ...title.map((t, i) => text(24 + i * 20, CARD_TITLE, ink, t, true))];
   // After the title: status first, then priority and subtasks, the result, the experiment; as many lines as the card has room for.
   const sub = subsLabel(r).text;
