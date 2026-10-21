@@ -12,7 +12,7 @@ show: back-to-hub
 > - **Start every day on [[00 Home]].** It shows what matters today and nothing else.
 > - **Capture first, sort later.** Anything that pops into your head goes into the inbox with **Quick capture** (`Alt+N`). You sort it on Friday.
 > - **Every to-do is a card on the board.** You plan by dragging cards onto days. Tick **done** when it's finished; anything unfinished follows you to the next day.
-> - **Experiments and papers move through stages.** The homepage shows the ones that need you.
+> - **Experiments move through stages.** The homepage shows the ones that need you.
 > - **Fridays tidy, meetings report.** Two short routines keep everything from piling up.
 
 ## Every day
@@ -29,7 +29,6 @@ show: back-to-hub
 > | Remember to do something | **New to-do** (`Alt+T`) - type it, press Enter, pick a project (or "(no project)"), what it **comes after** (only asked in a project with open to-dos), a due date (Enter = none; `fri`, `tomorrow` and `next mon` work too) and a priority. Esc cancels. Started from a project? It picks the project for you. Or press **New** in a day's column on the board - it lands on that day |
 > | Start an experiment | **New lab entry** (`Alt+L`) - it numbers itself and asks for a title |
 > | Find anything | **Search** (`Alt+F`) |
-> | Make a note for a paper | `Ctrl+P`, then **ZotLit: Create literature note** |
 > | Need to order something | **Add to shopping** - type items, commas between them |
 > | Clear the inbox | **Sort inbox** (under *This week*) - takes a minute when it's short |
 > | Mark something finished | Click the **circle** on its card on the [[To-do board.base\|To-do board]] - the card turns green. Click again to undo |
@@ -63,7 +62,6 @@ flowchart LR
 
 - **New lab entry** creates `0015 - Title` in the lab book.
 - Move it along the [[Lab book base.base|Experiments]] board as it goes: **Planned -> Started -> Processing results -> Closed**.
-- Link the papers it builds on in **Based on** - they show the experiment under *Used in experiments*.
 - Anything not *Closed* shows on the homepage under *Experiments on the go* (the tile heading opens the board).
 - The columns are coloured by status (Settings → Lab Kit → **Colour board columns**, with a colour for each).
 - The base has a second view, **All experiments**, a list that also shows old closed ones.
@@ -71,10 +69,10 @@ flowchart LR
 
 ## Projects
 
-- [[Projects overview]] (**Projects** on the homepage) has a **card for each project**: its goal, next to-dos, how many papers and notes, and buttons for **New note**, **New to-do** and **Open**.
+- [[Projects overview]] (**Projects** on the homepage) has a **card for each project**: its goal, next to-dos, how many notes, and buttons for **New note**, **New to-do** and **Open**.
 - **New note** on a card (or on a hub) puts the note straight into that project's folder - no filing later.
-- **New project** asks for a name and makes the folder and hub in `02 Projects`. Then make a Zotero collection with the **same name** under `Projects/`, and write the hub's one-line **goal**.
-- Each hub lists the project's to-dos, notes, papers and meetings by itself - give a to-do the project, keep notes in the folder, drag papers into the collection, set **project** on a meeting note. To-dos and notes show 10 rows, meetings the last 8; **Show all** shows the rest.
+- **New project** asks for a name and makes the folder and hub in `02 Projects`. Then write the hub's one-line **goal**.
+- Each hub lists the project's to-dos, notes, papers and meetings by itself - give a to-do the project, keep notes in the folder, set **project** on a meeting note. To-dos and notes show 10 rows, meetings the last 8; **Show all** shows the rest.
 - The row at the top of a hub has a link back to [[Projects overview]], **New to-do**, **New note**, the **Status** drop-down (Active, Paused, Done) and the **Deadline** date.
 - Give a hub a **deadline** date and, with Due-date countdown on, it shows `deadline 5d` on the hub, its card and the homepage (gone when the project is Done).
 - A note made with **New note** links to its project and starts with a link back to the hub.
@@ -88,24 +86,6 @@ flowchart LR
 > - Have the steps as a list of `[[to-do]]` links in a note? Select them and run **Link to-dos in order**.
 > - A to-do with `experiment` set to a lab note shows that experiment's status on its card, and the hub's **Experiments** tile lists those lab notes. A to-do with `sub` set to another to-do is its subtask (the parent's card shows `1/2`). Both are typed in the to-do's properties.
 
-## Reading papers
-
-> [!note] Highlight colours in Zotero - just three
-> `1` **Yellow** key point - `2` **Red** disagree, confused or a question - `3` **Green** something to try in the lab. Anything else goes under *Other highlights*.
-> Want to add your own words? Add a **comment** to the highlight. Want to find it by topic later? Give the highlight a **tag**.
-
-1. Read and highlight in **Zotero**. Drag the paper into its **project collection** (under `Projects/` - it can be in more than one), and tag it `key-paper` if it's important.
-2. In Obsidian, run **ZotLit: Create literature note** and pick the paper. Highlighted more later? Press the **update** button on the note.
-3. When you have 5 minutes, write **one line** after `takeaway::` - what the paper says. Then, in *For my projects*, finish each line - why it matters to that project. That's it - the paper is processed.
-4. [[Literature]] shows what's still *to process*, your key papers and ideas to try. [[Projects overview]] shows key papers grouped by project, and each project hub lists its papers.
-
-> [!tip] Linking a paper
-> - Whole paper: type `[[` and part of its title.
-> - One finding: type `[[citekey#^` and pick the highlight. Use `![[...]]` to show it inside a lab entry.
-
-> [!warning] Don't write between the `%%zt-managed%%` markers
-> The update button rewrites that part. Write in the *Takeaway* and *For my projects* boxes at the top or under *My notes* at the bottom.
-
 ## Meetings
 
 - [[Meetings]] has a **card per series** (next date, how often, notes held). A series can be weekly, fortnightly, monthly or **every N weeks**.
@@ -116,7 +96,7 @@ flowchart LR
 - Hubs have one row of buttons at the top: a project, topic or series hub has a **back link** to the hub above it, a topic hub has **New concept**, a series hub has **Meeting deck**, **New meeting note** and **Extra meeting now**. A meeting note starts with a link back to its series and **Meeting deck**.
 
 1. Before a meeting, open [[Meetings]], and press **New meeting note** on your series' card.
-2. It fills itself: experiments you touched, to-dos you ticked done, papers you read, and anything you flagged for the meeting.
+2. It fills itself: experiments you touched, to-dos you ticked done, and anything you flagged for the meeting.
 3. Press **Meeting deck** (it opens the deck of the meeting you are in) and copy what you need onto your slides.
 4. After the meeting, note the outcomes and turn actions into to-dos.
 
@@ -137,9 +117,8 @@ Open [[Weekly review]] (button **Weekly review** on the homepage) and work down 
 1. Empty the inbox - press **Sort inbox**. Each note opens, you pick where it goes (to-do, project, knowledge, how-to, meetings, archive or delete). In a folder list, type a new name to make a new folder. Esc stops at any point.
 2. Close finished experiments.
 3. Plan next week - drag to-dos from Backlog onto days (Mon-Thu mean *next* week when you plan on a Friday).
-4. Process one paper.
-5. Flag anything for the next meeting.
-6. First Friday of the month: **Archive old to-dos** (anything finished over 30 days ago; a project's to-dos stay until the project is Done).
+4. Flag anything for the next meeting.
+5. First Friday of the month: **Archive old to-dos** (anything finished over 30 days ago; a project's to-dos stay until the project is Done).
 
 Then press **Start a new review**.
 

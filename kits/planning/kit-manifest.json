@@ -126,7 +126,7 @@
       "role": "howtos",
       "path": "Obsidian/Hotkeys.md",
       "version": "1.4.1",
-      "sha256": "57fdd7f7716549b3e50bba1079744fbe9147c406a9d1d4cec9770a03bb70ef58",
+      "sha256": "c6287d1424950d60373f9a08a171ada50972cc32cca5d4e60644f4f7d6dea306",
       "renamedFrom": [],
       "desc": "Recommended hotkeys (Alt + first letter); never set for you"
     },
@@ -137,22 +137,9 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.4.1",
-      "sha256": "ce22c4f176b73b40baac2fef358d8edc4ea25368009afab26dbe64881e02a96f",
+      "sha256": "997bb2f7cc1e56fc55d9104a98f0575b95d4c9f98f0134ea2861e90403438db3",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
-    },
-    {
-      "id": "note-obsidian-set-up-zotlit-md",
-      "kind": "note",
-      "src": "07 How-tos/Obsidian/Set up ZotLit.md",
-      "role": "howtos",
-      "path": "Obsidian/Set up ZotLit.md",
-      "version": "1.0.1",
-      "sha256": "7b1fe1ceab889c5989cfd857c9bfdb0430470c2992a0e382295b998cb63b9a42",
-      "renamedFrom": [],
-      "desc": "Checklist: ZotLit's note folder and template folder",
-      "optional": true,
-      "needs": "plugin:zotlit"
     },
     {
       "id": "note-obsidian-setting-up-a-computer-md",
@@ -160,8 +147,8 @@
       "src": "07 How-tos/Obsidian/Setting up a computer.md",
       "role": "howtos",
       "path": "Obsidian/Setting up a computer.md",
-      "version": "1.0.1",
-      "sha256": "b28245c3b9cd28d08d7de7a1376527fe8e3da9e1dd0f06972198642e17d73f61",
+      "version": "1.4.1",
+      "sha256": "dda89873279ca07be3de1d9de3764f3bc5265056ef41fad4feb27704ee95ff99",
       "renamedFrom": [],
       "desc": "Steps to set up Obsidian on a new computer"
     },
@@ -172,7 +159,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.4.1",
-      "sha256": "f62632e8d1223515fc7ff5a3dbffe09879d5de37ae29259504e051500aa60df3",
+      "sha256": "4f2e0267815439ad6c2697d9522ca62bf34f73c37a580a29b0a8a43e2bf6c304",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -194,8 +181,8 @@
       "src": "04 Literature/Literature.md",
       "role": "literature",
       "path": "Literature.md",
-      "version": "1.0.0",
-      "sha256": "0af3d1bb1e5918529147af7272ca0f61ad67650b1958d0f6a192192c2845fed3",
+      "version": "1.4.1",
+      "sha256": "05cd1bf120d02055c46b5b43d04003f89a94c04d32e11a579600f0b0d0869dca",
       "renamedFrom": [],
       "desc": "Literature hub (ZotLit imports)",
       "optional": true,
@@ -418,6 +405,7 @@
     "tpl-actions-add-to-shopping-list-md",
     "tpl-actions-archive-old-to-dos-md",
     "tpl-actions-sort-inbox-md",
-    "note-weekly-meetings-weekly-meetings-md"
+    "note-weekly-meetings-weekly-meetings-md",
+    "note-obsidian-set-up-zotlit-md"
   ]
 }
