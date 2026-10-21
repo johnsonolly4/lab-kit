@@ -1,6 +1,7 @@
 // New-vault starter (Phase 8): the Obsidian settings a fresh vault needs for the kits, generated from the kit manifests and the setup check's own lists so they can't drift.
-// Pure (no Node): `npm run starter` writes the result to dist/starter/ (scripts/make-starter.mjs). Settings and plugin list only, no notes: the plugin installs the kit files.
-import { LAB_LAYOUT, PLANNING_FOLDER_DEFAULTS, KIT_DEFAULTS, kitJoin, todoFolder } from "./paths";
+// Pure (no Node): `npm run starter` writes the result to dist/starter/ (scripts/make-starter.mjs). Settings, plugin list and install scripts only,
+// no notes and no folders: the kit install makes the files and folders (CI4, 2026-10-21).
+import { LAB_LAYOUT, PLANNING_FOLDER_DEFAULTS, KIT_DEFAULTS, kitJoin } from "./paths";
 import { SETUP_PLUGINS, labFolderTemplates, planningFolderTemplates } from "./setup-check";
 import type { EmbeddedKit } from "./managed";
 
@@ -10,8 +11,6 @@ export const PLUGIN_ID = "lab-kit";
 export interface Starter {
   /** Vault-relative path → file text. */
   files: Record<string, string>;
-  /** Empty folders the folder contract expects. */
-  folders: string[];
 }
 
 const json = (v: unknown): string => JSON.stringify(v, null, 2) + "\n";
@@ -47,6 +46,5 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
       ...starterPlugins().map(id => `obsidian plugin:install id=${id} enable`), ""].join("\r\n"),
   };
 
-  const folders = [KIT_DEFAULTS.labFolder, KIT_DEFAULTS.chemicalFolder, ...(Object.keys(pf) as (keyof typeof pf)[]).filter(r => r !== "archive").map(r => pf[r]), todoFolder(pf)];
-  return { files, folders: [...new Set(folders)] };
+  return { files };
 }
