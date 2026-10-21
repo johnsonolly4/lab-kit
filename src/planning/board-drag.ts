@@ -59,7 +59,7 @@ let lastEnd = 0;
 export const dragJustEnded = (): boolean => Date.now() - lastEnd < 400;
 
 export interface DragHooks {
-  /** The board's root: the ghost lives here. */
+  /** The board's root (the ghost itself goes on the window's body, see `begin`). */
   root: HTMLElement;
   /** Drop on `key`: a column's or day tab's date (YYYY-MM-DD) or the tray's "Backlog". A zone marked `data-past` is never highlighted, but a drop on it is still passed on (the board answers with a notice). */
   onDrop: (path: string, key: string) => void;
@@ -121,7 +121,9 @@ export function attachCardDrag(card: HTMLElement, path: string, title: string, h
       on = true;
       h.onState(true);
       const b = card.getBoundingClientRect();
-      ghost = h.root.createDiv({ cls: "lk-board-ghost", text: title });
+      // On the window's body, not the board: `position: fixed` inside an Obsidian pane is measured from the pane (it makes its own containing block),
+      // so the ghost sat a sidebar's width away from the cursor (owner, 2026-10-21). ownerDocument keeps a pop-out window's own body.
+      ghost = card.ownerDocument.body.createDiv({ cls: "lk-board-ghost", text: title });
       ghost.setCssProps({ "--lk-ghost-w": `${b.width}px` });
       card.addClass("is-lifted");
       scrollTimer = window.setInterval(scrollStep, 30);
