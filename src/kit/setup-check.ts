@@ -300,6 +300,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
     for (const ft of s.folderTemplates) {
       const kit = ft.kit ?? "planning";
       if (kit === "planning" && !s.planning) continue;
+      if (s.fill?.rows.some(r => r.folder === ft.folder && r.kind === "token")) continue;   // a token template: Lab Kit fills these itself, Templater needs no row
       const installed = s.installed[kit];
       const have = t.folderTemplates.find(e => e.folder === ft.folder);
       const ok = !!have;

@@ -2,10 +2,13 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, it, vi } from "vitest";
 import assert from "node:assert";
-import { TODO_TEMPLATE, columnEntry, createTodoNote, isoDay, startDate, todoNoteText, type TodoAnswer } from "../src/planning/todo-note";
+import { TODO_TEMPLATE, columnEntry, createTodoNote, isoDay, startDate, todoNoteText, todoTemplate, type TodoAnswer } from "../src/planning/todo-note";
+import { miniYaml } from "./token-snippets";
 
 const TODAY = new Date(2026, 9, 19);   // Mon 2026-10-19, local
 const F = "```";
+/** The note through the bundled template (the kit's To-do.md is the same text; tests/note-template.test.ts runs the kit file itself). */
+const note = (a: TodoAnswer, day: string | undefined, today: Date, after = ""): string => todoNoteText(TODO_TEMPLATE, miniYaml, a, day, today, after);
 const base: TodoAnswer = { text: "Buy vials", project: "", meeting: "", due: "", priority: "", experiment: "", waiting: "" };
 
 /** The template's output for these values, written out by hand: each optional line is there only when its value is (I2: no day / planned / rolled / countdown, no empty keys). */
@@ -23,54 +26,54 @@ function expected(o: { scheduled?: string; project?: string; due?: string; prior
 
 describe("todo-note: same text as To-do.md", () => {
   it("no column, nothing set: kind, done and cssclasses only", () => {
-    const t = todoNoteText(base, undefined, TODAY);
+    const t = note(base, undefined, TODAY);
     assert.equal(t, expected({}));
     for (const k of ["day", "planned", "rolled", "countdown", "project", "due", "priority", "meeting", "scheduled"]) assert.ok(!t.includes(`\n${k}:`), k);
   });
   it("project and due (the plan's third case)", () => {
-    assert.equal(todoNoteText({ ...base, project: "Alpha", due: "2026-10-23" }, undefined, TODAY), expected({ project: "Alpha", due: "2026-10-23" }));
+    assert.equal(note({ ...base, project: "Alpha", due: "2026-10-23" }, undefined, TODAY), expected({ project: "Alpha", due: "2026-10-23" }));
   });
   it("project and comes-after", () => {
-    assert.equal(todoNoteText({ ...base, project: "Alpha" }, undefined, TODAY, "Order solvent"), expected({ project: "Alpha", after: "Order solvent" }));
+    assert.equal(note({ ...base, project: "Alpha" }, undefined, TODAY, "Order solvent"), expected({ project: "Alpha", after: "Order solvent" }));
   });
   it("meeting", () => {
-    assert.equal(todoNoteText({ ...base, meeting: "Group meeting" }, undefined, TODAY), expected({ meeting: "Group meeting" }));
+    assert.equal(note({ ...base, meeting: "Group meeting" }, undefined, TODAY), expected({ meeting: "Group meeting" }));
   });
   it("due and priority", () => {
-    assert.equal(todoNoteText({ ...base, due: "2026-10-23", priority: 2 }, undefined, TODAY), expected({ due: "2026-10-23", priority: 2 }));
+    assert.equal(note({ ...base, due: "2026-10-23", priority: 2 }, undefined, TODAY), expected({ due: "2026-10-23", priority: 2 }));
   });
   it("experiment", () => {
-    assert.equal(todoNoteText({ ...base, experiment: "ABC0014" }, undefined, TODAY), expected({ experiment: "ABC0014" }));
+    assert.equal(note({ ...base, experiment: "ABC0014" }, undefined, TODAY), expected({ experiment: "ABC0014" }));
   });
   it("waiting: written as a JSON string", () => {
-    assert.equal(todoNoteText({ ...base, waiting: "  supplier's \"quote\"  " }, undefined, TODAY), expected({ waiting: JSON.stringify("supplier's \"quote\"") }));
+    assert.equal(note({ ...base, waiting: "  supplier's \"quote\"  " }, undefined, TODAY), expected({ waiting: JSON.stringify("supplier's \"quote\"") }));
   });
   it("a board column: a scheduled date kept, an old weekday day read as the next such day (today counts); anything else is the Backlog", () => {
-    assert.equal(todoNoteText(base, "Wed", TODAY), expected({ scheduled: "2026-10-21" }));
-    assert.equal(todoNoteText(base, "Mon", TODAY), expected({ scheduled: "2026-10-19" }));
-    assert.equal(todoNoteText(base, "Wed", new Date(2026, 9, 22)), expected({ scheduled: "2026-10-28" }));
-    assert.equal(todoNoteText(base, "2026-10-23", TODAY), expected({ scheduled: "2026-10-23" }));
-    for (const v of ["Done", "Backlog", "Teusday", "2026-02-30", ""]) assert.equal(todoNoteText(base, v, TODAY), expected({}), v);
-    assert.equal(todoNoteText(base, " Fri ", TODAY), expected({ scheduled: "2026-10-23" }));
+    assert.equal(note(base, "Wed", TODAY), expected({ scheduled: "2026-10-21" }));
+    assert.equal(note(base, "Mon", TODAY), expected({ scheduled: "2026-10-19" }));
+    assert.equal(note(base, "Wed", new Date(2026, 9, 22)), expected({ scheduled: "2026-10-28" }));
+    assert.equal(note(base, "2026-10-23", TODAY), expected({ scheduled: "2026-10-23" }));
+    for (const v of ["Done", "Backlog", "Teusday", "2026-02-30", ""]) assert.equal(note(base, v, TODAY), expected({}), v);
+    assert.equal(note(base, " Fri ", TODAY), expected({ scheduled: "2026-10-23" }));
   });
   it("the entry window's Day chip decides over the column (I2 Phase 5): a date is written, an empty chip is the Backlog, no chip keeps the column", () => {
-    assert.equal(todoNoteText({ ...base, scheduled: "2026-10-27" }, undefined, TODAY), expected({ scheduled: "2026-10-27" }));
-    assert.equal(todoNoteText({ ...base, scheduled: "2026-10-27" }, "Wed", TODAY), expected({ scheduled: "2026-10-27" }));
-    assert.equal(todoNoteText({ ...base, scheduled: "" }, "2026-10-22", TODAY), expected({}));
-    assert.equal(todoNoteText(base, "2026-10-22", TODAY), expected({ scheduled: "2026-10-22" }));
+    assert.equal(note({ ...base, scheduled: "2026-10-27" }, undefined, TODAY), expected({ scheduled: "2026-10-27" }));
+    assert.equal(note({ ...base, scheduled: "2026-10-27" }, "Wed", TODAY), expected({ scheduled: "2026-10-27" }));
+    assert.equal(note({ ...base, scheduled: "" }, "2026-10-22", TODAY), expected({}));
+    assert.equal(note(base, "2026-10-22", TODAY), expected({ scheduled: "2026-10-22" }));
   });
   it("everything set", () => {
     const a: TodoAnswer = { text: "x", project: "Alpha", meeting: "Group meeting", due: "2026-11-01", priority: 1, experiment: "ABC0014", waiting: "reply" };
-    assert.equal(todoNoteText(a, "Mon", TODAY, "Other"), expected({ scheduled: "2026-10-19", project: "Alpha", due: "2026-11-01", priority: 1, after: "Other", meeting: "Group meeting", experiment: "ABC0014", waiting: '"reply"' }));
+    assert.equal(note(a, "Mon", TODAY, "Other"), expected({ scheduled: "2026-10-19", project: "Alpha", due: "2026-11-01", priority: 1, after: "Other", meeting: "Group meeting", experiment: "ABC0014", waiting: '"reply"' }));
   });
   it("text of a value is never read as a token", () => {
-    assert.ok(todoNoteText({ ...base, project: "A {{day}} B" }, undefined, TODAY).includes('project: "[[A {{day}} B]]"'));
+    assert.ok(note({ ...base, project: "A {{day}} B" }, undefined, TODAY).includes('project: "[[A {{day}} B]]"'));
   });
 });
 
-describe("todo-note: the template's own date lines give startDate's date", () => {
+describe("todo-note: the old Templater template's own date lines give startDate's date", () => {
   afterEach(() => { vi.useRealTimers(); });
-  const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+  const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");   // the last Templater-code To-do.md: the kit now ships a token template (Phase 3)
   const from = tpl.indexOf("const days = "), to = tpl.indexOf("let scheduled = ");
   const block = tpl.slice(from, tpl.indexOf("\n", to)).replace(/^const raw = .*$/m, "");
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
@@ -105,12 +108,23 @@ describe("todo-note: the board column's New opens the window on that day (I2 Pha
   });
 });
 
-describe("todo-note: engine limits (recorded in docs/plans/templater-spike.md)", () => {
-  it("a note name of only commas reads as empty to {{#if}} (To-do.md would link it)", () => {
-    assert.equal(todoNoteText({ ...base, project: "," }, undefined, TODAY), expected({}));
+describe("todo-note: the template", () => {
+  it("a project of only a comma is written as the link (the old {{#if}} read it as empty)", () => {
+    assert.ok(note({ ...base, project: "," }, undefined, TODAY).includes('project: "[[,]]"'));
   });
-  it("the template has no tag the engine could not parse", () => {
-    assert.ok(TODO_TEMPLATE.includes("{{#if waiting_json}}"));
+  it("the bundled text is the kit's To-do.md", () => {
+    assert.equal(TODO_TEMPLATE, readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8"));
+  });
+  it("the vault's token template is used; an old Templater one, an empty or a missing one gives the bundled text (Q7)", () => {
+    const own = TODO_TEMPLATE.replace("kind: todo", "kind: todo\nmine: yes");
+    assert.equal(todoTemplate(own, miniYaml), own);
+    const old = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
+    for (const v of [old, "", null, "just a note"]) assert.equal(todoTemplate(v, miniYaml), TODO_TEMPLATE);
+    assert.equal(todoTemplate(own, () => { throw new Error("bad yaml"); }), TODO_TEMPLATE);
+  });
+  it("an edited vault template is what makes the note", () => {
+    const own = TODO_TEMPLATE.replace("kind: todo", "kind: todo\nmine: yes");
+    assert.ok(todoNoteText(own, miniYaml, base, undefined, TODAY).startsWith("---\nkind: todo\nmine: yes\ndone: false"));
   });
 });
 
@@ -121,12 +135,30 @@ describe("todo-note: create", () => {
   };
   it("makes the note under the name rule", async () => {
     const { made, v } = vault(["00 Planning/To-dos/Buy vials.md"]);
-    await createTodoNote(v, "00 Planning/To-dos", { ...base, text: "Buy: vials" }, "Tue", TODAY);
+    await createTodoNote(v, "00 Planning/To-dos", TODO_TEMPLATE, miniYaml, { ...base, text: "Buy: vials" }, "Tue", TODAY);
     assert.equal(made[0][0], "00 Planning/To-dos/Buy- vials.md");
     const { made: m2, v: v2 } = vault(["00 Planning/To-dos/Buy vials.md"]);
-    await createTodoNote(v2, "00 Planning/To-dos", base, undefined, TODAY);
+    await createTodoNote(v2, "00 Planning/To-dos", TODO_TEMPLATE, miniYaml, base, undefined, TODAY);
     assert.equal(m2[0][0], "00 Planning/To-dos/Buy vials 2.md");
     assert.equal(m2[0][1], expected({}));
   });
   it("isoDay is local and zero-padded", () => { assert.equal(isoDay(new Date(2026, 0, 5)), "2026-01-05"); });
+});
+
+describe("todo-note: board New (the board writes the column into the new note before the template runs)", () => {
+  // Expected by hand from the old To-do.md (tests/fixtures/templates/old/To-do.md): it read `scheduled:` or an old weekday `day:` from the note, the window's answers did the rest.
+  it("a stub with the column's date, a weekday, or neither (the Backlog)", () => {
+    assert.equal(note({ ...base, text: "Order vials" }, "2026-10-21", TODAY), expected({ scheduled: "2026-10-21" }));
+    assert.equal(note(base, "Wed", TODAY), expected({ scheduled: "2026-10-21" }));
+    assert.equal(note(base, undefined, TODAY), expected({}));
+  });
+  it("the Day chip of the window decides over the column the card was made in", () => {
+    assert.equal(note({ ...base, scheduled: "2026-10-23" }, "2026-10-21", TODAY), expected({ scheduled: "2026-10-23" }));
+    assert.equal(note({ ...base, scheduled: "" }, "2026-10-21", TODAY), expected({}));
+  });
+  it("the old fixture is a Templater template, not a token template", () => {
+    const old = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
+    assert.ok(old.startsWith("<%*") && old.includes("<% scheduled ?"));
+    assert.ok(!/^make:\s*note/m.test(old));
+  });
 });

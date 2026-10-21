@@ -3,8 +3,15 @@
 // file-open; Templater's raw header arrives about 0.3-0.5 s later; a synced-in file is never the active file.
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { NoteFiller, classify, rowFor, shouldFill, type FillHost } from "../src/kit/note-fill";
-import { miniYaml } from "./token-snippets";
+import { NoteFiller, boardStub, classify, rowFor, shouldFill, type FillHost } from "../src/kit/note-fill";
+import { miniYaml as mini } from "./token-snippets";
+
+/** miniYaml reads a key with no value as an empty list; a real YAML reader gives null. */
+const miniYaml = (src: string): unknown => {
+  const o = mini(src) as Record<string, unknown>;
+  for (const k of Object.keys(o)) if (Array.isArray(o[k]) && !(o[k] as unknown[]).length) o[k] = null;
+  return o;
+};
 
 const TPL = "---\nmake: note\nfields:\n  - key: project\n    label: Project\n---\n---\nkind: todo\nproject: {{project}}\n---\n";
 const FILLED = "---\nkind: todo\nproject: P1\n---\n";
@@ -165,5 +172,101 @@ describe("the runner on a vault event stream", () => {
     assert.equal(d.action, "skip");
     assert.equal(v.failures.length, 1);
     assert.equal(v.files.get(P), bad);
+  });
+});
+
+/* ---------- the board's New (Phase 3): a stub with only the column and empty keys ---------- */
+
+const STUB = "---\nscheduled: 2026-10-21\ndone:\n---\n";
+const STUB_DAY = "---\nday: Wed\ndone:\n---\n";
+const STUB_BACKLOG = "---\ndone:\n---\n";
+/** What Templater's row makes of STUB in the plan's Phase 0 measurement: the header keys and the stub's keys in one front matter, then the template's own text. */
+const MIXED_STUB = "---\nscheduled: 2026-10-21\ndone:\nmake: note\nfields:\n  - key: project\n    label: Project\n---\n---\nkind: todo\nproject: {{project}}\n---\n";
+
+describe("boardStub / classify: the board's New", () => {
+  it("the column's date or weekday, or none (the Backlog); only empty keys besides", () => {
+    assert.deepEqual(boardStub(STUB, miniYaml), { day: "2026-10-21" });
+    assert.deepEqual(boardStub(STUB_DAY, miniYaml), { day: "Wed" });
+    assert.deepEqual(boardStub(STUB_BACKLOG, miniYaml), { day: "" });
+    assert.equal(classify(STUB, miniYaml), "board-stub");
+  });
+  it("what Templater's row made of it is the same stub (its column is kept)", () => {
+    assert.deepEqual(boardStub(MIXED_STUB, miniYaml), { day: "2026-10-21" });
+    assert.equal(classify(MIXED_STUB, miniYaml), "board-stub");
+  });
+  it("a note with text, a value of the user's, or other properties is not a stub; a plain raw header is not either", () => {
+    assert.equal(boardStub(STUB + "\nBuy vials\n", miniYaml), null);
+    assert.equal(boardStub("---\nscheduled: 2026-10-21\nproject: \"[[A]]\"\n---\n", miniYaml), null);
+    assert.equal(boardStub("---\nkind: todo\ndone: false\n---\n", miniYaml), null);
+    assert.equal(boardStub(TPL, miniYaml), null);
+    assert.equal(classify(TPL, miniYaml), "raw-header");
+    assert.equal(classify("---\nkind: todo\nmake: note\nfields:\n  - key: a\n    label: A\n---\n---\nkind: todo\n---\n", miniYaml), "mixed");
+  });
+});
+
+describe("shouldFill: a board stub", () => {
+  const base = { text: STUB, path: P, active: true, rows: ROWS, templaterFolders: [] as string[], rowTemplateText: TPL, parseYaml: miniYaml };
+  it("filled from the row's template with the column; with no Templater row", () => {
+    assert.deepEqual(shouldFill(base), { action: "fill", source: "row-template", day: "2026-10-21" });
+    assert.deepEqual(shouldFill({ ...base, text: STUB_BACKLOG }), { action: "fill", source: "row-template", day: "" });
+  });
+  it("with a Templater row the plain stub waits for Templater's pass; the note it makes of it is then filled", () => {
+    assert.deepEqual(shouldFill({ ...base, templaterFolders: ["00 Planning/To-dos"] }), { action: "skip", reason: "templater-row" });
+    assert.deepEqual(shouldFill({ ...base, templaterFolders: ["00 Planning/To-dos"], text: MIXED_STUB }), { action: "fill", source: "row-template", day: "2026-10-21" });
+  });
+  it("an old blank note is left (not fresh), a note that is not open is left, a Templater template in the row is left", () => {
+    assert.deepEqual(shouldFill({ ...base, fresh: false }), { action: "skip", reason: "other" });
+    assert.deepEqual(shouldFill({ ...base, active: false }), { action: "skip", reason: "not-open" });
+    assert.equal((shouldFill({ ...base, rowTemplateText: "<% tp.date.now() %>" }) as { reason: string }).reason, "not-token-template");
+  });
+});
+
+describe("the runner on a board stub", () => {
+  class Board extends FakeVault {
+    ctx: unknown[] = []; finished: string[] = []; cancelled: string[] = []; young = true;
+    constructor() {
+      super();
+      this.host.ask = async (_h, _n, c) => { this.asked++; this.ctx.push(c); return this.answer; };
+      this.host.finish = async c => { this.finished.push(c.path); };
+      this.host.cancelled = async (c, t) => { this.cancelled.push(c.path + "|" + t); };
+      this.host.fresh = () => this.young;
+      this.filler = new NoteFiller(this.host);
+    }
+  }
+  it("New on the board: the stub is asked once with its column, filled once, then finished (renamed by the caller)", async () => {
+    const v = new Board(); v.files.set(P, STUB);
+    assert.equal((await v.open(P)).action, "fill");
+    assert.deepEqual(v.ctx, [{ file: "To-do.md", path: P, day: "2026-10-21", stub: true }]);
+    assert.equal(v.files.get(P), FILLED);
+    assert.deepEqual(v.finished, [P]);
+    await v.open(P); await v.modify(P, FILLED);
+    assert.equal(v.asked, 1);
+  });
+  it("Esc: nothing is written and the caller is told it was a stub; not asked again", async () => {
+    const v = new Board(); v.files.set(P, STUB_DAY); v.answer = null;
+    await v.open(P);
+    assert.deepEqual(v.cancelled, [P + "|" + STUB_DAY]);
+    assert.equal(v.files.get(P), STUB_DAY);
+    await v.open(P);
+    assert.equal(v.asked, 1);
+  });
+  it("Esc on an ordinary new note is not reported as a stub (the empty note stays)", async () => {
+    const v = new Board(); v.files.set(P, ""); v.answer = null;
+    await v.open(P);
+    assert.deepEqual(v.cancelled, []);
+  });
+  it("with Templater's row: the plain stub is left, the mixed note Templater makes of it is filled once with the column", async () => {
+    const v = new Board(); v.templaterFolders = ["00 Planning/To-dos"]; v.files.set(P, STUB);
+    assert.equal((await v.open(P)).action, "skip");
+    assert.equal(v.asked, 0);
+    await v.modify(P, MIXED_STUB);
+    assert.deepEqual(v.ctx, [{ file: "To-do.md", path: P, day: "2026-10-21", stub: true }]);
+    assert.equal(v.files.get(P), FILLED);
+    assert.equal(v.writes.length, 1);
+  });
+  it("a stub left from earlier is not asked about when opened", async () => {
+    const v = new Board(); v.young = false; v.files.set(P, STUB);
+    assert.equal((await v.open(P)).action, "skip");
+    assert.equal(v.asked, 0);
   });
 });

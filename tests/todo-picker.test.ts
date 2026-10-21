@@ -190,7 +190,7 @@ describe("addAfterFlow", () => {
     expect(newTodoText("Alpha", "", { waiting: 'Dr "S": samples' })).toContain('waiting: "Dr \\"S\\": samples"\ncssclasses:');
   });
   it("the To-do template writes the entry window's Waiting chip", () => {
-    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
     expect(tpl).toContain("preset.waiting");
     expect(tpl).toContain("waiting: ${JSON.stringify(waiting)}");
   });

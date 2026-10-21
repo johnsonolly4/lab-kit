@@ -72,6 +72,17 @@ describe("check setup (Phase 6)", () => {
     expect(r["folder-template:00 Planning/To-dos"].detail).toContain("Mine.md");
   });
 
+  it("no Templater folder-template row is asked for a folder whose template is a token template (Lab Kit fills those; Phase 3)", () => {
+    const r = byId(state({
+      planning: true, installed: { lab: true, planning: true },
+      templater: { templatesFolder: "T", userScriptsFolder: "S", folderTemplates: [] },
+      folderTemplates: [{ folder: "01 Daily Notes", template: "T/Daily note.md" }, { folder: "00 Planning/To-dos", template: "T/To-do.md" }],
+      fill: { rows: [{ folder: "00 Planning/To-dos", file: "To-do.md", folderExists: true, kind: "token", templaterRow: false }], mixed: [] },
+    }));
+    expect(r["folder-template:00 Planning/To-dos"]).toBeUndefined();
+    expect(r["folder-template:01 Daily Notes"].fix).toEqual({ kind: "folder-template", folder: "01 Daily Notes", template: "T/Daily note.md" });
+  });
+
   it("lab folder template: shown without the planning kit, Fix adds it, set one is kept, none without a Lab notes folder", () => {
     const lab = { folder: "03 Lab Book/Notes", template: "T/Lab Book Template.md", kit: "lab" as const };
     const r = byId(state({ folderTemplates: [lab] }));

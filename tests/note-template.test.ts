@@ -6,7 +6,7 @@ import assert from "node:assert";
 import { noteFromTemplate, type NoteEnv } from "../src/kit/note-template";
 import { TemplateError, fillTemplate, parseTemplate } from "../src/kit/snippet-template";
 import { emptyEnv } from "../src/kit/snippet-env";
-import { startDate, todoNoteText, type TodoAnswer } from "../src/planning/todo-note";
+import { startDate, type TodoAnswer } from "../src/planning/todo-note";
 import { miniYaml } from "./token-snippets";
 
 const F = "```";
@@ -197,9 +197,9 @@ describe("noteFromTemplate", () => {
   });
 });
 
-/* ---------- the spike's To-do cases, through a token-format To-do.md ---------- */
+/* ---------- the spike's To-do cases, through the kit's token-format To-do.md (Phase 3; the Templater version is tests/fixtures/templates/old/To-do.md) ---------- */
 
-const TODO_FIXTURE = readFileSync("tests/fixtures/templates/To-do.md", "utf8");
+const TODO_FIXTURE = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
 const TODAY = new Date(2026, 9, 19);   // Mon 2026-10-19, local
 const base: TodoAnswer = { text: "Buy vials", project: "", meeting: "", due: "", priority: "", experiment: "", waiting: "" };
 
@@ -250,7 +250,6 @@ describe("To-do.md as a token-format note template = the spike's text, byte for 
     it(c.name, () => {
       const got = todoVia(c.a, c.day, c.today ?? TODAY, c.after);
       assert.equal(got, expected(c.exp));
-      assert.equal(got, todoNoteText(c.a, c.day, c.today ?? TODAY, c.after));   // the code in src/planning/todo-note.ts says the same
     });
   }
   it("a day that is not a weekday or date (Done, Backlog, a typo, 2026-02-30, empty) is the Backlog", () => {
@@ -259,9 +258,8 @@ describe("To-do.md as a token-format note template = the spike's text, byte for 
   it("the text of a value is never read as a token", () => {
     assert.ok(todoVia({ ...base, project: "A {{day}} B" }, undefined, TODAY).includes('project: "[[A {{day}} B]]"'));
   });
-  it("the one difference from todoNoteText: a project of only a comma is written (the old {{#if}} read it as empty)", () => {
+  it("a project of only a comma is written (the spike's {{#if x}} read it as empty)", () => {
     assert.ok(todoVia({ ...base, project: "," }, undefined, TODAY).includes('project: "[[,]]"'));
-    assert.equal(todoNoteText({ ...base, project: "," }, undefined, TODAY), expected({}));
   });
   it("has no name or folder of its own: the caller names the note (todoFileName)", () => {
     const r = noteFromTemplate(TODO_FIXTURE, todoAnswers(base, undefined, TODAY), { ...env, folder: "00 Planning/To-dos" });

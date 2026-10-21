@@ -1,9 +1,10 @@
 // Planning kit commands (fixed IDs, never renamed: kit buttons call them as lab-kit:<id>). Rules: src/planning/actions.ts.
 // Plan: docs/plans/phase-4b-planning-commands.md. Note folders: Settings → Planning folders (Phase 5a); a missing one is never made again silently.
-import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
+import { Notice, Platform, TFile, normalizePath, parseYaml, type App, type Plugin } from "obsidian";
 import { ensureFolder } from "../kit/ensure-folder";
 import type { ManagedState } from "../kit/managed";
-import { hasTemplater, templaterCreateNote } from "../kit/obsidian-private";
+import { ensurePropertyType, hasTemplater, templaterCreateNote } from "../kit/obsidian-private";
+import type { CustomFill } from "../kit/note-fill-ui";
 import { missingFolderNotice, type FolderGuardActions } from "../kit/folder-guard";
 import { archiveInboxFolder, archiveTodoFolder, kitIsBackup, kitJoin, planningRoles, todoFolder, type KitData, type PlanningFolders } from "../kit/paths";
 import { nodeModule } from "../node";
@@ -23,7 +24,7 @@ import { addResult } from "./result";
 import { freezeDue, freezeFile } from "./freeze-note";
 import { linkInOrder } from "./sequence";
 import { dayOf, parseDay, ymd } from "./todo";
-import { columnEntry } from "./todo-note";
+import { columnEntry, createTodoNote, todoAnswers, todoTemplate, type TodoAnswer } from "./todo-note";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -37,8 +38,8 @@ export const TPL = {
   topicHub: { id: "tpl-new-topic-hub-md", dest: "New topic hub.md" },
 } as const;
 
-/** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string; waiting?: string; scheduled?: string }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
+/** Hand-offs the kit's templates read (and delete) at their start. `vtEntryTodo` stays for an old Templater To-do.md that asks for the entry window itself (a Templater folder row); Lab Kit's own To-do no longer uses a hand-off. */
+interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<TodoAnswer | null>; vtPresetProject?: string; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
   vtTopicHub?: { folder: string; name: string };
   vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
@@ -101,8 +102,8 @@ export class PlanningCommands {
     new Notice(`${name} failed. See the developer console for details.`);
   }
 
-  /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): what the To-do template reads as `window.vtTodo`, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in: its date `YYYY-MM-DD`, or an old weekday name) opens the Day chip with that date when it is today or later, and its weekday is named in the heading. */
-  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<Handoff["vtTodo"] | null> {
+  /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): the answers, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in: its date `YYYY-MM-DD`, or an old weekday name) opens the Day chip with that date when it is today or later, and its weekday is named in the heading. */
+  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<TodoAnswer | null> {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => ({ name: f.basename, fm: (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) }));
     const inside = project ?? this.hubOfActiveNote();
@@ -131,16 +132,49 @@ export class PlanningCommands {
     return { title: q.title, anchor: selectionAnchor(this.app), ...(q.projectGuess ? { openField: { key: "project", search: q.projectGuess } } : {}), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.scheduled ? { scheduled: q.scheduled } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
   }
 
-  /** New to-do: the entry window, then the To-do template makes the note from what was set. */
+  /** New to-do: the entry window, then the note is made from the vault's To-do.md (a token template) with what was set; not opened, as the old button. */
   async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<void> {
     const todo = await this.askTodo(project, initial, day);
     if (!todo) return;
-    handoff().vtTodo = todo;
-    // Made under its final name: a rename after something links to the note makes Obsidian ask "Update links" (with Automatically update internal links off)
     const folder = todoFolder(this.folders);
-    const name = todoFileName(todo.text, n => !!this.app.vault.getAbstractFileByPath(`${folder}/${n}.md`));
-    try { await this.fromTemplate(TPL.todo, this.folders.planning, folder, false, name); }   // not opened, as the old button
-    finally { delete handoff().vtTodo; }   // the template deletes it when it runs; also gone when it didn't or failed
+    if (!(await this.ready(this.folders.planning, folder))) return;
+    await this.ensureTodoTypes();
+    await createTodoNote(this.app.vault, folder, await this.todoTemplateText(), parseYaml, todo, day, new Date());
+  }
+
+  /** The text of the To-do template to fill: the vault's when it is a token template, else the bundled one (an old Templater To-do.md is not run: owner's answer to Q7, 2026-10-21). */
+  private async todoTemplateText(): Promise<string> {
+    const file = this.templateFile(TPL.todo);
+    return todoTemplate(file ? await this.app.vault.cachedRead(file) : null, parseYaml);
+  }
+
+  /** `due` is a date property and `priority` a number in this vault (Obsidian keeps the type in .obsidian/types.json); an older Obsidian leaves them as text. */
+  private async ensureTodoTypes(): Promise<void> {
+    try { await ensurePropertyType(this.app, "due", "date"); await ensurePropertyType(this.app, "priority", "number"); } catch (e) { console.error(e); }
+  }
+
+  /**
+   * The board's New (and the explorer's New note in the To-dos folder): the note exists already, so Lab Kit's note filler (src/kit/note-fill.ts) asks the
+   * same entry window, names the column the board wrote, fills the note from To-do.md and renames it to its title. Esc trashes a blank board note.
+   */
+  todoFill(): CustomFill {
+    return {
+      ask: async ctx => {
+        const t = await this.askTodo(undefined, {}, ctx.day || undefined);
+        return t ? todoAnswers(t, ctx.day || undefined, new Date()) : null;
+      },
+      finish: async (ctx, answers) => {
+        await this.ensureTodoTypes();
+        const file = this.app.vault.getFileByPath(ctx.path), folder = ctx.path.includes("/") ? ctx.path.slice(0, ctx.path.lastIndexOf("/")) : "";
+        if (!file) return;
+        const name = todoFileName(answers.text ?? "", n => `${folder}/${n}.md` !== ctx.path && !!this.app.vault.getAbstractFileByPath(`${folder}/${n}.md`));
+        if (`${folder}/${name}.md` !== ctx.path) await this.app.fileManager.renameFile(file, `${folder}/${name}.md`);
+      },
+      cancelled: async ctx => {
+        const file = this.app.vault.getFileByPath(ctx.path);
+        if (file && ctx.stub) await this.app.fileManager.trashFile(file);   // nothing but the board's own day and empty keys was in it
+      },
+    };
   }
 
   /** A day header's `+` on the board: New to-do with that day (`YYYY-MM-DD`) in the Day chip, the window under the clicked button. */

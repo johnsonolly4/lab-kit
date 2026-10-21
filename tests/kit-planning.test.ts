@@ -114,7 +114,7 @@ describe("planning kit files (Phase 3)", () => {
     }
     // one pass: a folder written in is not rewritten again (planning inside the old projects name, and swapped names)
     const nested = planningRoles(app(), {}, { ...PLANNING_FOLDER_DEFAULTS, planning: "02 Projects/Plan", projects: "Work" });
-    const tpl = planning.manifest.files.find(f => f.dest === "To-do.md")!;
+    const tpl = planning.manifest.files.find(f => f.dest === "Project hub.md")!;
     expect(kitText(planning, tpl, nested)).toContain('"02 Projects/Plan/To-dos"');
     const swapped = planningRoles(app(), {}, { ...PLANNING_FOLDER_DEFAULTS, planning: "02 Projects", projects: "00 Planning" });
     const board0 = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
@@ -153,10 +153,10 @@ describe("planning kit files (Phase 3)", () => {
     const v = memVault();
     const first = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
     const out = await applyManaged(v, planning, first, null, opts);
-    const todo = planning.manifest.files.find(f => f.dest === "To-do.md")!;
+    const todo = planning.manifest.files.find(f => f.dest === "To-do board.base")!;   // a kit file that holds the to-dos folder (To-do.md no longer does: it files by the folder it is run in)
     const hub = planning.manifest.files.find(f => f.dest === "Project hub.md")!;
-    const todoPath = kitJoin(roles.templates, "To-do.md"), hubPath = kitJoin(roles.templates, "Project hub.md");
-    expect(v.files[todoPath]).toContain('"00 Planning/To-dos"');
+    const todoPath = kitJoin(roles.planning, "To-do board.base"), hubPath = kitJoin(roles.templates, "Project hub.md");
+    expect(v.files[todoPath]).toContain('file.inFolder("00 Planning/To-dos")');
     v.files[hubPath] += "\n// my own note\n";   // the user edited the project hub template
     const moved = planningRoles(app(), trackedRoles(planning, out.state), { ...PLANNING_FOLDER_DEFAULTS, planning: "10 Plan", projects: "20 Work" });
     const items = await planManaged(v, planning, out.state, moved, null, opts.baseDir, offIds(planning, {}, {}, ZOTLIT));
@@ -164,7 +164,7 @@ describe("planning kit files (Phase 3)", () => {
     expect(plan.rewrite.map(i => i.file.id)).toContain(todo.id);
     expect(plan.kept.map(i => i.file.id)).toEqual([hub.id]);
     const res = await applyManaged(v, planning, plan.rewrite, out.state, { ...opts, keepVersion: true, select: () => true });
-    expect(v.files[todoPath]).toContain('"10 Plan/To-dos"');
+    expect(v.files[todoPath]).toContain('file.inFolder("10 Plan/To-dos")');
     expect(v.files[todoPath]).not.toContain("00 Planning");
     expect(v.files[hubPath]).toContain("02 Projects/${name}");   // edited: untouched
     expect(res.results.find(r => r.id === todo.id)?.backup).toBeDefined();

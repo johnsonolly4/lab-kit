@@ -2,7 +2,7 @@
 // editor, and `modify` of that note (a raw header written by Templater about 0.3-0.5 s after create). Never `create`: a note made in the explorer
 // is empty at create and open from file-open on, and a synced-in file is never open (measured, plan "Phase 0 result" items 2-3).
 import { Notice, TFile, parseYaml, type App, type Plugin } from "obsidian";
-import { NoteFiller, classify, rowFor, type FillHost } from "./note-fill";
+import { NoteFiller, classify, rowFor, type FillContext, type FillHost } from "./note-fill";
 import { defaultAnswers, parseTemplate, type TemplateHeader } from "./snippet-template";
 import { emptyEnv } from "./snippet-env";
 import { kitJoin, type KitData } from "./paths";
@@ -16,6 +16,15 @@ export interface NoteFillDeps {
   templateFolders: () => string[];
   planningOn: () => boolean;
   form: () => FormFn;
+  /** A template that asks through its own window instead of the plain form, by template file name (the planning kit's To-do). */
+  custom?: () => Record<string, CustomFill>;
+}
+
+/** What a template with its own window does around the fill. `ask` returning undefined falls back to the plain form. */
+export interface CustomFill {
+  ask: (ctx: FillContext) => Promise<Record<string, string> | null | undefined>;
+  finish?: (ctx: FillContext, answers: Record<string, string>) => Promise<void>;
+  cancelled?: (ctx: FillContext, text: string) => Promise<void>;
 }
 
 /** The text of a row's template: the first template folder that has the file. */
@@ -26,6 +35,9 @@ export async function rowTemplateText(app: App, folders: string[], file: string)
   }
   return null;
 }
+
+/** A board stub is filled only while it is this new (a blank to-do left from last week is not asked about when opened). */
+const FRESH_MS = 2 * 60 * 1000;
 
 const answerText = (v: unknown): string => typeof v === "string" ? v.trim() : typeof v === "number" || typeof v === "boolean" ? String(v) : "";
 
@@ -43,12 +55,17 @@ export function noteFillHost(app: App, d: NoteFillDeps): FillHost {
       await app.vault.process(f, cur => { if (cur !== expected) return cur; wrote = true; return text; });
       return wrote;
     },
-    ask: async (header: TemplateHeader, name: string) => {
+    ask: async (header: TemplateHeader, name: string, ctx: FillContext) => {
+      const own = await d.custom?.()[ctx.file]?.ask(ctx);
+      if (own !== undefined) return own;
       const defaults = defaultAnswers(header, emptyEnv());
       const got = await d.form()(name, header.fields.map(f => ({ key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: defaults[f.key],
         ...(f.mandatory ? { required: true } : {}) })));
       return got ? Object.fromEntries(header.fields.map(f => [f.key, answerText(got[f.key])])) : null;
     },
+    finish: async (ctx, answers) => { await d.custom?.()[ctx.file]?.finish?.(ctx, answers); },
+    cancelled: async (ctx, text) => { await d.custom?.()[ctx.file]?.cancelled?.(ctx, text); },
+    fresh: path => { const f = app.vault.getFileByPath(path); return !!f && Date.now() - f.stat.ctime < FRESH_MS; },
     env: path => ({ parseYaml, folder: path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "", noteName: path.split("/").pop()!.replace(/\.md$/, "") }),
     parseYaml,
     failed: (path, message) => new Notice(`Lab Kit could not fill ${path.split("/").pop()}: ${message}`, 8000),
