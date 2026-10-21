@@ -5,7 +5,6 @@
   "version": "1.4.1",
   "date": "2026-10-04",
   "rewrite": {
-    "Extras/scripts": "scripts",
     "03 Lab Book/Notes": "labNotes",
     "05 Chemicals/Chemicals": "chemicalNotes"
   },
