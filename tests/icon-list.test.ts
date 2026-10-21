@@ -10,7 +10,7 @@ describe("headerIcon", () => {
     expect(headerIcon("no icon here")).toBe("");
   });
   it("finds an icon in every snippet the kit ships (the settings boxes are never blank)", () => {
-    const dir = "kits/lab/Templates/Snippets";
+    const dir = "kits/lab/Snippets";
     const files = readdirSync(dir).filter(f => f.endsWith(".md"));
     expect(files.length).toBeGreaterThan(10);
     for (const f of files) expect(headerIcon(readFileSync(`${dir}/${f}`, "utf8")), f).not.toBe("");

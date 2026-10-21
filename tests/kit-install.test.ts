@@ -5,7 +5,7 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget, figuresTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot,cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget, figuresTarget } from "../src/kit/paths";
 import { readRig } from "../src/rig/parts";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
@@ -239,9 +239,9 @@ describe("install preview and folder contract (Phase 1b)", () => {
     const roles = kitDetectRoles(app(v), null, {});
     const items = await planManaged(readOnly(v), lab, null, roles);
     const preview = await previewInstall(readOnly(v), items);
-    expect(preview.create.sort()).toEqual(["Extras/Templates/Lab Kit/Insert snippet.md", "Extras/scripts/lab-kit/excel_to_calc.py", "Extras/scripts/templater/lab-kit/labForm.js"]);
+    expect(preview.create.sort()).toEqual(["Extras/Templates/Insert snippet.md", "Extras/scripts/lab-kit/excel_to_calc.py", "Extras/scripts/templater/lab-kit/labForm.js"]);
     expect(preview.leftAlone).toEqual([]);
-    expect(preview.folders).toEqual(["Extras", "Extras/Templates", "Extras/Templates/Lab Kit", "Extras/scripts", "Extras/scripts/lab-kit", "Extras/scripts/templater", "Extras/scripts/templater/lab-kit"]);
+    expect(preview.folders).toEqual(["Extras", "Extras/Templates", "Extras/scripts", "Extras/scripts/lab-kit", "Extras/scripts/templater", "Extras/scripts/templater/lab-kit"]);
     await applyManaged(v, lab, items, null, opts);
     const written = Object.keys(v.files).filter(p => !p.startsWith(".obsidian/"));
     expect(written.sort()).toEqual(preview.create.sort());
@@ -401,7 +401,7 @@ describe("lab kit completion (Phase 2)", () => {
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
     expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual([]);   // every folder setting has a default now, including the Rigs folder
-    expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })]).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
+    expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })].sort()).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
   });
 
   it("New lab entry: says what is missing, else gives the template and folder", () => {
@@ -463,17 +463,6 @@ describe("New lab entry needs initials (Phase 6e)", () => {
     expect(num("ABC", "Analysis 2")).toBe(0);
     expect(num("AB2", "AB20005 - x")).toBe(5);
     expect(num("A.B", "AxB0003")).toBe(0);
-  });
-});
-
-describe("Snippet icons page follows the Snippets folder", () => {
-  it("only notes directly in the templates folder's Snippets folder count", () => {
-    const t = "Extras/Templates/Lab Kit";
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/05 Sample list.md", t)).toBe(true);
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/Old/05 Sample list.md", t)).toBe(false);
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Insert snippet.md", t)).toBe(false);
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/notes.txt", t)).toBe(false);
-    expect(inSnippetsFolder("Snippets/05 Sample list.md", "")).toBe(true);
   });
 });
 

@@ -1,7 +1,7 @@
 // Tidy up notes window: the scan's result as a before (left) / after (right) split view, one tick box per rule, an "Only reported" group, Copy report.
 // Nothing is written until: the backup box is ticked, Change notes… is pressed and the second window is confirmed (Phase 7b).
 import { Modal, Notice, type App } from "obsidian";
-import { PLANNING_FOLDER_DEFAULTS, kitJoin, kitParent, kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
+import { PLANNING_FOLDER_DEFAULTS, kitParent,kitEnsureDir, type KitData, type PlanningFolders, type PlanningRole } from "./paths";
 import type { KitManaged } from "./managed-ui";
 import { kitBackupPath } from "./managed";
 import { tokenFillFolders } from "./note-fill-ui";
@@ -84,7 +84,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     contractFolders: planningOn ? [...new Set(contract)] : [],
     rootNotes: [host.planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md"],
     migrations,
-    snippetsFolder: kitJoin(host.managed.templatesFolder(), "Snippets"),
+    snippetsFolder: host.managed.snippetsFolder(),
     snippetIcons: host.kit.snippetIcons,
     kitSnippets,
     fillFolders,
@@ -142,7 +142,7 @@ export class TidyNotesModal extends Modal {
 
   /** Reads the vault and scans it. */
   private async load(): Promise<void> {
-    this.kitSnippets = (await this.host.managed.plan()).filter(i => i.file.dest.startsWith("Snippets/") && (i.action === "up-to-date" || i.action === "fast-forward")).map(i => i.dest);
+    this.kitSnippets = (await this.host.managed.plan()).filter(i => i.file.role === "snippets" &&(i.action === "up-to-date" || i.action === "fast-forward")).map(i => i.dest);
     const planningOn = !!this.host.planning?.slot.enabled;
     this.fillFolders = await tokenFillFolders(this.app, { kit: () => this.host.kit, planningOn: () => planningOn, templateFolders: () => [...(planningOn && this.host.planning ? [this.host.planning.templatesFolder()] : []), this.host.managed.templatesFolder()] });
     this.files = await readVault(this.app, tidyContext(this.host, this.answers, this.app, this.kitSnippets, this.fillFolders));

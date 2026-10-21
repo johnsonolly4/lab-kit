@@ -19,7 +19,7 @@ export interface InsertDeps {
   /** The plugin's question window. */
   form: FormFn;
   scripts: KitScripts;
-  /** The folder with the snippet notes (`<templates>/Snippets`). */
+  /** The folder with the snippet notes (the lab kit's snippets folder: `Extras/Snippets`, or `<templates>/Snippets` in an older vault). */
   snippetFolder: string;
   /** Templater's insert-at-cursor, when Templater is installed; null without it. Only used for a plain snippet that holds `<% %>`. */
   templaterInsert: ((file: TFile) => Promise<boolean>) | null;

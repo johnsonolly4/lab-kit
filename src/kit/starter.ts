@@ -35,7 +35,7 @@ export function buildStarter(kits: EmbeddedKit[], CONFIG: string): Starter {
       templates_folder: templates,
       user_scripts_folder: LAB_LAYOUT.userScripts,
       folder_templates: [
-        ...labFolderTemplates(KIT_DEFAULTS.labFolder, KIT_DEFAULTS.chemicalFolder).map(f => ({ folder: f.folder, template: kitJoin(templates, LAB_LAYOUT.templatesSub, f.file) })),   // the lab kit's templates sit in a Lab Kit subfolder
+        ...labFolderTemplates(KIT_DEFAULTS.labFolder, KIT_DEFAULTS.chemicalFolder).map(f => ({ folder: f.folder, template: kitJoin(templates, f.file) })),
         ...planningFolderTemplates(pf).map(f => ({ folder: f.folder, template: kitJoin(templates, f.file) })),
       ],
       trigger_on_file_creation_mode: "folder",

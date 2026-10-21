@@ -32,7 +32,7 @@ describe("snippet menu", () => {
     expect(groupOf({ name: "Solution prep", value: 1 })).toBe("My snippets");
   });
   it("the kit files' own headers put each snippet in the agreed group", () => {
-    const dir = "kits/lab/Templates/Snippets";
+    const dir = "kits/lab/Snippets";
     const files = readdirSync(dir).filter(f => f.endsWith(".md"));
     expect(files.length).toBe(11);
     for (const f of files) {

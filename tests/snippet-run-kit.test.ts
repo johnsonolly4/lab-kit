@@ -12,7 +12,7 @@ import { DEFAULT_RAFT, raftBlock, raftLines } from "../src/blocks/raft/text";
 const require = createRequire(import.meta.url);
 const labSnippets = require("../src/kit/bundled/labSnippets.js");
 const labMethods = require("../src/kit/bundled/labMethods.js");
-const DIR = "kits/lab/Templates/Snippets/";
+const DIR = "kits/lab/Snippets/";
 const MW: Record<string, number> = { "lipoic acid": 206.32, "benzyl alcohol": 108.14, dcm: 84.93, pabtc: 238.39, dmam: 99.13, "va-044": 323.33 };
 
 const ANSWERS: Record<string, Record<string, unknown>> = {

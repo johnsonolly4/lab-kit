@@ -1,4 +1,4 @@
-// Rig notes Phase 5: the shipped Rig snippet (kits/lab/Templates/Snippets/14 Rig.md) run the way Alt+S runs it, on a stub app.
+// Rig notes Phase 5: the shipped Rig snippet (kits/lab/Snippets/14 Rig.md) run the way Alt+S runs it, on a stub app.
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Notice, TFile, TFolder } from "obsidian";
 import { readFileSync } from "node:fs";
@@ -11,7 +11,7 @@ import { miniYaml } from "./token-snippets";
 import { rigVault } from "./helpers/rig-vault";
 
 const RIG = readFileSync("tests/fixtures/rigs/inline-analysis.md", "utf8");
-const SHIPPED = readFileSync("kits/lab/Templates/Snippets/14 Rig.md", "utf8");
+const SHIPPED = readFileSync("kits/lab/Snippets/14 Rig.md", "utf8");
 const F = "```";
 
 // The stub's parseYaml reads JSON only: turn the shipped header into JSON, keep the body as written.
@@ -100,7 +100,7 @@ describe("the shipped Rig snippet", () => {
   });
   it("is kept off by the manifest while the Rigs folder is empty", () => {
     const m = JSON.parse(readFileSync("kits/lab/kit-manifest.json", "utf8")) as { files: { src: string; needs?: string; optional?: boolean }[] };
-    expect(m.files.find(f => f.src === "Templates/Snippets/14 Rig.md")).toMatchObject({ needs: "rigsFolder", optional: true });
+    expect(m.files.find(f => f.src === "Snippets/14 Rig.md")).toMatchObject({ needs: "rigsFolder", optional: true });
   });
 });
 

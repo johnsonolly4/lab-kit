@@ -15,7 +15,7 @@ const require = createRequire(import.meta.url);
 const labSnippets = require("../src/kit/bundled/labSnippets.js");
 const labMethods = require("../src/kit/bundled/labMethods.js");
 
-const DIR = "kits/lab/Templates/Snippets";
+const DIR = "kits/lab/Snippets";
 const FOLDER = "Templates/Snippets";
 // The stub's parseYaml reads JSON only: the shipped header becomes JSON, the body stays as written.
 const asJson = (text: string): string => {

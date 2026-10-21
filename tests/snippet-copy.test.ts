@@ -69,7 +69,7 @@ describe("snippetKey", () => {
     assert.strictEqual(snippetKey("plain\n"), null);
   });
   it("the kit's calculators name their keys in the header", () => {
-    const dir = "kits/lab/Templates/Snippets/";
+    const dir = "kits/lab/Snippets/";
     const keys = { "01 Solution prep": "solution", "02 Recipe by equivalents": "recipe", "03 RAFT recipe generator": "raft", "10 Combined results": "results" };
     for (const [f, k] of Object.entries(keys)) assert.strictEqual(snippetKey(readFileSync(`${dir}${f}.md`, "utf8")), k, f);
   });
@@ -77,7 +77,7 @@ describe("snippetKey", () => {
 
 describe("run: headers of the kit's calculators", () => {
   it("keep each snippet's title, icon and description from the old stub, and name their group and key", () => {
-    const dir = "kits/lab/Templates/Snippets/";
+    const dir = "kits/lab/Snippets/";
     const want: Record<string, object> = {
       "01 Solution prep": { title: "Solution prep", icon: "test-tube", desc: "Solutes and solvents with MW from their notes, targets by concentration or ratio, added in g or mL", group: "Make up", run: "solution" },
       "02 Recipe by equivalents": { title: "Recipe by equivalents", icon: "flask-round", desc: "Eq. relative to any reagent, solvent makes up the rest, wt%", group: "Make up", run: "recipe" },
@@ -94,7 +94,7 @@ describe("run: headers of the kit's calculators", () => {
 
 describe("isStubSnippet", () => {
   it("is true for the stubs that call labSnippets.js and false for token templates, which the settings window can open", () => {
-    const dir = "kits/lab/Templates/Snippets/";
+    const dir = "kits/lab/Snippets/";
     assert.ok(isStubSnippet(readFileSync(dir + "01 Solution prep.md", "utf8")));
     for (const f of ["02 Recipe by equivalents", "03 RAFT recipe generator", "10 Combined results"]) assert.ok(isStubSnippet(readFileSync(`${dir}${f}.md`, "utf8")), f);
     // the old `<%*` form (07-09, and 01-03 / 10 before 1.5) is still a stub
@@ -145,7 +145,7 @@ describe("makeSnippetCopy", () => {
 });
 
 describe("token template copy", () => {
-  const dir = "kits/lab/Templates/Snippets/";
+  const dir = "kits/lab/Snippets/";
   const six = ["04 Variant naming matrix", "05 Sample list", "06 Sampling timetable", "11 Flow column prep", "12 Residence times", "13 Blank calc table"];
 
   it("is offered for the six token templates and not for stubs or plain notes", () => {
