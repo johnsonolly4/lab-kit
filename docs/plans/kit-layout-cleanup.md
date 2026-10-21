@@ -18,7 +18,19 @@ Measured base: clean-install check 2026-10-21 (`scripts/clean-install-structure.
 5. **CI4: the starter holds settings, plugin list and install scripts only.** `buildStarter` (`src/kit/starter.ts:57`) and `scripts/make-starter.mjs` drop the folders and the `.gitkeep` files (and so `04 Literature`); `tests/starter.test.ts` follows.
 6. **Docs + measurement.** `docs/maintenance.md` routine (tutorial folder table, architecture, vault spec, changelog Unreleased, checklist); BACKLOG ticks; the clean-install measurement re-run (script copied into `scripts/`, `!/scripts/` is already allowed) with the new counts in this file.
 
-Expected after phases 1-5 (to be measured): 2 scripts fewer, 1 empty folder fewer (attachments) and 2 made on purpose (Rigs, Methods), one level less under `Extras/Templates`, starter with 0 folders.
+## Result (BUILT 2026-10-21, branch `claude/kit-layout-cleanup`; measured, NOT seen by the owner)
+Measured with `node scripts/clean-install-structure.mjs all` (throwaway Obsidian, both kits installed, then every Check setup Fix; counts outside `.obsidian`; reports in the shared notes folder `clean-install-structure/after/`):
+
+| Scenario (end state) | Files | Folders | Empty folders | Deepest level |
+|---|---|---|---|---|
+| empty vault, before | 44 | 25 | 8 (incl. `Extras/attachments`, `Extras/methods`) | 5 |
+| empty vault, after | 39 | 22 | 7 (all note folders: Inbox, Daily, To-dos, Notes, Rigs, Methods, Chemicals) | 5 |
+| starter, before | 57 | 26 | 3 | 5 |
+| starter, after | 41 (39 + the 2 install scripts) | 22 (the same folders as the empty vault) | 7 | 5 |
+
+The Templater scenarios give the same counts as their non-Templater twins, before and after. The Check setup rows left not OK at the end are the same set before and after (empty and Templater scenarios). The first run of the measurement caught a bug (a new vault's snippets went to `Extras/Templates/Snippets`, because `KitManaged.roles()` always passes a record): fixed in 882eb85, then measured again (the table above). Not measured: an existing vault being updated in real Obsidian (unit tests only: `tests/kit-picker.test.ts` "a vault installed before…"), a phone.
+
+Expected after phases 1-5 (written before building): 2 scripts fewer, 1 empty folder fewer (attachments) and 2 made on purpose (Rigs, Methods), one level less under `Extras/Templates`, starter with 0 folders.
 
 ## Audit: every kit file (2026-10-21, this branch)
 Users found with `grep` over `src/`, `kits/`, `tests/` (commands in the Appendix). "New vaults" = after this plan.
