@@ -61,10 +61,10 @@ show: project-map
 
 > [!summary] Papers
 > ```dataview
-> LIST WITHOUT ID choice(contains(default(zotero_tags, default(row["Zotero Tags"], list())), "/priority"), "&#9733; ", "") + link(file.path, default(paper_title, Title)) + " <span class='vt-muted'>&middot; " + default(join(map(filter(file.lists, (l) => contains(l.outlinks, this.file.link)), (l) => regexreplace(l.text, "^[^:]*:\\s*", "")), "; "), "") + "</span>"
+> LIST WITHOUT ID choice(contains(default(zotero_tags, list()), "/priority"), "&#9733; ", "") + link(file.path, paper_title) + " <span class='vt-muted'>&middot; " + default(join(map(filter(file.lists, (l) => contains(l.outlinks, this.file.link)), (l) => regexreplace(l.text, "^[^:]*:\\s*", "")), "; "), "") + "</span>"
 > FROM "04 Literature"
-> WHERE kind = "literature" AND (contains(default(collections, default(Collections, list())), "Projects/" + this.file.name) OR contains(file.outlinks, this.file.link))
-> SORT contains(default(zotero_tags, default(row["Zotero Tags"], list())), "/priority") DESC, Year DESC
+> WHERE kind = "literature" AND (contains(default(collections, list()), "Projects/" + this.file.name) OR contains(file.outlinks, this.file.link))
+> SORT contains(default(zotero_tags, list()), "/priority") DESC, Year DESC
 > ```
 
 > [!goto]- Done to-dos
