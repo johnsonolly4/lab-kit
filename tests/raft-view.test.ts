@@ -35,19 +35,18 @@ function textOf(el: any): string[] {
   return out;
 }
 
-describe("fixture note raft-0005.md (R-A of the page)", () => {
+describe("fixture note raft-0005.md (R-C of the page)", () => {
   const view = buildRaftView(sourceOf("raft-0005.md"), lookup);
   it("has the page's numbers", () => {
     expect(view.errors).toEqual([]);
     expect(view.title).toBe("RAFT: P(DAAm), DP 105");
-    expect(view.status).toBe("in progress · step 3 of 3");
-    expect(view.summary).toBe("DAAm 2.50 g · DP 105 · PDMA 76 · CTA : initiator 20 · 20 % solids in water · Mn 19 990.14 g/mol");
-    expect(view.steps.map(s => s.title)).toEqual(["1. Monomer and CTA ✓", "2. Solvent ✓", "3. Initiator"]);
-    expect(view.steps.flatMap(s => s.rows.map(r => [r.label, r.sub, r.target, r.actual]))).toEqual([
-      ["DAAm", "14.773 mmol", "2.5000 g", "2.5012 g"],
-      ["PDMA 76", "0.1407 mmol · 1/105", "0.3125 g", "0.3131 g"],
-      ["Water", "to 20 % solids", "11.259 g", "11.2630 g"],
-      ["VA-044", "0.00703 mmol · CTA ÷ 20", "2.27 mg", ""],
+    expect(view.status).toBe("3 of 4 weighed");
+    expect(view.summary).toBe("DAAm 2.50 g · DP 105 · PDMA 76 · CTA : initiator 20 · 20 % solids in water · Mn 19\u202f990.14 g/mol");
+    expect(view.rows.map(r => [r.label, r.sub, r.target, r.actual])).toEqual([
+      ["DAAm", "monomer · 14.773 mmol", "2.5000 g", "2.5012 g"],
+      ["PDMA 76", "CTA · 0.1407 mmol", "0.3125 g", "0.3131 g"],
+      ["Water", "solvent", "11.259 g", "11.2630 g"],
+      ["VA-044", "initiator · 0.00703 mmol", "2.27 mg", ""],
     ]);
     expect(view.estimate).toEqual({ mn: "19 963 g/mol", range: "(DP 104.8 · solids 20.00 %)" });
   });
@@ -59,17 +58,16 @@ describe("fixture note raft-0005.md (R-A of the page)", () => {
   it("a fresh block has no estimate and is on step 1", () => {
     const v = buildRaftView(sourceOf("raft-0005-fresh.md"), lookup);
     expect(v.estimate).toBeNull();
-    expect(v.status).toBe("in progress · step 1 of 3");
+    expect(v.status).toBe("0 of 4 weighed");
     expect(v.title).toBe("RAFT: P(DAAm), DP 105");
   });
   it("a done block says done", () => {
     const v = buildRaftView(sourceOf("raft-0005.md").replace("  VA-044:", "  VA-044: 2.31 mg"), lookup);
     expect(v.status).toBe("done");
-    expect(v.steps.every(s => s.done)).toBe(true);
   });
   it("a bare number takes the row's unit", () => {
     const v = buildRaftView(sourceOf("raft-0005.md").replace("  VA-044:", "  VA-044: 2.31"), lookup);
-    expect(v.steps[2].rows[0].actual).toBe("2.31 mg");
+    expect(v.rows[3].actual).toBe("2.31 mg");
   });
 });
 
@@ -87,9 +85,7 @@ describe("what is wrong is said, nothing is guessed", () => {
   it("two monomers and a co-solvent get their own rows", () => {
     const v = buildRaftView(src.replace('  "[[DAAm]]": 1', '  "[[DAAm]]": 1\n  "[[PDMA 76]]": 1').replace('solvent: "[[Water]]"', 'solvent: "[[Water]]"\ncosolvent: "[[Water]]"\ncosolvent-pct: 20 %'), lookup);
     expect(v.errors).toEqual([]);
-    expect(v.steps[0].title).toBe("1. Monomers and CTA");
-    expect(v.steps[0].rows.length).toBe(3);
-    expect(v.steps[1].title).toBe("2. Solvents");
+    expect(v.rows.map(r => r.label)).toEqual(["DAAm", "PDMA 76", "PDMA 76", "Water", "Water", "VA-044"]);
   });
 });
 
@@ -99,7 +95,7 @@ describe("drawn", () => {
     const host = new El("div");
     drawRaft(host, view);
     const lines = textOf(host);
-    expect(lines).toContain("DAAm14.773 mmol | 2.5000 g | 2.5012 g");
+    expect(lines).toContain("DAAmmonomer · 14.773 mmol | 2.5000 g | 2.5012 g");
     expect(lines).toContain(" | Target | Actual");
     expect(host.querySelector?.("table") ?? null).toBeNull();
     const fold = host.querySelector(".lk-sol-fold");

@@ -1,4 +1,4 @@
-// RAFT block as what is drawn (look R-A of the owner-picked page: steps like Solution prep, mmol under each name, a live "Mn from what you've weighed",
+// RAFT block as what is drawn (look R-C of the owner-picked page: one Target / Actual list, role and mmol under each name, a live "Mn from what you've weighed",
 // a collapsed "How it's worked out" fold). A view model made from the block text and the chemical notes' MW. Pure (no Obsidian runtime).
 // Plan: docs/plans/templater-replacement-and-live-snippets.md, Phase 9. New wording is listed in BACKLOG "Questions for the owner".
 import { parseBlock, parseQuantity, massToGrams } from "../core";
@@ -10,7 +10,6 @@ import { raftLines, setupFromLines, valuesFromBlock, workedOut, type RaftField }
 /** Where an Actual is stored: its `used:` key and the unit a bare number takes. */
 export interface UsedField { key: string; unit: string }
 export interface RaftRow { label: string; sub: string; target: string; actual: string; field: UsedField }
-export interface RaftStep { title: string; done: boolean; rows: RaftRow[] }
 export interface RaftError { text: string; /** The chemical note whose MW can be typed once (the line is clickable). */ ask?: string }
 export interface RaftView {
   newer: string | null;
@@ -18,7 +17,8 @@ export interface RaftView {
   title: string;
   status: string;
   summary: string;
-  steps: RaftStep[];
+  /** One list (look R-C): monomer(s), CTA, solvent, co-solvent, initiator. */
+  rows: RaftRow[];
   /** "Mn from what you've weighed:" value and the (DP · solids) text; null until a mass is entered. */
   estimate: { mn: string; range: string } | null;
   /** The sums of "How it's worked out", one line each (the note's `#` lines without the head and MW line, and without `# `). */
@@ -40,9 +40,7 @@ export const TEXT = {
   noChange: "Couldn't change this RAFT block. Edit it in source mode instead.",
   foldNote: "same lines as in the note",
   // New wording, asked in BACKLOG "Questions for the owner":
-  stepMonomer: (n: number) => n > 1 ? "Monomers and CTA" : "Monomer and CTA",
-  stepSolvent: (two: boolean) => two ? "Solvents" : "Solvent",
-  stepInitiator: "Initiator",
+  weighed: (n: number, m: number) => `${n} of ${m} weighed`,
   noMonomer: "monomers: no monomer given",
   missing: (key: string) => `${key} is missing`,
   bad: (key: string) => `${key} is missing or not a number`,
@@ -73,7 +71,7 @@ const unitOf = (g: number): string => g < 0.1 ? "mg" : "g";
 /** What the block shows for this text and these chemical notes. */
 export function buildRaftView(source: string, lookup: (name: string) => MwLookup): RaftView {
   const block = parseBlock(source);
-  const view: RaftView = { newer: null, errors: [], title: "", status: "", summary: "", steps: [], estimate: null, worked: [] };
+  const view: RaftView = { newer: null, errors: [], title: "", status: "", summary: "", rows: [], estimate: null, worked: [] };
   if (block.newer) { view.newer = TEXT.newer; return view; }
 
   const parsed = raftLines(valuesFromBlock(block));
@@ -102,23 +100,16 @@ export function buildRaftView(source: string, lookup: (name: string) => MwLookup
     const unit = unitOf(g), a = actual(used[label], unit);
     return { label, sub, target: fmtMass(g), actual: a.text, field: { key: label, unit }, g: a.g };
   };
-  const mon = t.monomers.map(m => row(m.name, fmtMmol(m.mol), m.g));
-  const cta = row(l.cta, `${fmtMmol(t.cta.mol)} · 1/${trimZeros(String(setup.dp))}`, t.cta.g);
-  const solvent = row(l.solvent, `to ${trimZeros(String(setup.solidsPct))} % solids`, t.solventG);
-  const co = l.cosolvent && t.cosolventG !== null ? row(l.cosolvent, `${trimZeros(String(setup.cosolventPct ?? 0))} % of the ${lowerFirst(l.solvent)}`, t.cosolventG) : null;
-  const init = row(l.initiator, `${fmtMmol(t.initiator.mol)} · CTA ÷ ${trimZeros(String(setup.ratio))}`, t.initiator.g);
+  const mon = t.monomers.map(m => row(m.name, `monomer · ${fmtMmol(m.mol)}`, m.g));
+  const cta = row(l.cta, `CTA · ${fmtMmol(t.cta.mol)}`, t.cta.g);
+  const solvent = row(l.solvent, "solvent", t.solventG);
+  const co = l.cosolvent && t.cosolventG !== null ? row(l.cosolvent, `co-solvent · ${trimZeros(String(setup.cosolventPct ?? 0))} % of the ${lowerFirst(l.solvent)}`, t.cosolventG) : null;
+  const init = row(l.initiator, `initiator · ${fmtMmol(t.initiator.mol)}`, t.initiator.g);
 
-  const make = (n: number, title: string, rows: (RaftRow & { g: number | null })[]): RaftStep => {
-    const done = rows.every(r => r.actual !== "");
-    return { title: `${n}. ${title}${done ? " ✓" : ""}`, done, rows: rows.map(({ g: _g, ...r }) => r) };
-  };
-  view.steps = [
-    make(1, TEXT.stepMonomer(mon.length), [...mon, cta]),
-    make(2, TEXT.stepSolvent(co !== null), co ? [solvent, co] : [solvent]),
-    make(3, TEXT.stepInitiator, [init]),
-  ];
-  const left = view.steps.findIndex(s => !s.done);
-  view.status = left < 0 ? TEXT.done : TEXT.inProgress(left + 1, view.steps.length);
+  const all = [...mon, cta, ...(co ? [solvent, co] : [solvent]), init];
+  const weighedN = all.filter(r => r.actual !== "").length;
+  view.rows = all.map(({ g: _g, ...r }) => r);
+  view.status = weighedN === all.length ? TEXT.done : TEXT.weighed(weighedN, all.length);
 
   const names = l.monomers.map(m => m.name);
   const solventText = co ? `${lowerFirst(l.solvent)} + ${lowerFirst(l.cosolvent)} (${trimZeros(String(setup.cosolventPct ?? 0))} % of the ${lowerFirst(l.solvent)})` : lowerFirst(l.solvent);
@@ -137,5 +128,5 @@ export function buildRaftView(source: string, lookup: (name: string) => MwLookup
 
 /** The Actual cells in the order they are drawn. */
 export function cellsOf(view: RaftView): { field: UsedField; value: string }[] {
-  return view.steps.flatMap(s => s.rows.map(r => ({ field: r.field, value: r.actual })));
+  return view.rows.map(r => ({ field: r.field, value: r.actual }));
 }

@@ -1,5 +1,5 @@
 // Renders ```raft blocks: the set-up and the typed `used:` masses of the block, worked out by ./view.ts and drawn with the same div rows and classes as the
-// Solution prep block (.lk-sol-*, no <table>, so a vault's table styling cannot reach it), plus the collapsed "How it's worked out" fold.
+// Solution prep block (.lk-sol-*, one list, look R-C, no <table>, so a vault's table styling cannot reach it), plus the collapsed "How it's worked out" fold.
 // Typing an actual writes its own `used:` line only; Edit set-up rewrites the changed set-up lines and the `#` worked-out lines (Q36 a).
 // Plan: docs/plans/templater-replacement-and-live-snippets.md, Phase 9. The Actual input is the solution block's, adapted (BACKLOG: move it into ../core.ts).
 import { MarkdownRenderChild, Notice, Platform, TFile, type App, type MarkdownPostProcessorContext, type Plugin } from "obsidian";
@@ -274,28 +274,24 @@ export function drawRaft(host: HTMLElement, view: RaftView, on?: RaftHandlers): 
   head.createSpan({ cls: view.status === TEXT.done ? "lk-sol-chip is-done" : "lk-sol-chip", text: view.status });
   if (on) editButton(head, on);
   box.createDiv({ cls: "lk-sol-summary", text: view.summary });
-  for (const step of view.steps) {
-    const sec = box.createDiv({ cls: step.done ? "lk-sol-step is-done" : "lk-sol-step" });
-    sec.createDiv({ cls: "lk-sol-step-title", text: step.title });
-    const grid = sec.createDiv({ cls: "lk-sol-grid", attr: { role: "table" } });
-    const hrow = grid.createDiv({ cls: "lk-sol-row is-head", attr: { role: "row" } });
-    hrow.createDiv({ cls: "lk-sol-cell", attr: { role: "columnheader" } });
-    hrow.createDiv({ cls: "lk-sol-cell is-num", text: "Target", attr: { role: "columnheader" } });
-    hrow.createDiv({ cls: "lk-sol-cell is-num", text: "Actual", attr: { role: "columnheader" } });
-    for (const r of step.rows) {
-      const row = grid.createDiv({ cls: "lk-sol-row", attr: { role: "row" } });
-      const label = row.createDiv({ cls: "lk-sol-cell", text: r.label, attr: { role: "cell" } });
-      label.createSpan({ cls: "lk-sol-sub", text: r.sub });
-      row.createDiv({ cls: "lk-sol-cell is-num is-target", text: r.target, attr: { role: "cell" } });
-      const cell = row.createDiv({ cls: `lk-sol-cell is-num is-actual${r.actual ? "" : " is-empty"}${on ? " is-editable" : ""}`, text: r.actual, attr: { role: "cell" } });
-      if (on) {
-        const idx = cells.length;
-        cell.tabIndex = 0;
-        cell.addEventListener("click", () => on.edit(idx));
-        cell.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); on.edit(idx); } });
-      }
-      cells.push(cell);
+  const grid = box.createDiv({ cls: "lk-sol-grid", attr: { role: "table" } });
+  const hrow = grid.createDiv({ cls: "lk-sol-row is-head", attr: { role: "row" } });
+  hrow.createDiv({ cls: "lk-sol-cell", attr: { role: "columnheader" } });
+  hrow.createDiv({ cls: "lk-sol-cell is-num", text: "Target", attr: { role: "columnheader" } });
+  hrow.createDiv({ cls: "lk-sol-cell is-num", text: "Actual", attr: { role: "columnheader" } });
+  for (const r of view.rows) {
+    const row = grid.createDiv({ cls: "lk-sol-row", attr: { role: "row" } });
+    const label = row.createDiv({ cls: "lk-sol-cell", text: r.label, attr: { role: "cell" } });
+    label.createSpan({ cls: "lk-sol-sub", text: r.sub });
+    row.createDiv({ cls: "lk-sol-cell is-num is-target", text: r.target, attr: { role: "cell" } });
+    const cell = row.createDiv({ cls: `lk-sol-cell is-num is-actual${r.actual ? "" : " is-empty"}${on ? " is-editable" : ""}`, text: r.actual, attr: { role: "cell" } });
+    if (on) {
+      const idx = cells.length;
+      cell.tabIndex = 0;
+      cell.addEventListener("click", () => on.edit(idx));
+      cell.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); on.edit(idx); } });
     }
+    cells.push(cell);
   }
   if (view.estimate) {
     const est = box.createDiv({ cls: "lk-sol-estimate" });
