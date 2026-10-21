@@ -73,7 +73,7 @@ class RigView extends MarkdownRenderChild {
     const made = makeFigure(text);
     let snap: { date: string; changed: boolean; problems: string[] } | null = null;
     try { snap = file instanceof TFile && made ? await snapshotState(app, file, text) : null; } catch (e) { console.error("Lab Kit rig snapshot", e); }
-    const sig = JSON.stringify([made?.svg ?? "", rig.problems, snap]);
+    const sig = JSON.stringify([made?.svg ?? "", rig.problems, made?.problems ?? [], snap]);
     if (run !== this.drawing || sig === this.shown) return;
 
     const box = this.containerEl.createDiv({ cls: "lab-kit-rig" });

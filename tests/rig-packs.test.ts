@@ -164,3 +164,14 @@ describe("no pack asset in the repo", () => {
     expect([...walk("src"), ...walk("kits")].filter(p => /\.(svg|png)$/i.test(p))).toEqual([]);
   });
 });
+
+describe("label of a pack mixer", () => {
+  it("sits under a sized pack symbol, not at the tee's lower right", async () => {
+    usePack(await loadPack(io(GOOD), "Pack"));
+    const m = makeFigure(RIG)!;
+    const box = m.boxes.find(b => b.id === "M1")!;
+    const label = new RegExp(`<text x="([\\d.]+)" y="([\\d.]+)"[^>]*text-anchor="middle">M<tspan|<text x="([\\d.]+)" y="([\\d.]+)"[^>]*text-anchor="middle">M`).exec(m.svg);
+    expect(label).not.toBeNull();
+    expect(Number(label![1] ?? label![3])).toBeCloseTo(box.x, 0);
+  });
+});

@@ -77,7 +77,7 @@ function labelSvg(p: Placed, above: boolean, half = p.sym.h / 2, returns = false
     return `<text x="${x}" y="${n1(node.y + (detail ? 0 : 5))}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 17)}" font-size="13">${esc(detail)}</text>` : "");
   }
-  if (node.kind === "Mixer" || returns) {   // streams run into a tee from above and below, and a return line leaves a part's underside, so the label sits to the lower right
+  if ((node.kind === "Mixer" && !sym.name.startsWith("pack-")) || returns) {   // streams run into a tee from above and below, and a return line leaves a part's underside, so the label sits to the lower right (a pack symbol has a size of its own: label under it)
     const x = n1(node.x + 12);
     return `<text x="${x}" y="${n1(node.y + 24)}" font-size="16" font-weight="700">${idText(node.id)}</text>`
       + (detail ? `<text x="${x}" y="${n1(node.y + 41)}" font-size="13">${esc(detail)}</text>` : "");
