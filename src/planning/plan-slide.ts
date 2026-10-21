@@ -70,7 +70,7 @@ export function statusLines(row: PlanRow, all: PlanRow[], today?: string): { tex
   if (late) out.push({ text: `late: due ${shortDate(row.due)}`, tone: "late" });
   if (row.waiting) out.push({ text: `waiting: ${row.waiting}`, tone: "waiting" });
   if (row.blocked) { const names = openBefore(row, all); if (names.length) out.push({ text: `after ${names.join(", ")}`, tone: "muted" }); }
-  if (row.due && !late) out.push(left !== null && left <= DUE_SOON_DAYS ? { text: `due ${shortDate(row.due)} (in ${left} d)`, tone: "soon" } : { text: `due ${shortDate(row.due)}`, tone: "muted" });
+  if (row.due && !late) out.push(left !== null && left <= DUE_SOON_DAYS ? { text: `due ${shortDate(row.due)} (${left === 0 ? "today" : left === 1 ? "tomorrow" : `in ${left} d`})`, tone: "soon" } : { text: `due ${shortDate(row.due)}`, tone: "muted" });
   return out;
 }
 
