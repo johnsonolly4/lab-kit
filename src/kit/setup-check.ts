@@ -2,7 +2,7 @@
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
 import type { ZotlitScan } from "./zotlit";
-import { RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
+import { METHODS_DEFAULT, RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
 import type { ClosedScan } from "../close/scan";
@@ -165,9 +165,6 @@ export function setupSummary(items: SetupItem[]): string {
   const n = items.filter(it => { const s = setupRowState(it); return s === "missing" || s === "todo"; }).length;
   return n ? `${n} ${n === 1 ? "thing" : "things"} to do.` : "Everything the kits need is in place.";
 }
-
-/** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
-export const METHODS_DEFAULT = "Extras/methods";
 
 const names1 = (list: unknown[], one: string, many: string): string => list.length === 1 ? one : many;
 

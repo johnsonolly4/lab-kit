@@ -123,8 +123,10 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
 
 /** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
 export const RIGS_DEFAULT = "03 Lab Book/Rigs";
+/** The Methods folder of a new vault (CI3, 2026-10-21: made at install next to Rigs). A vault saved before keeps what it had (empty = only NMR, GPC, DLS). */
+export const METHODS_DEFAULT = "03 Lab Book/Methods";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, freezeAuto: true, styleAllNotes: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, figuresFolder: "", folderTemplates: null, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, freezeAuto: true, styleAllNotes: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: METHODS_DEFAULT, rigsFolder: RIGS_DEFAULT, figuresFolder: "", folderTemplates: null, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -140,6 +142,8 @@ export function kitLoad(saved: unknown): KitData {
   const old = { ...((saved ?? {}) as Record<string, unknown>) };
   // Saved by v0.5.2 or older: no folder default is put on a vault that already uses Lab Kit (Lab book base, New lab entry stay off until set)
   if (saved && typeof saved === "object" && old.labFolder === undefined) old.labFolder = "";
+  // Saved before the Methods folder had a default (2026-10-21): it stays as it was (unset = empty)
+  if (saved && typeof saved === "object" && old.methodsFolder === undefined) old.methodsFolder = "";
   if (old.checkOnStartup === false && old.notifyKitUpdate === undefined) old.notifyKitUpdate = false;
   const single = { managed: old.managed, paths: old.paths, off: old.off };
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
@@ -286,11 +290,13 @@ export function planningFolders(roles: Roles, zotlit: boolean): KitFolder[] {
   return list.filter(f => f.path);
 }
 
-/** The lab kit's note folders from the Lab notebook settings (empty = not set, not made). */
-export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder">): KitFolder[] {
+/** The lab kit's note folders from the Lab notebook settings (empty = not set, not made). Rigs and Methods sit under 03 Lab Book in a new vault (CI3). */
+export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder" | "rigsFolder" | "methodsFolder">): KitFolder[] {
   return [
     { path: kit.labFolder, desc: "Your experiment notes (New lab entry puts them here)." },
     { path: kit.chemicalFolder, desc: "Your chemical notes (suggested in calc cells and forms)." },
+    { path: kit.rigsFolder, desc: "Your rig notes (New rig puts them here)." },
+    { path: kit.methodsFolder, desc: "Your own analysis methods (the Alt+S menu lists them next to NMR, GPC and DLS)." },
   ].filter(f => f.path);
 }
 
