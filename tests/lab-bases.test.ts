@@ -4,6 +4,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { inFolders, patchFolders } from "../src/kit/managed";
+import { LAB_BOARD_VIEW } from "../src/lab/lab-board";
 
 const text = readFileSync("kits/lab/03 Lab Book/Lab book base.base", "utf8");
 const lines = (s: string) => s.split(/\r?\n/);
@@ -27,10 +28,18 @@ const sortOf = (v: string) => { const m = /    sort:\n      - property: (\S+)\n 
 const orderOf = (v: string) => { const ls = lines(v), i = ls.indexOf("    order:"); const out: string[] = []; for (const l of ls.slice(i + 1)) { if (!l.startsWith("      - ")) break; out.push(l.slice(8)); } return out; };
 
 describe("Lab book base.base (kit)", () => {
-  it("is one base with the running board first, so it opens first, then the list, then the completed views", () => {
+  it("is one base with the Lab Kit lab board first, so it opens first, then the built-in running board, the list and the completed views", () => {
     expect(views.map((v) => [typeOf(v), /    name: (.+)/.exec(v)![1]])).toEqual([
-      ["kanban", "Experiments"], ["list", "All experiments"], ["table", "Completed experiments"], ["table", "RAFT experiments"], ["table", "Closed this year"],
+      ["lab-kit-lab-board", "Lab board"], ["kanban", "Experiments"], ["list", "All experiments"], ["table", "Completed experiments"], ["table", "RAFT experiments"], ["table", "Closed this year"],
     ]);
+  });
+
+  it("Lab board (own view, src/lab/lab-board-view.ts): every lab note, no view filter (it splits running and completed itself); property ids without note. (Obsidian drops the prefix when it re-saves)", () => {
+    const b = view("Lab board");
+    expect(typeOf(b)).toBe(LAB_BOARD_VIEW);
+    expect(filterLines(b)).toEqual([]);
+    expect(orderOf(b)).toEqual(["file.name", "Status", "Exp. Class", "Exp. Start", "Chemicals", "Outcome", "Result", "closed_on"]);
+    expect(orderOf(b).some((p) => p.startsWith("note."))).toBe(false);
   });
 
   it("base filter is the Lab notes folder (the one folder string patchFolders follows)", () => {
@@ -85,6 +94,7 @@ describe("Lab book base.base (kit)", () => {
     const all = views.flatMap(filterLines).join("\n");
     expect(all).not.toMatch(/ = "/);                       // Status = "Closed" (single =) matched nothing
     expect(all).not.toMatch(/(^|\s)Exp\. Class\b/);        // a bare name with a space and a dot matched nothing in a filter
-    for (const v of views) expect(typeOf(v)).toMatch(/^(kanban|list|table)$/);   // only built-in view types: the file works with the plugin off
+    // only built-in view types after the first: with the plugin off the Lab board says "unknown view type" and the others still work
+    for (const v of views.slice(1)) expect(typeOf(v)).toMatch(/^(kanban|list|table)$/);
   });
 });

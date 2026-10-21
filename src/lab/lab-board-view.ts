@@ -6,9 +6,8 @@ import { BasesView, Keymap, Notice, Platform, TFile, setIcon, type Plugin, type 
 import { attachCardDrag, dragJustEnded, stepDay, swipeDir } from "../planning/board-drag";
 import { NARROW_PX } from "../planning/board-view";
 import { inFolder } from "../planning/lists";
-import { chemText, chipValues, COMPLETED_COLS, COMPLETED_START, completedRows, cellText, isCompleted, labRow, nextSort, openTodosByNote, OTHER, pickColumn, progress, RESULT_LOOK, RUNNING, runningColumns, summary, type CompletedState, type LabRow } from "./lab-board";
+import { chemText, chipValues, COMPLETED_COLS, COMPLETED_START, completedRows, cellText, isCompleted, LAB_BOARD_VIEW, labRow, nextSort, openTodosByNote, OTHER, pickColumn, progress, RESULT_LOOK, RUNNING, runningColumns, summary, type CompletedState, type LabRow } from "./lab-board";
 
-export const LAB_BOARD_VIEW = "lab-kit-lab-board";
 /** Per-device (this vault's local storage, not synced): Hide toolbar and the last tab, for every lab board. */
 export const LAB_BOARD_KEY = "lk-lab-board";
 /** Set on the tab's `.workspace-leaf-content` while Hide toolbar is on: styles.css hides Obsidian's Bases toolbar under it. */

@@ -4,6 +4,8 @@ import { prop, toList } from "../frontmatter";
 import { linkTarget } from "../planning/lists";
 import { isFinishedTodo } from "../planning/todo";
 
+/** The view type id in a `.base` file (`type: lab-kit-lab-board`). */
+export const LAB_BOARD_VIEW = "lab-kit-lab-board";
 /** The running columns, in board order. A drop on one writes that Status. There is no Closed column: Close experiment closes a note. */
 export const RUNNING = ["Planned", "Started", "Processing results"] as const;
 /** The column for running notes whose Status is none of RUNNING (empty or a word of the user's own). Not a drop target. */

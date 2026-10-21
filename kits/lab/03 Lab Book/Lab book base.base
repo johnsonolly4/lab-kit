@@ -5,6 +5,17 @@ properties:
   note.closed_on:
     displayName: Ended
 views:
+  - type: lab-kit-lab-board
+    name: Lab board
+    order:
+      - file.name
+      - Status
+      - Exp. Class
+      - Exp. Start
+      - Chemicals
+      - Outcome
+      - Result
+      - closed_on
   - type: kanban
     name: Experiments
     filters:
