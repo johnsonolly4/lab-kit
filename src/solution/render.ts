@@ -8,6 +8,7 @@ import { readReagent } from "./reagent";
 import { blockRange, parseSolution, writeActual, writeSetup } from "./block";
 import { askReagent } from "./ask-reagent";
 import { NOT_A_MASS, actualText, cellsOf, nextCell } from "./edit";
+import { holdScroll, processNote } from "../blocks/core";
 import { openSetup, reagentChoices, SETUP_HINT, type SetupFn } from "./setup";
 import { setupChanges, valuesFromSetup } from "./setup-text";
 import { buildView, reagentName, TEXT, type ActualField, type ReagentLookup, type View } from "./view";
@@ -134,13 +135,11 @@ class SolutionView extends MarkdownRenderChild {
     if (!got) return;
     const changes = setupChanges(values, got.values);
     if (!changes.length) return;
-    this.holdScroll();
-    let out: string | null = null;
-    await app.vault.process(file, data => {
+    holdScroll(this.containerEl);
+    const out = await processNote(app, file, data => {
       let note: string | null = data;
       for (const [key, value] of changes) { note = note === null ? null : writeSetup(note, info.lineStart, key, value); }
-      out = note;
-      return note ?? data;
+      return note;
     });
     if (out === null) { new Notice("Couldn't change this solution block. Edit it in source mode instead."); return; }
     const after = blockRange(out, info.lineStart);
@@ -215,25 +214,12 @@ class SolutionView extends MarkdownRenderChild {
     const info = this.ctx.getSectionInfo(this.containerEl);
     const file = app.vault.getAbstractFileByPath(this.sourcePath);
     if (!info || !(file instanceof TFile)) { new Notice("Couldn't find this solution block. Edit it in source mode instead."); this.stopEditing(); return; }
-    this.holdScroll();
-    let out: string | null = null;
-    await app.vault.process(file, data => { out = writeActual(data, info.lineStart, f.step, f.key, text); return out ?? data; });
+    holdScroll(this.containerEl);
+    const out = await processNote(app, file, data => writeActual(data, info.lineStart, f.step, f.key, text));
     if (out === null) { new Notice("Couldn't change this solution block. Edit it in source mode instead."); this.stopEditing(); return; }
     const r = blockRange(out, info.lineStart);
     if (r) this.source = r.source;
     this.stopEditing();
-  }
-
-  /** Puts the note back where it was scrolled to while Obsidian lays the redrawn block out, until the user scrolls. */
-  private holdScroll(): void {
-    const scroller = this.containerEl.closest<HTMLElement>(".cm-scroller") ?? this.containerEl.closest<HTMLElement>(".markdown-preview-view");
-    if (!scroller) return;
-    const top = scroller.scrollTop;
-    const ac = new AbortController();
-    const stop = (): void => ac.abort();
-    scroller.addEventListener("wheel", stop, { signal: ac.signal, passive: true });
-    scroller.addEventListener("touchmove", stop, { signal: ac.signal, passive: true });
-    for (const ms of [0, 60, 200, 500, 1000, 1800]) window.setTimeout(() => { if (!ac.signal.aborted && scroller.scrollTop !== top) scroller.scrollTop = top; if (ms === 1800) ac.abort(); }, ms);
   }
 }
 
