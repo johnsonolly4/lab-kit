@@ -181,20 +181,18 @@ ${m.dataset ? `Dataset: ${values.dataset ?? ""}\n\n` : ""}${m.checklist.map(c =>
     const v = await form(m.title, [
       ...cf.fields,
       ...(m.machines.length ? [{ key: "machine", label: "Machine", type: "select", options: m.machines.map(x => ({ value: x.name, label: x.name })), value: m.defaultMachine }] : []),
-      ...fieldColumns(m).map(c => ({ key: c.key, label: c.label ?? c.name, value: M.columnDefault(c, dm?.fm) ?? "" })),
+      ...fieldColumns(m).map(c => ({ key: c.key, label: c.label ?? c.name, value: M.columnDefault(c, dm?.fm) ?? "",
+        ...(m.machines.length ? { follows: { key: "machine", values: Object.fromEntries(m.machines.map(x => [x.name, M.columnDefault(c, x.fm) ?? ""])) } } : {}) })),
       ...(m.dataset ? [{ key: "dataset", label: "Dataset / folder", hint: "optional · can be filled in later", value: "", placeholder: `e.g. folder name of the ${m.name} data` }] : []),
     ]);
     if (v) v.codes = cf.resolve(v).join(", ");
     return v;
   };
-  /** Ask for one method's table and build it. A field left at the default machine's value follows the machine that was picked. */
+  /** Ask for one method's table and build it. The boxes follow the picked machine in the form (`follows`), so the table gets what they show. */
   const runMethod = async (m) => {
     const v = await methodForm(m);
     if (!v) return "";
-    const machine = machineOf(m, v.machine), dm = machineOf(m, m.defaultMachine);
-    if (machine && dm && machine !== dm) for (const c of fieldColumns(m)) {
-      if (v[c.key] === (M.columnDefault(c, dm.fm) ?? "")) v[c.key] = M.columnDefault(c, machine.fm) ?? "";
-    }
+    const machine = machineOf(m, v.machine);
     tag(m.tag);
     const codes = list(v.codes);
     return methodTable(m, codes, { machine, values: v }).md;

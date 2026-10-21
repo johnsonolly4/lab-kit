@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
 import { TFile } from "obsidian";
-import { formFooter, currentItem, matchNames, missingRequired, replaceItem, startValues, PILL_MAX, type FormField, type FormFn } from "../src/kit/snippet-form";
+import { formFooter, followUps, currentItem, matchNames, missingRequired, replaceItem, startValues, PILL_MAX, type FormField, type FormFn } from "../src/kit/snippet-form";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 
@@ -34,6 +34,27 @@ describe("plugin form helpers = labForm.js", () => {
     expect(missingRequired(fields, values)).toEqual(["a", "d"]);
     expect(missingRequired(fields, values)).toEqual(old.missingRequired(fields, values));
     expect(missingRequired(fields, { a: "x", b: "", c: false, d: "0" })).toEqual([]);
+  });
+});
+
+describe("boxes that follow a choice (follows)", () => {
+  const fields: FormField[] = [
+    { key: "machine", label: "Machine", type: "select", options: [{ value: "TGA 550" }, { value: "TGA Q50" }] },
+    { key: "atmosphere", label: "Atmosphere", value: "N2", follows: { key: "machine", values: { "TGA 550": "N2", "TGA Q50": "Air" } } },
+    { key: "ramp", label: "Ramp", value: "10", follows: { key: "machine", values: { "TGA 550": 10, "TGA Q50": 20 } } },
+    { key: "only", label: "Only one", value: "x", follows: { key: "machine", values: { "TGA 550": "x" } } },
+    { key: "other", label: "Other", value: "y" },
+  ];
+  it("gives the picked choice's value to each following box, not to typed ones or ones without a value for it", () => {
+    expect(followUps(fields, "machine", "TGA Q50", new Set())).toEqual({ atmosphere: "Air", ramp: "20" });
+    expect(followUps(fields, "machine", "TGA Q50", new Set(["ramp"]))).toEqual({ atmosphere: "Air" });
+    expect(followUps(fields, "machine", "TGA 550", new Set())).toEqual({ atmosphere: "N2", ramp: "10", only: "x" });
+    expect(followUps(fields, "other", "TGA Q50", new Set())).toEqual({});
+  });
+  it("labForm.js follows the same way", () => {
+    for (const [v, typed] of [["TGA Q50", []], ["TGA Q50", ["ramp"]], ["TGA 550", ["atmosphere"]], ["nope", []]] as [string, string[]][]) {
+      expect(followUps(fields, "machine", v, new Set(typed))).toEqual(old.followUps(fields, "machine", v, new Set(typed)));
+    }
   });
 });
 

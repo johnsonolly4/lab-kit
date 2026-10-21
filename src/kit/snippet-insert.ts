@@ -32,12 +32,13 @@ export function formatNow(format: string, now: Date = new Date()): string {
   return format.replace(/YYYY|MM|DD|HH|mm|ss/g, t => parts[t]);
 }
 
-/** The `tp` the kit scripts read: the note being written, the date, the plugin's form and the two scripts. */
+/** The `tp` the kit scripts read: the note being written, the date, the plugin's form and the two scripts.
+ *  `target_file` is the note's TFile, as in Templater: labSnippets.js writes method tags with `processFrontMatter` on it. */
 export function snippetTp(app: App, form: FormFn, scripts: KitScripts, now: Date = new Date()): SnippetTp & { date: { now: (format?: string) => string }; user: Record<string, unknown> } {
   const active = app.workspace.getActiveFile();
   const basename = active?.basename ?? "";
   return {
-    config: { target_file: { basename, path: active?.path ?? "" } },
+    config: { target_file: active },
     file: { title: basename },
     date: { now: (format = "YYYY-MM-DD") => formatNow(format, now) },
     user: {

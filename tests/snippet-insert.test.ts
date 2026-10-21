@@ -1,10 +1,10 @@
 // I23 Phase 6: Alt+S without Templater. The Insert snippet command lists the Snippets folder and the Methods folder, runs the pick on the
 // kit scripts and the plugin's form, and puts the text at the cursor. The old test of Insert snippet.md's own code lives on here.
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createRequire } from "node:module";
 import { Notice, TFile } from "obsidian";
 import { SnippetTemplates } from "../src/kit/snippet-run";
-import { insertSnippet, formatNow, type InsertDeps } from "../src/kit/snippet-insert";
+import { insertSnippet, formatNow, snippetTp, type InsertDeps } from "../src/kit/snippet-insert";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 import type { FormField } from "../src/kit/snippet-form";
 
@@ -121,6 +121,35 @@ describe("Insert snippet without Templater", () => {
     delete g.app;
     await insertSnippet(r.deps, r.editor);
     expect("app" in g).toBe(false);
+  });
+
+  it("the method's tag is written to the note's tags: target_file is the active TFile, as processFrontMatter needs", async () => {
+    vi.useFakeTimers();
+    try {
+      const r = setup({ files: [], pick: "NMR samples", answers: { codes: "ABC0016-A" } });
+      const note = new TFile({ path: "0016 - Test.md", basename: "0016 - Test" });
+      const fm: Record<string, unknown> = { tags: ["lab"] };
+      const app = r.deps.app as unknown as { workspace: { getActiveFile: () => TFile }; fileManager: { processFrontMatter: (f: unknown, fn: (fm: Record<string, unknown>) => void) => Promise<void> } };
+      app.workspace.getActiveFile = () => note;
+      // like Obsidian: anything but a TFile is refused
+      app.fileManager.processFrontMatter = async (f, fn) => { if (!(f instanceof TFile)) throw new Error("not a TFile"); fn(fm); };
+      const g = window as unknown as Record<string, unknown>;
+      g.app = r.deps.app;   // Obsidian's window.app outlives the run; tag() writes 800 ms later
+      await insertSnippet(r.deps, r.editor);
+      expect(r.inserted[0]).toContain("name: nmr");
+      await vi.advanceTimersByTimeAsync(800);
+      expect(fm.tags).toEqual(["lab", "NMR"]);
+      delete g.app;
+    } finally { vi.useRealTimers(); }
+  });
+
+  it("snippetTp gives the active note itself as target_file, null without one", () => {
+    const note = new TFile({ path: "a/0016 - Test.md", basename: "0016 - Test" });
+    const app = (active: TFile | null) => ({ workspace: { getActiveFile: () => active } }) as never;
+    const tp = snippetTp(app(note), async () => null, { labSnippets: async () => "", labMethods: () => ({ menuEntries: async () => [] }) } as never);
+    expect(tp.config?.target_file).toBe(note);
+    expect(tp.file?.title).toBe("0016 - Test");
+    expect(snippetTp(app(null), async () => null, {} as never).config?.target_file).toBeNull();
   });
 
   it("the tp date follows Templater's tokens the kit scripts use", () => {

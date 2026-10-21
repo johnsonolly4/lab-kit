@@ -15,6 +15,8 @@
    A field with  required: true  is marked * and the form stays open while it is empty.
    A text field may have  suggest: [{ name, aliases }]  : typing suggests those
    names (note name or alias) for the item after the last comma.
+   A text field may have  follows: { key, values }  : when field `key` changes,
+   the box takes values[<new choice>], unless the user has typed in it.
    Keys: Enter = insert (Ctrl+Enter inside a textarea), Esc = cancel
    (with suggestions showing, Enter picks one)
    ===================================================================== */
@@ -60,6 +62,16 @@ function missingRequired(fields, values) {
     .map(f => f.key);
 }
 
+/** The new text of the boxes that follow field `key` (`follows`) once it is set to `value`. Boxes the user typed in, and choices with no value listed, are left out. */
+function followUps(fields, key, value, typed) {
+  const out = {};
+  for (const f of fields) {
+    if (f.follows?.key !== key || typed.has(f.key) || !Object.prototype.hasOwnProperty.call(f.follows.values, value)) continue;
+    out[f.key] = String(f.follows.values[value] ?? "");
+  }
+  return out;
+}
+
 function labForm(tp, title, fields, opts = {}) {
   const { Modal, Setting, AbstractInputSuggest } = tp.obsidian;
 
@@ -73,6 +85,10 @@ function labForm(tp, title, fields, opts = {}) {
         const inputs = [];
         const popups = [];
         const rows = this.rows = {};   // mandatory text rows, to show "Needs an answer" under them (submit() reads them too)
+        const boxes = {}, typed = new Set();   // text boxes by key, and the ones the user typed in (a choice they follow no longer changes them)
+        const follow = (key, value) => {
+          for (const [k, v] of Object.entries(followUps(fields, key, value, typed))) { this.values[k] = v; boxes[k]?.setValue(v); }
+        };
 
         for (const f of fields) {
           if (f.type === "heading") { new Setting(contentEl).setName(f.label).setHeading(); continue; }
@@ -87,7 +103,7 @@ function labForm(tp, title, fields, opts = {}) {
             this.values[f.key] = String(f.value ?? f.options?.[0]?.value ?? "");
             row.addDropdown((d) => {
               for (const o of f.options ?? []) d.addOption(String(o.value), String(o.label ?? o.value));
-              d.setValue(this.values[f.key]).onChange((v) => { this.values[f.key] = v; });
+              d.setValue(this.values[f.key]).onChange((v) => { this.values[f.key] = v; follow(f.key, v); });
             });
             continue;
           }
@@ -96,11 +112,12 @@ function labForm(tp, title, fields, opts = {}) {
           const setup = (c) => {
             c.setPlaceholder(f.placeholder ?? "")
              .setValue(String(f.value ?? ""))
-             .onChange((v) => { this.values[f.key] = v; });
+             .onChange((v) => { this.values[f.key] = v; typed.add(f.key); });
+            boxes[f.key] = c;
             c.inputEl.style.width = "100%";
             if (f.type === "number") c.inputEl.type = "number";
             if (f.type === "textarea") c.inputEl.rows = f.rows ?? 4;
-            if (f.suggest?.length && AbstractInputSuggest) popups.push(attachSuggest(AbstractInputSuggest, c, f.suggest, (v) => { this.values[f.key] = v; }));
+            if (f.suggest?.length && AbstractInputSuggest) popups.push(attachSuggest(AbstractInputSuggest, c, f.suggest, (v) => { this.values[f.key] = v; typed.add(f.key); }));
             inputs.push(c.inputEl);
             if (rows[f.key]) rows[f.key].input = c.inputEl;
           };
@@ -167,4 +184,4 @@ function attachSuggest(Base, component, entries, store) {
 }
 
 module.exports = labForm;
-Object.assign(module.exports, { matchNames, currentItem, replaceItem, missingRequired });
+Object.assign(module.exports, { matchNames, currentItem, replaceItem, missingRequired, followUps });

@@ -171,10 +171,18 @@ describe("snippets with a Methods folder", () => {
     assert.ok(md.trimEnd().endsWith("- [ ] Submitted\n- [ ] Results processed\n- [ ] Results saved"));
   });
 
-  it("picking another machine changes the fields left at the default machine's values, not the ones typed", async () => {
+  it("the boxes follow the machine in the form (follows), and the table gets exactly the answers", async () => {
     const h = harness();
-    const md = await h.run("method:mass_spec", { codes: "ABC0001-A", machine: "Machine B", calibrant: "typed" });
+    let md = await h.run("method:mass_spec", { codes: "ABC0001-A", machine: "Machine B", ionisation: "APCI", calibrant: "typed" });
+    const fields = h.forms["Mass spec samples"];
+    assert.deepStrictEqual(fields.slice(2).map((f: any) => f.follows), [
+      { key: "machine", values: { "Machine A": "ESI", "Machine B": "APCI" } },
+      { key: "machine", values: { "Machine A": "NaI", "Machine B": "Ref B" } },
+    ]);
     assert.ok(md.includes("| ABC0001-A | [[Machine B]] | APCI | typed |"), md);
+    // a box typed back to the default machine's value is kept: nothing is swapped after Insert
+    md = await h.run("method:mass_spec", { codes: "ABC0001-B", machine: "Machine B", ionisation: "ESI", calibrant: "Ref B" });
+    assert.ok(md.includes("| ABC0001-B | [[Machine B]] | ESI | Ref B |"), md);
   });
 
   it("the formula column follows the Machine column and evaluates", async () => {

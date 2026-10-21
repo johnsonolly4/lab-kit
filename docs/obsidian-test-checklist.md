@@ -105,6 +105,7 @@
 - [ ] In `test-vault/Methods/`: a method note (Columns, Results, Machines) and two machine notes. Alt+S lists your method; its form shows a **Machine** dropdown (looks right, default selected) and a field for each column with a default
 - [ ] Alt+S menu (after Review update… for the new Insert snippet.md): your method is listed at the end as *Name samples* with its icon and the machines in the description; picking it opens its form directly; add a second method note and it shows next time with no refresh
 - [ ] Pick the other machine without touching the fields: they take its values; type a value first: it stays
+- [ ] (2026-10-21, F1 / F2) Alt+S **NMR**, **GPC**, **DLS** and a method of your own with a `Tag` (e.g. TGA): after Insert the note's `tags` hold the tag (once, tags already there kept). In the method window pick the other machine: the boxes change to its values at once, before Insert; type in a box first and pick again: your text stays; the table gets exactly what the boxes showed
 - [ ] The formula column calculates; the Machine cell links to the machine note
 - [ ] **Combined results** has a toggle for your method and the right columns, filled from the table (with two tables of the method: the second is used for codes missing from the first)
 - [ ] A note with no Columns in the Methods folder is ignored; a note called GPC replaces the built-in GPC
