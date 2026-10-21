@@ -7,7 +7,7 @@ import { kitBackupPath } from "./managed";
 import { tokenFillFolders } from "./note-fill-ui";
 import { ensureFolder } from "./ensure-folder";
 import { applyTidy, type TidyIO } from "./tidy-apply";
-import { batchChanges, changeKey, datedTodos, countRows, diffRows, foldRows, pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
+import { batchChanges, changeKey, datedTodos, countRows, diffRows, foldRows, readsAllForOldScripts,pageSummary, replacesPage, reportMarkdown, scan, selectChanges, tidyGroupState, tidySummary, wantsText, type DiffRow, type Migration, type TidyChange, type TidyContext, type TidyFile, type TidyScan } from "./tidy";
 import { hotkeysInUse, metaBindButtons, removeTemplaterFolderTemplates, setMetaBindActions, setTemplaterPath, settingSnapshot, templaterPaths } from "./obsidian-private";
 import { INTERVALS, WEEKDAYS, everyWeeks, intervalWeeks } from "../planning/meetings";
 import { todoFolder } from "./paths";
@@ -46,7 +46,7 @@ export function vaultIO(app: App, backups: string, stamp: string): TidyIO {
       return setTemplaterPath(app, c.target, c.key, c.from as string, c.to as string);
     },
     create: async (p, text) => { await ensureFolder(app.vault, kitParent(p)); await app.vault.create(p, text); },
-    trash: async p => { const f = file(p); if (f) await app.fileManager.trashFile(f); },
+    trash: async p => { const f = app.vault.getAbstractFileByPath(p); if (f) await app.fileManager.trashFile(f); },   // a file, or an empty folder (old-kit-files rule)
     rename: async (from, to) => {
       const f = app.vault.getAbstractFileByPath(from);
       if (!f) return;
@@ -69,6 +69,9 @@ function hubTemplates(host: TidyHost): TidyContext["hubTemplates"] {
   const out = { project: get("tpl-project-hub-md"), topic: get("tpl-new-topic-hub-md"), series: get("tpl-meeting-series-md") };
   return out.project && out.topic && out.series ? out : undefined;
 }
+
+/** Folders the kit made empty at install until 2026-10-21 and no longer makes (CI2). */
+const OLD_KIT_FOLDERS = ["Extras/attachments"];
 
 /** The folders and rules the scan works from: the lab kit's, plus the planning kit's while it is on. */
 export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAULTS, app?: App, kitSnippets?: string[], fillFolders?: string[]): TidyContext {
@@ -93,6 +96,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
     settings: app ? { templater: templaterPaths(app), metaBind: metaBindButtons(app) ?? undefined, hotkeyCommands: Object.keys(hotkeysInUse(app)) } : undefined,
     meetings: planningOn ? { folder: pf.meetings, todos: todoFolder(pf), today: ymd(new Date()), ...ask } : undefined,
     todoQueries: planningOn || undefined,
+    emptyOldFolders: app ? OLD_KIT_FOLDERS.filter(p => app.vault.getFolderByPath(p)?.children.length === 0) : undefined,
     freeze: planningOn && app ? path => { const f = app.vault.getFileByPath(path); return f ? freezeDataFor(app, host.kit, f) : null; } : undefined,
   };
 }
@@ -100,7 +104,7 @@ export function tidyContext(host: TidyHost, ask: MeetingAnswers = MEETING_DEFAUL
 /** Reads the vault (only the notes the scan needs). Writes nothing. */
 async function readVault(app: App, ctx: TidyContext): Promise<TidyFile[]> {
   const paths = app.vault.getFiles().map(f => f.path);
-  const readAll = paths.some(p => /(^|\/)view\.js$/.test(p));
+  const readAll = paths.some(p => /(^|\/)view\.js$/.test(p)) || readsAllForOldScripts(paths);
   return Promise.all(paths.map(async path => {
     const f = wantsText(path, ctx, readAll) ? app.vault.getFileByPath(path) : null;
     return { path, text: f ? await app.vault.cachedRead(f) : undefined };
