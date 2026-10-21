@@ -32,7 +32,6 @@ show: back-to-hub
 | `01 Daily Notes/` | Daily notes, by year. A log of the day, not a to-do list. |
 | `02 Projects/` | One subfolder per project, each with a hub note. Plans, progress, decisions, paper drafts. |
 | `03 Lab Book/` | `Notes/` = numbered lab entries (`0014 - Title`), `Rigs/` = one note per flow rig (the lab kit's Rigs folder), plus `Lab book base.base`. |
-| `04 Literature/` | `ZotLit Imports/` (one ZotLit note per paper, named by citekey; `ZotLit attachments/` holds highlight images) and the [[Literature]] hub. Key papers are tagged `key-paper` in Zotero. |
 | `05 Chemicals/` | Chemical database notes and base. |
 | `06 Knowledge/` | Concepts and theory, by topic subfolder. Index: [[Knowledge index]]. |
 | `07 How-tos/` | Procedures and software tips, by topic subfolder. Index: [[How-tos index]]. |
@@ -119,7 +118,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | *Notes* (`show: project-notes`) | every note in the project folder (and subfolders), newest first; 10 rows, **Show all** |
 | *Experiments* (`show: project-experiments`) | the lab notes that this project's to-dos name in `experiment`, each once, with its `Status` and the to-do that names it; open ones first, Closed last; nothing is written to the lab notes (a lab note has no `project`); needs the Lab folder set |
 | *Meetings* (`show: project-meetings`) | meeting notes whose `project` names this hub, newest first; the last 8, **Show all** |
-| *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, key papers first (&#9733;), with my reason from its *For my projects* line (Dataview) |
+| *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, papers tagged `/priority` first (&#9733;), with my reason from its *For my projects* line (Dataview) |
 | *Done to-dos* | collapsed (Dataview) |
 | `## Related` | links I add by hand (concepts, how-tos); anything else project-specific goes below it |
 
@@ -180,61 +179,6 @@ flowchart LR
   D -->|won't happen this week| BL
 ```
 
-### Literature note (`04 Literature/ZotLit Imports`)
-Created by **ZotLit** (command *ZotLit: Create literature note*) from three Liquid templates in `Extras/Templates/ZotLit/`: `zotlit-note.liquid.md` (layout), `zotlit-content.liquid.md` (the managed region) and `zotlit-lititem.liquid.md` (one highlight). Refreshed with the **update-litnote** button, which runs *ZotLit: Update literature note*.
-
-> [!warning] Only the managed region is rewritten
-> ZotLit rewrites only what sits between `%%zt-managed%%` and `%%/zt-managed%%`, plus its own properties. The *Takeaway* box above it and *My notes* below it are never touched. Never write inside the markers.
-
-**Note layout:** empty line - Takeaway box (`[takeaway:: ]`) - *For my projects* box - update button and PDF link - *managed region* - `## My notes`.
-
-**For my projects** (`[!projects]` callout) is filled once, when the note is created: one line `- [[<Project>]]: ` for each Zotero collection under `Projects/` that the paper is in (or a placeholder line if none). I write after the colon how the paper helps that project. Updates don't touch this box.
-
-**Which projects a paper belongs to** comes from the `Collections` property (e.g. `Projects/Flow rig`), refreshed from Zotero on every update. So a paper added to another project collection later shows on that hub after **Update literature note** - just without a reason until I add a line `- [[<Project>]]: why` to the box. A box line on its own (no collection) also counts.
-
-**Managed region:** `## Key points`, `## To try`, `## Questions`, `## Other highlights` (each only if it has highlights), then collapsed `[!lab]` *Used in experiments* and `[!info]` *Abstract & related*. Each highlight appears once, as one line: text, *my Zotero comment*, Zotero tags as `#tags`, page link to the PDF, and a block ID (`^` + Zotero annotation key), so a lab entry can link one finding with `[[citekey#^key]]`.
-
-**Properties** are set in Settings > ZotLit > Templates > Frontmatter (not in the template file):
-
-| Property | Expression | Merge |
-|---|---|---|
-| `kind` | `"literature"` | Keep existing |
-| `Type` | `"Literature Note"` | Keep existing |
-| `Title` | `zt.title` | Replace |
-| `aliases` | `zt.title \| split: "§§"` | Append arrays |
-| `Year` | `zt.date.year` | Replace |
-| `Authors` | `zt.authors \| join: ", "` | Replace |
-| `Zotero Tags` | `zt.tags \| map: "name"` | Replace |
-| `Collections` | `zt.collections \| collection_paths` | Replace |
-| `citekey` | `zt.citationKey` | Replace |
-| `URL` | `zt.url` | Keep existing |
-| `DOI` | `zt.DOI` | Keep existing |
-| `imported` | `"now" \| date: "%Y-%m-%d"` | Keep existing |
-| `cssclasses` | `"vt,literature,wide" \| split: ","` | Keep existing |
-
-`DOI` is for your own use (the kit reads no DOI); its expression is the one Zotero's field name suggests and has not been checked in ZotLit: if it stays empty, look the field name up in ZotLit's template data explorer. `zotero-key` is added by ZotLit itself and marks the note as a literature note. `imported` is the date the note was first created (queries fall back to `file.ctime`).
-
-| Field | Where | Meaning |
-|---|---|---|
-| `Zotero Tags` | properties | `key-paper` and topic tags, set **in Zotero** |
-| `takeaway` | inline field in the Takeaway box | one line in my own words - what the paper says; empty = still *to process* |
-| project lines | *For my projects* box | why it matters to each project |
-
-> [!tip] Organising papers - two separate decisions, both in Zotero
-> - **Which project?** Put the paper in a collection under `Projects/` (it can be in several).
-> - **Is it important?** Tag it `key-paper`.
-> Projects are no longer Zotero *tags*.
-
-Highlight colours (set in Zotero, keys `1` `2` `3` in Zotero's colour order): **yellow** `1` key point (-> Key points), **red** `2` (or magenta) disagree / confused / question (-> Questions), **green** `3` method or idea to try (-> To try; green = lab in the palette). Any other colour -> Other highlights. Zotero can't reorder its colours, so the meanings follow its key order. A Zotero **comment** on a highlight is my own words; a Zotero **tag** on a highlight becomes a `#tag`.
-
-```mermaid
-flowchart LR
-  Z[Read and highlight in Zotero] --> T[Tag project / key-paper in Zotero]
-  T --> I[Create or update note with ZotLit]
-  I --> P[To process]
-  P -->|weekly review: write takeaway, link to project| D[Processed]
-```
-
 ### Shopping list ([[Shopping list]], `00 Planning`)
 One list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not scheduled. **Add to shopping** (homepage; the Lab Kit command **Add to shopping list**) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
 
@@ -285,7 +229,7 @@ The note starts with a top row (`show: meeting-bar`: back link to its series, **
 The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the series hub and opens that location with this computer's default app (desktop only). On a series hub or a meeting note it opens that series' deck; elsewhere it asks which series.
 
 ### Weekly review ([[Weekly review]])
-Friday, 15 minutes: inbox, close experiments, plan next week, process one paper, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
+Friday, 15 minutes: inbox, close experiments, plan next week, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
 
 ### Daily note (`01 Daily Notes/YYYY/YYYY-MM-DD`)
 Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kind: daily`, `Experiments`, `cssclasses: [vt]`.
@@ -295,7 +239,7 @@ Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kin
 | Buttons | **New to-do**, **To-do board** |
 | *Planned for today* | open to-dos whose `scheduled` is that date, plus anything due on or before that date |
 | *Notes* | free text - the log of the day |
-| *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`), papers imported on that date |
+| *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`) |
 
 All queries use the note's **file name** as the date (`date(this.file.name)`), so a note made ahead of time from the calendar shows the right day. *Today in the vault* uses last-modified dates, so an entry edited again later moves to that later day.
 
@@ -324,7 +268,7 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 > [!tip] One rule: `Alt` + the first letter of what you want
 > The recommended keys are in [[Hotkeys]]. They are suggestions: nothing is set until I do it, in Obsidian → Settings → Hotkeys or with **Set the suggested keys…** in **Check hotkeys…** (Settings > Lab Kit), which shows which are set, sets only commands with no key whose suggested key is free, and asks first.
 
-Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkeys]], and only there. In Zotero: `1` `2` `3` pick the highlight colour (see [[#Literature note (`04 Literature/ZotLit Imports`)|Literature note]]).
+Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkeys]], and only there.
 
 ## Visual theme
 

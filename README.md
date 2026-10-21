@@ -161,7 +161,7 @@ The kits expect these folders. Each is a setting; empty means the default below,
 | Figures folder (empty: the rig note's own folder; made when first saved to) | lab kit: rig figure SVG and PNG files | Figures folder |
 | `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
-| `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
+| `02 Projects` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
 | `99 Archive` (made when first needed) | planning kit | Planning folders |
 | `Extras/` (templates, scripts, fonts) | both kits | Setup → Kit folders |
 

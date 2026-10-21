@@ -17,8 +17,6 @@ r6: false
 >
 > `INPUT[toggle:r3]` **Plan next week** - drag to-dos from Backlog onto days (a card dragged onto a day before today waits for next week) `BUTTON[go-todo]`
 >
-> `INPUT[toggle:r4]` **Process one paper** - write its takeaway `BUTTON[go-lit]`
->
 > `INPUT[toggle:r5]` **Meeting prep** - flag anything for the meeting `BUTTON[go-meetings]`
 >
 > `INPUT[toggle:r6]` **First Friday of the month:** archive finished to-dos older than 30 days `BUTTON[archive-todos]`
@@ -39,15 +37,6 @@ r6: false
 > > FROM "03 Lab Book/Notes"
 > > WHERE Status AND Status != "Closed"
 > > SORT file.name ASC
-> > ```
->
-> > [!projects] Papers to process
-> > ```dataview
-> > LIST WITHOUT ID link(file.path, Title)
-> > FROM "04 Literature"
-> > WHERE kind = "literature" AND !takeaway
-> > SORT imported ASC
-> > LIMIT 5
 > > ```
 >
 > > [!summary] Backlog

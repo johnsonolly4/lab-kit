@@ -61,7 +61,7 @@ describe("planning kit files (Phase 3)", () => {
     expect(roles.userScripts).toBe("Extras/scripts/templater/vault");
     const without = await planManaged(memVault(), planning, null, roles, null, null, offIds(planning, {}, {}));
     const off = without.filter(i => i.action === "off").map(i => i.file.src).sort();
-    expect(off).toEqual(["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
+    expect(off).toEqual(["04 Literature/Literature.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
     const v = memVault();
     const items = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(items.every(i => i.action === "create")).toBe(true);

@@ -25,10 +25,10 @@ describe("check hotkeys", () => {
     expect(clash.status).toBe("clash");
     expect(clash.detail).toMatch(/already used by Save/);
   });
-  it("finds the commands under the names Obsidian showed (Navigator, ZotLit, Templater without .md)", () => {
-    const names = ["Notebook Navigator: Open homepage", "ZotLit: Open literature note quick switcher", "ZotLit: Insert Markdown citation", "ZotLit: Update literature note"];
+  it("finds the commands under the names Obsidian showed (Navigator, Omnisearch, Templater without .md)", () => {
+    const names = ["Notebook Navigator: Open homepage", "Omnisearch: Vault search", "Daily notes: Open today's daily note"];
     const rows = by(state({ hotkeys: {}, commands: Object.fromEntries(names.map((n, i) => [`c${i}`, n])) }));
-    for (const c of ["Notebook Navigator: Open homepage", "ZotLit: Open literature note quick switcher", "ZotLit: Insert Markdown citation", "ZotLit: Update literature note"]) expect(rows[c].status, c).toBe("none");
+    for (const c of names) expect(rows[c].status, c).toBe("none");
   });
   it("the old Alt+S is the menu template's, not another template command in a Snippets folder", () => {
     const commands = { a: "Templater: Insert Extras/Templates/Lab Kit/Snippets/Insert snippet notes.md", b: "Templater: Insert Extras/Templates/Lab Kit/Insert snippet.md", "lab-kit:insert-snippet": "Lab Kit: Insert snippet" };
@@ -37,7 +37,7 @@ describe("check hotkeys", () => {
     expect(by(state({ hotkeys: { a: alt }, commands }))["Lab Kit: Insert snippet"].status).toBe("clash");
   });
   it("a command that isn't there is missing; unreadable hotkeys are reported, not guessed", () => {
-    expect(by(state())["ZotLit: Insert Markdown citation"].status).toBe("missing");
+    expect(by(state())["Notebook Navigator: Open homepage"].status).toBe("missing");
     expect(by(state({ hotkeys: null }))["Lab Kit: New to-do"].status).toBe("unreadable");
   });
   it("commands with no suggested key show their key when you set one", () => {

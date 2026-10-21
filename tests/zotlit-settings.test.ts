@@ -1,32 +1,14 @@
 // ZotLit's frontmatter fields and folders against the kit's (src/kit/zotlit.ts).
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
 import { ZOTLIT_FIELDS, zotlitApply, zotlitScan } from "../src/kit/zotlit";
 
 const want = { literature: "04 Literature/ZotLit Imports", templates: "Extras/Templates/ZotLit" };
-const spec = readFileSync("kits/planning/07 How-tos/Obsidian/Vault spec.md", "utf8");
-const guide = readFileSync("kits/planning/07 How-tos/Obsidian/Set up ZotLit.md", "utf8");
-const MERGE: Record<string, string> = { "Replace": "replace", "Keep existing": "keep", "Append arrays": "append" };
-
-/** The `| `key` | `expr` | Merge |` rows of a note's frontmatter table. */
-function table(text: string): { key: string; expr: string; merge: string }[] {
-  return [...text.matchAll(/^\s*\| `([^`|]+)` \| `((?:[^`]|\\\|)+)` \| (Replace|Keep existing|Append arrays) \|\s*$/gm)]
-    .map(m => ({ key: m[1], expr: m[2].replace(/\\\|/g, "|"), merge: MERGE[m[3]] }));
-}
 /** What the user's ZotLit 2.1.4 had on 2026-10-13 (the twelve fields before DOI). */
 const theirs = ZOTLIT_FIELDS.filter(f => f.key !== "DOI").map(f => ({ ...f }));
 const data = (fields: unknown, extra: Record<string, unknown> = {}): Record<string, unknown> =>
   ({ "__VERSION__": 9, "release.previous-version": "2.1.4", "note.literature-folder": want.literature, "template.folder": want.templates, "note.frontmatter-fields": fields, "server.enabled": true, ...extra });
 
 describe("the kit's ZotLit fields", () => {
-  it("are the same as the Vault spec table and the Set up ZotLit table", () => {
-    const expected = ZOTLIT_FIELDS.map(f => ({ key: f.key, expr: f.expr, merge: f.merge })).sort((a, b) => a.key.localeCompare(b.key));
-    // The Vault spec lists them with the escaped pipe `\|`: unescaped above
-    const bySpec = table(spec).filter(r => expected.some(e => e.key === r.key)).sort((a, b) => a.key.localeCompare(b.key));
-    const byGuide = table(guide).sort((a, b) => a.key.localeCompare(b.key));
-    expect(bySpec).toEqual(expected);
-    expect(byGuide).toEqual(expected);
-  });
   it("all use the liquid language and each key once", () => {
     expect(ZOTLIT_FIELDS.every(f => f.language === "liquid")).toBe(true);
     expect(new Set(ZOTLIT_FIELDS.map(f => f.key)).size).toBe(ZOTLIT_FIELDS.length);

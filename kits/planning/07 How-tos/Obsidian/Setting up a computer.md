@@ -18,29 +18,15 @@ show: back-to-hub
 
 | App | Why | Check |
 |---|---|---|
-| **Obsidian** - full installer, not just the in-app update | ZotLit needs installer 1.13.4 or newer | Settings > About > *Installer version* |
-| **Zotero** 7 or newer | Reading and highlighting | Help > About Zotero |
+| **Obsidian** - full installer, not just the in-app update | The vault runs in it | Settings > About > *Installer version* |
 | **Google Drive for desktop** | Meeting deck button opens the deck through it | The deck path in your meeting series note opens |
 
-## 2. Zotero add-ons and settings
-
-These live in Zotero on each computer - Zotero sync does **not** copy them.
-
-1. **ZotLit Companion** - Tools > Plugins > install from file. Needed for live updates.
-2. **Better BibTeX** - same way. Then set the **same citation key formula** as the other computer (Settings > Better BibTeX > Citation keys).
-3. **Zotero sync** - signed in (Settings > Sync), so highlights, tags and `Projects/` collections reach both computers.
-4. **Check**: pick one paper and compare its citation key on both computers. They must match exactly - the key is the note's filename, and a mismatch makes a duplicate note.
-
-> [!warning] Citation keys must match
-> If the two computers give a paper different citekeys, ZotLit makes a second note for it and every `[[link]]` points at the wrong one. Fix the formula before making any notes on the new computer.
-
-## 3. Obsidian - once, after the vault arrives
+## 2. Obsidian - once, after the vault arrives
 
 1. **Enable community plugins** if Obsidian asks (Settings > Community plugins > Turn on).
-2. **ZotLit** - open Settings > ZotLit and check it found Zotero (it detects the Zotero folders itself, separately on each computer). If not, set the Zotero data directory by hand. When it asks to import highlight images, allow it.
-3. **Lab Kit** - run **Check setup…** (Settings > Lab Kit). It lists what this computer is missing (plugins and Obsidian's own Bases and Daily notes, kit files that are missing or have an update waiting, Templater's folders, Meta Bind buttons, the homepage, the Daily notes folder and date format, ZotLit's frontmatter fields and folders, the deck path) with a **Fix** where Lab Kit can make the change. The window stays open while you work through it; **Check again** redraws it.
-4. **Omnisearch** - let it build its index (first search is slow); if results look wrong, clear its cache in its settings.
-5. **Hotkeys** - they carry over, with `Ctrl` becoming `Cmd` on the Mac. Test `Alt+H` (Option+H on the Mac) - if a key types a symbol instead, tell Claude which.
+2. **Lab Kit** - run **Check setup…** (Settings > Lab Kit). It lists what this computer is missing (plugins and Obsidian's own Bases and Daily notes, kit files that are missing or have an update waiting, Templater's folders, Meta Bind buttons, the homepage, the Daily notes folder and date format, the deck path) with a **Fix** where Lab Kit can make the change. The window stays open while you work through it; **Check again** redraws it.
+3. **Omnisearch** - let it build its index (first search is slow); if results look wrong, clear its cache in its settings.
+4. **Hotkeys** - they carry over, with `Ctrl` becoming `Cmd` on the Mac. Test `Alt+H` (Option+H on the Mac) - if a key types a symbol instead, tell Claude which.
 
 | Windows | Mac |
 |---|---|
@@ -48,18 +34,17 @@ These live in Zotero on each computer - Zotero sync does **not** copy them.
 | `Alt+` + letter (see [[Hotkeys]]) | `Option+` + letter |
 | `Alt+Shift+...` | `Option+Shift+...` |
 
-## 4. When the deck moves
+## 3. When the deck moves
 
 - Update **both** deck paths, `deck_windows` and `deck_mac`, in your meeting series note.
 
-## 5. Quick test on the new computer
+## 4. Quick test on the new computer
 
 1. `Alt+H` opens the homepage.
 2. `Alt+D` makes today's note with the template filled in.
-3. Make a ZotLit note for a paper you've already highlighted - colours land in the right sections and its filename matches the other computer.
-4. **Meeting deck** opens the deck (or the folder of decks).
-5. **Projects** on the homepage shows a card per project, and a card's **New note** button makes a note in that project's folder.
-6. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check the planning kit is on and its files are installed (Settings > Lab Kit > Updates), then restart Obsidian. Lab Kit does the roll-over itself; no Templater startup template is needed.
+3. **Meeting deck** opens the deck (or the folder of decks).
+4. **Projects** on the homepage shows a card per project, and a card's **New note** button makes a note in that project's folder.
+5. **To-do board**: today's column is **blue** and clicking a card's circle turns it green. If not, check the planning kit is on and its files are installed (Settings > Lab Kit > Updates), then restart Obsidian. Lab Kit does the roll-over itself; no Templater startup template is needed.
 
 > [!note] Keeping this list right
 > Anything new that has to be set up per computer goes here - see the rule in [[Vault spec#Rules for changes|Vault spec]].

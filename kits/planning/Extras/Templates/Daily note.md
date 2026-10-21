@@ -39,10 +39,3 @@ ids: todo, go-todo
 > > FROM "00 Planning/To-dos"
 > > WHERE kind = "todo" AND done AND done_on = date(this.file.name)
 > > ```
->
-> > [!projects] Papers read
-> > ```dataview
-> > LIST WITHOUT ID link(file.path, Title)
-> > FROM "04 Literature"
-> > WHERE kind = "literature" AND striptime(default(imported, file.ctime)) = date(this.file.name)
-> > ```
