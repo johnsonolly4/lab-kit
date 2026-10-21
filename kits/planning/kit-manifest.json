@@ -159,7 +159,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.4.1",
-      "sha256": "4f2e0267815439ad6c2697d9522ca62bf34f73c37a580a29b0a8a43e2bf6c304",
+      "sha256": "052b608212ba01d03c81bc539f91a8bea2aef03d9138cb473701ab875a989ce8",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -232,7 +232,7 @@
       "role": "planning",
       "path": "Weekly review.md",
       "version": "1.4.1",
-      "sha256": "408812730c423821708070a7dd26e1960b6219906fb78c98e896bfa19c6ab514",
+      "sha256": "fe7ed0cc744b0c94c2f2dcab9846697e668a80cab9c321601ad0deaf03bcc38a",
       "renamedFrom": [],
       "desc": "Weekly review note",
       "policy": "keep"
@@ -256,7 +256,7 @@
       "role": "templates",
       "path": "Daily note.md",
       "version": "1.4.1",
-      "sha256": "9abd9367ae07d3c614a650d661069d07a2d4791f37918af372d3798ae1b56eea",
+      "sha256": "482ebfbc3d863287ec3100860ad3e8e75376a5160d4d63b9fd96c2b1c5c43ce0",
       "renamedFrom": [],
       "desc": "Daily note (folder template for 01 Daily Notes)"
     },

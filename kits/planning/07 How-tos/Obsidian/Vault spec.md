@@ -229,7 +229,7 @@ The note starts with a top row (`show: meeting-bar`: back link to its series, **
 The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the series hub and opens that location with this computer's default app (desktop only). On a series hub or a meeting note it opens that series' deck; elsewhere it asks which series.
 
 ### Weekly review ([[Weekly review]])
-Friday, 15 minutes: inbox, close experiments, plan next week, process one paper, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
+Friday, 15 minutes: inbox, close experiments, plan next week, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
 
 ### Daily note (`01 Daily Notes/YYYY/YYYY-MM-DD`)
 Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kind: daily`, `Experiments`, `cssclasses: [vt]`.
@@ -239,7 +239,7 @@ Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kin
 | Buttons | **New to-do**, **To-do board** |
 | *Planned for today* | open to-dos whose `scheduled` is that date, plus anything due on or before that date |
 | *Notes* | free text - the log of the day |
-| *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`), papers imported on that date |
+| *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`) |
 
 All queries use the note's **file name** as the date (`date(this.file.name)`), so a note made ahead of time from the calendar shows the right day. *Today in the vault* uses last-modified dates, so an entry edited again later moves to that later day.
 
