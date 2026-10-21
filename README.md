@@ -16,6 +16,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - [Snippet forms (Alt+S)](#snippet-forms-alts)
 - [Analysis methods](#analysis-methods)
 - [Experiment header](#experiment-header)
+- [Recovering rig records without Lab Kit](#recovering-rig-records-without-lab-kit)
 - [Built-in kit](#built-in-kit)
 - [Folder contract](#folder-contract)
 - [Settings](#settings)
@@ -32,7 +33,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - **Chemical database**: point Lab Kit at your folder of chemical notes; typing `[[` in a calc cell and the reagent/solvent fields of the forms suggest them, by note name or by the names in a note's `Names` property. **New chemical** makes a chemical note with a name and a class.
 - **Snippet forms** (Alt+S, needs Templater): solution prep (targets by concentration or ratio, added in g or mL), recipe by equivalents, RAFT recipe, sample lists, sampling timetables, NMR / GPC / DLS sample tables, combined results, flow column prep, residence times.
 - **Your own analysis methods**: one note per method (and per machine) in a Methods folder defines the sample table; each shows up in the Alt+S menu and feeds the combined results.
-- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the flow diagram from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder. A batch setup (a stirred vessel, no pumps) is a Reactor row with a Heater and a Stirrer row feeding it.
+- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the rig figure (symbols and lines, on a white card, no Mermaid) from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder. A batch setup (a stirred vessel, no pumps) is a Reactor row with a Heater and a Stirrer row feeding it. **Save snapshot…** under the block saves a dated picture of the rig (`<rig> YYYY-MM-DD.svg` in a `<rig> history` folder beside the note, with the parts tables inside the file) and adds a row to the note's `## Rig history` table; the block says when the rig has changed since the last snapshot. In **Figure…** you can drag parts by hand; **Save layout** writes their places as plain lines in a ```` ```rig-layout ```` block under the rig block, **Reset to automatic** goes back. All of it stays readable without Lab Kit: see [Recovering rig records without Lab Kit](#recovering-rig-records-without-lab-kit).
 - **Experiment header**: hazard table built from the note's Chemicals property, and a button that opens the experiment's data folder.
 - **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it, so a plugin update brings the new kit. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 - **Planning kit** (off until you switch it on): a homepage, a to-do board whose unfinished cards roll over to today, project hubs with a plan map (to-dos as cards joined by arrows: what comes after what, what is blocked, each one's result), meeting series with notes that fill themselves, knowledge notes, an inbox you sort one note at a time, and **Tidy up notes** for a vault that already has notes. See [tutorial section 8](docs/tutorial.md#8-planning-kit).
@@ -112,7 +113,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 | **NMR / GPC / DLS samples** · your own methods | Sample tables with machine, checklist and result columns. The sample codes come from every table in the note that holds codes; with more than one, **Codes from** picks which |
 | **Combined results** | One row per sample with the results of every method |
 | **Flow column prep** · **Residence times** | Packing a column, reactor volume, flow rates. Pick a solvent and leave the density empty, and the density is read from that chemical's note |
-| **Rig** | Links the rig note, puts a fixed copy of its diagram at the cursor (with the rig note's `Summary` table under it, if it has one), sets the `Rig` property and copies the parts tables under `Flow platform setup` at the bottom of the note (a `Setup heading` property on the rig note changes the heading, e.g. for a batch rig) |
+| **Rig** | Links the rig note, puts a dated snapshot of the rig at the cursor (`![[<rig> YYYY-MM-DD.svg]]` with the caption `Snapshot of <rig>, <date>` in italics; an unchanged rig reuses its latest snapshot) with the rig note's `Summary` table under it, if it has one, sets the `Rig` and `Rig snapshot` properties and copies the parts tables under `Flow platform setup` at the bottom of the note (a `Setup heading` property on the rig note changes the heading, e.g. for a batch rig) |
 | **Blank calc table** | Your own columns |
 
 Choose which snippets you want in **Manage files…** (each has a **Use** toggle). Icons for the Alt+S menu are a setting. Seven snippets (Variant naming matrix, Sample list, Sampling timetable, Flow column prep, Residence times, Blank calc table, Rig) are plain notes with a header of questions and `{{tokens}}` in the text, so you can read and edit them: syntax in [docs/snippet-syntax.md](docs/snippet-syntax.md).
@@ -127,6 +128,14 @@ A ```` ```lab-header ```` block shows, for the note it is in:
 - an **Open data folder** button that creates `<data folder root>/<note name>` and opens it (desktop only; set the root in Settings → Lab Kit → Lab notebook).
 
 It only redraws when this note's Chemicals or a linked chemical note changes. The command **Insert lab header block** adds one; the Lab Book template already has it. Every option is in Settings → Lab Kit → Hazards and can be overridden for one note with lines inside the block (`layout: table`, `collapsed: false`, …): see [tutorial section 4](docs/tutorial.md#4-hazards).
+
+## Recovering rig records without Lab Kit
+Rig records are plain files, so they can be read if Lab Kit is switched off or no longer supported:
+1. Open the lab note (Obsidian without Lab Kit, or any text editor): the `Rig` and `Rig snapshot` properties, the embedded snapshot picture (Obsidian shows it on its own) and the parts tables under `Flow platform setup`.
+2. Open the snapshot `.svg` (in the `<rig> history` folder beside the rig note) in any web browser for the picture; in a text editor, its `<metadata>` holds the parts tables and the layout as they were that day.
+3. Open the rig note: `## Rig history` lists every snapshot with its date and change; the parts tables are the rig's current state; the ```` ```rig-layout ```` block lists hand-placed parts as `ID: x, y`.
+4. For a PNG: open the SVG in a browser or Inkscape and export or print it.
+5. The ```` ```rig ```` block shows as an empty code block: expected, it never held data.
 
 ## Built-in kit
 The templates (Lab Book, Alt+S menu, one file per snippet), the Templater scripts and a CSS snippet are bundled inside the plugin. Updating the plugin brings the new kit, but your files only change when you say so:
