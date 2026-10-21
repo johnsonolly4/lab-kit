@@ -23,7 +23,8 @@ A note in the `Snippets` folder whose first lines are a header between `---` lin
 | `title` | form title and the name in the Alt+S menu |
 | `icon`, `desc` | menu icon (a Lucide name) and the one-line description |
 | `group` | the Alt+S menu section: `Make up`, `Samples`, `Characterise`, `Flow` or `Tables` (any other text, or none, lists the snippet under My snippets; every kit snippet carries its group, and Settings → Lab Kit → Snippets has a switch per group that hides it in the menu) |
-| `run` | a calculator of Lab Kit by name (`solution`, `recipe`, `raft`, `results`, `nmr`, `gpc`, `dls`): it asks its own questions and builds the text, so a header with `run` has no `fields` and the note has no body. An unknown name shows `“Title”: Lab Kit has no calculator called “name”.` and inserts nothing |
+| `block` | the same as `run`, written for a live block (`block: raft`); a header has `run` or `block`, not both |
+| `run` | a calculator of Lab Kit by name (`solution`, `recipe`, `raft`, `raft-table` (the old RAFT calc tables), `results`, `nmr`, `gpc`, `dls`): it asks its own questions and builds the text, so a header with `run` has no `fields` and the note has no body. An unknown name shows `“Title”: Lab Kit has no calculator called “name”.` and inserts nothing |
 | `required` | key of a field that must hold at least one list item, else nothing is inserted (silently; to make the form refuse an empty field, give that field `mandatory: true`, below) |
 | `set` | properties written on the note you are in when the snippet is inserted, one `Name: value` line each; the value may hold tokens (`Rig: "[[{{rig}}]]"`). An existing property is replaced; an empty value is not written |
 | `fields` | the questions (below); an empty list is allowed |
