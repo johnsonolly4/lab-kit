@@ -99,4 +99,39 @@ describe("duplicate table names", () => {
     const { g } = wbOf("```calc\nname: a\n| X | Y |\n|---|---|\n| 2 | =zz!A2 |\n```");
     assert.match(g(0, "B2").msg, /no table named "zz"/);
   });
+
+  // Expected values: scripts/calc_stats_known_answers.py (10 significant figures)
+  describe("SLOPE / INTERCEPT / RSQ / STDEV", () => {
+    const stats = (ys: (number | string)[], xs: (number | string)[], fn: string) => {
+      const rows = ys.map((y, i) => `| ${xs[i]} | ${y} |`).join("\n");
+      const n = ys.length + 1;
+      return wbOf(`\`\`\`calc\nname: d\n| X | Y |\n|---|---|\n${rows}\n\`\`\`\n\`\`\`calc\nname: s\n| F | V |\n|---|---|\n| f | =${fn}(d!B2:B${n}${fn === "STDEV" ? "" : `, d!A2:A${n}`}) |\n\`\`\``).g(1, "B2");
+    };
+    const X6 = [1, 2, 3, 4, 5, 6];
+    it("perfect line", () => {
+      const y = [3, 5, 7, 9, 11], x = [1, 2, 3, 4, 5];
+      close(stats(y, x, "SLOPE"), 2, 1e-9); close(stats(y, x, "INTERCEPT"), 1, 1e-9); close(stats(y, x, "RSQ"), 1, 1e-9);
+    });
+    it("noisy data", () => {
+      const y = [2.1, 3.9, 6.2, 7.8, 10.1, 12.2];
+      close(stats(y, X6, "SLOPE"), 2.02, 1e-9); close(stats(y, X6, "INTERCEPT"), -0.02, 1e-9); close(stats(y, X6, "RSQ"), 0.9982106661, 1e-9);
+    });
+    it("a blank or text cell drops its pair", () => {
+      const y = [1.5, "", 4.4, 6.1, "n/a", 9.8];
+      close(stats(y, X6, "SLOPE"), 1.661538462, 1e-9); close(stats(y, X6, "INTERCEPT"), -0.3653846154, 1e-9); close(stats(y, X6, "RSQ"), 0.9955403819, 1e-9);
+    });
+    it("STDEV is the sample SD and skips blanks and text", () => {
+      close(stats([3, 5, 7, 9, 11], [1, 2, 3, 4, 5], "STDEV"), 3.16227766, 1e-9);
+      close(stats([2.1, 3.9, 6.2, 7.8, 10.1, 12.2], X6, "STDEV"), 3.782459517, 1e-9);
+      close(stats([1.5, "", 4.4, 6.1, "n/a", 9.8], X6, "STDEV"), 3.466506407, 1e-9);
+    });
+    it("errors: unequal lengths #N/A, under 2 points #DIV/0!, no spread #DIV/0!", () => {
+      const { g } = wbOf("```calc\nname: d\n| X | Y |\n|---|---|\n| 1 | 2 |\n| 2 | 4 |\n| 3 | 6 |\n```\n```calc\nname: s\n| F | V |\n|---|---|\n| a | =SLOPE(d!B2:B4, d!A2:A3) |\n| b | =SLOPE(d!B2, d!A2) |\n| c | =STDEV(d!B2) |\n| d | =RSQ(d!B2:B4, d!B2:B4) |\n```");
+      assert.strictEqual(g(1, "B2").err, "#N/A"); assert.strictEqual(g(1, "B3").err, "#DIV/0!");
+      assert.strictEqual(g(1, "B4").err, "#DIV/0!"); close(g(1, "B5"), 1);
+      assert.strictEqual(stats([1, 2, 3], [5, 5, 5], "SLOPE").err, "#DIV/0!");
+      assert.strictEqual(stats([5, 5, 5], [1, 2, 3], "RSQ").err, "#DIV/0!");
+      assert.strictEqual(stats([1, "", "x"], [1, 2, 3], "INTERCEPT").err, "#DIV/0!");
+    });
+  });
 });

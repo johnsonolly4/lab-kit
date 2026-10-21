@@ -239,10 +239,35 @@ function parseClock(s: unknown): number | null {
   return m ? (+m[1]) * 60 + (+m[2]) : null;
 }
 
+/** Excel's SLOPE / INTERCEPT / RSQ: pairs with a blank or text value on either side are skipped; unequal lengths #N/A; under 2 pairs or no spread in x #DIV/0! (RSQ also when y has no spread). */
+function fitStat(ys: Value, xs: Value, pick: (slope: number, intercept: number, sxx: number, syy: number, sxy: number) => Value): Value {
+  const y = Array.isArray(ys) ? ys : [ys], x = Array.isArray(xs) ? xs : [xs];
+  const e = firstErr(y) || firstErr(x); if (e) return e;
+  if (y.length !== x.length) return ERR("#N/A", "the two ranges must be the same size");
+  const p: [number, number][] = [];
+  y.forEach((v, i) => { if (typeof v === "number" && typeof x[i] === "number") p.push([v, x[i]]); });
+  if (p.length < 2) return ERR("#DIV/0!", "needs at least 2 pairs of numbers");
+  const my = p.reduce((s, q) => s + q[0], 0) / p.length, mx = p.reduce((s, q) => s + q[1], 0) / p.length;
+  let sxx = 0, syy = 0, sxy = 0;
+  for (const [vy, vx] of p) { sxx += (vx - mx) ** 2; syy += (vy - my) ** 2; sxy += (vx - mx) * (vy - my); }
+  if (sxx === 0) return ERR("#DIV/0!", "all x values are the same");
+  const slope = sxy / sxx;
+  return pick(slope, my - slope * mx, sxx, syy, sxy);
+}
+
 const FUNCS: Record<string, (a: Value[]) => Value> = {
   SUM: (a) => { const v = flat(a); return firstErr(v) || numsOnly(v).reduce((s, x) => s + x, 0); },
   PRODUCT: (a) => { const v = flat(a); return firstErr(v) || numsOnly(v).reduce((s, x) => s * x, 1); },
   AVERAGE: (a) => { const v = flat(a); const e = firstErr(v); if (e) return e; const n = numsOnly(v); return n.length ? n.reduce((s, x) => s + x, 0) / n.length : ERR("#DIV/0!"); },
+  STDEV: (a) => {
+    const v = flat(a); const e = firstErr(v); if (e) return e;
+    const n = numsOnly(v); if (n.length < 2) return ERR("#DIV/0!", "needs at least 2 numbers");
+    const m = n.reduce((t, x) => t + x, 0) / n.length;
+    return Math.sqrt(n.reduce((t, x) => t + (x - m) ** 2, 0) / (n.length - 1));
+  },
+  SLOPE: ([y, x]) => fitStat(y, x, (sl) => sl),
+  INTERCEPT: ([y, x]) => fitStat(y, x, (_sl, ic) => ic),
+  RSQ: ([y, x]) => fitStat(y, x, (_sl, _ic, sxx, syy, sxy) => syy === 0 ? ERR("#DIV/0!", "all y values are the same") : sxy * sxy / (sxx * syy)),
   MIN: (a) => { const v = flat(a); return firstErr(v) || (numsOnly(v).length ? Math.min(...numsOnly(v)) : 0); },
   MAX: (a) => { const v = flat(a); return firstErr(v) || (numsOnly(v).length ? Math.max(...numsOnly(v)) : 0); },
   COUNT: (a) => numsOnly(flat(a)).length,
