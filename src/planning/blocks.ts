@@ -416,7 +416,7 @@ class BlockView extends MarkdownRenderChild {
           const shot = title.createEl("button", { cls: "vt-map-dir vt-map-slide", attr: { "aria-label": "Picture for a slide", title: "Copy a picture of the plan for a slide" } });
           setIcon(shot, "image");
           shot.addEventListener("mousedown", stop);
-          shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
+          shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, plan, map, this.sourcePath.replace(/^.*\//, "").replace(/\.md$/, ""), this.slideChoice).open(); });
         }
         const addEnv = { app: this.app, history, hub: this.owner.rec(hubFile), folder: todoFolder(f), todos: this.owner.notesIn(todoFolder(f)), plan, experiments: this.experimentChoices() };
         const mapOptions = { app: this.app, sourcePath: this.sourcePath, collapsed: this.collapsed, direction, zoom: this.zoom, history, problemsOpen: this.problemsOpen, showProblems: (open: boolean) => { this.problemsOpen = open; this.draw(); }, redraw: () => this.draw(),
