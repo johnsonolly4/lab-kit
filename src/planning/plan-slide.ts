@@ -1,9 +1,9 @@
 // The picture of one project's plan for a slide (planning kit): which to-dos are shown how, and the SVG text of it.
 // Pure (no DOM, no Obsidian runtime): the window turns the SVG into a PNG. Always light colours, whatever Obsidian's theme.
-import type { PlanRow } from "./plan";
+import type { Plan, PlanRow } from "./plan";
 import { CARD_H, CARD_W, mapGeometry, subsLabel } from "./plan-map";
 import type { MapArrow, MapCard, PlanMap } from "./plan-map";
-import { CHIP_CHAR_W, COUNT_H, FOLD_ID, KEY_ROOM, LABEL_W, LINE_H, LOOSE_GAP, LOOSE_H, OPEN_FONT, OPEN_H, OPEN_W, PAD_X, PAD_Y, SUB_GAP, TOP, chipSize, foldOpen, moreId, moreLines, openGeometry } from "./plan-open";
+import { CHIP_CHAR_W, COUNT_H, FOLD_ID, KEY_ROOM, LABEL_W, LINE_H, LOOSE_GAP, LOOSE_H, OPEN_FONT, OPEN_H, OPEN_W, PAD_X, PAD_Y, SUB_GAP, TOP, chipSize, chooseLayout, foldOpen, moreId, moreLines, openGeometry, openModel } from "./plan-open";
 import type { OpenChip, OpenModel, OpenStatus } from "./plan-open";
 
 /** How a to-do stands today. Late (open, due date passed) wins over waiting (open, `waiting` set); a to-do with something unfinished before it is blocked. */
@@ -397,4 +397,15 @@ export function openSvg(model: OpenModel, opts: SlideOptions): SlidePicture {
   if (used.size) parts.push(keySvg(used, MARGIN, H - MARGIN - 24, lateWins ? { late: "late (wins over waiting)" } : {}));
   const min = Math.min(F, KEY_FONT, 22);
   return { svg: svgDoc(W, H, parts.join("")), minText: min, tooSmall: min < MIN_READABLE };
+}
+
+/** A picture and which one it is, with the open and all top-level to-dos (for the window's note). */
+export interface ChosenPicture extends SlidePicture { kind: "full-map" | "open-work"; open: number; total: number }
+/** The picture a plan gets (M1-5; owner, Q4 a: automatic only, no switch): option A in `layout` (default compact) while the compact map is readable (`chooseLayout`), else the open-work picture, whatever `layout` is.
+ *  `map` is the plan laid out as the window shows it (places the user moved are kept); the open-work picture lays out the open to-dos itself. */
+export function pictureFor(plan: Plan, map: PlanMap, opts: SlideOptions & { layout?: SlideLayout }): ChosenPicture {
+  const top = plan.rows.filter(r => !r.parent), open = top.filter(r => !r.done).length;
+  const { layout, ...o } = opts;
+  if (chooseLayout(map) === "open-work") return { ...openSvg(openModel(plan, o.today), o), kind: "open-work", open, total: top.length };
+  return { ...slideSvg(slideModel(map, layout ?? { kind: "compact", ahead: DEFAULT_AHEAD }), o), kind: "full-map", open, total: top.length };
 }

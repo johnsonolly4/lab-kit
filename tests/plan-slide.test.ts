@@ -2,7 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { layoutPlan } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
-import { MIN_READABLE, openSvg, slideModel, slideSvg } from "../src/planning/plan-slide";
+import { DEFAULT_AHEAD, MIN_READABLE, openSvg, pictureFor, slideModel, slideSvg } from "../src/planning/plan-slide";
 import { foldOpen, openGeometry, openModel } from "../src/planning/plan-open";
 import type { NoteRec } from "../src/planning/lists";
 import { BIG_HUB, BIG_TITLE, BIG_TODAY, BIG_TODOS } from "./fixtures/plan-big";
@@ -225,5 +225,31 @@ describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-e
     expect(wait).toMatch(/stroke="#c77700"[^>]*\/><text[^>]*>One<\/text>/);
     expect(fixture.svg).toContain('stroke-dasharray="6 4"');
     expect(fixture.svg).not.toContain("<circle");
+  });
+});
+
+describe("pictureFor: option A or the open-work picture, chosen automatically (M1-5, Q4 a)", () => {
+  const opts = { title: "T", today: BIG_TODAY };
+  it("a small project gets option A (compact), exactly as slideSvg draws it, and says so", () => {
+    const plan = readPlan(chain(4, 1), hub), m = layoutPlan(plan);
+    const p = pictureFor(plan, m, opts);
+    expect(p.kind).toBe("full-map");
+    expect(p.svg).toBe(slideSvg(slideModel(m, { kind: "compact", ahead: DEFAULT_AHEAD }), opts).svg);
+    expect([p.open, p.total]).toEqual([3, 4]);
+  });
+  it("option A keeps the window's layout (whole map, fewer columns)", () => {
+    const plan = readPlan(chain(4, 1), hub), m = layoutPlan(plan);
+    expect(pictureFor(plan, m, { ...opts, layout: { kind: "whole" } }).svg).toBe(slideSvg(slideModel(m, { kind: "whole" }), opts).svg);
+    expect(pictureFor(plan, m, { ...opts, layout: { kind: "compact", ahead: 1 } }).svg).toBe(slideSvg(slideModel(m, { kind: "compact", ahead: 1 }), opts).svg);
+  });
+  it("the 59 to-do fixture gets the open-work picture, exactly as openSvg draws it, whatever the window's layout", () => {
+    const plan = readPlan(BIG_TODOS, BIG_HUB), m = layoutPlan(plan);
+    for (const layout of [undefined, { kind: "whole" as const }, { kind: "compact" as const, ahead: 1 }]) {
+      const p = pictureFor(plan, m, { ...opts, layout });
+      expect(p.kind).toBe("open-work");
+      expect(p.svg).toBe(openSvg(openModel(plan, BIG_TODAY), opts).svg);
+      expect(p.minText).toBe(22);
+      expect([p.open, p.total]).toEqual([24, 59]);
+    }
   });
 });
