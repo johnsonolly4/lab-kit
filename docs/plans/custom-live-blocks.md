@@ -1,16 +1,22 @@
 # Plan: Custom snippet blocks and live blocks from a definition
 
 > [!warning] PLAN WAITING FOR OWNER
-> Written 2026-10-21 by `/phase-plan` (Opus, plan only, no code changed), from the owner's chat of 2026-10-21 ("Custom snippet blocks that ask questions like the built-in ones: plan it now"; `docs/decisions.md` 2026-10-21, lines "Code block names" and "Custom snippet blocks"). Questions CQ1-CQ9 are at the end, ready for BACKLOG "Questions for the owner". Phases C1-C3 need no answer and can start; every later phase says which answers it needs. Looks are never decided here: the two new looks (the definition check report, the "worked out with an older definition" line) go on a feedback page first (Phase CF). Each phase = one Sonnet session.
+> Written 2026-10-21 by `/phase-plan` (Opus, plan only, no code changed), from the owner's chat of 2026-10-21 ("Custom snippet blocks that ask questions like the built-in ones: plan it now"; `docs/decisions.md` 2026-10-21, lines "Code block names" and "Custom snippet blocks"). Owner input of the same day (chat, relayed by the orchestrator) is in **Decided by the owner** below; CQ2 is answered. Questions CQ1 and CQ3-CQ9 are at the end, ready for BACKLOG "Questions for the owner". Phases C1-C3 need no answer and can start; every later phase says which answers it needs. Looks are never decided here: the two new looks (the definition check report, the "worked out with an older definition" line) go on a feedback page first (Phase CF). Each phase = one Sonnet session.
 
 ## Goal
 A user writes a snippet file that asks questions in every way the built-in blocks do (text, number, chemical, note, codes, toggle, choice, a list of chemicals with fractions) and, if they want, puts a **live block** in the note that is described in that file (rows, look-ups from chemical notes, target formulas, actual values typed at the bench), without any code, in the plugin's own look, and still readable when the plugin is gone.
+
+## Decided by the owner (chat 2026-10-21, relayed by the orchestrator; not re-asked)
+- One shared tag for definition-driven blocks, ```` ```lk-block ```` with a `use: <definition>` line: "This seems sensible" (CQ2 a).
+- A `layout:` from a small fixed menu, `steps` / `list` / `table` / `grouped`, checked against all four chosen looks: "Yes makes sense".
+- The `lk-` rename of every Lab Kit block, old names not read, is confirmed: nobody has notes with Lab Kit blocks yet.
+- The owner has an Excel file with the original RAFT logic and will resend it (not in the repo yet). The definition format must be able to express that sheet's formulas; Phase C4 has a step to compare against it at `my_work/private/raft-excel/` (placeholder path; private, never in the public repo).
 
 ## Decision taken
 - **Declarative only** (owner direction, chat 2026-10-21). Questions in the snippet file's `fields:` header as today (Q27 a); the live block described as rows with formulas in the existing calc formula language; one shared tag; looks only from the plugin's CSS; a small fixed set of layouts.
 - **Changed from the chat direction, with reasons (each asked below):**
   - The rows and layout sit in a ```` ```lk-definition ```` block **in the body** of the snippet file, not in the header (CQ1). Obsidian's properties editor shows nested lists of maps badly and may rewrite the YAML when a property is clicked (Phase 0 of the Templater plan measured this risk for `{{tokens}}` in front matter); a code block is never rewritten, keeps comments, and the plugin can draw a check report under it in the snippet file itself.
-  - **Three layouts, not four:** `list`, `table`, `steps`. `grouped` (Combined results S-B) is dropped from v1 because what Results does is not a set of rows with targets: see "Do the four chosen looks fit one format?" (CQ4).
+  - **Four layouts as decided, but `grouped` is a look, not Results' data:** `list`, `table`, `steps`, `grouped` (a `table` whose columns sit under group headings, look S-B). Any row definition can use `grouped`. What Combined results itself does (rows = sample codes found in other tables, values looked up there) is not a set of rows with targets, so the Results block stays built-in: see "Do the four chosen looks fit one format?" (CQ4).
   - **Kit-only first:** the definition language ships with the kit's own definitions before the release, but definitions in the user's own files are read only from the release after (CQ3), so format 1 can still change while nobody outside depends on it. Once open, format 1 is read forever (owner rule for live blocks, 2026-10-20).
 - **Rejected:** a Templater-like syntax with code (`<% %>`, JavaScript, `eval`): unbounded, not store-review safe, the thing being removed. Free layouts or user CSS classes: no stable look, breaks the "styling only from the plugin" rule. A new formula language: the calc one is known to the owner from every calc table and already parses on mobile.
 
@@ -28,9 +34,9 @@ A user writes a snippet file that asks questions in every way the built-in block
 | RAFT R-C | `list`: name + small line, Target, Actual; chip; summary; live line; fold | yes; the monomer row repeats per monomer, the co-solvent row is optional | yes (sums, products, ratios) | **fits**, with repeated rows (`each:`), optional rows (`when:`) and number formats; see "RAFT-only quirks" below |
 | Recipe P-B | `table`: 7 declared columns (Reagent, Eq., Relative to, mmol, Target, Actual, wt%), solvent "rest" row, total row | yes | yes (rest = total − sum of the others; wt% = target ÷ total) | **fits**, needs `columns:` and `total:` |
 | Solution prep (approved) | `steps`: numbered sections, done bar | yes | **no**: the estimated pH solves the charge balance by bisection (`docs/plans/solution-live-block.md`, Technical choices), which no formula does | **look fits, maths does not**: stays built-in |
-| Combined results S-B | grouped header over columns | **no**: rows are sample codes found in other tables, columns are look-ups into the note's `nmr` / `gpc` / `dls` tables, nothing is weighed | not rows-with-targets: a query over other calc tables | **does not fit**: stays built-in (Templater plan Phase 11), CQ4 |
+| Combined results S-B | grouped header over columns | **no**: rows are sample codes found in other tables, columns are look-ups into the note's `nmr` / `gpc` / `dls` tables, nothing is weighed | not rows-with-targets: a query over other calc tables | **look fits** (`grouped`), **data does not**: the Results block stays built-in (Templater plan Phase 11), CQ4 |
 
-So one format covers two of the four fully (RAFT, Recipe), Solution prep only in its look, and Results not at all (interpretation from the table above). The language is aimed at "a recipe you weigh out": a fixed or repeated set of reagents, targets worked out from the answers and chemical notes, actuals typed in.
+So the layout menu covers all four looks, but the row format covers the maths of only two (RAFT, Recipe); Solution prep (a solver) and Combined results (a look-up across tables) keep their built-in code (interpretation from the table above). The language is aimed at "a recipe you weigh out": a fixed or repeated set of reagents, targets worked out from the answers and chemical notes, actuals typed in.
 
 ### RAFT-only quirks the byte-for-byte proof needs (measured in `view.ts` / `text.ts` on the P9 branch)
 The proof demands the same text, so these must be expressible. Each is generic enough to keep, except where marked:
@@ -91,7 +97,7 @@ Plus `unit:` on a number field (the stored line gets it, as `monomer-mass: 2.5 g
 ```yaml
 format: 1
 name: raft                     # what `use:` names; unique in the vault
-layout: list                   # list | table | steps
+layout: list                   # list | table | steps | grouped
 status: weighed                # chip "N of M weighed" / done
 title: 'RAFT: P({{#each monomers | "-co-"}}{{name}}{{/each}}), DP {{= dp}}'
 summary: '{{#each monomers | ", "}}{{name}}{{/each}} {{= mass | mass2}} · DP {{= dp}} · {{cta}} · ...'
@@ -129,6 +135,7 @@ worked:                         # the M-A `#` lines, rewritten only on insert / 
 - **Names:** `answer keys`, `values`, row ids; per row `mw` / `mol` / `target` / `actual` / `amount`; from outside a row `cta.target`; for a repeated row `monomers.target` is a list, usable only inside SUM, SUMPRODUCT, AVERAGE, MIN, MAX, COUNT. `weighed` / `rows` = counts. Names are not case-sensitive (the tokenizer upper-cases them) and must not look like a cell (`dp1`): the check says so.
 - **Formulas:** parsed by `parseFormula`, evaluated by a new exported `evaluate(node, resolveName)` beside `Workbook` that shares `FUNCS`; table evaluation is unchanged (0011 guard, calccraft tests). Refused at check time: cell references and ranges (no reading the note's tables in v1), XLOOKUP / INDEX / PROP / MW (look-ups go through `lookup:`), CLOCK. Errors come back as the calc error values (`#DIV/0!` …) and show on the row.
 - **Texts:** titles, summary, `sub`, `worked` and labels use the token syntax users already know, plus one new token `{{= formula | format}}`. Whether this reuses `fillTemplate` or a small own filler is decided in C4 (fewer surprises if it is the same `#each` / `#if`).
+- **The owner's RAFT Excel sheet** (to be resent; `my_work/private/raft-excel/`, placeholder): the formula functions are the calc engine's, which are Excel-like (SUM, SUMPRODUCT, IF, ROUND …), so each cell formula of the sheet should become one named value. C4 checks this; a sheet formula that cannot be written (a function the engine lacks, a lookup into another sheet) is listed and asked about, not worked around.
 - **Formats (fixed list):** `mass`, `mass2`, `mol`, `mw`, `number: N`, `sig: N`, `percent: N`, `group`, `unit: <text>`, text filter `lower-first`.
 
 ### 4. The block in the note (one shared tag, CQ2 a)
@@ -164,12 +171,12 @@ used:
 - **Store review:** no `eval` / `new Function`, no `innerHTML`, no inline styles, all classes in `styles.css` on `--lk-radius-*` (`.claude/rules/obsidian-plugin.md`).
 
 ### 6. Looks
-Only the plugin's CSS. The three layouts reuse the live-block classes the RAFT and Solution blocks already draw with (`.lk-sol-*` in `styles.css`; a shared rename belongs to the `lk-` prefix work, not here): `list` = R-C, `table` = P-B (sideways scroll inside the block on a phone, as in the mock-up), `steps` = the approved Solution prep steps. Nothing a definition writes changes a colour, size or corner.
+Only the plugin's CSS. The four layouts reuse the live-block classes the RAFT and Solution blocks already draw with (`.lk-sol-*` in `styles.css`; a shared rename belongs to the `lk-` prefix work, not here): `list` = R-C, `table` = P-B (sideways scroll inside the block on a phone, as in the mock-up), `steps` = the approved Solution prep steps, `grouped` = S-B (group headings over the columns, the copy button copies flat). Nothing a definition writes changes a colour, size or corner.
 
 ## Out of scope
 - Anything that reads other tables of the note (Combined results, S-B), solvers or iteration (Solution prep's pH), dates or clocks in block maths.
 - Actuals other than masses (volumes, times) in v1: `actual: mass | none`.
-- Code of any kind; user CSS; free layouts; more than the three layouts.
+- Code of any kind; user CSS; free layouts; more than the four layouts.
 - Converting blocks already in notes (old ```` ```raft ```` / calc tables stay as they are; Templater plan Q10).
 - Definitions outside the Snippets folder; sharing definitions between vaults (a snippet file is copied like any note).
 - The `lk-` prefix rename of every existing block (owner decision 2026-10-21, not built): its own plan, see "Order".
@@ -194,7 +201,7 @@ Only the plugin's CSS. The three layouts reuse the live-block classes the RAFT a
 ### Phase C4 — Block text: answers, `used:`, `#` lines (RAFT proof, part 1)
 - Depends on: C1, C3; **Templater Phase 9 merged** (the built-in RAFT and its fixtures are the reference).
 - Files: new `src/blocks/def/block.ts` (answers ↔ lines, Edit set-up ops generalised from `raftChanges`, `worked` lines with the padding rule, definition hash in the head line), `src/blocks/def/text.ts` (the `{{= … }}` token and formats; `format.ts` of RAFT moved into a shared place if both need it), `kits/lab/Templates/Snippets/` is **not** touched yet; the RAFT definition as a test fixture `tests/fixtures/defs/raft.md`; `tests/def-raft-proof.test.ts`.
-- Done when: for every block-text case of `tests/raft-text.test.ts` (fresh 0005, several monomers, three monomers, co-solvent added and removed, a used line written, Edit set-up DP 105 → 120) the definition gives the built-in's block text **byte for byte except the fence line and the `use:` line** (and the head line's definition name); the stop rule above held (list the RAFT-only features used); check PASS.
+- Done when: for every block-text case of `tests/raft-text.test.ts` (fresh 0005, several monomers, three monomers, co-solvent added and removed, a used line written, Edit set-up DP 105 → 120) the definition gives the built-in's block text **byte for byte except the fence line and the `use:` line** (and the head line's definition name); the stop rule above held (list the RAFT-only features used); **compare against the owner's Excel sheet**: every formula of the RAFT sheet in `my_work/private/raft-excel/` (placeholder path, private, never committed to this repo) written as a definition value, and the sheet's own numbers for its inputs reproduced (results noted in `my_work/`, not in the public repo); if the file is still not there, write "Excel comparison NOT DONE: file not resent" in the phase result and a BACKLOG leftover; check PASS.
 
 ### Phase C5 — View model, `list` layout (RAFT proof, part 2)
 - Depends on: C4.
@@ -202,7 +209,7 @@ Only the plugin's CSS. The three layouts reuse the live-block classes the RAFT a
 - Done when: for the 12 cases of `tests/raft-view.test.ts` the definition's view equals `buildRaftView` field by field (title, status, summary, rows label / sub / target / actual, estimate, worked, errors); 0005 Mn 19990.14 and the weighed estimate 19 963 g/mol (mock-up R-C) come out; check PASS.
 
 ### Phase C6 — In Obsidian: registry, ```` ```lk-block ````, typing actuals
-- Depends on: C5; CQ2, CQ5.
+- Depends on: C5; CQ5 (CQ2 answered a).
 - Files: new `src/blocks/def/registry.ts` (definitions from the Snippets folder, re-read on change, duplicates and missing names), `src/blocks/def/render.ts` (`registerMarkdownCodeBlockProcessor("lk-block")`, `list` layout from the shared classes, Actual cells through `core.ts`, Update line for a changed definition), `src/main.ts`, `styles.css` only if a class is missing (no new look), tests (DOM: no `<table>`, scoped classes).
 - Done when: obsidian-check: a note with the RAFT definition fixture and a note with the built-in block side by side, light / dark / 390 px; the two `.lk-raft` crops show the same texts (compare as N4 Phase 8 did); typing 2.5012 g writes one line (byte check); deleting the definition file leaves the block text untouched and shows the error line; console errors []; check PASS. The Update line is drawn only after CF.
 
@@ -221,10 +228,10 @@ Only the plugin's CSS. The three layouts reuse the live-block classes the RAFT a
 - Files: `my_work/mockups/` page with `my_work/agent_kit/render_check.py feedback`: (1) the check report under ```` ```lk-definition ```` in the snippet file (OK and with problems), (2) the "worked out with an older definition" line with Update; BACKLOG question with the picks.
 - Done when: the owner has picked; picks in `my_work/reference_visual/` with README rows.
 
-### Phase C9 — `steps` layout, the check report, Make my own copy
+### Phase C9 — `steps` and `grouped` layouts, the check report, Make my own copy
 - Depends on: C6, CF.
-- Files: `src/blocks/def/render.ts` (`steps`: `step:` on a row, done bar per step, chip "step n of m"), `src/blocks/def/report.ts` (```` ```lk-definition ```` processor = the check report as picked), `src/kit/snippet-copy*.ts` (Make my own copy of a definition snippet gives it a new `name:`), a made-up two-step definition fixture, tests.
-- Done when: the two-step fixture draws like the approved Solution prep steps (crop beside `solution-live-block.png`); a broken definition shows its report; a copy has a unique name and the original's blocks still use the original; check PASS.
+- Files: `src/blocks/def/render.ts` (`steps`: `step:` on a row, done bar per step, chip "step n of m"; `grouped`: `group:` on a column, a heading row over the grouped columns, flat copy), `src/blocks/def/report.ts` (```` ```lk-definition ```` processor = the check report as picked), `src/kit/snippet-copy*.ts` (Make my own copy of a definition snippet gives it a new `name:`), a made-up two-step definition fixture and a made-up grouped fixture, tests.
+- Done when: the two-step fixture draws like the approved Solution prep steps (crop beside `solution-live-block.png`); the grouped fixture draws like S-B in `my_work/mockups/live-block-looks.html` (crop beside it) and Copy gives flat rows; a broken definition shows its report; a copy has a unique name and the original's blocks still use the original; check PASS.
 
 ### Phase C10 — Docs and the switch for own definitions
 - Depends on: C9; CQ3 (whether own definitions are read in this release).
@@ -237,7 +244,7 @@ Only the plugin's CSS. The three layouts reuse the live-block classes the RAFT a
 - **Templater Phase 10 (Recipe):** replaced by C8 when CQ3 = a or c; built as planned (built-in) when CQ3 = b.
 - **Templater Phase 11 (Combined results):** unchanged and independent (CQ4 a); may run before or between C-phases.
 - **Templater Phase 12** needs C8 (or Phase 10) for the `recipe` key. **Phase 13** is unchanged.
-- **The `lk-` prefix rename** (decided, not built; old names not read) should get its own plan and land before C6, so the new processors and the renamed ones are one set of names, and before the release (otherwise `raft` / `recipe` blocks ship under names that are dropped one release later). It touches every block processor, kit template and test; it is not part of this plan.
+- **The `lk-` prefix rename** (owner confirmed 2026-10-21: old names not read, nobody has notes with Lab Kit blocks yet; not built) should get its own plan and land before C6, so the new processors and the renamed ones are one set of names, and before the release (otherwise `raft` / `recipe` blocks ship under names that are dropped one release later). It touches every block processor, kit template and test; it is not part of this plan.
 - Size: C1-C10 + CF = 11 sessions (interpretation); against 1 session for a built-in Recipe. With one side session at a time (owner, 2026-10-21) this adds about 10 sessions before the release if CQ3 = a or c.
 
 ## Risks
@@ -248,20 +255,21 @@ Only the plugin's CSS. The three layouts reuse the live-block classes the RAFT a
 - **Names read as cells** (`dp1`) and upper-casing: refused at check time with a sentence.
 - **Obsidian rewriting the header:** the rows are in a code block (CQ1 a); the header holds only `fields:` as today.
 - **Performance:** bounded by the limits; definitions parsed once per change, not per draw.
-- **The `lk-` rename** makes every existing ```` ```calc ```` block of store users plain text (Claude's earlier warning, owner decided): outside this plan, but the changelog must say it.
+- **The `lk-` rename** turns any old-named block into plain code; the owner says nobody has such notes yet (2026-10-21). Outside this plan; the changelog still names the new block names.
 
 ## Verification
 - Outside reference: the built-in RAFT block (P9) for every text and view case; the 0005 known answer Mn = 19990.14 (reported, CLAUDE.md); the mock-up's R-C weighed estimate 19 963 g/mol and its Recipe numbers (derived by a saved script before C8's code).
 - Saved fixtures for both version lines, never regenerated from the writer.
 - obsidian-check light / dark / 390 px / `--mobile` per UI phase; crops compared with the built-in block and the approved Solution prep picture; the owner via checklist 6i rows.
+- The owner's RAFT Excel sheet (C4; `my_work/private/raft-excel/`, placeholder until resent): every formula expressible, its numbers reproduced.
 - 0005 / 0011 guards every phase.
 
 ## Open questions (paste into BACKLOG "Questions for the owner"; rec. = recommended)
 See the session report; the same list:
 - **CQ1 Where a block definition sits in the snippet file:** (a, rec) questions in the header as today, rows and layout in a ```` ```lk-definition ```` block in the body (Obsidian never rewrites it; the plugin draws a check report under it) / (b) everything in the header (nested properties; Obsidian's property editor may rewrite them) / (c) a separate definition file (`.json` in Extras).
-- **CQ2 Tag of definition-made blocks:** (a, rec) one tag ```` ```lk-block ```` with `use: <name>` under `format:` for every definition, kit or own / (b) each definition names its own tag (`lk-raft`); needs a reload after a new definition and can clash with built-in names.
+- ~~CQ2 Tag~~: answered 2026-10-21, (a) one ```` ```lk-block ```` with `use: <name>` ("This seems sensible").
 - **CQ3 When it ships:** (a) everything before the release, own definitions included / (b) Recipe built-in now (Templater Phase 10), definitions after the release / (c, rec) before the release but kit-only (the Recipe ships as a kit definition; own definitions are read from the next release, so format 1 can still change).
-- **CQ4 Combined results (S-B):** (a, rec) stays a built-in block (Templater Phase 11): it looks values up in the note's method tables, which the row language does not do; no `grouped` layout in v1 / (b) a second kind of definition ("look-up table") later / (c) add it now.
+- **CQ4 Combined results (S-B):** the `grouped` look is in the layout menu (decided); the question is its data: (a, rec) the Results block stays built-in (Templater Phase 11), because it looks values up in the note's method tables, which the row language does not do / (b) a second kind of definition ("look-up table" from the note's tables) later / (c) add that kind now.
 - **CQ5 A definition changed after blocks were made with it:** (a, rec) the block draws with the new definition; when its `#` lines no longer match it says so and offers Update (rewrites the `#` lines only) / (b) refuse to draw until Update / (c) say nothing.
 - **CQ6 Limits:** (a, rec) 50 rows, 30 items in a repeated row, 200 named values, 300 characters per formula, 32 KB per definition, no reading of the note's other tables in v1 / (b) looser.
 - **CQ7 What a definition may write:** (a, rec) only its own block's lines, plus the ask-once property (MW, Purity…) into a chemical note after a click, as Solution prep does / (b) its own block only; a missing MW is an error line, typed into the chemical note by hand.
