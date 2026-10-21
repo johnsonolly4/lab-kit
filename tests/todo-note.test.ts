@@ -68,9 +68,9 @@ describe("todo-note: same text as To-do.md", () => {
   });
 });
 
-describe("todo-note: the template's own date lines give startDate's date", () => {
+describe("todo-note: the old Templater template's own date lines give startDate's date", () => {
   afterEach(() => { vi.useRealTimers(); });
-  const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+  const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");   // the last Templater-code To-do.md: the kit now ships a token template (Phase 3)
   const from = tpl.indexOf("const days = "), to = tpl.indexOf("let scheduled = ");
   const block = tpl.slice(from, tpl.indexOf("\n", to)).replace(/^const raw = .*$/m, "");
   // eslint-disable-next-line @typescript-eslint/no-implied-eval
@@ -129,4 +129,22 @@ describe("todo-note: create", () => {
     assert.equal(m2[0][1], expected({}));
   });
   it("isoDay is local and zero-padded", () => { assert.equal(isoDay(new Date(2026, 0, 5)), "2026-01-05"); });
+});
+
+describe("todo-note: board New (the board writes the column into the new note before the template runs)", () => {
+  // Expected by hand from the old To-do.md (tests/fixtures/templates/old/To-do.md): it read `scheduled:` or an old weekday `day:` from the note, the window's answers did the rest.
+  it("a stub with the column's date, a weekday, or neither (the Backlog)", () => {
+    assert.equal(todoNoteText({ ...base, text: "Order vials" }, "2026-10-21", TODAY), expected({ scheduled: "2026-10-21" }));
+    assert.equal(todoNoteText(base, "Wed", TODAY), expected({ scheduled: "2026-10-21" }));
+    assert.equal(todoNoteText(base, undefined, TODAY), expected({}));
+  });
+  it("the Day chip of the window decides over the column the card was made in", () => {
+    assert.equal(todoNoteText({ ...base, scheduled: "2026-10-23" }, "2026-10-21", TODAY), expected({ scheduled: "2026-10-23" }));
+    assert.equal(todoNoteText({ ...base, scheduled: "" }, "2026-10-21", TODAY), expected({}));
+  });
+  it("the old fixture is a Templater template, not a token template", () => {
+    const old = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
+    assert.ok(old.startsWith("<%*") && old.includes("<% scheduled ?"));
+    assert.ok(!/^make:\s*note/m.test(old));
+  });
 });
