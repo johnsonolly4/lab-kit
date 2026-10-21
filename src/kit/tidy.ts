@@ -65,6 +65,8 @@ export interface TidyContext {
   snippetIcons?: Record<string, string>;
   /** Paths of the kit's snippet files nobody has edited: their icon is not written (a kit update would meet it). */
   kitSnippets?: string[];
+  /** Folders of Lab Kit's own folder templates (Settings → Folder templates) whose template is a token template (`make: note`) that Lab Kit fills itself. Missing = the Templater folder-template rule is off. */
+  fillFolders?: string[];
   /** I2: every note is read, for kept kit queries and your own queries that read the old to-do `day`. Missing = those rules are off. */
   todoQueries?: boolean;
 }
@@ -77,7 +79,7 @@ export interface TidySettings {
   /** Ids of the commands that have an Obsidian hotkey (only `templater-obsidian:` ones matter). */
   hotkeyCommands?: string[];
 }
-export type TidySettingTarget = "templater-startup" | "templater-folder" | "templater-hotkey" | "metabind-button";
+export type TidySettingTarget = "templater-startup" | "templater-folder" | "templater-folder-remove" | "templater-hotkey" | "metabind-button";
 /** One settings value to change: `key` finds it (the old path, the folder, the button id); it is changed only while it still equals `from`. */
 export interface TidySetting { target: TidySettingTarget; key: string; from: unknown; to: unknown }
 
@@ -667,6 +669,14 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     for (const f of st.templater?.folders ?? []) { const n = remap(f.template); if (n) add("templater-folder", `Templater › Folder template for ${f.folder}`, f.folder, f.template, n); }
     for (const v of st.templater?.hotkeys ?? []) { const n = remap(v); if (n) add("templater-hotkey", "Templater › Template hotkeys", v, v, n); }
     if (tp.changes.length) groups.push(tp);
+
+    // Templater's folder-template rows for folders whose template Lab Kit now fills itself (plan Phase 2, rule 1): the row is removed, the list backed up first
+    const fillFolders = ctx.fillFolders ?? [];
+    const own: TidyGroup = { id: "templater-folder-templates", title: "Templater folder templates for kit folders: Lab Kit fills these", detail: "Folders where Lab Kit fills new notes itself (Settings → Folder templates) and Templater also has a folder template. The Templater row is removed; a copy of Templater's list is saved first. Not ticked until you tick it.", changes: [], optIn: true };
+    for (const f of st.templater?.folders ?? []) {
+      if (fillFolders.includes(f.folder)) own.changes.push({ path: `Templater › Folder template for ${f.folder}`, before: f.template, after: "(removed: Lab Kit fills new notes here)", setting: { target: "templater-folder-remove", key: f.folder, from: f.template, to: null } });
+    }
+    if (own.changes.length) groups.push(own);
 
     const mb: TidyGroup = { id: "metabind-buttons", title: "Meta Bind: buttons that run a template", detail: "A button that runs a Templater file becomes a button that runs the matching Lab Kit command.", changes: [] };
     const unknown: { path: string; note: string }[] = [];

@@ -259,9 +259,9 @@ export function templaterPaths(app: App): { startup: string[]; folders: { folder
 }
 
 /** The saved value of one Templater / Meta Bind setting as JSON text (for a backup before it is changed). "" when the plugin isn't there. */
-export function settingSnapshot(app: App, target: "templater-startup" | "templater-folder" | "templater-hotkey" | "metabind-button"): string {
+export function settingSnapshot(app: App, target: "templater-startup" | "templater-folder" | "templater-folder-remove" | "templater-hotkey" | "metabind-button"): string {
   const st = templater(app)?.settings;
-  const value = target === "templater-startup" ? st?.startup_templates : target === "templater-folder" ? st?.folder_templates
+  const value = target === "templater-startup" ? st?.startup_templates : target === "templater-folder" || target === "templater-folder-remove" ? st?.folder_templates
     : target === "templater-hotkey" ? st?.enabled_templates_hotkeys : pluginOf(app, META_BIND)?.settings?.buttonTemplates;
   return value === undefined ? "" : JSON.stringify(value, null, 2);
 }

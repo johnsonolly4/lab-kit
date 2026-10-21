@@ -32,7 +32,7 @@ function mem(st: ReturnType<typeof settings>, existing: string[]): TidyIO & { sn
     st, snaps,
     read: async () => null, write: async () => undefined, backup: async (p, t) => { snaps.set(p, t); return `backups/${p}`; },
     exists: p => existing.includes(p), filesIn: () => [], linkedFrom: () => [], rename: async () => undefined, create: async () => undefined,
-    settingSnapshot: target => JSON.stringify(target === "metabind-button" ? st.metaBind : target === "templater-startup" ? st.templater.startup : target === "templater-folder" ? st.templater.folders : st.templater.hotkeys),
+    settingSnapshot: target => JSON.stringify(target === "metabind-button" ? st.metaBind : target === "templater-startup" ? st.templater.startup : (target === "templater-folder" || target === "templater-folder-remove") ? st.templater.folders : st.templater.hotkeys),
     setSetting: async c => {
       if (c.target === "metabind-button") {
         const b = st.metaBind.find(x => x.id === c.key);
@@ -129,5 +129,37 @@ describe("Change notes: settings (Phase 7c-2)", () => {
     expect(out.skipped.map(s => s.path)).toEqual(["Templater › Startup templates", "Templater › Folder template for 02 Projects"]);
     expect(out.skipped[0].why).toBe("the setting changed since the scan");
     expect(st.templater.folders[0].template).toBe("Extras/Templates/Scripts/Project.md");
+  });
+});
+
+describe("Tidy up notes: Templater folder templates for folders Lab Kit fills (Templater replacement Phase 2)", () => {
+  const withFill = (st: TidySettings, fillFolders?: string[]): TidyContext => ({ ...ctx(st), fillFolders });
+  const files = vaultFiles(true);
+
+  it("a Templater row for a folder whose template Lab Kit fills is proposed for removal, opt-in; other rows and a missing list change nothing", () => {
+    const g = scan(files, withFill(settings(), ["02 Projects"])).groups.find(x => x.id === "templater-folder-templates");
+    expect(g?.optIn).toBe(true);
+    expect(g?.changes.map(c => [c.path, c.setting?.target, c.setting?.key])).toEqual([["Templater › Folder template for 02 Projects", "templater-folder-remove", "02 Projects"]]);
+    expect(scan(files, withFill(settings())).groups.find(x => x.id === "templater-folder-templates")).toBeUndefined();
+    expect(scan(files, withFill(settings(), ["Elsewhere"])).groups.find(x => x.id === "templater-folder-templates")).toBeUndefined();
+  });
+
+  it("applying backs up Templater's folder list as it was, removes only that row, and a value changed since the scan is skipped", async () => {
+    const st = settings(), before = JSON.stringify(st.templater.folders);
+    const io = mem(st, []);
+    io.setSetting = async c => {
+      const i = st.templater.folders.findIndex(f => f.folder === c.key && f.template === c.from);
+      if (i < 0) return "the setting changed since the scan";
+      st.templater.folders.splice(i, 1); return null;
+    };
+    const s = scan(files, withFill(st, ["02 Projects"]));
+    const changes = selectChanges(s, new Set(["templater-folder-templates"]));
+    const out = await applyTidy(io, changes);
+    expect(out.skipped).toEqual([]);
+    expect(io.snaps.get("settings/templater-folder-remove.json")).toBe(before);
+    expect(st.templater.folders).toEqual([{ folder: "Other", template: "Mine/Other.md" }]);
+    st.templater.folders = [{ folder: "02 Projects", template: "Changed.md" }];
+    const again = await applyTidy(io, changes);
+    expect(again.skipped.map(x => x.why)).toEqual(["the setting changed since the scan"]);
   });
 });

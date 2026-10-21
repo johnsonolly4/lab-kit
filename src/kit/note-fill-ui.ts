@@ -3,7 +3,7 @@
 // is empty at create and open from file-open on, and a synced-in file is never open (measured, plan "Phase 0 result" items 2-3).
 import { Notice, TFile, parseYaml, type App, type Plugin } from "obsidian";
 import { NoteFiller, classify, type FillHost } from "./note-fill";
-import { defaultAnswers, type TemplateHeader } from "./snippet-template";
+import { defaultAnswers, parseTemplate, type TemplateHeader } from "./snippet-template";
 import { emptyEnv } from "./snippet-env";
 import { kitJoin, type KitData } from "./paths";
 import { folderTemplateRows } from "./setup-check";
@@ -62,6 +62,19 @@ export function registerNoteFill(plugin: Plugin, d: NoteFillDeps): NoteFiller {
   plugin.registerEvent(app.workspace.on("file-open", f => run(f)));
   plugin.registerEvent(app.vault.on("modify", f => { if (f instanceof TFile && f.path === app.workspace.getActiveFile()?.path) run(f); }));
   return filler;
+}
+
+/** The folders of Lab Kit's folder templates whose template file is a token template (`make: note`): the ones Lab Kit fills itself. */
+export async function tokenFillFolders(app: App, d: Pick<NoteFillDeps, "kit" | "planningOn" | "templateFolders">): Promise<string[]> {
+  const out: string[] = [];
+  for (const r of folderTemplateRows(d.kit(), d.planningOn())) {
+    if (!r.folder.trim() || !r.file.trim()) continue;
+    const text = await rowTemplateText(app, d.templateFolders(), r.file);
+    let token = false;
+    try { token = !!text && parseTemplate(text, parseYaml)?.header.make === "note"; } catch { token = false; }
+    if (token) out.push(r.folder);
+  }
+  return out;
 }
 
 /** Notes in the mapped folders whose front matter mixes a template header with the note's own keys (Check setup lists them; never filled, never guessed). */

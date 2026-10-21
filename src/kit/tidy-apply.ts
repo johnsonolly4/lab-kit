@@ -104,7 +104,7 @@ export async function applyTidy(io: TidyIO, changes: TidyChange[]): Promise<Tidy
   for (const c of changes.filter(x => x.setting)) {
     const st = c.setting as TidySetting;
     try {
-      if (st.target !== "metabind-button" && !io.exists(st.to as string)) { out.skipped.push({ path: c.path, why: `${String(st.to)} is not there` }); continue; }
+      if (st.target !== "metabind-button" && st.target !== "templater-folder-remove" && !io.exists(st.to as string)) { out.skipped.push({ path: c.path, why: `${String(st.to)} is not there` }); continue; }
       await backUp(`settings/${st.target}.json`, io.settingSnapshot(st.target));
       const why = await io.setSetting(st);
       if (why !== null) { out.skipped.push({ path: c.path, why }); continue; }
