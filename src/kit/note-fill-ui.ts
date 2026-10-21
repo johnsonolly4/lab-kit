@@ -2,7 +2,7 @@
 // editor, and `modify` of that note (a raw header written by Templater about 0.3-0.5 s after create). Never `create`: a note made in the explorer
 // is empty at create and open from file-open on, and a synced-in file is never open (measured, plan "Phase 0 result" items 2-3).
 import { Notice, TFile, parseYaml, type App, type Plugin } from "obsidian";
-import { NoteFiller, classify, type FillHost } from "./note-fill";
+import { NoteFiller, classify, rowFor, type FillHost } from "./note-fill";
 import { defaultAnswers, parseTemplate, type TemplateHeader } from "./snippet-template";
 import { emptyEnv } from "./snippet-env";
 import { kitJoin, type KitData } from "./paths";
@@ -58,7 +58,7 @@ export function noteFillHost(app: App, d: NoteFillDeps): FillHost {
 /** Registers the two events. `modify` looks at the active note only and only reads it when it is cheap to tell (a front matter with `make`). */
 export function registerNoteFill(plugin: Plugin, d: NoteFillDeps): NoteFiller {
   const app = plugin.app, host = noteFillHost(app, d), filler = new NoteFiller(host);
-  const run = (f: TFile | null): void => { if (f && f.extension === "md") filler.check(f.path).catch(e => console.error(e)); };
+  const run = (f: TFile | null): void => { if (f && f.extension === "md" && rowFor(host.rows(), f.path)) filler.check(f.path).catch(e => console.error(e)); };
   plugin.registerEvent(app.workspace.on("file-open", f => run(f)));
   plugin.registerEvent(app.vault.on("modify", f => { if (f instanceof TFile && f.path === app.workspace.getActiveFile()?.path) run(f); }));
   return filler;
