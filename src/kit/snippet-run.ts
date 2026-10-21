@@ -4,7 +4,9 @@ import { Notice, TFile, TFolder, parseYaml, type App } from "obsidian";
 import { text } from "../calc/engine";
 import { prop, toList } from "../frontmatter";
 import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "./snippet-env";
-import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, oldStub, parseTemplate, type ParsedTemplate, type TemplateField } from "./snippet-template";
+import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, oldStub, parseTemplate, rigSnapshotFields, type ParsedTemplate, type TemplateField } from "./snippet-template";
+import { saveSnapshot } from "../rig/snapshot-io";
+import { readSnapshotMeta } from "../rig/snapshot";
 import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
 import { hideShadowedStubs, pushRecent, visibleItems, type MenuItem } from "./snippet-menu";
@@ -36,7 +38,7 @@ const NOTE_FOLDERS: Record<string, string> = { rigsFolder: "Rigs folder", method
 
 export class SnippetTemplates {
   /** `form` = the plugin's question window (main.ts); without it the answers come from Templater's labForm.js on `tp` (tests, old setups). */
-  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn, private setup: SetupFn = openSetup) {}
+  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn, private setup: SetupFn = openSetup, private version: () => string = () => "") {}
 
   /** Right-click → Change icon… in the menu (set by the kit controller; without it the menu has no right-click). */
   icons: MenuIcons | null = null;
@@ -133,7 +135,8 @@ export class SnippetTemplates {
       const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
       // suggest: notes: the notes of each such field's folder, and the ones picked (read once the form is answered)
       const listed = new Map(header.fields.filter(f => f.suggest === "notes").map(f => [f.key, this.notesFor(f)]));
-      const picked = new Map<string, { text: string; fm: Record<string, unknown> | undefined }>();
+      const picked = new Map<string, { file: TFile; text: string; fm: Record<string, unknown> | undefined }>();
+      const snapshots = new Map<string, { link: string; date: string }>();
       const env = makeEnv(note, `${initials}${num}-`, (name, property) => {
         const n = this.app.metadataCache.getFirstLinkpathDest(plain(name), sourcePath);
         const v = n ? prop(this.app.metadataCache.getFileCache(n)?.frontmatter, property) : undefined;
@@ -142,6 +145,7 @@ export class SnippetTemplates {
       }, {
         text: name => picked.get(name.toLowerCase())?.text ?? null,
         prop: (name, property) => toList(prop(picked.get(name.toLowerCase())?.fm, property)).join(", "),
+        snapshot: name => snapshots.get(name.toLowerCase()) ?? null,
       });
       const defaults = defaultAnswers(header, env);
       const chems = header.fields.some(f => f.suggest === "chemicals") ? this.chemicals() : [];
@@ -174,7 +178,15 @@ export class SnippetTemplates {
         const hit = files.find(n => n.basename.toLowerCase() === name.toLowerCase());
         if (!hit) throw new TemplateError(`No note called "${name}" in the ${NOTE_FOLDERS[header.fields.find(f => f.key === key)!.folder!]}.`);
         answers[key] = hit.basename;
-        picked.set(hit.basename.toLowerCase(), { text: await this.app.vault.cachedRead(hit), fm: this.app.metadataCache.getFileCache(hit)?.frontmatter });
+        picked.set(hit.basename.toLowerCase(), { file: hit, text: await this.app.vault.cachedRead(hit), fm: this.app.metadataCache.getFileCache(hit)?.frontmatter });
+      }
+      // {{rig-snapshot:key}}: the snapshot is written (or the latest equal one reused) before filling in, once per rig
+      for (const key of rigSnapshotFields([body, ...(header.set ?? []).map(p => p.value)])) {
+        const rig = picked.get((answers[key] ?? "").toLowerCase());
+        if (rig && !snapshots.has(rig.file.basename.toLowerCase())) {
+          const snap = await this.rigSnapshot(rig.file, sourcePath);
+          if (snap) snapshots.set(rig.file.basename.toLowerCase(), snap);
+        }
       }
       const out = fillParts(body, answers, env);
       const props = (header.set ?? []).map(p => ({ name: p.name, value: fillTemplate(p.value, answers, env).trim() })).filter(p => p.value);
@@ -208,6 +220,16 @@ export class SnippetTemplates {
     if (got.method === "volume") return await this.calculator(tp, file, title, "solution-volume");   // Method: by volume = the old volume form, as before
     const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
     return (at && at.ch > 0 ? "\n" : "") + solutionBlock(got.lines);   // a fence starts on a line of its own
+  }
+
+  /** A snapshot of the rig for this lab note (a new file and history row, or the latest equal one): its link from the lab note and its date. null when the rig has no parts to draw. */
+  private async rigSnapshot(rig: TFile, sourcePath: string): Promise<{ link: string; date: string } | null> {
+    let saved;
+    try { saved = await saveSnapshot(this.app, rig, this.version(), ""); } catch (e) { throw new TemplateError(`Could not save the snapshot of ${rig.basename}: ${e instanceof Error ? e.message : String(e)}`); }
+    if (!saved) return null;
+    if (saved.rowNote) new Notice(saved.rowNote, 10000);
+    const read = readSnapshotMeta(await this.app.vault.cachedRead(saved.file));
+    return { link: this.app.fileManager.generateMarkdownLink(saved.file, sourcePath), date: read.status === "ok" ? read.meta.date : "" };
   }
 
   private fail(file: TFile, e: unknown): string {

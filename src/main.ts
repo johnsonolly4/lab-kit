@@ -39,7 +39,7 @@ export default class LabKitPlugin extends Plugin {
     this.header = new HeaderRenderer(this, store);
     this.kit = new KitController(this, store);
     await this.kit.load();
-    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor));
+    this.snippets = new SnippetTemplates(this.app, () => this.kit.kit, () => this.kit.save(), openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor), undefined, () => this.manifest.version);
     this.kit.snippets = this.snippets;
     this.kit.setup();
 

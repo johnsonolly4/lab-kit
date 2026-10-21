@@ -62,6 +62,8 @@ export interface TemplateEnv {
   rigTables(note: string, hashes: string): string;
   /** The diagram of the rig note called `note` as a Mermaid code block. Throws a TemplateError when it has no parts table. */
   rigDiagram(note: string): string;
+  /** The snapshot of the rig note called `note` taken for this insert: its link (as Obsidian writes it) and its date. Throws a TemplateError when there is none. */
+  rigSnapshot(note: string): { link: string; date: string };
   /** The Summary table of the rig note called `note`, or "" when it has none. */
   rigSummary(note: string): string;
 }
@@ -200,6 +202,7 @@ type Alt =
   | { k: "noteLine"; field: string; property: string }
   | { k: "rigTables"; field: string; hashes: string }
   | { k: "rigDiagram"; field: string }
+  | { k: "rigSnapshot"; field: string; part: "link" | "date" }
   | { k: "rigSummary"; field: string };
 
 type Node =
@@ -258,6 +261,14 @@ function splitTop(s: string): string[] {
   return out.map(x => x.trim());
 }
 
+const SNAPSHOT_TOKEN = /^rig-snapshot(-date)?:([A-Za-z_][\w-]*)$/;
+
+/** The fields whose rig a template takes a snapshot of (`{{rig-snapshot:key}}`, `{{rig-snapshot-date:key}}`), once each: the runner takes them before filling in, since writing a file cannot happen inside the engine. */
+export function rigSnapshotFields(texts: string[]): string[] {
+  const keys = texts.flatMap(t => [...t.matchAll(/\{\{\s*([^{}]*?)\s*\}\}/g)].flatMap(m => m[1].split("|").map(x => SNAPSHOT_TOKEN.exec(x.trim())?.[2] ?? "")));
+  return [...new Set(keys.filter(Boolean))];
+}
+
 function parseAlt(src: string): Alt {
   const s = src.trim();
   let m: RegExpExecArray | null;
@@ -274,6 +285,7 @@ function parseAlt(src: string): Alt {
   if ((m = /^note-line:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteLine", field: m[1], property: m[2].trim() };
   if ((m = /^rig-tables:([A-Za-z_][\w-]*)(?:\s+(#{1,6}))?$/.exec(s))) return { k: "rigTables", field: m[1], hashes: m[2] ?? "##" };
   if ((m = /^rig-diagram:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigDiagram", field: m[1] };
+  if ((m = SNAPSHOT_TOKEN.exec(s))) return { k: "rigSnapshot", field: m[2], part: m[1] ? "date" : "link" };
   if ((m = /^rig-summary:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigSummary", field: m[1] };
   if (NAME.test(s)) return { k: "ref", name: s };
   throw new TemplateError(`Unknown token {{${s}}}.`);
@@ -314,7 +326,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
   const check = (a: Alt, tag: string) => {
     if (a.k === "ref" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
-    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSummary") field(a.field, tag);
+    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSnapshot" || a.k === "rigSummary") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
   };
   for (const tok of tokenize(src)) {
@@ -455,6 +467,7 @@ class Filler {
       case "noteProp": { const note = this.answers[a.field] ?? ""; return note ? this.env.noteText(note, a.property) : ""; }
       case "rigTables": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigTables(note, a.hashes) : ""; }
       case "rigDiagram": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigDiagram(note) : ""; }
+      case "rigSnapshot": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigSnapshot(note)[a.part] : ""; }
       case "rigSummary": { const note = this.answers[a.field] ?? ""; const v = note ? this.env.rigSummary(note) : ""; return v; }
     }
   }
