@@ -71,6 +71,9 @@ Sources **read** this session: Malvern Panalytical "Top 10 tips for GPC sample p
 - **G5 several typed values per row**: TGA pan start mass and residue mass.
 
 ## 4. Owner questions (paste into BACKLOG "Questions for the owner"; rec. = recommended)
+
+> [!done] Answered by the owner 2026-10-21 (`docs/decisions.md`): CQ15 **b** (align now); MS1 **a**; MS2 **G1, G2, G4** (G5 "might be needed"); MS3 **a**; MS4 **a** (F1 and F2 fixed in their own session).
+
 - **CQ15 Method notes vs definitions:** (a, rec) leave method notes as they are; one syntax page explains both (table in §2); aligning formula naming later is a BACKLOG item / (b) align the formula naming now (method formulas also accept bare names) / (c) make a method a kind of definition (`layout: table`, rows from sample codes).
 - **MS1 Machine switch in the method window (F2):** (a, rec) boxes follow the picked machine at once / (b) keep, add a hint "follows the machine" / (c) keep as is.
 - **MS2 Gaps in definition format 1:** (a, rec) G2 and G4 (sample prep, titrations, NMR conversion need them), G1 / G3 / G5 later / (b) all five / (c) none: masses only.
