@@ -19,10 +19,11 @@ import { applyTodoValue, experimentOptions, projectNames, todoFields, todoValues
 import { PlanHistory } from "./plan-history";
 import { tickButton } from "./undo-notice";
 import { runHistory } from "./after-write";
-import { DEFAULT_AHEAD, PlanSlideModal, type SlideChoice } from "./plan-slide-ui";
+import { DEFAULT_AHEAD, PlanSlideModal, copyPng, type SlideChoice } from "./plan-slide-ui";
+import { pictureFor } from "./plan-slide";
 import { hasNode } from "../platform";
 import { flaggedLines, FLAGGED_EMPTY, RAISED } from "./freeze";
-import { blockOptions, linkTarget, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, linkTarget, pictureHub, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -76,13 +77,17 @@ class BlockView extends MarkdownRenderChild {
   private zoom = 1;   // the plan map's zoom buttons; not saved
   private noteText = "";   // the hub text, read for the Plan tile (does the hub also hold the map?)
   private showAll = false;   // a project hub list (meetings: last 8; to-dos and notes: 10) or all of it
+  private pictureUrl = "";   // the plan-picture block's blob URL on screen: revoked on redraw and unload
+  private newUrl = "";   // the one the draw being built made
 
   constructor(el: HTMLElement, private owner: PlanningBlocks, private lang: Lang, private source: string, private sourcePath: string) { super(el); }
 
   get app(): App { return this.owner.app; }
 
   onload(): void { this.owner.add(this); this.draw(); }
-  onunload(): void { this.owner.remove(this); }
+  onunload(): void { this.owner.remove(this); this.swapUrl(""); }
+
+  private swapUrl(url: string): void { if (this.pictureUrl) URL.revokeObjectURL(this.pictureUrl); this.pictureUrl = url; }
 
   draw(): void {
     const run = ++this.drawing;   // a newer draw wins over a slower one still reading goals
@@ -100,9 +105,13 @@ class BlockView extends MarkdownRenderChild {
         const file = this.app.vault.getFileByPath(this.sourcePath);
         this.noteText = file ? await this.app.vault.cachedRead(file) : "";
       }
+      this.newUrl = "";
       this.card(box);
     }
-    if (run !== this.drawing) return;
+    const url = this.newUrl;
+    this.newUrl = "";
+    if (run !== this.drawing) { if (url) URL.revokeObjectURL(url); return; }
+    this.swapUrl(url);
     this.containerEl.empty();
     this.containerEl.appendChild(box);
     const scroller = box.querySelector<HTMLElement>(".vt-map-scroll");
@@ -429,6 +438,30 @@ class BlockView extends MarkdownRenderChild {
         drawProblems(box, plan, mapOptions);
         return;
       }
+      case "plan-picture": {   // the slide picture of a project's plan (option A, or the open work of a big project), view only; the note's own hub or `project: [[Hub]]`
+        if (!this.need(box, todoFolder(f))) return;
+        const here = this.app.vault.getFileByPath(this.sourcePath);
+        const found = pictureHub(this.source, here ? this.owner.rec(here) : null, link => { const t = this.app.metadataCache.getFirstLinkpathDest(link, this.sourcePath); return t ? this.owner.rec(t) : null; });
+        if ("error" in found) { box.createDiv({ cls: "vt-muted", text: found.error }); return; }
+        const plan = readPlan(this.owner.notesIn(todoFolder(f)), found.hub, this.labNotes()), map = layoutPlan(plan);
+        const now = new Date(), picture = pictureFor(plan, map, { title: found.hub.name, width: 1920, height: 1080, today: ymd(now) });
+        box.addClass("vt-plan");
+        const title = box.createDiv({ cls: "vt-plan-title is-bar", text: `Plan: ${found.hub.name}` });
+        title.createSpan({ cls: "vt-muted lab-kit-plan-picture-asof", text: `as of ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` });
+        if (hasNode()) {   // Copy picture and the window: desktop only (PNG on the clipboard)
+          const stop = (e: Event): void => { e.stopPropagation(); e.preventDefault(); };
+          const copy = title.createEl("button", { cls: "lab-kit-plan-picture-copy", text: "Copy picture" });
+          copy.addEventListener("mousedown", stop);
+          copy.addEventListener("click", e => { stop(e); copyPng(picture.svg).then(() => { new Notice("Picture copied: paste it into your slide."); }, (err: unknown) => { new Notice(`Could not copy the picture: ${err instanceof Error ? err.message : "the clipboard refused it."}`); }); });
+          const shot = title.createEl("button", { cls: "vt-map-dir vt-map-slide", attr: { "aria-label": "Picture for a slide", title: "Open the picture window" } });
+          setIcon(shot, "image");
+          shot.addEventListener("mousedown", stop);
+          shot.addEventListener("click", e => { stop(e); new PlanSlideModal(this.app, plan, map, found.hub.name, this.slideChoice).open(); });
+        }
+        this.newUrl = URL.createObjectURL(new Blob([picture.svg], { type: "image/svg+xml" }));
+        box.createDiv({ cls: "lab-kit-plan-picture" }).createEl("img", { attr: { src: this.newUrl, alt: `Plan of ${found.hub.name}` } });
+        return;
+      }
       case "meeting-cards": {   // the Meetings hub: one card per series
         if (!this.need(box, f.meetings)) return;
         const today = new Date(), all = this.owner.commands()?.seriesList() ?? [];
@@ -478,7 +511,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, meeting-flagged, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, meeting-flagged, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, plan-picture, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

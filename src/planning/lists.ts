@@ -187,6 +187,18 @@ export function folderHub(notes: NoteRec[], path: string): NoteRec | null {
   return (linked && notes.find(n => n.name === linked.split("/").pop())) || null;
 }
 
+/** The project a `show: plan-picture` block draws (plan-map Phase 3): the hub a `project: [[Hub]]` line of the block names, else the note itself when it is a project hub.
+ *  `find` turns a link into a note (Obsidian's link lookup); an error line when the link finds no project hub, or there is no line and the note is none. */
+export function pictureHub(source: string, here: NoteRec | null, find: (link: string) => NoteRec | null): { hub: NoteRec } | { error: string } {
+  const line = /^\s*project\s*:\s*(.*?)\s*$/im.exec(source);
+  const link = line ? linkTarget(line[1]) : "";
+  if (link) {
+    const hub = find(link);
+    return hub?.fm.kind === "project" ? { hub } : { error: `No project hub called "${link}".` };
+  }
+  return here?.fm.kind === "project" ? { hub: here } : { error: "Not a project hub: add a line project: [[Your project]] to this block." };
+}
+
 export interface ProjectCard { hub: ListLine; goal: string; todos: ListLine[]; more: number; open: number; papers: number; notes: number; folder: string }
 
 /** Priority 1 (highest), 2 or 3, as a number or text; empty or anything else last. */

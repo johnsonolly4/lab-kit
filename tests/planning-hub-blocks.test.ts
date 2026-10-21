@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { folderHub, parentHub, topicIndex, type NoteRec } from "../src/planning/lists";
+import { folderHub, parentHub, pictureHub, topicIndex, type NoteRec } from "../src/planning/lists";
 import { KIT_DEFAULTS } from "../src/kit/paths";
 import { seriesOfNote } from "../src/planning/meetings";
 
@@ -143,5 +143,29 @@ describe("no plan list option", () => {
     const walk = (d: string): string[] => readdirSync(d).flatMap(n => statSync(join(d, n)).isDirectory() ? walk(join(d, n)) : n.endsWith(".ts") ? [join(d, n)] : []);
     for (const f of walk("src")) expect(readFileSync(f, "utf8"), f).not.toContain("planView");
     expect(readFileSync("src/planning/blocks.ts", "utf8")).toMatch(/if \(this\.hubHasMap\(\)\) return;/);
+  });
+});
+
+describe("pictureHub: the project a plan-picture block draws (plan-map Phase 3)", () => {
+  const hub = note("02 Projects/Polymers/Polymers.md", { kind: "project" });
+  const meeting = note("08 Meetings/Group/2026-10-21 Group.md", { kind: "meeting" });
+  const topic = note("03 Knowledge/Kinetics/Kinetics.md", { kind: "topic" });
+  const find = (link: string): NoteRec | null => [hub, meeting, topic].find(n => n.name === link.split("/").pop()) ?? null;
+  it("on the project's own hub, with no project line: the hub itself", () => {
+    expect(pictureHub("show: plan-picture", hub, find)).toEqual({ hub });
+  });
+  it("a project: [[Hub]] line names the project (alias, heading and .md dropped), also on the hub of another project", () => {
+    for (const v of ["[[Polymers]]", "[[Polymers|the polymers]]", "[[02 Projects/Polymers/Polymers.md#Plan]]", "Polymers"]) {
+      expect(pictureHub(`show: plan-picture\nproject: ${v}`, meeting, find)).toEqual({ hub });
+    }
+    expect(pictureHub("show: plan-picture\n  Project :  [[Polymers]]  ", meeting, find)).toEqual({ hub });
+  });
+  it("an unknown project, or a link to a note that is not a project hub: a line saying so", () => {
+    expect(pictureHub("show: plan-picture\nproject: [[Nope]]", meeting, find)).toEqual({ error: 'No project hub called "Nope".' });
+    expect(pictureHub("show: plan-picture\nproject: [[Kinetics]]", hub, find)).toEqual({ error: 'No project hub called "Kinetics".' });
+  });
+  it("no project line on a note that is not a project hub: a line saying how to name one", () => {
+    expect(pictureHub("show: plan-picture", meeting, find)).toEqual({ error: "Not a project hub: add a line project: [[Your project]] to this block." });
+    expect(pictureHub("show: plan-picture\nproject:", null, find)).toEqual({ error: "Not a project hub: add a line project: [[Your project]] to this block." });
   });
 });
