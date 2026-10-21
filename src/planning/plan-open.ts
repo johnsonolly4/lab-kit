@@ -2,8 +2,8 @@
 // Pure (no DOM, no Obsidian runtime, no drawing): sizes, folding and pixels come later (docs/plans/plan-map-export.md, Phases M1-2 to M1-4).
 import type { Plan, PlanRow } from "./plan";
 import { layoutPlan } from "./plan-map";
-import type { MapArrow } from "./plan-map";
-import { CHAR_W, statusOf, wrap } from "./plan-slide";
+import type { MapArrow, PlanMap } from "./plan-map";
+import { CHAR_W, DEFAULT_AHEAD, slideModel, slideSvg, statusOf, wrap } from "./plan-slide";
 
 /** How an open chip stands: late wins over waiting, waiting over can start; "later" waits for an earlier step. */
 export type OpenStatus = "late" | "waiting" | "ready" | "later";
@@ -208,4 +208,9 @@ export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOp
     height: used(shown) + (fold ? STEP_GAP + COUNT_H : 0),
     counts: { open: model.counts.open, drawn: drawnSteps + nLoose, inStep: inStepShown, folded: foldedChips.length, looseMore: rest.length },
   };
+}
+
+/** Which picture a plan gets (owner, Q4 a: automatic only): the full map (option A, compact) while its smallest text is 22 px or more, else the open work. */
+export function chooseLayout(map: PlanMap, ahead = DEFAULT_AHEAD): "full-map" | "open-work" {
+  return slideSvg(slideModel(map, { kind: "compact", ahead }), { title: "" }).tooSmall ? "open-work" : "full-map";
 }

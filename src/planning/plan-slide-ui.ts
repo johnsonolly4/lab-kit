@@ -1,11 +1,11 @@
 // The window for the plan map's picture for a slide (desktop only): choose the layout, see a preview, copy a PNG to the clipboard.
 // Nothing is saved in the vault. The picture itself is made in plan-slide.ts; this file only shows it and turns the SVG into a PNG.
 import { Modal, Notice, Setting, type App } from "obsidian";
-import { MIN_READABLE, slideModel, slideSvg, type SlideLayout, type SlidePicture } from "./plan-slide";
+import { DEFAULT_AHEAD, MIN_READABLE, slideModel, slideSvg, type SlideLayout, type SlidePicture } from "./plan-slide";
 import type { PlanMap } from "./plan-map";
 import { ymd } from "./todo";
 
-export const DEFAULT_AHEAD = 5;
+export { DEFAULT_AHEAD };
 const WIDTH = 1920, HEIGHT = 1080;
 
 /** What the window remembers while Obsidian is open (kept on the block, not a setting). */

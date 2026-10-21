@@ -10,6 +10,8 @@ export type RowStatus = "done" | "late" | "waiting" | "ready" | "blocked";
 export const DUE_SOON_DAYS = 3;
 
 export type SlideLayout = { kind: "compact"; ahead: number } | { kind: "whole" };
+/** Steps ahead the compact picture draws as cards, unless the window asks for another number. */
+export const DEFAULT_AHEAD = 5;
 
 export interface SlideModel {
   /** Finished to-dos shown as tiles (compact only): linked ones in step order, then the unlinked. */

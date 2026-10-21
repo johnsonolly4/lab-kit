@@ -1,7 +1,8 @@
 // The open-work model of a big project (src/planning/plan-open.ts): open chips in steps, loose row, counts. Known answers: docs/plans/plan-map-export.md "Big projects".
 import { describe, it, expect } from "vitest";
 import { readPlan } from "../src/planning/plan";
-import { CHIP_CAP, FOLD_ID, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, openBudget, openModel, rowHeights } from "../src/planning/plan-open";
+import { layoutPlan } from "../src/planning/plan-map";
+import { CHIP_CAP, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, openBudget, openModel, rowHeights } from "../src/planning/plan-open";
 import type { FoldedOpen, OpenModel } from "../src/planning/plan-open";
 import type { OpenChip } from "../src/planning/plan-open";
 import { MIN_READABLE } from "../src/planning/plan-slide";
@@ -222,5 +223,20 @@ describe("foldOpen: what is drawn in 1920 × 1080 (M1-2; known answers in docs/p
     expect(f.arrows.filter(a => a.to === moreId(1))).toHaveLength(1);
     addsUp(m, f);
     for (const s of f.steps) for (const c of s.chips) expect(chipSize(c, f.places).chars).toBeGreaterThanOrEqual(MIN_CHARS);
+  });
+});
+
+describe("chooseLayout: full map while its text is readable, else the open work (M1-2)", () => {
+  const mapOf = (todos: NoteRec[]) => layoutPlan(readPlan(todos, hub));
+  it("the 59 to-do fixture gets the open-work picture", () => expect(chooseLayout(layoutPlan(readPlan(BIG_TODOS, BIG_HUB)))).toBe("open-work"));
+  it("a 6-card project keeps the full map", () => {
+    const m = mapOf([td("A", { done: true }), td("B", { after: ["[[A]]"] }), td("C", { after: ["[[A]]"] }), td("D", { after: ["[[B]]"] }), td("E", { after: ["[[C]]", "[[D]]"] }), td("F", { after: ["[[E]]"] })]);
+    expect(m.cards).toHaveLength(6);
+    expect(chooseLayout(m)).toBe("full-map");
+  });
+  it("a small project that is all open stays on the full map", () => {
+    const m = mapOf([td("A"), td("B", { after: ["[[A]]"] }), td("C", { after: ["[[B]]"] }), td("D")]);
+    expect(m.cards.every(c => !c.row.done)).toBe(true);
+    expect(chooseLayout(m)).toBe("full-map");
   });
 });
