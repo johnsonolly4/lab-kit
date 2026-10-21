@@ -417,6 +417,7 @@ Order after the store submission: **Kit picker → Chemical database → Analysi
 - Dropped: Retired files "build kit file from related?" (user: drop the question)
 
 ## Future features (user, 2026-10-08: ideas, not scheduled)
+- [ ] **RAFT agent vs monomer warning (owner, 2026-10-21: "not yet, backlog"):** chemical notes carry `raft_agent_class` (trithiocarbonate, dithiobenzoate, xanthate, dithiocarbamate) and `monomer_class` (more / less activated); the RAFT block warns about a poor pair, from the table in Keddie et al., *Macromolecules* 2012, 45, 5321 (`docs/plans/chemical-database-components.md` §4 "RAFT agent suitability").
 - [ ] **Several targets from several pre-mixes at once (owner board 7, CD8, 2026-10-21: not in v1, "Add to backlog"):** a solver that picks amounts of several pre-mixes to hit several ingredient targets together (`docs/plans/chemical-database-components.md` CD8).
 - [ ] **Recipe "by steps" block (owner, 2026-10-21, comment on the live block looks page, P-B: "This for now, maybe we have a 'by steps' block later"):** a later recipe block in addition order (like mock-up P-C, `my_work/mockups/live-block-looks.html` section 2). Not planned; after the Templater replacement.
 - [ ] **NMR results other than conversion (owner, 2026-10-21, chat on Q35):** "NMR won't always be conversion (could be peak area o.e.), but for now that is fine." The Combined results block (Templater plan Phase 11) shows conversion for now; later let an NMR column be another measure (peak area, ratio…). Not planned.
