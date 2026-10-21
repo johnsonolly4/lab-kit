@@ -27,6 +27,8 @@ A note in the `Snippets` folder whose first lines are a header between `---` lin
 | `required` | key of a field that must hold at least one list item, else nothing is inserted (silently; to make the form refuse an empty field, give that field `mandatory: true`, below) |
 | `set` | properties written on the note you are in when the snippet is inserted, one `Name: value` line each; the value may hold tokens (`Rig: "[[{{rig}}]]"`). An existing property is replaced; an empty value is not written |
 | `fields` | the questions (below); an empty list is allowed |
+| `make` | `make: note` = a **note template**: the body is a whole note (its own front matter included) and the header may also hold `name` and `folder` (below). Not for Alt+S: it is made into a note, not inserted at the cursor. Built and tested, not yet used by any command |
+| `name`, `folder` | with `make: note`: the new note's name (no folder, no `.md`) and folder, each may hold tokens; left out, the command that makes the note decides |
 
 A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint` (the help text under the label), `placeholder`, `mandatory: true` (the form marks the label with `*` and stays open, with "Needs an answer" under the field, until it holds text; Esc still inserts nothing; any field you do not mark can simply be left empty to skip it), `type` (`text` default, `number`, `textarea`), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered). A field with `suggest: notes` and `folder: <setting>` lists the notes of one of your Lab Kit folders (`rigsFolder`, `methodsFolder`, `chemicalFolder`, `labFolder`); the answer must be one of those notes, and the snippet stops with a message while the folder setting is empty or has no notes.
 
@@ -42,6 +44,11 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{@i}}` `{{@n}}` `{{@seq}}`     | index from 0, from 1, and a running count over all repeats of the block; `{{@i+2}}` adds a number (spreadsheet rows)                                                                                                                                           |
 | `{{#repeat key\|3}}…{{/repeat}}` | repeat a number of times; without a usable number the fallback is used (1 when none is given)                                                                                                                                                                  |
 | `{{#if key}}…{{else}}…{{/if}}`   | true when the answer has at least one item; `{{#if key ^= "h"}}` = starts with (ignoring case; false for an empty answer)                                                                                                                                      |
+| `{{#if key != ""}}…{{/if}}`    | true when the answer is not empty (any text, also only commas or line breaks, counts); only spaces are empty. `{{else}}` works the same |
+| `{{today}}`                      | today's date, `YYYY-MM-DD`, from the clock of this device (local time) |
+| `{{date:key}}` `{{date:today}}`  | the date answered in `key` (written `YYYY-MM-DD`; a time after it is ignored), or today. Empty answer gives nothing; text that is not a real date (`2026-02-30`, `tomorrow`) stops the snippet with a message. `{{date:key+7d}}` / `{{date:today-1d}}` add or take days; `{{date:key\|DD MMM YYYY}}` sets the format |
+| `{{json:key}}`                   | the answer as one JSON string: in double quotes, `"` `\` and line breaks escaped (`"say \"hi\""`). An empty answer gives `""`. For a property value that may hold anything |
+| `{{note-name}}` `{{folder}}`     | note templates only (`make: note`): the new note's name and folder, in its text (not in the header's own `name` / `folder`). A snippet field called `today`, `folder` or `note-name` still wins over these |
 | `{{prefix}}`                     | your initials + the note's number + `-` (`ABC0016-`)                                                                                                                                                                                                           |
 | `{{code}}`                       | `prefix` + the next free sample letter; continues from earlier codes in the note and advances on each use                                                                                                                                                      |
 | `{{table:base}}`                 | a table id that is unique in the note (`base`, `base2`…); the same `base` gives the same id again within one insert. `{{table:$key\|"base"}}` takes the base from a field; `{{table:sampling>_start}}` = the id of `sampling` plus `_start`                    |
@@ -68,6 +75,34 @@ fields:
     suggest: codes
     value: ""   # used when the note has no table with codes
 ```
+
+### Dates in tokens
+
+`{{date:…}}` formats with these letters; text in `[brackets]` stays as written and anything else is copied: `YYYY` 2026 · `YY` 26 · `MMMM` October · `MMM` Oct · `MM` 10 · `M` 10 · `DD` 05 · `D` 5 · `dddd` Monday · `ddd` Mon. Names are English. `{{date:today|dddd D MMMM YYYY}}` gives `Monday 19 October 2026`; `{{date:d+1d|[Week of] D MMM}}` with `d` = `2026-12-31` gives `Week of 1 Jan`. A field key that ends in `-` and digits and `d` (such as `last-1d`) is read as a sum: pick another key.
+
+### Note templates (`make: note`)
+
+A note template is a token template whose header says `make: note`. The header sits first, between `---` lines; the note's own text follows it, and its own front matter (`---` … `---`) is plain text there, written byte for byte:
+
+```
+---
+make: note
+name: "{{date:date}} {{series}}"
+folder: "Meetings/{{series}}"
+fields:
+  - key: series
+    label: Series
+  - key: date
+    label: Date
+---
+---
+series: "[[{{series}}]]"
+date: {{date:date}}
+---
+# {{note-name}}
+```
+
+Obsidian shows the header as properties and the rest as text, so the template stays editable; a `{{token}}` as a property value outside quotes is not valid YAML, which is why the questions sit in this header and not in the note's own properties (measured in `docs/plans/templater-replacement-and-live-snippets.md`, "Phase 0 result"). The code is `noteFromTemplate` in `src/kit/note-template.ts`: it fills `name` and `folder` first, then the text, and returns all three; a field left out of the answers has its default, a `required` field that is empty and an `{{#append}}` part stop it. It makes no file: the command that calls it checks the name and creates the note.
 
 ## 2. Calc block options
 

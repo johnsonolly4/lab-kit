@@ -29,6 +29,14 @@ export function calcTables(note: string): { name: string; title: string; codes: 
 export interface NoteLookup { text(name: string): string | null; prop(name: string, property: string): string; snapshot?(name: string): { link: string; date: string } | null }
 const NO_NOTES: NoteLookup = { text: () => null, prop: () => "" };
 
+/** An environment that reads nothing from a note or the vault (a note template with no lookups); `extra` replaces parts of it. */
+export function emptyEnv(extra: Partial<TemplateEnv> = {}): TemplateEnv {
+  return {
+    prefix: "", nextFreeIndex: () => 0, uniqueTable: b => b, tableRows: () => 0, noteProperty: () => "", noteText: () => "",
+    rigTables: () => "", rigDiagram: () => "", rigSnapshot: () => ({ link: "", date: "" }), rigSummary: () => "", ...extra,
+  };
+}
+
 /**
  * The engine's environment for one insert. `note` is the text of the note being edited, `prefix` its sample-code prefix (ABC0016-),
  * `noteProperty` reads a number from a property of another note. Table ids already handed out stay taken for this insert.

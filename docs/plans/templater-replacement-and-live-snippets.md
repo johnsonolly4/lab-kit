@@ -123,15 +123,61 @@ Everything runs on the Vault API and the plugin's own windows; no Node (`hasNode
 5. **Size per port:** lines and tests per template (the spike measured To-do: 157 lines added, 13 tests).
 Results go in a "Phase 0 result" section of this plan, labelled measured / not measured.
 
+## Phase 0 result (measured 2026-10-21, throwaway Obsidian 1.14.4 on macOS, desktop and `--mobile`; nothing in `src/` changed)
+Labels: **measured** = run by `scripts/phase0-templater-measure.js` (re-run: the three commands in its header; port 9337 so it does not clash with another check); **not measured** = said why; **est.** = estimate (interpretation).
+
+**1. Properties view and `{{tokens}}` (measured; identical on desktop and `--mobile`).** Four template files opened in reading view, a property input focused and left, then an API property edit (`processFrontMatter`, what the Properties view writes through):
+| File shape | Properties shown | Obsidian's frontmatter cache | Open / focus rewrote the file? | Property edit |
+|---|---|---|---|---|
+| Q5 (a): header (`make`, `name`, `fields`) first, the note's own `---` block below as text | the 3 header keys | the 3 header keys | no / no | works (only the header is touched) |
+| Q5 (b): note properties first with `project: {{project}}` | none (panel empty) | none (`null`) | no / no (nothing to focus) | **refused**: "Comments must be separated from other tokens by white space characters at line 2" |
+| Q5 (b'), not in the plan: properties first, tokens in quotes (`project: "{{project}}"`) | 2 properties | both keys | no / no | works |
+| Templater today (`project: <% tp.file.title %>`) | 2 properties | both keys | no / no | works |
+- An unquoted `{{token}}` as a property value is invalid YAML: Obsidian shows no Properties for that template and refuses edits through it. Nothing is rewritten by merely opening or clicking it.
+- Not measured: whether Obsidian re-serialises (re-quotes or re-orders) the header after a real typed edit in the Properties panel; the API edit above only adds one key.
+
+**2. File-create events (measured, same order on desktop and `--mobile`; stand-ins for the real sources).**
+| Source | Events (ms after the action) | Empty at `create`? | Open in the active editor? |
+|---|---|---|---|
+| File explorer New note (`createNewMarkdownFile`, then `openFile` as the explorer does) | `create` len 0 at 4, `file-open` at 16 | yes | yes, from `file-open` on |
+| Bases-style `vault.create` with front matter, not opened | `create` len 19 at 8; no `file-open` | no (stand-in had text) | **no** (the active file stayed the earlier note) |
+| Another process writes a whole file (Sync stand-in) | `create` len 24 at 14 | no | no |
+| Another process writes an empty file, then the text 600 ms later | `create` len 0 at 21, `modify` len 24 at 616 | **yes** | no |
+| Obsidian core Templates insert into an empty note | not measured: the insert call left the note at 0 bytes (call not resolved; needs the real command window) | | |
+- Answers: a synced-in file **can** be empty at `create` (when the writer writes empty first; real Sync not measured). A note made in the explorer is empty at `create` and open only from `file-open` (12 ms later here), so the fill rule must act on `file-open` (or the next `modify`), never on `create`. Real Bases' New button: **not measured** (its create path is not callable from the shell; stand-in only).
+
+**3. Templater and Lab Kit on one folder: not measured.** Templater is a community plugin, not in the throwaway vault, and installing it is a download; asked of nobody here. Whether the raw header arrives, and whether the fills race, stays open: Phase 2 must test with a fake event stream and the owner (or a vault with Templater) must see it once. The design rule "while Templater has a row for the folder, Lab Kit leaves it alone" is what protects this until then.
+
+**4. Token gaps per template (hand read of each `<%*` header and each `<%` line; 9 templates).**
+| Template | Gaps beyond today's engine | In the plan's token list? |
+|---|---|---|
+| To-do | `JSON.stringify(waiting)` → `{{json:waiting}}`; `x != ""` for the optional lines | yes |
+| Meeting series | `JSON.stringify` on `deck_*` and `template` → `{{json:…}}`; `tp.file.move` → result `name` / `folder` (`{{folder}}` for the `FROM` line) | yes |
+| One-off meeting | `moment(date).format("YYYY-MM-DD")` → `{{date:date\|YYYY-MM-DD}}`; `first` (is this series first by name) = a value the caller works out; project line has a newline inside an inline `{{#if}}…{{else}}…{{/if}}`; unused-name loop (`tp.file.exists`) = the creator (`makeNote`), not a token | yes (+ creator) |
+| Meeting | as One-off meeting, without `first` | yes |
+| Lab Book Template | `tp.date.now` → `{{today}}`; `Exp. Class` → `{{#if expClass != ""}}{{json:expClass}}{{/if}}`; **`Status:` = plain text when it matches `^[\w .-]+$`, else JSON** (a safe-scalar rule: **not in the list**); initials, next number, existing-`Status` read from the raw note = the creator's work | **one gap: a `{{yaml:key}}` token (plain when safe, else JSON)**, est. 8 lines + 3 tests, add at Phase 5 |
+| New project note | `hasHub` ternaries → `{{#if hubName != ""}}`; a fenced block inside `{{#if}}`; text right after the block on the same line (`…{{/if}}cssclasses:`) | yes |
+| New topic hub | `tp.file.folder(true)` → `{{folder}}` | yes |
+| Project hub | no `<%` tag in the body; `vtEnsureType` and `createFolder` = side effects of the creator | none |
+| New concept | no `<%` tag in the body; folder / topic questions, `createFolder`, "already exists" refusal = the creator | none |
+- Result: the plan's six tokens cover 8 of 9; one more (`yaml`) for Lab Book. Nothing needs general code. Side effects (create folder, set a property type, unused name, refuse an existing note) belong to `makeNote`, which is not Phase 1.
+
+**5. Size per port (counted from the files; the port sizes are est.).** Template lines / lines with `<%` (measured, Inventory B): To-do 129 / 10, Meeting series 51 / 8, One-off meeting 50 / 6, Meeting 69 / 5, Lab Book Template 97 / 5, New project note 33 / 3, New topic hub 25 / 2, Project hub 79 / 1, New concept 44 / 1. Measured for To-do (spike): 75 lines of module (28 of them the template text) and 82 lines / 13 tests. **est.** with the shared `noteFromTemplate` from Phase 1: each later template needs its token-format file (template lines minus the code block, about 70-80 % of today's) plus 20-40 lines of creator glue and 8-13 tests; the spike's 100-150 lines per template falls to about 60-110. Not measured: any port other than To-do.
+
+**Q5 / Q6 recommendations from these numbers (owner board Q27 / Q28, still open, to be re-asked with a picture).**
+- **Q5: the recommendation (a) holds; it is the owner's provisional answer (b, "which is easier to edit?") that the numbers argue against.** (b) fails the plain test the owner cares about ("which is easier to edit"): a template whose properties hold `{{project}}` shows an empty Properties panel and refuses edits, whereas (a) shows the header as normal properties and keeps the note's own properties as readable text below. The new option (b'), tokens in quotes, is valid YAML, but then the note's own properties and its questions share one block, and a typed `"` in an answer would break the line (the `{{json:}}` token is for that). Recommendation unchanged: **(a)**.
+- **Q6 stays (a), with two changes of wording.** (1) The fill must act on `file-open` of the active note, never on `create` (an explorer note is empty at `create` and open 12 ms later; a synced-in file is never open). (2) The Bases New button and Templater coexistence are **not measured**, so Phase 2 ships behind "only when the note is open on this device" and the Templater-row guard, and the owner confirms once on a real vault with Templater. No reason found to prefer (b) or (c).
+- **Picture for re-asking both:** one image with two panels. Left, "what you see when you open a template in Obsidian": (a) the Properties panel listing `make`, `name`, `fields`, then the note's own text with its `---` block below; (b) the same template with an empty Properties panel and a red "can't edit" note. Right, "what happens when you press New on the To-do board": a three-step strip (empty note appears → the note opens → Lab Kit fills it, once; a note that only arrives by Sync stays as it is) beside the Templater row switch ("while Templater has a row here, Lab Kit does nothing"). Looks go through `render_check.py feedback` first, per the design rules.
+
 ## Phases (each = one Sonnet session; Templater keeps working until Phase 13)
 Order check: 0 measures; 1-2 build the engine and the self-filling path that every template port needs, so a template can change format without breaking Templater's folder rows; 3-6 port templates one family at a time (each ships alone, the others still run through Templater); 7 is the look page that 9-11 wait for, placed so the owner can answer while 3-6 are built; 8 waits for N4 Phase 5 (the solution block's writer) to finish; 12 needs 9-11 (every `run:` key ported); 13 is last because it removes the setup help that the not-yet-switched parts still need.
 
-### Phase 0 — Measure (no user-facing change)
+### Phase 0 — Measure (no user-facing change) — MEASURED 2026-10-21 (see "Phase 0 result"; item 3 not measured)
 - Files: this plan ("Phase 0 result"); scratch vault through `node scripts/obsidian-check.mjs`; no `src/` change.
 - Done when: items 1-5 above answered with measured / not measured; Q5 and Q6 recommendations confirmed or changed from the numbers.
 - New dependencies: none.
 
-### Phase 1 — Engine: note templates and the missing tokens
+### Phase 1 — Engine: note templates and the missing tokens — BUILT 2026-10-21 (engine only, nothing wired; tests 2016 → 2067 (+51 in `tests/note-template.test.ts`), lint 0 errors, 5 warnings as before; the 28 scenarios of `tests/snippet-template.test.ts` and the 0005 / 0011 guards pass unchanged; leftovers in BACKLOG "Templater replacement Phases 0-1 leftovers")
 - Depends on: Phase 0, Q5.
 - Files: `src/kit/snippet-template.ts` (`make: note` header, `{{today}}`, `{{date:…}}`, `{{json:…}}`, `{{#if x != ""}}`, `{{note-name}}`, `{{folder}}`), `src/kit/snippet-env.ts`, new `src/kit/note-template.ts` (pure `noteFromTemplate(text, answers, env)` → `{ name, folder, text }`), tests `tests/note-template.test.ts`; `docs/snippet-syntax.md` (new tokens).
 - Done when: every new token has tests (edge cases: empty answer, bad date, a JSON string with quotes and newlines); the spike's 13 To-do cases pass through `noteFromTemplate` on a token-format `To-do.md` fixture byte for byte; the six token snippets' 28 scenarios unchanged; 0005 / 0011 guards; check PASS. Nothing wired.

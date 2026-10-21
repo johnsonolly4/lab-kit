@@ -36,6 +36,11 @@ export interface TemplateHeader {
   group?: string;
   /** `run: solution` = a calculator: Lab Kit runs that key of labSnippets.js, which asks its own questions, so the header has no `fields` and the note has no body. */
   run?: string;
+  /** `make: note` = a note template (src/kit/note-template.ts): the body is a whole note, front matter included. */
+  make?: "note";
+  /** With `make: note`: the new note's name and folder (may hold tokens); empty = the caller decides. */
+  name?: string;
+  folder?: string;
   fields: TemplateField[];
 }
 
@@ -66,6 +71,11 @@ export interface TemplateEnv {
   rigSnapshot(note: string): { link: string; date: string };
   /** The Summary table of the rig note called `note`, or "" when it has none. */
   rigSummary(note: string): string;
+  /** The moment `{{today}}` and `{{date:today…}}` use (local time); the real clock when it is left out. */
+  now?: Date;
+  /** The note's own name and folder (`{{note-name}}`, `{{folder}}`); only a note template has them, so the tokens fail without. */
+  noteName?: string;
+  folder?: string;
 }
 
 /** The key of the "Codes from" choice the form adds after a `suggest: codes` field (not a template field, so templates never see it). */
@@ -101,21 +111,24 @@ export function parseTemplate(text: string, parseYaml: (yaml: string) => unknown
   if (!m) return null;
   let raw: unknown;
   try { raw = parseYaml(m[1]); } catch (e) { throw new TemplateError(`The header is not valid YAML: ${e instanceof Error ? e.message : "unreadable"}`); }
-  if (!isRecord(raw) || !("fields" in raw || "run" in raw)) return null;
+  if (!isRecord(raw) || !("fields" in raw || "run" in raw || "make" in raw)) return null;
   return { header: readHeader(raw), body: text.slice(m[0].length) };
 }
 
 function readHeader(raw: Record<string, unknown>): TemplateHeader {
   const group = asText(raw.group)?.trim() || undefined;
+  const make = "make" in raw;
+  if (make && asText(raw.make)?.trim() !== "note") throw new TemplateError("make: must be note (a template that makes a whole note).");
+  if (make && "run" in raw) throw new TemplateError("A header with make: has no run:.");
   if ("run" in raw) {
     const run = asText(raw.run)?.trim();
     if (!run) throw new TemplateError("run: needs the name of a Lab Kit calculator, for example run: solution.");
     if ("fields" in raw) throw new TemplateError("A header with run: has no fields: the calculator asks its own questions.");
     return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, run, fields: [] };
   }
-  if (!Array.isArray(raw.fields)) throw new TemplateError("The header's fields must be a list.");
+  if (!Array.isArray(raw.fields) && !(make && raw.fields === undefined)) throw new TemplateError("The header's fields must be a list.");
   const fields: TemplateField[] = [];
-  for (const [n, f] of (raw.fields as unknown[]).entries()) {
+  for (const [n, f] of ((raw.fields ?? []) as unknown[]).entries()) {
     if (!isRecord(f)) throw new TemplateError(`Field ${n + 1} is not a key with a label.`);
     const key = asText(f.key)?.trim() ?? "";
     if (!NAME.test(key)) throw new TemplateError(`Field ${n + 1} needs a key made of letters, digits, - and _.`);
@@ -150,7 +163,9 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
       return { name, value };
     });
   }
-  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, required, ...(set ? { set } : {}), fields };
+  const name = make ? asText(raw.name)?.trim() || undefined : undefined, folder = make ? asText(raw.folder)?.trim() || undefined : undefined;
+  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, required, ...(set ? { set } : {}),
+    ...(make ? { make: "note" as const, ...(name ? { name } : {}), ...(folder ? { folder } : {}) } : {}), fields };
 }
 
 /**
@@ -193,6 +208,11 @@ type Alt =
   | { k: "idx"; of: "i" | "n" | "seq"; add: number }
   | { k: "prefix" }
   | { k: "code" }
+  | { k: "today" }
+  | { k: "noteName" }
+  | { k: "folder" }
+  | { k: "json"; name: string }
+  | { k: "date"; of: string; add: number; fmt: string; src: string }
   | { k: "table"; bases: Alt[]; suffix: string }
   | { k: "linked"; table: string; ref: string }
   | { k: "nextLetter"; table: string }
@@ -210,7 +230,7 @@ type Node =
   | { t: "expr"; alts: Alt[] }
   | { t: "each"; key: string; as?: string; or?: string; sep?: string; body: Node[] }
   | { t: "repeat"; key: string; fallback: number; body: Node[] }
-  | { t: "if"; key: string; starts?: string; yes: Node[]; no: Node[] }
+  | { t: "if"; key: string; starts?: string; nonEmpty?: boolean; yes: Node[]; no: Node[] }
   | { t: "append"; heading: string; level: number; from?: { field: string; property: string }; body: Node[] };
 
 type Tok = { text: string } | { tag: string };
@@ -277,6 +297,7 @@ function parseAlt(src: string): Alt {
   if (s === ".") return { k: "item" };
   if (s === "prefix") return { k: "prefix" };
   if (s === "code") return { k: "code" };
+  if ((m = /^json:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "json", name: m[1] };
   if ((m = /^linked:([^!\s]+)!(\S+)$/.exec(s))) return { k: "linked", table: m[1], ref: m[2] };
   if ((m = /^next-letter:(\S+)$/.exec(s))) return { k: "nextLetter", table: m[1] };
   if ((m = /^note-number:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteNumber", field: m[1], property: m[2].trim() };
@@ -291,7 +312,50 @@ function parseAlt(src: string): Alt {
   throw new TemplateError(`Unknown token {{${s}}}.`);
 }
 
+/** `date:today`, `date:key`, with `+3d` / `-1d` after it, then `|` and a format (default YYYY-MM-DD). */
+function parseDate(src: string): Alt {
+  const bar = src.indexOf("|");
+  const spec = (bar < 0 ? src : src.slice(0, bar)).trim(), fmt = bar < 0 ? "YYYY-MM-DD" : src.slice(bar + 1).trim();
+  const m = /^([A-Za-z_][\w-]*?)(?:\s*([+-])\s*(\d+)d)?$/.exec(spec);
+  if (!m || !fmt) throw new TemplateError(`Unknown token {{date:${src}}}. Write {{date:today}}, {{date:key}} or {{date:key+7d|DD MMM YYYY}}.`);
+  return { k: "date", of: m[1], add: m[2] ? (m[2] === "-" ? -1 : 1) * Number(m[3]) : 0, fmt, src: `date:${src.trim()}` };
+}
+
+/* ---------- dates: YYYY-MM-DD in, a day of the week and month names out (English), no time zones ---------- */
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** The day as UTC midnight, or null when the text does not start with a real YYYY-MM-DD (a time after it is ignored). */
+function parseDay(s: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T ])/.exec(s.trim());
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]) ? d : null;
+}
+
+/** YYYY YY MMMM MMM MM M DD D dddd ddd; text in [brackets] stays as written; anything else is copied. */
+function formatDay(d: Date, fmt: string): string {
+  const p2 = (n: number): string => String(n).padStart(2, "0");
+  return fmt.replace(/\[([^\]]*)\]|YYYY|YY|MMMM|MMM|MM|M|dddd|ddd|DD|D/g, (t: string, lit?: string) => {
+    if (lit !== undefined) return lit;
+    switch (t) {
+      case "YYYY": return String(d.getUTCFullYear());
+      case "YY": return p2(d.getUTCFullYear() % 100);
+      case "MMMM": return MONTHS[d.getUTCMonth()];
+      case "MMM": return MONTHS[d.getUTCMonth()].slice(0, 3);
+      case "MM": return p2(d.getUTCMonth() + 1);
+      case "M": return String(d.getUTCMonth() + 1);
+      case "dddd": return WEEKDAYS[d.getUTCDay()];
+      case "ddd": return WEEKDAYS[d.getUTCDay()].slice(0, 3);
+      case "DD": return p2(d.getUTCDate());
+      default: return String(d.getUTCDate());
+    }
+  });
+}
+
 function parseExpr(src: string): Alt[] {
+  if (src.startsWith("date:")) return [parseDate(src.slice(5))];
   if (src.startsWith("table:")) {
     const bases = splitTop(src.slice(6)).map((b): Alt => {
       if (b.startsWith("$")) return { k: "ref", name: b.slice(1) };
@@ -328,6 +392,13 @@ function parseBody(src: string, known: Set<string>): Node[] {
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
     if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSnapshot" || a.k === "rigSummary") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
+    if (a.k === "json" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
+    if (a.k === "date" && a.of !== "today" && !known.has(a.of) && !vars.includes(a.of)) throw new TemplateError(`{{${tag}}} uses "${a.of}", which is not a field of this snippet.`);
+  };
+  // today, folder and note-name are tokens unless the snippet has a field of that name (older snippets keep working)
+  const named = (a: Alt): Alt => {
+    if (a.k !== "ref" || known.has(a.name) || vars.includes(a.name)) return a;
+    return a.name === "today" ? { k: "today" } : a.name === "folder" ? { k: "folder" } : a.name === "note-name" ? { k: "noteName" } : a;
   };
   for (const tok of tokenize(src)) {
     if ("text" in tok) { list().push({ t: "text", s: tok.text }); continue; }
@@ -341,9 +412,9 @@ function parseBody(src: string, known: Set<string>): Node[] {
       field(m[1], tag);
       const node = { t: "repeat" as const, key: m[1], fallback: m[2] ? Number(m[2]) : 1, body: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false }); vars.push("");
-    } else if ((m = /^#if\s+([A-Za-z_][\w-]*)(?:\s*\^=\s*"([^"]*)")?$/.exec(tag))) {
+    } else if ((m = /^#if\s+([A-Za-z_][\w-]*)(?:\s*\^=\s*"([^"]*)"|(\s*!=\s*""))?$/.exec(tag))) {
       field(m[1], tag);
-      const node = { t: "if" as const, key: m[1], starts: m[2], yes: [] as Node[], no: [] as Node[] };
+      const node = { t: "if" as const, key: m[1], starts: m[2], ...(m[3] ? { nonEmpty: true } : {}), yes: [] as Node[], no: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false });
     } else if ((m = /^#append\s+"\s*(#{1,6})?\s*([^"#][^"]*?)\s*"(?:\s+from\s+([A-Za-z_][\w-]*)\.(.+?))?$/.exec(tag))) {
       if (open.length) throw new TemplateError("{{#append}} cannot be inside another block.");
@@ -363,7 +434,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
     } else if (tag.startsWith("#")) {
       throw new TemplateError(`Unknown block {{${tag}}}.`);
     } else {
-      const alts = parseExpr(tag);
+      const alts = parseExpr(tag).map(named);
       alts.forEach(a => check(a, tag));
       list().push({ t: "expr", alts });
     }
@@ -404,7 +475,7 @@ class Filler {
       else if (n.t === "append") this.appends.push({ heading: this.appendHeading(n), level: n.level, text: this.render(n.body) });
       else if (n.t === "if") {
         const v = this.answers[n.key] ?? "";
-        const yes = n.starts !== undefined ? v !== "" && v.toLowerCase().startsWith(n.starts.toLowerCase()) : listOf(v).length > 0;
+        const yes = n.nonEmpty ? v !== "" : n.starts !== undefined ? v !== "" && v.toLowerCase().startsWith(n.starts.toLowerCase()) : listOf(v).length > 0;
         out += this.render(yes ? n.yes : n.no);
       } else if (n.t === "each") {
         let items = listOf(this.answers[n.key]);
@@ -429,6 +500,18 @@ class Filler {
     try { return this.render(body); } finally { this.frames.pop(); }
   }
 
+  /** A loop variable of that name (the innermost), else the answer; undefined when there is neither. */
+  private lookup(name: string): string | undefined {
+    for (let i = this.frames.length - 1; i >= 0; i--) if (this.frames[i].name === name) return this.frames[i].item;
+    return this.answers[name];
+  }
+
+  /** Today in local time, as the day itself at UTC midnight (what parseDay gives). */
+  private day(): Date {
+    const n = this.env.now ?? new Date();
+    return new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()));
+  }
+
   /** The first alternative that is not empty. */
   private expr(alts: Alt[]): string {
     for (const a of alts) { const v = this.alt(a).trim(); if (v) return v; }
@@ -438,9 +521,18 @@ class Filler {
   private alt(a: Alt): string {
     switch (a.k) {
       case "lit": return a.s;
-      case "ref": {
-        for (let i = this.frames.length - 1; i >= 0; i--) if (this.frames[i].name === a.name) return this.frames[i].item;
-        return this.answers[a.name] ?? "";
+      case "ref": return this.lookup(a.name) ?? "";
+      case "json": return JSON.stringify(this.lookup(a.name) ?? "");
+      case "today": return formatDay(this.day(), "YYYY-MM-DD");
+      case "noteName": if (this.env.noteName === undefined) throw new TemplateError("{{note-name}} only works in a note template."); return this.env.noteName;
+      case "folder": if (this.env.folder === undefined) throw new TemplateError("{{folder}} only works in a note template."); return this.env.folder;
+      case "date": {
+        const raw = this.lookup(a.of) ?? (a.of === "today" ? formatDay(this.day(), "YYYY-MM-DD") : "");
+        if (!raw) return "";
+        const d = parseDay(raw);
+        if (!d) throw new TemplateError(`{{${a.src}}}: "${raw}" is not a date (write it as YYYY-MM-DD).`);
+        d.setUTCDate(d.getUTCDate() + a.add);
+        return formatDay(d, a.fmt);
       }
       case "item": return this.frames[this.frames.length - 1].item;
       case "idx": {
