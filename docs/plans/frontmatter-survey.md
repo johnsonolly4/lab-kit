@@ -79,6 +79,32 @@ Research only, no code changed. Asked by the owner on 2026-10-21: snippet questi
 | `updated` | Vault spec | file | nothing | date |
 | Literature (ZotLit settings, Vault spec rows 201-213): `kind`, `Type`, `Title`, `aliases`, `Year`, `Authors`, `Zotero Tags`, `Collections`, `citekey`, `URL`, `DOI`, `imported`, `cssclasses` | literature notes | ZotLit | `src/planning/lists.ts:102-147,276` (`Title`, `imported`, `Collections`; `takeaway` is an inline field) | text / list / date |
 
+### Literature notes (ZotLit, refpane)
+Source: the kit's `ZOTLIT_FIELDS` (`src/kit/zotlit.ts:9-23`, code). The refpane session reported its template (refpane `my_work/notes/options/19_refpane_note_template.md`, my_work commit 3acc3e8, relayed 2026-10-21). That template writes the same 13 fields unchanged and adds no property of its own; Refpane's data sits in a live `refpane` code block.
+
+| Property | Written by | Merge (ZotLit) | Read by the kit | Value type | Notes |
+|---|---|---|---|---|---|
+| `citekey` | ZotLit (`zt.citationKey`) | replace | file names, links | text | |
+| `kind` | ZotLit (`"literature"`) | keep | `src/planning/lists.ts:104,144`, Dataview queries | text | FM3 |
+| `Type` | ZotLit (`"Literature Note"`) | keep | nothing | text | FM3 |
+| `Title` | ZotLit (`zt.title`) | replace | `lists.ts:109,147` | text | one property with snippet `title` (measured); Front Matter Title's key (FM10) |
+| `Year`, `Authors` | ZotLit | replace | nothing | text | |
+| `Zotero Tags` | ZotLit | replace | Dataview (key papers) | list | Dataview key `zotero-tags` (docs, §3) |
+| `URL`, `DOI` | ZotLit | keep | nothing | text | |
+| `cssclasses` | ZotLit | keep | Obsidian | list | core |
+| `Collections` | ZotLit (`collection_paths`) | replace | `lists.ts:276` (project cards) | list | |
+| `aliases` | ZotLit (`zt.title`) | append | Obsidian | aliases | core |
+| `imported` | ZotLit (date) | keep | `lists.ts:102,144`, Dataview | date | |
+| `zotero-key` | ZotLit itself, always | — | nothing | text | cannot be renamed (ZotLit docs, as reported by the refpane session; not read here) |
+| `takeaway` | by hand, inline field `[takeaway:: ]` | — | `lists.ts:110,147` | Dataview field, **not a property** | |
+| `refpane-topics`, `refpane-read` | only if the owner picks the refpane plan's non-recommended option 4 | — | — | — | would be kebab-case: a third style (FM9); no clash, even ignoring capitals |
+
+**Clash found (code + report):**
+- ZotLit's own default fields include `title`, `related`, `collections` and `citekey` (ZotLit docs `reference/templates/frontmatter.mdx:39-44`, as reported by the refpane session; not read here).
+- The kit's ZotLit check compares keys with capitals counted (`src/kit/zotlit.ts:51`, `text(h?.key) === f.key`). If ZotLit still has `title` and `collections`, Check setup reports `Title` and `Collections` as missing, and its Fix appends them (`zotlitApply`, `:62`).
+- That gives two ZotLit fields that Obsidian treats as one property (measured: Obsidian ignores capitals), written with different merges.
+- Not known: what ZotLit writes into the note then (two YAML keys `title:` and `Title:`?), and whether ZotLit's own duplicate-key check ignores capitals.
+
 ### Snippet file headers (`Templates/Snippets/*.md`; parser `src/kit/snippet-template.ts:21-44`)
 `title`, `icon`, `desc`, `group`, `run`, `required`, `set` (map), `fields` (list of maps), plus `make`, `name`, `folder` (used by `make: note` templates, none in the kit yet). The custom-blocks plan adds `block: definition` and new keys *inside* `fields` (`type`, `weights`, `wide`, `unit`, `options`); those inner keys are not properties. Its `lk-definition` keys (`format`, `name`, `layout`, `status`, `title`, `summary`, `rows`…) sit in a code block in the body, so they are not properties either (code: plan CQ1).
 
@@ -182,9 +208,15 @@ No store users have notes yet (owner, 2026-10-21), so renames are cheap now: a T
   - (a, rec) keep that split and write it in the Vault spec "Property naming" box; rename nothing else.
   - (b) as (a), plus tidy the odd ones: `H_Phrase` → `H phrases`, `Exp. Start` → `Start date` (both read for one release).
   - (c) one style for every name.
+  - Literature notes mix both styles too (`Title`, `Year`, `Authors`, `Collections`, `Zotero Tags` vs `citekey`, `kind`, `imported`), and ZotLit's own `zotero-key` is kebab-case and cannot be renamed. A rename here also changes the refpane template, which takes its names from `ZOTLIT_FIELDS`.
 - **FM10 `title`/`icon` and other plugins:** Front Matter Title (default key `title`) would show snippet, literature and method notes by their title. Notebook Navigator and Iconize read `icon` only when their front-matter option is on (off by default).
   - (a, rec) nothing now; one line in the snippet docs.
   - (b) rename the snippet keys to `menu-title` / `menu-icon` (also unlike the method notes' `Title`/`Icon`).
+
+- **FM11 ZotLit's default fields next to the kit's:** ZotLit's defaults `title` and `collections` equal the kit's `Title` and `Collections` apart from capitals. Check setup's ZotLit Fix would add the kit's ones beside them, so two ZotLit fields write one Obsidian property (see "Literature notes (ZotLit, refpane)" in §1).
+  - (a, rec) Check setup compares ZotLit keys without regard to capitals. A ZotLit field equal to a kit field apart from capitals is listed as "yours, differs from the kit" (never changed, never duplicated), with one line saying the kit reads it either way. The kit's readers already ignore capitals only where they use `prop()`; `lists.ts` reads `fm.Title` / `fm.Collections` exactly, so those readers would switch to `prop()` too.
+  - (b) As (a), and Fix renames ZotLit's `title` → `Title` and `collections` → `Collections` in ZotLit's settings (it changes the user's own ZotLit set-up).
+  - (c) Leave as is, and say in the Set up ZotLit note to delete ZotLit's default `title` and `collections` first.
 
 Not covered: the owner's own vault (never read), the mobile app, Obsidian versions other than 1.14.4, other plugins than those listed, and whether Front Matter Title / Notebook Navigator are installed in the owner's vault.
 
