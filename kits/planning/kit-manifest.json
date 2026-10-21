@@ -137,7 +137,7 @@
       "role": "howtos",
       "path": "Obsidian/How my vault works.md",
       "version": "1.4.1",
-      "sha256": "e0ae4d079981871f45d67cee6d56a8fd255c7705cee0143f5d2ea9de1bdb2675",
+      "sha256": "1beadc4ff0c2a91800f231188a22c4db266ae7da50fd06f235af177669038a4b",
       "renamedFrom": [],
       "desc": "Guide to the vault layout and daily routine"
     },
@@ -195,8 +195,8 @@
       "src": "08 Meetings/Meetings.md",
       "role": "meetings",
       "path": "Meetings.md",
-      "version": "1.3.0",
-      "sha256": "499e6aafe25a2f715a1a7a400966c45d7c4830a837d044753361a508a9a0b31e",
+      "version": "1.4.1",
+      "sha256": "5eedd411dde23ab9b06e7a8b4121933c0cb470df87a5a8aec8f89442a63bcb67",
       "renamedFrom": [],
       "desc": "Meetings hub: next meeting of each series",
       "policy": "keep"

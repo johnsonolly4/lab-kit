@@ -93,7 +93,7 @@ flowchart LR
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files it in the **One-off** hub.
 - Set **project** on any meeting note to show it on that project's hub.
 - **New meeting series** (command palette) asks for a name, how often, the day, the first date and the deck; its last box is an optional template note for that series' meeting notes (Enter = the kit's Meeting template).
-- Hubs have one row of buttons at the top: a project, topic or series hub has a **back link** to the hub above it, a topic hub has **New concept**, a series hub has **Meeting deck**, **New meeting note** and **Extra meeting now**. A meeting note starts with a link back to its series and **Meeting deck**.
+- Hubs have one row of buttons at the top: a project, topic or series hub has a **back link** to the hub above it, a topic hub has **New concept**, a series hub has **New meeting note** and **Extra meeting now**. A meeting note starts with a link back to its series and **Meeting deck**.
 
 1. Before a meeting, open [[Meetings]], and press **New meeting note** on your series' card.
 2. It fills itself: experiments you touched, to-dos you ticked done, and anything you flagged for the meeting.

@@ -538,7 +538,7 @@ class BlockView extends MarkdownRenderChild {
     else if (kind === "meeting-series") {
       const series = this.owner.commands()?.seriesList().find(x => x.path === this.sourcePath);
       if (!series) { box.createDiv({ cls: "vt-muted", text: "This series has a wrong property: Check setup names it." }); return; }
-      button("Meeting deck", c => void c.openDeck(series));
+      // no Meeting deck here: only a meeting note has it (owner's Phase 4 test M6, 2026-10-21)
       if (series.interval === ONCE) button("New one-off meeting", c => void c.newOneOff());
       else { button("New meeting note", c => void c.newMeeting(series)); button("Extra meeting now", c => void c.newMeeting(series, true)); }
     } else box.createDiv({ cls: "vt-muted", text: "hub-bar belongs on a project, topic or meeting series hub." });
