@@ -250,10 +250,11 @@ describe("the runner on a board stub", () => {
     await v.open(P);
     assert.equal(v.asked, 1);
   });
-  it("Esc on an ordinary new note is not reported as a stub (the empty note stays)", async () => {
+  it("Esc on an ordinary new note is reported with its (empty) text; the handler decides (the To-do's leaves it, the lab note's trashes a blank one)", async () => {
     const v = new Board(); v.files.set(P, ""); v.answer = null;
     await v.open(P);
-    assert.deepEqual(v.cancelled, []);
+    assert.deepEqual(v.cancelled, [P + "|"]);
+    assert.equal(v.files.get(P), "");
   });
   it("with Templater's row: the plain stub is left, the mixed note Templater makes of it is filled once with the column", async () => {
     const v = new Board(); v.templaterFolders = ["00 Planning/To-dos"]; v.files.set(P, STUB);

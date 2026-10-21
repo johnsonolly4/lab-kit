@@ -1,17 +1,20 @@
 // Kit settings tab and the controller that wires the built-in kit into the plugin (commands, startup notice, renames).
-import { Notice, PluginSettingTab, TFile, type Editor, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
+import { Notice, PluginSettingTab, TFile, parseYaml, type Editor, normalizePath, type App, type Plugin, type SettingDefinitionItem, type SettingGroupItem } from "obsidian";
 import { KIT_DEFAULTS, RIGS_DEFAULT, LAB_KIT, CHEMICAL_TEMPLATE_ID, LAB_TEMPLATE_ID, PLANNING_KIT, PLANNING_FOLDER_DEFAULTS, changedPlanningFolders, cloneExperimentTarget, followFolderRename, kitJoin, kitLoad, newChemicalTarget, newLabEntryTarget, newRigTarget, RIG_TEMPLATE_ID, type KitData, type PlanningRole } from "./paths";
 import { ask, pick } from "../planning/ask";
 import { openEntry } from "../planning/entry-window";
 import { labEntryFields, labEntryTitle, type LabNote } from "./lab-entry";
 import { cloneLabNote, labNoteName, labPrefix, localDate, nextLabNumber } from "./clone";
+import { CHEMICAL_TEMPLATE, LAB_TEMPLATE, createChemicalNote, createLabNote, foundStatus, freeName, holdsTemplaterCode, labAnswers, labTemplate, safeName } from "./lab-note";
+import type { CustomFill } from "./note-fill-ui";
+import { nameTaken } from "../planning/todo-note";
 import { chemicalClasses } from "./snippet-env";
 import { formsAtCursorRow, groupToggleRows } from "./snippet-settings";
 import { loadDeviceFolders, saveDeviceFolders } from "../close/device-folders";
 import { FREEZE_AUTO } from "../planning/freeze";
 import { STYLE_ALL_NOTES } from "./style-all-notes";
 import { prop, toList } from "../frontmatter";
-import { ensurePropertyType, hasTemplater, openPluginSettings, templaterCreateNote, templaterInsert } from "./obsidian-private";
+import { ensurePropertyType, hasTemplater, openPluginSettings, templaterInsert } from "./obsidian-private";
 import { insertSnippet } from "./snippet-insert";
 import { openSnippetForm } from "./snippet-form";
 import { menuIcons } from "./snippet-icon-ui";
@@ -491,14 +494,11 @@ export class KitController {
 
   /**
    * New lab entry: the entry window (title, an Exp. Class chip, and a Copy of chip), then a note from the Lab Book Template in the Lab notes folder (created if
-   * missing), made and opened by Templater. With a note chosen in Copy of it is a clone of that note instead (`cloneLabNote`). `clone`: Clone experiment, which needs
-   * a note to copy and starts with the open lab note chosen. `status`: the lab board's column the `+` belongs to; the new note gets that Status once it is made.
+   * missing), made and opened by Lab Kit (`createLabNote`; no Templater). With a note chosen in Copy of it is a clone of that note instead (`cloneLabNote`). `clone`:
+   * Clone experiment, which needs a note to copy and starts with the open lab note chosen. `status`: the lab board's column the `+` belongs to; the new note gets that Status.
    */
   async newLabEntry(options: { clone?: boolean; status?: string } = {}): Promise<void> {
-    const tracked = this.managed.stateOf(LAB_TEMPLATE_ID)?.path;
-    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Lab Book Template.md")]
-      .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
-    const target = newLabEntryTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, labFolder: this.kit.labFolder, initials: this.kit.initials });
+    const target = newLabEntryTarget({ labFolder: this.kit.labFolder, initials: this.kit.initials });
     if ("error" in target) { new Notice(target.error); return; }
     const notes = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === target.folder);
     if (options.clone && !notes.some(f => labPrefix(f.basename))) { new Notice(`No lab notes with a number found in ${target.folder}.`); return; }
@@ -511,18 +511,55 @@ export class KitController {
     const source = notes.find(f => f.path === answer.values.copyOf) ?? null;
     const title = labEntryTitle(answer.title, source ? { basename: source.basename, path: source.path, classes: [] } : null);
     if (source) { await this.cloneInto(source, notes, title, expClass, options.status); return; }
-    const w = window as unknown as { labKitPresetTitle?: string; labKitPresetClass?: string };
     try {
       await ensureFolder(this.app.vault, target.folder);
-      const folder = this.app.vault.getFolderByPath(target.folder);
-      if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
-      w.labKitPresetTitle = title;   // the template reads and clears it (as the to-do template does for projects)
-      w.labKitPresetClass = expClass;
-      const made = await templaterCreateNote(this.app, template, folder);
-      if (!made) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
-      else if (made instanceof TFile && options.status) await this.setStatus(made, options.status);
+      const template = await this.labTemplateText("Lab Book Template.md", LAB_TEMPLATE_ID, LAB_TEMPLATE);
+      const initials = this.kit.initials.trim();
+      const file = await createLabNote(this.app.vault, target.folder, template, parseYaml, { title, expClass, initials, number: nextLabNumber(notes.map(f => f.basename), initials), status: options.status }, new Date());
+      await this.app.workspace.getLeaf(false).openFile(file);
     } catch (e) { console.error(e); new Notice("New lab entry failed. See the developer console for details."); }
-    finally { delete w.labKitPresetTitle; delete w.labKitPresetClass; }
+  }
+
+  /**
+   * The text of a kit note template: the vault's file when it is in the new format, else the bundled one (the file is missing, or an edited old copy still holds
+   * Templater code, which Lab Kit does not run: a notice says so; Review update… merges the new text).
+   */
+  private async labTemplateText(file: string, id: string, bundled: string): Promise<string> {
+    const tracked = this.managed.stateOf(id)?.path;
+    const tf = [tracked, kitJoin(this.managed.templatesFolder(), file)].map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
+    const text = tf ? await this.app.vault.cachedRead(tf) : null;
+    if (holdsTemplaterCode(text, parseYaml)) new Notice(`${file} holds Templater code, which Lab Kit no longer runs. Using the kit's text; Review update… shows the new template.`, 8000);
+    return labTemplate(text, bundled, parseYaml);
+  }
+
+  /**
+   * A note made in the lab folder by hand (or one that arrives holding the Lab Book Template's header): the self-filling path asks the title and Exp. Class
+   * in the same window, works out the initials, the next number and the Status a board column already wrote, and renames the note to `ABC0014 - Title`.
+   * Esc leaves a note that is still blank to the trash.
+   */
+  labFill(): CustomFill {
+    return {
+      ask: async ctx => {
+        const initials = this.kit.initials.trim(), need = newLabEntryTarget({ labFolder: this.kit.labFolder || ctx.path, initials });
+        if ("error" in need) { new Notice(need.error); return null; }
+        const got = await this.askLabEntry();
+        if (!got) return null;
+        const file = this.app.vault.getFileByPath(ctx.path), folder = ctx.path.slice(0, ctx.path.lastIndexOf("/"));
+        const siblings = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === folder && f.path !== ctx.path).map(f => f.basename);
+        const status = file ? foundStatus(await this.app.vault.read(file)) : "";
+        return labAnswers({ title: got.title, expClass: got.expClass, initials, number: nextLabNumber(siblings, initials), status });
+      },
+      finish: async (ctx, answers, made) => {
+        const file = this.app.vault.getFileByPath(ctx.path), folder = ctx.path.slice(0, ctx.path.lastIndexOf("/"));
+        if (!file) return;
+        const name = freeName(this.app.vault, folder, safeName(made.name || `${answers.initials}${answers.number} - ${answers.title}`), ctx.path);
+        if (`${folder}/${name}.md` !== ctx.path) await this.app.fileManager.renameFile(file, `${folder}/${name}.md`);
+      },
+      cancelled: async (ctx, text) => {
+        const file = this.app.vault.getFileByPath(ctx.path);
+        if (file && !text.trim()) await this.app.fileManager.trashFile(file);   // nothing in it: no empty note is left
+      },
+    };
   }
 
   /** The window for a note made in the lab folder by hand: title and Exp. Class (no Copy of: the note already exists). The title as typed (empty = the template says Untitled) and the class, or null when Esc was pressed. */
@@ -533,7 +570,6 @@ export class KitController {
     return answer ? { title: answer.title, expClass: String(answer.values.expClass ?? "") } : null;
   }
 
-  /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Templater. */
   /** The Insert snippet command (Alt+S): the menu and the snippet run by Lab Kit itself, no Templater (snippet-insert.ts); the text goes in at the cursor. */
   async insertSnippet(editor: Editor): Promise<void> {
     if (!this.snippets) return;
@@ -545,24 +581,22 @@ export class KitController {
     } catch (e) { console.error(e); new Notice("Insert snippet failed. See the developer console for details."); }
   }
 
+  /** New chemical: a note from the Chemical database template in the Chemical folder (created if missing), made and opened by Lab Kit (no Templater); the class is written by the template. */
   async newChemical(): Promise<void> {
-    const tracked = this.managed.stateOf(CHEMICAL_TEMPLATE_ID)?.path;
-    const template = [tracked, kitJoin(this.managed.templatesFolder(), "Chemical database template.md")]
-      .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
-    const target = newChemicalTarget({ templater: hasTemplater(this.app), template: template?.path ?? null, chemicalFolder: this.kit.chemicalFolder });
+    const target = newChemicalTarget({ chemicalFolder: this.kit.chemicalFolder });
     if ("error" in target) { new Notice(target.error); return; }
     try {
       await ensureFolder(this.app.vault, target.folder);
-      const folder = this.app.vault.getFolderByPath(target.folder);
-      if (!template || !folder) { new Notice(`Could not use the folder ${target.folder}.`); return; }
       const typed = await ask(this.app, "Chemical name (Esc cancels)");
       const name = typed?.replace(/[\\/:*?"<>|#^[\]]/g, "-").trim();
       if (!name) return;   // Esc or empty cancels
-      if (this.app.vault.getAbstractFileByPath(`${target.folder}/${name}.md`)) { new Notice(`${target.folder}/${name}.md already exists.`); return; }
+      if (nameTaken(this.app.vault, target.folder)(name)) { new Notice(`${target.folder}/${name}.md already exists.`); return; }
       const cls = await this.askChemicalClass(target.folder);
       if (cls === null) return;   // Esc cancels
-      if (!(await templaterCreateNote(this.app, template, folder, true, name))) { new Notice("Templater couldn't create the note. Update it to the latest version, then try again."); return; }
-      if (cls) await this.setChemicalClass(target.folder, cls);
+      const template = await this.labTemplateText("Chemical database template.md", CHEMICAL_TEMPLATE_ID, CHEMICAL_TEMPLATE);
+      if (cls) await this.makeClassAList();
+      const file = await createChemicalNote(this.app.vault, target.folder, template, parseYaml, name, cls, new Date());
+      await this.app.workspace.getLeaf(false).openFile(file);
     } catch (e) { console.error(e); new Notice("New chemical failed. See the developer console for details."); }
   }
 
@@ -622,14 +656,6 @@ export class KitController {
   /** Makes "Chemical class" a list property, so the Properties pane offers the classes already in use. Private API, reached through obsidian-private.ts; an older Obsidian keeps it as text. */
   private async makeClassAList(): Promise<void> {
     await ensurePropertyType(this.app, "Chemical class", "multitext");
-  }
-
-  /** Writes the class into the note Templater just made and opened (only if it is in the Chemical folder and has no class yet). */
-  private async setChemicalClass(folder: string, cls: string): Promise<void> {
-    const file = this.app.workspace.getActiveFile();
-    if (!file || file.extension !== "md" || !file.path.startsWith(folder + "/")) return;
-    await this.makeClassAList();
-    await this.app.fileManager.processFrontMatter(file, (fm: Record<string, unknown>) => { if (!toList(prop(fm, "Chemical class")).length) fm["Chemical class"] = [cls]; });
   }
 
   /** Opens the Check setup window. */

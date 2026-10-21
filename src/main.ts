@@ -48,7 +48,8 @@ export default class LabKitPlugin extends Plugin {
     const planningOn = (): boolean => !!this.kit.planning?.slot.enabled;
     registerNoteFill(this, { kit: () => this.kit.kit, planningOn, form: () => openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor),
       templateFolders: () => [...(planningOn() ? [this.kit.planning!.templatesFolder()] : []), this.kit.managed.templatesFolder()],
-      custom: (): Record<string, CustomFill> => this.planning ? { "To-do.md": this.planning.todoFill() } : {} });
+      custom: (): Record<string, CustomFill> => ({ ...(this.planning ? { "To-do.md": this.planning.todoFill() } : {}),
+        "Lab Book Template.md": this.kit.labFill(), "Chemical database template.md": { ask: () => Promise.resolve({}) } }) });
 
     this.calc.register();
     this.registerEditorExtension(calcTextRefs());

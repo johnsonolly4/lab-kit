@@ -1,7 +1,7 @@
 // Self-filling note (docs/plans/templater-replacement-and-live-snippets.md, Phase 2): should this note be filled by Lab Kit, and the runner that
 // acts on file-open / modify events. Pure: the vault, the clock, the form and Templater's settings are passed in (`FillHost`).
 import { TemplateError, parseTemplate, type TemplateHeader } from "./snippet-template";
-import { noteFromTemplate, type NoteEnv } from "./note-template";
+import { noteFromTemplate, type MadeNote, type NoteEnv } from "./note-template";
 
 /** One folder → template row (the template is a file name in the kit's templates folder, as in `planningFolderTemplates`). */
 export interface FolderRow { folder: string; file: string }
@@ -124,9 +124,9 @@ export interface FillHost {
   write: (path: string, expected: string, text: string) => Promise<boolean>;
   /** Asks the header's fields; null = cancelled. `ctx` names the template file of the row, the note and the column a board stub carried. */
   ask: (header: TemplateHeader, name: string, ctx: FillContext) => Promise<Record<string, string> | null>;
-  /** After the note was written (a to-do is renamed to its title here). */
-  finish?: (ctx: FillContext, answers: Record<string, string>) => Promise<void>;
-  /** The questions were cancelled; `text` is what the note held (a blank board stub goes to the trash). */
+  /** After the note was written (a to-do is renamed to its title here); `made` is what the template made (its name, when the header names one). */
+  finish?: (ctx: FillContext, answers: Record<string, string>, made: MadeNote) => Promise<void>;
+  /** The questions were cancelled; `text` is what the note held (a blank board stub goes to the trash; the handler decides for any other note). */
   cancelled?: (ctx: FillContext, text: string) => Promise<void>;
   /** The note was made a moment ago. */
   fresh?: (path: string) => boolean;
@@ -163,10 +163,10 @@ export class NoteFiller {
         const ctx: FillContext = { file: row!.file, path, day: d.day ?? "", stub: kind === "board-stub" };
         const answers = header.fields.length ? await this.host.ask(header, path.split("/").pop()!.replace(/\.md$/, ""), ctx) : {};
         this.done.add(path);   // asked once, whatever the answer: a cancel leaves the note as it is (a blank board stub goes)
-        if (!answers) { if (ctx.stub) await this.host.cancelled?.(ctx, text); return { action: "skip", reason: "done" }; }
+        if (!answers) { await this.host.cancelled?.(ctx, text); return { action: "skip", reason: "done" }; }
         const made = noteFromTemplate(source, answers, this.host.env(path));
         if (!(await this.host.write(path, text, made.text))) this.done.delete(path);   // changed under us: look again at the next event
-        else await this.host.finish?.(ctx, answers);
+        else await this.host.finish?.(ctx, answers, made);
       } catch (e) {
         this.done.add(path);
         this.host.failed?.(path, e instanceof TemplateError ? e.message : "Could not fill this note.");
