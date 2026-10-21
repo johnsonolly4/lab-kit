@@ -262,6 +262,7 @@ type Alt =
   | { k: "noteName" }
   | { k: "folder" }
   | { k: "json"; name: string }
+  | { k: "yaml"; name: string }
   | { k: "date"; of: string; add: number; fmt: string; src: string }
   | { k: "table"; bases: Alt[]; suffix: string }
   | { k: "linked"; table: string; ref: string }
@@ -348,6 +349,7 @@ function parseAlt(src: string): Alt {
   if (s === "prefix") return { k: "prefix" };
   if (s === "code") return { k: "code" };
   if ((m = /^json:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "json", name: m[1] };
+  if ((m = /^yaml:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "yaml", name: m[1] };
   if ((m = /^linked:([^!\s]+)!(\S+)$/.exec(s))) return { k: "linked", table: m[1], ref: m[2] };
   if ((m = /^next-letter:(\S+)$/.exec(s))) return { k: "nextLetter", table: m[1] };
   if ((m = /^note-number:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteNumber", field: m[1], property: m[2].trim() };
@@ -442,7 +444,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
     if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSnapshot" || a.k === "rigSummary") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
-    if (a.k === "json" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
+    if ((a.k === "json" || a.k === "yaml") && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if (a.k === "date" && a.of !== "today" && !known.has(a.of) && !vars.includes(a.of)) throw new TemplateError(`{{${tag}}} uses "${a.of}", which is not a field of this snippet.`);
   };
   // today, folder and note-name are tokens unless the snippet has a field of that name (older snippets keep working)
@@ -573,6 +575,7 @@ class Filler {
       case "lit": return a.s;
       case "ref": return this.lookup(a.name) ?? "";
       case "json": return JSON.stringify(this.lookup(a.name) ?? "");
+      case "yaml": { const v = (this.lookup(a.name) ?? "").trim(); return /^[\w .-]+$/.test(v) ? v : JSON.stringify(v); }   // plain when it is safe as a property value
       case "today": return formatDay(this.day(), "YYYY-MM-DD");
       case "noteName": if (this.env.noteName === undefined) throw new TemplateError("{{note-name}} only works in a note template."); return this.env.noteName;
       case "folder": if (this.env.folder === undefined) throw new TemplateError("{{folder}} only works in a note template."); return this.env.folder;

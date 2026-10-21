@@ -1,6 +1,7 @@
 ---
-Type:
-  - Daily Note
+make: note
+---
+---
 kind: daily
 Experiments:
 cssclasses:

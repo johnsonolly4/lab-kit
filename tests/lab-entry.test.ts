@@ -31,17 +31,17 @@ describe("labEntryTitle", () => {
   });
 });
 
-describe("the Lab Book Template", () => {
+describe("the old Templater Lab Book Template (kept as a fixture)", () => {
   it("writes the Exp. Class handed over by the window (quoted), and clears it", () => {
-    const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+    const tpl = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
     expect(tpl).toContain('const expClass = String(presetClass ?? "").trim();');
     expect(tpl).toContain("delete window.labKitPresetClass;");
     expect(tpl).toContain('Exp. Class: <% expClass ? JSON.stringify(expClass) : "" %>');
   });
 });
 
-describe("a note made in the lab folder by hand (the folder trigger)", () => {
-  const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+describe("a note made in the lab folder by hand, old Templater template (the folder trigger)", () => {
+  const tpl = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
   it("the template opens the plugin's window through window.vtEntryLab and trashes an empty note on Esc, only inside the lab folder", () => {
     expect(tpl).toContain('title === undefined && typeof window.vtEntryLab === "function"');
     expect(tpl).toContain("const got = await window.vtEntryLab();");
@@ -58,7 +58,7 @@ describe("a note made in the lab folder by hand (the folder trigger)", () => {
 });
 
 describe("a lab note made from a board column keeps that column's Status", () => {
-  const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  const tpl = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
   it("reads the Status already in the new file and writes it once (Planned only when there is none)", () => {
     expect(tpl).toContain('const foundStatus = ((rawNow.match(/^Status:[ \\t]*["\']?([^"\'\\r\\n]+)/m) || [])[1] || "").trim();');
     expect(tpl).toContain('const status = foundStatus || "Planned";');

@@ -22,7 +22,7 @@ describe("Esc cancels the creation", () => {
   });
 
   it("Lab Book Template: takes the preset title, Esc in its own box throws, empty is Untitled", () => {
-    const lab = read("kits/lab/Templates/Lab Book Template.md");
+    const lab = read("tests/fixtures/templates/old/Lab Book Template.md");
     expect(lab).toContain("window.labKitPresetTitle");
     expect(lab).toContain('title === null) { await trashIfBlank(); throw new Error("Cancelled');
     expect(lab).toContain('title = title || "Untitled"');
@@ -32,14 +32,14 @@ describe("Esc cancels the creation", () => {
     const ui = read("src/kit/ui.ts");
     const fn = ui.slice(ui.indexOf("async newLabEntry"));
     expect(fn.indexOf("await openEntry(")).toBeGreaterThan(0);
-    expect(fn.indexOf("await openEntry(")).toBeLessThan(fn.indexOf("templaterCreateNote("));
+    expect(fn.indexOf("await openEntry(")).toBeLessThan(fn.indexOf("createLabNote("));
     expect(fn).toContain("if (!answer) return;");
-    expect(fn).toContain("delete w.labKitPresetTitle; delete w.labKitPresetClass;");
+    expect(fn).not.toContain("labKitPreset");
   });
 });
 
 describe("a cancel is not logged as an error (Templater would print 'Template parsing error, aborting')", () => {
-  for (const f of ["tests/fixtures/templates/old/To-do.md", "kits/lab/Templates/Lab Book Template.md"]) it(`${f}: the script is a try, a cancel is caught at the end and writes nothing, the empty note is trashed later`, () => {
+  for (const f of ["tests/fixtures/templates/old/To-do.md", "tests/fixtures/templates/old/Lab Book Template.md"]) it(`${f}: the script is a try, a cancel is caught at the end and writes nothing, the empty note is trashed later`, () => {
     const t = read(f);
     expect(t.startsWith("<%*\ntry {")).toBe(true);
     expect(t).toContain('if (String(e && e.message).startsWith("Cancelled")) { tR = ""; } else { throw e; }');

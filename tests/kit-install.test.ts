@@ -321,11 +321,11 @@ describe("lab kit completion (Phase 2)", () => {
   const NEW = ["tpl-chemical-database-template-md", "note-chemical-database-base", "note-lab-book-base-base"];
   const byId = (items: { file: { id: string } }[], id: string) => items.find(i => i.file.id === id) as any;
 
-  it("Lab Book Template: Status is text (issue #32) and the title box uses vtAsk with Templater's prompt as fallback", () => {
+  it("Lab Book Template: Status is text (issue #32), written once; the title is a field of the template (Phase 5)", () => {
     const text = real.contents["tpl-lab-book-template-md"];
-    expect(text).toMatch(/^Status: <% .*status.* %>$/m);   // plain text, written once; Planned unless the board's column gave one
-    expect(text).toContain('const status = foundStatus || "Planned";');
-    expect(text).toContain('tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title")');
+    expect(text).toMatch(/^Status: \{\{yaml:status\}\}$/m);   // plain text, written once; Planned unless the board's column gave one
+    expect(text).toContain("key: title\n    label: Experiment title");
+    expect(text).not.toContain("<%");
   });
 
   it("a fresh vault (default folders) installs the chemical template and both bases next to the default folders", async () => {
@@ -404,22 +404,18 @@ describe("lab kit completion (Phase 2)", () => {
     expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })].sort()).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
   });
 
-  it("New lab entry: says what is missing, else gives the template and folder", () => {
-    const ok = { templater: true, template: "Extras/Templates/Lab Kit/Lab Book Template.md", labFolder: " 03 Lab Book/Notes/ " };
-    expect(newLabEntryTarget(ok)).toEqual({ template: ok.template, folder: "03 Lab Book/Notes" });
-    expect(newLabEntryTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
+  it("New lab entry: says what is missing, else gives the folder (no Templater needed)", () => {
+    const ok = { labFolder: " 03 Lab Book/Notes/ " };
+    expect(newLabEntryTarget(ok)).toEqual({ folder: "03 Lab Book/Notes" });
     expect(newLabEntryTarget({ ...ok, labFolder: "" })).toHaveProperty("error", expect.stringContaining("Lab notes folder"));
-    expect(newLabEntryTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Lab Book Template"));
   });
 });
 
 describe("New chemical", () => {
-  it("says what is missing, else gives the template and folder", () => {
-    const ok = { templater: true, template: "Extras/Templates/Lab Kit/Chemical database template.md", chemicalFolder: " 05 Chemicals/Chemicals/ " };
-    expect(newChemicalTarget(ok)).toEqual({ template: ok.template, folder: "05 Chemicals/Chemicals" });
-    expect(newChemicalTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
+  it("says what is missing, else gives the folder (no Templater needed)", () => {
+    const ok = { chemicalFolder: " 05 Chemicals/Chemicals/ " };
+    expect(newChemicalTarget(ok)).toEqual({ folder: "05 Chemicals/Chemicals" });
     expect(newChemicalTarget({ ...ok, chemicalFolder: "" })).toHaveProperty("error", expect.stringContaining("Chemical folder"));
-    expect(newChemicalTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Chemical database template"));
   });
 });
 
@@ -442,19 +438,18 @@ describe("New rig", () => {
 
 describe("New lab entry needs initials (Phase 6e)", () => {
   it("refuses without initials, before Templater runs; with initials it goes ahead", () => {
-    const base = { templater: true, template: "T/Lab Book Template.md", labFolder: "03 Lab Book/Notes" };
+    const base = { labFolder: "03 Lab Book/Notes" };
     expect(newLabEntryTarget({ ...base, initials: " " })).toEqual({ error: expect.stringContaining("initials") });
-    expect(newLabEntryTarget({ ...base, initials: "ABC" })).toEqual({ template: base.template, folder: "03 Lab Book/Notes" });
+    expect(newLabEntryTarget({ ...base, initials: "ABC" })).toEqual({ folder: "03 Lab Book/Notes" });
   });
 
-  it("the Lab Book Template names notes by initials and stops without them", () => {
+  it("the Lab Book Template names notes by initials + number + title", () => {
     const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
-    expect(tpl).toContain("`${initials}${next} - ${title}`");
-    expect(tpl).toMatch(/if \(!initials\) \{[\s\S]*throw new Error/);
+    expect(tpl).toContain('name: "{{initials}}{{number}} - {{title}}"');
   });
 
-  it("the template's note-number pattern counts 0014 and ABC0014 notes, not other names", () => {
-    const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  it("the old Templater template's note-number pattern (kept as a fixture) counts 0014 and ABC0014 notes, not other names", () => {
+    const tpl = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
     const line = tpl.split("\n").find(l => l.startsWith("const numbered = "))!;
     const make = new Function("initials", `${line.replace("const numbered = ", "return ")}`) as (i: string) => RegExp;
     const num = (i: string, name: string) => parseInt(name.match(make(i))?.[1] ?? "0", 10);

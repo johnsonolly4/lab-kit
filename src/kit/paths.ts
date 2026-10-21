@@ -308,23 +308,19 @@ export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";
 export const RIG_TEMPLATE_ID = "tpl-rig-template-md";
 
-/** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
-export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
-  if (!o.templater) return { error: "New lab entry needs the Templater plugin. Install and enable it, then try again." };
+/** What New lab entry needs before it can run: the folder to use, or the reason it can't (shown as a notice). No Templater: Lab Kit makes the note from the Lab Book Template's text (or its own copy of it when the file is missing or still written for Templater). */
+export function newLabEntryTarget(o: { labFolder: string; initials?: string }): { folder: string } | { error: string } {
   if (o.initials !== undefined && !o.initials.trim()) return { error: "Set your initials in Lab Kit settings first: lab notes are named ABC0001 - Title." };
   const folder = kitJoin(o.labFolder.trim());
   if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
-  if (!o.template) return { error: "The Lab Book Template is not installed. Install it from Manage kit files." };
-  return { template: o.template, folder };
+  return { folder };
 }
 
-/** What New chemical needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
-export function newChemicalTarget(o: { templater: boolean; template: string | null; chemicalFolder: string }): { template: string; folder: string } | { error: string } {
-  if (!o.templater) return { error: "New chemical needs the Templater plugin. Install and enable it, then try again." };
+/** What New chemical needs before it can run: the folder to use, or the reason it can't (shown as a notice). No Templater (see `newLabEntryTarget`). */
+export function newChemicalTarget(o: { chemicalFolder: string }): { folder: string } | { error: string } {
   const folder = kitJoin(o.chemicalFolder.trim());
   if (!folder) return { error: "Set the Chemical folder in Lab Kit settings first." };
-  if (!o.template) return { error: "The Chemical database template is not installed. Install it from Manage kit files." };
-  return { template: o.template, folder };
+  return { folder };
 }
 
 /** What Clone experiment needs before it can run: the folder of lab notes and the initials, or the reason it can't (shown as a notice). No Templater: the old note's text is copied. */

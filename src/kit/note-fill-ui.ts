@@ -3,6 +3,7 @@
 // is empty at create and open from file-open on, and a synced-in file is never open (measured, plan "Phase 0 result" items 2-3).
 import { Notice, TFile, parseYaml, type App, type Plugin } from "obsidian";
 import { NoteFiller, classify, rowFor, type FillContext, type FillHost } from "./note-fill";
+import type { MadeNote } from "./note-template";
 import { defaultAnswers, parseTemplate, type TemplateHeader } from "./snippet-template";
 import { emptyEnv } from "./snippet-env";
 import { kitJoin, type KitData } from "./paths";
@@ -23,7 +24,7 @@ export interface NoteFillDeps {
 /** What a template with its own window does around the fill. `ask` returning undefined falls back to the plain form. */
 export interface CustomFill {
   ask: (ctx: FillContext) => Promise<Record<string, string> | null | undefined>;
-  finish?: (ctx: FillContext, answers: Record<string, string>) => Promise<void>;
+  finish?: (ctx: FillContext, answers: Record<string, string>, made: MadeNote) => Promise<void>;
   cancelled?: (ctx: FillContext, text: string) => Promise<void>;
 }
 
@@ -63,7 +64,7 @@ export function noteFillHost(app: App, d: NoteFillDeps): FillHost {
         ...(f.mandatory ? { required: true } : {}) })));
       return got ? Object.fromEntries(header.fields.map(f => [f.key, answerText(got[f.key])])) : null;
     },
-    finish: async (ctx, answers) => { await d.custom?.()[ctx.file]?.finish?.(ctx, answers); },
+    finish: async (ctx, answers, made) => { await d.custom?.()[ctx.file]?.finish?.(ctx, answers, made); },
     cancelled: async (ctx, text) => { await d.custom?.()[ctx.file]?.cancelled?.(ctx, text); },
     fresh: path => { const f = app.vault.getFileByPath(path); return !!f && Date.now() - f.stat.ctime < FRESH_MS; },
     env: path => ({ parseYaml, folder: path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "", noteName: path.split("/").pop()!.replace(/\.md$/, "") }),
@@ -78,6 +79,8 @@ export function registerNoteFill(plugin: Plugin, d: NoteFillDeps): NoteFiller {
   const run = (f: TFile | null): void => { if (f && f.extension === "md" && rowFor(host.rows(), f.path)) filler.check(f.path).catch(e => console.error(e)); };
   plugin.registerEvent(app.workspace.on("file-open", f => run(f)));
   plugin.registerEvent(app.vault.on("modify", f => { if (f instanceof TFile && f.path === app.workspace.getActiveFile()?.path) run(f); }));
+  plugin.registerEvent(app.vault.on("rename", (_f, oldPath) => filler.forget(oldPath)));
+  plugin.registerEvent(app.vault.on("delete", f => filler.forget(f.path)));
   return filler;
 }
 

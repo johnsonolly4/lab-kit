@@ -39,7 +39,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - **Planning kit** (off until you switch it on): a homepage, a to-do board whose unfinished cards roll over to today, project hubs with a plan map (to-dos as cards joined by arrows: what comes after what, what is blocked, each one's result), meeting series with notes that fill themselves, knowledge notes, an inbox you sort one note at a time, and **Tidy up notes** for a vault that already has notes. See [tutorial section 8](docs/tutorial.md#8-planning-kit).
 
 ## Install
-Needs Obsidian 1.14 or newer. [Templater](https://github.com/SilentVoid13/Templater) is still used by some note templates (lab book, chemical, project) until they move into Lab Kit; the snippet forms, to-dos and meetings no longer need it. **Check setup…** (step 3) lists every plugin the kits use, which are needed and which are optional, and what each is for (Dataview belongs to the planning kit); Lab Kit never installs a plugin for you.
+Needs Obsidian 1.14 or newer. [Templater](https://github.com/SilentVoid13/Templater) is still used by some note templates (project, concept, topic hub) until they move into Lab Kit; the snippet forms, to-dos, meetings, lab entries and chemicals no longer need it. **Check setup…** (step 3) lists every plugin the kits use, which are needed and which are optional, and what each is for (Dataview belongs to the planning kit); Lab Kit never installs a plugin for you.
 
 1. Settings → Community plugins → Browse → search **Lab Kit** → Install → Enable.
 2. Settings → Lab Kit → Updates → **Review update…** installs the templates and scripts. The first install can also turn on the CSS snippet and, if Templater has no user scripts folder yet, set one.
@@ -81,7 +81,7 @@ Set **Chemical folder** to the folder that holds your chemical notes (one note p
 - Typing `[[` in a calc cell, or in a reagent, solvent, monomer, CTA or initiator field of a form, suggests your notes by file name or by their **Names** property (a list or a single value). A name found through **Names** inserts `[[Note|name]]`.
 - The hazard table lists each chemical from its `H_Phrase` property.
 
-The command **New chemical** asks for the chemical's name, then its class (a list of the classes your notes already use; type a new one, or pick no class), and makes the note from the Chemical database template (needs Templater).
+The command **New chemical** asks for the chemical's name, then its class (a list of the classes your notes already use; type a new one, or pick no class), and makes the note from the Chemical database template (no Templater needed).
 
 Give a chemical a `Chemical class` (a list property: `solvent`, `monomer`, `initiator`, `CTA`, or a class of your own; plain text works too). Form fields that ask for a class (Solvent, Monomer, CTA, Initiator) then suggest those chemicals first; switch on **Only suggest chemicals of the asked class** to hide the others. Reagents and solutes stay unfiltered.
 
@@ -188,8 +188,8 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys: **Che
 |---|---|
 | Insert empty calc block | Adds a small example calc table at the cursor |
 | Insert lab header block | Adds the hazard / data-folder header at the cursor |
-| New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
-| New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder (needs Templater) |
+| New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder |
+| New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder |
 | New rig | Asks the rig's name; makes the note from the Rig template in your Rigs folder and opens it |
 | Clone experiment | Copies the open lab note (or one you pick) into a new numbered lab note and opens it: properties, objectives, apparatus, procedure, rig and tables are kept with the sample codes renumbered; Status goes back to Planned, dates and Outcome are emptied, free text under Results / Analysis and Notes for next time is cleared. The title box starts with the old title and the new note gets a `Cloned from` link to the old one. The old note is not changed. Not seen in Obsidian yet |
 | Review kit files | Opens the update preview |
