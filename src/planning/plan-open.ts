@@ -92,7 +92,7 @@ export const chipWidth = (places: number): number => Math.floor((OPEN_W - 2 * MA
 /** Characters a chip line holds when the picture has `places` columns (17 at 6). */
 export const chipChars = (places: number): number => Math.floor((chipWidth(places) - 2 * PAD_X) / (OPEN_FONT * CHAR_W));
 /** The lines of a "+N more in this step" chip: its text in up to 2 lines, so it is never cut (20 characters do not fit one line of 17). */
-export const moreLines = (text: string, places: number): string[] => wrap(text, chipChars(places), NAME_LINES);
+export const moreLines = (text: string, places: number): string[] => wrap(text, chipChars(places), NAME_LINES, 0);
 const moreHeight = (text: string, places: number): number => 2 * PAD_Y + moreLines(text, places).length * LINE_H;
 export interface ChipSize {
   width: number; height: number;
@@ -105,7 +105,7 @@ export interface ChipSize {
 export function chipSize(c: OpenChip, places: number): ChipSize {
   const width = chipWidth(places);
   const chars = chipChars(places);
-  const name = wrap(c.name, chars, NAME_LINES);
+  const name = wrap(c.name, chars, NAME_LINES, 0);   // chips break at any space, never mid-word while a space is left
   const line = cut(c.line, chars);
   const shown = c.subs.length > SUB_LINES ? c.subs.slice(0, SUB_LINES - 1) : c.subs;
   const subs = shown.map(s => ({ text: cut((s.done ? "✓ " : "○ ") + s.name, chars), done: s.done, more: false }));

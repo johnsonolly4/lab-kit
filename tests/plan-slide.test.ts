@@ -154,6 +154,8 @@ describe("openSvg: the open-work picture (M1-4; numbers in docs/plans/plan-map-e
     expect(fixture.svg).toContain("Not linked to other open work (3):");
     expect(fixture.svg).toContain(">can start<");
     expect(fixture.svg).toContain(">then +3<");
+    expect(fixture.svg).toContain(">Fit rate<");   // chip names break at a space, not mid-word ("Fit rate constant" / "s")
+    expect(fixture.svg).toContain(">constants<");
     expect(fixture.svg).toContain("35 of 59 done");
     expect(fixture.svg).toContain("as of Tue 20 Oct 2026");
   });

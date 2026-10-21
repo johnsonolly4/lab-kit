@@ -127,14 +127,14 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 
 const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const cut = (s: string, n: number): string => (s.length <= n ? s : s.slice(0, Math.max(1, n - 1)).trimEnd() + "…");
-/** At most `lines` lines of at most `n` characters, split at spaces; the rest is cut with "…". */
-export function wrap(s: string, n: number, lines: number): string[] {
+/** At most `lines` lines of at most `n` characters, split at a space after `minAt` characters (else mid-word); the rest is cut with "…". */
+export function wrap(s: string, n: number, lines: number, minAt = n / 2): string[] {
   const out: string[] = [];
   let rest = s.trim();
   while (rest && out.length < lines) {
     if (rest.length <= n) { out.push(rest); rest = ""; break; }
     const at = rest.lastIndexOf(" ", n);
-    const k = at > n / 2 ? at : n;
+    const k = at > minAt ? at : n;
     out.push(rest.slice(0, k).trimEnd());
     rest = rest.slice(k).trim();
   }
