@@ -60,9 +60,10 @@ describe("meeting-note: helpers", () => {
     expect(tokenTemplate(readFileSync("tests/fixtures/templates/old/Meeting.md", "utf8"), MEETING_TEMPLATE, miniYaml)).toBe(MEETING_TEMPLATE);
     expect(tokenTemplate("---\nmake: note\n---\n---\nkind: meeting\n---\n", MEETING_TEMPLATE, miniYaml)).toContain("kind: meeting");
   });
-  it("the first series by name (one-offs do not count); none yet counts as first", () => {
+  it("the first series by name (the One-off hub counts, as the old template read them); none yet counts as first", () => {
     const s = (name: string, interval = "weekly") => ({ name, interval }) as never;
-    expect(isFirstSeries([s("Journal club"), s("Group meeting"), s("A one", "once")], "Group meeting")).toBe(true);
+    expect(isFirstSeries([s("Journal club"), s("Group meeting"), s("A one", "once")], "Group meeting")).toBe(false);
+    expect(isFirstSeries([s("Journal club"), s("Group meeting"), s("One-off", "once")], "Group meeting")).toBe(true);
     expect(isFirstSeries([s("Journal club"), s("Group meeting")], "Journal club")).toBe(false);
     expect(isFirstSeries([], "x")).toBe(true);
   });

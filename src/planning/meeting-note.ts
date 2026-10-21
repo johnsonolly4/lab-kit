@@ -4,7 +4,7 @@
 import type { TFile, Vault } from "obsidian";
 import { noteFromTemplate, type MadeNote } from "../kit/note-template";
 import { parseTemplate } from "../kit/snippet-template";
-import { ONCE, type Series } from "./meetings";
+import type { Series } from "./meetings";
 
 /** The bundled Meeting.md (a regular series). */
 export const MEETING_TEMPLATE = `---
@@ -224,9 +224,9 @@ export function seriesAnswers(s: SeriesNote): Record<string, string> {
     deck_windows: s.deckKey === "deck_windows" ? s.deck : "", deck_mac: s.deckKey === "deck_mac" ? s.deck : "" };
 }
 
-/** The first series by name: the one whose to-dos the old `meeting: true` flag belongs to (also true when there is none yet). */
+/** The first series by name: the one whose to-dos the old `meeting: true` flag belongs to (also true when there is none yet). Every series counts, the One-off hub too, as the old template read them. */
 export const isFirstSeries = (all: Series[], name: string): boolean => {
-  const names = all.filter(s => s.interval !== ONCE).map(s => s.name).sort((a, b) => a.localeCompare(b));
+  const names = all.map(s => s.name).sort((a, b) => a.localeCompare(b));
   return !names.length || names[0] === name;
 };
 
