@@ -200,6 +200,22 @@ describe("SnippetTemplates", () => {
     expect("required" in calls[0].fields[1]).toBe(false);
   });
 
+  it("run: toggle, select and list are asked as such and come back as tokens", async () => {
+    const t = header({ title: "T", fields: [
+      { key: "t", label: "T", type: "toggle", value: "yes" },
+      { key: "s", label: "S", type: "select", options: ["x", { value: "y", label: "Why" }] },
+      { key: "l", label: "L", type: "list" },
+    ] }, "{{#if t}}on{{else}}off{{/if}} {{s}} {{#each l}}<{{.}}>{{/each}}");
+    const { st } = setup({ files: { "S/n.md": t } });
+    const calls: FormCall[] = [];
+    expect(await st.run(tpWith({ t: false, s: "y", l: "A,  B" }, calls), file("S/n.md"))).toBe("off y <A><B>");
+    const f = calls[0].fields as unknown as { type: string; value: unknown; options?: unknown }[];
+    expect(f[0]).toMatchObject({ type: "toggle", value: true });
+    expect(f[1]).toMatchObject({ type: "select", options: [{ value: "x" }, { value: "y", label: "Why" }] });
+    expect(f[2].type).toBe("text");
+    expect(await st.run(tpWith({ t: true, s: "x" }), file("S/n.md"))).toBe("on x ");
+  });
+
   it("run: cancel and an empty required list insert nothing", async () => {
     const { st } = setup({ files: { "S/a.md": LIST } });
     expect(await st.run(tpWith(null), file("S/a.md"))).toBe("");

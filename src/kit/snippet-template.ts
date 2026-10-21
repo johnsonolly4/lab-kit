@@ -13,7 +13,17 @@ export interface TemplateField {
   /** REMOVING: see docs/decisions.md, "Removing experimental features". `mandatory: true`: the form marks the field with * and does not close while it is empty. Only the form checks it; `required` in the header is a different rule. */
   mandatory?: boolean;
   placeholder?: string;
-  type: "text" | "number" | "textarea";
+  type: "text" | "number" | "textarea" | "toggle" | "select" | "list";
+  /** `type: select`: the choices (`value`, shown as `label` when given). The default answer is `value:`, else the first option. */
+  options?: { value: string; label?: string }[];
+  /** `type: list` with `weights: fraction`: the items may carry a share, "A: 0.7, B: 0.3". Stored as typed. */
+  weights?: "fraction";
+  /** `type: number`: the unit written after the value in a live block (the form has no place for it yet). */
+  unit?: string;
+  /** The question spans the window's grid (the form has no grid yet: parsed and kept). */
+  wide?: boolean;
+  /** A longer help text shown on demand behind an (i) (CQ22 a). Parsed and kept; the form has no place for it yet. */
+  help?: string;
   /** The default answer; may hold computed tokens such as {{next-letter:sampling}}. */
   value: string;
   /** `suggest: chemicals` = the field suggests the chemical notes while typing. `suggest: codes` = the box is filled with the sample codes of the note's tables, with a "Codes from" choice when there are several. `suggest: notes` = the field lists the notes of a settings folder (`folder`). */
@@ -115,6 +125,22 @@ export function parseTemplate(text: string, parseYaml: (yaml: string) => unknown
   return { header: readHeader(raw), body: text.slice(m[0].length) };
 }
 
+const FIELD_TYPES = ["text", "number", "textarea", "toggle", "select", "list"];
+
+/** `options:` of a select: a list of texts, or of `value` / `label` pairs. */
+function readOptions(key: string, raw: unknown): { value: string; label?: string }[] {
+  if (!Array.isArray(raw) || raw.length === 0) throw new TemplateError(`Field "${key}": a select needs options: a list of choices, for example options: [Yes, No] or a list of value / label lines.`);
+  const out = raw.map((o, i) => {
+    const value = isRecord(o) ? asText(o.value)?.trim() : asText(o)?.trim();
+    if (!value) throw new TemplateError(`Field "${key}": option ${i + 1} needs a text, or a line with value: (and label:).`);
+    const label = isRecord(o) ? asText(o.label)?.trim() : undefined;
+    return { value, ...(label ? { label } : {}) };
+  });
+  const dup = out.find((o, i) => out.findIndex(x => x.value === o.value) !== i);
+  if (dup) throw new TemplateError(`Field "${key}": the option "${dup.value}" is listed twice.`);
+  return out;
+}
+
 function readHeader(raw: Record<string, unknown>): TemplateHeader {
   const group = asText(raw.group)?.trim() || undefined;
   const make = "make" in raw;
@@ -136,7 +162,14 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     if (RESERVED.includes(key)) throw new TemplateError(`The field key "${key}" is reserved.`);
     if (fields.some(x => x.key === key)) throw new TemplateError(`The field key "${key}" is used twice.`);
     const type = asText(f.type) ?? "text";
-    if (type !== "text" && type !== "number" && type !== "textarea") throw new TemplateError(`Field "${key}" has an unknown type "${type}".`);
+    if (!FIELD_TYPES.includes(type)) throw new TemplateError(`Field "${key}" has an unknown type "${type}" (use ${FIELD_TYPES.join(", ")}).`);
+    const options = type === "select" ? readOptions(key, f.options) : undefined;
+    if (type !== "select" && f.options !== undefined) throw new TemplateError(`Field "${key}": options needs type: select.`);
+    const weights = asText(f.weights)?.trim();
+    if (weights !== undefined && (type !== "list" || weights !== "fraction")) throw new TemplateError(`Field "${key}": weights: fraction needs type: list.`);
+    const unit = asText(f.unit)?.trim();
+    if (unit && type !== "number") throw new TemplateError(`Field "${key}": unit needs type: number.`);
+    if (f.wide !== undefined && typeof f.wide !== "boolean") throw new TemplateError(`Field "${key}": wide must be true or false.`);
     const suggest = asText(f.suggest)?.trim();
     if (suggest && suggest !== "chemicals" && suggest !== "codes" && suggest !== "notes") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals", "codes" or "notes").`);
     const folder = asText(f.folder)?.trim();
@@ -146,7 +179,11 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     if (classes.some(c => !c)) throw new TemplateError(`Field "${key}": class must be text or a list of texts.`);
     if (classes.length && suggest !== "chemicals") throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
     if (f.mandatory !== undefined && typeof f.mandatory !== "boolean") throw new TemplateError(`Field "${key}": mandatory must be true or false.`);
-    fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "",
+    const value = asText(f.value) ?? "";
+    if (options && value && !options.some(o => o.value === value)) throw new TemplateError(`Field "${key}": value "${value}" is not one of the options.`);
+    fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type: type as TemplateField["type"], value,
+      ...(options ? { options } : {}), ...(weights ? { weights: "fraction" as const } : {}), ...(unit ? { unit } : {}), ...(f.wide ? { wide: true } : {}),
+      ...(asText(f.help) ? { help: asText(f.help) } : {}),
       ...(f.mandatory ? { mandatory: true } : {}),
       ...(suggest === "chemicals" || suggest === "codes" || suggest === "notes" ? { suggest } : {}), ...(classes.length ? { classes } : {}), ...(folder ? { folder } : {}) });
   }
@@ -186,6 +223,18 @@ export function oldStub(text: string): { run: string; icon?: string; desc?: stri
     if (!l.startsWith("//")) return null;
   }
   return run ? { run, ...(icon ? { icon } : {}), ...(desc ? { desc } : {}) } : null;
+}
+
+/** What the form starts a field on: a toggle takes a boolean (`yes` / `true` = on), the others the default text. */
+export function formValue(f: TemplateField, def: string): string | boolean {
+  return f.type === "toggle" ? /^(yes|true)$/i.test(def.trim()) : def;
+}
+
+/** The token a form answer becomes: toggle `yes` or empty, list `A, B` (items as typed when they carry weights), anything else the trimmed text. */
+export function answerOf(f: TemplateField, got: unknown): string {
+  if (f.type === "toggle") return got === true || got === "yes" ? "yes" : "";
+  const box = (typeof got === "string" || typeof got === "number" ? String(got) : "").trim();
+  return f.type === "list" ? listOf(box).join(", ") : box;
 }
 
 /** True when the required field has no list item: nothing is inserted. */
