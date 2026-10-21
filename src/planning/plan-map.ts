@@ -121,6 +121,14 @@ export function chainOf(plan: Plan, path: string): Set<string> {
 }
 
 export const CARD_W = 190, CARD_H = 108, GAP_X = 56, GAP_Y = 14, PAD = 12;
+/** Card sizes for `mapGeometry`: one width, each card's own height (else `height`), the gap between steps and between places, the margin round the map. */
+export interface MapSizes {
+  width: number; height: number;
+  heights?: ReadonlyMap<string, number>;
+  stepGap: number; placeGap: number; pad: number;
+}
+/** The on-screen map's cards (and option A's). */
+export const CARD_SIZES: MapSizes = { width: CARD_W, height: CARD_H, stepGap: GAP_X, placeGap: GAP_Y, pad: PAD };
 
 /** `across`: steps run left to right; `down`: steps run top to bottom. */
 /** The zoom limits and step of the zoom buttons (1 = the size the map has always had). */
@@ -163,17 +171,25 @@ const line = (p: Pt, q: Pt, n: number): Pt[] => Array.from({ length: n + 1 }, (_
 
 /** Pixels for a layout. `across`: steps left to right, places top to bottom. `down`: steps top to bottom, places left to right.
  *  An arrow that skips steps and would run behind a card in between is sent through a lane between rows (columns in `down`). `extraHeight`: room under the lowest card.
- *  `room`: pixels an open subtask list needs under a card; the rows below move down by the most any card of the row above needs (rows run top to bottom in `across`, steps in `down`). */
-export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction = "across", room?: ReadonlyMap<string, number>): MapGeometry {
+ *  `room`: pixels an open subtask list needs under a card; the rows below move down by the most any card of the row above needs (rows run top to bottom in `across`, steps in `down`).
+ *  `sizes`: the cards' width, own heights and gaps (default the on-screen map's); a row is as tall as its tallest card, and an arrow from a shorter card first runs straight to the row's far edge. */
+export function mapGeometry(map: Pick<PlanMap, "arrows" | "startStep"> & { cards: readonly { path: string; step: number; place: number }[] }, extraHeight = 0, direction: Direction = "across", room?: ReadonlyMap<string, number>, sizes: MapSizes = CARD_SIZES): MapGeometry {
   const across = direction === "across";
+  const { width: W, stepGap, placeGap, pad } = sizes;
+  const hOf = (path: string): number => sizes.heights?.get(path) ?? sizes.height;
   const rows = map.cards.length ? Math.max(...map.cards.map(c => (across ? c.place : c.step))) + 1 : 0;
   const rowRoom = Array.from({ length: rows + 1 }, () => 0);
-  for (const c of map.cards) { const r = across ? c.place : c.step; rowRoom[r] = Math.max(rowRoom[r], room?.get(c.path) ?? 0); }
+  const rowH = Array.from({ length: rows }, () => -1);   // tallest card of each row (a row with no card: the default height)
+  for (const c of map.cards) { const r = across ? c.place : c.step; rowRoom[r] = Math.max(rowRoom[r], room?.get(c.path) ?? 0); rowH[r] = Math.max(rowH[r], hOf(c.path)); }
+  for (let k = 0; k < rows; k++) if (rowH[k] < 0) rowH[k] = sizes.height;
+  const gapOfRows = across ? placeGap : stepGap;
   const off = [0];   // off[k]: room taken by the rows above row k
   for (let k = 0; k < rows; k++) off.push(off[k] + rowRoom[k]);
+  const top = [pad];   // top[k]: where row k starts, room left out
+  for (let k = 0; k < rows; k++) top.push(top[k] + rowH[k] + gapOfRows);
   const pos = new Map<string, Pt>();
   for (const c of map.cards) {
-    pos.set(c.path, across ? { x: PAD + c.step * (CARD_W + GAP_X), y: PAD + c.place * (CARD_H + GAP_Y) + off[c.place] } : { x: PAD + c.place * (CARD_W + GAP_Y), y: PAD + c.step * (CARD_H + GAP_X) + off[c.step] });
+    pos.set(c.path, across ? { x: pad + c.step * (W + stepGap), y: top[c.place] + off[c.place] } : { x: pad + c.place * (W + placeGap), y: top[c.step] + off[c.step] });
   }
   const steps = map.cards.length ? Math.max(...map.cards.map(c => c.step)) + 1 : 0;
   const places = map.cards.length ? Math.max(...map.cards.map(c => c.place)) + 1 : 0;
@@ -181,8 +197,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
   const alongOf = (p: Pt): number => (across ? p.x : p.y);   // position along the step axis
   const crossOf = (p: Pt): number => (across ? p.y : p.x);
   const at = (a: number, c: number): Pt => (across ? { x: a, y: c } : { x: c, y: a });
-  const crossSize = across ? CARD_H : CARD_W;
-  const lane = (k: number): number => PAD + k * (crossSize + GAP_Y) - GAP_Y / 2 + (across ? off[k] : 0);   // between rows (columns); k = 0 above the first, `places` below the last
+  const lane = (k: number): number => (across ? top[k] : pad + k * (W + placeGap)) - placeGap / 2 + (across ? off[k] : 0);   // between rows (columns); k = 0 above the first, `places` below the last
 
   const hitsCard = (pts: Pt[], f: string, t: string): boolean => {
     const lo = Math.min(stepOf.get(f)!, stepOf.get(t)!), hi = Math.max(stepOf.get(f)!, stepOf.get(t)!);
@@ -190,7 +205,7 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
       const st = stepOf.get(c.path)!;
       if (c.path === f || c.path === t || st <= lo || st >= hi) return false;
       const p = pos.get(c.path)!;
-      return pts.some(q => q.x > p.x - 4 && q.x < p.x + CARD_W + 4 && q.y > p.y - 4 && q.y < p.y + CARD_H + 4);
+      return pts.some(q => q.x > p.x - 4 && q.x < p.x + W + 4 && q.y > p.y - 4 && q.y < p.y + hOf(c.path) + 4);
     });
   };
 
@@ -198,32 +213,38 @@ export function mapGeometry(map: PlanMap, extraHeight = 0, direction: Direction 
   const curves = map.arrows.flatMap((a): MapCurve[] => {
     const f = pos.get(a.from), t = pos.get(a.to);
     if (!f || !t) return [];
-    const o = across ? { x: f.x + CARD_W, y: f.y + CARD_H / 2 } : { x: f.x + CARD_W / 2, y: f.y + CARD_H };
-    const i = across ? { x: t.x, y: t.y + CARD_H / 2 } : { x: t.x + CARD_W / 2, y: t.y };
-    const k = Math.max(GAP_X / 2, Math.abs(alongOf(i) - alongOf(o)) / 2);
+    const fh = hOf(a.from), th = hOf(a.to);
+    const start = across ? { x: f.x + W, y: f.y + fh / 2 } : { x: f.x + W / 2, y: f.y + fh };
+    // In `down` a chip shorter than its step row starts with a straight line to the row's bottom, so the curve never runs past a taller chip beside it.
+    const end = across ? start.x : f.y + rowH[stepOf.get(a.from)!];
+    const o = across || end === start.y ? start : { x: start.x, y: end };
+    const lead = o === start ? "" : ` L${o.x} ${o.y}`, leadPts = o === start ? [] : [start];
+    const i = across ? { x: t.x, y: t.y + th / 2 } : { x: t.x + W / 2, y: t.y };
+    const k = Math.max(stepGap / 2, Math.abs(alongOf(i) - alongOf(o)) / 2);
     const c1 = at(alongOf(o) + k, crossOf(o)), c2 = at(alongOf(i) - k, crossOf(i));
-    const straight = Array.from({ length: 25 }, (_, n) => cubic(o, c1, c2, i, n / 24));
+    const straight = [...leadPts, ...Array.from({ length: 25 }, (_, n) => cubic(o, c1, c2, i, n / 24))];
     const skips = stepOf.get(a.to)! - stepOf.get(a.from)! >= 2;
-    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${o.x} ${o.y} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight, via: a.via }];
+    if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${start.x} ${start.y}${lead} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight, via: a.via }];
     // Out into the gap after the first card, along the nearest lane between rows, in through the gap before the last card.
     const mid = (crossOf(o) + crossOf(i)) / 2;
     let best = 0;
     for (let n = 1; n <= places; n++) if (Math.abs(lane(n) - mid) < Math.abs(lane(best) - mid)) best = n;
     const seen = inLane.get(best) ?? 0;
     inLane.set(best, seen + 1);
-    const cor = lane(best) + [0, 3, -3][seen % 3], a0 = alongOf(o), a1 = alongOf(i), g = GAP_X * 0.35, q = g / 2;   // out and in at different places of a shared gap, else an arrow leaving and one arriving there look like one bump
+    const cor = lane(best) + [0, 3, -3][seen % 3], a0 = alongOf(o), a1 = alongOf(i), g = stepGap * 0.35, q = g / 2;   // out and in at different places of a shared gap, else an arrow leaving and one arriving there look like one bump
     const p1 = at(a0 + g, cor), p2 = at(a1 - g, cor);
     const out1 = at(a0 + q, crossOf(o)), out2 = at(a0 + q, cor), in1 = at(a1 - q, cor), in2 = at(a1 - q, crossOf(i));
-    const d = `M${o.x} ${o.y} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
-    const samples = [...Array.from({ length: 13 }, (_, n) => cubic(o, out1, out2, p1, n / 12)), ...line(p1, p2, 12), ...Array.from({ length: 13 }, (_, n) => cubic(p2, in1, in2, i, n / 12))];
+    const d = `M${start.x} ${start.y}${lead} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
+    const samples = [...leadPts, ...Array.from({ length: 13 }, (_, n) => cubic(o, out1, out2, p1, n / 12)), ...line(p1, p2, 12), ...Array.from({ length: 13 }, (_, n) => cubic(p2, in1, in2, i, n / 12))];
     return [{ from: a.from, to: a.to, d, routed: true, samples, via: a.via }];
   });
+  const rowsH = rowH.reduce((s, h) => s + h, 0);
   return {
-    width: steps ? (across ? 2 * PAD + steps * CARD_W + (steps - 1) * GAP_X : 2 * PAD + places * CARD_W + (places - 1) * GAP_Y) : 0,
-    height: steps ? (across ? 2 * PAD + places * CARD_H + (places - 1) * GAP_Y : 2 * PAD + steps * CARD_H + (steps - 1) * GAP_X) + off[rows] + extraHeight : 0,
+    width: steps ? (across ? 2 * pad + steps * W + (steps - 1) * stepGap : 2 * pad + places * W + (places - 1) * placeGap) : 0,
+    height: steps ? 2 * pad + rowsH + (rows - 1) * gapOfRows + off[rows] + extraHeight : 0,
     pos, curves,
-    scrollLeft: across ? Math.max(0, map.startStep * (CARD_W + GAP_X)) : 0,
-    scrollTop: across ? 0 : Math.max(0, map.startStep * (CARD_H + GAP_X)),
+    scrollLeft: across ? Math.max(0, map.startStep * (W + stepGap)) : 0,
+    scrollTop: across ? 0 : Math.max(0, top[map.startStep] - pad),
   };
 }
 
