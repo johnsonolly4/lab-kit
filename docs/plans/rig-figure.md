@@ -97,6 +97,15 @@ Decided: marks 7-8 need no code (the figure draws the Control / Data lines the t
 - Note (2026-10-20): a pack symbol is drawn into each rig snapshot SVG (`docs/plans/rig-block-no-mermaid.md`), so old lab notes keep their picture if the pack is later removed or changed; snapshots live in the user's vault only.
 - Done when: tests; a fictional pack with two symbols replaces the generic ones in the figure; a broken pack falls back and says why; a test or check keeps any pack-like asset out of the repo (no `.svg` or `.png` under `src/` or `kits/` except the generic symbols' text in code).
 
+**Pack format (decided in this phase, 2026-10-21; the plan left it open):**
+- Setting **Module pack folder** (empty = no pack). The folder holds the symbol files and one list file, **`Pack list.md`**: a Markdown table (same style as the rig parts tables; the first table with `Kind` and `File` columns is read).
+- Columns (headers not case-sensitive): `Kind` (one of the part kinds: Pump, Mixer, Reactor, Heater, Stirrer, Regulator, Valve, Analysis, Outlet, Tubing), `Match` (optional: text the part's detail must contain; a row with `Match` wins over one without), `Name` (shown in messages and in the `data-symbol` of the drawing), `File` (`.svg` or `.png`, path inside the pack folder), `In` / `Out` / `Top` / `Bottom` (optional connection points as `x,y` in the picture's own units, origin at its top-left; defaults: the middle of the left, right, top and bottom edge), `Size` (optional: width in figure units, or `WxH`; default: longer side 72), `Enter` (optional: `top` for a symbol lines drop into, like the vial).
+- Safe SVG: refused (the row falls back to the generic symbol, with the reason) when it has a script, `foreignObject`, event attribute, `javascript:` link, a link or `url()` that is not inside the file, a DOCTYPE / entity, animation, no `viewBox` or width and height, or is over 200 KB. Editor leftovers (`<metadata>`, `inkscape:` / `sodipodi:` parts, comments, titles) are dropped. PNG: must be a real PNG, under 300 KB.
+- A symbol that cannot be used is never fatal: the row falls back to the generic symbol and the rig block / Figure… window list one line why. A missing folder or list file falls back wholesale, with a line.
+- **Check module pack** (command + button in settings): per row OK / missing / unreadable, files in the folder the list does not name (unused).
+- The pack is read each time a figure is drawn (a few small files); a pack symbol is copied into the SVG, so snapshots and saved figures stay self-contained.
+- Unblocks (not drawn here; the group's own symbols stay private, in the owner's vault only): the owner's own tee (mark 11) and the pre-mixer box can come from the pack as `Mixer` rows (the pre-mixer with `Match` = `pre-mixer`).
+
 ### Phase 7: docs and tutorial
 - Depends on: Phases 1-6
 - Files: `docs/changelog.md`, `README.md`, `docs/tutorial.md`, the Rig how-to note if there is one, `docs/architecture.md`, `docs/obsidian-test-checklist.md`, `BACKLOG.md` (tick the item; add what is left), `docs/decisions.md`.
