@@ -1,25 +1,35 @@
-<%*
-// Meeting series template - creates the hub note "<name>/<name>" of a new meeting series. The New meeting series command asks name, interval,
-// day, first date and deck path and hands them over as window.vtSeries; run by hand (no hand-over) it stops and says which command to use.
-const vt = window.vtSeries;
-delete window.vtSeries;
-if (!vt) {
-  new Notice("Use the New meeting series command: it asks the name, how often and the day.", 8000);
-  throw new Error("Meeting series template run without the New meeting series command");
-}
-const deck = (key) => JSON.stringify(key === vt.deckKey ? vt.deck : "");
-await tp.file.move(`${vt.folder}/${vt.name}`);
--%>
+---
+make: note
+name: "{{name}}"
+folder: "{{folder}}"
+fields:
+  - key: name
+    label: Name
+  - key: folder
+    label: Folder
+  - key: interval
+    label: How often
+  - key: day
+    label: Day
+  - key: start
+    label: First meeting
+  - key: deck_windows
+    label: Deck (Windows)
+  - key: deck_mac
+    label: Deck (Mac)
+  - key: template
+    label: Meeting template
+---
 ---
 kind: meeting-series
-interval: <% vt.interval %>
-day: <% vt.day %>
-start: <% vt.start %>
+interval: {{interval}}
+day: {{day}}
+start: {{start}}
 cssclasses:
   - vt
-deck_windows: <% deck("deck_windows") %>
-deck_mac: <% deck("deck_mac") %>
-template: <% JSON.stringify(vt.template || "") %>
+deck_windows: {{json:deck_windows}}
+deck_mac: {{json:deck_mac}}
+template: {{json:template}}
 ---
 
 ```vault-card
@@ -45,7 +55,7 @@ show: hub-bar
 > [!summary] All meetings
 > ```dataview
 > TABLE WITHOUT ID file.link AS "Meeting", date AS "Date"
-> FROM "<% vt.folder %>"
+> FROM "{{folder}}"
 > WHERE kind = "meeting"
 > SORT date DESC
 > ```
