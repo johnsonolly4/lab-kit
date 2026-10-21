@@ -3,6 +3,7 @@
 // Plan: docs/plans/rig-block-no-mermaid.md, Phase 2.
 import { MarkdownRenderChild, TFile, type App, type Plugin } from "obsidian";
 import { makeFigure } from "./figure-make";
+import { inPack, refreshPack } from "./packs-io";
 import { readRig } from "./parts";
 import { openFigureWindow } from "./figure-ui";
 import { snapshotState } from "./snapshot-io";
@@ -26,6 +27,11 @@ export class RigRenderer {
 
     const timers = new Map<string, number>();
     this.plugin.registerEvent(this.app.vault.on("modify", (file) => {
+      if (inPack(file.path)) {   // a pack file or its list changed: every open block is drawn again (an unchanged picture is left alone)
+        window.clearTimeout(timers.get(""));
+        timers.set("", window.setTimeout(() => { for (const v of this.views) v.draw(); }, 250));
+        return;
+      }
       if (![...this.views].some(v => v.sourcePath === file.path)) return;
       window.clearTimeout(timers.get(file.path));
       timers.set(file.path, window.setTimeout(() => this.refreshFile(file.path), 250));
@@ -63,6 +69,7 @@ class RigView extends MarkdownRenderChild {
     const file = app.vault.getAbstractFileByPath(this.sourcePath);
     const text = file instanceof TFile ? await app.vault.cachedRead(file) : "";
     const rig = readRig(text);
+    await refreshPack(app);
     const made = makeFigure(text);
     let snap: { date: string; changed: boolean; problems: string[] } | null = null;
     try { snap = file instanceof TFile && made ? await snapshotState(app, file, text) : null; } catch (e) { console.error("Lab Kit rig snapshot", e); }

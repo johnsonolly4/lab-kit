@@ -21,6 +21,7 @@ import { applyStyleAllNotes } from "./kit/style-all-notes";
 import { calcTextRefs } from "./calc/text-refs-cm";
 import { SnippetTemplates } from "./kit/snippet-run";
 import { RigRenderer } from "./rig/render";
+import { registerPackCommand, setPackFolder } from "./rig/packs-io";
 import { SolutionRenderer } from "./solution/render";
 import { RaftRenderer } from "./blocks/raft/render";
 
@@ -53,6 +54,8 @@ export default class LabKitPlugin extends Plugin {
     this.calc.register();
     this.registerEditorExtension(calcTextRefs());
     this.header.register();
+    setPackFolder(() => this.kit.kit.modulePackFolder);
+    registerPackCommand(this);
     new RigRenderer(this, () => this.kit.kit.figuresFolder).register();
     new SolutionRenderer(this, () => this.kit.kit, openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor)).register();
     new RaftRenderer(this, () => this.kit.kit, openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor)).register();

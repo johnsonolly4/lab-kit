@@ -7,6 +7,7 @@ import { ensureFolder } from "../kit/ensure-folder";
 import { figuresTarget, kitJoin } from "../kit/paths";
 import { figureFileName, heightMm, pngSize, savedNote, sizeLine } from "./figure-export";
 import { makeFigure, type Made } from "./figure-make";
+import { refreshPack } from "./packs-io";
 import { GRID, dropAt, findLayout, partAt, setLayoutInNote, toFigure, writeLayout, type Places, type Pos } from "./layout";
 
 /** Width and dpi the window remembers while Obsidian is open. */
@@ -33,6 +34,7 @@ async function makePng(svg: string, width: number, height: number): Promise<{ by
 export async function openFigureWindow(app: App, notePath: string, figuresFolder: string, anchor: HTMLElement | null): Promise<void> {
   const file = app.vault.getAbstractFileByPath(notePath);
   const text = file instanceof TFile ? await app.vault.cachedRead(file) : "";
+  await refreshPack(app);
   const made = file instanceof TFile ? makeFigure(text) : null;
   if (!(file instanceof TFile) || !made) { new Notice("This rig has no parts to draw yet."); return; }
   const r = Platform.isDesktop ? anchor?.getBoundingClientRect() : undefined;

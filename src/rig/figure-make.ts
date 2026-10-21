@@ -3,6 +3,7 @@
 import { buildFigure } from "./figure";
 import { figureSvg, type PartBox } from "./figure-svg";
 import { findLayout, readLayout, type Places } from "./layout";
+import type { Pack } from "./packs";
 import { controlLabel, readRig } from "./parts";
 
 export interface Made {
@@ -15,6 +16,10 @@ export interface Made {
   layout: { body: string | null; writable: boolean };
 }
 
+/** The module pack every figure is drawn with (set by `refreshPack` in packs-io.ts before a figure is made; null = the generic symbols). */
+let current: Pack | null = null;
+export const usePack = (pack: Pack | null): void => { current = pack; };
+
 /** The figure of a rig note's text, or null when it has no parts to draw. `places` (the Figure… window's) wins over the note's block; an empty map = automatic. `grid`: dots while dragging. */
 export function makeFigure(text: string, places?: Places, grid?: number): Made | null {
   const rig = readRig(text);
@@ -23,9 +28,9 @@ export function makeFigure(text: string, places?: Places, grid?: number): Made |
   const read = block ? readLayout(block.body, rig.parts.map(p => p.id)) : null;
   const fixed = places ?? read?.fixed ?? new Map();
   const fig = buildFigure(rig.parts, rig.links, { computer: controlLabel(text) || undefined, fixed });
-  const problems = [...(read?.problems ?? [])];
+  const problems = [...(read?.problems ?? []), ...(current?.problems ?? [])];
   for (const n of fig.nodes) if (n.host && read?.fixed.has(n.id)) problems.push(`${n.id} sits with ${n.host}: its layout line is not used (move ${n.host}).`);
-  const { svg, missing, width, height, boxes } = figureSvg(fig, { grid });
+  const { svg, missing, width, height, boxes } = figureSvg(fig, { grid, pack: current });
   const now: Places = new Map(fig.nodes.filter(n => !n.host).map(n => [n.id, { x: n.x, y: n.y }]));
   return { svg, width, height, missing, problems, places: now, boxes, layout: { body: block?.body ?? null, writable: read?.status !== "newer" } };
 }

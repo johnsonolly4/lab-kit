@@ -4,6 +4,7 @@ import { TFile, TFolder, normalizePath, type App } from "obsidian";
 import { ensureFolder } from "../kit/ensure-folder";
 import { kitJoin, kitParent } from "../kit/paths";
 import { makeFigure } from "./figure-make";
+import { refreshPack } from "./packs-io";
 import { appendRow, historyTargets, reconcile } from "./history";
 import { localDate, readSnapshotMeta, rigRecord, sameRecord, snapshotName, snapshotNames, snapshotSvg, type SnapshotMeta } from "./snapshot";
 
@@ -51,6 +52,7 @@ export interface Taken { file: TFile; /** False when the latest snapshot already
 /** A snapshot of the rig note as it is now: the latest one when the rig is unchanged since, else a new file (vault.create, so an existing file is never touched). null when the rig has no parts to draw. */
 export async function takeSnapshot(app: App, rig: TFile, version: string, now: Date = new Date()): Promise<Taken | null> {
   const text = await app.vault.read(rig);
+  await refreshPack(app);
   const made = makeFigure(text);
   if (!made) return null;
   const record = rigRecord(text);
