@@ -24,7 +24,11 @@ export interface FigComputer { x: number; y: number; label: string }
 /** A line between the computer and a part: `control` runs to the part (what the computer sets), `data` back from it. */
 export interface FigControl { part: string; dir: "control" | "data"; label: string }
 export interface Figure { nodes: FigNode[]; edges: FigEdge[]; width: number; height: number; computer: FigComputer | null; controls: FigControl[] }
-export interface FigureOptions { /** The computer's label (the rig note's `Control:` property). */ computer?: string }
+export interface FigureOptions {
+  /** The computer's label (the rig note's `Control:` property). */ computer?: string;
+  /** Parts placed by hand (the ```rig-layout block, layout.ts): centre in figure units. A part attached to a host moves with its host and is never placed on its own. */
+  fixed?: Map<string, { x: number; y: number }>;
+}
 
 /** Room above the flow for the computer (its height, a gap) and one lane per direction: the control lines share one run, the data lines another. */
 export const COMPUTER_BAND = 110;
@@ -140,5 +144,36 @@ export function buildFigure(parts: RigPart[], links: RigLink[], opts: FigureOpti
     height += band;
     computer = { x: width / 2, y: MARGIN + 35, label: opts.computer ?? "Control" };
   }
+  if (opts.fixed?.size) {
+    const size = place(nodes, opts.fixed);
+    if (computer) computer.x = size.width / 2;
+    return { nodes, edges, width: size.width, height: size.height, computer, controls };
+  }
   return { nodes, edges, width, height, computer, controls };
+}
+
+/**
+ * Hand layout: listed parts go to their place (the parts attached to them with them); a part not listed keeps its automatic place unless that is taken,
+ * then moves down a row at a time until it is free, so a part added to the tables never moves the others. The frame then fits the parts.
+ */
+function place(nodes: FigNode[], fixed: Map<string, { x: number; y: number }>): { width: number; height: number } {
+  const move = (n: FigNode, x: number, y: number): void => {
+    const dx = x - n.x, dy = y - n.y;
+    for (const m of nodes) if (m === n || m.host === n.id) { m.x += dx; m.y += dy; }
+  };
+  const flow = nodes.filter(n => !n.host);
+  const held = (n: FigNode): number => nodes.filter(m => m.host === n.id).length;   // rows its attached parts take under it
+  const taken: FigNode[] = [];
+  for (const n of flow) { const p = fixed.get(n.id); if (p) { move(n, p.x, p.y); taken.push(n); } }
+  const clash = (n: FigNode): boolean => taken.some(t => Math.abs(t.x - n.x) < COL_W / 2
+    && n.y - ROW_H / 2 < t.y + ROW_H / 2 + held(t) * ROW_H && t.y - ROW_H / 2 < n.y + ROW_H / 2 + held(n) * ROW_H);
+  for (const n of flow) {
+    if (fixed.has(n.id)) continue;
+    while (clash(n)) move(n, n.x, n.y + ROW_H);
+    taken.push(n);
+  }
+  return {
+    width: Math.max(...nodes.map(n => n.x)) + COL_W / 2 + MARGIN,
+    height: Math.max(...nodes.map(n => n.y)) + ROW_H / 2 + MARGIN,
+  };
 }

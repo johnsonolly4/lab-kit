@@ -1,6 +1,6 @@
 // Rig figure: the SVG text of a laid-out figure (symbols, lines, labels). Pure (no Obsidian runtime).
 // Plan: docs/plans/rig-figure.md, Phase 2. Colour and control lines come in Phase 3.
-import { LANE, type FigEdge, type Figure, type FigNode } from "./figure";
+import { COL_W, LANE, type FigEdge, type Figure, type FigNode } from "./figure";
 import { COMPUTER, ovenAround, symbolFor, type Point, type RigSymbol } from "./symbols";
 
 export interface FigureSvgOptions {
@@ -8,10 +8,15 @@ export interface FigureSvgOptions {
   /** Colour of the lines the computer sends to the parts, and of the lines that bring data back. */
   controlColor?: string; dataColor?: string;
 }
+/** A part's symbol as drawn (centre and size, figure units); `host` is the part an attached one sits with. The Figure… window drags these. */
+export interface PartBox { id: string; host: string; x: number; y: number; w: number; h: number }
 export interface FigureSvg {
   svg: string;
   /** IDs of the parts drawn as a plain box because their kind is unknown. */
   missing: string[];
+  /** The size of the drawing (its viewBox). */
+  width: number; height: number;
+  boxes: PartBox[];
 }
 
 const INK = "#000000";
@@ -102,8 +107,10 @@ function controlSvg(fig: Figure, placed: Map<string, Placed>, colours: { control
     const p = placed.get(c.part);
     if (!p) return [];
     const shift = both.has(c.part) ? (c.dir === "control" ? -10 : 10) : 0;
-    const column = fig.nodes.filter(m => m.layer === p.node.layer && !m.host);
-    const blocked = fig.nodes.some(m => m.layer === p.node.layer && m.y < p.node.y);
+    // a column = the parts drawn within half a column of it (the automatic layout's own columns; a part moved by hand joins the one it is in)
+    const near = (m: FigNode): boolean => Math.abs(m.x - p.node.x) < COL_W / 2;
+    const column = fig.nodes.filter(m => near(m) && !m.host);
+    const blocked = fig.nodes.some(m => m !== p.node && near(m) && m.y < p.node.y);
     if (!blocked) return [{ c, tx: p.node.x + shift, ty: p.node.y + p.sym.top.y, side: false, endX: 0, sideY: 0 }];
     const left = Math.min(...column.map(m => m.x - placed.get(m.id)!.sym.w / 2));
     return [{ c, tx: left - 24 - (c.dir === "data" ? 8 : 0), ty: p.node.y, side: true, endX: p.node.x - p.sym.w / 2, sideY: p.node.y + (shift || -12) }];
@@ -191,5 +198,6 @@ export function figureSvg(fig: Figure, opts: FigureSvgOptions = {}): FigureSvg {
     + `<g fill="#ffffff" stroke="${INK}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">`
     + `${drawn.filter(isOven).map(d => d.svg).join("")}<g fill="none">${lines.join("")}</g>${dots.join("")}${drawn.filter(d => !isOven(d)).map(d => d.svg).join("")}${computerSvg(fig)}${controlSvg(fig, placed, { control: opts.controlColor ?? CONTROL_COLOR, data: opts.dataColor ?? DATA_COLOR })}</g>`
     + `<g stroke="none">${parts.map(p => labelSvg(p, hosts.has(p.node.id), ovens.get(p.node.id), returnFrom.has(p.node.id))).join("")}</g></svg>`;
-  return { svg, missing };
+  const boxes = parts.map(p => ({ id: p.node.id, host: p.node.host, x: p.node.x, y: p.node.y, w: p.sym.w, h: p.sym.h }));
+  return { svg, missing, width: fig.width, height: fig.height, boxes };
 }

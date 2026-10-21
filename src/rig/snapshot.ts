@@ -1,6 +1,7 @@
 // Rig snapshots: a dated, write-once SVG of the rig with the data it was drawn from kept as plain text in its <metadata>. Pure (no Obsidian runtime).
 // The file name is "<rig> <YYYY-MM-DD>.svg" (" 2", " 3" for another one the same day). Lab Kit never rewrites or deletes one.
 // Plan: docs/plans/rig-block-no-mermaid.md, Phase 3. Format version 1; a reader for every older version stays (tests/fixtures/rigs/saved/).
+import { findLayout } from "./layout";
 import { controlLabel, readRig } from "./parts";
 
 /** The newest snapshot format this Lab Kit writes and reads. */
@@ -13,10 +14,10 @@ const LAYOUT_MARK = "=== layout ===";
 export interface RigRecord { control: string; tables: string; layout: string }
 export interface SnapshotMeta { format: number; rig: string; date: string; version: string; record: RigRecord }
 
-/** The text of the ```rig-layout block of a note (its lines, trimmed), "" when there is none. Phase 6 writes this block; the snapshot already keeps it. */
+/** The text of the ```rig-layout block of a note (its lines, trimmed), "" when there is none (layout.ts reads and writes the block). */
 function layoutText(text: string): string {
-  const m = /^```rig-layout[^\n]*\n([\s\S]*?)\n```/m.exec(text.replace(/\r\n/g, "\n"));
-  return m ? m[1].split("\n").map(l => l.trim()).join("\n").trim() : "";
+  const b = findLayout(text);
+  return b ? b.body.split("\n").map(l => l.trim()).join("\n").trim() : "";
 }
 
 /** The record of a rig note's text: every parts table with its heading (as the Rig snippet copies them), the Control line, the layout block. */
