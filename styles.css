@@ -629,6 +629,9 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 /* Lab board, our own Bases view (src/lab/lab-board-view.ts; prototype B3, owner 2026-10-21): the to-do board's rules above, plus what it lacks. */
 .lk-lab-loading { padding: 12px; color: var(--text-faint); font-size: var(--font-ui-small); }
 .lk-lab-tabs { margin-right: auto; }
+/* `.lk-board` beats Obsidian's button fill, so the chips are outline only, as in the tray */
+.lk-board.lk-lab .lk-board-chip { background: none; box-shadow: none; }
+.lk-board.lk-lab .lk-board-chip.is-on { background: rgba(var(--color-purple-rgb), 0.15); }
 .lk-board .lk-lab-tabs .lk-board-chip { padding: 2px 14px; font-size: var(--font-ui-small); }
 .lk-board .lk-lab-tabs .lk-board-chip:hover:not(.is-on) { color: var(--text-accent); border-color: var(--interactive-accent); }
 .lk-board .lk-lab-hide.is-on { color: var(--text-accent); border-color: var(--interactive-accent); }
