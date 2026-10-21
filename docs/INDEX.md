@@ -15,6 +15,7 @@
 | Why something was decided | `docs/decisions.md` |
 | Which docs to update after a change | `docs/maintenance.md` |
 | A planned multi-phase feature | `docs/plans/<feature>.md` |
+| How chemical and hazard data is stored (for a CoSHH / risk assessment tool), with example notes | `docs/coshh-data/` |
 | What each version changed | `docs/changelog.md` |
 | How the user works with the plugin | `docs/tutorial.md`, `README.md` |
 | Snippet, calc block and method note syntax (tokens, `codes:`) | `docs/snippet-syntax.md` |
