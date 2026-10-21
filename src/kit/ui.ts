@@ -168,7 +168,7 @@ class KitSettingTab extends PluginSettingTab {
     const kitFolders: SettingGroupItem[] = [];
     kitFolders.push(folder("templates", "Templates folder", "Where the kit's templates go. Empty: where the kit's files already are; in a new vault Templater's template folder, or Extras/Templates."));
     kitFolders.push(folder("snippets", "Snippets folder", "Where the kit's Alt+S snippets go; the menu lists the notes in this folder. Empty: where the kit's snippets already are; in a new vault Extras/Snippets."));
-    kitFolders.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Templater's scripts folder, or scripts.", true));
+    kitFolders.push(folder("scripts", "Scripts folder", "Where the kit's scripts go. Must not be a hidden (dot) folder. Empty: where the kit's files already are; in a new vault Extras/scripts/lab-kit.", true));
     setup.push({ type: "page", name: "Kit folders", items: kitFolders });
     setup.push({ type: "page", name: "Folder templates", items: this.folderTemplateRows() });
     const bc = kit.boardColours;

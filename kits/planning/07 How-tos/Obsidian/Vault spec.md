@@ -345,7 +345,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 | Meta Bind | Buttons (as button templates) and inputs (homepage, hub status) |
 | Dataview | Lists Lab Kit doesn't draw itself: weekly review, daily notes, Literature, key papers, a hub's Papers and Done to-dos, a meeting note's flagged to-dos |
 | Bases (core) | Tables and the built-in kanban boards (experiments, to-dos) |
-| Templater | Lab book, to-do, project, meeting and concept templates; the Alt+S snippet menu; folder templates for `01 Daily Notes`, `00 Planning/To-dos`, `03 Lab Book/Notes`, `05 Chemicals/Chemicals`; user script `Extras/scripts/templater/vault/vtAsk.js` (the text box). No startup template |
+| Templater | Lab book, project and concept templates, until they move into Lab Kit (to-dos, meetings and the Alt+S menu no longer need it); folder templates for `01 Daily Notes`, `03 Lab Book/Notes`, `05 Chemicals/Chemicals`; user script `Extras/scripts/templater/vault/vtAsk.js` (the text box). No startup template |
 | Lab Kit | Lab entries, snippets, hazards, calculations; the planning commands (to-dos, inbox, meetings, projects, concepts), the carried-over cards on the board, the homepage tiles, hub rows and cards; Check setup, Tidy up notes, Manage files |
 | ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Template folder `Extras/Templates/ZotLit` |
 | Omnisearch | Search |

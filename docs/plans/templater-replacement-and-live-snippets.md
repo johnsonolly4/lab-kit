@@ -257,6 +257,7 @@ Order check: 0 measures; 1-2 build the engine and the self-filling path that eve
 - Depends on: Phases 9-11 (and N4 Phase 5 for `solution`).
 - Files: `src/kit/snippet-insert.ts` / `snippet-run.ts` (`run:` keys dispatch to TypeScript; the old volume Solution prep becomes `src/snippets/solution-volume.ts` for kept copies), `src/kit/snippet-copy-ui.ts` (Make my own copy without the bundled scripts), `src/kit/ui.ts:16-17` (imports removed), tests: every `run:` key byte for byte against the recorded output.
 - Done when: `grep -c labSnippets main.js` after `npm run build` is 0; all snippet tests pass; check PASS.
+- Note (2026-10-21, kit layout clean-up): the bundled scripts (`labSnippets.js`, `labMethods.js`, `labForm.js`) now live in `src/kit/bundled/`, no longer in `kits/lab/Extras/scripts/templater/`.
 
 ### Phase 13 — Lab Kit without Templater code
 - Depends on: Phases 3-6 and 12.

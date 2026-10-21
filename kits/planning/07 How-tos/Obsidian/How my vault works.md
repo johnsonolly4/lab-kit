@@ -102,7 +102,7 @@ flowchart LR
 
 ## Snippets (Alt+S)
 
-`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original. **Settings → Lab Kit → Lab notebook → Snippet icons** sets each snippet's icon.
+`Alt+S` in a lab note opens a menu of tables to insert: solutions, recipes, sample lists, NMR / GPC / DLS tables, combined results, flow column prep and more. Several are plain notes you can read and edit (in the Snippets folder). **Settings → Lab Kit → Manage files…** has **Make my own copy** on each, so you can change one without losing the original. Right-click a snippet in the Alt+S menu → **Change icon…** sets its icon.
 
 ## Keeping the vault healthy
 
@@ -172,7 +172,7 @@ Press **Ctrl/Cmd + P**, type part of the name. Many are also buttons on the home
 | New lab entry | Makes a lab book entry from the Lab Book Template |
 | New chemical | Makes a chemical note (asks the name, then the class) |
 | New rig | Makes a rig note from the Rig template in your Rigs folder (asks the name) |
-| Insert snippet | The Alt+S menu: Recent, then the snippets by group; type to search. Needs Templater for now |
+| Insert snippet | The Alt+S menu: Recent, then the snippets by group; type to search. |
 | Clone experiment | Copies a lab note (the open one, or pick) into a new numbered lab note: set-up kept, sample codes renumbered, status, dates, results and notes started again, with a `Cloned from` link back |
 | Close experiment | Saves a PDF of the open lab note in the PDF folders you set (settings, Close experiment: PDF folders), marks the note closed with the date and a SHA-256 of its text, and sets Status to Closed; the note stays editable. On a phone the PDF is left pending |
 | Reopen experiment | Removes the closed mark and sets Status back to Started; the PDFs are kept |
