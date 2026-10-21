@@ -21,6 +21,7 @@ import { calcTextRefs } from "./calc/text-refs-cm";
 import { SnippetTemplates } from "./kit/snippet-run";
 import { RigRenderer } from "./rig/render";
 import { SolutionRenderer } from "./solution/render";
+import { RaftRenderer } from "./blocks/raft/render";
 
 export default class LabKitPlugin extends Plugin {
   calc!: CalcRenderer;
@@ -48,6 +49,7 @@ export default class LabKitPlugin extends Plugin {
     this.header.register();
     new RigRenderer(this, () => this.kit.kit.figuresFolder).register();
     new SolutionRenderer(this, () => this.kit.kit, openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor)).register();
+    new RaftRenderer(this, () => this.kit.kit, openSnippetForm(this.app, () => this.kit.kit.snippetFormsAtCursor)).register();
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();

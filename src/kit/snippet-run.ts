@@ -14,6 +14,9 @@ import { openSnippetMenu, type MenuIcons } from "./snippet-menu-ui";
 import type { FormField, FormFn } from "./snippet-form";
 import { openSetup, reagentChoices, setupAnchor, SETUP_HINT, type SetupFn } from "../solution/setup";
 import { DEFAULT_SETUP, solutionBlock } from "../solution/setup-text";
+import { lookupMw } from "../blocks/raft/render";
+import { openRaftSetup, type RaftSetupFn } from "../blocks/raft/setup";
+import { DEFAULT_RAFT, raftBlock, workedFor } from "../blocks/raft/text";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
@@ -29,7 +32,7 @@ export interface SnippetTp {
 export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string; /** An old-form stub file (`<%*` … `labSnippets(tp, "nmr")`): the key it runs. */ oldStub?: string }
 
 /** The keys a header's `run:` may name. `solution` is the live ```solution block (N4: Solution prep IS the block, its own set-up window); the old volume tables run on as `solution-volume` (labSnippets.js `solution`). The rest are labSnippets.js keys. */
-export const CALCULATORS = ["solution", "solution-volume", "recipe", "raft", "results", "nmr", "gpc", "dls"];
+export const CALCULATORS = ["solution", "solution-volume", "recipe", "raft", "raft-table", "results", "nmr", "gpc", "dls"];
 
 const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
 
@@ -38,7 +41,7 @@ const NOTE_FOLDERS: Record<string, string> = { rigsFolder: "Rigs folder", method
 
 export class SnippetTemplates {
   /** `form` = the plugin's question window (main.ts); without it the answers come from Templater's labForm.js on `tp` (tests, old setups). */
-  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn, private setup: SetupFn = openSetup, private version: () => string = () => "") {}
+  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn, private setup: SetupFn = openSetup, private version: () => string = () => "", private raftSetup: RaftSetupFn = openRaftSetup) {}
 
   /** Right-click → Change icon… in the menu (set by the kit controller; without it the menu has no right-click). */
   icons: MenuIcons | null = null;
@@ -201,6 +204,7 @@ export class SnippetTemplates {
   /** `run: <key>`: the calculator of that name in labSnippets.js asks its questions and builds the text, exactly as the stub files did. */
   private async calculator(tp: SnippetTp, file: TFile, title: string | undefined, key: string): Promise<string> {
     if (key === "solution") return await this.solutionBlock(tp, file, title);
+    if (key === "raft") return await this.raftBlock();
     if (!CALCULATORS.includes(key)) {
       new Notice(`“${title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "")}”: Lab Kit has no calculator called “${key}”.`);
       return "";
@@ -209,7 +213,7 @@ export class SnippetTemplates {
       new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
       return "";
     }
-    return await tp.user.labSnippets(tp, key === "solution-volume" ? "solution" : key);
+    return await tp.user.labSnippets(tp, key === "solution-volume" ? "solution" : key === "raft-table" ? "raft" : key);
   }
 
   /** `run: solution`: the set-up window at the cursor, then the live block (set-up filled in, actuals empty). "" when it was closed. */
@@ -220,6 +224,18 @@ export class SnippetTemplates {
     if (got.method === "volume") return await this.calculator(tp, file, title, "solution-volume");   // Method: by volume = the old volume form, as before
     const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
     return (at && at.ch > 0 ? "\n" : "") + solutionBlock(got.lines);   // a fence starts on a line of its own
+  }
+
+  /** `run: raft` / `block: raft`: the set-up window at the cursor, then the live ```raft block (set-up filled in, `used:` empty, the worked-out `#` lines written). "" when it was closed.
+   *  The old calc-table generator runs on as `run: raft-table`. */
+  private async raftBlock(): Promise<string> {
+    const kit = this.kit();
+    const got = await this.raftSetup(this.app, { values: DEFAULT_RAFT, names: reagentChoices(this.app, kit.chemicalFolder, kit.mwProperty).map(c => c.name), anchor: setupAnchor(this.app, kit.snippetFormsAtCursor !== false), submit: "Insert", hint: SETUP_HINT.insert });
+    if (!got) return "";
+    const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+    const worked = workedFor(got.lines, n => lookupMw(this.app, kit.mwProperty, n, sourcePath).mw);
+    const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
+    return (at && at.ch > 0 ? "\n" : "") + raftBlock(got.lines, worked);   // a fence starts on a line of its own
   }
 
   /** A snapshot of the rig for this lab note (a new file and history row, or the latest equal one): its link from the lab note and its date. null when the rig has no parts to draw. */

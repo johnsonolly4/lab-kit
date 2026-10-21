@@ -1,5 +1,6 @@
 // I23 Phase 2 leftover (2), form audit 2026-10-20: EVERY snippet in the Alt+S menu asks through the plugin's own form
 // (src/kit/snippet-form.ts, handed in as `form`), with Templater absent. Rows of the table in docs/plans/snippet-menu.md "Form audit 2026-10-20".
+import { DEFAULT_RAFT, raftLines } from "../src/blocks/raft/text";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createRequire } from "node:module";
 import { readFileSync, readdirSync } from "node:fs";
@@ -28,7 +29,8 @@ const RIG = readFileSync("tests/fixtures/rigs/inline-analysis.md", "utf8");
 /** What Alt+S asks, per menu entry: [menu name, the form title(s) the plugin form is opened with]. */
 const EXPECTED: [string, string[]][] = [
   ["Solution prep", []],   // the live block: its own set-up window (src/solution/setup.ts), not the question form
-   ["Recipe by equivalents", ["Recipe by equivalents"]], ["RAFT recipe generator", ["RAFT recipe generator"]],
+   ["Recipe by equivalents", ["Recipe by equivalents"]], ["RAFT recipe generator", []],   // the live block: its own set-up window (src/blocks/raft/setup.ts), not the question form
+  
   ["Variant naming matrix", ["Variant naming matrix"]], ["Sample list", ["Sample list"]], ["Sampling timetable", ["Sampling timetable"]],
   ["Combined results", ["Combined results table"]],
   ["Flow column prep", ["Flow column prep"]], ["Residence times", ["Residence times"]], ["Blank calc table", ["Blank calc table"]], ["Rig", ["Rig"]],
@@ -67,7 +69,8 @@ function setup(pick: string) {
     return Object.fromEntries(fields.filter(f => f.key).map(f => [f.key, f.type === "toggle" ? !!f.value : f.key === "rig" ? "Rig A" : f.key === "codes" || f.key === "rows" || f.key === "rts" || f.key === "times" || f.key === "cols" ? (f.key === "codes" ? "ABC0016-A" : "a, b") : String(f.value ?? "")]));
   };
   const setupWindow = async (_a: unknown, i: { values: unknown }) => ({ values: i.values, lines: { reagent: "Acetic acid", aqueous: "15.00 g", pH: "4.00", share: "60 %", use: "50 %", balance: "0.1 mg" } });
-  const real = new SnippetTemplates(app as never, () => kit, async () => {}, form as never, setupWindow as never);
+  const raftWindow = async (_a: unknown, i: { values: unknown }) => { const r = raftLines({ ...DEFAULT_RAFT, monomers: "DAAm", cta: "PDMA 76", initiator: "VA-044", solvent: "Water", mass: "2.5", dp: "105" }); return { values: i.values, lines: "lines" in r ? r.lines : null }; };
+  const real = new SnippetTemplates(app as never, () => kit, async () => {}, form as never, setupWindow as never, undefined, raftWindow as never);
   const snippets = {
     meta: (f: TFile) => real.meta(f), run: (tp: never, f: TFile) => real.run(tp, f),
     menu: async (items: { name: string; value: unknown }[]) => items.find(i => i.name === pick)?.value ?? null,
@@ -83,8 +86,9 @@ describe("Form audit: every Alt+S snippet asks through the plugin form, Template
     it(`${name}: opens the plugin form (${titles.join(", ")}) and inserts text`, async () => {
       const r = setup(name);
       await insertSnippet(r.deps, r.editor);
-      if (name !== "Solution prep") expect(r.typed.length).toBeGreaterThan(0);
-      else expect(r.inserted.join("")).toContain("```solution\nformat: 1\n");
+      if (name === "Solution prep") expect(r.inserted.join("")).toContain("```solution\nformat: 1\n");
+      else if (name === "RAFT recipe generator") expect(r.inserted.join("")).toContain("```raft\nformat: 1\n");
+      else expect(r.typed.length).toBeGreaterThan(0);
       expect(r.typed).toEqual(titles);
       expect(Notice.messages.filter(m => /Templater|labForm|User script/i.test(m))).toEqual([]);
       // Solution prep, Recipe and RAFT need chemicals to give text (their byte-for-byte output is tested in snippet-run-kit.test.ts and snippets*.test.ts); here only the form matters

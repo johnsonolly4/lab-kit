@@ -742,6 +742,14 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .lk-sol-estimate { margin: 10px 0 8px; font-size: var(--font-ui-small); }
 .lk-sol-estimate-value { font-weight: 700; color: var(--interactive-accent); }
 .lk-sol-estimate-range { color: var(--text-muted); }
+.lk-sol-cell .lk-sol-sub { display: block; font-size: var(--font-ui-smaller); color: var(--text-muted); font-weight: normal; }   /* RAFT block: mmol under each name */
+.lk-sol-fold { margin-top: 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--lk-radius-control); }   /* RAFT block: "How it's worked out" */
+.lk-sol .lk-sol-fold-head { display: flex; align-items: center; gap: 8px; width: 100%; height: auto; padding: 5px 10px; border: 0; background: transparent; box-shadow: none; font-size: var(--font-ui-small); font-weight: 600; color: var(--text-normal); text-align: left; cursor: pointer; }
+.lk-sol-fold-head .chev { color: var(--text-muted); }
+.lk-sol-fold-head .cnt { margin-left: auto; color: var(--text-muted); font-weight: normal; font-size: var(--font-ui-smaller); }
+.lk-sol-fold-body { display: none; padding: 4px 10px 8px; border-top: 1px solid var(--background-modifier-border); font-family: var(--font-monospace); font-size: var(--font-ui-smaller); line-height: 1.55; color: var(--text-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.lk-sol-fold.is-open .lk-sol-fold-body { display: block; }
+.lk-sol-setup-grid .lk-form-row.is-wide { grid-column: 1 / -1; }
 .lk-sol-caution { padding: 8px 12px; border-radius: var(--lk-radius-control); background: rgba(var(--color-orange-rgb), 0.12); color: var(--color-orange); font-size: var(--font-ui-small); }
 .lk-sol-approx, .lk-sol-note { margin-top: 6px; font-size: var(--font-ui-smaller); color: var(--text-muted); }
 .lk-sol-note { margin-top: 0; font-size: var(--font-ui-small); }

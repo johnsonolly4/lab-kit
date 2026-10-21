@@ -295,7 +295,7 @@ describe("SnippetTemplates: run: calculators", () => {
   });
 
   it("run: hands the key and the same tp to labSnippets and inserts exactly what it returns", async () => {
-    for (const key of ["recipe", "raft", "results", "nmr", "gpc", "dls"]) {
+    for (const key of ["recipe", "results", "nmr", "gpc", "dls"]) {
       const { st } = setup({ files: { "S/s.md": stub(key) } });
       const calls: { key: string; tp: unknown }[] = [];
       const tp = calcTp(calls, `## ${key}\n| a |\n\n`);
@@ -305,6 +305,13 @@ describe("SnippetTemplates: run: calculators", () => {
       expect(calls[0].tp).toBe(tp);
     }
     expect(Notice.messages).toEqual([]);
+  });
+
+  it("run: raft-table is the old RAFT calc-table generator (labSnippets key raft); run: raft is the live block", async () => {
+    const { st } = setup({ files: { "S/s.md": stub("raft-table") } });
+    const calls: { key: string; tp: unknown }[] = [];
+    expect(await st.run(calcTp(calls, "## raft\n"), file("S/s.md"))).toBe("## raft\n");
+    expect(calls.map(c => c.key)).toEqual(["raft"]);
   });
 
   it("run: solution is the live block: its own window, no labSnippets; solution-volume is the old volume form (labSnippets key solution)", async () => {
@@ -350,13 +357,13 @@ describe("SnippetTemplates: run: calculators", () => {
   });
 
   it("run: without labSnippets (no user scripts) a Notice says where to look", async () => {
-    const { st } = setup({ files: { "S/s.md": stub("raft") } });
+    const { st } = setup({ files: { "S/s.md": stub("recipe") } });
     expect(await st.run({ user: {} }, file("S/s.md"))).toBe("");
     expect(Notice.messages.at(-1)).toContain("User script functions folder");
   });
 
   it("run: a header with run: and fields, or an empty run:, is an error with a Notice", async () => {
-    const { st } = setup({ files: { "S/a.md": stub("raft", { fields: [] }), "S/b.md": stub("  ") } });
+    const { st } = setup({ files: { "S/a.md": stub("recipe", { fields: [] }), "S/b.md": stub("  ") } });
     expect(await st.run(calcTp([]), file("S/a.md"))).toBe("");
     expect(Notice.messages.at(-1)).toContain("has no fields");
     expect(await st.run(calcTp([]), file("S/b.md"))).toBe("");
@@ -374,11 +381,11 @@ describe("SnippetTemplates: old calculator stubs kept in a vault", () => {
   });
 
   it("run: an old stub runs its calculator through labSnippets, an edited icon or an extra comment line changes nothing", async () => {
-    const { st } = setup({ files: { "S/a.md": OLD("raft"), "S/b.md": OLD("recipe", "// remember to check MW\n") } });
+    const { st } = setup({ files: { "S/a.md": OLD("gpc"), "S/b.md": OLD("recipe", "// remember to check MW\n") } });
     const calls: string[] = [];
-    expect(await st.run(calcTp(calls), file("S/a.md"))).toBe("out:raft\n");
+    expect(await st.run(calcTp(calls), file("S/a.md"))).toBe("out:gpc\n");
     expect(await st.run(calcTp(calls), file("S/b.md"))).toBe("out:recipe\n");
-    expect(calls).toEqual(["raft", "recipe"]);
+    expect(calls).toEqual(["gpc", "recipe"]);
   });
 
   it("run: an old stub with an unknown key shows the Notice and inserts nothing", async () => {

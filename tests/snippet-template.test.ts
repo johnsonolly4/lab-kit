@@ -123,6 +123,14 @@ describe("parseTemplate", () => {
     assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ run: "raft", fields: [] })), /has no fields/);
     assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ run: "" })), /needs the name/);
   });
+  it("block: names a live block like run: names a calculator (the same code runs both)", () => {
+    const p = parseTemplate("---\nx: 1\n---\n", () => ({ title: "T", block: " raft ", group: "Make up" }));
+    assert.deepStrictEqual(p?.header, { title: "T", icon: undefined, desc: undefined, group: "Make up", run: "raft", fields: [] });
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ block: "raft", run: "raft" })), /run: or block:, not both/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ block: "raft", fields: [] })), /has no fields/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ block: "" })), /needs the name/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ make: "note", block: "raft" })), /no run: or block:/);
+  });
   it("turns YAML numbers into text", () => {
     const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "n", label: "N", type: "number", value: 6 }] }));
     assert.strictEqual(p?.header.fields[0].value, "6");
