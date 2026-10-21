@@ -1,7 +1,9 @@
 // The open-work model of a big project (src/planning/plan-open.ts): open chips in steps, loose row, counts. Known answers: docs/plans/plan-map-export.md "Big projects".
 import { describe, it, expect } from "vitest";
 import { readPlan } from "../src/planning/plan";
-import { SECOND_LINE_MAX, openModel } from "../src/planning/plan-open";
+import { CHIP_CAP, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, openModel, rowHeights } from "../src/planning/plan-open";
+import type { OpenChip } from "../src/planning/plan-open";
+import { MIN_READABLE } from "../src/planning/plan-slide";
 import type { NoteRec } from "../src/planning/lists";
 import { BIG_HUB, BIG_TODAY, BIG_TODOS } from "./fixtures/plan-big";
 
@@ -99,5 +101,45 @@ describe("openModel: rules", () => {
   it("an empty plan gives zero counts", () => {
     const m = model([]);
     expect(m.counts).toMatchObject({ open: 0, drawn: 0, steps: 0, places: 0, done: 0, total: 0 });
+  });
+});
+
+describe("chipSize: chip width from places, height from content (M1-2)", () => {
+  const chip = (o: Partial<OpenChip> = {}): OpenChip => ({ path: "x.md", name: "Run kinetics at 70 C", status: "ready", step: 0, place: 0, line: "", subs: [], ...o });
+  const subs = (n: number, done = 0) => Array.from({ length: n }, (_, i) => ({ path: `s${i}.md`, name: `Subtask ${i + 1}`, done: i < done }));
+  it("no chip is under 17 characters a line, whatever the places (capped at 6)", () => {
+    expect(MIN_CHARS).toBe(17);
+    for (let p = 1; p <= 30; p++) expect(chipSize(chip(), p).chars).toBeGreaterThanOrEqual(MIN_CHARS);
+    expect(chipWidth(6)).toBe(259);
+    expect(chipWidth(12)).toBe(chipWidth(CHIP_CAP));
+    expect(chipSize(chip(), 6).chars).toBe(17);
+  });
+  it("every text is 22 px or more (MIN_READABLE)", () => {
+    expect(OPEN_FONT).toBeGreaterThanOrEqual(MIN_READABLE);
+    expect(chipSize(chip({ subs: subs(9) }), 6).font).toBeGreaterThanOrEqual(MIN_READABLE);
+  });
+  it("a chip with subtasks is taller than the same chip without", () => {
+    expect(chipSize(chip({ subs: subs(2) }), 6).height).toBeGreaterThan(chipSize(chip(), 6).height);
+    expect(chipSize(chip({ subs: subs(4) }), 6).height).toBeGreaterThan(chipSize(chip({ subs: subs(2) }), 6).height);
+  });
+  it("name up to 2 lines, cut with …; the second line adds a line", () => {
+    const long = chipSize(chip({ name: "A very long to-do name that will never fit on two short lines of a chip" }), 6);
+    expect(long.name).toHaveLength(2);
+    expect(long.name[1].endsWith("…")).toBe(true);
+    for (const l of long.name) expect(l.length).toBeLessThanOrEqual(long.chars);
+    expect(chipSize(chip({ line: "ABC0014 · Started" }), 6).height).toBeGreaterThan(chipSize(chip(), 6).height);
+  });
+  it("subtask lines up to 4, the 4th says +N more when there are more; done ones ticked", () => {
+    const four = chipSize(chip({ subs: subs(4, 1) }), 6).subs;
+    expect(four.map(l => l.text)).toEqual(["✓ Subtask 1", "○ Subtask 2", "○ Subtask 3", "○ Subtask 4"]);
+    expect(four[0].done).toBe(true);
+    const nine = chipSize(chip({ subs: subs(9) }), 6).subs;
+    expect(nine).toHaveLength(4);
+    expect(nine[3]).toMatchObject({ text: "+6 more", more: true });
+    expect(chipSize(chip({ subs: subs(9) }), 6).height).toBe(chipSize(chip({ subs: subs(4) }), 6).height);
+  });
+  it("a row is as tall as its tallest chip", () => {
+    const h = rowHeights([chip(), chip({ subs: subs(3), place: 1 }), chip({ step: 1 })], 6);
+    expect(h).toEqual([chipSize(chip({ subs: subs(3) }), 6).height, chipSize(chip(), 6).height]);
   });
 });

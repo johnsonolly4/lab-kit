@@ -113,7 +113,7 @@ export const MIN_READABLE = 22;
 const INK = "#1b1f24", MUTED = "#6b7280", LINE = "#9aa1ab", TILE = "#eef0f3", ACCENT = "#1f6feb", LATE = "#b3124f", WAIT = "#c77700", OK = "#2e7d32";
 const TONE = { late: LATE, waiting: WAIT, soon: WAIT, muted: MUTED } as const;
 const FONT = "Helvetica, Arial, sans-serif";
-const CHAR_W = 0.56;   // average character width in em: text is never measured, so wrap and cut by character count with room to spare
+export const CHAR_W = 0.56;   // average character width in em: text is never measured, so wrap and cut by character count with room to spare
 const MARGIN = 48, TITLE_H = 72, GAP = 16;
 const TILE_W = 340, TILE_H = 48, TILE_GAP = 12, TILE_FONT = 22, LABEL_FONT = 24, LABEL_H = 36;
 const CARD_TITLE = 17, CARD_META = 15, MAX_ZOOM = 1.7;
@@ -124,7 +124,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 const esc = (s: string): string => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const cut = (s: string, n: number): string => (s.length <= n ? s : s.slice(0, Math.max(1, n - 1)).trimEnd() + "…");
 /** At most `lines` lines of at most `n` characters, split at spaces; the rest is cut with "…". */
-function wrap(s: string, n: number, lines: number): string[] {
+export function wrap(s: string, n: number, lines: number): string[] {
   const out: string[] = [];
   let rest = s.trim();
   while (rest && out.length < lines) {
