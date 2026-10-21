@@ -2,7 +2,8 @@
 import { describe, it, expect } from "vitest";
 import { readPlan } from "../src/planning/plan";
 import { layoutPlan } from "../src/planning/plan-map";
-import { CHIP_CAP, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, openBudget, openModel, rowHeights } from "../src/planning/plan-open";
+import { CHIP_CAP, COUNT_H, FOLD_ID, chooseLayout, MIN_CHARS, OPEN_FONT, SECOND_LINE_MAX, chipSize, chipWidth, foldOpen, moreId, openBudget, openGeometry, openModel, rowHeights } from "../src/planning/plan-open";
+import type { MapGeometry } from "../src/planning/plan-map";
 import type { FoldedOpen, OpenModel } from "../src/planning/plan-open";
 import type { OpenChip } from "../src/planning/plan-open";
 import { MIN_READABLE } from "../src/planning/plan-slide";
@@ -223,6 +224,89 @@ describe("foldOpen: what is drawn in 1920 × 1080 (M1-2; known answers in docs/p
     expect(f.arrows.filter(a => a.to === moreId(1))).toHaveLength(1);
     addsUp(m, f);
     for (const s of f.steps) for (const c of s.chips) expect(chipSize(c, f.places).chars).toBeGreaterThanOrEqual(MIN_CHARS);
+  });
+});
+
+describe("openGeometry: chips down, arrows through lanes (M1-3; numbers in docs/plans/plan-map-export.md Phase M1-3)", () => {
+  type Box = { x: number; y: number; w: number; h: number };
+  const boxes = (f: FoldedOpen, g: MapGeometry): Map<string, Box> => {
+    const h = new Map<string, number>();
+    for (const s of f.steps) { for (const c of s.chips) h.set(c.path, chipSize(c, f.places).height); if (s.more) h.set(moreId(s.step), COUNT_H); }
+    if (f.fold) h.set(FOLD_ID, COUNT_H);
+    return new Map([...g.pos].map(([p, q]) => [p, { ...q, w: f.width, h: h.get(p)! }]));
+  };
+  /** Sampled points of an arrow inside a chip it does not start or end at. */
+  const crossings = (f: FoldedOpen, g: MapGeometry): string[] => {
+    const out: string[] = [];
+    for (const c of g.curves) for (const [p, b] of boxes(f, g)) {
+      if (p === c.from || p === c.to) continue;
+      if (c.samples.some(q => q.x > b.x && q.x < b.x + b.w && q.y > b.y && q.y < b.y + b.h)) out.push(`${c.from} → ${c.to} crosses ${p}`);
+    }
+    return out;
+  };
+  /** Pairs of routed arrows whose lane parts lie on one line (same x, overlapping in y). */
+  const sharedLanes = (g: MapGeometry): number => {
+    const lanes = g.curves.filter(c => c.routed).map(c => { const l = c.samples.slice(13, 26); return { x: l[0].x, y0: Math.min(...l.map(q => q.y)), y1: Math.max(...l.map(q => q.y)) }; });
+    let n = 0;
+    for (let i = 0; i < lanes.length; i++) for (let j = i + 1; j < lanes.length; j++) if (Math.abs(lanes[i].x - lanes[j].x) < 0.5 && lanes[i].y0 < lanes[j].y1 && lanes[j].y0 < lanes[i].y1) n++;
+    return n;
+  };
+  const path = (name: string): string => big.chips.find(c => c.name === name)!.path;
+  it("the fixture as folded (4 of 9 steps): picture height = the fold's height, places across 6 × 259 px", () => {
+    const f = foldOpen(big), g = openGeometry(f);
+    expect(g.height).toBe(f.height);
+    expect(g.height).toBe(194 + 76 + 166 + 76 + 3 * 36 + 36 + COUNT_H);   // 704 of the 770 px budget
+    expect(g.width).toBe(6 * 259 + 5 * 24);
+    for (const s of f.steps) for (const c of s.chips) expect(g.pos.get(c.path)).toEqual({ x: c.place * (259 + 24), y: [0, 194 + 36, 194 + 76 + 72, 194 + 76 + 166 + 108][s.step] });
+    expect(g.pos.get(FOLD_ID)).toEqual({ x: 0, y: 194 + 76 + 166 + 76 + 4 * 36 });
+    expect(g.curves).toHaveLength(f.arrows.length);
+  });
+  it("an arrow into the count row ends at its top edge", () => {
+    const f = foldOpen(big), g = openGeometry(f);
+    const into = g.curves.filter(c => c.to === FOLD_ID);
+    expect(into.length).toBeGreaterThan(0);
+    const top = g.pos.get(FOLD_ID)!;
+    for (const c of into) expect(c.samples.at(-1)).toEqual({ x: top.x + f.width / 2, y: top.y });
+  });
+  it("no sampled point of any arrow lies inside a chip it does not start or end at (folded, all 9 steps, without subtasks)", () => {
+    for (const f of [foldOpen(big), foldOpen(big, 5000), foldOpen({ ...big, chips: big.chips.map(c => ({ ...c, subs: [] })) })]) expect(crossings(f, openGeometry(f))).toEqual([]);
+    for (let b = 0; b <= 2000; b += 50) expect(crossings(foldOpen(big, b), openGeometry(foldOpen(big, b)))).toEqual([]);
+  });
+  it("GPC of diblocks → Scale up diblock to 5 g (all 9 steps drawn) crosses no chip", () => {
+    const f = foldOpen(big, 5000), g = openGeometry(f);
+    const c = g.curves.find(c => c.from === path("GPC of diblocks") && c.to === path("Scale up diblock to 5 g"));
+    expect(c).toBeTruthy();
+    expect(crossings(f, { ...g, curves: [c!] })).toEqual([]);
+  });
+  it("two routed arrows never share a lane line; the routed counts", () => {
+    const all9 = openGeometry(foldOpen(big, 5000)), folded = openGeometry(foldOpen(big));
+    expect(sharedLanes(all9)).toBe(0);
+    expect(sharedLanes(folded)).toBe(0);
+    // the fixture needs no routing: every arrow joins neighbouring steps or runs past no chip
+    expect([all9.curves.filter(c => c.routed).length, all9.curves.length]).toEqual([0, 23]);
+    expect([folded.curves.filter(c => c.routed).length, folded.curves.length]).toEqual([0, 16]);
+    expect(all9.height).toBe(1304);   // all 9 steps: taller than the 770 px budget, which is why the fold draws 4
+  });
+  it("many arrows skipping steps in one column: each routed through a lane on a line of its own, crossing no chip", () => {
+    const chain = ["A", "B", "C", "D", "E"];
+    const skips: [string, string][] = [["Root", "B"], ["Root", "C"], ["Root", "D"], ["Root", "E"], ["A", "C"], ["A", "D"], ["B", "D"]];
+    const m = model([td("Root"), ...chain.map((n, i) => td(n, { after: [i ? `[[${chain[i - 1]}]]` : "[[Root]]", ...skips.filter(s => s[1] === n).map(s => `[[${s[0]}]]`)] }))]);
+    const f = foldOpen(m, 5000), g = openGeometry(f);
+    expect(f.steps).toHaveLength(6);
+    expect(g.curves.filter(c => c.routed)).toHaveLength(7);
+    expect(sharedLanes(g)).toBe(0);
+    expect(crossings(f, g)).toEqual([]);
+    expect(new Set(g.curves.filter(c => c.routed).map(c => c.samples[13].x))).toEqual(new Set([-12, -9, -15, -6, -18, 1686, 1689]));   // 5 lines left of the one column (0, ±3, ±6), then 2 right of it (one place: chips 1674 px)
+  });
+  it("a step's more chip sits in the last place, and an arrow into it ends at its top edge", () => {
+    const kids = ["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8"];
+    const m = model([td("Root"), ...kids.map((k, i) => td(k, { after: ["[[Root]]"], ...(i >= 6 ? { due: "2026-10-01" } : {}) })), td("Tail", { after: ["[[K1]]"] })]);
+    const f = foldOpen(m, 5000), g = openGeometry(f);
+    const more = g.pos.get(moreId(1))!;
+    expect(more.x).toBe((CHIP_CAP - 1) * (f.width + 24));
+    const into = g.curves.find(c => c.to === moreId(1))!;
+    expect(into.samples.at(-1)).toEqual({ x: more.x + f.width / 2, y: more.y });
+    expect(crossings(f, g)).toEqual([]);
   });
 });
 

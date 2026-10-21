@@ -1,8 +1,8 @@
 // The open-work picture of a big project (planning kit, "M1"): only the unfinished to-dos, as name chips in steps with arrows; finished work is only counted.
 // Pure (no DOM, no Obsidian runtime, no drawing): sizes, folding and pixels come later (docs/plans/plan-map-export.md, Phases M1-2 to M1-4).
 import type { Plan, PlanRow } from "./plan";
-import { layoutPlan } from "./plan-map";
-import type { MapArrow, PlanMap } from "./plan-map";
+import { layoutPlan, mapGeometry } from "./plan-map";
+import type { MapArrow, MapGeometry, PlanMap } from "./plan-map";
 import { CHAR_W, DEFAULT_AHEAD, slideModel, slideSvg, statusOf, wrap } from "./plan-slide";
 
 /** How an open chip stands: late wins over waiting, waiting over can start; "later" waits for an earlier step. */
@@ -208,6 +208,20 @@ export function foldOpen(model: OpenModel, budget = openBudget(model)): FoldedOp
     height: used(shown) + (fold ? STEP_GAP + COUNT_H : 0),
     counts: { open: model.counts.open, drawn: drawnSteps + nLoose, inStep: inStepShown, folded: foldedChips.length, looseMore: rest.length },
   };
+}
+
+/** Pixels of the drawn steps (M1-3): steps top to bottom, places across, each row as tall as its tallest chip; a step's "+N more" chip in the last place, the count row a step of its own under them.
+ *  Arrows that skip steps go through the lanes between places; one into a more chip or the count row ends at its top edge. Origin: the first chip's top-left corner (no margin). */
+/** Lines a lane between places holds (0, ±3, ±6 px: 6 px clear of the chips in a 24 px gap) before a routed arrow takes the next lane, so two never share one. */
+const LANE_LINES = 5;
+export function openGeometry(folded: FoldedOpen): MapGeometry {
+  const cards: { path: string; step: number; place: number }[] = [], heights = new Map<string, number>();
+  for (const s of folded.steps) {
+    for (const c of s.chips) { cards.push({ path: c.path, step: s.step, place: c.place }); heights.set(c.path, chipSize(c, folded.places).height); }
+    if (s.more) { cards.push({ path: moreId(s.step), step: s.step, place: CHIP_CAP - 1 }); heights.set(moreId(s.step), COUNT_H); }
+  }
+  if (folded.fold) { cards.push({ path: FOLD_ID, step: folded.steps.length, place: 0 }); heights.set(FOLD_ID, COUNT_H); }
+  return mapGeometry({ cards, arrows: folded.arrows, startStep: 0 }, 0, "down", undefined, { width: folded.width, height: COUNT_H, heights, stepGap: STEP_GAP, placeGap: PLACE_GAP, pad: 0, laneLines: LANE_LINES });
 }
 
 /** Which picture a plan gets (owner, Q4 a: automatic only): the full map (option A, compact) while its smallest text is 22 px or more, else the open work. */

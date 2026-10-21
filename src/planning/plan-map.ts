@@ -126,6 +126,8 @@ export interface MapSizes {
   width: number; height: number;
   heights?: ReadonlyMap<string, number>;
   stepGap: number; placeGap: number; pad: number;
+  /** Separate lines (3 px apart) a lane holds before a routed arrow goes to the next nearest lane with room; none: 3 lines, the 4th arrow reuses the 1st's (the on-screen map as it always was). */
+  laneLines?: number;
 }
 /** The on-screen map's cards (and option A's). */
 export const CARD_SIZES: MapSizes = { width: CARD_W, height: CARD_H, stepGap: GAP_X, placeGap: GAP_Y, pad: PAD };
@@ -227,11 +229,17 @@ export function mapGeometry(map: Pick<PlanMap, "arrows" | "startStep"> & { cards
     if (!skips || !hitsCard(straight, a.from, a.to)) return [{ from: a.from, to: a.to, d: `M${start.x} ${start.y}${lead} C${c1.x} ${c1.y} ${c2.x} ${c2.y} ${i.x} ${i.y}`, routed: false, samples: straight, via: a.via }];
     // Out into the gap after the first card, along the nearest lane between rows, in through the gap before the last card.
     const mid = (crossOf(o) + crossOf(i)) / 2;
-    let best = 0;
-    for (let n = 1; n <= places; n++) if (Math.abs(lane(n) - mid) < Math.abs(lane(best) - mid)) best = n;
+    const cap = sizes.laneLines, full = (n: number): boolean => cap !== undefined && (inLane.get(n) ?? 0) >= cap;
+    const nearest = (ok: (n: number) => boolean): number => {
+      let b = -1;
+      for (let n = 0; n <= places; n++) if (ok(n) && (b < 0 || Math.abs(lane(n) - mid) < Math.abs(lane(b) - mid))) b = n;
+      return b;
+    };
+    const free = nearest(n => !full(n)), best = free < 0 ? nearest(() => true) : free;   // every lane full: the nearest one's lines are shared
     const seen = inLane.get(best) ?? 0;
     inLane.set(best, seen + 1);
-    const cor = lane(best) + [0, 3, -3][seen % 3], a0 = alongOf(o), a1 = alongOf(i), g = stepGap * 0.35, q = g / 2;   // out and in at different places of a shared gap, else an arrow leaving and one arriving there look like one bump
+    const shift = cap === undefined ? [0, 3, -3][seen % 3] : (seen % 2 ? 1 : -1) * 3 * Math.ceil(seen / 2);   // 0, 3, −3, 6, −6, …
+    const cor = lane(best) + shift, a0 = alongOf(o), a1 = alongOf(i), g = stepGap * 0.35, q = g / 2;   // out and in at different places of a shared gap, else an arrow leaving and one arriving there look like one bump
     const p1 = at(a0 + g, cor), p2 = at(a1 - g, cor);
     const out1 = at(a0 + q, crossOf(o)), out2 = at(a0 + q, cor), in1 = at(a1 - q, cor), in2 = at(a1 - q, crossOf(i));
     const d = `M${start.x} ${start.y}${lead} C${out1.x} ${out1.y} ${out2.x} ${out2.y} ${p1.x} ${p1.y} L${p2.x} ${p2.y} C${in1.x} ${in1.y} ${in2.x} ${in2.y} ${i.x} ${i.y}`;
