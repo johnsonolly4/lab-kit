@@ -7,6 +7,7 @@ import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 import { miniYaml } from "./token-snippets";
 import { solutionBlock } from "../src/solution/setup-text";
+import { DEFAULT_RAFT, raftBlock, raftLines } from "../src/blocks/raft/text";
 
 const require = createRequire(import.meta.url);
 const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
@@ -22,9 +23,9 @@ const ANSWERS: Record<string, Record<string, unknown>> = {
 };
 
 describe("run: files give what labSnippets.js gives", () => {
-  // 01 Solution prep is the live block now; its old volume form is the kept copy `run: solution-volume` (the same file with that key)
+  // 01 Solution prep and 03 RAFT recipe generator are live blocks now; their old calc-table forms are the kept copies `run: solution-volume` / `run: raft-table` (the same files with that key)
   it.each([["01 Solution prep", "solution"], ["02 Recipe by equivalents", "recipe"], ["03 RAFT recipe generator", "raft"], ["10 Combined results", "results"]])("%s", async (name, key) => {
-    const kept = name === "01 Solution prep";
+    const kept = name === "01 Solution prep" || name === "03 RAFT recipe generator";
     const note = "---\nChemicals:\n  - \"[[Lipoic Acid]]\"\n  - \"[[Benzyl alcohol]]\"\n  - \"[[DCM]]\"\n---\n";
     const g = globalThis as Record<string, unknown>;
     g.Notice = class { constructor(_m: string) { /* silent */ } };
@@ -41,8 +42,8 @@ describe("run: files give what labSnippets.js gives", () => {
       config: { target_file: { basename: "0016 - Test", path: "0016 - Test.md" } }, file: { title: "0016 - Test" }, date: { now: () => "2026_10_02" },
       user: { labMethods, labSnippets, labForm: async (_t: unknown, _title: string, fields: { key?: string; type?: string; value?: unknown }[]) => Object.fromEntries(fields.filter(f => f.key).map(f => [f.key, f.key! in ANSWERS[key] ? ANSWERS[key][f.key!] : f.type === "toggle" ? !!f.value : String(f.value ?? "")])) },
     };
-    const real = readFileSync(`${DIR}${name}.md`, "utf8").replace(kept ? "run: solution\n" : "\0", "run: solution-volume\n");
-    if (kept) expect(real).toContain("run: solution-volume");
+    const real = readFileSync(`${DIR}${name}.md`, "utf8").replace(name === "01 Solution prep" ? "run: solution\n" : name === "03 RAFT recipe generator" ? "block: raft\n" : "\0", name === "01 Solution prep" ? "run: solution-volume\n" : "run: raft-table\n");
+    if (kept) expect(real).toContain(name === "01 Solution prep" ? "run: solution-volume" : "run: raft-table");
     const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(real)!;
     const text = `---\n${JSON.stringify(miniYaml(m[1]))}\n---\n`;
     const app = { vault: { cachedRead: async () => text }, workspace: { activeEditor: { editor: { getValue: () => note } }, getActiveFile: () => null }, metadataCache: {} };
@@ -65,5 +66,20 @@ describe("01 Solution prep is the live block", () => {
     const st = new SnippetTemplates(app as never, () => ({ ...KIT_DEFAULTS }) as KitData, undefined, undefined, async (_a, i) => ({ values: i.values, lines }));
     const via = await st.run({ user: {} } as unknown as SnippetTp, new TFile({ path: "S/01 Solution prep.md", basename: "01 Solution prep" }));
     expect(via).toBe(solutionBlock(lines));
+  });
+});
+
+describe("03 RAFT recipe generator is the live block", () => {
+  it("its header is block: raft and it inserts the block with the window's answers, not the calc tables", async () => {
+    const real = readFileSync(`${DIR}03 RAFT recipe generator.md`, "utf8");
+    expect(real).toMatch(/^block: raft$/m);
+    const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(real)!;
+    const text = `---\n${JSON.stringify(miniYaml(m[1]))}\n---\n`;
+    const r = raftLines({ ...DEFAULT_RAFT, monomers: "DAAm", cta: "PDMA 76", initiator: "VA-044", solvent: "Water", mass: "2.5", dp: "105" });
+    if (!("lines" in r)) throw new Error(r.problem);
+    const app = { vault: { cachedRead: async () => text, getFolderByPath: () => null }, workspace: { activeEditor: { editor: { getValue: () => "", getCursor: () => ({ line: 0, ch: 0 }) } }, getActiveFile: () => null }, metadataCache: { getFirstLinkpathDest: () => null } };
+    const st = new SnippetTemplates(app as never, () => ({ ...KIT_DEFAULTS }) as KitData, undefined, undefined, undefined, undefined, async () => ({ values: DEFAULT_RAFT, lines: r.lines }));
+    const via = await st.run({ user: {} } as unknown as SnippetTp, new TFile({ path: "S/03 RAFT recipe generator.md", basename: "03 RAFT recipe generator" }));
+    expect(via).toBe(raftBlock(r.lines, []));   // no chemical notes in this stub app: no MW, so no worked-out lines yet (Edit set-up writes them)
   });
 });

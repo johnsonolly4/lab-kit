@@ -70,6 +70,7 @@
    "name": "modal-bg",
    "kind": "selector",
    "files": [
+    "src/blocks/raft/setup.ts",
     "src/kit/snippet-form.ts",
     "src/kit/snippet-menu-ui.ts",
     "src/planning/board-close-ui.ts",

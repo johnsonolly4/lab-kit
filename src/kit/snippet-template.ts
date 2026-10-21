@@ -34,7 +34,7 @@ export interface TemplateHeader {
   set?: { name: string; value: string }[];
   /** The Alt+S menu section (`Make up`, `Samples`, …). Anything else is listed under My snippets. */
   group?: string;
-  /** `run: solution` = a calculator: Lab Kit runs that key of labSnippets.js, which asks its own questions, so the header has no `fields` and the note has no body. */
+  /** `run: solution` = a calculator (`block: raft` is the same for a live block; both fill this): Lab Kit runs that key of labSnippets.js, which asks its own questions, so the header has no `fields` and the note has no body. */
   run?: string;
   /** `make: note` = a note template (src/kit/note-template.ts): the body is a whole note, front matter included. */
   make?: "note";
@@ -111,7 +111,7 @@ export function parseTemplate(text: string, parseYaml: (yaml: string) => unknown
   if (!m) return null;
   let raw: unknown;
   try { raw = parseYaml(m[1]); } catch (e) { throw new TemplateError(`The header is not valid YAML: ${e instanceof Error ? e.message : "unreadable"}`); }
-  if (!isRecord(raw) || !("fields" in raw || "run" in raw || "make" in raw)) return null;
+  if (!isRecord(raw) || !("fields" in raw || "run" in raw || "block" in raw || "make" in raw)) return null;
   return { header: readHeader(raw), body: text.slice(m[0].length) };
 }
 
@@ -119,11 +119,12 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
   const group = asText(raw.group)?.trim() || undefined;
   const make = "make" in raw;
   if (make && asText(raw.make)?.trim() !== "note") throw new TemplateError("make: must be note (a template that makes a whole note).");
-  if (make && "run" in raw) throw new TemplateError("A header with make: has no run:.");
-  if ("run" in raw) {
-    const run = asText(raw.run)?.trim();
-    if (!run) throw new TemplateError("run: needs the name of a Lab Kit calculator, for example run: solution.");
-    if ("fields" in raw) throw new TemplateError("A header with run: has no fields: the calculator asks its own questions.");
+  if (make && ("run" in raw || "block" in raw)) throw new TemplateError("A header with make: has no run: or block:.");
+  if ("run" in raw || "block" in raw) {
+    if ("run" in raw && "block" in raw) throw new TemplateError("A header has run: or block:, not both.");
+    const run = asText("run" in raw ? raw.run : raw.block)?.trim();
+    if (!run) throw new TemplateError("run: needs the name of a Lab Kit calculator, for example run: solution. block: names a live block, for example block: raft.");
+    if ("fields" in raw) throw new TemplateError("A header with run: or block: has no fields: the calculator asks its own questions.");
     return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, run, fields: [] };
   }
   if (!Array.isArray(raw.fields) && !(make && raw.fields === undefined)) throw new TemplateError("The header's fields must be a list.");

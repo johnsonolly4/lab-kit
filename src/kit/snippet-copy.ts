@@ -62,10 +62,10 @@ export async function renderCopy(run: (tp: HeadlessTp) => Promise<string>, user:
   return "";
 }
 
-/** The snippet a stub note runs: `tp.user.labSnippets(tp, "solution")` → "solution", or a header's `run: solution`. */
+/** The snippet a stub note runs: `tp.user.labSnippets(tp, "solution")` → "solution", or a header's `run: solution` / `block: raft`. */
 export const snippetKey = (stub: string): string | null =>
   stub.match(/labSnippets\(\s*tp\s*,\s*"([^":]+)"/)?.[1]
-  ?? /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(stub)?.[1].match(/^run:[ \t]*["']?([^\s"':]+)["']?[ \t]*$/m)?.[1]
+  ?? /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(stub)?.[1].match(/^(?:run|block):[ \t]*["']?([^\s"':]+)["']?[ \t]*$/m)?.[1]
   ?? null;
 
 /** True for a snippet note that is only a stub calling labSnippets.js (the old `<%*` form or a `run:` header); a token template is a real note (opening it is useful). */

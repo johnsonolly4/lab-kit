@@ -223,7 +223,7 @@
       "role": "templates",
       "path": "Snippets/03 RAFT recipe generator.md",
       "version": "1.4.1",
-      "sha256": "30c0cccc9bf1541ccf1a96a07a9c84429776713f1f6180f278186eb7fd75a05c",
+      "sha256": "95eaa340a95e2b46684fa6c4a865478b69a4eab4acc3bebe4d0b279cba7c793f",
       "renamedFrom": [],
       "desc": "Monomer mass, DP, CTA:initiator, solids → every mass and Mn",
       "optional": true
