@@ -143,16 +143,16 @@ describe("Meeting notes without Templater (Phase 4)", () => {
     expect(made[0].text).toBe(expectedMeeting({ series: "Group meeting", date: "2026-10-22", since: "2026-10-15" }));
   });
 
-  it("a series' own template in token format makes the note; one still in the old format runs through Templater with the hand-over while it is installed", async () => {
+  it("a series' own template in token format makes the note; one still in the old format is never run, even with Templater installed (owner 2026-10-21)", async () => {
     const own = "---\nmake: note\n---\n---\nkind: meeting\nseries: \"[[{{series}}]]\"\n---\nMine\n";
     const files = { [`${TPLS}/Meeting.md`]: kitText("Meeting"), [`${TPLS}/Mine.md`]: own, [`${TPLS}/Old mine.md`]: oldText("Meeting"), [group.path]: "" };
     await call(makeCommands(files), "makeMeeting", { ...group, template: "Mine" }, "2026-10-22");
     expect(made[0]).toEqual({ path: `${MEETINGS}/Group meeting/2026-10-22 Group meeting.md`, text: "---\nkind: meeting\nseries: \"[[Group meeting]]\"\n---\nMine\n" });
     made = [];
     await call(makeCommands(files), "makeMeeting", { ...group, template: "Old mine" }, "2026-10-22");
-    expect(made).toEqual([]);
-    expect(created).toEqual([{ template: `${TPLS}/Old mine.md`, folder: `${MEETINGS}/Group meeting`, handoff: { series: "Group meeting", folder: `${MEETINGS}/Group meeting`, date: "2026-10-22", since: "2026-10-15" } }]);
-    expect(window).not.toHaveProperty("vtMeeting");
+    expect(created).toEqual([]);
+    expect(made).toHaveLength(1);
+    expect(made[0].text).toBe(expectedMeeting({ series: "Group meeting", date: "2026-10-22", since: "2026-10-15" }));
   });
 
   it("a series' old-format own template without Templater: the kit's text makes the note", async () => {

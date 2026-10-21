@@ -382,8 +382,8 @@ export class PlanningCommands {
 
   /**
    * What a series' meeting note is made from: the token text of the template named on its hub (`template`), else of the kit's One-off meeting for a one-off hub, else of the kit's Meeting
-   * (the bundled text when the vault has none or only an old Templater one: Q7). A hub's own template that still holds Templater code runs through Templater (`old`) while it is there;
-   * without it the kit's text is used and a notice says so. A name that finds no note falls back with a notice.
+   * (the bundled text when the vault has none or only an old Templater one: Q7). A hub's own template that still holds Templater code is never run (owner,
+   * 2026-10-21): the kit's text is used and a notice says so. A name that finds no note falls back with a notice.
    */
   private async meetingSource(series: Series): Promise<{ text: string } | { old: TFile }> {
     if (series.template) {
@@ -392,8 +392,8 @@ export class PlanningCommands {
       else {
         const text = await this.app.vault.cachedRead(own);
         if (isTokenTemplate(text, parseYaml)) return { text };
-        if (hasTemplater(this.app)) return { old: own };
-        new Notice(`Template "${series.template}" for ${series.name} holds Templater code and Templater is not installed. Using the kit's template.`);
+        // never run, as an edited kit template (owner, 2026-10-21: "Never run it"); the `old` path stays for Phase 13 to remove
+        new Notice(`Template "${series.template}" for ${series.name} holds Templater code, which Lab Kit no longer runs. Using the kit's template; convert yours to the new template format.`);
       }
     }
     return { text: await this.kitText(series.interval === ONCE ? TPL.oneOff : TPL.meeting, series.interval === ONCE ? ONE_OFF_TEMPLATE : MEETING_TEMPLATE) };
