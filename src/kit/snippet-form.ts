@@ -18,6 +18,8 @@ export interface FormField {
   rows?: number;
   options?: FormOption[];
   suggest?: SuggestEntry[];
+  /** A box that follows a choice: when field `key` changes, the box takes `values[<new choice>]`, unless the user has typed in it. */
+  follows?: { key: string; values: Record<string, unknown> };
 }
 export interface FormOpts { intro?: string; submitText?: string }
 
@@ -77,6 +79,16 @@ export function startValues(fields: FormField[]): Record<string, unknown> {
   return out;
 }
 
+/** The new text of the boxes that follow field `key` (`follows`) once it is set to `value`. Boxes the user typed in, and choices with no value listed, are left out. */
+export function followUps(fields: FormField[], key: string, value: string, typed: Set<string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const f of fields) {
+    if (f.follows?.key !== key || typed.has(f.key) || !Object.prototype.hasOwnProperty.call(f.follows.values, value)) continue;
+    out[f.key] = text(f.follows.values[value]);
+  }
+  return out;
+}
+
 /** A select with this many options or fewer is drawn as pills, more as a dropdown. */
 export const PILL_MAX = 3;
 
@@ -107,6 +119,8 @@ class FormWindow extends Modal {
   private values: Record<string, unknown>;
   private rows: Record<string, { el: HTMLElement; hint: HTMLElement; input: HTMLInputElement | HTMLTextAreaElement }> = {};
   private popups: Suggest[] = [];
+  /** Boxes the user has typed in: a choice they follow no longer changes them. */
+  private typed = new Set<string>();
   private done = false;
 
   constructor(app: App, private title: string, private fields: FormField[], private opts: FormOpts, private anchor: EntryAnchor | null, private settle: (v: Record<string, unknown> | null) => void) {
@@ -160,7 +174,7 @@ class FormWindow extends Modal {
   }
 
   private text(row: HTMLElement, f: FormField): HTMLInputElement | HTMLTextAreaElement {
-    const store = (v: string) => { this.values[f.key] = v; };
+    const store = (v: string) => { this.values[f.key] = v; this.typed.add(f.key); };
     let input: HTMLInputElement | HTMLTextAreaElement;
     if (f.type === "textarea") {
       input = row.createEl("textarea", { cls: "lk-form-box", attr: { rows: String(f.rows ?? 4), placeholder: f.placeholder ?? "" } });
@@ -184,7 +198,7 @@ class FormWindow extends Modal {
 
   private select(row: HTMLElement, f: FormField): void {
     const opts = f.options ?? [];
-    const set = (v: string) => { this.values[f.key] = v; };
+    const set = (v: string) => { this.values[f.key] = v; this.follow(f.key, v); };
     if (opts.length > PILL_MAX) {
       const sel = row.createEl("select", { cls: "dropdown lk-form-box" });
       for (const o of opts) sel.createEl("option", { value: String(o.value), text: String(o.label ?? o.value) });
@@ -197,6 +211,15 @@ class FormWindow extends Modal {
     const draw = () => all.forEach(([el, v]) => el.toggleClass("is-on", v === this.values[f.key]));
     for (const [el, v] of all) el.addEventListener("click", () => { set(v); draw(); });
     draw();
+  }
+
+  /** Field `key` was set to `value`: the boxes that follow it show (and will insert) their value for it. */
+  private follow(key: string, value: string): void {
+    for (const [k, v] of Object.entries(followUps(this.fields, key, value, this.typed))) {
+      this.values[k] = v;
+      const input = this.rows[k]?.input;
+      if (input) input.value = v;
+    }
   }
 
   private submit(): void {
