@@ -25,6 +25,7 @@
 - `src/solution/ask-reagent.ts:9`: a missing property is written under the template's name through `processFrontMatter` (code).
 - `H_Phrase` is read by the hazards header (`src/header/hazards.ts:63`) and by the owner's own risk-assessment script (decision 2026-10-21, `docs/decisions.md:318`) (code).
 - Front-matter rules (measured in `frontmatter-survey.md`, branch `claude/frontmatter-survey`): property names are one property whatever the capitals; one type per name across the vault; nested properties are type *Unknown* and drawn as JSON. No property called `Components` or `Component amounts` exists in `src/` or `kits/` (code, grep 2026-10-21), and neither equals another name apart from capitals (FM2).
+- **Names:** this plan renames no existing property. Every new name here (`Components`, `Component amounts`, and the §4 candidates `SDS`, `Storage class`, `10 h half-life temperature`, `Activation energy`, `ln A`, `Efficiency`, `Tg of homopolymer`, `Monomer class`, `RAFT agent class`, `Volatile`) is a proposal: it follows the owner's answers to the survey's FM2 (no name equal to another apart from capitals; so no `Kind`), FM8 (`Names` / `aliases`) and FM9 (naming style, e.g. `H_Phrase`, `CAS-No.`), and is added to the survey's §1 chemical table when built.
 - The owner's SDS-to-chemical-note tool (own repository, decision 2026-10-20) writes these notes too, so whatever format is chosen must be simple to write from Python (interpretation).
 
 ## 1. Components format (CQ18 a)
