@@ -184,19 +184,19 @@ export function workedOut(s: RaftNamed, t: RaftTargets): string[] {
   const mws = [...s.monomers, s.cta, s.initiator].map(r => `${r.name} ${fmtMw(r.mw)}`).join(", ");
   const out = [WORKED_HEAD, `# MW from the chemical notes: ${mws}`];
   const fSum = s.monomers.reduce((a, m) => a + m.fraction, 0);
+  const mw = (x: number): string => `${fmtMw(x)} g/mol`;   // every amount carries its unit (owner board 9, C4-Q3 b)
   if (s.monomers.length === 1) {
-    out.push(row(s.monomers[0].name, `${fmtMass(s.massG)} ÷ ${fmtMw(s.monomers[0].mw)} = ${fmtMmol(t.monomers[0].mol)}`));
+    out.push(row(s.monomers[0].name, `${fmtMass(s.massG)} ÷ ${mw(s.monomers[0].mw)} = ${fmtMmol(t.monomers[0].mol)}`));
   } else {
-    const sum = s.monomers.map(m => `${fmtMw(m.mw)} × ${trimZeros(String(m.fraction))}`).join(" + ");
-    out.push(row("Monomers", `mean MW = (${sum}) ÷ ${trimZeros(String(fSum))} = ${fmtMw(t.meanMw)}; ${fmtMass(s.massG)} ÷ ${fmtMw(t.meanMw)} = ${fmtMmol(t.nMonomer)}`));
-    s.monomers.forEach((m, i) => out.push(row(m.name, `${fmtMmol(t.nMonomer).replace(" mmol", "")} × ${trimZeros(String(m.fraction))}/${trimZeros(String(fSum))} = ${fmtMmol(t.monomers[i].mol)} × ${fmtMw(m.mw)} = ${fmtMass(t.monomers[i].g)}`)));
+    const sum = s.monomers.map(m => `${mw(m.mw)} × ${trimZeros(String(m.fraction))}`).join(" + ");
+    out.push(row("Monomers", `mean MW = (${sum}) ÷ ${trimZeros(String(fSum))} = ${mw(t.meanMw)}; ${fmtMass(s.massG)} ÷ ${mw(t.meanMw)} = ${fmtMmol(t.nMonomer)}`));
+    s.monomers.forEach((m, i) => out.push(row(m.name, `${fmtMmol(t.nMonomer)} × ${trimZeros(String(m.fraction))}/${trimZeros(String(fSum))} = ${fmtMmol(t.monomers[i].mol)} × ${mw(m.mw)} = ${fmtMass(t.monomers[i].g)}`)));
   }
-  const mmolM = fmtMmol(t.nMonomer).replace(" mmol", "");
-  out.push(row(s.cta.name, `${mmolM} ÷ ${trimZeros(String(s.dp))} = ${fmtMmol(t.cta.mol)} × ${fmtMw(s.cta.mw)} = ${fmtMass(t.cta.g)}`));
-  out.push(row(s.initiator.name, `${fmtMmol(t.cta.mol).replace(" mmol", "")} ÷ ${trimZeros(String(s.ratio))} = ${fmtMmol(t.initiator.mol)} × ${fmtMw(s.initiator.mw)} = ${fmtMass(t.initiator.g)}`));
+  out.push(row(s.cta.name, `${fmtMmol(t.nMonomer)} ÷ ${trimZeros(String(s.dp))} = ${fmtMmol(t.cta.mol)} × ${mw(s.cta.mw)} = ${fmtMass(t.cta.g)}`));
+  out.push(row(s.initiator.name, `${fmtMmol(t.cta.mol)} ÷ ${trimZeros(String(s.ratio))} = ${fmtMmol(t.initiator.mol)} × ${mw(s.initiator.mw)} = ${fmtMass(t.initiator.g)}`));
   out.push(row(s.solvent, `${fmtMass(t.solidsG)} solids × (100 ÷ ${trimZeros(String(s.solidsPct))} − 1) = ${fmtMass(t.solventG)}`));
   if (t.cosolventG !== null) out.push(row(s.cosolvent ?? "", `${fmtMass(t.solventG)} × ${trimZeros(String(s.cosolventPct ?? 0))} % = ${fmtMass(t.cosolventG)}`));
-  out.push(row("Mn", `${trimZeros(String(s.dp))} × ${fmtMw(t.meanMw)} + ${fmtMw(s.cta.mw)} = ${trimZeros(t.mn.toFixed(2))} g/mol`));
+  out.push(row("Mn", `${trimZeros(String(s.dp))} × ${mw(t.meanMw)} + ${mw(s.cta.mw)} = ${trimZeros(t.mn.toFixed(2))} g/mol`));
   return out;
 }
 

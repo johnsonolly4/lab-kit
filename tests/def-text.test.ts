@@ -13,11 +13,6 @@ describe("formats", () => {
     expect(f(158.226666, "mw")).toBe(fmtMw(158.226666));
     expect(f(169.23, "mw")).toBe("169.23");
   });
-  it("mmol is the mol digits without the unit", () => {
-    expect(f(0.01477279, "mmol")).toBe("14.773");
-    expect(f(0.00014069, "mmol")).toBe("0.1407");
-    expect(f(0.00000703466, "mmol")).toBe("0.00703");
-  });
   it("number N drops trailing zeros; no format rounds float noise", () => {
     expect(f(19990.14, "number: 2")).toBe("19990.14");
     expect(f(20000, "number: 2")).toBe("20000");

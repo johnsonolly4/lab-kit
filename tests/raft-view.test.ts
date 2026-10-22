@@ -51,7 +51,7 @@ describe("fixture note raft-0005.md (R-C of the page)", () => {
     expect(view.estimate).toEqual({ mn: "19 963 g/mol", range: "(DP 104.8 · solids 20.00 %)" });
   });
   it("the fold holds the sums of the note's # lines", () => {
-    const inNote = sourceOf("raft-0005.md").split("\n").filter(l => l.startsWith("# ")).slice(3).map(l => l.slice(2));   // after the hand comment, the head and the MW line
+    const inNote = sourceOf("raft-0005-units.md").split("\n").filter(l => l.startsWith("# ")).slice(3).map(l => l.slice(2));   // after the hand comment, the head and the MW line
     expect(view.worked).toEqual(inNote);
     expect(view.worked.length).toBe(5);
   });

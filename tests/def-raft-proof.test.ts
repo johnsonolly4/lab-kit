@@ -65,7 +65,7 @@ describe("the C4 additions to the header and the reader", () => {
 
 describe("block text, definition vs built-in", () => {
   it("fresh 0005: the saved note's block, byte for byte", () => {
-    const fresh = note("raft-0005-fresh.md");
+    const fresh = note("raft-0005-fresh-units.md");
     const saved = blockRange(fresh, fence(fresh, "raft"))!.source;
     expect(same(defSource(picture))).toBe(saved);
     expect(defSource(picture)).toContain("use: raft\n");
@@ -81,8 +81,8 @@ describe("block text, definition vs built-in", () => {
 
   it("three monomers write the mean MW line and one line each", () => {
     const w = model(answersOf({ ...picture, monomers: "DMAm, DAAm, Lipoic Acid" })).worked(HASH);
-    expect(w.some(x => x.includes("mean MW = (99.13 × 1 + 169.23 × 1 + 206.32 × 1) ÷ 3 = 158.2267"))).toBe(true);
-    expect(w[w.length - 1]).toMatch(/^# Mn +105 × 158\.2267 \+ 2220\.99 = /);
+    expect(w.some(x => x.includes("mean MW = (99.13 g/mol × 1 + 169.23 g/mol × 1 + 206.32 g/mol × 1) ÷ 3 = 158.2267 g/mol"))).toBe(true);
+    expect(w[w.length - 1]).toMatch(/^# Mn +105 × 158\.2267 g\/mol \+ 2220\.99 g\/mol = /);
   });
   it("short reagent names (6 characters or fewer): `# Monomers` keeps one space before its text, in the built-in and in the definition", () => {
     const mws: Record<string, number> = { AAm: 71.08, MAm: 85.1, CTA: 417.69, INIT: 323.33 };
@@ -105,7 +105,7 @@ describe("0005 known answer through the definition path", () => {
     expect(m.value("cta.target") as number).toBeCloseTo(0.31248, 4);
     expect(m.value("solvent.target") as number).toBeCloseTo(11.259, 3);
     const w = m.worked(HASH);
-    expect(w[w.length - 1]).toBe("# Mn       105 × 169.23 + 2220.99 = 19990.14 g/mol");
+    expect(w[w.length - 1]).toBe("# Mn       105 × 169.23 g/mol + 2220.99 g/mol = 19990.14 g/mol");
     expect(w.some(x => x.includes("19990.14"))).toBe(true);
   });
 });

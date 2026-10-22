@@ -28,7 +28,7 @@ describe("numbers as written", () => {
 
 describe("the window's answers as block text", () => {
   it("the picture's values give the saved fresh block byte for byte (with the worked-out lines)", () => {
-    const fresh = note("raft-0005-fresh.md");
+    const fresh = note("raft-0005-fresh-units.md");
     const l = lines(picture);
     const worked = workedFor(l, mwOf);
     expect(worked.length).toBe(7);
@@ -64,9 +64,9 @@ describe("the window's answers as block text", () => {
   });
   it("three monomers write the mean MW and one line each", () => {
     const w = workedFor(lines({ ...picture, monomers: "DMAm, DAAm, Lipoic Acid", cta: "PDMA 76" }), mwOf);
-    expect(w.some(x => x.includes("mean MW = (99.13 × 1 + 169.23 × 1 + 206.32 × 1) ÷ 3 = 158.2267"))).toBe(true);
+    expect(w.some(x => x.includes("mean MW = (99.13 g/mol × 1 + 169.23 g/mol × 1 + 206.32 g/mol × 1) ÷ 3 = 158.2267 g/mol"))).toBe(true);
     expect(w.filter(x => /^# (DMAm|DAAm|Lipoic Acid) /.test(x)).length).toBe(3);
-    expect(w[w.length - 1]).toMatch(/^# Mn +105 × 158\.2267 \+ 2220\.99 = /);
+    expect(w[w.length - 1]).toMatch(/^# Mn +105 × 158\.2267 g\/mol \+ 2220\.99 g\/mol = /);
   });
 });
 
@@ -146,8 +146,16 @@ describe("the worked-out lines are replaced as a group", () => {
   const full = note("raft-0005.md");
   const src = blockRange(full, fence(full))!.source;
   it("replacing with the same lines is a no-op, a hand comment above stays", () => {
-    const same = workedFor(lines(picture), mwOf);
-    expect(replaceWorkedOut(src, same)).toBe(src);
+    const units = note("raft-0005-units.md");
+    const unitsSrc = blockRange(units, fence(units))!.source;
+    expect(replaceWorkedOut(unitsSrc, workedFor(lines(picture), mwOf))).toBe(unitsSrc);
+  });
+  it("a block saved before the units were added keeps its # lines until its set-up changes (owner board 9, C4-Q3 b)", () => {
+    const before = valuesFromBlock(parseBlock(src));
+    expect(src).toContain("# PDMA 76  14.773 ÷ 105 = 0.1407 mmol × 2220.99 = 0.3125 g");
+    expect(applyOps(src, raftChanges(before, before))).toBe(src);                       // nothing changed: nothing written
+    expect(applyOps(src, raftChanges(before, { ...before, dp: "120" }))).toContain("# PDMA 76  14.773 ÷ 105 = 0.1407");   // a changed DP writes the DP line only
+    expect(replaceWorkedOut(src, workedFor(lines(picture), mwOf))).toContain("# PDMA 76  14.773 mmol ÷ 105 = 0.1407 mmol × 2220.99 g/mol = 0.3125 g");   // Edit set-up's rewrite uses the new text
   });
   it("new lines replace the old group only", () => {
     const out = replaceWorkedOut(src, ["# worked out by Lab Kit, rewritten when the set-up changes", "# Mn  1"]);

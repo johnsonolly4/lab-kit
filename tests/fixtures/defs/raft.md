@@ -91,22 +91,22 @@ live:
 worked:
   - when: COUNT(monomers) = 1
     each: monomers
-    text: '{{= monomer_mass | mass}} ÷ {{= mw | mw}} = {{= mol | mol}}'
+    text: '{{= monomer_mass | mass}} ÷ {{= mw | mw | unit: g/mol}} = {{= mol | mol}}'
   - when: COUNT(monomers) > 1
     label: Monomers
-    text: 'mean MW = ({{#each monomers | " + "}}{{= mw | mw}} × {{= fraction}}{{/each}}) ÷ {{= SUM(monomers.fraction)}} = {{= mean_mw | mw}}; {{= monomer_mass | mass}} ÷ {{= mean_mw | mw}} = {{= n_monomer | mol}}'
+    text: 'mean MW = ({{#each monomers | " + "}}{{= mw | mw | unit: g/mol}} × {{= fraction}}{{/each}}) ÷ {{= SUM(monomers.fraction)}} = {{= mean_mw | mw | unit: g/mol}}; {{= monomer_mass | mass}} ÷ {{= mean_mw | mw | unit: g/mol}} = {{= n_monomer | mol}}'
   - when: COUNT(monomers) > 1
     each: monomers
-    text: '{{= n_monomer | mmol}} × {{= fraction}}/{{= SUM(monomers.fraction)}} = {{= mol | mol}} × {{= mw | mw}} = {{= target | mass}}'
+    text: '{{= n_monomer | mol}} × {{= fraction}}/{{= SUM(monomers.fraction)}} = {{= mol | mol}} × {{= mw | mw | unit: g/mol}} = {{= target | mass}}'
   - label: '{{cta}}'
-    text: '{{= n_monomer | mmol}} ÷ {{= dp}} = {{= cta.mol | mol}} × {{= cta.mw | mw}} = {{= cta.target | mass}}'
+    text: '{{= n_monomer | mol}} ÷ {{= dp}} = {{= cta.mol | mol}} × {{= cta.mw | mw | unit: g/mol}} = {{= cta.target | mass}}'
   - label: '{{initiator}}'
-    text: '{{= n_cta | mmol}} ÷ {{= cta_to_initiator}} = {{= initiator.mol | mol}} × {{= initiator.mw | mw}} = {{= initiator.target | mass}}'
+    text: '{{= n_cta | mol}} ÷ {{= cta_to_initiator}} = {{= initiator.mol | mol}} × {{= initiator.mw | mw | unit: g/mol}} = {{= initiator.target | mass}}'
   - label: '{{solvent}}'
     text: '{{= solids_g | mass}} solids × (100 ÷ {{= solids}} − 1) = {{= solvent.target | mass}}'
   - when: cosolvent
     label: '{{cosolvent}}'
     text: '{{= solvent_g | mass}} × {{= cosolvent_pct}} % = {{= cosolvent.target | mass}}'
   - label: Mn
-    text: '{{= dp}} × {{= mean_mw | mw}} + {{= cta.mw | mw}} = {{= mn | number: 2}} g/mol'
+    text: '{{= dp}} × {{= mean_mw | mw | unit: g/mol}} + {{= cta.mw | mw | unit: g/mol}} = {{= mn | number: 2}} g/mol'
 ```

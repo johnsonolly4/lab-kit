@@ -50,7 +50,7 @@ const ROW_NAMES = ["mol", "target", "actual", "amount"];
 /** What an item of a list answer has (`monomers.fraction`, or `fraction` inside its `each:` row). */
 const ITEM_NAMES = ["fraction"];
 const COUNT_NAMES = ["weighed", "rows"];
-const FLAG_FORMATS = ["mass", "mass2", "mol", "mmol", "mw", "group", "lower-first"];
+const FLAG_FORMATS = ["mass", "mass2", "mol", "mw", "group", "lower-first"];
 const NUMBER_FORMATS = ["number", "sig", "percent"];
 const FORMATS = [...FLAG_FORMATS, ...NUMBER_FORMATS, "unit"];
 const DEF_NAME = /^[a-z][a-z0-9-]*$/;

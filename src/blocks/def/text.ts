@@ -26,7 +26,7 @@ export const fmtMass2 = (g: number): string => g >= 1 ? `${g.toFixed(2)} g` : fm
 
 /**
  * A value as text, through the formats in order. The first number format picks the digits, later ones decorate:
- * `mass` `mass2` (grams) · `mol` (`14.773 mmol`) · `mmol` (`14.773`, the same digits without the unit) · `mw` (4 decimals, zeros dropped) ·
+ * `mass` `mass2` (grams) · `mol` (`14.773 mmol`) · `mw` (4 decimals, zeros dropped) ·
  * `number: N` (at most N decimals, trailing zeros dropped) · `sig: N` (N significant figures) · `percent: N` (N decimals, then ` %`; the value is already in percent) ·
  * `group` (thin space between thousands) · `unit: text` (appended after a space) · `lower-first`.
  * No number format: the number rounded to 12 figures. An error value shows its code (`#DIV/0!`).
@@ -43,7 +43,6 @@ export function formatValue(v: Value, fmts: readonly Fmt[] = []): string {
       case "mass": if (n !== null) out = fmtMass(n); break;
       case "mass2": if (n !== null) out = fmtMass2(n); break;
       case "mol": if (n !== null) out = fmtMmol(n); break;
-      case "mmol": if (n !== null) out = fmtMmol(n).replace(" mmol", ""); break;
       case "mw": if (n !== null) out = fmtMw(n); break;
       case "number": if (n !== null) out = trimZeros(n.toFixed(places)); break;
       case "sig": if (n !== null) out = String(Number(n.toPrecision(Math.max(1, places)))); break;
