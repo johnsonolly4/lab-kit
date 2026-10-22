@@ -1,6 +1,6 @@
 // I23 Phase 3 guard: each kit calculator file (a `run:` header) inserts byte for byte what labSnippets.js gives for its key, on the same answers.
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it, expect } from "vitest";
-import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { TFile } from "obsidian";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
@@ -9,9 +9,6 @@ import { miniYaml } from "./token-snippets";
 import { solutionBlock } from "../src/solution/setup-text";
 import { DEFAULT_RAFT, raftBlock, raftLines } from "../src/blocks/raft/text";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../src/kit/bundled/labSnippets.js");
-const labMethods = require("../src/kit/bundled/labMethods.js");
 const DIR = "kits/lab/Snippets/";
 const MW: Record<string, number> = { "lipoic acid": 206.32, "benzyl alcohol": 108.14, dcm: 84.93, pabtc: 238.39, dmam: 99.13, "va-044": 323.33 };
 
@@ -46,7 +43,7 @@ describe("run: files give what labSnippets.js gives", () => {
     if (kept) expect(real).toContain(name === "01 Solution prep" ? "run: solution-volume" : "run: raft-table");
     const m = /^---\r?\n([\s\S]*?)\r?\n---/.exec(real)!;
     const text = `---\n${JSON.stringify(miniYaml(m[1]))}\n---\n`;
-    const app = { vault: { cachedRead: async () => text }, workspace: { activeEditor: { editor: { getValue: () => note } }, getActiveFile: () => null }, metadataCache: {} };
+    const app = { ...g.app as object, vault: { cachedRead: async () => text, getFolderByPath: () => null }, workspace: { activeEditor: { editor: { getValue: () => note } }, getActiveFile: () => null } };
     const st = new SnippetTemplates(app as never, () => ({ ...KIT_DEFAULTS, initials: "ABC" }) as KitData);
     const direct: string = await labSnippets(tp, key);
     const via = await st.run(tp as unknown as SnippetTp, new TFile({ path: `S/${name}.md`, basename: name }));

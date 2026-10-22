@@ -254,6 +254,7 @@ Order check: 0 measures; 1-2 build the engine and the self-filling path that eve
 - Done when: those tests; the form audit (`tests/snippet-form-audit.test.ts`) still passes for NMR / GPC / DLS / Mass spec; check PASS; obsidian-check.
 
 ### Phase 12 — Last scripts out of Alt+S
+- **BUILT 2026-10-22** (owner: port every `run:` key now, same output; Recipe = C8 later, Results stays a calc table until Phase 11): `src/snippets/` (`run.ts`, `common.ts`, `methods.ts`, `solution-volume.ts`, `recipe.ts`, `raft-table.ts`, `results.ts`, `util.ts`); `src/kit/bundled/` deleted; `InsertDeps.scripts` is now `kit`. Phase 11's `methods.ts` is done here (the live Results block is not built). Tests: `tests/snippet-port.test.ts` against `tests/fixtures/snippets/expected.json` (3 settings sets × 29 runs, text, questions, notices and tags, recorded from the old scripts); the old script tests now call `tests/helpers/lab-scripts.ts`. Leftovers in BACKLOG "Templater Phase 12 leftovers".
 - Depends on: Phases 9-11 (and N4 Phase 5 for `solution`).
 - Files: `src/kit/snippet-insert.ts` / `snippet-run.ts` (`run:` keys dispatch to TypeScript; the old volume Solution prep becomes `src/snippets/solution-volume.ts` for kept copies), `src/kit/snippet-copy-ui.ts` (Make my own copy without the bundled scripts), `src/kit/ui.ts:16-17` (imports removed), tests: every `run:` key byte for byte against the recorded output.
 - Done when: `grep -c labSnippets main.js` after `npm run build` is 0; all snippet tests pass; check PASS.

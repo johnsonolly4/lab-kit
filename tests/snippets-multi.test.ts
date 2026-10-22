@@ -1,12 +1,9 @@
 // Snippets that read other tables must find numbered copies (samples2, nmr2…) and combine them (BACKLOG v0.4).
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../src/kit/bundled/labSnippets.js");
-const labMethods = require("../src/kit/bundled/labMethods.js");
 import { isTokenSnippet, runToken } from "./token-snippets";
 
 const table = (name: string, codes: string[]) =>
