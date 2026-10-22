@@ -66,7 +66,7 @@ describe("PDF rows", () => {
     const d = await checkData(input({ fm: { "Data folder": "/other/ABC0011-A" } }));
     const rows = dataPdfRows(d);
     expect(rows).toEqual([["Data folder (this device)", FOLDER], ["Data folder (note property)", "/other/ABC0011-A"]]);
-    const html = pdfHtml("ABC0011-A", [["Exp. Class", "RAFT"], ...rows], "<p>x</p>", false);
+    const html = pdfHtml("ABC0011-A", [["Exp. Class", "RAFT"], ...rows], "<p>x</p>", { left: "", right: "", footer: "" });
     expect(html).toContain(`<th>Data folder (this device)</th><td>${FOLDER}</td>`);
     expect(html).not.toContain("Data file");
   });

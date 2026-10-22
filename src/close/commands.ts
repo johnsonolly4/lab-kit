@@ -41,7 +41,7 @@ export interface CloseHost {
   /** The data folder, its files and the missing links of this note, on this device. */
   checkData(): Promise<DataCheck>;
   /** The note as a PDF with `footer` on every page and `extra` rows under the properties; null when this Obsidian cannot print. */
-  makePdf(footer: string, extra: [string, string][]): Promise<ArrayBuffer | null>;
+  makePdf(footer: string, extra: [string, string][], closedOn: string): Promise<ArrayBuffer | null>;
   fileExists(folder: string, name: string): boolean;
   /** Throws when the folder cannot be written. */
   saveFile(folder: string, name: string, bytes: ArrayBuffer): void;
@@ -77,7 +77,7 @@ export async function closeExperiment(h: CloseHost): Promise<void> {
   let pdfMissing = false;
   if (h.canPdf) {
     const footer = closedFooter(date, h.name, hash);
-    const bytes = await h.makePdf(footer, dataPdfRows(data));
+    const bytes = await h.makePdf(footer, dataPdfRows(data), date);
     if (!bytes) pdfMissing = true;
     else {
       const name = pdfFileName(h.name, date, n => h.folders.some(f => h.fileExists(f, n)));
@@ -105,7 +105,7 @@ export async function makeClosedPdf(h: CloseHost): Promise<boolean> {
   const fm = h.frontmatter(), date = closedOn(fm), hash = text(prop(fm, "closed_hash")).trim();
   if (!h.isLabNote || !date || !hash) { h.notice("This note is not closed."); return false; }
   if (!h.canPdf || !h.folders.length) { h.notice(h.canPdf ? MSG.noFolder : "This device cannot make the PDF: do it on a computer."); return false; }
-  const bytes = await h.makePdf(closedFooter(date, h.name, hash), dataPdfRows(await h.checkData()));
+  const bytes = await h.makePdf(closedFooter(date, h.name, hash), dataPdfRows(await h.checkData()), date);
   if (!bytes) { h.notice("This Obsidian cannot make the PDF here."); return false; }
   const name = pdfFileName(h.name, date, n => h.folders.some(f => h.fileExists(f, n)));
   const files: string[] = [];

@@ -61,9 +61,9 @@ function load<K extends keyof NodeModules>(name: K): NodeModules[K] {
  * HTML to PDF bytes through a hidden window and `webContents.printToPDF`. Desktop only: null on a phone, in mobile emulation,
  * or when this Obsidian does not offer `electron.remote`. `electron.remote` is an Obsidian internal (the app supplies it, as
  * `@electron/remote` for `scripts/obsidian-check.mjs`); this is the only place that uses it. The page sets its own size and margins
- * (`@page`), the footer text repeats on every page.
+ * (`@page`), including the running header and footer (margin boxes, measured 2026-10-22: Electron draws them on every page).
  */
-export async function printHtmlToPdf(html: string, footerHtml: string): Promise<ArrayBuffer | null> {
+export async function printHtmlToPdf(html: string): Promise<ArrayBuffer | null> {
   const fs = nodeModule("fs"), path = nodeModule("path"), os = nodeModule("os"), remote = nodeModule("electron")?.remote;
   if (!fs || !path || !os || !remote) return null;
   const file = path.join(os.tmpdir(), `lab-kit-close-${Date.now()}.html`);
@@ -74,7 +74,6 @@ export async function printHtmlToPdf(html: string, footerHtml: string): Promise<
     await win.loadFile(file);
     const bytes = await win.webContents.printToPDF({
       pageSize: "A4", printBackground: true, preferCSSPageSize: true,
-      displayHeaderFooter: true, headerTemplate: "<span></span>", footerTemplate: footerHtml,
     });
     return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
   } catch (e) {
