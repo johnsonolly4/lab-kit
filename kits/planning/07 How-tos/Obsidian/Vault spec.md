@@ -78,7 +78,7 @@ flowchart LR
 > [!warning] Property naming
 > - `Status` (capital S, plain text, one value) is the **only** status property in the vault. Never create a lowercase `status`.
 > - `kind` marks system notes: `project`, `todo`, `literature`, `meeting`, `meeting-series`, `concept`, `review`, `hub`, `daily`, `guide`, `list`, `spec`. (Not `type` - that clashes with the lab book's `Type`.)
-> - Exception: literature notes have no `Status`. Their state is the inline field `[takeaway:: ...]` (empty = to process), because ZotLit refreshes the properties on every update (see below).
+> - Exception: literature notes have no `Status`; the Refpane plugin owns them and their property names (`paper_title`, `zotero_tags`, `collections`, ...).
 > - Lab book properties keep the lab kit's names (`Type`, `Exp. Class`, `Plan date`, ...).
 > - Two lab note properties are written by a command or snippet, not by the template, so a note without them is normal and Tidy up notes never adds them: `Rig` (the Rig snippet, a link to the rig note) and `Cloned from` (Clone experiment, a link to the note it was copied from).
 
@@ -129,7 +129,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 An older hub gets the current layout from **Tidy up notes** > *Hubs: bring the page up to the current template* (it keeps the goal and what is under Related; never ticked by default).
 
 ### Projects overview ([[Projects overview]], `02 Projects`)
-**New project** button, then **one card per project** (two per row, Active first), then **Key papers by project** (from `Collections`, so a paper in several projects appears under each, with its takeaway). Homepage button **Projects** (`go-projects`).
+**New project** button, then **one card per project** (two per row, Active first), then **Key papers by project** (a `refpane` block, `show: key-papers-by-project`: empty without the Refpane plugin). Homepage button **Projects** (`go-projects`).
 
 Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue first, "+ N more"), counts of open to-dos / papers / notes, and three buttons - **New note** (straight into that project's folder), **New to-do**, **Open**.
 
@@ -220,7 +220,7 @@ A meeting note is `YYYY-MM-DD <series name>`, created by **New meeting note** (c
 | `since` | the last meeting of the series, else one interval back - the start of the window the lists read |
 | `project` | empty, a link or a list of links to project hubs - the note then shows on those hubs |
 
-The note starts with a top row (`show: meeting-bar`: back link to its series, **Meeting deck**) and fills itself from `since` to `date`: experiments edited (`show: meeting-experiments`), to-dos ticked done that have a priority of 1, 2 or 3 and are not subtasks (`show: meeting-done`; a muted line says how many without a priority are left out), papers imported (`show: meeting-papers`), and the open to-dos whose `meeting` links this series (Dataview).
+The note starts with a top row (`show: meeting-bar`: back link to its series, **Meeting deck**) and fills itself from `since` to `date`: experiments edited (`show: meeting-experiments`), to-dos ticked done that have a priority of 1, 2 or 3 and are not subtasks (`show: meeting-done`; a muted line says how many without a priority are left out), papers read (a `refpane` block, `show: papers-read`: empty without the Refpane plugin), and the open to-dos whose `meeting` links this series (Dataview).
 
 - **Extra meeting now** (series hub and card; command **New extra meeting now**) makes a meeting note on a date I give, in between; the schedule doesn't move.
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files `<date> <title>` in the `One-off` hub, from the smaller **One-off meeting** template.
@@ -310,7 +310,7 @@ Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkey
 1. Date heading, with **How it works** at the right-hand end - opens [[How my vault works]]
 2. Action buttons: Today's note, New to-do, New lab entry, Quick capture, Add to shopping, Search
 3. Go to (a `vault-goto` block): one button per top-level folder that has a hub note or a base (named after the folder: To-do for the planning folder, Projects, Lab Book, Literature, Chemicals, Knowledge, How-tos, Meetings), plus the `extra:` lines (Weekly review, Shopping list; `Label | target | icon`)
-4. Five tiles (`vault-card` blocks), two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count below) - **Experiments on the go** - **Projects** - **Recently read** (last 5 imports) - **Next meetings**. Each heading opens its board or hub. A tile shows at most 8 rows unless its block has `limit:`, with **Show all** / **Show the last N** when there are more
+4. Five tiles (`vault-card` blocks; Recently read is a `refpane` block), two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count below) - **Experiments on the go** - **Projects** - **Recently read** (a `refpane` block, `show: recently-read`, `limit: 5`; empty without the Refpane plugin) - **Next meetings**. Each heading opens its board or hub. A tile shows at most 8 rows unless its block has `limit:`, with **Show all** / **Show the last N** when there are more
 
 The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and redraw when notes change.
 
@@ -334,7 +334,6 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > | `go-todo` · `go-lab` · `go-projects` · `go-lit` · `go-chem` · `go-know` · `go-howto` · `go-meetings` · `go-review` · `go-shop` | To-do board · Experiments · Projects · Literature · Chemicals · Knowledge · How-tos · Meetings · Weekly review · Shopping list | open that note or base |
 > | `help` | How it works | open `[[How my vault works]]` |
 > | `clear-review` | Start a new review | unticks the review's boxes |
-> | `update-litnote` | Update literature note | ZotLit command |
 
 ## Plugins and their jobs
 
@@ -347,7 +346,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 | Bases (core) | Tables and the built-in kanban boards (experiments, to-dos) |
 | Templater | Lab book, project and concept templates, until they move into Lab Kit (to-dos, meetings and the Alt+S menu no longer need it); folder templates for `01 Daily Notes`, `03 Lab Book/Notes`, `05 Chemicals/Chemicals`; user script `Extras/scripts/templater/vault/vtAsk.js` (the text box). No startup template |
 | Lab Kit | Lab entries, snippets, hazards, calculations; the planning commands (to-dos, inbox, meetings, projects, concepts), the carried-over cards on the board, the homepage tiles, hub rows and cards; Check setup, Tidy up notes, Manage files |
-| ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Template folder `Extras/Templates/ZotLit` |
+| ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Its templates and settings are set up by the Refpane plugin (Check setup there), not by Lab Kit |
 | Omnisearch | Search |
 
 ## Rules for changes
@@ -363,7 +362,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > - Every note is **wide** by default (`vault-theme.css`). Don't add a `wide` class to new templates; existing ones that have it are harmless.
 > - Templates never add a `# heading` that repeats the file name - Obsidian's inline title already shows it. (A heading with *different* text is fine.)
 > - Every template starts with **an empty line** (straight after the properties, or at the very top if it has none), so the cursor lands there and doesn't open the first callout or block into edit mode.
-> - Templates use Templater syntax only - except ZotLit's templates, which must be Liquid and live directly in `Extras/Templates/ZotLit/`. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
+> - Templates use Templater syntax only. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
 > - Kit files (templates, scripts, these notes) are updated through Settings > Lab Kit > **Review update…**. A file I edited is never overwritten: it merges, or shows in **Manage files…** with Compare… / Use kit version… / Keep mine.
 > - Templates ask for text with `tp.user.vtAsk(tp, "Placeholder")` - never `tp.system.prompt` - so every box looks like the pickers. Lists to choose from use `tp.system.suggester`. My user scripts live in `Extras/scripts/templater/vault/` (the kit owns `lab-kit/`).
 > - Templates that a board can create (folder templates) keep any `scheduled` / `Status` the board already wrote, unless the default is intended (lab entries always start `Planned`).

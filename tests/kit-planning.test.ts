@@ -56,18 +56,18 @@ describe("planning kit files (Phase 3)", () => {
     for (const f of planning.manifest.files) expect(planning.contents[f.id], f.src).not.toMatch(/\/Users\/|C:\\\\Users|\\\\Users\\\\|@gmail|johnsonolly4/);
   });
 
-  it("goes to the folder contract in a new vault; ZotLit files only with ZotLit", async () => {
+  it("goes to the folder contract in a new vault; Literature page only with ZotLit", async () => {
     expect(roles.templates).toBe("Extras/Templates");
     expect(roles.userScripts).toBe("Extras/scripts/templater/vault");
     const without = await planManaged(memVault(), planning, null, roles, null, null, offIds(planning, {}, {}));
     const off = without.filter(i => i.action === "off").map(i => i.file.src).sort();
-    expect(off).toEqual(["04 Literature/Literature.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
+    expect(off).toEqual(["04 Literature/Literature.md"]);
     const v = memVault();
     const items = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(items.every(i => i.action === "create")).toBe(true);
     expect(Object.keys(v.files)).toEqual([]);
     const out = await applyManaged(v, planning, items, null, opts);
-    for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Meetings.md"]) expect(v.files[d], d).toBeDefined();
+    for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Meetings.md"]) expect(v.files[d], d).toBeDefined();
     const again = await planManaged(v, planning, out.state, planningRoles(app(), trackedRoles(planning, out.state), PLANNING_FOLDER_DEFAULTS), null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(again.every(i => i.action === "up-to-date")).toBe(true);
   });

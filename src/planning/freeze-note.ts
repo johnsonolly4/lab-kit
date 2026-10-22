@@ -27,7 +27,6 @@ export function freezeDataFor(app: App, kit: KitData, file: TFile): FreezeData |
     fm,
     lab: lab && app.vault.getFolderByPath(lab) ? inside(lab) : undefined,
     todos: inside(todoFolder(f)),
-    literature: app.vault.getFolderByPath(f.literature) ? inside(f.literature) : undefined,
     hub, isFirst: !!hub && firstSeries(hubs)?.name === hub.name,
     planOf: link => {   // a plan-picture block's project: its plan, when the link finds a project hub
       const t = app.metadataCache.getFirstLinkpathDest(link, file.path), rec = t ? recOf(app, t) : null;

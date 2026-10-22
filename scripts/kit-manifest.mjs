@@ -68,9 +68,6 @@ const PLANNING_DESC = {
   "Extras/Templates/Meeting series.md": "New meeting series: its hub note",
   "Extras/Templates/New concept.md": "New concept: a knowledge note in a topic folder",
   "Extras/Templates/New topic hub.md": "New topic hub: the index note of a topic folder",
-  "Extras/Templates/ZotLit/zotlit-note.liquid.md": "ZotLit literature note template",
-  "Extras/Templates/ZotLit/zotlit-lititem.liquid.md": "ZotLit template: one literature item",
-  "Extras/Templates/ZotLit/zotlit-content.liquid.md": "ZotLit template: annotations",
   "00 Home.md": "Homepage: today, focus, this week, experiments, projects, recently read",
   "00 Planning/To-do board.base": "To-do board: one column per day",
   "00 Planning/Weekly review.md": "Weekly review note",
@@ -82,12 +79,11 @@ const PLANNING_DESC = {
   "07 How-tos/Obsidian/How my vault works.md": "Guide to the vault layout and daily routine",
   "07 How-tos/Obsidian/Setting up a computer.md": "Steps to set up Obsidian on a new computer",
   "07 How-tos/Obsidian/Hotkeys.md": "Recommended hotkeys (Alt + first letter); never set for you",
-  "07 How-tos/Obsidian/Set up ZotLit.md": "Checklist: ZotLit's note folder and template folder",
   "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
   "08 Meetings/Meetings.md": "Meetings hub: next meeting of each series",
 };
 const GUIDES = "07 How-tos/Obsidian/";
-const ZOTLIT = ["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
+const ZOTLIT = ["04 Literature/Literature.md"];
 CONFIG.planning = {
   roleByPrefix: PLANNING_ROLE_BY_PREFIX, desc: PLANNING_DESC,
   // Only the ZotLit files can be off (and are, without the ZotLit plugin)

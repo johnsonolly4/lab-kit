@@ -1,4 +1,5 @@
 // Lab Kit: live ```calc tables, hazard header + built-in kit. See STATUS.md.
+import { registerRefpaneStub } from "./planning/refpane-stub";
 import { openSnippetForm } from "./kit/snippet-form";
 import { registerNoteFill, type CustomFill } from "./kit/note-fill-ui";
 import { Plugin } from "obsidian";
@@ -63,6 +64,7 @@ export default class LabKitPlugin extends Plugin {
     // Homepage blocks: always registered, so a homepage never shows raw code (they say so while the planning kit is off)
     const blocks = new PlanningBlocks(this, () => this.kit.kit, () => this.planning);
     blocks.register();
+    registerRefpaneStub(this);
     this.kit.onChanged = () => blocks.refresh();
 
     // Lab board (own Bases view in the kit's Lab book base): always registered, the lab kit has no start step

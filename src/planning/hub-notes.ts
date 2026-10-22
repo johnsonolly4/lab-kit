@@ -65,11 +65,8 @@ show: project-map
 > \`\`\`
 
 > [!summary] Papers
-> \`\`\`dataview
-> LIST WITHOUT ID choice(contains(default(zotero_tags, list()), "/priority"), "&#9733; ", "") + link(file.path, paper_title) + " <span class='vt-muted'>&middot; " + default(join(map(filter(file.lists, (l) => contains(l.outlinks, this.file.link)), (l) => regexreplace(l.text, "^[^:]*:\\\\s*", "")), "; "), "") + "</span>"
-> FROM "04 Literature"
-> WHERE kind = "literature" AND (contains(default(collections, list()), "Projects/" + this.file.name) OR contains(file.outlinks, this.file.link))
-> SORT contains(default(zotero_tags, list()), "/priority") DESC, Year DESC
+> \`\`\`refpane
+> show: project-papers
 > \`\`\`
 
 > [!goto]- Done to-dos

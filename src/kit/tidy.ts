@@ -1,6 +1,7 @@
 // Tidy up notes (Phase 7a, plan docs/plans/phase-7-tidy-notes.md): scans a vault's notes against the kit layout and lists what would change, as
 // before / after text, plus what is only reported. Pure and read-only: the caller reads the vault into `files`; nothing here writes.
 // Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, meetings, leftovers, note bodies) are code.
+import { swapRefpaneBlocks } from "./tidy-refpane-boxes";
 import { BAR_BUTTONS } from "../planning/button-bar";
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
@@ -581,6 +582,18 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       if (first) ownQueries.push({ path: n.path, note: first });
     }
     if (kept.changes.length) groups.push(kept);
+  }
+
+  // Paper boxes: Lab Kit's `recently-read` / `meeting-papers` blocks and its old Dataview paper queries become refpane blocks (refpane owns the paper boxes). Opt-in.
+  if (ctx.todoQueries) {
+    const papers: TidyGroup = { id: "refpane-blocks", title: "Paper boxes: use refpane's blocks", detail: "Home, meeting notes, Literature, Projects overview and project hubs: the paper lists (Recently read, Papers read, To process, Key papers, Papers by Zotero tag, Papers) become refpane blocks. A Dataview query you changed is left alone. Without refpane the boxes are empty. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes) {
+      const text = effective.get(n.path) ?? "", s = split(text), body = s ? s.body : text.replace(/\r\n/g, "\n");
+      if (!/vault-card|dataview/.test(body)) continue;
+      const out = swapRefpaneBlocks(body);
+      if (out !== body && s) papers.changes.push({ path: n.path, before: body, after: out, body: true });
+    }
+    if (papers.changes.length) groups.push(papers);
   }
 
   // Buttons: a line that is only Meta Bind buttons becomes the plugin's button bar (the window a button opens then appears under it). Opt-in: it replaces text in many notes. Off with the planning kit.

@@ -8,9 +8,8 @@ import type { ClosingModal, KitManaged, SettingChange } from "./managed-ui";
 import { ensureFolder } from "./ensure-folder";
 import { addMetaBindButtons, metaBindButtons, resetMetaBindActions, hidePropertiesInDocument, alwaysUpdateLinks, setAlwaysUpdateLinks, navigatorHomepage, setNavigatorHomepage, propertiesInDocument, addTemplaterFolderTemplate,
   isCssSnippetEnabled, loadedPlugins, metaBindButtonIds, openPluginSettings, removeTemplaterStartup, setCssSnippets, setTemplaterFolderMode, templaterFolderTemplates,
-  templaterMatchingMode, templaterStartupTemplates, removeTemplaterFolderTemplates, settingSnapshot, templaterTemplatesFolder, templaterUserScriptsFolder, readZotlitData, writeZotlitData,
+  templaterMatchingMode, templaterStartupTemplates, removeTemplaterFolderTemplates, settingSnapshot, templaterTemplatesFolder, templaterUserScriptsFolder,
   corePluginsOn, dailyNotesOptions, dataviewInlineQueries, propertyTypes, setPropertyType } from "./obsidian-private";
-import { zotlitApply, zotlitScan, type ZotlitScan } from "./zotlit";
 import { deckPath } from "../planning/actions";
 import { PLANNING_BUTTONS } from "../planning/buttons";
 import { inFolder } from "../planning/lists";
@@ -52,15 +51,12 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   const homePath = planning?.stateOf("note-00-home-md")?.path ?? "00 Home.md";
   const homeFile = app.vault.getFileByPath(homePath);
   const homepageMode = homeFile ? String(app.metadataCache.getFileCache(homeFile)?.frontmatter?.obsidianUIMode ?? "") : null;
-  const guideId = "note-obsidian-set-up-zotlit-md";
-  const guide = planning?.stateOf(guideId)?.path ?? null;
   return {
     lab: { initials: host.kit.initials, dataRoot: !!(host.header.dataRootWindows.trim() || host.header.dataRootMac.trim()), methodsFolder: host.kit.methodsFolder, rigsFolder: host.kit.rigsFolder, rigsFolderMissing: !!host.kit.rigsFolder && !app.vault.getFolderByPath(host.kit.rigsFolder),
       labFolder: host.kit.labFolder, chemicalFolder: host.kit.chemicalFolder },
     scripts, homepageMode,
     metaBindDiffers: mbIds ? differingButtons(PLANNING_BUTTONS, metaBindButtons(app) ?? []) : undefined,
     metaBind: mbIds ? { missing: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).length, total: PLANNING_BUTTONS.length, names: PLANNING_BUTTONS.filter(b => !mbIds.includes(b.id)).map(b => b.id) } : null,
-    zotlitGuide: guide && app.vault.getFileByPath(guide) ? guide : null,
     propertiesView: propertiesInDocument(app),
     updateLinks: alwaysUpdateLinks(app),
     corePlugins: corePluginsOn(app, CORE_PLUGINS.map(c => c.id)),
@@ -92,7 +88,6 @@ export class SetupCheckModal extends Modal {
   private newerKit: string[] | undefined;
   private kitFiles: SetupState["kitFiles"];
   private types: SetupState["propertyTypes"];
-  private zotlit: ZotlitScan | null = null;
   private closed: ClosedScan | undefined;
   private fill: FillScan | undefined;
   /** Notes Close / Make PDF is writing: Obsidian updates its copy of their properties a moment after the write, so the list redraws when it has. */
@@ -105,9 +100,9 @@ export class SetupCheckModal extends Modal {
     void this.refresh();
   }
 
-  /** Reads again what needs files read (kept files, kit files, ZotLit's settings), then redraws. */
+  /** Reads again what needs files read (kept files, kit files), then redraws. */
   private async refresh(): Promise<void> {
-    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadZotlit(), this.loadClosed(), this.loadFill(),
+    await Promise.all([this.countNewer(), this.countKitFiles(), this.loadClosed(), this.loadFill(),
       (async () => { this.types = this.host.planning?.slot.enabled ? await propertyTypes(this.app, PROPERTY_TYPES.map(p => p.name)) : undefined; })()]);
     if (this.contentEl.isConnected) this.render();
   }
@@ -151,19 +146,6 @@ export class SetupCheckModal extends Modal {
     } catch (e) { console.error(e); }
   }
 
-  /** The folders the kit's Set up ZotLit checklist names, from the planning folders setting and the templates folder. */
-  private zotlitWanted(): { literature: string; templates: string } {
-    return { literature: kitJoin(this.host.kit.planningFolders.literature, "ZotLit Imports"), templates: kitJoin(this.host.planning?.templatesFolder() ?? "", "ZotLit") };
-  }
-
-  /** ZotLit's settings file read and compared with the kit's fields (only when the planning kit is on and ZotLit is loaded). */
-  private async loadZotlit(): Promise<void> {
-    this.zotlit = null;
-    if (!this.host.planning?.slot.enabled || !loadedPlugins(this.app).has("zotlit")) return;
-    const data = await readZotlitData(this.app);
-    if (data && data !== "unreadable") this.zotlit = zotlitScan(data, this.zotlitWanted());
-  }
-
   /** The count needs the files read, so the list shows first and the row appears when it is ready. */
   private async countNewer(): Promise<void> {
     try {
@@ -179,7 +161,7 @@ export class SetupCheckModal extends Modal {
     el.addClass("lab-kit-win");
     cardWindow(this);
     this.setTitle("Check setup");
-    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, zotlitData: this.zotlit, closed: this.closed && { ...this.closed, canPdf: hasNode() }, fill: this.fill });
+    const items = checkSetup({ ...readSetupState(this.app, this.host), newerKit: this.newerKit, kitFiles: this.kitFiles, propertyTypes: this.types, closed: this.closed && { ...this.closed, canPdf: hasNode() }, fill: this.fill });
     winIntro(el, "What the kits need, and whether it is there. Nothing changes until you press a button and confirm; the list checks again after each one.");
     winSummary(el, setupSummary(items));
     for (const it of orderSetupItems(items)) {
@@ -214,16 +196,6 @@ export class SetupCheckModal extends Modal {
       case "matching-mode": await confirm({ name: "Set Templater's matching mode to Folder templates", desc: "It is None now, so folder templates never run.", apply: () => setTemplaterFolderMode(this.app) }); break;
       case "startup-remove": await confirm({ name: "Remove the old roll-over from Templater's startup templates", desc: `${fix.template}. Lab Kit's to-do engine does the roll-over now. The file itself stays.`,
         apply: () => removeTemplaterStartup(this.app, fix.template) }); break;
-      case "zotlit-fields": await confirm({ name: "Add the kit's fields to ZotLit's Frontmatter settings", desc: "Only the missing ones, and the two folders if they are empty. Fields you already have are never changed. Lab Kit then turns ZotLit off and on so it reads them.",
-        apply: async () => {
-          const data = await readZotlitData(this.app);
-          if (!data || data === "unreadable") { new Notice("Couldn't read the settings file: nothing was changed."); return; }
-          const want = this.zotlitWanted(), scan = zotlitScan(data, want);
-          if (!scan.readable) { new Notice("The field list is not in the expected form: nothing was changed."); return; }
-          await writeZotlitData(this.app, zotlitApply(data, scan, want));
-          new Notice(`ZotLit settings updated (${scan.missing.length} field${scan.missing.length === 1 ? "" : "s"} added).`, 8000);
-          await this.loadZotlit();
-        } }); break;
       case "meta-bind": await confirm({ name: "Add the planning buttons to Meta Bind", desc: "Only the ones missing (by id). Buttons you already have are never changed.",
         apply: async () => { if (await addMetaBindButtons(this.app, PLANNING_BUTTONS)) new Notice("Buttons added. Restart Obsidian so they load.", 10000); } }); break;
       case "meta-bind-reset": await confirm({ name: "Put the kit's action on these Meta Bind buttons", desc: `${fix.ids.join(", ")}. Their old action is replaced (label and look stay). Restart Obsidian afterwards.`,

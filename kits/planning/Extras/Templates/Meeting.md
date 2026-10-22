@@ -50,8 +50,8 @@ show: meeting-bar
 > > ```
 >
 > > [!projects] Papers read
-> > ```vault-card
-> > show: meeting-papers
+> > ```refpane
+> > show: papers-read
 > > ```
 >
 > > [!question] Flagged for this meeting

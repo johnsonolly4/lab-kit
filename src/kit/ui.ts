@@ -154,7 +154,7 @@ class KitSettingTab extends PluginSettingTab {
         } });
     }
     const setup: SettingGroupItem[] = [];
-    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins and Obsidian's own, kit files, the settings below, Templater, Meta Bind buttons, the homepage, ZotLit, meeting series, CSS snippets, folders) and what is missing, with a Fix where Lab Kit can make the change. Nothing changes until you confirm.",
+    setup.push({ name: "Check setup", desc: "Lists what the kits need (plugins and Obsidian's own, kit files, the settings below, Templater, Meta Bind buttons, the homepage, meeting series, CSS snippets, folders) and what is missing, with a Fix where Lab Kit can make the change. Nothing changes until you confirm.",
       render: b => actionRow(b, () => this.ctl.checkSetup()) });
     setup.push({ name: "Check hotkeys", desc: "Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now. Changes nothing: set keys in Obsidian's Hotkeys settings.",
       render: b => actionRow(b, () => this.ctl.checkHotkeys()) });
