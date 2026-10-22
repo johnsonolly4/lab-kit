@@ -84,6 +84,15 @@ describe("block text, definition vs built-in", () => {
     expect(w.some(x => x.includes("mean MW = (99.13 × 1 + 169.23 × 1 + 206.32 × 1) ÷ 3 = 158.2267"))).toBe(true);
     expect(w[w.length - 1]).toMatch(/^# Mn +105 × 158\.2267 \+ 2220\.99 = /);
   });
+  it("short reagent names: the built-in runs `# Monomers` into its text, the definition keeps one space (the one known difference)", () => {
+    const mws: Record<string, number> = { AAm: 71.08, MAm: 85.1, CTA: 417.69, INIT: 323.33 };
+    const v: RaftValues = { ...picture, monomers: "AAm, MAm", cta: "CTA", initiator: "INIT" };
+    const old = workedFor(lines(v), n => mws[n] ?? null);
+    expect(old.some(l => l.startsWith("# Monomersmean MW"))).toBe(true);
+    const m = model(answersOf(v), {}, (n, p) => p === "MW" ? mws[n] ?? null : null);
+    expect(m.worked(HASH).some(l => l.startsWith("# Monomers mean MW"))).toBe(true);
+    expect(m.worked(HASH).filter(l => !l.startsWith("# Monomers")).slice(1)).toEqual(old.filter(l => !l.startsWith("# Monomers")).slice(1));
+  });
   it("no worked-out lines when a MW is missing", () => {
     expect(model(answersOf(picture), {}, (n, p) => n === "DAAm" ? null : lookup(n, p)).worked()).toEqual([]);
   });
