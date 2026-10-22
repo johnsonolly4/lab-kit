@@ -94,3 +94,11 @@ describe("inlineImages", () => {
     expect(a.getAttribute("src")).toBe(`data:image/png;base64,${btoa("x")}`);
   });
 });
+
+describe("PRINT_CSS", () => {
+  it("never breaks a word in a table cell: calc data cells stay on one line, no fixed layout", () => {
+    expect(PRINT_CSS).not.toContain("anywhere");
+    expect(PRINT_CSS).not.toContain("table-layout: fixed");
+    expect(PRINT_CSS).toContain(".block-language-calc td { white-space: nowrap; }");
+  });
+});

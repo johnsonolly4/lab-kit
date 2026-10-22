@@ -21,8 +21,7 @@ body { background: #fff; }
 .markdown-rendered table { table-layout: auto; font-size: 8pt; }
 .markdown-rendered th, .markdown-rendered td { font-size: 8pt; white-space: normal; word-break: normal; overflow-wrap: normal; hyphens: none; padding: 2px 4px; }
 .lab-kit-scroll, .block-language-calc { overflow: visible; max-width: none; width: 100%; }
-.lk-wide table { width: 100%; table-layout: fixed; }
-.lk-wide th, .lk-wide td { overflow-wrap: anywhere; }
+.block-language-calc td { white-space: nowrap; }
 tr { break-inside: avoid; }
 `;
 
