@@ -20,6 +20,8 @@ export interface TemplateField {
   weights?: "fraction";
   /** `type: number`: the unit written after the value in a live block (the form has no place for it yet). */
   unit?: string;
+  /** Key of another question: this one is stored in a live block (and later shown in the window) only while that one is filled. */
+  when?: string;
   /** The question spans the window's grid (the form has no grid yet: parsed and kept). */
   wide?: boolean;
   /** A longer help text shown on demand behind an (i) (CQ22 a). Parsed and kept; the form has no place for it yet. */
@@ -185,7 +187,11 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
       ...(options ? { options } : {}), ...(weights ? { weights: "fraction" as const } : {}), ...(unit ? { unit } : {}), ...(f.wide ? { wide: true } : {}),
       ...(asText(f.help) ? { help: asText(f.help) } : {}),
       ...(f.mandatory ? { mandatory: true } : {}),
+      ...(asText(f.when)?.trim() ? { when: asText(f.when)!.trim() } : {}),
       ...(suggest === "chemicals" || suggest === "codes" || suggest === "notes" ? { suggest } : {}), ...(classes.length ? { classes } : {}), ...(folder ? { folder } : {}) });
+  }
+  for (const f of fields) {
+    if (f.when !== undefined && (f.when === f.key || !fields.some(x => x.key === f.when))) throw new TemplateError(`Field "${f.key}": when: "${f.when}" is not another one of the fields.`);
   }
   for (const f of fields.filter(x => x.suggest === "codes")) {
     if (fields.some(x => x.key === codesFromKey(f.key))) throw new TemplateError(`The field key "${codesFromKey(f.key)}" is reserved: the "Codes from" choice of "${f.key}" uses it.`);

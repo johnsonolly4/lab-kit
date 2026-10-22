@@ -21,7 +21,7 @@ export type Check = typeof CHECKS[number] | "limit";
 export interface Problem { check: Check; key: string; line: number; text: string }
 
 /** A question of the snippet header (`fields:`), as far as the definition needs it. */
-export interface DefField { key: string; type: string }
+export interface DefField { key: string; type: string; when?: string }
 
 /** One display format: `mass`, `number: 0`, `unit: g/mol` … */
 export interface Format { name: string; arg?: string | number | boolean }
@@ -32,7 +32,7 @@ export interface DefRow {
   hint?: string; help?: string;
 }
 export interface DefLive { when?: string; label: string; value: string; format: Format[]; hint?: string; help?: string }
-export interface DefWorked { when?: string; each?: string; text: string }
+export interface DefWorked { when?: string; each?: string; label?: string; text: string }
 
 export interface Definition {
   format: number; name: string; layout: Layout; status: "weighed" | "none";
@@ -44,16 +44,18 @@ export interface Definition {
 const TOP_KEYS = ["format", "name", "layout", "status", "title", "summary", "values", "rows", "live", "worked"];
 const ROW_KEYS = ["id", "each", "role", "name", "when", "lookup", "mol", "target", "sub", "actual", "hint", "help"];
 const LIVE_KEYS = ["when", "label", "value", "format", "hint", "help"];
-const WORKED_KEYS = ["when", "each", "text"];
+const WORKED_KEYS = ["when", "each", "label", "text"];
 /** What every row has, from outside as `<id>.<name>`. `actual` = the typed value, `amount` = actual, else target. */
 const ROW_NAMES = ["mol", "target", "actual", "amount"];
 /** What an item of a list answer has (`monomers.fraction`, or `fraction` inside its `each:` row). */
 const ITEM_NAMES = ["fraction"];
 const COUNT_NAMES = ["weighed", "rows"];
-const FLAG_FORMATS = ["mass", "mass2", "mol", "mw", "group", "lower-first"];
+const FLAG_FORMATS = ["mass", "mass2", "mol", "mmol", "mw", "group", "lower-first"];
 const NUMBER_FORMATS = ["number", "sig", "percent"];
 const FORMATS = [...FLAG_FORMATS, ...NUMBER_FORMATS, "unit"];
 const DEF_NAME = /^[a-z][a-z0-9-]*$/;
+/** The name a question has in formulas: upper case, `-` read as `_` (a stored line `monomer-mass` is `monomer_mass` in a formula). */
+export const norm = (key: string): string => key.toUpperCase().replace(/-/g, "_");
 const FORMULA_TOKEN = /\{\{=([^}]*)\}\}/g;
 
 type Path = (string | number)[];
@@ -195,8 +197,8 @@ export function readDefinition(source: string, parseYaml: (yaml: string) => unkn
   const title = text(["title"], raw.title), summary = text(["summary"], raw.summary);
 
   // answers and the names they give
-  const answers = new Map(fields.map(f => [f.key.toUpperCase(), f]));
-  const listFields = new Set(fields.filter(f => f.type === "list").map(f => f.key.toUpperCase()));
+  const answers = new Map(fields.map(f => [norm(f.key), f]));
+  const listFields = new Set(fields.filter(f => f.type === "list").map(f => norm(f.key)));
 
   // values: names first, formulas later (rows give names values may read)
   const valuesRaw = raw.values;
@@ -225,15 +227,15 @@ export function readDefinition(source: string, parseYaml: (yaml: string) => unkn
     const at = (k: string): Path => ["rows", i, k];
     const id = text(at("id"), item.id), each = text(at("each"), item.each);
     if (each !== undefined) {
-      if (!answers.has(each.toUpperCase())) add("each-unknown", at("each"), `"${each}" is not a question in the snippet's fields:`);
-      else if (!listFields.has(each.toUpperCase())) add("each-not-list", at("each"), `"${each}" is not a list question (type: list), so a row cannot repeat over it`);
+      if (!answers.has(norm(each))) add("each-unknown", at("each"), `"${each}" is not a question in the snippet's fields:`);
+      else if (!listFields.has(norm(each))) add("each-not-list", at("each"), `"${each}" is not a list question (type: list), so a row cannot repeat over it`);
     }
     if (id !== undefined) {
       // a row may share its answer's name (`cta: "[[PDMA 76]]"` and the row `cta`, read as `cta.mw`), not a value's
       const bad = nameProblem(id, new Set(Object.keys(values).map(v => v.toUpperCase())));
       if (bad) add("row-id", at("id"), bad);
     } else if (each === undefined) add("row-id", ["rows", i], `needs "id:" (a name for the row) or "each:" (a list question)`);
-    const rowName = (id ?? each)?.toUpperCase();
+    const rowName = (id !== undefined ? id.toUpperCase() : each !== undefined ? norm(each) : undefined);
     let first = false;
     if (rowName) {
       if (rowNames.has(rowName)) add("row-duplicate", at(id !== undefined ? "id" : "each"), `"${id ?? each}" is already row ${rowNames.get(rowName)! + 1}; each row needs its own name`);
@@ -267,7 +269,7 @@ export function readDefinition(source: string, parseYaml: (yaml: string) => unkn
   const lists = new Set<string>(listFields);
   for (const l of listFields) for (const n of ITEM_NAMES) { global.add(`${l}.${n.toUpperCase()}`); lists.add(`${l}.${n.toUpperCase()}`); }
   rows.forEach(r => {
-    const rowName = (r.id ?? r.each)?.toUpperCase();
+    const rowName = (r.id !== undefined ? r.id.toUpperCase() : r.each !== undefined ? norm(r.each) : undefined);
     if (!rowName) return;
     for (const n of itemNamesOf.get(rowName) ?? []) {
       const full = `${rowName}.${n.toUpperCase()}`;
@@ -279,7 +281,7 @@ export function readDefinition(source: string, parseYaml: (yaml: string) => unkn
   const localOf = (rowName: string | undefined): Set<string> => {
     const out = new Set<string>();
     if (!rowName) return out;
-    const up = rowName.toUpperCase();
+    const up = norm(rowName);
     for (const n of itemNamesOf.get(up) ?? ROW_NAMES) out.add(n.toUpperCase());
     if (listFields.has(up)) for (const n of ITEM_NAMES) out.add(n.toUpperCase());
     return out;
@@ -304,7 +306,7 @@ export function readDefinition(source: string, parseYaml: (yaml: string) => unkn
     if (closed.length !== opens) { add("token", path, `a "{{=" has no closing "}}"`); return; }
     // inside {{#each list}} … {{/each}} the item's own names may be used
     const eachLocal = new Set(local);
-    for (const m of s.matchAll(/\{\{#each\s+([A-Za-z_]\w*)/g)) for (const n of localOf(m[1])) eachLocal.add(n);
+    for (const m of s.matchAll(/\{\{#each\s+([A-Za-z_][\w-]*)/g)) for (const n of localOf(m[1])) eachLocal.add(n);
     for (const m of closed) {
       const [f, ...fmts] = m[1].split("|");
       if (!f.trim()) { add("token", path, `"{{=}}" needs a formula, as "{{= dp}}"`); continue; }
@@ -351,11 +353,12 @@ export function readDefinition(source: string, parseYaml: (yaml: string) => unkn
   list("worked").forEach((item, i) => {
     unknownKeys("worked", i, item, WORKED_KEYS);
     const at = (k: string): Path => ["worked", i, k];
-    const when = formulaText(at("when"), item.when), each = text(at("each"), item.each), line = text(at("text"), item.text);
-    if (each !== undefined && !rowNames.has(each.toUpperCase())) add("each-unknown", at("each"), `"${each}" is not a row's "each:" or "id:"`);
+    const when = formulaText(at("when"), item.when), each = text(at("each"), item.each), line = text(at("text"), item.text), label = text(at("label"), item.label);
+    if (each !== undefined && !rowNames.has(norm(each))) add("each-unknown", at("each"), `"${each}" is not a row's "each:" or "id:"`);
     if (line === undefined && item.text === undefined) add("kind", ["worked", i], `needs "text:", the line to write`);
-    formula(at("when"), when); tokens(at("text"), line, localOf(each));
-    worked.push({ when, each, text: line ?? "" });
+    if (each === undefined && label === undefined) add("kind", ["worked", i], `needs "label:" (the first column of its # line) or "each:" (one line per item)`);
+    formula(at("when"), when); tokens(at("label"), label, localOf(each)); tokens(at("text"), line, localOf(each));
+    worked.push({ when, each, label, text: line ?? "" });
   });
 
   if (problems.length || !name || !layout || !status) return { problems };
