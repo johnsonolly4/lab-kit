@@ -66,4 +66,15 @@ describe("Tidy up notes on the old-style planning fixture", () => {
     expect(s2.reported.find(r => r.id === "todo-own-queries")?.items.map(i => i.path)).toEqual(["00 Planning/Own queries.md"]);
     expect(hashes()).toEqual(before);
   });
+
+  it("Templater Phase 6: the hub pages are the same from the new-format templates as from the old Templater ones (tests/fixtures/templates/old/)", () => {
+    const O = "tests/fixtures/templates/old/";
+    const oldCtx: TidyContext = { ...ctx, hubTemplates: { ...ctx.hubTemplates!, project: readFileSync(`${O}Project hub.md`, "utf8"), topic: readFileSync(`${O}New topic hub.md`, "utf8") } };
+    const hubs = (c: TidyContext) => scan(files(), c).groups.find(g => g.id === "hub-body")!.changes.filter(x => !x.path.startsWith("08 Meetings/")).map(x => [x.path, x.after]);
+    const now = hubs(ctx), before = hubs(oldCtx);
+    expect(now.map(([p]) => p)).toEqual(["02 Projects/Alpha/Alpha.md", "06 Knowledge/NMR/NMR.md"]);
+    expect(now).toEqual(before);
+    // no template header in any replaced page, the meeting series hub's too (its template went to the new format in Phase 4)
+    for (const c of scan(files(), ctx).groups.find(g => g.id === "hub-body")!.changes) expect(c.after, c.path).not.toMatch(/make: note|\{\{|<%|^kind:/m);
+  });
 });
