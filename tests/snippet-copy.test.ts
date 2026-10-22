@@ -1,15 +1,12 @@
 // "Make my own copy": every kit snippet run headless gives a plain note; an existing file is never overwritten.
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { canCopy, copyTokenTemplate, isStubSnippet, isTokenTemplate, snippetKey, copyPath, defaultCopyName, hasFixedCodes, makeSnippetCopy, renderCopy, withTitle, type HeadlessTp } from "../src/kit/snippet-copy";
 import { parseTemplate } from "../src/kit/snippet-template";
 import { miniYaml, shippedTemplate } from "./token-snippets";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../src/kit/bundled/labSnippets.js");
-const labMethods = require("../src/kit/bundled/labMethods.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 const TODAY = new Date(2026, 9, 9);

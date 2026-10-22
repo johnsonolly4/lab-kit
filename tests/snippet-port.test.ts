@@ -3,6 +3,7 @@
 // Re-record (only from the old scripts): RECORD=1 npx vitest run tests/snippet-port.test.ts
 import { describe, it, expect } from "vitest";
 import { readFileSync, writeFileSync } from "node:fs";
+import { Notice as StubNotice } from "obsidian";
 import { labSnippets, labMethods } from "./helpers/lab-scripts";
 
 const EXPECTED = "tests/fixtures/snippets/expected.json";
@@ -82,6 +83,7 @@ async function runAll(kit: Record<string, unknown>): Promise<unknown[]> {
   for (const c of CASES) {
     const asked: unknown[] = [];
     notices.length = 0;
+    const stubFrom = StubNotice.messages.length;
     const tp = {
       config: { target_file: { basename: "0016 - Test", path: "0016 - Test.md" } },
       file: { title: "0016 - Test" },
@@ -99,7 +101,7 @@ async function runAll(kit: Record<string, unknown>): Promise<unknown[]> {
     };
     const md: string = await labSnippets(tp, c.key);
     note += "\n" + md;
-    out.push({ key: c.key, asked, notices: notices.slice(), md });
+    out.push({ key: c.key, asked, notices: [...notices, ...StubNotice.messages.slice(stubFrom)], md });
   }
   await new Promise(r => setTimeout(r, 1000));
   out.push({ tags: tags.slice() });
@@ -113,6 +115,7 @@ describe("calculator snippets give the recorded text and questions", () => {
     const got: Record<string, unknown> = {};
     for (const [name, kit] of Object.entries(KITS)) got[name] = JSON.parse(JSON.stringify(await runAll(kit)));
     if (process.env.RECORD === "1") { writeFileSync(EXPECTED, JSON.stringify(got, null, 1) + "\n"); return; }
-    expect(got).toEqual(JSON.parse(readFileSync(EXPECTED, "utf8")));
+    const want = JSON.parse(readFileSync(EXPECTED, "utf8"));
+    expect(got).toEqual(want);
   }, 30000);
 });

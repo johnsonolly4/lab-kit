@@ -1,4 +1,4 @@
-// Alt+S for token templates: read a snippet note's header, ask its questions with the kit's form (labForm.js), fill the body.
+// Alt+S for token templates: read a snippet note's header, ask its questions with the plugin's form, fill the body.
 // Insert snippet.md calls this through the plugin (`plugin.snippets`); plain snippets never come here. See docs/plans/snippet-token-templates.md.
 import { Notice, TFile, TFolder, parseYaml, type App } from "obsidian";
 import { text } from "../calc/engine";
@@ -17,21 +17,23 @@ import { DEFAULT_SETUP, solutionBlock } from "../solution/setup-text";
 import { lookupMw } from "../blocks/raft/render";
 import { openRaftSetup, type RaftSetupFn } from "../blocks/raft/setup";
 import { DEFAULT_RAFT, raftBlock, workedFor } from "../blocks/raft/text";
+import { runCalculator } from "../snippets/run";
+import { isoToday } from "../snippets/util";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
-  config?: { target_file?: { basename?: string } };
+  config?: { target_file?: { basename?: string; path?: string } | null };
   file?: { title?: string };
   user: {
     labForm?: (tp: unknown, title: string, fields: FormField[], opts?: unknown) => Promise<Record<string, unknown> | null>;
-    labSnippets?: (tp: unknown, key: string) => Promise<string>;
   };
+  date?: { now: (format?: string) => string };
 }
 
 /** Title, icon, description and group for the Alt+S menu. */
 export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string; /** An old-form stub file (`<%*` … `labSnippets(tp, "nmr")`): the key it runs. */ oldStub?: string }
 
-/** The keys a header's `run:` may name. `solution` is the live ```solution block (N4: Solution prep IS the block, its own set-up window); the old volume tables run on as `solution-volume` (labSnippets.js `solution`). The rest are labSnippets.js keys. */
+/** The keys a header's `run:` may name. `solution` is the live ```solution block (N4: Solution prep IS the block, its own set-up window); the old volume tables run on as `solution-volume`. `raft` is the live block, the old tables are `raft-table`. The rest are src/snippets/ calculators. */
 export const CALCULATORS = ["solution", "solution-volume", "recipe", "raft", "raft-table", "results", "nmr", "gpc", "dls"];
 
 const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
@@ -202,7 +204,7 @@ export class SnippetTemplates {
     } catch (e) { return this.fail(file, e); }
   }
 
-  /** `run: <key>`: the calculator of that name in labSnippets.js asks its questions and builds the text, exactly as the stub files did. */
+  /** `run: <key>`: the calculator of that name (src/snippets/) asks its questions and builds the text, exactly as the stub files did. */
   private async calculator(tp: SnippetTp, file: TFile, title: string | undefined, key: string): Promise<string> {
     if (key === "solution") return await this.solutionBlock(tp, file, title);
     if (key === "raft") return await this.raftBlock();
@@ -210,11 +212,11 @@ export class SnippetTemplates {
       new Notice(`“${title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "")}”: Lab Kit has no calculator called “${key}”.`);
       return "";
     }
-    if (!tp.user.labSnippets) {
-      new Notice("Lab snippets need Templater → User script functions folder = the folder that holds labSnippets.js (or a folder above it)");
-      return "";
-    }
-    return await tp.user.labSnippets(tp, key === "solution-volume" ? "solution" : key === "raft-table" ? "raft" : key);
+    const labForm = tp.user.labForm;
+    const ask: FormFn | undefined = this.form ?? (labForm ? (t, f, o) => labForm(tp, t, f, o) : undefined);
+    if (!ask) { new Notice("The question window was not found."); return ""; }
+    const target = (tp.config?.target_file ?? this.app.workspace.getActiveFile()) as TFile | null;
+    return await runCalculator({ app: this.app, kit: this.kit(), form: ask, file: target, today: () => tp.date?.now("YYYY-MM-DD") ?? isoToday() }, key);
   }
 
   /** `run: solution`: the set-up window at the cursor, then the live block (set-up filled in, actuals empty). "" when it was closed. */
