@@ -76,6 +76,34 @@ function refusal(n: Node, lists: ReadonlySet<string>, listOk: boolean): string |
   }
 }
 
+/** Why `k` cannot name a value or a row, or null. `taken` = upper-case names already used (answer keys, row ids). */
+export function nameProblem(k: string, taken: ReadonlySet<string> = new Set()): string | null {
+  const up = k.toUpperCase();
+  if (!VALUE_NAME.test(k)) return `"${k}" is not a name: use letters, digits and _, starting with a letter.`;
+  if (CELL_LIKE.test(k)) return `"${k}" looks like a cell. Names must not look like a cell (such as dp1): rename it, e.g. dp_1.`;
+  if (BUILT_IN_NAMES.includes(up)) return `"${k}" is a built-in name; use another.`;
+  if (taken.has(up)) return `"${k}" is already used as an answer or row name.`;
+  return null;
+}
+
+/** Each circle of values that refer to each other: its names in order (upper case), the first one repeated at the end. */
+export function circles(nodes: ReadonlyMap<string, Node>): string[][] {
+  const found: string[][] = [];
+  const state = new Map<string, 1 | 2>();
+  const visit = (k: string, path: string[]): void => {
+    if (state.get(k) === 2) return;
+    if (state.get(k) === 1) { found.push([...path.slice(path.indexOf(k)), k]); return; }
+    state.set(k, 1);
+    for (const d of names(nodes.get(k)!)) if (nodes.has(d)) visit(d, [...path, k]);
+    state.set(k, 2);
+  };
+  for (const k of nodes.keys()) visit(k, []);
+  return found;
+}
+
+/** The sentence for one circle of `circles`. */
+export const circleProblem = (c: readonly string[]): string => `${c.join(" → ").toLowerCase()} refer to each other in a circle.`;
+
 /** Problems of a set of named values (name → formula), one sentence each; empty = fine. `answers` = names that are already taken (answer keys, row ids), `lists` = the upper-case names of lists. */
 export function checkValues(values: Record<string, string>, answers: readonly string[] = [], lists: ReadonlySet<string> = new Set()): string[] {
   const problems: string[] = [];
@@ -84,23 +112,12 @@ export function checkValues(values: Record<string, string>, answers: readonly st
   const taken = new Set(answers.map(a => a.toUpperCase()));
   const nodes = new Map<string, Node>();
   for (const k of keys) {
-    const up = k.toUpperCase();
-    if (!VALUE_NAME.test(k)) problems.push(`"${k}" is not a name: use letters, digits and _, starting with a letter.`);
-    else if (CELL_LIKE.test(k)) problems.push(`"${k}" looks like a cell. Names must not look like a cell (such as dp1): rename it, e.g. dp_1.`);
-    else if (BUILT_IN_NAMES.includes(up)) problems.push(`"${k}" is a built-in name; use another.`);
-    else if (taken.has(up)) problems.push(`"${k}" is already used as an answer or row name.`);
+    const bad = nameProblem(k, taken);
+    if (bad) problems.push(bad);
     const c = checkFormula(values[k], lists);
-    if ("problem" in c) problems.push(`${k}: ${c.problem}`); else nodes.set(up, c.node);
+    if ("problem" in c) problems.push(`${k}: ${c.problem}`); else nodes.set(k.toUpperCase(), c.node);
   }
-  const state = new Map<string, 1 | 2>();
-  const visit = (k: string, path: string[]): void => {
-    if (state.get(k) === 2) return;
-    if (state.get(k) === 1) { problems.push(`${[...path.slice(path.indexOf(k)), k].join(" → ").toLowerCase()} refer to each other in a circle.`); return; }
-    state.set(k, 1);
-    for (const d of names(nodes.get(k)!)) if (nodes.has(d)) visit(d, [...path, k]);
-    state.set(k, 2);
-  };
-  for (const k of nodes.keys()) visit(k, []);
+  for (const c of circles(nodes)) problems.push(circleProblem(c));
   return problems;
 }
 
