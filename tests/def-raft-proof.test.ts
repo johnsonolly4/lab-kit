@@ -175,25 +175,34 @@ describe("Edit set-up changes only what changed", () => {
   });
 });
 
-describe("the stop rule and the sheet's cases", () => {
-  // Cases A, B, C of my_work/private/raft-excel/compare.py (the owner's sheet), through the definition and the built-in maths.
-  const cases: [string, number, [string, number][], number, number, number, number, number][] = [
-    ["A acrylamide, DP 2350", 2.5, [["AAm", 1]], 2350, 10, 20, 34000, 323.33],
-    ["B DMAm, DP 76", 10, [["DMAm", 1]], 76, 20, 20, 417.69, 323.33],
-    ["C copolymer 0.95 : 0.05", 20, [["DMAm", 0.95], ["Lipoic Acid", 0.05]], 76, 20, 30, 417.69, 323.33],
-    ["C at 0.5 : 0.5", 20, [["DMAm", 0.5], ["Lipoic Acid", 0.5]], 76, 20, 30, 417.69, 323.33],
+describe("the owner's sheet cases (my_work/private/raft-excel/compare.py, output compare-output.txt)", () => {
+  // Cases A, B, C of the sheet through the definition. A, B and C at 0.5 : 0.5 equal the sheet's numbers (6 decimals); C at 0.95 : 0.05 follows CQ10 a (weighted mean),
+  // so its numbers are Lab Kit's, not the sheet's plain average. The NMR standard row and `Init eq` are not in the definition (CQ11).
+  type Want = { monomers: number[]; cta: number; init: number; solvent: number; mn: number };
+  const cases: [string, number, [string, number][], number, number, number, number, Want][] = [
+    ["A acrylamide, DP 2350", 2.5, [["AAm", 1]], 2350, 10, 20, 34000, { monomers: [2.5], cta: 0.508866, init: 0.000484, solvent: 12.037401, mn: 201038.0 }],
+    ["B DMAm, DP 76", 10, [["DMAm", 1]], 76, 20, 20, 417.69, { monomers: [10], cta: 0.554416, init: 0.021458, solvent: 42.303496, mn: 7951.57 }],
+    ["C at 0.5 : 0.5 (the sheet's plain average is right here)", 20, [["DMAm", 0.5], ["Lipoic Acid", 0.5]], 76, 20, 30, 417.69, { monomers: [6.490751, 13.509249], cta: 0.719715, init: 0.027856, solvent: 48.410999, mn: 12024.79 }],
+    ["C copolymer 0.95 : 0.05 (CQ10 a: weighted mean; the sheet differs)", 20, [["DMAm", 0.95], ["Lipoic Acid", 0.05]], 76, 20, 30, 417.69, { monomers: [18.025448, 1.974552], cta: 1.051957, init: 0.040715, solvent: 49.216235, mn: 8358.892 }],
   ];
-  for (const [name, mass, mons, dp, ratio, solids, mwCta, mwInit] of cases) {
+  for (const [name, mass, mons, dp, ratio, solids, mwCta, want] of cases) {
     it(name, () => {
-      const mws: Record<string, number> = { AAm: 71.08, DMAm: 99.13, "Lipoic Acid": 206.32, CTA: mwCta, INIT: mwInit };
+      const mws: Record<string, number> = { AAm: 71.08, DMAm: 99.13, "Lipoic Acid": 206.32, CTA: mwCta, INIT: 323.33 };
       const v: RaftValues = { ...DEFAULT_RAFT, monomers: mons.map(([n, f]) => `${n}: ${f}`).join(", "), cta: "CTA", initiator: "INIT", solvent: "Water", mass: String(mass), dp: String(dp), ratio: String(ratio), solids: String(solids) };
       const m = model(answersOf(v), {}, (n, p) => p === "MW" ? mws[n] ?? null : null);
-      const t = raftTargets({ monomers: mons.map(([n, f]) => ({ name: n, mw: mws[n], fraction: f })), cta: { name: "CTA", mw: mwCta }, initiator: { name: "INIT", mw: mwInit }, massG: mass, dp, ratio, solidsPct: solids })!;
+      const t = raftTargets({ monomers: mons.map(([n, f]) => ({ name: n, mw: mws[n], fraction: f })), cta: { name: "CTA", mw: mwCta }, initiator: { name: "INIT", mw: 323.33 }, massG: mass, dp, ratio, solidsPct: solids })!;
+      // the definition equals the built-in maths to 9 decimals ...
       expect(m.value("mn") as number).toBeCloseTo(t.mn, 9);
-      expect(m.value("monomers.target") as number[]).toEqual(t.monomers.map(x => expect.closeTo(x.g, 9)));
+      (m.value("monomers.target") as number[]).forEach((x, i) => expect(x).toBeCloseTo(t.monomers[i].g, 9));
       expect(m.value("cta.target") as number).toBeCloseTo(t.cta.g, 9);
       expect(m.value("initiator.target") as number).toBeCloseTo(t.initiator.g, 9);
       expect(m.value("solvent.target") as number).toBeCloseTo(t.solventG, 9);
+      // ... and the sheet's printed numbers (6 decimals)
+      (m.value("monomers.target") as number[]).forEach((x, i) => expect(x).toBeCloseTo(want.monomers[i], 5));
+      expect(m.value("cta.target") as number).toBeCloseTo(want.cta, 5);
+      expect(m.value("initiator.target") as number).toBeCloseTo(want.init, 5);
+      expect(m.value("solvent.target") as number).toBeCloseTo(want.solvent, 5);
+      expect(m.value("mn") as number).toBeCloseTo(want.mn, 2);
     });
   }
 });
