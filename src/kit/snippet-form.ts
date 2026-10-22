@@ -102,6 +102,7 @@ export class Suggest extends AbstractInputSuggest<{ name: string; alias: string 
   }
   renderSuggestion(s: { name: string; alias: string | null }, el: HTMLElement): void {
     el.setText(s.name);
+    el.closest(".suggestion-container")?.addClass("lk-drop");   // styles.css: the one dropdown look (Obsidian's container has no class of ours)
     if (s.alias) el.createSpan({ cls: "lab-kit-suggest-alias", text: s.alias });
   }
   selectSuggestion(s: { name: string; alias: string | null }): void {
