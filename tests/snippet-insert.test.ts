@@ -1,16 +1,12 @@
 // I23 Phase 6: Alt+S without Templater. The Insert snippet command lists the Snippets folder and the Methods folder, runs the pick on the
-// kit scripts and the plugin's form, and puts the text at the cursor. The old test of Insert snippet.md's own code lives on here.
+// plugin's calculators and its form, and puts the text at the cursor. The old test of Insert snippet.md's own code lives on here.
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { createRequire } from "node:module";
 import { Notice, TFile } from "obsidian";
 import { SnippetTemplates } from "../src/kit/snippet-run";
 import { insertSnippet, formatNow, snippetTp, type InsertDeps } from "../src/kit/snippet-insert";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 import type { FormField } from "../src/kit/snippet-form";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../src/kit/bundled/labSnippets.js");
-const labMethods = require("../src/kit/bundled/labMethods.js");
 
 const FOLDER = "Templates/Snippets";
 const snip = (name: string, text: string) => ({ file: new TFile({ path: `${FOLDER}/${name}.md`, basename: name }), text });
@@ -44,7 +40,7 @@ function setup(opts: { files: { file: TFile; text: string }[]; pick: string; wit
     menu: async (items: { name: string; icon?: string; desc?: string; value: unknown }[]) => { shown.push(...items); return items.find(i => i.name === opts.pick)?.value ?? null; },
   };
   const deps: InsertDeps = {
-    app: app as never, snippets: snippets as never, scripts: { labSnippets, labMethods }, snippetFolder: FOLDER,
+    app: app as never, snippets: snippets as never, kit: { chemicalFolder: "", chemClassOnly: false, methodsFolder: opts.withMethods ? "Methods" : "" }, snippetFolder: FOLDER,
     form: async (title, fields) => { typed.push(title); return real["form"]!(title, fields); },
     templaterInsert: opts.templater ? async f => { viaTemplater.push(f.basename); return true; } : null,
   };
@@ -78,10 +74,10 @@ describe("Insert snippet without Templater", () => {
     expect(r.forms).toEqual(["Hello"]);
   });
 
-  it("a run: calculator asks through the plugin's form (no Templater labForm) and gives what labSnippets.js gives", async () => {
+  it("a run: calculator asks through the plugin's form (no Templater labForm) and gives the calculator's text", async () => {
     const r = setup({ files: [snip("10 Combined", header({ title: "Combined results", run: "results" }, ""))], pick: "Combined results", answers: { codes: "ABC0016-A, ABC0016-B" } });
     await insertSnippet(r.deps, r.editor);
-    expect(r.typed.length).toBe(1);
+    expect(r.forms.length).toBe(1);
     expect(r.inserted).toHaveLength(1);
     expect(r.inserted[0]).toContain("ABC0016-A");
     expect(r.inserted[0]).toContain("ABC0016-B");
@@ -112,17 +108,6 @@ describe("Insert snippet without Templater", () => {
     expect(r.inserted).toEqual([]);
   });
 
-  it("the script globals are put back after the run", async () => {
-    const g = window as unknown as Record<string, unknown>;
-    g.app = "mine";
-    const r = setup({ files: [snip("01 Plain", "x")], pick: "Plain" });
-    await insertSnippet(r.deps, r.editor);
-    expect(g.app).toBe("mine");
-    delete g.app;
-    await insertSnippet(r.deps, r.editor);
-    expect("app" in g).toBe(false);
-  });
-
   it("the method's tag is written to the note's tags: target_file is the active TFile, as processFrontMatter needs", async () => {
     vi.useFakeTimers();
     try {
@@ -133,26 +118,23 @@ describe("Insert snippet without Templater", () => {
       app.workspace.getActiveFile = () => note;
       // like Obsidian: anything but a TFile is refused
       app.fileManager.processFrontMatter = async (f, fn) => { if (!(f instanceof TFile)) throw new Error("not a TFile"); fn(fm); };
-      const g = window as unknown as Record<string, unknown>;
-      g.app = r.deps.app;   // Obsidian's window.app outlives the run; tag() writes 800 ms later
       await insertSnippet(r.deps, r.editor);
       expect(r.inserted[0]).toContain("name: nmr");
       await vi.advanceTimersByTimeAsync(800);
       expect(fm.tags).toEqual(["lab", "NMR"]);
-      delete g.app;
     } finally { vi.useRealTimers(); }
   });
 
   it("snippetTp gives the active note itself as target_file, null without one", () => {
     const note = new TFile({ path: "a/0016 - Test.md", basename: "0016 - Test" });
     const app = (active: TFile | null) => ({ workspace: { getActiveFile: () => active } }) as never;
-    const tp = snippetTp(app(note), async () => null, { labSnippets: async () => "", labMethods: () => ({ menuEntries: async () => [] }) } as never);
+    const tp = snippetTp(app(note), async () => null);
     expect(tp.config?.target_file).toBe(note);
     expect(tp.file?.title).toBe("0016 - Test");
-    expect(snippetTp(app(null), async () => null, {} as never).config?.target_file).toBeNull();
+    expect(snippetTp(app(null), async () => null).config?.target_file).toBeNull();
   });
 
-  it("the tp date follows Templater's tokens the kit scripts use", () => {
+  it("the tp date follows Templater's tokens the snippets use", () => {
     expect(formatNow("YYYY-MM-DD", new Date(2026, 9, 5))).toBe("2026-10-05");
     expect(formatNow("YYYY_MM_DD HH:mm", new Date(2026, 0, 2, 3, 4))).toBe("2026_01_02 03:04");
   });

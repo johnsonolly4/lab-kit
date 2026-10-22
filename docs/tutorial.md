@@ -227,7 +227,7 @@ flowchart LR
 | Data folder (e.g. on Google Drive) | Settings → Lab Kit → Lab notebook → Data folder root (one for Windows, one for macOS / Linux; empty until you set it) |
 | A snippet's menu icon | Alt+S, right-click the snippet → **Change icon…** (pick from Obsidian's icons). A kit snippet is copied first (**Make my own copy**) and the copy gets the icon; the four calculators (Solution prep, Recipe by equivalents, RAFT, Combined results) get it in the kit file itself (it then shows as changed by you). If the icon is the ONLY thing you changed in a kit file, a later kit update (Review update…) updates the rest of the file and keeps your icon: the row says **Only your icon changed: kept.** (tick it as for any edited file; your copy is backed up first). If you changed anything else too, it stays a normal "changed by you" file. The icon is the `icon:` line in the snippet's header. Icons you saved under the old Settings → Snippet icons page: Tidy up notes → **Snippets: icons from settings into the notes** (opt-in) |
 | A snippet's built-in icon or text | first two lines of its file in the snippets folder (Settings → Lab Kit → Setup → Kit folders → Snippets folder; `Extras/Snippets` in a new vault) (`// icon:` and `// desc:`); a token template (variant matrix, sample list, timetable, column, residence times, blank table, rig) has `icon:` and `desc:` in its header |
-| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: `labSnippets.js` in your Templater user scripts folder (one section per snippet). The other seven (the six above and Rig) are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
+| What a snippet builds | the solution, recipe, RAFT, NMR, GPC, DLS, method and Combined results snippets: code inside the Lab Kit plugin (no Templater script). The other seven (the six above and Rig) are plain notes in the `Snippets` folder: a header with the questions, then the text with `{{tokens}}` (the Lab Kit plugin fills them) |
 | A new snippet | Settings → Lab Kit → **Manage files…** → **Make my own copy** on a snippet row (asks a name, never overwrites, and updates never touch the copy), or copy a file in the `Snippets` folder by hand and give it a new number and name. Token syntax: [snippet-syntax.md](snippet-syntax.md) |
 | Leave a snippet out of the Alt+S menu | Settings → Lab Kit → **Manage files…** → switch its **Use** toggle off (see section 7) |
 
@@ -376,7 +376,7 @@ The planning kit turns the vault around the lab book into a planner: a homepage,
 
 | Problem | Fix |
 |---|---|
-| Snippets ask one question at a time, or say "need Templater → User script functions" | Settings → Templater → **User script functions** folder = the folder that holds `labSnippets.js` |
+| Snippets ask one question at a time, or say "need Templater → User script functions" | An older Lab Kit version: update the plugin; Alt+S no longer needs Templater's User script functions folder |
 | `#NOTE?` in an MW cell | No note with that name. Check spelling, or type the MW over the formula |
 | `#PROP?` in an MW cell | The chemical note has no molecular weight property (set **Molecular weight property** in Settings → Lab Kit, or add `MW`) |
 | `#REF!` | The formula points at a deleted row or a table name that doesn't exist |

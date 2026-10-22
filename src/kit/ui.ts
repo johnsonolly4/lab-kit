@@ -19,8 +19,6 @@ import { insertSnippet } from "./snippet-insert";
 import { openSnippetForm } from "./snippet-form";
 import { menuIcons } from "./snippet-icon-ui";
 import type { SnippetTemplates } from "./snippet-run";
-import labSnippets from "./bundled/labSnippets.js";
-import labMethods from "./bundled/labMethods.js";
 import type { FolderGuardActions } from "./folder-guard";
 import { runCloseCommand } from "../close/ui";
 import { hasNode } from "../platform";
@@ -585,7 +583,7 @@ export class KitController {
     this.snippets.icons = menuIcons(this.app, this.managed);
     const snippetFolder = this.managed.snippetsFolder();
     try {
-      await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app, () => this.kit.snippetFormsAtCursor), scripts: { labSnippets, labMethods }, snippetFolder,
+      await insertSnippet({ app: this.app, snippets: this.snippets, form: openSnippetForm(this.app, () => this.kit.snippetFormsAtCursor), kit: this.kit, snippetFolder,
         templaterInsert: hasTemplater(this.app) ? f => templaterInsert(this.app, f) : null }, editor);
     } catch (e) { console.error(e); new Notice("Insert snippet failed. See the developer console for details."); }
   }

@@ -26,6 +26,9 @@ export type ClosingModal = Modal & { onClosed?: () => void };
 export class KitManaged {
   constructor(private plugin: Plugin, private host: ManagedHost, readonly bundle: EmbeddedKit) {}
 
+  /** The plugin's settings (the folders the Alt+S snippets read). */
+  settings(): KitData { return this.host.kit; }
+
   get app(): App { return this.plugin.app; }
   get version(): string { return this.bundle.manifest.kitVersion; }
   /** This kit's saved state (installed files, folders, files switched off). */
@@ -718,10 +721,10 @@ class KitFilesSection {
       }
       if (it.action === "detached") button("Re-attach", () => void this.run(() => this.managed.detach(id, false)));
       else if (!it.untracked && it.action !== "off") button("Detach", () => void this.run(() => this.managed.detach(id, true)));
-      // A code snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so those rows have no Open button (token templates do)
+      // A code snippet's .md is only a stub that names a calculator (`run:`): opening it is no use, so those rows have no Open button (token templates do)
       const isSnippet = it.file.role === "snippets";
       if (isSnippet && (canCopy(snippetKey(it.text)) || isTokenTemplate(it.text, parseYaml)) && this.app.vault.getFileByPath(it.dest)) {
-        button("Make my own copy", () => void makeMyCopy(this.app, it.dest).then(() => this.refresh()));
+        button("Make my own copy", () => void makeMyCopy(this.app, this.managed.settings(), it.dest).then(() => this.refresh()));
       }
       const file = isSnippet && isStubSnippet(it.text) ? null : this.app.vault.getFileByPath(it.dest);
       if (file) this.openButton(actions, file);

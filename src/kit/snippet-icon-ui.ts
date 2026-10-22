@@ -24,7 +24,7 @@ function iconDeps(app: App, managed: KitManaged): IconDeps {
     isKit: async p => (await managed.plan()).some(i => i.dest === p && (i.action === "up-to-date" || i.action === "fast-forward")),
     kind: snippetKind,
     pick: current => new Promise(resolve => { new IconPickerModal(app, current, name => resolve(name), () => window.setTimeout(() => resolve(null), 0)).open(); }),
-    copy: p => makeMyCopy(app, p),
+    copy: p => makeMyCopy(app, managed.settings(), p),
   };
 }
 

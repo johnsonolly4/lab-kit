@@ -2,7 +2,6 @@
 // (src/kit/snippet-form.ts, handed in as `form`), with Templater absent. Rows of the table in docs/plans/snippet-menu.md "Form audit 2026-10-20".
 import { DEFAULT_RAFT, raftLines } from "../src/blocks/raft/text";
 import { describe, it, expect, beforeEach } from "vitest";
-import { createRequire } from "node:module";
 import { readFileSync, readdirSync } from "node:fs";
 import { Notice, TFile, TFolder } from "obsidian";
 import { SnippetTemplates } from "../src/kit/snippet-run";
@@ -11,9 +10,6 @@ import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
 import type { FormField } from "../src/kit/snippet-form";
 import { miniYaml } from "./token-snippets";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../src/kit/bundled/labSnippets.js");
-const labMethods = require("../src/kit/bundled/labMethods.js");
 
 const DIR = "kits/lab/Snippets";
 const FOLDER = "Templates/Snippets";
@@ -62,7 +58,7 @@ function setup(pick: string) {
     metadataCache: { getFileCache: () => ({ frontmatter: MASS_SPEC }), getFirstLinkpathDest: () => null },
     fileManager: { processFrontMatter: async () => { /* not under test */ }, generateMarkdownLink: (f: TFile) => `[[${f.path}]]` },
   };
-  const kit = { ...KIT_DEFAULTS, initials: "ABC", rigsFolder: "Rigs" } as KitData;
+  const kit = { ...KIT_DEFAULTS, initials: "ABC", rigsFolder: "Rigs", methodsFolder: "Methods" } as KitData;
   // The plugin's form, as a recording fake: every field answered with its default (a required text field gets a value so the snippet goes on).
   const form = async (title: string, fields: FormField[]): Promise<Record<string, unknown>> => {
     typed.push(title);
@@ -75,7 +71,7 @@ function setup(pick: string) {
     meta: (f: TFile) => real.meta(f), run: (tp: never, f: TFile) => real.run(tp, f),
     menu: async (items: { name: string; value: unknown }[]) => items.find(i => i.name === pick)?.value ?? null,
   };
-  const deps: InsertDeps = { app: app as never, snippets: snippets as never, scripts: { labSnippets, labMethods }, snippetFolder: FOLDER, form: form as never, templaterInsert: null };
+  const deps: InsertDeps = { app: app as never, snippets: snippets as never, kit, snippetFolder: FOLDER, form: form as never, templaterInsert: null };
   return { deps, editor: { replaceSelection: (t: string) => { inserted.push(t); } } as never, typed, inserted };
 }
 

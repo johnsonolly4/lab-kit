@@ -1,6 +1,6 @@
 // The Alt+S menu's contents (pure): groups, section order, Recent, search ranking (docs/plans/snippet-menu.md Phase 1).
+import { labMethods } from "./helpers/lab-scripts";
 import { describe, it, expect } from "vitest";
-import { createRequire } from "node:module";
 import { readdirSync, readFileSync } from "node:fs";
 import { groupOf, hideShadowedStubs, iconNames, menuSections, pushRecent, searchItems, visibleItems, type MenuItem } from "../src/kit/snippet-menu";
 
@@ -82,7 +82,6 @@ describe("snippet menu", () => {
 });
 
 describe("built-in methods in the menu (labMethods.js menuEntries)", () => {
-  const labMethods = createRequire(import.meta.url)("../src/kit/bundled/labMethods.js");
   const app = { vault: { adapter: { read: async () => { throw new Error("no settings"); } }, getFolderByPath: () => null } };
 
   it("without the flag the built-ins are left out; with it NMR, GPC and DLS come first, with the old stubs' icon and description", async () => {

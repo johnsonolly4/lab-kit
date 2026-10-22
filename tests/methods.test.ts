@@ -1,13 +1,10 @@
 // Analysis methods as vault notes: the descriptor module (labMethods.js) and the snippets that use it.
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../src/kit/bundled/labSnippets.js");
-const labMethods = require("../src/kit/bundled/labMethods.js");
 const { parseMethod, loadMethods, planColumns, buildRows } = labMethods;
 
 type Fm = Record<string, unknown>;
