@@ -2,6 +2,7 @@
 // The page string and the cleaning are plain functions (tested); `renderForPdf` is the only part that needs Obsidian.
 import { Component, MarkdownRenderer, type App, type TFile } from "obsidian";
 import { extractBlocks, text } from "../calc/engine";
+import { makeFigure } from "../rig/figure-make";
 
 /** A table with more columns than this turns the whole PDF landscape. */
 export const WIDE_COLUMNS = 7;
@@ -21,9 +22,11 @@ body { background: #fff; }
 .markdown-rendered table { table-layout: auto; font-size: 8pt; }
 .markdown-rendered th, .markdown-rendered td { font-size: 8pt; white-space: normal; word-break: normal; overflow-wrap: normal; hyphens: none; padding: 2px 4px; }
 .lab-kit-scroll, .block-language-calc { overflow: visible; max-width: none; width: 100%; }
-.lk-wide table { width: 100%; table-layout: fixed; }
-.lk-wide th, .lk-wide td { overflow-wrap: anywhere; }
+.markdown-rendered .block-language-calc tbody > tr > td { white-space: nowrap; }   /* beats Obsidian's .markdown-rendered tbody > tr > td */
 tr { break-inside: avoid; }
+.lab-kit-rig-diagram { overflow: visible; break-inside: avoid; }
+.lab-kit-rig-img { min-width: 0 !important; width: auto; max-width: 100%; max-height: 150mm; margin: 0 auto; }
+h1, h2, h3, h4, h5, h6, .block-language-calc > :first-child { break-after: avoid; }
 `;
 
 export function esc(s: string): string {
@@ -41,9 +44,14 @@ export function propRows(fm: Record<string, unknown> | undefined): [string, stri
   return Object.entries(fm ?? {}).filter(([k]) => k !== "cssclasses" && k !== "position").map(([k, v]) => [k, show(v)]);
 }
 
-/** Removes what does not belong on paper from a rendered note and marks wide calc tables; returns the widest table's column count. */
+/** Removes what does not belong on paper from a rendered note, opens folds and marks wide calc tables; returns the widest table's column count. */
 export function cleanForPdf(root: HTMLElement): number {
-  for (const sel of REMOVE) for (const e of Array.from(root.querySelectorAll(sel))) e.remove();
+  // the RAFT block's "How it's worked out" prints open: its head (a button) keeps its words, only the arrow goes
+  for (const fold of Array.from(root.querySelectorAll(".lk-sol-fold"))) {
+    fold.addClass("is-open");
+    for (const c of Array.from(fold.querySelectorAll(".chev"))) c.remove();
+  }
+  for (const sel of REMOVE) for (const e of Array.from(root.querySelectorAll(sel))) if (!e.hasClass("lk-sol-fold-head")) e.remove();
   let widest = 0;
   for (const block of Array.from(root.querySelectorAll(".block-language-calc"))) {
     const n = block.querySelector("tr")?.children.length ?? 0;
@@ -51,7 +59,32 @@ export function cleanForPdf(root: HTMLElement): number {
     widest = Math.max(widest, n);
   }
   for (const d of Array.from(root.querySelectorAll("details"))) d.setAttribute("open", "");
+  // RAFT / Solution prep: an empty Actual cell prints blank, not "click to enter" (owner P2, 2026-10-22)
+  for (const c of Array.from(root.querySelectorAll(".lk-sol-cell"))) c.removeClass("is-editable");
   return widest;
+}
+
+/** The bytes of one picture and its media type, or null when it cannot be read. */
+export type ImageReader = (img: HTMLElement) => Promise<{ bytes: ArrayBuffer | Uint8Array; type: string } | null>;
+
+/** Media types of the pictures a note can embed, by extension. */
+const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp", avif: "image/avif" };
+export function imageType(ext: string): string { return IMAGE_TYPES[ext.toLowerCase()] ?? "application/octet-stream"; }
+
+/** Turns every picture that the printed page could not open (`blob:` rig figure, app resource URL of an embed) into a `data:` URI from `read`; a picture that cannot be read stays as it is. */
+export async function inlineImages(root: HTMLElement, read: ImageReader): Promise<void> {
+  for (const img of Array.from(root.querySelectorAll("img"))) {
+    const src = img.getAttribute("src") ?? "";
+    if (!src || src.startsWith("data:")) continue;
+    try {
+      const got = await read(img);
+      if (!got) continue;
+      const bytes = got.bytes instanceof Uint8Array ? got.bytes : new Uint8Array(got.bytes);
+      let bin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      img.setAttribute("src", `data:${got.type};base64,${btoa(bin)}`);
+    } catch { /* left as it is */ }
+  }
 }
 
 /** The whole HTML page. `bodyHtml` is the cleaned note; `css` the app's stylesheets. */
@@ -85,6 +118,20 @@ export async function renderForPdf(app: App, file: TFile, extra: [string, string
     const clone = host.cloneNode(true) as HTMLElement;
     clone.removeClass("lk-close-host");
     const widest = cleanForPdf(clone);
+    // pictures from the vault files the note embeds (no fetch); the rig figure drawn again from the note's parts tables
+    const byUrl = new Map<string, TFile>();
+    for (const e of app.metadataCache.getFileCache(file)?.embeds ?? []) {
+      const f = app.metadataCache.getFirstLinkpathDest(e.link.split("#")[0].split("|")[0], file.path);
+      if (f) byUrl.set(app.vault.getResourcePath(f).split("?")[0], f);
+    }
+    await inlineImages(clone, async img => {
+      if (img.hasClass("lab-kit-rig-img")) {
+        const svg = makeFigure(note)?.svg;
+        return svg ? { bytes: new TextEncoder().encode(svg), type: "image/svg+xml" } : null;
+      }
+      const f = byUrl.get((img.getAttribute("src") ?? "").split("?")[0]);
+      return f ? { bytes: await app.vault.readBinary(f), type: imageType(f.extension) } : null;
+    });
     const bodyHtml = new XMLSerializer().serializeToString(clone);
     let css = "";
     for (const sheet of Array.from(document.styleSheets)) {

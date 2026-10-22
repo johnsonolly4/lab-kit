@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
-import { pdfHtml, propRows, cleanForPdf, footerTemplate, PRINT_CSS, WIDE_COLUMNS } from "../src/close/pdf";
+import { pdfHtml, propRows, cleanForPdf, inlineImages, imageType, footerTemplate, PRINT_CSS, WIDE_COLUMNS } from "../src/close/pdf";
 import { closedFooter } from "../src/close/mark";
 
 const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
@@ -60,6 +60,26 @@ describe("cleanForPdf", () => {
     cleanForPdf(root);
     expect(root.querySelector("details").getAttribute("open")).toBe("");
   });
+  it("prints the RAFT \"How it's worked out\" fold open with its head words, without the arrow", () => {
+    const root = new El("div");
+    const fold = root.createDiv({ cls: "lk-sol-fold" });
+    const head = fold.createEl("button", { cls: "lk-sol-fold-head" });
+    head.createSpan({ cls: "chev", text: "▸" });
+    head.createSpan({ text: "How it's worked out" });
+    fold.createDiv({ cls: "lk-sol-fold-body", text: "# n = m / M" });
+    cleanForPdf(root);
+    expect(fold.hasClass("is-open")).toBe(true);
+    expect(root.querySelector(".lk-sol-fold-head")).not.toBeNull();
+    expect(root.querySelector(".chev")).toBeNull();
+    expect(root.querySelector(".lk-sol-fold-body")).not.toBeNull();
+  });
+  it("prints an empty RAFT / Solution prep Actual cell blank (no \"click to enter\")", () => {
+    const root = new El("div");
+    const cell = root.createDiv({ cls: "lk-sol-cell is-num is-actual is-empty is-editable" });
+    cleanForPdf(root);
+    expect(cell.hasClass("is-editable")).toBe(false);
+    expect(cell.hasClass("is-empty")).toBe(true);
+  });
   it(`marks a table of more than ${WIDE_COLUMNS} columns wide and returns the widest count`, () => {
     const wide = note(11), narrow = note(WIDE_COLUMNS);
     expect(cleanForPdf(wide)).toBe(11);
@@ -72,5 +92,49 @@ describe("cleanForPdf", () => {
 describe("footerTemplate", () => {
   it("prints the closed footer text exactly", () => {
     expect(footerTemplate(closedFooter("2026-10-20", "ABC0011", "a".repeat(64)))).toContain("Closed 2026-10-20 · ABC0011 · SHA-256 aaaaaaaaaaaa<");
+  });
+});
+
+describe("inlineImages", () => {
+  it("turns a picture into a data: URI from the reader, and leaves data: pictures and unreadable ones alone", async () => {
+    const root = new El("div");
+    const a = root.createEl("img", { cls: "lab-kit-rig-img", attr: { src: "blob:abc" } });
+    const b = root.createEl("img", { attr: { src: "data:image/png;base64,AA==" } });
+    const c = root.createEl("img", { attr: { src: "app://x/gone.png" } });
+    const d = root.createEl("img", { attr: { src: "app://x/p.png" } });
+    const asked: string[] = [];
+    await inlineImages(root, async img => {
+      asked.push(img.getAttribute("src") ?? "");
+      if (img.hasClass("lab-kit-rig-img")) return { bytes: new TextEncoder().encode("<svg/>"), type: "image/svg+xml" };
+      if (img.getAttribute("src") === "app://x/gone.png") return null;
+      return { bytes: new Uint8Array([120]).buffer, type: imageType("PNG") };
+    });
+    expect(a.getAttribute("src")).toBe(`data:image/svg+xml;base64,${btoa("<svg/>")}`);
+    expect(b.getAttribute("src")).toBe("data:image/png;base64,AA==");
+    expect(c.getAttribute("src")).toBe("app://x/gone.png");
+    expect(d.getAttribute("src")).toBe(`data:image/png;base64,${btoa("x")}`);
+    expect(asked).not.toContain("data:image/png;base64,AA==");
+  });
+  it("leaves a picture as it is when the reader throws", async () => {
+    const root = new El("div");
+    const a = root.createEl("img", { attr: { src: "app://x/p.jpg" } });
+    await inlineImages(root, async () => { throw new Error("no"); });
+    expect(a.getAttribute("src")).toBe("app://x/p.jpg");
+  });
+  it("knows the media type of the usual picture files", () => {
+    expect(imageType("jpg")).toBe("image/jpeg");
+    expect(imageType("svg")).toBe("image/svg+xml");
+    expect(imageType("xyz")).toBe("application/octet-stream");
+  });
+});
+
+describe("PRINT_CSS", () => {
+  it("never breaks a word in a table cell: calc data cells stay on one line, no fixed layout", () => {
+    expect(PRINT_CSS).not.toContain("anywhere");
+    expect(PRINT_CSS).not.toContain("table-layout: fixed");
+    expect(PRINT_CSS).toContain(".markdown-rendered .block-language-calc tbody > tr > td { white-space: nowrap; }");
+  });
+  it("keeps a heading or a calc title with what follows it", () => {
+    expect(PRINT_CSS).toContain("h1, h2, h3, h4, h5, h6, .block-language-calc > :first-child { break-after: avoid; }");
   });
 });
