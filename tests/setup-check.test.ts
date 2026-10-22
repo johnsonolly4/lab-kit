@@ -102,6 +102,14 @@ describe("check setup (Phase 6)", () => {
     expect(r["plugin:zotlit"].ok).toBe(true);
   });
 
+  it("Refpane is an optional plugin row (owner board 10 R3 a), present with the planning kit and ticked when loaded", () => {
+    const off = byId(state({ planning: true, plugins: new Set(["templater-obsidian", "dataview"]) }));
+    expect(off["plugin:refpane"]).toMatchObject({ ok: false, optional: true });
+    expect(off["plugin:refpane"].detail).toContain("Without it those boxes stay empty.");
+    expect(byId(state({ planning: true, plugins: new Set(["templater-obsidian", "dataview", "refpane"]) }))["plugin:refpane"].ok).toBe(true);
+    expect(byId(state())["plugin:refpane"]).toBeUndefined();   // planning kit off: no row
+  });
+
   it("sets no hotkey: Check setup has no Hotkeys group (Check hotkeys reports them)", () => {
     expect(checkSetup(state()).some(i => i.group === "Hotkeys" || i.fix?.kind === ("hotkey" as string))).toBe(false);
   });

@@ -288,7 +288,7 @@ export function planningFolders(roles: Roles, zotlit: boolean): KitFolder[] {
     { path: roles.daily, desc: "Daily notes (Templater fills them from the Daily note template)." },
     { path: kitJoin(roles.planning, "To-dos"), desc: "One note per to-do; the to-do board shows them." },
     { path: roles.projects, desc: "One folder per project, with its hub note." },
-    ...(zotlit ? [{ path: roles.literature, desc: "Literature notes from ZotLit." }] : []),
+    ...(zotlit ? [{ path: roles.literature, desc: "Literature notes, made by Refpane (with ZotLit)." }] : []),
     { path: roles.knowledge, desc: "Concept notes, one folder per topic." },
     { path: roles.howtos, desc: "How-to notes, one folder per topic." },
     { path: roles.meetings, desc: "Meeting series and their notes." },

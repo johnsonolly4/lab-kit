@@ -202,7 +202,7 @@ class KitSettingTab extends PluginSettingTab {
       ["daily", "Daily notes", "Daily notes (Templater's folder template for this folder)."],
       ["planning", "Planning", "To-dos (in its To-dos folder), the to-do board, weekly review and shopping list."],
       ["projects", "Projects", "One folder per project, with its hub note."],
-      ["literature", "Literature", "Literature notes from ZotLit."],
+      ["literature", "Literature", "Literature notes, made by Refpane (with ZotLit)."],
       ["knowledge", "Knowledge", "Concept notes, one folder per topic."],
       ["howtos", "How-tos", "How-to notes, one folder per topic."],
       ["meetings", "Meetings", "Meeting series and their notes."],
