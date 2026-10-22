@@ -35,7 +35,7 @@ const BASES = [
   { kit: "lab" as const, dest: "Chemical database.base", old: "05 Chemicals/Chemicals", change: (s: Settings) => { s.chemicalFolder = "05 Chemicals/Stock"; }, now: '"05 Chemicals/Stock"' },
 ];
 const bundle = (id: "planning" | "lab"): EmbeddedKit => (id === "planning" ? planning : lab);
-const offFor = (id: "planning" | "lab", s: Settings) => offIds(bundle(id), {}, { labFolder: s.labFolder, chemicalFolder: s.chemicalFolder }, new Set(["zotlit"]));
+const offFor = (id: "planning" | "lab", s: Settings) => offIds(bundle(id), {}, { labFolder: s.labFolder, chemicalFolder: s.chemicalFolder }, new Set(["literature"]));
 
 /** A vault with the kit installed at the default folders. */
 async function install(id: "planning" | "lab", s: Settings): Promise<{ v: Vault; state: ManagedState }> {
