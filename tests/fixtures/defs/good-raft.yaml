@@ -1,0 +1,51 @@
+format: 1
+name: raft
+layout: list
+status: weighed
+# the built-in RAFT block (src/blocks/raft/maths.ts) as a definition; bench order as its used: lines
+title: 'RAFT: P({{#each monomers | "-co-"}}{{name}}{{/each}}), DP {{= dp}}'
+summary: '{{= mass | mass2}} · DP {{= dp}} · {{cta}} · Mn {{= mn | number: 0 | group | unit: g/mol}}'
+values:
+  mean_mw: SUMPRODUCT(monomers.mw, monomers.fraction) / SUM(monomers.fraction)
+  n_monomer: mass / mean_mw
+  n_cta: n_monomer / dp
+  n_init: n_cta / ratio
+  solids_g: SUM(monomers.target) + cta.target + initiator.target
+  solvent_g: solids_g * (100 / solids - 1)
+  mn: dp * mean_mw + cta.mw
+rows:
+  - each: monomers
+    role: monomer
+    lookup: { mw: MW }
+    mol: n_monomer * fraction / SUM(monomers.fraction)
+    target: mol * mw
+    sub: 'monomer · {{= mol | mol}}'
+  - id: cta
+    name: '{{cta}}'
+    role: CTA
+    lookup: { mw: MW }
+    mol: n_cta
+    target: mol * mw
+  - id: solvent
+    name: '{{solvent}}'
+    target: solvent_g
+  - id: cosolvent
+    name: '{{cosolvent}}'
+    when: cosolvent
+    target: solvent_g * cosolvent_pct / 100
+  - id: initiator
+    name: '{{initiator}}'
+    role: initiator
+    lookup: { mw: MW }
+    mol: n_init
+    target: mol * mw
+    hint: 'mol CTA per 1 mol initiator sets this mass'
+live:
+  - when: weighed > 0
+    label: "Mn from what you've weighed:"
+    value: SUM(monomers.amount) / (cta.amount / cta.mw) + cta.mw
+    format: { number: 0, group: true, unit: g/mol }
+worked:
+  - when: COUNT(monomers) = 1
+    each: monomers
+    text: '{{= mass | mass}} ÷ {{= mw | mw}} = {{= mol | mol}}'

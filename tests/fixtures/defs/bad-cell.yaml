@@ -1,0 +1,9 @@
+format: 1
+name: tiny
+layout: list
+values:
+  n: A1 * 2
+rows:
+  - id: salt
+    lookup: { mw: MW }
+    target: n * salt.mw

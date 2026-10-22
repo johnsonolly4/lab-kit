@@ -1,0 +1,9 @@
+format: 1
+name: Tiny Block
+layout: list
+values:
+  n: mass / 100
+rows:
+  - id: salt
+    lookup: { mw: MW }
+    target: n * salt.mw
