@@ -10,7 +10,7 @@ export function templatePage(template: string, folder: string): string {
   const t = template.replace(/\r\n/g, "\n");
   let afterHeader = t.includes("-%>\n") ? t.slice(t.indexOf("-%>\n") + 4) : t;
   // a token template (`make: note`, Phase 4) starts with its own header block, then the note's properties
-  const head = /^---\n(?:(?!---\n)[\s\S])*?\nmake: note\n[\s\S]*?\n---\n/.exec(afterHeader);
+  const head = /^---\n(?:(?!---\n)[^\n]*\n)*?make: note\n[\s\S]*?\n---\n/.exec(afterHeader);
   if (head) afterHeader = afterHeader.slice(head[0].length);
   const m = /^---\n[\s\S]*?\n---\n/.exec(afterHeader);
   return (m ? afterHeader.slice(m[0].length) : afterHeader).replace(/<%\s*vt\.folder\s*%>|\{\{\s*folder\s*\}\}/g, folder).trim();
