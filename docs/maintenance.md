@@ -8,7 +8,7 @@ Claude: check this table at the end of every session (routine step 2).
 | The formula engine (`src/calc/`) | A test against `tests/fixtures/` (known answers in `CLAUDE.md`) |
 | Anything user-visible (feature, setting, snippet, wording) | `docs/changelog.md` under "Unreleased" |
 | Settings (`src/kit/ui.ts`, `src/kit/paths.ts`) | `README.md` → Settings, `docs/tutorial.md` |
-| A snippet or form (`kits/lab/Snippets/`, `src/kit/bundled/`) | `docs/tutorial.md` snippet table, `docs/obsidian-test-checklist.md` |
+| A snippet or form (`kits/lab/Snippets/`, `src/snippets/`) | `docs/tutorial.md` snippet table, `docs/obsidian-test-checklist.md` |
 | A feature that needs a look inside Obsidian | `docs/obsidian-test-checklist.md`, and `BACKLOG.md` → Not yet tested |
 | A folder or entry file added, moved or removed | `docs/architecture.md` |
 | A command in `package.json` | `CLAUDE.md` → Commands, `README.md` → Development |

@@ -7,7 +7,7 @@ Everything you can write in a Lab Kit snippet, a calc block or a method note. On
 | I want… | Use | Where it lives |
 |---|---|---|
 | A table or text built from a few answers (a **calculator**) | a **token template**: a header with `fields` and `{{tokens}}` | a note in the `Snippets` folder |
-| Anything a token template cannot do (reads many notes, row maths, calls other code): Solution prep, Recipe by equivalents, RAFT recipe generator, Combined results | a **calculator by name**: a header with `run: <key>` and no fields or body | a note in the `Snippets` folder; the key names a section of `labSnippets.js` (`solution`, `recipe`, `raft`, `results`) |
+| Anything a token template cannot do (reads many notes, row maths, calls other code): Solution prep, Recipe by equivalents, RAFT recipe generator, Combined results | a **calculator by name**: a header with `run: <key>` and no fields or body | a note in the `Snippets` folder; the key names a calculator in `src/snippets/` (`solution-volume`, `recipe`, `raft-table`, `results`, `nmr`, `gpc`, `dls`) or a live block (`solution`, `raft`) |
 | A sample table for an analysis (columns, defaults, machines) that also feeds Combined results | a **method**: a note in the Methods folder (Settings → Lab Kit). NMR, GPC and DLS are built in and listed by the menu itself | the Methods folder |
 
 A token template can build a table but Combined results does not know about it (see "Sample codes" below for what it can still share). An old calculator file that starts with `<%*` and calls `labSnippets(tp, "nmr")` still works: the menu reads it as `run: nmr`. Tidy up notes offers to move kept NMR, GPC and DLS files to the trash, because the menu lists those three itself.
