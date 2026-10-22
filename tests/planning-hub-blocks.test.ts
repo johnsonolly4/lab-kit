@@ -68,10 +68,10 @@ describe("hub templates carry the buttons as blocks", () => {
     expect(t).not.toContain("go-meetings");
     expect(t).not.toContain("this.since");
   });
-  it("New concept files in a topic hub's folder without asking the topic", () => {
+  it("New concept files in a topic hub's folder without asking the topic: the template takes the folder as an answer (the window asks, tests/hub-note.test.ts)", () => {
     const t = kit("Extras/Templates/New concept.md");
-    expect(t).toContain("window.vtNewConceptFolder");
-    expect(t.indexOf("presetFolder &&")).toBeLessThan(t.indexOf("Which topic?"));
+    expect(t).toContain('folder: "{{folder}}"');
+    expect(t).not.toContain("<%");
   });
 });
 

@@ -68,11 +68,10 @@ describe("required fields (New project note, New one-off meeting)", () => {
     expect(projectField(["Alpha"]).options?.[0].label).toBe("(none)");
     expect(missingRequired([projectField(["Alpha"])], {})).toBeNull();
   });
-  it("the New project note template takes the window's answers (window.vtNote) and still asks without them", () => {
+  it("the New project note template takes the window's answers as fields (title, folder, hub)", () => {
     const tpl = readFileSync("kits/planning/Extras/Templates/New project note.md", "utf8");
-    expect(tpl).toContain("const preset = window.vtNote;");
-    expect(tpl).toContain("let folder = preset ? preset.folder : window.vtNewNoteFolder;");
-    expect(tpl).toContain('let title = preset ? preset.title : await tp.user.vtAsk(tp, "Note title");');
-    expect(tpl).toContain("Cancelled - no title");
+    expect(tpl.startsWith('---\nmake: note\nname: "{{title}}"\nfolder: "{{folder}}"\n')).toBe(true);
+    expect(tpl).toContain("  - key: hub\n");
+    expect(tpl).not.toContain("<%");
   });
 });

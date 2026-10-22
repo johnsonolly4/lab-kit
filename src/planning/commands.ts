@@ -1,6 +1,6 @@
 // Planning kit commands (fixed IDs, never renamed: kit buttons call them as lab-kit:<id>). Rules: src/planning/actions.ts.
 // Plan: docs/plans/phase-4b-planning-commands.md. Note folders: Settings → Planning folders (Phase 5a); a missing one is never made again silently.
-import { Notice, Platform, TFile, normalizePath, parseYaml, type App, type Plugin } from "obsidian";
+import { Notice, Platform, TFile, TFolder, normalizePath, parseYaml, type App, type Plugin } from "obsidian";
 import { ensureFolder } from "../kit/ensure-folder";
 import type { ManagedState } from "../kit/managed";
 import { ensurePropertyType, hasTemplater, templaterCreateNote } from "../kit/obsidian-private";
@@ -25,6 +25,7 @@ import { freezeDue, freezeFile } from "./freeze-note";
 import { linkInOrder } from "./sequence";
 import { dayOf, parseDay, ymd } from "./todo";
 import { createMadeNote, isFirstSeries, isTokenTemplate, MEETING_TEMPLATE, meetingAnswers, ONE_OFF_TEMPLATE, SERIES_TEMPLATE, seriesAnswers, tokenTemplate, type MeetingNote, type SeriesNote } from "./meeting-note";
+import { CONCEPT_TEMPLATE, PROJECT_HUB_TEMPLATE, PROJECT_NOTE_TEMPLATE, TOPIC_HUB_TEMPLATE, cleanNoteName, cleanProjectName, conceptFields, projectHubAnswers, projectNoteAnswers, readConcept } from "./hub-notes";
 import { columnEntry, createTodoNote, nameTaken, todoAnswers, todoTemplate, type TodoAnswer } from "./todo-note";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
@@ -40,8 +41,7 @@ export const TPL = {
 } as const;
 
 /** Hand-offs the kit's templates read (and delete) at their start. `vtEntryTodo` stays for an old Templater To-do.md that asks for the entry window itself (a Templater folder row); Lab Kit's own To-do no longer uses a hand-off. */
-interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<TodoAnswer | null>; vtPresetProject?: string; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
-  vtTopicHub?: { folder: string; name: string }; }
+interface Handoff { vtEntryTodo?: (day?: string) => Promise<TodoAnswer | null>; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
@@ -81,9 +81,9 @@ export class PlanningCommands {
     add("freeze-meeting", "Freeze this meeting note", () => this.freezeActive());
     add("new-one-off-meeting", "New one-off meeting", () => this.newOneOff());
     add("new-meeting-series", "New meeting series", () => this.newSeries());
-    add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
+    add("new-project", "New project", () => this.newProject());
     add("new-project-note", "New project note", () => this.newProjectNote());
-    add("new-concept", "New concept", () => this.newConcept());   // the template asks title + topic and files the note
+    add("new-concept", "New concept", () => this.newConcept());
     add("new-topic-hub", "New topic hub", () => this.newTopicHub());
     add("open-todo-board", "Open to-do board", () => this.openBoard());
     // Desktop only: opening a file in another app needs Electron
@@ -325,7 +325,7 @@ export class PlanningCommands {
 
   /**
    * New topic hub: the index note (`kind: hub`, named like its folder) of a topic folder under Knowledge. Pick a topic that has no hub yet, or a new topic
-   * (its folder is made); Esc stops, nothing is made. The template reads `vtTopicHub`.
+   * (its folder is made); Esc stops, nothing is made. The hub is made from the New topic hub template.
    */
   async newTopicHub(): Promise<void> {
     const root = this.folders.knowledge;
@@ -346,9 +346,20 @@ export class PlanningCommands {
     const name = folder.slice(root.length + 1);
     const taken = this.app.vault.getAbstractFileByPath(`${folder}/${name}.md`);
     if (taken) { new Notice(`${name} already has a hub note in ${folder}.`); return; }
-    handoff().vtTopicHub = { folder, name };
-    try { await this.fromTemplate(TPL.topicHub, root, folder); }
-    finally { delete handoff().vtTopicHub; }
+    await this.makeFromKit(TPL.topicHub, TOPIC_HUB_TEMPLATE, root, { name, folder }, false);
+  }
+
+  /** New project: asks its name (as its Zotero collection under Projects/) and makes the hub `<Projects>/<Name>/<Name>.md` from the Project hub template. */
+  async newProject(): Promise<void> {
+    const root = this.folders.projects;
+    if (!(await this.ready(root))) return;
+    const typed = await ask(this.app, "Project name (same as its Zotero collection under Projects/)");
+    const name = typed ? cleanProjectName(typed) : "";
+    if (!name) return;
+    const answers = projectHubAnswers(root, name);
+    if (this.app.vault.getAbstractFileByPath(`${answers.folder}/${name}.md`)) { new Notice(`${name} already exists in ${answers.folder}.`); return; }
+    await ensurePropertyType(this.app, "deadline", "date");   // an optional date property, set once (Obsidian keeps it in .obsidian/types.json)
+    await this.makeFromKit(TPL.project, PROJECT_HUB_TEMPLATE, root, answers, false);
   }
 
   /** New note in a project; `folder` (the project's folder) is used without asking: for project cards. */
@@ -360,16 +371,34 @@ export class PlanningCommands {
     if (!answer) return;
     const hub = hubs.find(f => f.basename === answer.values.project);
     if (!hub?.parent) return;
-    handoff().vtNote = { title: answer.title, folder: hub.parent.path };
-    try { await this.fromTemplate(TPL.projectNote, this.folders.projects, hub.parent.path); }
-    finally { delete handoff().vtNote; delete handoff().vtNewNoteFolder; }
+    const title = cleanNoteName(answer.title);
+    if (!title) return;
+    const at = hub.parent.path, hubName = at.split("/").pop() ?? "";
+    await this.makeFromKit(TPL.projectNote, PROJECT_NOTE_TEMPLATE, this.folders.projects, projectNoteAnswers(at, title, !!this.app.vault.getAbstractFileByPath(`${at}/${hubName}.md`)));
   }
 
-  /** New concept; `folder` (a topic hub's folder) files it there without asking the topic. */
+  /** New concept: asks its title and topic (a topic folder under Knowledge, or a new one); `folder` (a topic hub's folder) files it there without asking the topic. */
   async newConcept(folder?: string): Promise<void> {
-    if (folder) handoff().vtNewConceptFolder = folder;
-    try { await this.fromTemplate(TPL.concept, this.folders.knowledge); }
-    finally { delete handoff().vtNewConceptFolder; }
+    const root = this.folders.knowledge;
+    if (!(await this.ready(root))) return;
+    const preset = folder && folder.startsWith(root + "/") ? folder : undefined;
+    const topics = (this.app.vault.getFolderByPath(root)?.children ?? []).filter((c): c is TFolder => c instanceof TFolder).map(c => c.name).sort((a, b) => a.localeCompare(b));
+    const exists = (path: string): boolean => !!this.app.vault.getAbstractFileByPath(path);
+    let concept: { title: string; folder: string } | null = null;
+    const answer = await openEntry(this.app, "New concept", conceptFields(topics, !!preset), {
+      requireTitle: true,
+      validate: a => { const r = readConcept(root, a.title, a.values, preset, exists); if ("error" in r) return r.error; concept = r; return null; },
+    });
+    if (!answer || !concept) return;
+    const { title, folder: at } = concept as { title: string; folder: string };
+    await this.makeFromKit(TPL.concept, CONCEPT_TEMPLATE, root, { title, folder: at }, false);
+  }
+
+  /** Makes a note from a kit template (the vault's token text, else the bundled one) inside the setting folder `root`, in the folder its answers name (made if needed), and opens it. `unique`: a taken name gets ` 2`, ` 3`...; false when the caller has checked. */
+  private async makeFromKit(tpl: { id: string; dest: string }, bundled: string, root: string, answers: Record<string, string>, unique = true): Promise<void> {
+    if (!(await this.ready(root, answers.folder))) return;
+    const file = await createMadeNote(this.app.vault, await this.kitText(tpl, bundled), parseYaml, answers, new Date(), answers.name ?? answers.title ?? "", answers.folder, unique);
+    await this.app.workspace.getLeaf(false).openFile(file);
   }
 
   /** Where the planning kit installed this template, else where it would install it. */
@@ -425,13 +454,6 @@ export class PlanningCommands {
     if (!(await this.ready(root, note.folder))) return;
     const file = await createMadeNote(this.app.vault, await this.kitText(TPL.series, SERIES_TEMPLATE), parseYaml, seriesAnswers(note), new Date(), note.name, note.folder, false);
     if (open) await this.app.workspace.getLeaf(false).openFile(file);
-  }
-
-  /** Creates a note from a kit template with Templater in `folderPath` (inside the setting folder `root`; the template then files it where it belongs). */
-  private async fromTemplate(tpl: { id: string; dest: string }, root: string, folderPath = root, open = true, filename?: string): Promise<void> {
-    const template = this.templateFile(tpl);
-    if (!template && hasTemplater(this.app)) { new Notice(`Template not found: ${tpl.dest}`); return; }
-    await this.fromTemplateFile(template, root, folderPath, open, filename);
   }
 
   private async fromTemplateFile(template: TFile | null, root: string, folderPath = root, open = true, filename?: string): Promise<void> {

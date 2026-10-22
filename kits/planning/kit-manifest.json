@@ -290,8 +290,8 @@
       "src": "Extras/Templates/New concept.md",
       "role": "templates",
       "path": "New concept.md",
-      "version": "1.0.0",
-      "sha256": "ac90b5aa2fef571c0c3a3a75bb36b09a2ad45120412fc60517abe95336e17d57",
+      "version": "1.4.1",
+      "sha256": "808aef4d0c9c7a75e03f1d5c9df794a0caa8c842848b9402a7d606e84af264e5",
       "renamedFrom": [],
       "desc": "New concept: a knowledge note in a topic folder"
     },
@@ -301,8 +301,8 @@
       "src": "Extras/Templates/New project note.md",
       "role": "templates",
       "path": "New project note.md",
-      "version": "1.3.0",
-      "sha256": "1fb72c0dd02154240b7fcdeba81483a5e882574c3a85cdacc958ae153338d2a3",
+      "version": "1.4.1",
+      "sha256": "86f8fb3bb507851cc69a5e5d02004ab292ca0483731b396dca26101201c65fbc",
       "renamedFrom": [],
       "desc": "New note inside a project"
     },
@@ -312,8 +312,8 @@
       "src": "Extras/Templates/New topic hub.md",
       "role": "templates",
       "path": "New topic hub.md",
-      "version": "1.0.0",
-      "sha256": "9cac42f3f3a87f453df14acb6b767f9d64e9cf13e6357b92035fdab21d98b07c",
+      "version": "1.4.1",
+      "sha256": "c3537509b02ca9a7fe045fc19335f5b332645c03753c20c4210732c902c4e396",
       "renamedFrom": [],
       "desc": "New topic hub: the index note of a topic folder"
     },
@@ -335,7 +335,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "1.4.1",
-      "sha256": "15a101bb3445afc4411c66e565ac71eb82898d3f9d26a24cdd6d283e95e7f76b",
+      "sha256": "c6d52e8c5b44bff256e42ff8c42b1b9ecfae11f8bea812201c2edfeb7d99f222",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },

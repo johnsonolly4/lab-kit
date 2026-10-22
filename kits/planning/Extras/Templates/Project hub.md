@@ -1,14 +1,13 @@
-<%*
-// Project hub template - asks for a name, then files the note as 02 Projects/<Name>/<Name>.md (a folder note)
-let name = await tp.user.vtAsk(tp, "Project name (same as its Zotero collection under Projects/)");
-if (!name) { throw new Error("Cancelled - no project name"); }   // Esc (null) or empty
-name = name.replace(/['&\\/:*?"<>|#^\[\]]/g, "").trim();
-const folder = `02 Projects/${name}`;
-// deadline: optional date property, set once here (Obsidian keeps it in .obsidian/types.json)
-try { await window.vtEnsureType?.("deadline", "date"); } catch (e) { /* older Lab Kit or Obsidian: deadline stays text */ }
-if (!app.vault.getAbstractFileByPath(folder)) { await app.vault.createFolder(folder); }
-await tp.file.move(`${folder}/${name}`);
--%>
+---
+make: note
+name: "{{name}}"
+folder: "{{folder}}"
+fields:
+  - key: name
+    label: Project name
+  - key: folder
+    label: Folder
+---
 ---
 kind: project
 Status: Active
