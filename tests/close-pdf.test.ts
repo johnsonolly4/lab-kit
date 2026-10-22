@@ -112,7 +112,7 @@ describe("PRINT_CSS", () => {
   it("never breaks a word in a table cell: calc data cells stay on one line, no fixed layout", () => {
     expect(PRINT_CSS).not.toContain("anywhere");
     expect(PRINT_CSS).not.toContain("table-layout: fixed");
-    expect(PRINT_CSS).toContain(".block-language-calc td { white-space: nowrap; }");
+    expect(PRINT_CSS).toContain(".markdown-rendered .block-language-calc tbody > tr > td { white-space: nowrap; }");
   });
   it("keeps a heading or a calc title with what follows it", () => {
     expect(PRINT_CSS).toContain("h1, h2, h3, h4, h5, h6, .block-language-calc > :first-child { break-after: avoid; }");

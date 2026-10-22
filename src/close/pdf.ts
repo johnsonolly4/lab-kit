@@ -21,8 +21,10 @@ body { background: #fff; }
 .markdown-rendered table { table-layout: auto; font-size: 8pt; }
 .markdown-rendered th, .markdown-rendered td { font-size: 8pt; white-space: normal; word-break: normal; overflow-wrap: normal; hyphens: none; padding: 2px 4px; }
 .lab-kit-scroll, .block-language-calc { overflow: visible; max-width: none; width: 100%; }
-.block-language-calc td { white-space: nowrap; }
+.markdown-rendered .block-language-calc tbody > tr > td { white-space: nowrap; }   /* beats Obsidian's .markdown-rendered tbody > tr > td */
 tr { break-inside: avoid; }
+.lab-kit-rig-diagram { overflow: visible; break-inside: avoid; }
+.lab-kit-rig-img { min-width: 0 !important; width: auto; max-width: 100%; max-height: 150mm; margin: 0 auto; }
 h1, h2, h3, h4, h5, h6, .block-language-calc > :first-child { break-after: avoid; }
 `;
 
