@@ -520,6 +520,19 @@ body.lab-kit-board-colours .bases-view[data-view-type="kanban"] .bases-kanban-co
 .vt-pop-hint.is-bad { color: var(--text-error); }
 .vt-pop-date { width: 100%; margin-top: 4px; }
 
+/* ---- One dropdown look (RS7 a, trial): chip dropdowns, the Alt+S menu, form field suggestions (`Suggest` adds lk-drop), plain pick lists. Obsidian's own Menu keeps the theme's look ---- */
+body { --lk-drop-band: rgba(0, 0, 0, 0.08); --lk-drop-border: var(--vt-card-border, color-mix(in srgb, var(--text-normal) 22%, var(--background-primary))); --lk-drop-divider: var(--vt-divider, color-mix(in srgb, var(--text-normal) 14%, var(--background-primary))); }
+body.theme-dark { --lk-drop-band: rgba(255, 255, 255, 0.12); }
+.vt-pop, .modal.lk-snip, .suggestion-container.lk-drop, .prompt.lab-kit-prompt:not(.lab-kit-ask):not(.lab-kit-pick-side) { --modal-radius: var(--lk-radius-control); padding: 4px; border: 1px solid var(--lk-drop-border); border-radius: var(--lk-radius-control); background: var(--background-primary); box-shadow: var(--shadow-s); }
+.vt-pop-row, .lk-snip-row, .lk-drop .suggestion-item, .lab-kit-prompt .suggestion-item { border-radius: var(--lk-radius-row); }
+.vt-pop-row.is-active, .lk-snip-row.is-active, .lk-drop .suggestion-item.is-selected, .lab-kit-prompt:not(.lab-kit-pick-side) .suggestion-item.is-selected { background: var(--lk-drop-band); font-weight: 600; }
+.lk-snip-row.is-active .lk-snip-desc { font-weight: normal; }
+.lk-snip .vt-entry-heading { margin: 8px 8px 6px; }
+.lk-snip-search { margin: 0 4px var(--size-4-2); }
+.lk-snip-heading { padding: 0 8px; }
+.lk-snip .vt-entry-hint, .vt-pop-hint:last-child { margin-top: 4px; padding: 6px 8px 4px; border-top: 1px solid var(--lk-drop-divider); color: var(--text-faint); font-size: var(--font-ui-smaller); }
+.lk-snip-list { margin: 0; }
+
 /* The window opened from highlighted text: just under the highlighted line (the plain command keeps it in the middle) */
 .vt-entry-anchored.modal-container { align-items: flex-start; justify-content: flex-start; pointer-events: none; }
 .vt-entry-anchored .vt-entry-nobg { display: none; }
