@@ -20,6 +20,7 @@
 | How the user works with the plugin | `docs/tutorial.md`, `README.md` |
 | Drawing your own rig symbols (module pack) | `docs/rig-pack-symbol.md` |
 | Snippet, calc block and method note syntax (tokens, `codes:`) | `docs/snippet-syntax.md` |
+| Stored text of live blocks (tag, `format:`, `used:`, `#` lines) | `docs/live-block-format.md` |
 | User setup (Claude Code + vault) | `GETTING-STARTED.md` |
 | The new-vault starter (`npm run starter`) | `src/kit/starter.ts`, `GETTING-STARTED.md` |
 | Checking a build inside Obsidian | `docs/obsidian-test-checklist.md` |

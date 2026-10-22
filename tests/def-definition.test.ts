@@ -36,7 +36,7 @@ const BAD: Record<string, [Problem["check"], string, number, string]> = {
   "bad-list": ["list", "n", 5, 'Line 5, value "n": "monomers.fraction" is a list. Use it only inside SUM, SUMPRODUCT, AVERAGE, MIN, MAX, COUNT.'],
   "bad-circle": ["circle", "a", 6, 'Line 6, value "a": a → b → a refer to each other in a circle.'],
   "bad-name-unknown": ["name-unknown", "target", 9, `Line 9, "target" of row 1: "dq" is not a question in the snippet's fields:, a value or a row name.`],
-  "bad-format-unknown": ["format-unknown", "colour", 13, 'Line 13, "colour" in "format" of live line 1: "colour" is not a format. Use mass, mass2, mol, mw, group, lower-first, number, sig, percent, unit.'],
+  "bad-format-unknown": ["format-unknown", "colour", 13, 'Line 13, "colour" in "format" of live line 1: "colour" is not a format. Use mass, mass2, mol, mmol, mw, group, lower-first, number, sig, percent, unit.'],
   "bad-each-unknown": ["each-unknown", "each", 10, `Line 10, "each" of row 2: "reagents" is not a question in the snippet's fields:.`],
   "bad-each-not-list": ["each-not-list", "each", 10, 'Line 10, "each" of row 2: "mass" is not a list question (type: list), so a row cannot repeat over it.'],
   "bad-row-id": ["row-id", "rows", 10, 'Line 10, row 2: needs "id:" (a name for the row) or "each:" (a list question).'],
