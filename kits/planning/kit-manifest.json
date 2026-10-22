@@ -187,7 +187,7 @@
       "desc": "Literature hub (ZotLit imports)",
       "optional": true,
       "policy": "keep",
-      "needs": "plugin:zotlit"
+      "needs": "plugin:literature"
     },
     {
       "id": "note-meetings-md",

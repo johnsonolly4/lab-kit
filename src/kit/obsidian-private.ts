@@ -43,8 +43,8 @@ const templater = (app: App): TemplaterPlugin | undefined => priv(app).plugins?.
 /** True when Obsidian has read every note's properties (`metadataCache.resolved`, not in the public typings). False when unknown. */
 export const metadataResolved = (app: App): boolean => (app.metadataCache as unknown as { resolved?: boolean }).resolved === true;
 
-/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`) that differ from the plugin id (none today: ZotLit's id is `zotlit`, checked in its manifest). */
-const PLUGIN_ALIASES: Record<string, string[]> = {};
+/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`) that differ from the plugin id. `literature`: either plugin that makes literature notes (ZotLit, or Refpane, owner board 9 R2 a). */
+const PLUGIN_ALIASES: Record<string, string[]> = { literature: ["zotlit", "refpane"] };
 /** Other plugins that are loaded (installed and on), as plugin ids plus the kit names in PLUGIN_ALIASES. */
 export function loadedPlugins(app: App): Set<string> {
   const ids = new Set(Object.keys(priv(app).plugins?.plugins ?? {}));

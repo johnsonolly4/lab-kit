@@ -91,7 +91,7 @@ CONFIG.planning = {
   // Notes become the user's own: installed once, never updated. Templates, Actions, scripts and CSS are updated, and so are the
   // guide notes in 07 How-tos/Obsidian (user, 2026-10-12): they describe the kit, so an unedited one follows it like a template.
   keepFiles: new Set(Object.keys(PLANNING_DESC).filter((rel) => !rel.startsWith("Extras/") && !rel.startsWith(".obsidian/") && !rel.startsWith(GUIDES))),
-  needs: Object.fromEntries(ZOTLIT.map((rel) => [rel, "plugin:zotlit"])),
+  needs: Object.fromEntries(ZOTLIT.map((rel) => [rel, "plugin:literature"])),
 };
 const SKIP = new Set(["kit-manifest.json"]);
 

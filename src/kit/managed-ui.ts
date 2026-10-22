@@ -136,7 +136,7 @@ export class KitManaged {
 
   /** Folders this kit makes empty at its first install so the layout is complete (the planning kit's folder contract; the lab kit's note folders). */
   kitFolders(): KitFolder[] {
-    return this.bundle.manifest.id === PLANNING_KIT ? planningFolders(this.roles(), loadedPlugins(this.app).has("zotlit")) : labFolders(this.host.kit);
+    return this.bundle.manifest.id === PLANNING_KIT ? planningFolders(this.roles(), loadedPlugins(this.app).has("literature")) : labFolders(this.host.kit);
   }
 
   /** Settings a kit's first install offers to change: its CSS snippet, and Templater's user scripts folder when Templater has none. */

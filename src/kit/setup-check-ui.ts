@@ -31,7 +31,7 @@ export function readSetupState(app: App, host: SetupHost): SetupState {
   const css = [...(lab.bundle.manifest.enableCss ?? []), ...(planningOn ? planning?.bundle.manifest.enableCss ?? [] : [])]
     .map(name => ({ name: name.replace(/\.css$/, ""), enabled: isCssSnippetEnabled(app, name) }));
   const pf = host.kit.planningFolders, folderTemplates = planningFolderTemplates(pf);
-  const zotlit = loadedPlugins(app).has("zotlit");
+  const zotlit = loadedPlugins(app).has("literature");
   // Folders named in a setting; the archive is made when first needed, Literature only with ZotLit
   const settingFolders = [host.kit.labFolder, host.kit.chemicalFolder,
     ...(planningOn ? (Object.keys(pf) as PlanningRole[]).filter(r => r !== "archive" && (r !== "literature" || zotlit)).map(r => pf[r]) : [])].filter(f => f);

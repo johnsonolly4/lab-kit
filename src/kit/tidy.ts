@@ -2,6 +2,7 @@
 // before / after text, plus what is only reported. Pure and read-only: the caller reads the vault into `files`; nothing here writes.
 // Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, meetings, leftovers, note bodies) are code.
 import { swapRefpaneBlocks } from "./tidy-refpane-boxes";
+import { isOldZotlitTemplate, isZotlitTemplatePath } from "./tidy-zotlit-files";
 import { BAR_BUTTONS } from "../planning/button-bar";
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
@@ -665,6 +666,15 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   }
   for (const folder of ctx.emptyOldFolders ?? []) oldFiles.changes.push({ path: folder, before: "", after: "", trash: true, folder: true, note: "empty folder" });
   if (oldFiles.changes.length) groups.push(oldFiles);
+
+  // ZotLit templates Lab Kit used to install (refpane writes files of the same names now): trashed only while a copy still holds Lab Kit's untouched text. Opt-in (owner board 9 R1 a).
+  const zot: TidyGroup = { id: "old-zotlit-templates", title: "Old ZotLit templates from Lab Kit", detail: "Lab Kit no longer installs its ZotLit templates (the Refpane plugin sets ZotLit up). A copy that is still exactly Lab Kit's text is moved to Obsidian's trash (you can get it back); a copy you or Refpane changed stays. Not ticked until you tick it; each file is copied to the backups folder first.", changes: [], optIn: true };
+  for (const f of files) {
+    if (!isZotlitTemplatePath(f.path) || hidden(f.path) || kitIsBackup(f.path) || f.text === undefined) continue;
+    if (isOldZotlitTemplate(f.path, f.text)) zot.changes.push({ path: f.path, before: "", after: "", trash: true });
+    else skipped.items.push({ path: f.path, note: "kept: this ZotLit template is not Lab Kit's text any more (yours or Refpane's)" });
+  }
+  if (zot.changes.length) groups.push(zot);
 
   // Snippets: icons saved under the old Settings → Snippet icons page go into each snippet's header (`icon:`). Opt-in; a note is backed up first.
   const savedIcons = Object.entries(ctx.snippetIcons ?? {}).map(([name, icon]) => [name.trim(), icon.trim()] as const).filter(([name, icon]) => name && icon);

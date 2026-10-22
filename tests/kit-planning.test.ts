@@ -21,7 +21,7 @@ const memVault = (files: Record<string, string> = {}): ManagedAdapter & { files:
   mkdir: async () => {},
 }) as unknown as ManagedAdapter & { files: Record<string, string> };
 const app = (tpl: object = {}): any => ({ vault: { configDir: ".obsidian" }, plugins: { plugins: { "templater-obsidian": { settings: tpl } } } });
-const ZOTLIT = new Set(["zotlit"]);
+const ZOTLIT = new Set(["literature"]);
 const dests = (kit: EmbeddedKit, roles: Record<string, string>) => kit.manifest.files.map(f => kitJoin(roles[f.role], f.dest));
 
 describe("planning kit files (Phase 3)", () => {
@@ -248,14 +248,17 @@ describe("planning kit switch (Phase 6a)", () => {
     expect(kitLoad(JSON.parse(JSON.stringify(kit))).kits.planning.enabled).toBe(true);
   });
 
-  it("ZotLit-only files install when ZotLit (plugin id zotlit) is loaded", async () => {
+  it("the Literature page installs when ZotLit or Refpane is loaded (owner board 9 R2 a)", async () => {
     const withZot = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "zotlit": {} } } } as any;
-    expect(loadedPlugins(withZot).has("zotlit")).toBe(true);
-    expect(loadedPlugins(app()).has("zotlit")).toBe(false);
-    const zotIds = planning.manifest.files.filter(f => f.needs === "plugin:zotlit").map(f => f.id);
+    const withRefpane = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "refpane": {} } } } as any;
+    expect(loadedPlugins(withZot).has("literature")).toBe(true);
+    expect(loadedPlugins(withRefpane).has("literature")).toBe(true);
+    expect(loadedPlugins(app()).has("literature")).toBe(false);
+    const zotIds = planning.manifest.files.filter(f => f.needs === "plugin:literature").map(f => f.id);
     expect(zotIds.length).toBeGreaterThan(0);
     for (const id of zotIds) {
       expect(offIds(planning, {}, {}, loadedPlugins(withZot)).has(id)).toBe(false);
+      expect(offIds(planning, {}, {}, loadedPlugins(withRefpane)).has(id)).toBe(false);
       expect(offIds(planning, {}, {}, loadedPlugins(app())).has(id)).toBe(true);
     }
   });
