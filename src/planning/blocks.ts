@@ -2,7 +2,7 @@
 // (no Dataview). Rules: src/planning/lists.ts. Plan: docs/plans/phase-5-homepage-meetings.md.
 import { Keymap, MarkdownRenderChild, Notice, TFile, TFolder, debounce, setIcon, type App, type Plugin } from "obsidian";
 import { folderMissingText } from "../kit/folder-guard";
-import { runCommand, commandInfo, loadedPlugins } from "../kit/obsidian-private";
+import { runCommand, commandInfo } from "../kit/obsidian-private";
 import { PLANNING_KIT, kitJoin, todoFolder, type KitData } from "../kit/paths";
 import type { PlanningCommands } from "./commands";
 import { ymd } from "./todo";
@@ -23,7 +23,7 @@ import { DEFAULT_AHEAD, PlanSlideModal, copyPng, type SlideChoice } from "./plan
 import { pictureFor } from "./plan-slide";
 import { hasNode } from "../platform";
 import { flaggedLines, FLAGGED_EMPTY, RAISED } from "./freeze";
-import { blockOptions, linkTarget, pictureHub, experiments, folderHub, meetingDone, meetingExperiments, meetingPapers, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
+import { blockOptions, linkTarget, pictureHub, experiments, folderHub, meetingDone, meetingExperiments, meetingWindow, topicIndex, gotoTargets, goalOf, inFolder, parentHub, deadlineBadge, dayMonth, projectCards, projectMeetings, projectNotes, projectTodos, noNextStep, NO_NEXT_STEP, waitingOn, PROJECT_MEETINGS, PROJECT_TILE_ROWS, projects, thisWeek, TILE_ROWS, unnumbered, withExtras, type GotoLink, type ListLine, type NoteRec } from "./lists";
 
 const LANGS = ["vault-card", "vault-goto", "vault-projects"] as const;
 type Lang = (typeof LANGS)[number];
@@ -253,20 +253,8 @@ class BlockView extends MarkdownRenderChild {
         }
         return;
       }
-      case "meeting-papers": {   // on a meeting note: papers imported since the last meeting
-        const w = this.window(box);
-        if (!w) return;
-        if (!this.app.vault.getFolderByPath(f.literature) && !loadedPlugins(this.app).has("zotlit")) { box.createDiv({ cls: "vt-muted", text: "No literature notes yet." }); return; }
-        if (this.need(box, f.literature)) this.capped(box, meetingPapers(this.owner.notesIn(f.literature), w), o.limit ?? PROJECT_TILE_ROWS, "No papers read since the last meeting.");
-        return;
-      }
       case "projects":
         if (this.need(box, f.projects)) this.capped(box, projects(this.owner.notesIn(f.projects), Infinity, kit.dueCountdown, new Date(), this.app.vault.getFolderByPath(todoFolder(f)) ? this.owner.notesIn(todoFolder(f)) : []), o.limit ?? TILE_ROWS, "No projects yet.");
-        return;
-      case "recently-read":
-        // Literature is only made with ZotLit: without it, an absent folder is normal
-        if (!this.app.vault.getFolderByPath(f.literature) && !loadedPlugins(this.app).has("zotlit")) { box.createDiv({ cls: "vt-muted", text: "No literature notes yet." }); return; }
-        if (this.need(box, f.literature)) this.capped(box, recentlyRead(this.owner.notesIn(f.literature), Infinity), o.limit ?? 5, "No literature notes yet.");
         return;
       case "deadline": {   // on a project hub: this project's deadline countdown
         const b = deadlineBadge((this.app.metadataCache.getCache(this.sourcePath)?.frontmatter ?? {}), kit.dueCountdown, new Date());
@@ -511,7 +499,7 @@ class BlockView extends MarkdownRenderChild {
         return;
       }
       default:
-        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, recently-read, meeting-experiments, meeting-done, meeting-papers, meeting-flagged, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, plan-picture, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
+        box.createDiv({ cls: "vt-muted", text: `Unknown card "${o.show}". Use show: this-week, inbox, experiments, projects, meeting-experiments, meeting-done, meeting-flagged, deadline, topic-index, hub-bar, todo-bar, button-bar, meeting-bar, back-to-project, project-meetings, project-experiments, project-plan, project-map, plan-picture, project-todos, project-notes, project-actions, waiting, back-to-hub, topic-actions, series-actions, meeting-cards or next-meetings.` });
     }
   }
 

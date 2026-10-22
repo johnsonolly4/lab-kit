@@ -15,7 +15,6 @@ const hub = rec("08 Meetings/Weekly meetings/Weekly meetings.md", { kind: "meeti
 const lists: FreezeLists = {
   "meeting-experiments": ["- [[0005 RAFT]] · in progress"],
   "meeting-done": ["No to-dos finished since the last meeting."],
-  "meeting-papers": ["- [[smith2026|A paper]] · good"],
   waiting: ["**Supplier**", "- [[Order column]] · Thu"],
   "meeting-flagged": ["- [[Fix pump]] · raised 8 Oct"],
 };
@@ -26,7 +25,7 @@ describe("freezeMeeting", () => {
   it("replaces every generated block, keeping the callout prefixes", () => {
     expect(after).toContain("> > - [[0005 RAFT]] · in progress");
     expect(after).toContain("> > No to-dos finished since the last meeting.");
-    expect(after).toContain("> > - [[smith2026|A paper]] · good");
+    expect(after).toContain("show: papers-read");   // refpane's block is not frozen by Lab Kit
     expect(after).toContain("> > - [[Fix pump]] · raised 8 Oct");
     expect(after).toContain("> > **Supplier**\n> > - [[Order column]] · Thu");
     expect(after).not.toContain("show: meeting-experiments");
@@ -53,8 +52,8 @@ describe("freezeMeeting", () => {
   });
 
   it("leaves a block alone when its list is not given", () => {
-    const { "meeting-papers": _p, ...some } = lists;
-    expect(freezeBody(before.split("---\n")[2], some)).toContain("show: meeting-papers");
+    const { waiting: _w, ...some } = lists;
+    expect(freezeBody(before.split("---\n")[2], some)).toContain("show: waiting");
   });
 
   it("keeps Windows line endings", () => {
@@ -88,7 +87,7 @@ describe("meetingFreezeLists", () => {
     expect(d.lists["meeting-flagged"]).toEqual(["- [[Fix pump]] · raised 8 Oct"]);
     expect(d.lists.waiting[0]).toBe("**Supplier**");
     expect(d.flagged.map(f => f.name)).toEqual(["Fix pump"]);
-    expect("meeting-papers" in d.lists).toBe(false);   // no literature folder: that block stays
+    expect("meeting-papers" in d.lists).toBe(false);   // papers are refpane's block now: never frozen
   });
 
   it("is null without since and date", () => {

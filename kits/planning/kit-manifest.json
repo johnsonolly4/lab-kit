@@ -101,8 +101,8 @@
       "src": "00 Home.md",
       "role": "home",
       "path": "00 Home.md",
-      "version": "1.3.0",
-      "sha256": "8fb14d7a8160222d46d795f355c78bec4ed8857ffc05d48b94add885c30fbfc1",
+      "version": "1.4.1",
+      "sha256": "db28d96d33b8778a9bfa90151791082ba261b7ac73e630ad088e992552d76d13",
       "renamedFrom": [],
       "desc": "Homepage: today, focus, this week, experiments, projects, recently read",
       "policy": "keep"
@@ -159,7 +159,7 @@
       "role": "howtos",
       "path": "Obsidian/Vault spec.md",
       "version": "1.4.1",
-      "sha256": "97aeb5228e3afe780b2171104f0febdcb8992aec6dfe29da45d987418f176ea7",
+      "sha256": "a54b80b6e2bf5977f25288d814c1be48537073aeb8c3660dc084541e83938be8",
       "renamedFrom": [],
       "desc": "Full specification of the vault"
     },
@@ -182,7 +182,7 @@
       "role": "literature",
       "path": "Literature.md",
       "version": "1.4.1",
-      "sha256": "05cd1bf120d02055c46b5b43d04003f89a94c04d32e11a579600f0b0d0869dca",
+      "sha256": "130efd04b7c0745ede2f1b5322b8eab508c7a69f5264c10af878b6b05156afa5",
       "renamedFrom": [],
       "desc": "Literature hub (ZotLit imports)",
       "optional": true,
@@ -243,8 +243,8 @@
       "src": "02 Projects/Projects overview.md",
       "role": "projects",
       "path": "Projects overview.md",
-      "version": "1.3.0",
-      "sha256": "65c601a79dcbc91b12fe772dc59440e822e87dcd96103eb4b1d8d269cf71d207",
+      "version": "1.4.1",
+      "sha256": "fddc4df9b8c3e904126241d9eddec5a2653a02e321539b126a2183ebd1bf7704",
       "renamedFrom": [],
       "desc": "All projects with their status",
       "policy": "keep"
@@ -278,7 +278,7 @@
       "role": "templates",
       "path": "Meeting.md",
       "version": "1.4.1",
-      "sha256": "214ae3a1fea3a90fb431951e74b7bf4dd4c044bb08432dadcc8beac6237fc7a8",
+      "sha256": "1f375e15d033be3bb279760254c7cde0dfc51ddce8aad51808354f213c310e8f",
       "renamedFrom": [
         "Weekly meeting.md"
       ],
@@ -335,7 +335,7 @@
       "role": "templates",
       "path": "Project hub.md",
       "version": "1.4.1",
-      "sha256": "c6d52e8c5b44bff256e42ff8c42b1b9ecfae11f8bea812201c2edfeb7d99f222",
+      "sha256": "bfe020908e443660a2fd07cfd1d362731ff3caa388e1063e934abcbf8f80339f",
       "renamedFrom": [],
       "desc": "New project: its folder and hub note"
     },

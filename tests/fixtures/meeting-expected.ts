@@ -17,7 +17,7 @@ export function expectedMeeting(c: MeetingCase): string {
   return [...head(c),
     "> [!columns]", "> > [!lab] Experiments", `> > ${F}vault-card`, "> > show: meeting-experiments", `> > ${F}`, ">",
     "> > [!planning] Done this week", `> > ${F}vault-card`, "> > show: meeting-done", `> > ${F}`, ">",
-    "> > [!projects] Papers read", `> > ${F}vault-card`, "> > show: meeting-papers", `> > ${F}`, ">",
+    "> > [!projects] Papers read", `> > ${F}refpane`, "> > show: papers-read", `> > ${F}`, ">",
     "> > [!question] Flagged for this meeting", `> > ${F}vault-card`, "> > show: meeting-flagged", `> > ${F}`, "> >", "> > **Waiting on**", `> > ${F}vault-card`, "> > show: waiting", `> > ${F}`, "",
     "## Notes from the meeting", "- ", "",
     "> [!tip] Actions", "> Turn each action into a to-do with **New to-do** (`Alt+T`) so it lands on the board.", ""].join("\n");

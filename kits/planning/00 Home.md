@@ -45,7 +45,7 @@ ids: today, todo, lab, capture, shop-add, search
 > > ```
 >
 > > [!summary] [[Literature|Recently read]]
-> > ```vault-card
+> > ```refpane
 > > show: recently-read
 > > limit: 5
 > > ```

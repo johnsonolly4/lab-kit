@@ -1,12 +1,12 @@
 // Freezing a meeting note (I19, I20): its generated lists become plain wikilink lists, so the note stays a record.
 // Pure (no Obsidian runtime). Plan: docs/plans/freeze-meeting-notes.md.
-import { dayMonth, isOpenTodo, linkTarget, meetingDone, meetingExperiments, meetingPapers, meetingWindow, waitingOn, type ListLine, type NoteRec } from "./lists";
+import { dayMonth, isOpenTodo, linkTarget, meetingDone, meetingExperiments, meetingWindow, waitingOn, type ListLine, type NoteRec } from "./lists";
 import { flaggedFor } from "./meetings";
 import type { Plan } from "./plan";
 import { statusLines } from "./plan-slide";
 import { parseDay } from "./todo";
 
-/** The lists of a meeting note as plain markdown lines (no callout prefix), by what the block shows: `meeting-experiments`, `meeting-done`, `meeting-papers`, `waiting`, `meeting-flagged`. A missing key leaves that block as it is. */
+/** The lists of a meeting note as plain markdown lines (no callout prefix), by what the block shows: `meeting-experiments`, `meeting-done`, `waiting`, `meeting-flagged`. A missing key leaves that block as it is. */
 export type FreezeLists = Record<string, string[]>;
 
 /** The Settings → Planning switch (owner board 5, 2026-10-20; the wording is new, recorded in BACKLOG for the owner's OK). */
@@ -14,7 +14,7 @@ export const FREEZE_AUTO = { name: "Freeze meeting notes automatically", desc: "
 export const FROZEN = "frozen";
 export const RAISED = "raised_on";
 export const FLAGGED_EMPTY = "Nothing is flagged for this meeting.";
-const BLOCKS = ["meeting-experiments", "meeting-done", "meeting-papers", "waiting", "meeting-flagged"];
+const BLOCKS = ["meeting-experiments", "meeting-done", "waiting", "meeting-flagged"];
 
 const baseOf = (path: string): string => (path.split("/").pop() ?? path).replace(/\.md$/, "");
 const plain = (t: string): string => t.replace(/^·\s*/, "");
@@ -51,8 +51,8 @@ export function pictureFreezeLines(plan: Plan, today: string): string[] {
   return lines.length ? lines : ["Nothing is late or waiting."];
 }
 
-/** What a meeting note's lists hold at freeze time. `lab`, `literature` undefined = that folder is missing: its block is left alone. `planOf` finds the plan of the project a `plan-picture` block names (null: not a project hub). */
-export interface FreezeSource { fm: Record<string, unknown>; lab?: NoteRec[]; todos: NoteRec[]; literature?: NoteRec[]; hub: NoteRec | null; isFirst: boolean; planOf?: (link: string) => Plan | null }
+/** What a meeting note's lists hold at freeze time. `lab` undefined = that folder is missing: its block is left alone. `planOf` finds the plan of the project a `plan-picture` block names (null: not a project hub). */
+export interface FreezeSource { fm: Record<string, unknown>; lab?: NoteRec[]; todos: NoteRec[]; hub: NoteRec | null; isFirst: boolean; planOf?: (link: string) => Plan | null }
 /** `pictures`: the list for a `plan-picture` block by the project it names; null leaves the block. */
 export interface FreezeData { lists: FreezeLists; flagged: NoteRec[]; pictures?: (link: string) => string[] | null }
 
@@ -63,7 +63,6 @@ export function meetingFreezeLists(src: FreezeSource, today: Date): FreezeData |
   const lists: FreezeLists = {};
   if (src.lab) lists["meeting-experiments"] = listOf(meetingExperiments(src.lab, w), "No experiments changed since the last meeting.");
   lists["meeting-done"] = listOf(meetingDone(src.todos, w).lines, "No to-dos finished since the last meeting.");
-  if (src.literature) lists["meeting-papers"] = listOf(meetingPapers(src.literature, w), "No papers read since the last meeting.");
   const groups = waitingOn(src.todos, today);
   lists.waiting = groups.length ? groups.flatMap(g => [`**${g.who}**`, ...g.lines.map(lineMarkdown)]) : ["Nothing is waiting."];
   const flagged = src.hub ? flaggedFor(src.todos.filter(isOpenTodo), src.hub, src.isFirst) : [];

@@ -1,6 +1,6 @@
 // Phase 5a: the homepage / Projects overview lists (src/planning/lists.ts), each against the Dataview query it replaced (kit 0.5.2).
 import { describe, it, expect } from "vitest";
-import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, hasPriority, linkTarget, meetingDone, meetingExperiments, meetingPapers, meetingWindow, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, recentlyRead, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
+import { blockOptions, deadlineBadge, experiments, folderIcon, goalOf, gotoTargets, hasPriority, linkTarget, meetingDone, meetingExperiments, meetingWindow, pointsTo, projectCards, projectMeetings, projectNotes, projectTodos, PROJECT_TILE_ROWS, projects, thisWeek, unnumbered, withExtras, type NoteRec } from "../src/planning/lists";
 
 const note = (path: string, fm: Record<string, unknown> = {}, o: Partial<NoteRec> = {}): NoteRec => {
   const name = path.slice(path.lastIndexOf("/") + 1).replace(/\.(md|base)$/, "");
@@ -77,25 +77,11 @@ describe("Experiments on the go (00 Home)", () => {
   });
 });
 
-describe("Projects and Recently read (00 Home)", () => {
+describe("Projects (00 Home)", () => {
   it("projects: Active → Paused → Done → other, then name", () => {
     const hubs = [note("P/Zed/Zed.md", { kind: "project", Status: "Active" }), note("P/Done/Done.md", { kind: "project", Status: "Done" }),
       note("P/Alpha/Alpha.md", { kind: "project", Status: "Active" }), note("P/Pause/Pause.md", { kind: "project", Status: "Paused" }), note("P/x.md", { kind: "hub" })];
     expect(projects(hubs).map(l => l.text)).toEqual(["Alpha", "Zed", "Pause", "Done"]);
-  });
-
-  it("recently read: newest import first (else created), by Title, processed / to process, 5 at most", () => {
-    const lit = [
-      note("L/a.md", { kind: "literature", Title: "Old paper", imported: "2026-01-01" }),
-      note("L/b.md", { kind: "literature", Title: "New paper", imported: "2026-10-01T09:00", takeaway: "RAFT works" }),
-      note("L/c.md", { kind: "literature" }, { ctime: Date.parse("2026-06-01") }),
-      note("L/hub.md", { kind: "hub" }),
-    ];
-    const l = recentlyRead(lit);
-    expect(l.map(x => x.text)).toEqual(["New paper", "c", "Old paper"]);
-    expect(l[0].badges[0].text).toBe("processed");
-    expect(l[1].badges[0].text).toBe("to process");
-    expect(recentlyRead(Array.from({ length: 8 }, (_, i) => note(`L/${i}.md`, { kind: "literature" })))).toHaveLength(5);
   });
 });
 
@@ -306,15 +292,5 @@ describe("Meeting note tiles (the window is the note's since and date)", () => {
   it("hasPriority: 1, 2 or 3 as a number or text; nothing else", () => {
     expect([1, 2, 3, "1", " 2 ", "3"].every(hasPriority)).toBe(true);
     expect([undefined, null, "", 0, 4, "0", "high", NaN, true].some(hasPriority)).toBe(false);
-  });
-  it("Papers read: imported after since up to the meeting day (else created), shown by Title", () => {
-    const lit = "04 Literature/";
-    const got = meetingPapers([
-      note(lit + "p1.md", { kind: "literature", Title: "Paper one", imported: "2026-10-05", takeaway: "works" }),
-      note(lit + "p2.md", { kind: "literature", imported: "2026-09-20" }),
-      note(lit + "p3.md", { kind: "literature" }, { ctime: at("2026-10-07") }),
-    ], w);
-    expect(got.map(l => l.text)).toEqual(["p3", "Paper one"]);
-    expect(got[1].badges).toEqual([{ text: "· works", cls: "vt-muted" }]);
   });
 });

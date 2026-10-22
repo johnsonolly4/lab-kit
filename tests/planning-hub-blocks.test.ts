@@ -64,7 +64,8 @@ describe("hub templates carry the buttons as blocks", () => {
   it("a meeting note has the meeting bar and native tiles with a window, not Dataview lists", () => {
     const t = kit("Extras/Templates/Meeting.md");
     expect(t).toContain("show: meeting-bar");
-    for (const s of ["meeting-experiments", "meeting-done", "meeting-papers"]) expect(t, s).toContain(`show: ${s}`);
+    for (const s of ["meeting-experiments", "meeting-done"]) expect(t, s).toContain(`show: ${s}`);
+    expect(t).toContain("show: papers-read");   // refpane block, not a Lab Kit one
     expect(t).not.toContain("go-meetings");
     expect(t).not.toContain("this.since");
   });

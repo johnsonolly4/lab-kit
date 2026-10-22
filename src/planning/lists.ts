@@ -98,18 +98,6 @@ export function projects(notes: NoteRec[], limit = Infinity, mode: CountdownMode
     });
 }
 
-/** When a literature note was imported: its `imported` property, else the file's creation time. */
-const importedAt = (n: NoteRec): number => { const t = Date.parse(str(n.fm.imported)); return Number.isNaN(t) ? n.ctime : t; };
-
-/** Recently read: literature notes, newest import first, shown by Title; processed (has a takeaway) or to process. */
-export function recentlyRead(notes: NoteRec[], limit = 5): ListLine[] {
-  return notes.filter(n => n.fm.kind === "literature")
-    .sort((a, b) => importedAt(b) - importedAt(a))
-    .slice(0, limit)
-    .map(n => ({ path: n.path, text: str(n.fm.Title) || n.name,
-      badges: [str(n.fm.takeaway) ? { text: "processed", cls: "vt-badge vt-closed" } : { text: "to process", cls: "vt-badge vt-planned" }] }));
-}
-
 /** A meeting note's window: its `since` and `date` properties (YYYY-MM-DD), null when either is missing. */
 export function meetingWindow(fm: Record<string, unknown>): { since: string; date: string } | null {
   const since = str(fm.since).slice(0, 10), date = str(fm.date).slice(0, 10);
@@ -137,14 +125,6 @@ export function meetingDone(todos: NoteRec[], w: { since: string; date: string }
   const lines = shown.sort((a, b) => a.name.localeCompare(b.name))
     .map(n => { const p = linkTarget(n.fm.project); return { path: n.path, text: n.name, badges: p ? [{ text: `· ${p}`, cls: "vt-muted" }] : [] }; });
   return { lines, hidden: finished.length - shown.length };
-}
-
-/** Meeting note, Papers read: literature notes imported after `since` up to the meeting day, shown by Title; badge: its takeaway. */
-export function meetingPapers(notes: NoteRec[], w: { since: string; date: string }): ListLine[] {
-  const day = (n: NoteRec): string => { const t = str(n.fm.imported).slice(0, 10); return parseDay(t) ? t : ymd(new Date(n.ctime)); };
-  return notes.filter(n => n.fm.kind === "literature" && day(n) > w.since && day(n) <= w.date)
-    .sort((a, b) => importedAt(b) - importedAt(a))
-    .map(n => { const t = str(n.fm.takeaway); return { path: n.path, text: str(n.fm.Title) || n.name, badges: t ? [{ text: `· ${t}`, cls: "vt-muted" }] : [] }; });
 }
 
 /** Notes in the inbox (and folders below it), as Dataview counted them. */
