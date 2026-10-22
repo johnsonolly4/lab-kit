@@ -54,6 +54,22 @@ export function cleanForPdf(root: HTMLElement): number {
   return widest;
 }
 
+/** Turns every picture that the printed page could not open (`blob:` rig figure, app resource URL of an embed) into a `data:` URI; a picture that cannot be fetched stays as it is. */
+export async function inlineImages(root: HTMLElement, fetcher: (url: string) => Promise<Response> = u => fetch(u)): Promise<void> {
+  for (const img of Array.from(root.querySelectorAll("img"))) {
+    const src = img.getAttribute("src") ?? "";
+    if (!src || src.startsWith("data:")) continue;
+    try {
+      const blob = await (await fetcher(src)).blob();
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let bin = "";
+      for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      const type = blob.type || (/\.svg(\?|$)/i.test(src) ? "image/svg+xml" : "image/png");
+      img.setAttribute("src", `data:${type};base64,${btoa(bin)}`);
+    } catch { /* left as it is */ }
+  }
+}
+
 /** The whole HTML page. `bodyHtml` is the cleaned note; `css` the app's stylesheets. */
 export function pdfHtml(title: string, props: [string, string][], bodyHtml: string, wide: boolean, css = "", bodyClass = ""): string {
   const rows = props.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join("");
@@ -85,6 +101,7 @@ export async function renderForPdf(app: App, file: TFile, extra: [string, string
     const clone = host.cloneNode(true) as HTMLElement;
     clone.removeClass("lk-close-host");
     const widest = cleanForPdf(clone);
+    await inlineImages(clone);
     const bodyHtml = new XMLSerializer().serializeToString(clone);
     let css = "";
     for (const sheet of Array.from(document.styleSheets)) {

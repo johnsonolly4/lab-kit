@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
-import { pdfHtml, propRows, cleanForPdf, footerTemplate, PRINT_CSS, WIDE_COLUMNS } from "../src/close/pdf";
+import { pdfHtml, propRows, cleanForPdf, inlineImages, footerTemplate, PRINT_CSS, WIDE_COLUMNS } from "../src/close/pdf";
 import { closedFooter } from "../src/close/mark";
 
 const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
@@ -72,5 +72,25 @@ describe("cleanForPdf", () => {
 describe("footerTemplate", () => {
   it("prints the closed footer text exactly", () => {
     expect(footerTemplate(closedFooter("2026-10-20", "ABC0011", "a".repeat(64)))).toContain("Closed 2026-10-20 · ABC0011 · SHA-256 aaaaaaaaaaaa<");
+  });
+});
+
+describe("inlineImages", () => {
+  const reply = (type: string, data: string) => async () => new Response(new Blob([data], { type }));
+  it("turns a blob: or app picture into a data: URI with its own type, and leaves data: and failures alone", async () => {
+    const root = new El("div");
+    const a = root.createEl("img", { attr: { src: "blob:abc" } });
+    const b = root.createEl("img", { attr: { src: "data:image/png;base64,AA==" } });
+    const c = root.createEl("img", { attr: { src: "app://x/gone.png" } });
+    await inlineImages(root, async u => { if (u.startsWith("app:")) throw new Error("no"); return reply("image/svg+xml", "<svg/>")(); });
+    expect(a.getAttribute("src")).toBe(`data:image/svg+xml;base64,${btoa("<svg/>")}`);
+    expect(b.getAttribute("src")).toBe("data:image/png;base64,AA==");
+    expect(c.getAttribute("src")).toBe("app://x/gone.png");
+  });
+  it("falls back to png when the reply has no type", async () => {
+    const root = new El("div");
+    const a = root.createEl("img", { attr: { src: "app://x/p.png" } });
+    await inlineImages(root, reply("", "x"));
+    expect(a.getAttribute("src")).toBe(`data:image/png;base64,${btoa("x")}`);
   });
 });
