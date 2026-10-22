@@ -349,26 +349,6 @@ export async function resetMetaBindActions(app: App, buttons: { id: string; acti
   return n;
 }
 
-const ZOTLIT = "zotlit";
-const zotlitFile = (app: App): string => `${app.vault.configDir}/plugins/${ZOTLIT}/data.json`;
-/** ZotLit's saved settings (its data.json, read as a file): the parsed object, null when it has none yet, "unreadable" when it isn't JSON. */
-export async function readZotlitData(app: App): Promise<Record<string, unknown> | null | "unreadable"> {
-  const path = zotlitFile(app);
-  try {
-    if (!(await app.vault.adapter.exists(path))) return null;
-    const parsed: unknown = JSON.parse(await app.vault.adapter.read(path));
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : "unreadable";
-  } catch { return "unreadable"; }
-}
-/** Writes ZotLit's settings file and turns ZotLit off and on again so it reads them (it only reads the file when it starts). Always turns it back on. */
-export async function writeZotlitData(app: App, data: Record<string, unknown>): Promise<void> {
-  const plugins = priv(app).plugins;
-  const loaded = !!plugins?.plugins?.[ZOTLIT];
-  if (loaded) await plugins?.disablePlugin(ZOTLIT);
-  try { await app.vault.adapter.write(zotlitFile(app), JSON.stringify(data, null, 2)); }
-  finally { if (loaded) await plugins?.enablePlugin(ZOTLIT); }
-}
-
 /** Opens Obsidian's settings on a plugin's tab (`app.setting`, private). False when it can't. */
 export function openPluginSettings(app: App, id: string): boolean {
   const setting = (app as unknown as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;

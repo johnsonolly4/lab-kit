@@ -2,19 +2,6 @@
   "note": "Meta Bind button templates the planning kit needs (Settings > Meta Bind > Button templates). Planning actions call Lab Kit commands (lab-kit:<id>, Phase 4b); shipped in Phase 6.",
   "buttonTemplates": [
     {
-      "label": "Update literature note",
-      "hidden": false,
-      "tooltip": "This will fetch new annotations from Zotero",
-      "id": "update-litnote",
-      "style": "primary",
-      "actions": [
-        {
-          "type": "command",
-          "command": "zotlit:update-note"
-        }
-      ]
-    },
-    {
       "label": "Today's note",
       "icon": "calendar",
       "style": "primary",

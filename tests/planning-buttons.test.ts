@@ -29,9 +29,9 @@ describe("planning buttons", () => {
     for (const id of inBlocks.keys()) expect(BAR_BUTTONS.get(id)?.kind, id).toMatch(/^(command|open|edit)$/);
   });
 
-  it("only the Weekly review and the ZotLit note template still use Meta Bind buttons (to be reworked, BACKLOG)", () => {
+  it("only the Weekly review still uses Meta Bind buttons (to be reworked, BACKLOG)", () => {
     const files = new Set([...used.values()].flat().map(f => f.replace(/\\/g, "/").replace(/^kits\/planning\//, "")));
-    expect([...files].sort()).toEqual(["00 Planning/Weekly review.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
+    expect([...files].sort()).toEqual(["00 Planning/Weekly review.md"]);
   });
 
   it("has a template for every id used in a kit note", () => {

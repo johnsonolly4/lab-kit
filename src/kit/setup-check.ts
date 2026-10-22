@@ -1,7 +1,6 @@
 // Setup check (Phase 6): what the kits need from other plugins, Templater, CSS snippets, folders and hotkeys, as a list of ok / missing items.
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
-import type { ZotlitScan } from "./zotlit";
 import { METHODS_DEFAULT, RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
@@ -68,10 +67,6 @@ export interface SetupState {
   metaBind: { missing: number; total: number; /** Ids of the missing buttons, for the row's text. */ names?: string[] } | null;
   /** Meta Bind buttons that exist but do something else than the kit's button of that id (see `differingButtons`). */
   metaBindDiffers?: { id: string; now: string; kit: string }[];
-  /** ZotLit's frontmatter fields and folders against the kit's (see `zotlitScan`); null when ZotLit has no settings file or it can't be read. */
-  zotlitData?: ZotlitScan | null;
-  /** Path of the "Set up ZotLit" checklist note when it is installed. */
-  zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
   propertiesView?: string;
   /** Obsidian's Automatically update internal links; undefined when it can't be read (no row when the planning kit is off). */
@@ -140,7 +135,6 @@ export type SetupFix =
   | { kind: "meta-bind-reset"; ids: string[] }
   | { kind: "open-note"; path: string }
   | { kind: "manage" }
-  | { kind: "zotlit-fields" }
   | { kind: "property-type"; name: string; type: string }
   | { kind: "close-notes"; paths: string[] }
   | { kind: "make-pdfs"; paths: string[] };
@@ -350,24 +344,6 @@ export function checkSetup(s: SetupState): SetupItem[] {
       detail: d.length ? `${d.map(b => `${b.id} ${b.now} (kit: ${b.kit})`).join("; ")}. Fix puts the kit's action on them (the button's label and look stay); then restart Obsidian.` : "Every button does what the kit's does.",
       fix: d.length ? { kind: "meta-bind-reset", ids: d.map(b => b.id) } : undefined });
   }
-
-  if (s.planning && s.plugins.has("zotlit") && s.zotlitData?.readable) {
-    const z = s.zotlitData;
-    const bits = [...z.missing.map(f => `${f.key} is missing`), ...z.differing.map(f => `${f.key} differs (yours: ${f.now}; kit: ${f.kit})`)];
-    const clean = !z.missing.length && !z.differing.length;
-    // a missing field is something to fix; a field of yours that only differs is a warning: Lab Kit never changes it, so check it by hand
-    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: clean, warn: (!clean && !z.missing.length) || undefined,
-      detail: bits.length ? `${bits.join("; ")}.${z.missing.length ? " Fix adds the missing ones, then turns ZotLit off and on so it reads them." : ""}${z.differing.length ? " Lab Kit never changes a field you have: check the ones that differ in Settings → ZotLit → Templates → Frontmatter." : ""}` : "All the kit's fields are there.",
-      fix: z.missing.length ? { kind: "zotlit-fields" } : undefined });
-    const f = [z.literature === "other" ? "Literature note folder is your own (left alone)" : z.literature === "empty" ? "Literature note folder is not set" : "",
-      z.templates === "other" ? "Template folder is your own (left alone)" : z.templates === "empty" ? "Template folder is not set" : ""].filter(Boolean);
-    out.push({ id: "zotlit:folders", group: "ZotLit", label: "ZotLit folders", ok: !f.length, warn: !!f.length || undefined,
-      detail: f.length ? `${f.join("; ")}.${z.literature === "empty" || z.templates === "empty" ? (z.missing.length ? " The Fix on the fields row sets the empty ones." : " Fix sets the empty ones.") : ""}` : "ZotLit uses the kit's literature and template folders.",
-      fix: !z.missing.length && (z.literature === "empty" || z.templates === "empty") ? { kind: "zotlit-fields" } : undefined });
-  } else if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
-    detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`
-      : "Lab Kit can't read ZotLit's settings. Install the planning kit (Review update…) to get its checklist note, Set up ZotLit.",
-    fix: s.zotlitGuide ? { kind: "open-note", path: s.zotlitGuide } : undefined });
 
   // Meeting series hubs: a wrong interval / day / start would make New meeting skip the series, so name the field
   if (s.planning) {

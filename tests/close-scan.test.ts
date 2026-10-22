@@ -49,7 +49,7 @@ describe("scanClosed", () => {
 
 const baseState = (closed?: SetupState["closed"]): SetupState => ({
   lab: { initials: "ABC", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: "03 Lab Book/Notes", chemicalFolder: "x" },
-  metaBind: null, zotlitGuide: null, plugins: new Set(), planning: false,
+  metaBind: null, plugins: new Set(), planning: false,
   templater: { templatesFolder: "", userScriptsFolder: "", folderTemplates: [] },
   installed: { lab: false, planning: false }, css: [], folders: [], folderTemplates: [], closed,
 });

@@ -334,7 +334,6 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > | `go-todo` · `go-lab` · `go-projects` · `go-lit` · `go-chem` · `go-know` · `go-howto` · `go-meetings` · `go-review` · `go-shop` | To-do board · Experiments · Projects · Literature · Chemicals · Knowledge · How-tos · Meetings · Weekly review · Shopping list | open that note or base |
 > | `help` | How it works | open `[[How my vault works]]` |
 > | `clear-review` | Start a new review | unticks the review's boxes |
-> | `update-litnote` | Update literature note | ZotLit command |
 
 ## Plugins and their jobs
 
@@ -347,7 +346,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 | Bases (core) | Tables and the built-in kanban boards (experiments, to-dos) |
 | Templater | Lab book, project and concept templates, until they move into Lab Kit (to-dos, meetings and the Alt+S menu no longer need it); folder templates for `01 Daily Notes`, `03 Lab Book/Notes`, `05 Chemicals/Chemicals`; user script `Extras/scripts/templater/vault/vtAsk.js` (the text box). No startup template |
 | Lab Kit | Lab entries, snippets, hazards, calculations; the planning commands (to-dos, inbox, meetings, projects, concepts), the carried-over cards on the board, the homepage tiles, hub rows and cards; Check setup, Tidy up notes, Manage files |
-| ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Template folder `Extras/Templates/ZotLit` |
+| ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Its templates and settings are set up by the Refpane plugin (Check setup there), not by Lab Kit |
 | Omnisearch | Search |
 
 ## Rules for changes
@@ -363,7 +362,7 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > - Every note is **wide** by default (`vault-theme.css`). Don't add a `wide` class to new templates; existing ones that have it are harmless.
 > - Templates never add a `# heading` that repeats the file name - Obsidian's inline title already shows it. (A heading with *different* text is fine.)
 > - Every template starts with **an empty line** (straight after the properties, or at the very top if it has none), so the cursor lands there and doesn't open the first callout or block into edit mode.
-> - Templates use Templater syntax only - except ZotLit's templates, which must be Liquid and live directly in `Extras/Templates/ZotLit/`. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
+> - Templates use Templater syntax only. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
 > - Kit files (templates, scripts, these notes) are updated through Settings > Lab Kit > **Review update…**. A file I edited is never overwritten: it merges, or shows in **Manage files…** with Compare… / Use kit version… / Keep mine.
 > - Templates ask for text with `tp.user.vtAsk(tp, "Placeholder")` - never `tp.system.prompt` - so every box looks like the pickers. Lists to choose from use `tp.system.suggester`. My user scripts live in `Extras/scripts/templater/vault/` (the kit owns `lab-kit/`).
 > - Templates that a board can create (folder templates) keep any `scheduled` / `Status` the board already wrote, unless the default is intended (lab entries always start `Planned`).

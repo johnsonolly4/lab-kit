@@ -7,7 +7,6 @@ const CMD = `templater-obsidian:${MENU}`;
 const state = (o: Partial<SetupState> = {}): SetupState => ({
   lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", rigsFolder: "Rigs", labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" },
   metaBind: { missing: 0, total: 26 },
-  zotlitGuide: null,
   propertiesView: "hidden",
   plugins: new Set(["templater-obsidian", "dataview", "table-editor-obsidian"]),
   planning: false,
@@ -134,14 +133,13 @@ describe("check setup (Phase 6)", () => {
     expect(mine.detail).toContain("Mine.md");
   });
 
-  it("Meta Bind buttons and the ZotLit checklist (planning only); no Dataview JS row since Phase 5a (no DataviewJS in the kit)", () => {
-    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26, names: ["new-meeting-series", "go-deck", "help"] }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
+  it("Meta Bind buttons (planning only); no Dataview JS row since Phase 5a (no DataviewJS in the kit)", () => {
+    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26, names: ["new-meeting-series", "go-deck", "help"] },
       plugins: new Set(["templater-obsidian", "dataview", "obsidian-meta-bind-plugin", "zotlit"]) }));
     expect(r["dataview:js"]).toBeUndefined();
     expect(r["metabind:buttons"]).toMatchObject({ ok: false, fix: { kind: "meta-bind" } });
     expect(r["metabind:buttons"].detail).toContain("3 of 26");
     expect(r["metabind:buttons"].detail).toContain("new-meeting-series, go-deck, help");
-    expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });
   });
 
   it("a Meta Bind button that does something else than the kit's is reported with both actions, and Fix names it", () => {
@@ -165,15 +163,14 @@ describe("check setup (Phase 6)", () => {
     expect(differingButtons(kit, have)).toEqual([{ id: "go-meetings", now: "opens [[Weekly meetings]]", kit: "opens [[Meetings]]" }]);
   });
 
-  it("Methods folder Fix creates the suggested folder; ZotLit is a warning, not a tick", () => {
+  it("Methods folder Fix creates the suggested folder", () => {
     const r = byId(state({ planning: true, lab: { initials: "A", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: "L", chemicalFolder: "C" },
-      plugins: new Set(["templater-obsidian", "dataview", "zotlit"]), zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md" }));
+      plugins: new Set(["templater-obsidian", "dataview", "zotlit"]) }));
     expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "methods-folder", path: "03 Lab Book/Methods" } });
     expect(r["lab:rigs-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "rigs-folder", path: "03 Lab Book/Rigs" } });
     expect(r["lab:rigs-folder"].detail).toContain("Fix creates 03 Lab Book/Rigs and uses it.");
     expect(byId(state())["lab:rigs-folder"]).toMatchObject({ ok: true, detail: "Set." });
-    expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true });
-    expect(r["zotlit:settings"].detail).toContain("07 How-tos/Obsidian/Set up ZotLit.md");
+    expect(Object.keys(r).filter(k => k.startsWith("zotlit:"))).toEqual([]);   // Lab Kit no longer manages ZotLit (refpane does)
   });
 
   it("properties view: hidden is ok, visible gets a Fix, unknown is a warning", () => {
@@ -253,49 +250,6 @@ describe("check setup: meeting series (Phase 5b)", () => {
     expect(byId(state({ ...on, homepageMode: "" }))["viewmode:homepage"]).toMatchObject({ ok: false, fix: { kind: "open-note", path: "00 Home.md" } });
     expect(byId(state({ ...on, homepageMode: null }))["viewmode:homepage"]).toMatchObject({ ok: false, fix: undefined });
     expect(byId(state({ ...on, homepageMode: "preview", plugins: new Set(["templater-obsidian"]) }))["viewmode:homepage"]).toBeUndefined();
-  });
-});
-
-describe("check setup: ZotLit settings read from its data.json", () => {
-  const zot = (o: Partial<NonNullable<SetupState["zotlitData"]>> = {}): SetupState["zotlitData"] => ({ readable: true, missing: [], differing: [], literature: "ok", templates: "ok", ...o });
-  const on = (zotlitData: SetupState["zotlitData"]) => byId(state({ planning: true, zotlitData, plugins: new Set(["templater-obsidian", "dataview", "zotlit"]), zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md" }));
-  const field = { key: "DOI", expr: "zt.DOI", merge: "keep" as const, language: "liquid" as const };
-  it("everything there: both rows are ok and the old warning is gone", () => {
-    const r = on(zot());
-    expect(r["zotlit:fields"]).toMatchObject({ ok: true });
-    expect(r["zotlit:folders"]).toMatchObject({ ok: true });
-    expect(r["zotlit:settings"]).toBeUndefined();
-  });
-  it("a missing field counts as something to fix, with a Fix that names it; yours that differ are named and have no Fix of their own", () => {
-    const r = on(zot({ missing: [field], differing: [{ key: "Year", now: "zt.x (replace)", kit: "zt.date.year (replace)" }] }));
-    expect(r["zotlit:fields"]).toMatchObject({ ok: false, fix: { kind: "zotlit-fields" } });
-    expect(r["zotlit:fields"].warn).toBeUndefined();   // counted, not a "!"
-    const only = on(zot({ missing: [field] }));
-    expect(only["zotlit:fields"].detail).toBe("DOI is missing. Fix adds the missing ones, then turns ZotLit off and on so it reads them.");
-    // the folders row says where its Fix is
-    expect(on(zot({ missing: [field], literature: "empty" }))["zotlit:folders"].detail).toContain("The Fix on the fields row sets the empty ones.");
-    expect(on(zot({ literature: "empty" }))["zotlit:folders"].detail).toContain(" Fix sets the empty ones.");
-    expect(r["zotlit:fields"].detail).toContain("DOI is missing");
-    expect(r["zotlit:fields"].detail).toContain("Year differs (yours: zt.x (replace); kit: zt.date.year (replace))");
-  });
-  it("only differing fields: flagged as a warning to check by hand, nothing to fix", () => {
-    const r = on(zot({ differing: [{ key: "Year", now: "a", kit: "b" }] }));
-    expect(r["zotlit:fields"]).toMatchObject({ ok: false, warn: true });
-    expect(r["zotlit:fields"].fix).toBeUndefined();
-    expect(r["zotlit:fields"].detail).toContain("Year differs");
-    expect(r["zotlit:fields"].detail).toContain("check the ones that differ");
-  });
-  it("folders: empty ones are fixed through the fields row Fix when fields are fine; your own folder is left alone", () => {
-    const r = on(zot({ literature: "empty", templates: "other" }));
-    expect(r["zotlit:folders"]).toMatchObject({ ok: false, warn: true, fix: { kind: "zotlit-fields" } });
-    expect(r["zotlit:folders"].detail).toContain("Template folder is your own (left alone)");
-    const both = on(zot({ missing: [field], literature: "empty" }));
-    expect(both["zotlit:folders"].fix).toBeUndefined();   // the fields row's Fix sets both
-  });
-  it("no ZotLit data (no file or unreadable): the old warning stays, pointing at the checklist note", () => {
-    const r = on(null);
-    expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true, fix: { kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" } });
-    expect(r["zotlit:fields"]).toBeUndefined();
   });
 });
 
