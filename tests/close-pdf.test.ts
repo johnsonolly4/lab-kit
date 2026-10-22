@@ -60,6 +60,19 @@ describe("cleanForPdf", () => {
     cleanForPdf(root);
     expect(root.querySelector("details").getAttribute("open")).toBe("");
   });
+  it("prints the RAFT \"How it's worked out\" fold open with its head words, without the arrow", () => {
+    const root = new El("div");
+    const fold = root.createDiv({ cls: "lk-sol-fold" });
+    const head = fold.createEl("button", { cls: "lk-sol-fold-head" });
+    head.createSpan({ cls: "chev", text: "▸" });
+    head.createSpan({ text: "How it's worked out" });
+    fold.createDiv({ cls: "lk-sol-fold-body", text: "# n = m / M" });
+    cleanForPdf(root);
+    expect(fold.hasClass("is-open")).toBe(true);
+    expect(root.querySelector(".lk-sol-fold-head")).not.toBeNull();
+    expect(root.querySelector(".chev")).toBeNull();
+    expect(root.querySelector(".lk-sol-fold-body")).not.toBeNull();
+  });
   it(`marks a table of more than ${WIDE_COLUMNS} columns wide and returns the widest count`, () => {
     const wide = note(11), narrow = note(WIDE_COLUMNS);
     expect(cleanForPdf(wide)).toBe(11);

@@ -41,9 +41,14 @@ export function propRows(fm: Record<string, unknown> | undefined): [string, stri
   return Object.entries(fm ?? {}).filter(([k]) => k !== "cssclasses" && k !== "position").map(([k, v]) => [k, show(v)]);
 }
 
-/** Removes what does not belong on paper from a rendered note and marks wide calc tables; returns the widest table's column count. */
+/** Removes what does not belong on paper from a rendered note, opens folds and marks wide calc tables; returns the widest table's column count. */
 export function cleanForPdf(root: HTMLElement): number {
-  for (const sel of REMOVE) for (const e of Array.from(root.querySelectorAll(sel))) e.remove();
+  // the RAFT block's "How it's worked out" prints open: its head (a button) keeps its words, only the arrow goes
+  for (const fold of Array.from(root.querySelectorAll(".lk-sol-fold"))) {
+    fold.addClass("is-open");
+    for (const c of Array.from(fold.querySelectorAll(".chev"))) c.remove();
+  }
+  for (const sel of REMOVE) for (const e of Array.from(root.querySelectorAll(sel))) if (!e.hasClass("lk-sol-fold-head")) e.remove();
   let widest = 0;
   for (const block of Array.from(root.querySelectorAll(".block-language-calc"))) {
     const n = block.querySelector("tr")?.children.length ?? 0;
