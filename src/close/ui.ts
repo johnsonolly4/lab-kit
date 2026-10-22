@@ -6,7 +6,7 @@ import { hasNode } from "../platform";
 import { fileExistsIn, listFolderFiles, nodeModule, printHtmlToPdf, saveFileTo } from "../node";
 import { closeExperiment, reopenExperiment, type CloseHost } from "./commands";
 import { scanClosed, type ClosedScan } from "./scan";
-import { footerTemplate, renderForPdf } from "./pdf";
+import { renderForPdf } from "./pdf";
 import { checkData, dataFoundLine, dataWarnings, NO_NODE_LINE, type DataCheck } from "./data";
 import type { KitData } from "../kit/paths";
 import type { HeaderSettings } from "../header/settings";
@@ -87,9 +87,9 @@ export function closeHostFor(app: App, kit: KitData, header: HeaderSettings, fil
       join: (...p) => nodeModule("path")?.join(...p) ?? p.join("/"),
       canRead: hasNode(), list: listFolderFiles, missingLinks: missingLinkedFiles(app, file),
     }),
-    makePdf: async (footer, extra) => {
-      const { html } = await renderForPdf(app, file, extra);
-      return printHtmlToPdf(html, footerTemplate(footer));
+    makePdf: async (footer, extra, closedOn) => {
+      const { html } = await renderForPdf(app, file, extra, footer, closedOn);
+      return printHtmlToPdf(html);
     },
     fileExists: fileExistsIn,
     saveFile: saveFileTo,

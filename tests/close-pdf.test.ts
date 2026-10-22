@@ -1,10 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { createRequire } from "node:module";
-import { pdfHtml, propRows, cleanForPdf, inlineImages, imageType, footerTemplate, PRINT_CSS, WIDE_COLUMNS } from "../src/close/pdf";
+import { pdfHtml, propRows, cleanForPdf, inlineImages, imageType, pageRule, frameHeader, PRINT_CSS } from "../src/close/pdf";
 import { closedFooter } from "../src/close/mark";
 
 const { El } = createRequire(import.meta.url)("./helpers/minidom.cjs");
-const html = (wide: boolean) => pdfHtml("ABC0011", [["Exp. Class", "RAFT"], ["Chemicals", "A, B"]], "<p>Dry the beads first.</p>", wide, "x{}");
+const frame = { left: "ABC0011 · Test", right: "RAFT · Proj · 2026-10-20", footer: closedFooter("2026-10-20", "ABC0011", "a".repeat(64)) };
+const html = () => pdfHtml("ABC0011", [["Exp. Class", "RAFT"], ["Chemicals", "A, B"]], "<p>Dry the beads first.</p>", frame, "x{}");
 
 describe("propRows", () => {
   it("lists every property, joins arrays, shows link names, leaves out cssclasses and position", () => {
@@ -16,23 +17,23 @@ describe("propRows", () => {
 
 describe("pdfHtml", () => {
   it("has one row per property, the title and the .print wrapper", () => {
-    const h = html(false);
+    const h = html();
     expect(h).toContain("<tr><th>Exp. Class</th><td>RAFT</td></tr>");
     expect(h).toContain("<tr><th>Chemicals</th><td>A, B</td></tr>");
     expect(h).toContain('<h1 class="lk-close-title">ABC0011</h1>');
     expect(h).toContain('<div class="print">');
     expect(h).toContain("<p>Dry the beads first.</p>");
   });
-  it("is portrait unless a table is wide", () => {
-    expect(html(false)).toContain("size: A4 portrait");
-    expect(html(true)).toContain("size: A4 landscape");
+  it("is always portrait A4, never landscape", () => {
+    expect(html()).toContain("size: A4 portrait");
+    expect(html()).not.toContain("landscape");
   });
   it("escapes the title and the properties", () => {
-    expect(pdfHtml("a<b", [["k", "<i>"]], "", false)).toContain("<th>k</th><td>&lt;i&gt;</td>");
+    expect(pdfHtml("a<b", [["k", "<i>"]], "", frame)).toContain("<th>k</th><td>&lt;i&gt;</td>");
   });
   it("carries the print rules and the given CSS", () => {
-    expect(html(false)).toContain(PRINT_CSS);
-    expect(html(false)).toContain("x{}");
+    expect(html()).toContain(PRINT_CSS);
+    expect(html()).toContain("x{}");
   });
 });
 
@@ -80,18 +81,28 @@ describe("cleanForPdf", () => {
     expect(cell.hasClass("is-editable")).toBe(false);
     expect(cell.hasClass("is-empty")).toBe(true);
   });
-  it(`marks a table of more than ${WIDE_COLUMNS} columns wide and returns the widest count`, () => {
-    const wide = note(11), narrow = note(WIDE_COLUMNS);
-    expect(cleanForPdf(wide)).toBe(11);
-    expect(wide.querySelector(".block-language-calc").hasClass("lk-wide")).toBe(true);
-    expect(cleanForPdf(narrow)).toBe(WIDE_COLUMNS);
-    expect(narrow.querySelector(".block-language-calc").hasClass("lk-wide")).toBe(false);
-  });
 });
 
-describe("footerTemplate", () => {
-  it("prints the closed footer text exactly", () => {
-    expect(footerTemplate(closedFooter("2026-10-20", "ABC0011", "a".repeat(64)))).toContain("Closed 2026-10-20 · ABC0011 · SHA-256 aaaaaaaaaaaa<");
+describe("page frame", () => {
+  it("puts the running header and the footer in the @page margin boxes, footer small and light grey", () => {
+    const r = pageRule(frame);
+    expect(r).toMatch(/@top-left \{ content: "ABC0011 · Test"; font-weight: 700;/);
+    expect(r).toContain('@top-right { content: "RAFT · Proj · 2026-10-20";');
+    expect(r).toContain("border-bottom: 0.3pt solid #999; margin-bottom: 4mm");   // a gap between the rule and the text
+    expect(r).toContain('Closed 2026-10-20 · ABC0011 · SHA-256 aaaaaaaaaaaa"');
+    const foot = r.match(/@bottom-center \{[^}]*\}/)![0];
+    expect(foot).toContain("font-size: 6pt");   // the old footer was 8px (6pt)
+    expect(foot).toContain("color: #aaa");      // lighter than the old #555
+  });
+  it("escapes quotes, backslashes and line breaks in the text", () => {
+    expect(pageRule({ left: 'a"b\\c', right: "x\ny", footer: "" })).toContain('"a\\"b\\\\c"');
+    expect(pageRule({ left: "", right: "x\ny", footer: "" })).toContain('"x y"');
+  });
+  it("header: number and title on the left; Exp. Class, project and closing date on the right, empty ones left out", () => {
+    expect(frameHeader("ABC0014 - RAFT test", { "Exp. Class": "RAFT", Project: "[[Beads]]" }, "2026-10-20"))
+      .toEqual({ left: "ABC0014 · RAFT test", right: "RAFT · Beads · 2026-10-20" });
+    expect(frameHeader("ABC0014", { Project: "" }, "2026-10-20")).toEqual({ left: "ABC0014", right: "2026-10-20" });
+    expect(frameHeader("Scratch note", undefined, "")).toEqual({ left: "Scratch note", right: "" });
   });
 });
 
