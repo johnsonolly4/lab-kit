@@ -23,6 +23,7 @@ body { background: #fff; }
 .lab-kit-scroll, .block-language-calc { overflow: visible; max-width: none; width: 100%; }
 .block-language-calc td { white-space: nowrap; }
 tr { break-inside: avoid; }
+h1, h2, h3, h4, h5, h6, .block-language-calc > :first-child { break-after: avoid; }
 `;
 
 export function esc(s: string): string {
