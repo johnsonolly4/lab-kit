@@ -15,7 +15,7 @@ What lands in the note is set by the plugin, not by a snippet file: a definition
 ## Where the built-in blocks differ (listed, not changed)
 | Block | Difference |
 |---|---|
-| `raft` (built in) | tag `raft` not `lk-…`; no `use:` line; head line without the definition name and hash; the `# Monomers` line runs into its text when every reagent name is 6 characters or shorter (`# Monomersmean MW`), a gap the definition path closes |
+| `raft` (built in) | tag `raft` not `lk-…`; no `use:` line; head line without the definition name and hash (the `# Monomersmean MW` gap for reagent names of 6 characters or fewer is FIXED 2026-10-22, owner: small fix in the built-in block) |
 | `solution` (built in) | tag `solution`; `use: 50 %` already means the share of acid used, so it cannot be the definition line (its tag differs, so there is no clash); `step N:` sections instead of `used:` (rule 5 allows them); no `#` worked-out lines |
 
 ## Reading the text

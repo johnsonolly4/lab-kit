@@ -180,7 +180,7 @@ export interface RaftNamed extends RaftSetup { solvent: string; cosolvent?: stri
 export function workedOut(s: RaftNamed, t: RaftTargets): string[] {
   const names = [...s.monomers.map(m => m.name), s.cta.name, s.initiator.name, s.solvent, ...(t.cosolventG === null ? [] : [s.cosolvent ?? ""]), "Mn"];
   const w = Math.max(...names.map(n => n.length)) + 2;
-  const row = (name: string, text: string): string => `# ${name.padEnd(w)}${text}`;
+  const row = (name: string, text: string): string => `# ${name.length >= w ? name + " " : name.padEnd(w)}${text}`;   // "Monomers" is not in `names`: never run it into its text
   const mws = [...s.monomers, s.cta, s.initiator].map(r => `${r.name} ${fmtMw(r.mw)}`).join(", ");
   const out = [WORKED_HEAD, `# MW from the chemical notes: ${mws}`];
   const fSum = s.monomers.reduce((a, m) => a + m.fraction, 0);
