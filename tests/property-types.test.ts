@@ -30,11 +30,10 @@ describe("ensurePropertyType", () => {
 });
 
 describe("planning templates", () => {
-  it("set property types only through window.vtEnsureType", () => {
-    for (const [f, names] of [["Project hub.md", ["deadline"]]] as const) {
-      const s = readFileSync(`kits/planning/Extras/Templates/${f}`, "utf8");
-      expect(s).not.toContain("metadataTypeManager");
-      for (const n of names) expect(s).toContain(`window.vtEnsureType?.("${n}"`);
-    }
+  it("no planning template sets property types any more: New project sets deadline's type itself (Templater Phase 6)", () => {
+    const s = readFileSync("kits/planning/Extras/Templates/Project hub.md", "utf8");
+    expect(s).not.toContain("metadataTypeManager");
+    expect(s).not.toContain("vtEnsureType");
+    expect(readFileSync("src/planning/commands.ts", "utf8")).toContain('ensurePropertyType(this.app, "deadline", "date")');
   });
 });
