@@ -2,6 +2,7 @@
 // The page string and the cleaning are plain functions (tested); `renderForPdf` is the only part that needs Obsidian.
 import { Component, MarkdownRenderer, type App, type TFile } from "obsidian";
 import { extractBlocks, text } from "../calc/engine";
+import { makeFigure } from "../rig/figure-make";
 
 /** A table with more columns than this turns the whole PDF landscape. */
 export const WIDE_COLUMNS = 7;
@@ -58,21 +59,30 @@ export function cleanForPdf(root: HTMLElement): number {
     widest = Math.max(widest, n);
   }
   for (const d of Array.from(root.querySelectorAll("details"))) d.setAttribute("open", "");
+  // RAFT / Solution prep: an empty Actual cell prints blank, not "click to enter" (owner P2, 2026-10-22)
+  for (const c of Array.from(root.querySelectorAll(".lk-sol-cell"))) c.removeClass("is-editable");
   return widest;
 }
 
-/** Turns every picture that the printed page could not open (`blob:` rig figure, app resource URL of an embed) into a `data:` URI; a picture that cannot be fetched stays as it is. */
-export async function inlineImages(root: HTMLElement, fetcher: (url: string) => Promise<Response> = u => fetch(u)): Promise<void> {
+/** The bytes of one picture and its media type, or null when it cannot be read. */
+export type ImageReader = (img: HTMLElement) => Promise<{ bytes: ArrayBuffer | Uint8Array; type: string } | null>;
+
+/** Media types of the pictures a note can embed, by extension. */
+const IMAGE_TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", bmp: "image/bmp", avif: "image/avif" };
+export function imageType(ext: string): string { return IMAGE_TYPES[ext.toLowerCase()] ?? "application/octet-stream"; }
+
+/** Turns every picture that the printed page could not open (`blob:` rig figure, app resource URL of an embed) into a `data:` URI from `read`; a picture that cannot be read stays as it is. */
+export async function inlineImages(root: HTMLElement, read: ImageReader): Promise<void> {
   for (const img of Array.from(root.querySelectorAll("img"))) {
     const src = img.getAttribute("src") ?? "";
     if (!src || src.startsWith("data:")) continue;
     try {
-      const blob = await (await fetcher(src)).blob();
-      const bytes = new Uint8Array(await blob.arrayBuffer());
+      const got = await read(img);
+      if (!got) continue;
+      const bytes = got.bytes instanceof Uint8Array ? got.bytes : new Uint8Array(got.bytes);
       let bin = "";
       for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      const type = blob.type || (/\.svg(\?|$)/i.test(src) ? "image/svg+xml" : "image/png");
-      img.setAttribute("src", `data:${type};base64,${btoa(bin)}`);
+      img.setAttribute("src", `data:${got.type};base64,${btoa(bin)}`);
     } catch { /* left as it is */ }
   }
 }
@@ -108,7 +118,20 @@ export async function renderForPdf(app: App, file: TFile, extra: [string, string
     const clone = host.cloneNode(true) as HTMLElement;
     clone.removeClass("lk-close-host");
     const widest = cleanForPdf(clone);
-    await inlineImages(clone);
+    // pictures from the vault files the note embeds (no fetch); the rig figure drawn again from the note's parts tables
+    const byUrl = new Map<string, TFile>();
+    for (const e of app.metadataCache.getFileCache(file)?.embeds ?? []) {
+      const f = app.metadataCache.getFirstLinkpathDest(e.link.split("#")[0].split("|")[0], file.path);
+      if (f) byUrl.set(app.vault.getResourcePath(f).split("?")[0], f);
+    }
+    await inlineImages(clone, async img => {
+      if (img.hasClass("lab-kit-rig-img")) {
+        const svg = makeFigure(note)?.svg;
+        return svg ? { bytes: new TextEncoder().encode(svg), type: "image/svg+xml" } : null;
+      }
+      const f = byUrl.get((img.getAttribute("src") ?? "").split("?")[0]);
+      return f ? { bytes: await app.vault.readBinary(f), type: imageType(f.extension) } : null;
+    });
     const bodyHtml = new XMLSerializer().serializeToString(clone);
     let css = "";
     for (const sheet of Array.from(document.styleSheets)) {
