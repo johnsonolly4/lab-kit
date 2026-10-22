@@ -1,0 +1,6 @@
+format: 1
+name: tiny
+layout: [list
+rows:
+  - id: salt
+    target: 1
