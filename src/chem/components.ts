@@ -120,8 +120,11 @@ function cells(v: unknown): string[] {
   return [cellText(v)];
 }
 
-const COMPONENTS = ["components", "Components"];
-const AMOUNTS = ["component_amounts", "component amounts", "Component_amounts"];
+/** Exact names only (CDA-2 a, snake_case): old spellings such as `Components` are not read; the property rename's Tidy rule rewrites them. */
+const exact = (fm: Record<string, unknown>, name: string): unknown => {
+  const v = fm[name];
+  return v == null || v === "" ? undefined : v;
+};
 const first = (fm: Record<string, unknown>, names: string[]): unknown => {
   for (const n of names) { const v = prop(fm, n); if (v != null && v !== "") return v; }
   return undefined;
@@ -130,8 +133,8 @@ const first = (fm: Record<string, unknown>, names: string[]): unknown => {
 /** The note's components and their amounts, each amount parsed. `owner` only names the note in sentences. */
 export function readComponents(fm: Record<string, unknown> | undefined, owner = "This note"): ComponentsRead {
   const f = fm ?? {};
-  const names = cells(first(f, COMPONENTS)).map(linkTarget);
-  const amounts = cells(first(f, AMOUNTS));
+  const names = cells(exact(f, "components")).map(linkTarget);
+  const amounts = cells(exact(f, "component_amounts"));
   const problems: string[] = [];
   if (names.length !== amounts.length) problems.push(PROBLEM.mismatch(names.length, amounts.length));
   const items = names.map((name, i) => parseAmount(owner, i + 1, name, amounts[i] ?? ""));

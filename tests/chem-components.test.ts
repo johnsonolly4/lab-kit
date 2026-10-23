@@ -34,10 +34,14 @@ describe("readComponents", () => {
     expect(r.items.map(i => [i.name, i.basis, i.lo])).toEqual([["C", "ww", 22], ["D", "ww", 5], ["E", "ww", 0.5], ["X", "rest", undefined]]);
     expect(mainComponent(r.items)?.name).toBe("C");
   });
-  it("strips alias and heading from links and accepts the spaced property names", () => {
-    const r = readComponents({ Components: ["[[C|the C]]", "[[D#x]]"], "Component amounts": ["22 %", "5 ppm"] });
+  it("strips alias and heading from links", () => {
+    const r = readComponents({ components: ["[[C|the C]]", "[[D#x]]"], component_amounts: ["22 %", "5 ppm"] });
     expect(r.items.map(i => i.name)).toEqual(["C", "D"]);
     expect(r.items[1]).toMatchObject({ basis: "ppm", lo: 5, hi: 5 });
+  });
+  it("reads only the snake_case names (CDA-2 a): old spellings are not read", () => {
+    expect(readComponents({ Components: ["[[C]]"], "Component amounts": ["22 %"] })).toEqual({ items: [], problems: [] });
+    expect(readComponents({ Components: ["[[C]]"], component_amounts: ["22 %"] }).problems).toEqual([PROBLEM.mismatch(0, 1)]);
   });
   it("a note without components has none", () => {
     expect(readComponents(fm("C"))).toEqual({ items: [], problems: [] });
