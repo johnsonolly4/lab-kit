@@ -1,6 +1,10 @@
+import { readFileSync } from "node:fs";
 // Quick capture: highlighted text → a title and the fields its @ % ! marks set (src/planning/quick-todo.ts).
 import { describe, it, expect } from "vitest";
-import { parseQuickTodo } from "../src/planning/quick-todo";
+import { parseQuickTodo, todoFileName } from "../src/planning/quick-todo";
+
+const MON = new Date(2026, 9, 19, 9, 0);   // Mon 2026-10-19 (I2 Phase 5)
+const qm = (t: string, now = MON) => parseQuickTodo(t, ["Polymers", "Thesis"], now);
 
 const NOW = new Date(2026, 9, 7, 15, 30);   // Wed 2026-10-07
 const projects = ["Polymer A", "Polymer", "Flow reactor", "Thesis"];
@@ -79,16 +83,20 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(isBlankBoardNote("---\nday: Wed\n---\n")).toBe(true);
     expect(isBlankBoardNote("---\r\nday: Backlog\r\n---\r\n\r\n")).toBe(true);
     expect(isBlankBoardNote("---\nday: Wed\n---\n\n   \n")).toBe(true);
+    expect(isBlankBoardNote("---\ndone:\nday: Backlog\n---\n")).toBe(true);
+    expect(isBlankBoardNote("---\nscheduled: 2026-10-21\ndone:\n---\n")).toBe(true);   // a board that writes the column as a date (I2)   // what the board's New writes (Obsidian 1.14.4)
   });
   it("any text, or any other property, is kept", () => {
     expect(isBlankBoardNote("---\nday: Wed\n---\nbuy tubing\n")).toBe(false);
     expect(isBlankBoardNote("---\nday: Wed\nproject: \"[[A]]\"\n---\n")).toBe(false);
     expect(isBlankBoardNote("just text")).toBe(false);
+    expect(isBlankBoardNote("---\ndone:\nday: Backlog\n---\nbuy tubing\n")).toBe(false);
+    expect(isBlankBoardNote("---\ndone: true\nday: Backlog\n---\n")).toBe(false);
     expect(isBlankBoardNote("---\nkind: todo\n---\n")).toBe(false);
   });
   it("the template carries the same rule and only trashes inside the to-dos folder", () => {
-    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
-    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^day:/.test(l.trim()))");
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
+    expect(tpl).toContain("fm.split(/\\r?\\n/).every(l => !l.trim() || /^(?:day:|scheduled:|[\\w .-]+:\\s*$)/.test(l.trim()))");
     expect(tpl).toContain("f.path.startsWith(`${folder}/`) && rest.trim() === \"\"");
     expect(tpl).toContain("app.fileManager.trashFile(f)");
   });
@@ -107,5 +115,52 @@ describe("isBlankBoardNote (Esc in the board's New trashes the empty note)", () 
     expect(parseQuickTodo("Book +Nobody", pr, NOW)).toEqual({ title: "Book +Nobody", projectGuess: "Nobody" });
     expect(parseQuickTodo('Book +"No body"', pr, NOW)).toEqual({ title: 'Book +"No body"', projectGuess: "No body" });
     expect(parseQuickTodo("Book + ", pr, NOW).projectGuess).toBeUndefined();
+  });
+});
+
+describe("todoFileName (I12: the to-do is made under its final name)", () => {
+  const none = () => false;
+  it("forbidden characters become -, 80 characters at most, empty = Untitled to-do", () => {
+    expect(todoFileName("  Run a/b: c?  ", none)).toBe("Run a-b- c-");
+    expect(todoFileName("x".repeat(100), none)).toHaveLength(80);
+    expect(todoFileName("   ", none)).toBe("Untitled to-do");
+  });
+  it("a used name gets 2, 3...", () => {
+    const used = new Set(["Plan", "Plan 2"]);
+    expect(todoFileName("Plan", n => used.has(n))).toBe("Plan 3");
+  });
+  it("the To-do template builds the same name and does not move a note that already has it", () => {
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
+    expect(tpl).toContain(String.raw`text.replace(/[\\/:*?"<>|#^\[\]]/g, "-").slice(0, 80)`);
+    expect(tpl).toContain("if (here !== `${folder}/${name}.md`) { await tp.file.move(");
+    expect(todoFileName("a#b[c]^d|e", none)).toBe("a-b-c--d-e");
+  });
+});
+
+describe("the > day mark (I2 Phase 5, Mon 19 Oct)", () => {
+  it(">next tue is the Tuesday of next week", () => {
+    expect(qm("Book NMR time +Polymers >next tue !1")).toEqual({ title: "Book NMR time", project: "Polymers", scheduled: "2026-10-27", priority: 1 });
+  });
+  it(">tue on a Tuesday is today", () => {
+    expect(qm("a >tue", new Date(2026, 9, 20)).scheduled).toBe("2026-10-20");
+    expect(qm("a >today", new Date(2026, 9, 20)).scheduled).toBe("2026-10-20");
+  });
+  it(">backlog sets nothing and leaves no trace in the title", () => {
+    expect(qm("Book NMR >backlog")).toEqual({ title: "Book NMR" });
+  });
+  it("marks in any order, with words up to the next mark", () => {
+    const want = { title: "Book NMR time", project: "Thesis", due: "2026-10-23", scheduled: "2026-10-21", priority: 2 };
+    expect(qm("Book NMR time +Thesis %fri >wed !2")).toEqual(want);
+    expect(qm(">wed !2 %fri +Thesis Book NMR time")).toEqual(want);
+    expect(qm("!2 >wed +Thesis Book NMR time %fri")).toEqual(want);
+    expect(qm("Book >in 3 days %fri")).toEqual({ title: "Book", scheduled: "2026-10-22", due: "2026-10-23" });
+    expect(qm("Book >27 oct")).toEqual({ title: "Book", scheduled: "2026-10-27" });
+  });
+  it("a past day is returned as pastDay and not set; a word that is not a date stays", () => {
+    expect(qm("a >2026-10-14")).toEqual({ title: "a", pastDay: "2026-10-14" });
+    expect(qm("a > soon").title).toBe("a > soon");
+  });
+  it("a leading quote marker is dropped, not read as the mark", () => {
+    expect(qm("> Book NMR >fri")).toEqual({ title: "Book NMR", scheduled: "2026-10-23" });
   });
 });

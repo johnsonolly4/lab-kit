@@ -17,7 +17,7 @@ export function missingNow(app: App, kit: KitData): MissingFolder[] {
   const planningOn = !!kit.kits[PLANNING_KIT]?.enabled;
   return missingFolderSettings({
     planning: { ...kit.planningFolders },
-    planningMissing: planningOn ? missingPlanningFolders(kit.planningFolders, exists, loadedPlugins(app).has("zotlit")) : [],
+    planningMissing: planningOn ? missingPlanningFolders(kit.planningFolders, exists, loadedPlugins(app).has("literature")) : [],
     labFolder: kitJoin(kit.labFolder.trim()), chemicalFolder: kitJoin(kit.chemicalFolder.trim()), exists,
   });
 }

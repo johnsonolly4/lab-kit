@@ -32,12 +32,11 @@ show: back-to-hub
 | `01 Daily Notes/` | Daily notes, by year. A log of the day, not a to-do list. |
 | `02 Projects/` | One subfolder per project, each with a hub note. Plans, progress, decisions, paper drafts. |
 | `03 Lab Book/` | `Notes/` = numbered lab entries (`0014 - Title`), `Rigs/` = one note per flow rig (the lab kit's Rigs folder), plus `Lab book base.base`. |
-| `04 Literature/` | `ZotLit Imports/` (one ZotLit note per paper, named by citekey; `ZotLit attachments/` holds highlight images) and the [[Literature]] hub. Key papers are tagged `key-paper` in Zotero. |
 | `05 Chemicals/` | Chemical database notes and base. |
 | `06 Knowledge/` | Concepts and theory, by topic subfolder. Index: [[Knowledge index]]. |
 | `07 How-tos/` | Procedures and software tips, by topic subfolder. Index: [[How-tos index]]. |
 | `08 Meetings/` | The [[Meetings]] hub, then one folder per meeting series with its hub note and meeting notes (one-off meetings in `One-off`). |
-| `Extras/` | Templates, scripts, attachments. The kit's own files here are managed by Lab Kit (Settings > Lab Kit > Manage files). |
+| `Extras/` | Templates (`Templates/`), the Alt+S snippets (`Snippets/`) and scripts. The kit's own files here are managed by Lab Kit (Settings > Lab Kit > Manage files). |
 | `99 Archive/` | Anything finished or retired. Never deleted outright. |
 
 These are the default names. Each folder is a setting (Settings > Lab Kit > Planning > Planning folders, and Lab notebook for the Lab notes, Chemical and Rigs folders); rename a folder inside Obsidian and its setting follows.
@@ -79,7 +78,7 @@ flowchart LR
 > [!warning] Property naming
 > - `Status` (capital S, plain text, one value) is the **only** status property in the vault. Never create a lowercase `status`.
 > - `kind` marks system notes: `project`, `todo`, `literature`, `meeting`, `meeting-series`, `concept`, `review`, `hub`, `daily`, `guide`, `list`, `spec`. (Not `type` - that clashes with the lab book's `Type`.)
-> - Exception: literature notes have no `Status`. Their state is the inline field `[takeaway:: ...]` (empty = to process), because ZotLit refreshes the properties on every update (see below).
+> - Exception: literature notes have no `Status`; the Refpane plugin owns them and their property names (`paper_title`, `zotero_tags`, `collections`, ...).
 > - Lab book properties keep the lab kit's names (`Type`, `Exp. Class`, `Plan date`, ...).
 > - Two lab note properties are written by a command or snippet, not by the template, so a note without them is normal and Tidy up notes never adds them: `Rig` (the Rig snippet, a link to the rig note) and `Cloned from` (Clone experiment, a link to the note it was copied from).
 
@@ -119,7 +118,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 | *Notes* (`show: project-notes`) | every note in the project folder (and subfolders), newest first; 10 rows, **Show all** |
 | *Experiments* (`show: project-experiments`) | the lab notes that this project's to-dos name in `experiment`, each once, with its `Status` and the to-do that names it; open ones first, Closed last; nothing is written to the lab notes (a lab note has no `project`); needs the Lab folder set |
 | *Meetings* (`show: project-meetings`) | meeting notes whose `project` names this hub, newest first; the last 8, **Show all** |
-| *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, key papers first (&#9733;), with my reason from its *For my projects* line (Dataview) |
+| *Papers* | every paper in the Zotero collection `Projects/<Project>` **or** linking this hub, papers tagged `/priority` first (&#9733;), with my reason from its *For my projects* line (Dataview) |
 | *Done to-dos* | collapsed (Dataview) |
 | `## Related` | links I add by hand (concepts, how-tos); anything else project-specific goes below it |
 
@@ -130,7 +129,7 @@ Created with the **New project** button or command (template `Extras/Templates/P
 An older hub gets the current layout from **Tidy up notes** > *Hubs: bring the page up to the current template* (it keeps the goal and what is under Related; never ticked by default).
 
 ### Projects overview ([[Projects overview]], `02 Projects`)
-**New project** button, then **one card per project** (two per row, Active first), then **Key papers by project** (from `Collections`, so a paper in several projects appears under each, with its takeaway). Homepage button **Projects** (`go-projects`).
+**New project** button, then **one card per project** (two per row, Active first), then **Key papers by project** (a `refpane` block, `show: key-papers-by-project`: empty without the Refpane plugin). Homepage button **Projects** (`go-projects`).
 
 Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue first, "+ N more"), counts of open to-dos / papers / notes, and three buttons - **New note** (straight into that project's folder), **New to-do**, **Open**.
 
@@ -138,36 +137,35 @@ Each card shows: name + status badge, the goal, the next 3 open to-dos (overdue 
 > Meta Bind buttons can't be generated per project, so Lab Kit draws the cards (a `vault-projects` block, styled by `vault-theme.css`). Their buttons call Lab Kit's New project note and New to-do. With a `deadline` and the countdown on, a card shows the days left.
 
 ### To-do (`00 Planning/To-dos`)
-Created with the **New to-do** button or command (`Alt+T`): an entry window (title box, chips for Project, Meeting, Due, Priority; Enter creates; the countdown badge is a setting for all to-dos), then the template `Extras/Templates/To-do.md` makes the note from what was set (it writes a `todo-bar` block, the chip bar, under the properties; Tidy up notes can add it to old to-dos). **New** in a column on the board runs the same template, which opens the same window through the plugin (its title names the column; without the plugin the template asks the questions one by one). A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's `day` (anything else starts in `Backlog`).
+Created with the **New to-do** button or command (`Alt+T`): an entry window (title box, chips for Project, Meeting, Due, Priority; Enter creates; the countdown badge is a setting for all to-dos), then the template `Extras/Templates/To-do.md` makes the note from what was set (it writes a `todo-bar` block, the chip bar, under the properties; Tidy up notes can add it to old to-dos). **New** in a column on the board runs the same template, which opens the same window through the plugin (its title names the column; without the plugin the template asks the questions one by one). A Templater **folder template** (`00 Planning/To-dos` -> `To-do.md`) runs the template for board cards too, and the template keeps the column's date as `scheduled` (anything else starts in the Backlog). The template writes only the properties that have a value.
 
 | Property | Values | Set by |
 |---|---|---|
 | `kind` | `todo` | template |
-| `day` | `Backlog`, `Mon`, `Tue`, `Wed`, `Thu`, `Fri` (`Done` = finished in an earlier week, off the board) | dragging the card |
+| `scheduled` | date (`YYYY-MM-DD`) the to-do is scheduled for; none = the Backlog. Before today and not done = carried over (orange card, worked out, never stored) | dragging the card |
 | `done` | tick box - finished | me |
-| `planned` | date the card was put on its day | Lab Kit |
-| `rolled` | tick box - carried over from an earlier day (orange card) | Lab Kit |
 | `done_on` | date `done` was ticked | Lab Kit |
-| `project` | link to a project hub, e.g. `"[[Flow rig]]"`, or empty | template / me |
+| `project` | link to a project hub, e.g. `"[[Flow rig]]"`; none when not in a project | template / me |
 | `due` | date (`YYYY-MM-DD`), optional - only for real deadlines | template / me |
 | `priority` / `project` on the board | the board card shows a small tag at the bottom left, `↑ Polymers` (an arrow for priority 1, 2 or 3: ↑, –, ↓, and the project's name); read from the note, so the property row need not be shown on the card | plugin |
-| `countdown` | tick box - show days left until `due` on the board card (needs Settings > Lab Kit > Due-date countdown) | template / me |
-| `priority` | `1`, `2` or `3` (1 = highest, a number property) or empty - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none; the board sorts each column the same way, after putting done cards last (`sort:` in `To-do board.base`) | template (New to-do asks it) / me |
+| `priority` | `1`, `2` or `3` (1 = highest, a number property); none when not set - in a project hub's To-dos tile and cards, to-dos on the same day are ordered 1, 2, 3, then none; the board sorts each column the same way, after putting done cards last (`sort:` in `To-do board.base`) | template (New to-do asks it) / me |
 | `sub` | optional, by hand: one link to the to-do this one is a subtask of (`"[[Parent to-do]]"`); the parent's card on the plan map shows a count (`1/2`) that opens the list; the parent is never ticked for you; one level only; the subtask stays an ordinary to-do (board, `after`) | me |
 | `experiment` | optional, by hand: one link to the lab note this to-do runs (`"[[ABC0014-A]]"`); the project plan shows that note's `Status` as a badge on the to-do's card. Display only; needs the Lab folder set | me |
 | `after`, `result`, `order` | for a to-do in a project: `after` = link(s) to the to-dos that come first (New to-do's *Comes after?* writes one; dragging on the plan map and Link to-dos in order write it too; a second one by hand, as a list), `result` = one line (the Add result command, or by hand), `order` = a number, by hand; read by the project hub's plan map and Plan list | template / plugin / me |
-| `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; `false` = not flagged | template / me |
+| `meeting` | link to a meeting series, e.g. `"[[Group meeting]]"` - raise this at its next meeting; none = not flagged | template / me |
+| `day`, `planned`, `rolled`, `countdown` | old properties from an older To-do template: still read (a weekday `day` as its date this week), removed when a note arrives in the to-dos folder or by Tidy up notes → To-dos: give each card a date | old template |
 
 The template always files the to-do in `00 Planning/To-dos`, wherever it was started from. It asks, in order: the text; the project (filled in by itself when started from a project card on [[Projects overview]], from a project hub, or from any note inside a project folder; "(no project)" for none); *Comes after?* (only for a project with other open to-dos: one pick, "(nothing)" first); which meeting to raise it at (only when there are several series); a due date (Enter = none; `YYYY-MM-DD`, or `today`, `tomorrow`, a weekday such as `fri`, `next mon`) and, with a date, whether to show a countdown; the priority (none, 1, 2, 3). Esc at any box cancels the to-do, except at *Comes after?*, where it picks nothing. New to-dos get `cssclasses: [vt]`.
 
-**Roll-over** is done by Lab Kit itself (no Templater startup template), when the planning kit is on and installed: about 90 seconds after Obsidian opens, and again when the date changes while Obsidian stays open. The command **Roll over to-dos now** runs it at once.
-- A card's day means *the first such weekday on or after `planned`*. So a card dragged onto Mon on a Friday waits for next Monday.
-- Unfinished card whose day has passed -> moves to today's column (Mon at the weekend), `rolled: true`, shown **amber**.
-- Ticked `done` (click the circle on the card) -> stays on its day, shown **green**, `done_on` stamped.
-- Monday (first run of a new week) -> cards finished in an earlier week get `day: Done` and leave the board. They still count everywhere else (meeting note, daily note, hubs, archive).
-- Dragging a card yourself stamps `planned` and clears `rolled`. Backlog cards never roll.
-- No weekend column: weekend leftovers roll to Monday.
-- Lab Kit also makes the circle on each card clickable, marks carried-over cards orange (`vt-rolled`), marks today's column (`body[data-vt-today]`) and puts the countdown on cards with a `due` date.
+**Carried over** cards are drawn by Lab Kit from the `scheduled` date: an open card scheduled for a day before today shows in today's column with an amber edge, on every device. Nothing is written and nothing runs at startup (the roll-over and its command are gone).
+- Ticked `done` (click the circle on the card) -> stays on its day, shown **green**, `done_on` stamped; a tick from the board or the chip bar shows an **Undo** notice for 8 seconds. A day's `N done` unfolds to that day's finished cards (the circle unticks one).
+- Cards finished in an earlier week leave the board by their date; they still count everywhere else (meeting note, daily note, hubs, archive). Nothing is written for that.
+- Dragging a card onto a day writes `scheduled` for that day of the shown week; onto the Backlog removes it. A past day takes no drop (a notice instead). Only properties with a value are written.
+- No weekend column by default (Settings > Lab Kit > Show weekend adds Sat and Sun); a weekend `scheduled` shows in the Backlog tray with its date.
+- **Week arrows**: `‹` `›` in the board's top row move the shown week (`Week of 26 Oct`); `This week` appears away from this week. Past weeks can be viewed and take no drops; the shown week is not saved.
+- **Late cards**: the grey `N carried over` chip opens a window with, per late card, `Today`, `Tomorrow`, `Next week`, `Backlog` and `Done`; each writes as a drag (or a tick) would.
+- **Close the week...** (top row) lists the open cards of the week (from Friday the whole week, before that only past days) with a box per card; choices `Move to next Monday` (default), `Move to the Backlog`, `Leave them`. Notes are never moved or archived.
+- Lab Kit also makes the circle on each card clickable, marks carried-over cards amber, marks today's column (`body[data-vt-today]`) and puts the countdown on cards with a `due` date.
 - Check it is running: today's column is blue. If not, check the planning kit is on and its files installed (Settings > Lab Kit > Updates); restart Obsidian.
 
 ```mermaid
@@ -175,69 +173,14 @@ flowchart LR
   N[New to-do] --> BL[Backlog]
   BL -->|plan the week| D[Mon ... Fri]
   D -->|tick done| G[Green on its day]
-  D -->|day passed, not done| O[Orange, moved to today]
+  D -->|day passed, not done| O[Amber, drawn in today's column]
   O -->|tick done| G
-  G -->|next week| DN[day: Done, off the board]
+  G -->|next week| DN[Off the board, still counted]
   D -->|won't happen this week| BL
 ```
 
-### Literature note (`04 Literature/ZotLit Imports`)
-Created by **ZotLit** (command *ZotLit: Create literature note*) from three Liquid templates in `Extras/Templates/ZotLit/`: `zotlit-note.liquid.md` (layout), `zotlit-content.liquid.md` (the managed region) and `zotlit-lititem.liquid.md` (one highlight). Refreshed with the **update-litnote** button, which runs *ZotLit: Update literature note*.
-
-> [!warning] Only the managed region is rewritten
-> ZotLit rewrites only what sits between `%%zt-managed%%` and `%%/zt-managed%%`, plus its own properties. The *Takeaway* box above it and *My notes* below it are never touched. Never write inside the markers.
-
-**Note layout:** empty line - Takeaway box (`[takeaway:: ]`) - *For my projects* box - update button and PDF link - *managed region* - `## My notes`.
-
-**For my projects** (`[!projects]` callout) is filled once, when the note is created: one line `- [[<Project>]]: ` for each Zotero collection under `Projects/` that the paper is in (or a placeholder line if none). I write after the colon how the paper helps that project. Updates don't touch this box.
-
-**Which projects a paper belongs to** comes from the `Collections` property (e.g. `Projects/Flow rig`), refreshed from Zotero on every update. So a paper added to another project collection later shows on that hub after **Update literature note** - just without a reason until I add a line `- [[<Project>]]: why` to the box. A box line on its own (no collection) also counts.
-
-**Managed region:** `## Key points`, `## To try`, `## Questions`, `## Other highlights` (each only if it has highlights), then collapsed `[!lab]` *Used in experiments* and `[!info]` *Abstract & related*. Each highlight appears once, as one line: text, *my Zotero comment*, Zotero tags as `#tags`, page link to the PDF, and a block ID (`^` + Zotero annotation key), so a lab entry can link one finding with `[[citekey#^key]]`.
-
-**Properties** are set in Settings > ZotLit > Templates > Frontmatter (not in the template file):
-
-| Property | Expression | Merge |
-|---|---|---|
-| `kind` | `"literature"` | Keep existing |
-| `Type` | `"Literature Note"` | Keep existing |
-| `Title` | `zt.title` | Replace |
-| `aliases` | `zt.title \| split: "§§"` | Append arrays |
-| `Year` | `zt.date.year` | Replace |
-| `Authors` | `zt.authors \| join: ", "` | Replace |
-| `Zotero Tags` | `zt.tags \| map: "name"` | Replace |
-| `Collections` | `zt.collections \| collection_paths` | Replace |
-| `citekey` | `zt.citationKey` | Replace |
-| `URL` | `zt.url` | Keep existing |
-| `DOI` | `zt.DOI` | Keep existing |
-| `imported` | `"now" \| date: "%Y-%m-%d"` | Keep existing |
-| `cssclasses` | `"vt,literature,wide" \| split: ","` | Keep existing |
-
-`DOI` is for your own use (the kit reads no DOI); its expression is the one Zotero's field name suggests and has not been checked in ZotLit: if it stays empty, look the field name up in ZotLit's template data explorer. `zotero-key` is added by ZotLit itself and marks the note as a literature note. `imported` is the date the note was first created (queries fall back to `file.ctime`).
-
-| Field | Where | Meaning |
-|---|---|---|
-| `Zotero Tags` | properties | `key-paper` and topic tags, set **in Zotero** |
-| `takeaway` | inline field in the Takeaway box | one line in my own words - what the paper says; empty = still *to process* |
-| project lines | *For my projects* box | why it matters to each project |
-
-> [!tip] Organising papers - two separate decisions, both in Zotero
-> - **Which project?** Put the paper in a collection under `Projects/` (it can be in several).
-> - **Is it important?** Tag it `key-paper`.
-> Projects are no longer Zotero *tags*.
-
-Highlight colours (set in Zotero, keys `1` `2` `3` in Zotero's colour order): **yellow** `1` key point (-> Key points), **red** `2` (or magenta) disagree / confused / question (-> Questions), **green** `3` method or idea to try (-> To try; green = lab in the palette). Any other colour -> Other highlights. Zotero can't reorder its colours, so the meanings follow its key order. A Zotero **comment** on a highlight is my own words; a Zotero **tag** on a highlight becomes a `#tag`.
-
-```mermaid
-flowchart LR
-  Z[Read and highlight in Zotero] --> T[Tag project / key-paper in Zotero]
-  T --> I[Create or update note with ZotLit]
-  I --> P[To process]
-  P -->|weekly review: write takeaway, link to project| D[Processed]
-```
-
 ### Shopping list ([[Shopping list]], `00 Planning`)
-One list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not planned. **Add to shopping** (homepage; the Lab Kit command **Add to shopping list**) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
+One list of plain checkboxes, the one place checkboxes are used instead of to-do notes, because items are ordered, not scheduled. **Add to shopping** (homepage; the Lab Kit command **Add to shopping list**) asks for items (comma-separated) and adds them to the end; **Clear ticked** (Meta Bind `regexpReplaceInNote`) removes ticked items.
 
 ### Inbox (`00 Inbox`)
 Everything captured quickly lands here (**Quick capture**, `Alt+N`). The homepage shows the count under *This week* with a **Sort inbox** button; the weekly review has the same button.
@@ -246,7 +189,7 @@ Everything captured quickly lands here (**Quick capture**, `Alt+N`). The homepag
 
 | Choice | What happens |
 |---|---|
-| To-do | becomes a to-do (`kind: todo`, `day: Backlog`) in `00 Planning/To-dos` |
+| To-do | becomes a to-do (`kind: todo`, no `scheduled`: the Backlog) in `00 Planning/To-dos` |
 | Project... | moved into the chosen project's folder |
 | Knowledge... / How-to... / Meetings... | moved into a chosen subfolder (or a new one: type its name) |
 | Archive | moved to `99 Archive/Inbox` |
@@ -277,7 +220,7 @@ A meeting note is `YYYY-MM-DD <series name>`, created by **New meeting note** (c
 | `since` | the last meeting of the series, else one interval back - the start of the window the lists read |
 | `project` | empty, a link or a list of links to project hubs - the note then shows on those hubs |
 
-The note starts with a top row (`show: meeting-bar`: back link to its series, **Meeting deck**) and fills itself from `since` to `date`: experiments edited (`show: meeting-experiments`), to-dos ticked done that have a priority of 1, 2 or 3 and are not subtasks (`show: meeting-done`; a muted line says how many without a priority are left out), papers imported (`show: meeting-papers`), and the open to-dos whose `meeting` links this series (Dataview).
+The note starts with a top row (`show: meeting-bar`: back link to its series, **Meeting deck**) and fills itself from `since` to `date`: experiments edited (`show: meeting-experiments`), to-dos ticked done that have a priority of 1, 2 or 3 and are not subtasks (`show: meeting-done`; a muted line says how many without a priority are left out), papers read (a `refpane` block, `show: papers-read`: empty without the Refpane plugin), and the open to-dos whose `meeting` links this series (Dataview).
 
 - **Extra meeting now** (series hub and card; command **New extra meeting now**) makes a meeting note on a date I give, in between; the schedule doesn't move.
 - **New one-off meeting** is for a meeting that belongs to no series: it asks what it is about, the date and a project, and files `<date> <title>` in the `One-off` hub, from the smaller **One-off meeting** template.
@@ -286,7 +229,7 @@ The note starts with a top row (`show: meeting-bar`: back link to its series, **
 The **Meeting deck** button works on Windows and Mac: it picks `deck_windows` or `deck_mac` from the series hub and opens that location with this computer's default app (desktop only). On a series hub or a meeting note it opens that series' deck; elsewhere it asks which series.
 
 ### Weekly review ([[Weekly review]])
-Friday, 15 minutes: inbox, close experiments, plan next week, process one paper, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
+Friday, 15 minutes: inbox, close experiments, plan next week, meeting prep, and on the first Friday of the month archive to-dos finished more than 30 days ago (button; uses `done_on`, moves them to `99 Archive/To-dos`; a to-do whose project hub is not `Done` stays, because the project plan reads it).
 
 ### Daily note (`01 Daily Notes/YYYY/YYYY-MM-DD`)
 Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kind: daily`, `Experiments`, `cssclasses: [vt]`.
@@ -294,9 +237,9 @@ Template: `Extras/Templates/Daily note.md`. Properties: `Type: Daily Note`, `kin
 | Section | What it shows |
 |---|---|
 | Buttons | **New to-do**, **To-do board** |
-| *Planned for today* | open to-dos whose `day` matches that date's weekday, plus anything due on or before that date |
+| *Planned for today* | open to-dos whose `scheduled` is that date, plus anything due on or before that date |
 | *Notes* | free text - the log of the day |
-| *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`), papers imported on that date |
+| *Today in the vault* | lab entries edited, to-dos ticked done that day (`done_on`) |
 
 All queries use the note's **file name** as the date (`date(this.file.name)`), so a note made ahead of time from the calendar shows the right day. *Today in the vault* uses last-modified dates, so an entry edited again later moves to that later day.
 
@@ -325,7 +268,7 @@ All queries use the note's **file name** as the date (`date(this.file.name)`), s
 > [!tip] One rule: `Alt` + the first letter of what you want
 > The recommended keys are in [[Hotkeys]]. They are suggestions: nothing is set until I do it, in Obsidian → Settings → Hotkeys or with **Set the suggested keys…** in **Check hotkeys…** (Settings > Lab Kit), which shows which are set, sets only commands with no key whose suggested key is free, and asks first.
 
-Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkeys]], and only there. In Zotero: `1` `2` `3` pick the highlight colour (see [[#Literature note (`04 Literature/ZotLit Imports`)|Literature note]]).
+Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkeys]], and only there.
 
 ## Visual theme
 
@@ -356,7 +299,7 @@ Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkey
 - The title wraps onto up to 3 lines, then "..."; on a card with a tag or a countdown it is one line, so it stays clear of the bottom row. The tick circle sits top right; **clicking it ticks `done`** (Lab Kit handles the click, because Bases cards are read-only). Clicking anywhere else opens the note.
 - Cards are a **fixed 88px**: Bases works out card heights itself and places each part with inline styles (`top`, `height`), so the CSS overrides those with `!important` rather than changing the height.
 - Card HTML, for future CSS: `.bases-kanban-card` > `.bases-kanban-card-property.mod-title[data-property="file.name"]` and `.bases-kanban-card-property[data-property="note.done"]`, each with a `.bases-kanban-card-label` and `.bases-kanban-card-line`. A ticked box renders an `input:checked`.
-- Green comes from `done` in the card; amber from a `vt-rolled` class Lab Kit adds (no `rolled` row needed on the card).
+- Green comes from `done` in the card; amber from a carried-over class Lab Kit adds (no extra row needed on the card).
 
 **Vault callouts** (defined in `vault-theme.css`): `[!focus]`, `[!projects]`, `[!planning]`, `[!lab]`, `[!goto]`, `[!overdue]`, `[!summary]`, `[!question]`, `[!comment]`, and `[!columns]` (the callouts inside it sit side by side, **at most 2 per row**, equal height). Standard Obsidian callouts (`note`, `tip`, `warning`, ...) are fine in ordinary notes.
 
@@ -367,7 +310,7 @@ Every key (the Alt + letter keys, the editing keys and the rules) is in [[Hotkey
 1. Date heading, with **How it works** at the right-hand end - opens [[How my vault works]]
 2. Action buttons: Today's note, New to-do, New lab entry, Quick capture, Add to shopping, Search
 3. Go to (a `vault-goto` block): one button per top-level folder that has a hub note or a base (named after the folder: To-do for the planning folder, Projects, Lab Book, Literature, Chemicals, Knowledge, How-tos, Meetings), plus the `extra:` lines (Weekly review, Shopping list; `Label | target | icon`)
-4. Five tiles (`vault-card` blocks), two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count below) - **Experiments on the go** - **Projects** - **Recently read** (last 5 imports) - **Next meetings**. Each heading opens its board or hub. A tile shows at most 8 rows unless its block has `limit:`, with **Show all** / **Show the last N** when there are more
+4. Five tiles (`vault-card` blocks; Recently read is a `refpane` block), two per row: **This week** (open to-dos: overdue first, then by day; today's are tagged, carried-over ones tagged amber; inbox count below) - **Experiments on the go** - **Projects** - **Recently read** (a `refpane` block, `show: recently-read`, `limit: 5`; empty without the Refpane plugin) - **Next meetings**. Each heading opens its board or hub. A tile shows at most 8 rows unless its block has `limit:`, with **Show all** / **Show the last N** when there are more
 
 The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and redraw when notes change.
 
@@ -391,7 +334,6 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > | `go-todo` · `go-lab` · `go-projects` · `go-lit` · `go-chem` · `go-know` · `go-howto` · `go-meetings` · `go-review` · `go-shop` | To-do board · Experiments · Projects · Literature · Chemicals · Knowledge · How-tos · Meetings · Weekly review · Shopping list | open that note or base |
 > | `help` | How it works | open `[[How my vault works]]` |
 > | `clear-review` | Start a new review | unticks the review's boxes |
-> | `update-litnote` | Update literature note | ZotLit command |
 
 ## Plugins and their jobs
 
@@ -402,9 +344,9 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 | Meta Bind | Buttons (as button templates) and inputs (homepage, hub status) |
 | Dataview | Lists Lab Kit doesn't draw itself: weekly review, daily notes, Literature, key papers, a hub's Papers and Done to-dos, a meeting note's flagged to-dos |
 | Bases (core) | Tables and the built-in kanban boards (experiments, to-dos) |
-| Templater | Lab book, to-do, project, meeting and concept templates; the Alt+S snippet menu; folder templates for `01 Daily Notes`, `00 Planning/To-dos`, `03 Lab Book/Notes`, `05 Chemicals/Chemicals`; user script `Extras/scripts/templater/vault/vtAsk.js` (the text box). No startup template |
-| Lab Kit | Lab entries, snippets, hazards, calculations; the planning commands (to-dos, inbox, meetings, projects, concepts), the to-do roll-over, the homepage tiles, hub rows and cards; Check setup, Tidy up notes, Manage files |
-| ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Template folder `Extras/Templates/ZotLit` |
+| Templater | Lab book, project and concept templates, until they move into Lab Kit (to-dos, meetings and the Alt+S menu no longer need it); folder templates for `01 Daily Notes`, `03 Lab Book/Notes`, `05 Chemicals/Chemicals`; user script `Extras/scripts/templater/vault/vtAsk.js` (the text box). No startup template |
+| Lab Kit | Lab entries, snippets, hazards, calculations; the planning commands (to-dos, inbox, meetings, projects, concepts), the carried-over cards on the board, the homepage tiles, hub rows and cards; Check setup, Tidy up notes, Manage files |
+| ZotLit (+ ZotLit Companion in Zotero) | Literature notes in `04 Literature/ZotLit Imports`, live annotation updates, citations. Its templates and settings are set up by the Refpane plugin (Check setup there), not by Lab Kit |
 | Omnisearch | Search |
 
 ## Rules for changes
@@ -413,17 +355,17 @@ The tiles and the Go to bar are drawn by Lab Kit, follow the folder settings and
 > - **Move and rename inside Obsidian**, never in File Explorer or Finder - links and Lab Kit's folder settings only follow that way. A folder moved outside Obsidian is found again with **Find moved folders**.
 > - Anything that has to be set up on **each computer** (apps, Zotero add-ons and settings, per-machine paths) is listed in [[Setting up a computer]] (`07 How-tos/Obsidian`). Add to it whenever such a setting is introduced.
 > - Buttons never contain file paths. Anything that differs between Windows and Mac is a property on a note (e.g. `deck_windows` / `deck_mac`), read by a Lab Kit command.
-> - Buttons are drawn by Lab Kit: a note holds a `vault-card` block with `show: button-bar` and `ids: id1, id2`, and the label, icon and action come from Lab Kit, never from the note. (Exceptions still on Meta Bind buttons: the Weekly review and the ZotLit note template, until they are reworked.)
+> - Buttons are drawn by Lab Kit: a note holds a `vault-card` block with `show: button-bar` and `ids: id1, id2`, and the label, icon and action come from Lab Kit, never from the note. An id written `cmd:<command id>` (for example `cmd:refpane:toggle-queue`) is a button for any Obsidian command, named from the command itself; if that plugin is off the block says the id is not a button. (Exceptions still on Meta Bind buttons: the Weekly review and the ZotLit note template, until they are reworked.)
 > - No commas or apostrophes in Meta Bind arguments (e.g. placeholders) - they break the parser.
 > - Folder names: no apostrophes or `&`.
 > - When a workflow changes, update **both** this spec and the user guide [[How my vault works]].
 > - Every note is **wide** by default (`vault-theme.css`). Don't add a `wide` class to new templates; existing ones that have it are harmless.
 > - Templates never add a `# heading` that repeats the file name - Obsidian's inline title already shows it. (A heading with *different* text is fine.)
 > - Every template starts with **an empty line** (straight after the properties, or at the very top if it has none), so the cursor lands there and doesn't open the first callout or block into edit mode.
-> - Templates use Templater syntax only - except ZotLit's templates, which must be Liquid and live directly in `Extras/Templates/ZotLit/`. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
+> - Templates use Templater syntax only. A folder that gets new notes from more than one place (e.g. daily notes) gets a Templater **folder template**.
 > - Kit files (templates, scripts, these notes) are updated through Settings > Lab Kit > **Review update…**. A file I edited is never overwritten: it merges, or shows in **Manage files…** with Compare… / Use kit version… / Keep mine.
 > - Templates ask for text with `tp.user.vtAsk(tp, "Placeholder")` - never `tp.system.prompt` - so every box looks like the pickers. Lists to choose from use `tp.system.suggester`. My user scripts live in `Extras/scripts/templater/vault/` (the kit owns `lab-kit/`).
-> - Templates that a board can create (folder templates) keep any `day` / `Status` the board already wrote, unless the default is intended (lab entries always start `Planned`).
+> - Templates that a board can create (folder templates) keep any `scheduled` / `Status` the board already wrote, unless the default is intended (lab entries always start `Planned`).
 
 ## Changelog
 - 2026-10-07 - First kit version.

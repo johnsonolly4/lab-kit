@@ -16,6 +16,7 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 - [Snippet forms (Alt+S)](#snippet-forms-alts)
 - [Analysis methods](#analysis-methods)
 - [Experiment header](#experiment-header)
+- [Recovering rig records without Lab Kit](#recovering-rig-records-without-lab-kit)
 - [Built-in kit](#built-in-kit)
 - [Folder contract](#folder-contract)
 - [Settings](#settings)
@@ -30,19 +31,19 @@ Lab Kit turns a plain note into an experiment page: a hazard table built from yo
 ## Features
 - **Calc tables**: ```` ```calc ```` blocks with Excel-style formulas (`SUM`, `XLOOKUP`, `IF`, …), references between tables, and `MW()` read from your chemical notes. Click a cell to edit; everything that depends on it updates. While you type a formula each reference gets its own colour, the cell it points at is outlined in that colour, and the column letters and row numbers show.
 - **Chemical database**: point Lab Kit at your folder of chemical notes; typing `[[` in a calc cell and the reagent/solvent fields of the forms suggest them, by note name or by the names in a note's `Names` property. **New chemical** makes a chemical note with a name and a class.
-- **Snippet forms** (Alt+S, needs Templater): solution prep (targets by concentration or ratio, added in g or mL), recipe by equivalents, RAFT recipe, sample lists, sampling timetables, NMR / GPC / DLS sample tables, combined results, flow column prep, residence times.
+- **Snippet forms** (Alt+S): solution prep (targets by concentration or ratio, added in g or mL), recipe by equivalents, RAFT recipe, sample lists, sampling timetables, NMR / GPC / DLS sample tables, combined results, flow column prep, residence times.
 - **Your own analysis methods**: one note per method (and per machine) in a Methods folder defines the sample table; each shows up in the Alt+S menu and feeds the combined results.
-- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the flow diagram from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder. A batch setup (a stirred vessel, no pumps) is a Reactor row with a Heater and a Stirrer row feeding it.
+- **Rig notes**: one note per flow rig, with small parts tables (pumps, reactor line, analysis); a ```` ```rig ```` block draws the rig figure (symbols and lines, on a white card, no Mermaid) from their `ID` and `Feeds` columns and redraws when they change. **New rig** makes one from the Rig template in your Rigs folder. A batch setup (a stirred vessel, no pumps) is a Reactor row with a Heater and a Stirrer row feeding it. **Save snapshot…** under the block saves a dated picture of the rig (`<rig> YYYY-MM-DD.svg` in a `<rig> history` folder beside the note, with the parts tables inside the file) and adds a row to the note's `## Rig history` table; the block says when the rig has changed since the last snapshot. In **Figure…** you can drag parts by hand; **Save layout** writes their places as plain lines in a ```` ```rig-layout ```` block under the rig block, **Reset to automatic** goes back. All of it stays readable without Lab Kit: see [Recovering rig records without Lab Kit](#recovering-rig-records-without-lab-kit).
 - **Experiment header**: hazard table built from the note's Chemicals property, and a button that opens the experiment's data folder.
 - **Built-in kit** (desktop and mobile): the templates, scripts and CSS snippet that go with the plugin are bundled in it, so a plugin update brings the new kit. Choose which snippets you want, review every change before it's made, update only the files you never edited, merge or resolve the ones you changed, and get a backup of anything replaced.
 - **Planning kit** (off until you switch it on): a homepage, a to-do board whose unfinished cards roll over to today, project hubs with a plan map (to-dos as cards joined by arrows: what comes after what, what is blocked, each one's result), meeting series with notes that fill themselves, knowledge notes, an inbox you sort one note at a time, and **Tidy up notes** for a vault that already has notes. See [tutorial section 8](docs/tutorial.md#8-planning-kit).
 
 ## Install
-Needs Obsidian 1.14 or newer. For the snippet forms, also install [Templater](https://github.com/SilentVoid13/Templater). **Check setup…** (step 3) lists every plugin the kits use, which are needed and which are optional, and what each is for (the lab kit needs only Templater; Dataview belongs to the planning kit); Lab Kit never installs a plugin for you.
+Needs Obsidian 1.14 or newer. [Templater](https://github.com/SilentVoid13/Templater) is still used by some note templates (project, concept, topic hub) until they move into Lab Kit; the snippet forms, to-dos, meetings, lab entries and chemicals no longer need it. **Check setup…** (step 3) lists every plugin the kits use, which are needed and which are optional, and what each is for (Dataview belongs to the planning kit); Lab Kit never installs a plugin for you.
 
 1. Settings → Community plugins → Browse → search **Lab Kit** → Install → Enable.
 2. Settings → Lab Kit → Updates → **Review update…** installs the templates and scripts. The first install can also turn on the CSS snippet and, if Templater has no user scripts folder yet, set one.
-3. For Alt+S: Settings → Lab Kit → Setup → **Check setup…** → Fix the Templater rows, then Obsidian → Hotkeys → search *Insert snippet* → set **Alt+S**.
+3. For Alt+S: Obsidian → Hotkeys → search *Lab Kit: Insert snippet* → set **Alt+S**. Settings → Lab Kit → Setup → **Check setup…** lists anything else the kits need.
 4. Settings → Lab Kit → **Initials**: your initials go into sample codes (`ABC0016-A`). Until then the snippets use `XX`.
 
 The full walk-through, with every feature explained, is the [tutorial](docs/tutorial.md). What changed in each version: [changelog](docs/changelog.md).
@@ -67,7 +68,7 @@ title: Stock solution
 ````
 
 - **Formulas** start with an equals sign and use Excel syntax. Row 1 is the header, so the first data row is row 2. Other tables in the note are reached by name (`sol1!D2`, `SUM(sol1!D2:D4)`).
-- **Functions:** `SUM AVERAGE MIN MAX COUNT COUNTA PRODUCT SUMPRODUCT ROUND ROUNDUP ROUNDDOWN INT ABS SQRT POWER EXP LN LOG LOG10 MOD PI IF IFERROR AND OR NOT CONCAT MATCH INDEX XLOOKUP CLOCK MW PROP`. `MW("DCM")` reads the molecular weight from a chemical note, `PROP("PABTC", "Density")` any property, `CLOCK("10:30", 90)` gives a clock time 90 minutes later.
+- **Functions:** `SUM AVERAGE STDEV SLOPE INTERCEPT RSQ MIN MAX COUNT COUNTA PRODUCT SUMPRODUCT ROUND ROUNDUP ROUNDDOWN INT ABS SQRT POWER EXP LN LOG LOG10 MOD PI IF IFERROR AND OR NOT CONCAT MATCH INDEX XLOOKUP CLOCK MW PROP`. `MW("DCM")` reads the molecular weight from a chemical note, `PROP("PABTC", "Density")` any property, `CLOCK("10:30", 90)` gives a clock time 90 minutes later.
 - **Editing:** click a cell, type, **Enter** or **Tab** to save, **Esc** to throw it away. **+ Row** adds a row and copies the formulas down; right-click a row to insert or delete one. References update like Excel, including those in other tables.
 - **Colours:** plain = typed, blue = calculated, amber = "needs …" (an input is missing, it tells you which), red = a real problem (hover for the reason).
 - **Copy** puts the table on the clipboard for Excel or Origin; **A1** shows cell addresses.
@@ -80,7 +81,7 @@ Set **Chemical folder** to the folder that holds your chemical notes (one note p
 - Typing `[[` in a calc cell, or in a reagent, solvent, monomer, CTA or initiator field of a form, suggests your notes by file name or by their **Names** property (a list or a single value). A name found through **Names** inserts `[[Note|name]]`.
 - The hazard table lists each chemical from its `H_Phrase` property.
 
-The command **New chemical** asks for the chemical's name, then its class (a list of the classes your notes already use; type a new one, or pick no class), and makes the note from the Chemical database template (needs Templater).
+The command **New chemical** asks for the chemical's name, then its class (a list of the classes your notes already use; type a new one, or pick no class), and makes the note from the Chemical database template (no Templater needed).
 
 Give a chemical a `Chemical class` (a list property: `solvent`, `monomer`, `initiator`, `CTA`, or a class of your own; plain text works too). Form fields that ask for a class (Solvent, Monomer, CTA, Initiator) then suggest those chemicals first; switch on **Only suggest chemicals of the asked class** to hide the others. Reagents and solutes stay unfiltered.
 
@@ -104,7 +105,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 
 | Snippet | Use it for |
 |---|---|
-| **Solution prep** | Making up a stock solution: a target per solute (M, mg/mL or g) or one total concentration split by a ratio, added in g or mL (mL uses the chemical note's Density), mmol and the concentration reached |
+| **Solution prep** | An acid (or base) solution for a target pH, made by mass: a small window at the cursor asks for the aqueous phase, target pH, reagent (a chemical note with `Purity` or `Concentration`, `Density`, `pKa`, `Acid / base`), the share made as acid solution and used, and your balance; it inserts a live ```` ```solution ```` block with numbered steps. You type the masses you weighed into the block's Actual cells; the estimated pH follows. **Edit set-up** changes the set-up later. (The old volume tables are still available as a snippet with `run: solution-volume`.) |
 | **Recipe by equivalents** | Planning amounts from equivalents relative to any reagent; the first amount in mmol, g or M; solvent "rest" row; total mass and wt% |
 | **RAFT recipe generator** | RAFT / PISA: monomer mass, DP, CTA:I, solids → every mass, solvent (and optional co-solvent), theoretical Mn |
 | **Variant naming matrix** | A grid of conditions, with sample codes `ABC0016-A`, `-B`… |
@@ -112,7 +113,7 @@ Put the cursor where you want the table, press **Alt+S**, pick a snippet, fill i
 | **NMR / GPC / DLS samples** · your own methods | Sample tables with machine, checklist and result columns. The sample codes come from every table in the note that holds codes; with more than one, **Codes from** picks which |
 | **Combined results** | One row per sample with the results of every method |
 | **Flow column prep** · **Residence times** | Packing a column, reactor volume, flow rates. Pick a solvent and leave the density empty, and the density is read from that chemical's note |
-| **Rig** | Links the rig note, puts a fixed copy of its diagram at the cursor (with the rig note's `Summary` table under it, if it has one), sets the `Rig` property and copies the parts tables under `Flow platform setup` at the bottom of the note (a `Setup heading` property on the rig note changes the heading, e.g. for a batch rig) |
+| **Rig** | Links the rig note, puts a dated snapshot of the rig at the cursor (`![[<rig> YYYY-MM-DD.svg]]` with the caption `Snapshot of <rig>, <date>` in italics; an unchanged rig reuses its latest snapshot) with the rig note's `Summary` table under it, if it has one, sets the `Rig` and `Rig snapshot` properties and copies the parts tables under `Flow platform setup` at the bottom of the note (a `Setup heading` property on the rig note changes the heading, e.g. for a batch rig) |
 | **Blank calc table** | Your own columns |
 
 Choose which snippets you want in **Manage files…** (each has a **Use** toggle). Icons for the Alt+S menu are a setting. Seven snippets (Variant naming matrix, Sample list, Sampling timetable, Flow column prep, Residence times, Blank calc table, Rig) are plain notes with a header of questions and `{{tokens}}` in the text, so you can read and edit them: syntax in [docs/snippet-syntax.md](docs/snippet-syntax.md).
@@ -128,9 +129,17 @@ A ```` ```lab-header ```` block shows, for the note it is in:
 
 It only redraws when this note's Chemicals or a linked chemical note changes. The command **Insert lab header block** adds one; the Lab Book template already has it. Every option is in Settings → Lab Kit → Hazards and can be overridden for one note with lines inside the block (`layout: table`, `collapsed: false`, …): see [tutorial section 4](docs/tutorial.md#4-hazards).
 
+## Recovering rig records without Lab Kit
+Rig records are plain files, so they can be read if Lab Kit is switched off or no longer supported:
+1. Open the lab note (Obsidian without Lab Kit, or any text editor): the `Rig` and `Rig snapshot` properties, the embedded snapshot picture (Obsidian shows it on its own) and the parts tables under `Flow platform setup`.
+2. Open the snapshot `.svg` (in the `<rig> history` folder beside the rig note) in any web browser for the picture; in a text editor, its `<metadata>` holds the parts tables and the layout as they were that day.
+3. Open the rig note: `## Rig history` lists every snapshot with its date and change; the parts tables are the rig's current state; the ```` ```rig-layout ```` block lists hand-placed parts as `ID: x, y`.
+4. For a PNG: open the SVG in a browser or Inkscape and export or print it.
+5. The ```` ```rig ```` block shows as an empty code block: expected, it never held data.
+
 ## Built-in kit
 The templates (Lab Book, Alt+S menu, one file per snippet), the Templater scripts and a CSS snippet are bundled inside the plugin. Updating the plugin brings the new kit, but your files only change when you say so:
-- **Review update…** previews every file (new, updated, changed by you, missing) and writes nothing until you press **Apply**. Each file has a tick box, so you can leave single files out.
+- **Review update…** previews every file (new, updated, changed by you, missing) and writes nothing until you press **Apply**. Each file has a tick box, so you can leave single files out. A kit file where the only edit is its `icon:` line is updated with your icon kept (the row says **Only your icon changed: kept.**).
 - **Update all safe files** adds new files and updates the ones you never edited.
 - **Manage files…** lists every kit file with a status and buttons to update, restore the original, detach, or open it; files that need action come first. Each snippet row has **Make my own copy**: it asks for a name and saves a plain, editable note in the Snippets folder.
 - A file you edited is never overwritten. If your changes and the kit's touch different lines you can **merge**; if they touch the same lines you **resolve** them change by change.
@@ -147,15 +156,17 @@ The kits expect these folders. Each is a setting; empty means the default below,
 |---|---|---|
 | `03 Lab Book/Notes` | lab kit: experiment notes | Lab notes folder |
 | `05 Chemicals/Chemicals` | lab kit: chemical notes | Chemical folder |
-| Methods folder (empty until set) | lab kit: analysis methods | Methods folder |
-| Rigs folder (`03 Lab Book/Rigs` unless you set another; Check setup's Fix creates it) | lab kit: rig notes | Rigs folder |
+| `03 Lab Book/Methods` (a new vault; a vault set up before 2026-10-21 keeps an empty setting until you set it) | lab kit: analysis methods | Methods folder |
+| `03 Lab Book/Rigs` | lab kit: rig notes | Rigs folder |
+| Figures folder (empty: the rig note's own folder; made when first saved to) | lab kit: rig figure SVG and PNG files | Figures folder |
+| Module pack folder (empty: the built-in symbols; see `docs/rig-pack-symbol.md`) | your own rig symbols (SVG / PNG) and `Pack list.md` | Module pack folder |
 | `00 Inbox` · `01 Daily Notes` | planning kit | Planning folders |
 | `00 Planning` (to-dos in `00 Planning/To-dos`) | planning kit | Planning folders |
-| `02 Projects` · `04 Literature` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
+| `02 Projects` · `06 Knowledge` · `07 How-tos` · `08 Meetings` | planning kit | Planning folders |
 | `99 Archive` (made when first needed) | planning kit | Planning folders |
-| `Extras/` (templates, scripts, fonts) | both kits | Setup → Kit folders |
+| `Extras/Templates` (note templates) · `Extras/Snippets` (Alt+S snippets) · `Extras/scripts` | both kits | Setup → Kit folders |
 
-A new vault can get this layout, the plugin list and the Templater settings from the generated starter (see Development).
+The kit's first install makes these folders (a vault set up before keeps its own: an older vault has its snippets in `<templates>/Snippets`). The generated starter (see Development) holds only the Obsidian settings, the plugin list and the install scripts.
 
 ## Settings
 Settings → Lab Kit is searchable and grouped. A name in bold with several settings after it in brackets is a sub-menu: a row that opens its own page.
@@ -163,10 +174,11 @@ Settings → Lab Kit is searchable and grouped. A name in bold with several sett
 | Group | What is in it |
 |---|---|
 | **Updates** | Update available, Kept files with a newer kit version, Lab kit (Manage files, Review update, Update all safe files), Planning kit switch and its files, update notice, What's new, **Backups** (Old backups with **Clear old backups…**, Backup folder) |
-| **Setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, **Find moved folders…**, **Kit folders** (Templates folder, Scripts folder, Snippets folder), console log |
-| **Lab notebook** | Initials; Lab notes folder, Chemical folder, Methods folder, Rigs folder; Data folder root (one for Windows, one for macOS / Linux); Molecular weight property; Only suggest chemicals of the asked class; **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default); **Board colours** (**Colour board columns**: kanban columns coloured by status, Planned, Started, Processing results, Closed, with a colour for each); **Snippet icons** (one row per snippet: the icon shown beside the box, a **Choose…** button with a searchable grid of Obsidian's icons, or type a Lucide name; empty keeps the snippet's own icon) |
+| **Setup** | **Check setup…** (its Fix sets up Templater), **Check hotkeys…**, **Find moved folders…**, **Kit folders** (Templates folder, Scripts folder, Snippets folder), **Folder templates** (which folders Lab Kit fills new notes in, and with which template), console log |
+| **Lab notebook** | Initials; Lab notes folder, Chemical folder, Rigs folder, Figures folder, Module pack folder; Data folder root (one for Windows, one for macOS / Linux); Molecular weight property; **Checklist progress** (writes `progress`, for example 3/7 ticked check boxes, into the properties of lab notes and the Shopping list so a board card can show it; off by default); **Board colours** (**Colour board columns**: kanban columns coloured by status, Planned, Started, Processing results, Closed, with a colour for each) |
+| **Snippets** | Methods folder; Only suggest chemicals of the asked class; **Open snippet forms at the cursor** (on: Alt+S question windows open under the cursor on desktop; off: in the middle of the window);  one switch per Alt+S group (Make up, Samples, Characterise, Flow, Tables and My snippets (your own snippets and groups it does not know): **Show these snippets in the Alt+S menu.** Off hides the group, its entries in the search and in Recent; no file is removed) |
 | **Hazards** | Layout, property names, collapsed / legend / sorting options |
-| **Planning** (planning kit on) | **Due-date countdown** (Off / only to-dos with `countdown: true` / every to-do with a due date: days left on the board card), **Project plan map direction** (left to right, or top to bottom), **Planning folders** (Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive; empty = the default, e.g. `02 Projects`; the row says how many are changed, for example "2 of 9 changed") |
+| **Planning** (planning kit on) | **Due-date countdown** (Off / every to-do with a due date: days left on the board card; a vault set to the old "only to-dos with `countdown: true`" reads as every to-do), **Project plan map direction** (left to right, or top to bottom), **Freeze meeting notes automatically** (on: a meeting note is frozen the day after its date, only its generated lists, never your text; off: only the command and Tidy freeze), **Planning folders** (Inbox, Daily notes, Planning, Projects, Literature, Knowledge, How-tos, Meetings, Archive; empty = the default, e.g. `02 Projects`; the row says how many are changed, for example "2 of 9 changed") |
 
 Folder settings left empty are detected; the data folder roots are empty until you set them. Rename or move folders **inside Obsidian** and the folder settings follow; a folder moved outside Obsidian (Finder, File Explorer, a sync tool) is found again with **Find moved folders**. Settings changed on another device (Obsidian Sync, iCloud, Dropbox, Syncthing, Git) are read again when they arrive.
 
@@ -177,8 +189,8 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys: **Che
 |---|---|
 | Insert empty calc block | Adds a small example calc table at the cursor |
 | Insert lab header block | Adds the hazard / data-folder header at the cursor |
-| New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder (needs Templater) |
-| New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder (needs Templater) |
+| New lab entry | A new experiment note from the Lab Book Template in your Lab notes folder |
+| New chemical | Asks the chemical's name, then its Chemical class; makes the note from the Chemical database template in your Chemical folder |
 | New rig | Asks the rig's name; makes the note from the Rig template in your Rigs folder and opens it |
 | Clone experiment | Copies the open lab note (or one you pick) into a new numbered lab note and opens it: properties, objectives, apparatus, procedure, rig and tables are kept with the sample codes renumbered; Status goes back to Planned, dates and Outcome are emptied, free text under Results / Analysis and Notes for next time is cleared. The title box starts with the old title and the new note gets a `Cloned from` link to the old one. The old note is not changed. Not seen in Obsidian yet |
 | Review kit files | Opens the update preview |
@@ -186,7 +198,7 @@ Open the command palette and type *Lab Kit*. There are no default hotkeys: **Che
 | Show what's new | Opens the What's new popup for this version |
 | Find moved folders | For each folder in the settings that no longer exists (moved outside Obsidian), suggests where it went; Apply changes only the settings |
 | Check hotkeys | Reports the keys the Hotkeys note recommends for the kit's functions and what Obsidian has now (also a button in Settings → Lab Kit). **Set the suggested keys…** lists the commands that have no key and whose suggested key is free, each with a tick box, and sets those after you confirm; a key you have is never changed or removed |
-| Check setup | Lists what the kits need (plugins and Obsidian's Bases and Daily notes, kit files that are missing or have an update waiting, Lab Kit's settings, Templater and its scripts, Meta Bind buttons, the homepage and its read-only mode, the Daily notes folder and date format, Dataview's inline queries, property types, ZotLit's frontmatter fields and folders, meeting series, CSS snippets, folders) with a Fix where Lab Kit can make the change; nothing changes until you confirm. The window stays open behind the windows it opens; **Check again** redraws it |
+| Check setup | Lists what the kits need (plugins and Obsidian's Bases and Daily notes, kit files that are missing or have an update waiting, Lab Kit's settings, Templater and its scripts, Meta Bind buttons, the homepage and its read-only mode, the Daily notes folder and date format, Dataview's inline queries, property types, meeting series, CSS snippets, folders) with a Fix where Lab Kit can make the change; nothing changes until you confirm. The window stays open behind the windows it opens; **Check again** redraws it |
 | Tidy up notes | Shows the notes of an existing vault that don't match the kit layout, before and after; every rule and every note has a tick box, and **Change notes…** rewrites only what you tick, after a backup and a second confirmation. Unchanged lines are folded and a change that is the same in several notes is shown once, with one tick box. One rule, **Hubs: bring the page up to the current template**, rewrites the page of project, topic and meeting series hubs from the kit's templates (keeping a project's goal and Related text and a topic's intro) and is never ticked by default |
 
 With the **planning kit** on (Settings → Lab Kit → Updates), these are added. Open meeting deck is desktop only.
@@ -212,7 +224,7 @@ With the **planning kit** on (Settings → Lab Kit → Updates), these are added
 ## Privacy & permissions
 - **No network use.** Lab Kit never connects to the internet, has no account, no ads, no telemetry and no paid features. The "full changelog" button only opens a link in your browser when you press it.
 - **Files in your vault**: the built-in kit reads and writes only the folders you set in Settings → Lab Kit, and copies a replaced file to a backup folder first. To find where your templates and scripts are, it lists the files in your vault.
-- **Other plugins' settings**: never changed without asking. Before the first kit install (and before a Check setup Fix) a confirmation lists every file, folder and setting it will touch, each setting with a switch: the kit's CSS snippet, Templater's user scripts folder when Templater has none (a folder you set is never changed; the lab scripts go into a `lab-kit` folder inside it), Templater's template folder when it is empty (Set up only), and the Alt+S template in Templater's hotkeys. A **Check setup** Fix changes one thing, after its own confirmation: Templater's folder templates, its template matching mode (only from None) and the old roll-over entry in its startup templates; Obsidian's *Properties in document* (to Hidden) and the type of the properties `due`, `deadline` and `priority` (values in notes are not changed); with the planning kit, Meta Bind's button templates (adds the missing ones; a second Fix puts the kit's action back on a kit button that does something else), Notebook Navigator's homepage (only when none is set) and ZotLit's settings (adds the frontmatter fields that are missing, sets its two folders when they are empty, then turns ZotLit off and on so it reads them). **Check hotkeys** → **Set the suggested keys…** sets Obsidian hotkeys for the commands you leave ticked, only where the command has no key and the key is free. **Tidy up notes** can change Templater paths and Meta Bind buttons that point at a renamed folder or an old template, only the ones you tick, after a backup.
+- **Other plugins' settings**: never changed without asking. Before the first kit install (and before a Check setup Fix) a confirmation lists every file, folder and setting it will touch, each setting with a switch: the kit's CSS snippet, Templater's user scripts folder when Templater has none (a folder you set is never changed; the lab scripts go into a `lab-kit` folder inside it), Templater's template folder when it is empty (Set up only), and the Alt+S template in Templater's hotkeys. A **Check setup** Fix changes one thing, after its own confirmation: Templater's folder templates, its template matching mode (only from None) and the old roll-over entry in its startup templates; Obsidian's *Properties in document* (to Hidden) and the type of the properties `due`, `deadline` and `priority` (values in notes are not changed); with the planning kit, Meta Bind's button templates (adds the missing ones; a second Fix puts the kit's action back on a kit button that does something else), Notebook Navigator's homepage (only when none is set) (ZotLit's templates and settings are set up by the Refpane plugin, not by Lab Kit). **Check hotkeys** → **Set the suggested keys…** sets Obsidian hotkeys for the commands you leave ticked, only where the command has no key and the key is free. **Tidy up notes** can change Templater paths and Meta Bind buttons that point at a renamed folder or an old template, only the ones you tick, after a backup.
 - **Clipboard**: the **Copy** button on a table writes to the clipboard, only when you click it. The plan map's **Copy picture** button (planning kit) puts a picture of the plan on the clipboard, only when you click it; nothing is saved in your vault.
 - **Files outside your vault** (optional, desktop only): the **data-folder button** in the experiment header creates `<data folder root>/<note name>` on your computer and opens it in your file manager, only when you press it. The root is empty until you set it in Settings → Lab Kit → Lab notebook. Nothing else reads or writes outside your vault.
 

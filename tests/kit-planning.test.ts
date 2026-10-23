@@ -21,7 +21,7 @@ const memVault = (files: Record<string, string> = {}): ManagedAdapter & { files:
   mkdir: async () => {},
 }) as unknown as ManagedAdapter & { files: Record<string, string> };
 const app = (tpl: object = {}): any => ({ vault: { configDir: ".obsidian" }, plugins: { plugins: { "templater-obsidian": { settings: tpl } } } });
-const ZOTLIT = new Set(["zotlit"]);
+const ZOTLIT = new Set(["literature"]);
 const dests = (kit: EmbeddedKit, roles: Record<string, string>) => kit.manifest.files.map(f => kitJoin(roles[f.role], f.dest));
 
 describe("planning kit files (Phase 3)", () => {
@@ -56,18 +56,18 @@ describe("planning kit files (Phase 3)", () => {
     for (const f of planning.manifest.files) expect(planning.contents[f.id], f.src).not.toMatch(/\/Users\/|C:\\\\Users|\\\\Users\\\\|@gmail|johnsonolly4/);
   });
 
-  it("goes to the folder contract in a new vault; ZotLit files only with ZotLit", async () => {
+  it("goes to the folder contract in a new vault; Literature page only with ZotLit", async () => {
     expect(roles.templates).toBe("Extras/Templates");
     expect(roles.userScripts).toBe("Extras/scripts/templater/vault");
     const without = await planManaged(memVault(), planning, null, roles, null, null, offIds(planning, {}, {}));
     const off = without.filter(i => i.action === "off").map(i => i.file.src).sort();
-    expect(off).toEqual(["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md"]);
+    expect(off).toEqual(["04 Literature/Literature.md"]);
     const v = memVault();
     const items = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(items.every(i => i.action === "create")).toBe(true);
     expect(Object.keys(v.files)).toEqual([]);
     const out = await applyManaged(v, planning, items, null, opts);
-    for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Meetings.md"]) expect(v.files[d], d).toBeDefined();
+    for (const d of ["00 Home.md", "00 Planning/To-do board.base", "Extras/scripts/templater/vault/vtAsk.js", ".obsidian/snippets/vault-theme.css", "08 Meetings/Meetings.md"]) expect(v.files[d], d).toBeDefined();
     const again = await planManaged(v, planning, out.state, planningRoles(app(), trackedRoles(planning, out.state), PLANNING_FOLDER_DEFAULTS), null, null, offIds(planning, {}, {}, ZOTLIT));
     expect(again.every(i => i.action === "up-to-date")).toBe(true);
   });
@@ -114,7 +114,7 @@ describe("planning kit files (Phase 3)", () => {
     }
     // one pass: a folder written in is not rewritten again (planning inside the old projects name, and swapped names)
     const nested = planningRoles(app(), {}, { ...PLANNING_FOLDER_DEFAULTS, planning: "02 Projects/Plan", projects: "Work" });
-    const tpl = planning.manifest.files.find(f => f.dest === "To-do.md")!;
+    const tpl = planning.manifest.files.find(f => f.dest === "Project hub.md")!;
     expect(kitText(planning, tpl, nested)).toContain('"02 Projects/Plan/To-dos"');
     const swapped = planningRoles(app(), {}, { ...PLANNING_FOLDER_DEFAULTS, planning: "02 Projects", projects: "00 Planning" });
     const board0 = planning.manifest.files.find(f => f.dest === "To-do board.base")!;
@@ -153,10 +153,10 @@ describe("planning kit files (Phase 3)", () => {
     const v = memVault();
     const first = await planManaged(v, planning, null, roles, null, null, offIds(planning, {}, {}, ZOTLIT));
     const out = await applyManaged(v, planning, first, null, opts);
-    const todo = planning.manifest.files.find(f => f.dest === "To-do.md")!;
+    const todo = planning.manifest.files.find(f => f.dest === "To-do board.base")!;   // a kit file that holds the to-dos folder (To-do.md no longer does: it files by the folder it is run in)
     const hub = planning.manifest.files.find(f => f.dest === "Project hub.md")!;
-    const todoPath = kitJoin(roles.templates, "To-do.md"), hubPath = kitJoin(roles.templates, "Project hub.md");
-    expect(v.files[todoPath]).toContain('"00 Planning/To-dos"');
+    const todoPath = kitJoin(roles.planning, "To-do board.base"), hubPath = kitJoin(roles.templates, "Project hub.md");
+    expect(v.files[todoPath]).toContain('file.inFolder("00 Planning/To-dos")');
     v.files[hubPath] += "\n// my own note\n";   // the user edited the project hub template
     const moved = planningRoles(app(), trackedRoles(planning, out.state), { ...PLANNING_FOLDER_DEFAULTS, planning: "10 Plan", projects: "20 Work" });
     const items = await planManaged(v, planning, out.state, moved, null, opts.baseDir, offIds(planning, {}, {}, ZOTLIT));
@@ -164,9 +164,10 @@ describe("planning kit files (Phase 3)", () => {
     expect(plan.rewrite.map(i => i.file.id)).toContain(todo.id);
     expect(plan.kept.map(i => i.file.id)).toEqual([hub.id]);
     const res = await applyManaged(v, planning, plan.rewrite, out.state, { ...opts, keepVersion: true, select: () => true });
-    expect(v.files[todoPath]).toContain('"10 Plan/To-dos"');
+    expect(v.files[todoPath]).toContain('file.inFolder("10 Plan/To-dos")');
     expect(v.files[todoPath]).not.toContain("00 Planning");
-    expect(v.files[hubPath]).toContain("02 Projects/${name}");   // edited: untouched
+    expect(v.files[hubPath]).toContain("// my own note");   // edited: untouched
+    expect(v.files[hubPath]).toContain('FROM "00 Planning/To-dos"');
     expect(res.results.find(r => r.id === todo.id)?.backup).toBeDefined();
     // nothing left to do on a second pass
     const again = await planFolderReapply(v, await planManaged(v, planning, res.state, moved, null, opts.baseDir, offIds(planning, {}, {}, ZOTLIT)), res.state, opts.baseDir);
@@ -175,23 +176,20 @@ describe("planning kit files (Phase 3)", () => {
   });
 
   it("the Project hub template writes kind, Status and the vt / project classes; the New project note template vt and a link to its hub", () => {
-    const front = (dest: string): string => readFileSync(join("kits/planning/Extras/Templates", dest), "utf8").replace(/\r\n/g, "\n").split("-%>\n")[1].split("---")[1];
-    expect(front("Project hub.md")).toMatch(/kind: project\nStatus: Active\ndeadline:\ncssclasses:\n {2}- vt\n {2}- project\n/);
+    // token templates (Templater Phase 6): the note's properties follow the `make: note` header
+    const front = (dest: string): string => readFileSync(join("kits/planning/Extras/Templates", dest), "utf8").replace(/\r\n/g, "\n").split("---\n")[3];
+    expect(front("Project hub.md")).toMatch(/^kind: project\nStatus: Active\ndeadline:\ncssclasses:\n {2}- vt\n {2}- project\n$/);
     // the note links to the folder's hub (when it exists) as a list, then the vt class
-    expect(front("New project note.md")).toBe('\n<% hasHub ? `project:\\n  - "[[${hubName}]]"\\n` : "" %>cssclasses:\n  - vt\n');
-    expect(readFileSync(join("kits/planning/Extras/Templates", "New project note.md"), "utf8")).toContain("getAbstractFileByPath(`${folder}/${hubName}.md`)");
+    expect(front("New project note.md")).toBe('{{#if hub != ""}}\nproject:\n  - "[[{{hub}}]]"\n{{/if}}\ncssclasses:\n  - vt\n');
   });
 
-  it("the New concept template: shipped, asks with vtAsk, Esc cancels, filed under Knowledge, no ### headings, and Tidy only asks for its summary and sources", () => {
+  it("the New concept template: shipped, a token template filed by its folder answer, no ### headings, and Tidy only asks for its summary and sources", () => {
     const file = planning.manifest.files.find(f => f.dest === "New concept.md")!;
     expect(file).toMatchObject({ kind: "template", role: "templates", src: "Extras/Templates/New concept.md" });
     const text = planning.contents[file.id].replace(/\r\n/g, "\n");
-    expect(text).toContain("tp.user.vtAsk");
-    expect(text).not.toContain("tp.system.prompt");
-    expect(text).toContain("Cancelled - no title");
-    expect(text).toContain("06 Knowledge");
-    const [code, note] = text.split("-%>\n");
-    expect(code).toContain("tp.file.move");
+    expect(text).not.toContain("<%");
+    const [, code, note] = text.split(/^---\n(make: note\n[\s\S]*?)---\n/);
+    expect(code).toContain('folder: "{{folder}}"');
     expect(note.startsWith("---\nkind: concept\nsummary:\nsources: []\nchecked: false\ncssclasses:\n  - vt\n---\n\n## ")).toBe(true);
     expect(note).not.toMatch(/^###\s/m);
     const ctx: TidyContext = { labFolder: "03 Lab Book/Notes", knowledgeFolder: "06 Knowledge", inboxFolder: "00 Inbox", contractFolders: ["06 Knowledge"], rootNotes: [], migrations: [] };
@@ -202,15 +200,13 @@ describe("planning kit files (Phase 3)", () => {
     expect(ids("knowledge-headings") ?? []).toEqual([]);
   });
 
-  it("the New topic hub template: shipped, takes the folder from the hand-over, kind hub, a text area above the list, no ### headings", () => {
+  it("the New topic hub template: shipped, a token template, kind hub, a text area above the list of its folder, no ### headings", () => {
     const file = planning.manifest.files.find(f => f.dest === "New topic hub.md")!;
     expect(file).toMatchObject({ kind: "template", role: "templates", src: "Extras/Templates/New topic hub.md" });
-    const [code, note] = planning.contents[file.id].replace(/\r\n/g, "\n").split("-%>\n");
-    expect(code).toContain("window.vtTopicHub");
-    expect(code).toContain("delete window.vtTopicHub");
-    expect(code).toContain("tp.file.move");
+    const [, code, note] = planning.contents[file.id].replace(/\r\n/g, "\n").split(/^---\n(make: note\n[\s\S]*?)---\n/);
+    expect(code).toContain('folder: "{{folder}}"');
     expect(note.startsWith("---\nkind: hub\ncssclasses:\n  - vt\n---\n\n")).toBe(true);
-    expect(note).toContain('FROM "<% vt.folder %>"');
+    expect(note).toContain('FROM "{{folder}}"');
     expect(note).not.toMatch(/^###\s/m);
   });
 
@@ -252,14 +248,17 @@ describe("planning kit switch (Phase 6a)", () => {
     expect(kitLoad(JSON.parse(JSON.stringify(kit))).kits.planning.enabled).toBe(true);
   });
 
-  it("ZotLit-only files install when ZotLit (plugin id zotlit) is loaded", async () => {
+  it("the Literature page installs when ZotLit or Refpane is loaded (owner board 9 R2 a)", async () => {
     const withZot = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "zotlit": {} } } } as any;
-    expect(loadedPlugins(withZot).has("zotlit")).toBe(true);
-    expect(loadedPlugins(app()).has("zotlit")).toBe(false);
-    const zotIds = planning.manifest.files.filter(f => f.needs === "plugin:zotlit").map(f => f.id);
+    const withRefpane = { vault: { configDir: ".obsidian" }, plugins: { plugins: { "refpane": {} } } } as any;
+    expect(loadedPlugins(withZot).has("literature")).toBe(true);
+    expect(loadedPlugins(withRefpane).has("literature")).toBe(true);
+    expect(loadedPlugins(app()).has("literature")).toBe(false);
+    const zotIds = planning.manifest.files.filter(f => f.needs === "plugin:literature").map(f => f.id);
     expect(zotIds.length).toBeGreaterThan(0);
     for (const id of zotIds) {
       expect(offIds(planning, {}, {}, loadedPlugins(withZot)).has(id)).toBe(false);
+      expect(offIds(planning, {}, {}, loadedPlugins(withRefpane)).has(id)).toBe(false);
       expect(offIds(planning, {}, {}, loadedPlugins(app())).has(id)).toBe(true);
     }
   });
@@ -293,7 +292,13 @@ describe("layout folders at install (Phase 6c)", () => {
   });
 
   it("lab note folders only when set", () => {
-    expect(labFolders({ labFolder: "03 Lab Book/Notes", chemicalFolder: "" }).map(f => f.path)).toEqual(["03 Lab Book/Notes"]);
+    expect(labFolders({ labFolder: "03 Lab Book/Notes", chemicalFolder: "", rigsFolder: "", methodsFolder: "" }).map(f => f.path)).toEqual(["03 Lab Book/Notes"]);
+  });
+
+  it("a new vault's first install makes Rigs and Methods under 03 Lab Book (CI3); a vault saved before keeps an empty Methods folder", () => {
+    expect(labFolders(kitLoad(undefined)).map(f => f.path)).toEqual(["03 Lab Book/Notes", "05 Chemicals/Chemicals", "03 Lab Book/Rigs", "03 Lab Book/Methods"]);
+    expect(kitLoad({ labFolder: "L", initials: "ABC" }).methodsFolder).toBe("");
+    expect(kitLoad({ labFolder: "L", methodsFolder: "My methods" }).methodsFolder).toBe("My methods");
   });
 });
 
@@ -350,10 +355,11 @@ describe("Phase 5b: the kit's meeting series", () => {
     expect(home).not.toContain("lab-kit:open-deck");
   });
 
-  it("the meeting template reads the hand-over and links its series; the homepage has the next-meetings card", () => {
+  it("the meeting template is a token template that links its series; the homepage has the next-meetings card", () => {
     const tpl = text("kits/planning/Extras/Templates/Meeting.md");
-    expect(tpl).toContain("window.vtMeeting");
-    expect(tpl).toContain('series: "[[<% series %>]]"');
+    expect(tpl).toContain("make: note");
+    expect(tpl).toContain('series: "[[{{series}}]]"');
+    expect(tpl).not.toContain("<%");
     expect(tpl).not.toContain("dur(7 days)");   // the window is "since the last meeting of the series"
     expect(text("kits/planning/00 Home.md")).toContain("show: next-meetings");
   });

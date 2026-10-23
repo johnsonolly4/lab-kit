@@ -8,15 +8,19 @@
 | Where code and files live | `docs/architecture.md` |
 | Corner sizes and shapes of anything the plugin draws | `docs/design-standard.md` |
 | A standalone (Python) dashboard that matches the vault's look | `docs/reference/dashboard/SPEC.md`, `lab-kit-dashboard.css` |
-| What a screen should look like (screenshots the user approved) | `docs/reference/visual/README.md` |
+| What a screen should look like (screenshots the user approved) | `my_work/reference_visual/README.md` (private) |
+| Questions waiting for the owner (visuals, behaviour) | `BACKLOG.md` → Questions for the owner |
 | Plugin code rules (store review) | `.claude/rules/obsidian-plugin.md`, `docs/reference/plugin-guidelines.md` |
 | Obsidian settings API | `docs/reference/settings-definitions.md` |
 | Why something was decided | `docs/decisions.md` |
 | Which docs to update after a change | `docs/maintenance.md` |
 | A planned multi-phase feature | `docs/plans/<feature>.md` |
+| How chemical and hazard data is stored (for a CoSHH / risk assessment tool), with example notes | `docs/coshh-data/` |
 | What each version changed | `docs/changelog.md` |
 | How the user works with the plugin | `docs/tutorial.md`, `README.md` |
+| Drawing your own rig symbols (module pack) | `docs/rig-pack-symbol.md` |
 | Snippet, calc block and method note syntax (tokens, `codes:`) | `docs/snippet-syntax.md` |
+| Stored text of live blocks (tag, `format:`, `used:`, `#` lines) | `docs/live-block-format.md` |
 | User setup (Claude Code + vault) | `GETTING-STARTED.md` |
 | The new-vault starter (`npm run starter`) | `src/kit/starter.ts`, `GETTING-STARTED.md` |
 | Checking a build inside Obsidian | `docs/obsidian-test-checklist.md` |

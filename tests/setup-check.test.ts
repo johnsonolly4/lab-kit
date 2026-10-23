@@ -7,12 +7,10 @@ const CMD = `templater-obsidian:${MENU}`;
 const state = (o: Partial<SetupState> = {}): SetupState => ({
   lab: { initials: "ABC", dataRoot: true, methodsFolder: "Methods", rigsFolder: "Rigs", labFolder: "03 Lab Book/Notes", chemicalFolder: "05 Chemicals/Chemicals" },
   metaBind: { missing: 0, total: 26 },
-  zotlitGuide: null,
   propertiesView: "hidden",
   plugins: new Set(["templater-obsidian", "dataview", "table-editor-obsidian"]),
   planning: false,
-  templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", menuHotkey: true, folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
-  menu: MENU,
+  templater: { templatesFolder: "Extras/Templates", userScriptsFolder: "Extras/scripts/templater", folderTemplates: [], matchingMode: "folder", startupTemplates: [] },
   installed: { lab: true, planning: false },
   css: [{ name: "scrolling-mermaid", enabled: true }],
   folders: [{ path: "03 Lab Book/Notes", exists: true }],
@@ -39,8 +37,8 @@ describe("check setup (Phase 6)", () => {
 
   it("a fresh vault: missing plugin, kit not installed, empty Templater folders, snippet off, folder missing", () => {
     const r = byId(state({
-      plugins: new Set(["templater-obsidian"]), installed: { lab: false, planning: false }, menu: null,
-      templater: { templatesFolder: "", userScriptsFolder: "", menuHotkey: true, folderTemplates: [] },
+      plugins: new Set(["templater-obsidian"]), installed: { lab: false, planning: false },
+      templater: { templatesFolder: "", userScriptsFolder: "", folderTemplates: [] },
       css: [{ name: "scrolling-mermaid", enabled: false }], folders: [{ path: "03 Lab Book/Notes", exists: false }],
     }));
     expect(r["plugin:dataview"]).toBeUndefined();   // no lab kit file uses Dataview: it is a planning kit plugin
@@ -54,7 +52,7 @@ describe("check setup (Phase 6)", () => {
   });
 
   it("Templater values already set are ok and get no fix", () => {
-    const r = byId(state({ templater: { templatesFolder: "Mine", userScriptsFolder: "My scripts", menuHotkey: true, folderTemplates: [] } }));
+    const r = byId(state({ templater: { templatesFolder: "Mine", userScriptsFolder: "My scripts", folderTemplates: [] } }));
     expect(r["templater:templates-folder"]).toMatchObject({ ok: true, fix: undefined });
     expect(r["templater:user-scripts"]).toMatchObject({ ok: true, fix: undefined });
   });
@@ -62,7 +60,7 @@ describe("check setup (Phase 6)", () => {
   it("planning on: Meta Bind and ZotLit (optional) are checked, a folder template is added only where the folder has none", () => {
     const r = byId(state({
       planning: true, installed: { lab: true, planning: true },
-      templater: { templatesFolder: "T", userScriptsFolder: "S", menuHotkey: true, folderTemplates: [{ folder: "00 Planning/To-dos", template: "Mine.md" }] },
+      templater: { templatesFolder: "T", userScriptsFolder: "S", folderTemplates: [{ folder: "00 Planning/To-dos", template: "Mine.md" }] },
       folderTemplates: [{ folder: "01 Daily Notes", template: "T/Daily note.md" }, { folder: "00 Planning/To-dos", template: "T/To-do.md" }],
     }));
     expect(r["plugin:obsidian-meta-bind-plugin"].ok).toBe(false);
@@ -70,6 +68,17 @@ describe("check setup (Phase 6)", () => {
     expect(r["folder-template:01 Daily Notes"].fix).toEqual({ kind: "folder-template", folder: "01 Daily Notes", template: "T/Daily note.md" });
     expect(r["folder-template:00 Planning/To-dos"]).toMatchObject({ ok: true, fix: undefined });
     expect(r["folder-template:00 Planning/To-dos"].detail).toContain("Mine.md");
+  });
+
+  it("no Templater folder-template row is asked for a folder whose template is a token template (Lab Kit fills those; Phase 3)", () => {
+    const r = byId(state({
+      planning: true, installed: { lab: true, planning: true },
+      templater: { templatesFolder: "T", userScriptsFolder: "S", folderTemplates: [] },
+      folderTemplates: [{ folder: "01 Daily Notes", template: "T/Daily note.md" }, { folder: "00 Planning/To-dos", template: "T/To-do.md" }],
+      fill: { rows: [{ folder: "00 Planning/To-dos", file: "To-do.md", folderExists: true, kind: "token", templaterRow: false }], mixed: [] },
+    }));
+    expect(r["folder-template:00 Planning/To-dos"]).toBeUndefined();
+    expect(r["folder-template:01 Daily Notes"].fix).toEqual({ kind: "folder-template", folder: "01 Daily Notes", template: "T/Daily note.md" });
   });
 
   it("lab folder template: shown without the planning kit, Fix adds it, set one is kept, none without a Lab notes folder", () => {
@@ -93,6 +102,14 @@ describe("check setup (Phase 6)", () => {
     expect(r["plugin:zotlit"].ok).toBe(true);
   });
 
+  it("Refpane is an optional plugin row (owner board 10 R3 a), present with the planning kit and ticked when loaded", () => {
+    const off = byId(state({ planning: true, plugins: new Set(["templater-obsidian", "dataview"]) }));
+    expect(off["plugin:refpane"]).toMatchObject({ ok: false, optional: true });
+    expect(off["plugin:refpane"].detail).toContain("Without it those boxes stay empty.");
+    expect(byId(state({ planning: true, plugins: new Set(["templater-obsidian", "dataview", "refpane"]) }))["plugin:refpane"].ok).toBe(true);
+    expect(byId(state())["plugin:refpane"]).toBeUndefined();   // planning kit off: no row
+  });
+
   it("sets no hotkey: Check setup has no Hotkeys group (Check hotkeys reports them)", () => {
     expect(checkSetup(state()).some(i => i.group === "Hotkeys" || i.fix?.kind === ("hotkey" as string))).toBe(false);
   });
@@ -112,7 +129,7 @@ describe("check setup (Phase 6)", () => {
 
   it("Templater (planning): matching mode None is fixed, a chosen mode is left alone; only the old roll-over startup entry is offered for removal", () => {
     const planned = (t: Partial<SetupState["templater"]>) => byId(state({ planning: true, installed: { lab: true, planning: true },
-      templater: { templatesFolder: "T", userScriptsFolder: "S", menuHotkey: true, folderTemplates: [], ...t } }));
+      templater: { templatesFolder: "T", userScriptsFolder: "S", folderTemplates: [], ...t } }));
     expect(planned({ matchingMode: "none" })["templater:matching-mode"].fix).toEqual({ kind: "matching-mode" });
     const regex = planned({ matchingMode: "regex" })["templater:matching-mode"];
     expect(regex.ok).toBe(false);
@@ -124,14 +141,13 @@ describe("check setup (Phase 6)", () => {
     expect(mine.detail).toContain("Mine.md");
   });
 
-  it("Meta Bind buttons and the ZotLit checklist (planning only); no Dataview JS row since Phase 5a (no DataviewJS in the kit)", () => {
-    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26, names: ["new-meeting-series", "go-deck", "help"] }, zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md",
+  it("Meta Bind buttons (planning only); no Dataview JS row since Phase 5a (no DataviewJS in the kit)", () => {
+    const r = byId(state({ planning: true, metaBind: { missing: 3, total: 26, names: ["new-meeting-series", "go-deck", "help"] },
       plugins: new Set(["templater-obsidian", "dataview", "obsidian-meta-bind-plugin", "zotlit"]) }));
     expect(r["dataview:js"]).toBeUndefined();
     expect(r["metabind:buttons"]).toMatchObject({ ok: false, fix: { kind: "meta-bind" } });
     expect(r["metabind:buttons"].detail).toContain("3 of 26");
     expect(r["metabind:buttons"].detail).toContain("new-meeting-series, go-deck, help");
-    expect(r["zotlit:settings"].fix).toEqual({ kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" });
   });
 
   it("a Meta Bind button that does something else than the kit's is reported with both actions, and Fix names it", () => {
@@ -155,15 +171,14 @@ describe("check setup (Phase 6)", () => {
     expect(differingButtons(kit, have)).toEqual([{ id: "go-meetings", now: "opens [[Weekly meetings]]", kit: "opens [[Meetings]]" }]);
   });
 
-  it("Methods folder Fix creates the suggested folder; ZotLit is a warning, not a tick", () => {
+  it("Methods folder Fix creates the suggested folder", () => {
     const r = byId(state({ planning: true, lab: { initials: "A", dataRoot: true, methodsFolder: "", rigsFolder: "", labFolder: "L", chemicalFolder: "C" },
-      plugins: new Set(["templater-obsidian", "dataview", "zotlit"]), zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md" }));
-    expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "methods-folder", path: "Extras/methods" } });
+      plugins: new Set(["templater-obsidian", "dataview", "zotlit"]) }));
+    expect(r["lab:methods-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "methods-folder", path: "03 Lab Book/Methods" } });
     expect(r["lab:rigs-folder"]).toMatchObject({ ok: false, optional: true, fix: { kind: "rigs-folder", path: "03 Lab Book/Rigs" } });
     expect(r["lab:rigs-folder"].detail).toContain("Fix creates 03 Lab Book/Rigs and uses it.");
     expect(byId(state())["lab:rigs-folder"]).toMatchObject({ ok: true, detail: "Set." });
-    expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true });
-    expect(r["zotlit:settings"].detail).toContain("07 How-tos/Obsidian/Set up ZotLit.md");
+    expect(Object.keys(r).filter(k => k.startsWith("zotlit:"))).toEqual([]);   // Lab Kit no longer manages ZotLit (refpane does)
   });
 
   it("properties view: hidden is ok, visible gets a Fix, unknown is a warning", () => {
@@ -246,49 +261,6 @@ describe("check setup: meeting series (Phase 5b)", () => {
   });
 });
 
-describe("check setup: ZotLit settings read from its data.json", () => {
-  const zot = (o: Partial<NonNullable<SetupState["zotlitData"]>> = {}): SetupState["zotlitData"] => ({ readable: true, missing: [], differing: [], literature: "ok", templates: "ok", ...o });
-  const on = (zotlitData: SetupState["zotlitData"]) => byId(state({ planning: true, zotlitData, plugins: new Set(["templater-obsidian", "dataview", "zotlit"]), zotlitGuide: "07 How-tos/Obsidian/Set up ZotLit.md" }));
-  const field = { key: "DOI", expr: "zt.DOI", merge: "keep" as const, language: "liquid" as const };
-  it("everything there: both rows are ok and the old warning is gone", () => {
-    const r = on(zot());
-    expect(r["zotlit:fields"]).toMatchObject({ ok: true });
-    expect(r["zotlit:folders"]).toMatchObject({ ok: true });
-    expect(r["zotlit:settings"]).toBeUndefined();
-  });
-  it("a missing field counts as something to fix, with a Fix that names it; yours that differ are named and have no Fix of their own", () => {
-    const r = on(zot({ missing: [field], differing: [{ key: "Year", now: "zt.x (replace)", kit: "zt.date.year (replace)" }] }));
-    expect(r["zotlit:fields"]).toMatchObject({ ok: false, fix: { kind: "zotlit-fields" } });
-    expect(r["zotlit:fields"].warn).toBeUndefined();   // counted, not a "!"
-    const only = on(zot({ missing: [field] }));
-    expect(only["zotlit:fields"].detail).toBe("DOI is missing. Fix adds the missing ones, then turns ZotLit off and on so it reads them.");
-    // the folders row says where its Fix is
-    expect(on(zot({ missing: [field], literature: "empty" }))["zotlit:folders"].detail).toContain("The Fix on the fields row sets the empty ones.");
-    expect(on(zot({ literature: "empty" }))["zotlit:folders"].detail).toContain(" Fix sets the empty ones.");
-    expect(r["zotlit:fields"].detail).toContain("DOI is missing");
-    expect(r["zotlit:fields"].detail).toContain("Year differs (yours: zt.x (replace); kit: zt.date.year (replace))");
-  });
-  it("only differing fields: flagged as a warning to check by hand, nothing to fix", () => {
-    const r = on(zot({ differing: [{ key: "Year", now: "a", kit: "b" }] }));
-    expect(r["zotlit:fields"]).toMatchObject({ ok: false, warn: true });
-    expect(r["zotlit:fields"].fix).toBeUndefined();
-    expect(r["zotlit:fields"].detail).toContain("Year differs");
-    expect(r["zotlit:fields"].detail).toContain("check the ones that differ");
-  });
-  it("folders: empty ones are fixed through the fields row Fix when fields are fine; your own folder is left alone", () => {
-    const r = on(zot({ literature: "empty", templates: "other" }));
-    expect(r["zotlit:folders"]).toMatchObject({ ok: false, warn: true, fix: { kind: "zotlit-fields" } });
-    expect(r["zotlit:folders"].detail).toContain("Template folder is your own (left alone)");
-    const both = on(zot({ missing: [field], literature: "empty" }));
-    expect(both["zotlit:folders"].fix).toBeUndefined();   // the fields row's Fix sets both
-  });
-  it("no ZotLit data (no file or unreadable): the old warning stays, pointing at the checklist note", () => {
-    const r = on(null);
-    expect(r["zotlit:settings"]).toMatchObject({ ok: false, warn: true, fix: { kind: "open-note", path: "07 How-tos/Obsidian/Set up ZotLit.md" } });
-    expect(r["zotlit:fields"]).toBeUndefined();
-  });
-});
-
 describe("check setup: kit files, core plugins, Daily notes, Dataview and property types (2026-10-13)", () => {
   const plan = { planning: true, installed: { lab: true, planning: true }, plugins: new Set(["templater-obsidian", "dataview"]) };
 
@@ -337,6 +309,13 @@ describe("check setup: kit files, core plugins, Daily notes, Dataview and proper
     expect(row({ folder: "01 Daily Notes", format: "YYYY/YYYY-MM-DD", want: "01 Daily Notes" }).detail).toBe("Yes: in 01 Daily Notes, named YYYY/YYYY-MM-DD.");
     expect(row(null)).toMatchObject({ ok: false, warn: true });
     expect(byId(state({ dailyNotes: null }))["core:daily-notes-settings"]).toBeUndefined();   // planning kit off
+  });
+
+  it("Links follow renames: planning kit only; off gets a Fix, unreadable is a warning", () => {
+    expect(byId(state({ ...plan, updateLinks: true }))["obsidian:update-links"]).toMatchObject({ ok: true });
+    expect(byId(state({ ...plan, updateLinks: false }))["obsidian:update-links"]).toMatchObject({ ok: false, fix: { kind: "update-links" } });
+    expect(byId(state({ ...plan, updateLinks: undefined }))["obsidian:update-links"]).toMatchObject({ ok: false, warn: true, fix: undefined });
+    expect(byId(state({ updateLinks: false }))["obsidian:update-links"]).toBeUndefined();
   });
 
   it("Dataview inline queries: only with Dataview loaded and the planning kit on", () => {

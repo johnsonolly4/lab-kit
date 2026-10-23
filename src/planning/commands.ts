@@ -1,27 +1,32 @@
 // Planning kit commands (fixed IDs, never renamed: kit buttons call them as lab-kit:<id>). Rules: src/planning/actions.ts.
 // Plan: docs/plans/phase-4b-planning-commands.md. Note folders: Settings → Planning folders (Phase 5a); a missing one is never made again silently.
-import { Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
+import { Notice, Platform, TFile, TFolder, normalizePath, parseYaml, type App, type Plugin } from "obsidian";
 import { ensureFolder } from "../kit/ensure-folder";
 import type { ManagedState } from "../kit/managed";
-import { hasTemplater, templaterCreateNote } from "../kit/obsidian-private";
+import { ensurePropertyType, hasTemplater, templaterCreateNote } from "../kit/obsidian-private";
+import type { CustomFill } from "../kit/note-fill-ui";
 import { missingFolderNotice, type FolderGuardActions } from "../kit/folder-guard";
 import { archiveInboxFolder, archiveTodoFolder, kitIsBackup, kitJoin, planningRoles, todoFolder, type KitData, type PlanningFolders } from "../kit/paths";
 import { nodeModule } from "../node";
 import { hasNode } from "../platform";
 import { cleanName, deckPath, isArchivable, shoppingAppend, sortedName, splitItems, subfolders, todoFields, topicsWithoutHub, uniquePath } from "./actions";
 import { ask, pick } from "./ask";
-import type { EntryField, EntryValues } from "./entry-fields";
+import type { EntryValues } from "./entry-fields";
+import { datePill } from "./board-card";
 import { captureAnchor, openEntry, selectionAnchor, type EntryAnchor } from "./entry-window";
 import { experimentOptions, projectField, projectNames, todoFields as todoEntryFields } from "./todo-bar";
 import { readSeries, seriesFields, type SeriesAnswer } from "./series-entry";
 import { followSeries, meetingFields, meetingStart, ONE_OFF, readMeeting } from "./meeting-entry";
-import { parseQuickTodo } from "./quick-todo";
-import type { TodoEngine } from "./engine";
+import { parseQuickTodo, todoFileName } from "./quick-todo";
 import { inFolder, linkTarget, type NoteRec } from "./lists";
 import { nextDate, ONCE, parseSeries, sinceLast, seriesOfNote, WEEKDAYS, type Series } from "./meetings";
 import { addResult } from "./result";
+import { freezeDue, freezeFile } from "./freeze-note";
 import { linkInOrder } from "./sequence";
 import { dayOf, parseDay, ymd } from "./todo";
+import { createMadeNote, isFirstSeries, isTokenTemplate, MEETING_TEMPLATE, meetingAnswers, ONE_OFF_TEMPLATE, SERIES_TEMPLATE, seriesAnswers, tokenTemplate, type MeetingNote, type SeriesNote } from "./meeting-note";
+import { CONCEPT_TEMPLATE, PROJECT_HUB_TEMPLATE, PROJECT_NOTE_TEMPLATE, TOPIC_HUB_TEMPLATE, cleanNoteName, cleanProjectName, conceptFields, projectHubAnswers, projectNoteAnswers, readConcept } from "./hub-notes";
+import { columnEntry, createTodoNote, nameTaken, todoAnswers, todoTemplate, type TodoAnswer } from "./todo-note";
 
 /** Templates the commands run, by kit file id and their place under the templates folder. */
 export const TPL = {
@@ -35,15 +40,13 @@ export const TPL = {
   topicHub: { id: "tpl-new-topic-hub-md", dest: "New topic hub.md" },
 } as const;
 
-/** Hand-offs the kit's To-do and New project note templates read (and delete) at their start. */
-interface Handoff { vtNote?: { title: string; folder: string }; vtEntryTodo?: (day?: string) => Promise<Handoff["vtTodo"] | null>; vtPresetProject?: string; vtTodo?: { text: string; project: string; meeting: string; due: string; priority: number | ""; experiment: string }; vtNewNoteFolder?: string; vtNewConceptFolder?: string; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string };
-  vtTopicHub?: { folder: string; name: string };
-  vtSeries?: { name: string; folder: string; interval: string; day: string; start: string; deckKey: string; deck: string; template?: string } }
+/** Hand-offs the kit's templates read (and delete) at their start. `vtEntryTodo` stays for an old Templater To-do.md that asks for the entry window itself (a Templater folder row); Lab Kit's own To-do no longer uses a hand-off. */
+interface Handoff { vtEntryTodo?: (day?: string) => Promise<TodoAnswer | null>; vtMeeting?: { series: string; folder: string; date: string; since: string; title?: string; project?: string } }
 const handoff = (): Handoff => window as unknown as Handoff;
 
 export class PlanningCommands {
   /** `state` reads the planning kit's install record when needed (it is replaced on every install); `kit` the current settings. */
-  constructor(private plugin: Plugin, private state: () => ManagedState | null, private engine: TodoEngine, private kit: () => KitData,
+  constructor(private plugin: Plugin, private state: () => ManagedState | null, private kit: () => KitData,
     private guard: FolderGuardActions) {}
 
   get app(): App { return this.plugin.app; }
@@ -75,13 +78,13 @@ export class PlanningCommands {
     add("archive-todos", "Archive old to-dos", () => this.archiveTodos());
     add("new-meeting", "New meeting", () => this.newMeeting());
     add("new-extra-meeting", "New extra meeting now", () => this.newMeeting(undefined, true));
+    add("freeze-meeting", "Freeze this meeting note", () => this.freezeActive());
     add("new-one-off-meeting", "New one-off meeting", () => this.newOneOff());
     add("new-meeting-series", "New meeting series", () => this.newSeries());
-    add("new-project", "New project", () => this.fromTemplate(TPL.project, this.folders.projects));
+    add("new-project", "New project", () => this.newProject());
     add("new-project-note", "New project note", () => this.newProjectNote());
-    add("new-concept", "New concept", () => this.newConcept());   // the template asks title + topic and files the note
+    add("new-concept", "New concept", () => this.newConcept());
     add("new-topic-hub", "New topic hub", () => this.newTopicHub());
-    add("roll-over-todos", "Roll over to-dos now", () => this.engine.rollOverNow());
     add("open-todo-board", "Open to-do board", () => this.openBoard());
     // Desktop only: opening a file in another app needs Electron
     this.plugin.addCommand({
@@ -99,15 +102,16 @@ export class PlanningCommands {
     new Notice(`${name} failed. See the developer console for details.`);
   }
 
-  /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): what the To-do template reads as `window.vtTodo`, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in) is named in the heading. */
-  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<Handoff["vtTodo"] | null> {
+  /** The entry window for a new to-do (title, then chips for project, meeting, due and priority; Enter creates): the answers, or null when Esc was pressed. `project` (a project hub's name) is already set; else the project the open note is in. `day` (the board column a card was made in: its date `YYYY-MM-DD`, or an old weekday name) opens the Day chip with that date when it is today or later, and its weekday is named in the heading. */
+  private async askTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<TodoAnswer | null> {
     const named = (kind: string): string[] => this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === kind).map(f => f.basename).sort((a, b) => a.localeCompare(b));
     const hubs = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => ({ name: f.basename, fm: (this.app.metadataCache.getFileCache(f)?.frontmatter ?? {}) }));
     const inside = project ?? this.hubOfActiveNote();
-    const answer = await openEntry(this.app, day ? `New to-do \u00b7 ${day}` : "New to-do", todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...initial.values } });
+    const column = columnEntry(day, new Date());
+    const answer = await openEntry(this.app, column.heading, todoEntryFields(projectNames(hubs), named("meeting-series"), this.experimentChoices()), { title: initial.title, anchor: initial.anchor, openField: initial.openField, values: { ...(inside ? { project: inside } : {}), ...(column.scheduled ? { scheduled: column.scheduled } : {}), ...initial.values } });
     if (!answer) return null;
     const v = answer.values;
-    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", experiment: String(v.experiment ?? "") };
+    return { text: answer.title, project: String(v.project ?? ""), meeting: String(v.meeting ?? ""), due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", experiment: String(v.experiment ?? ""), waiting: String(v.waiting ?? ""), scheduled: String(v.scheduled ?? "") };
   }
 
   /** The lab notes as the Experiment chip's list; none (no chip) when the lab folder is not set. */
@@ -118,22 +122,65 @@ export class PlanningCommands {
     return experimentOptions(this.app.vault.getMarkdownFiles().filter(f => f.path.startsWith(prefix)).map(f => ({ name: f.basename, fm: this.app.metadataCache.getFileCache(f)?.frontmatter ?? {} })));
   }
 
-  /** Highlighted text in the open note as a quick to-do: the title and the `@project`, `%date`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */
+  /** Highlighted text in the open note as a quick to-do: the title and the `+project`, `%date`, `>day`, `!priority` marks read out (see `parseQuickTodo`); nothing selected: nothing, so the window opens empty. The note itself is left as it is. */
   private selectionTodo(): { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } {
     const text = this.app.workspace.activeEditor?.editor?.getSelection() ?? "";
     if (!text.trim()) return {};
     const projects = this.app.vault.getMarkdownFiles().filter(f => this.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "project").map(f => f.basename);
     const q = parseQuickTodo(text, projects, new Date());
-    return { title: q.title, anchor: selectionAnchor(this.app), ...(q.projectGuess ? { openField: { key: "project", search: q.projectGuess } } : {}), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
+    if (q.pastDay) new Notice(`${datePill(parseDay(q.pastDay)!)} has passed: pick today or a later day.`);
+    return { title: q.title, anchor: selectionAnchor(this.app), ...(q.projectGuess ? { openField: { key: "project", search: q.projectGuess } } : {}), values: { ...(q.project ? { project: q.project } : {}), ...(q.due ? { due: q.due } : {}), ...(q.scheduled ? { scheduled: q.scheduled } : {}), ...(q.priority ? { priority: q.priority } : {}) } };
   }
 
-  /** New to-do: the entry window, then the To-do template makes the note from what was set. */
-  async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}): Promise<void> {
-    const todo = await this.askTodo(project, initial);
+  /** New to-do: the entry window, then the note is made from the vault's To-do.md (a token template) with what was set; not opened, as the old button. */
+  async newTodo(project?: string, initial: { title?: string; values?: EntryValues; anchor?: EntryAnchor | null; openField?: { key: string; search: string } } = {}, day?: string): Promise<void> {
+    const todo = await this.askTodo(project, initial, day);
     if (!todo) return;
-    handoff().vtTodo = todo;
-    try { await this.fromTemplate(TPL.todo, this.folders.planning, todoFolder(this.folders), false); }   // not opened, as the old button
-    finally { delete handoff().vtTodo; }   // the template deletes it when it runs; also gone when it didn't or failed
+    const folder = todoFolder(this.folders);
+    if (!(await this.ready(this.folders.planning, folder))) return;
+    await this.ensureTodoTypes();
+    await createTodoNote(this.app.vault, folder, await this.todoTemplateText(), parseYaml, todo, day, new Date());
+  }
+
+  /** The text of the To-do template to fill: the vault's when it is a token template, else the bundled one (an old Templater To-do.md is not run: owner's answer to Q7, 2026-10-21). */
+  private async todoTemplateText(): Promise<string> {
+    const file = this.templateFile(TPL.todo);
+    return todoTemplate(file ? await this.app.vault.cachedRead(file) : null, parseYaml);
+  }
+
+  /** `due` is a date property and `priority` a number in this vault (Obsidian keeps the type in .obsidian/types.json); an older Obsidian leaves them as text. */
+  private async ensureTodoTypes(): Promise<void> {
+    try { await ensurePropertyType(this.app, "due", "date"); await ensurePropertyType(this.app, "priority", "number"); } catch (e) { console.error(e); }
+  }
+
+  /**
+   * The board's New (and the explorer's New note in the To-dos folder): the note exists already, so Lab Kit's note filler (src/kit/note-fill.ts) asks the
+   * same entry window, names the column the board wrote, fills the note from To-do.md and renames it to its title. Esc trashes a blank board note.
+   */
+  todoFill(): CustomFill {
+    return {
+      ask: async ctx => {
+        const t = await this.askTodo(undefined, {}, ctx.day || undefined);
+        return t ? todoAnswers(t, ctx.day || undefined, new Date()) : null;
+      },
+      finish: async (ctx, answers) => {
+        await this.ensureTodoTypes();
+        const file = this.app.vault.getFileByPath(ctx.path), folder = ctx.path.includes("/") ? ctx.path.slice(0, ctx.path.lastIndexOf("/")) : "";
+        if (!file) return;
+        const name = todoFileName(answers.text ?? "", nameTaken(this.app.vault, folder, ctx.path));
+        if (`${folder}/${name}.md` !== ctx.path) await this.app.fileManager.renameFile(file, `${folder}/${name}.md`);
+      },
+      cancelled: async ctx => {
+        const file = this.app.vault.getFileByPath(ctx.path);
+        if (file && ctx.stub) await this.app.fileManager.trashFile(file);   // nothing but the board's own day and empty keys was in it
+      },
+    };
+  }
+
+  /** A day header's `+` on the board: New to-do with that day (`YYYY-MM-DD`) in the Day chip, the window under the clicked button. */
+  newTodoOn(day: string): void {
+    captureAnchor();
+    void this.newTodo(undefined, {}, day).catch(e => this.failed("New to-do", e));
   }
 
   /** The project hub the open note is, or is inside (as the To-do template works it out), else "". */
@@ -169,7 +216,7 @@ export class PlanningCommands {
     return all.length === 1 ? all[0] : pick(this.app, all.map(s => s.name), all, "Which meeting?");
   }
 
-  /** New meeting note in `given` (a series card's button: no window), else from one window: Series (or One-off), Date, and for a One-off its title and Project. `extra` = an extra meeting now: regular series only, today by default, held in between. The template reads `vtMeeting`. */
+  /** New meeting note in `given` (a series card's button: no window), else from one window: Series (or One-off), Date, and for a One-off its title and Project. `extra` = an extra meeting now: regular series only, today by default, held in between. */
   async newMeeting(given?: Series, extra = false): Promise<void> {
     if (given) {
       if (given.interval === ONCE) { await this.newOneOff(); return; }
@@ -196,13 +243,28 @@ export class PlanningCommands {
     else await this.makeMeeting(read.series, read.date);
   }
 
+  /** Freeze this meeting note: the active note's lists become plain links (the command, for a one-off or by hand). */
+  async freezeActive(): Promise<void> {
+    const file = this.app.workspace.getActiveFile();
+    const r = file ? await freezeFile(this.app, this.kit(), file) : null;
+    if (!file || !r) new Notice("This is not a meeting note.");
+    else if (r.done) new Notice("Meeting note frozen.");
+    else if (r.why === "frozen") new Notice(`This note was frozen on ${r.on}.`);
+    else if (r.why === "no-window") new Notice("This note has no since and date properties.");
+    else new Notice("This is not a meeting note.");
+  }
+
+  /** The daily check (I19): freezes every regular-series meeting note dated before today; a failure is a notice, never a stop. */
+  async freezeDueNotes(today: Date = new Date()): Promise<void> {
+    const failed = await freezeDue(this.app, this.kit(), today);
+    for (const name of failed) new Notice(`Could not freeze ${name}. See the developer console for details.`);
+  }
+
   /** Makes the meeting note of a regular series on `date`, "since" the last meeting of the series. */
   private async makeMeeting(series: Series, date: string): Promise<void> {
     const held = this.app.vault.getMarkdownFiles().filter(f => f.parent?.path === series.folder)
       .map(f => parseDay(String(this.app.metadataCache.getFileCache(f)?.frontmatter?.date ?? "").slice(0, 10))).filter((d): d is Date => !!d);
-    handoff().vtMeeting = { series: series.name, folder: series.folder, date, since: ymd(sinceLast(series, parseDay(date)!, held)) };
-    try { await this.fromTemplateFile(this.seriesTemplate(series), this.folders.meetings, series.folder); }
-    finally { delete handoff().vtMeeting; }
+    await this.createMeeting(series, { series: series.name, folder: series.folder, date, since: ymd(sinceLast(series, parseDay(date)!, held)) });
   }
 
   /** New one-off meeting: the same window as New meeting with One-off chosen. */
@@ -221,7 +283,6 @@ export class PlanningCommands {
 
   /**
    * A one-off meeting: it belongs to no series. It goes in the One-off hub (made the first time), is named from `title`, dated `date` and can belong to a project.
-   * The Meeting template reads `vtMeeting`.
    */
   private async makeOneOff(date: string, title: string, project: string): Promise<void> {
     const root = this.folders.meetings;
@@ -229,9 +290,7 @@ export class PlanningCommands {
     let hub = this.seriesList().find(s => s.interval === ONCE);
     if (!hub) {
       const folder = kitJoin(root, NAME);
-      handoff().vtSeries = { name: NAME, folder, interval: ONCE, day: "Mon", start: date, deckKey: "deck_windows", deck: "" };
-      try { await this.fromTemplate(TPL.series, root, folder, false); }
-      finally { delete handoff().vtSeries; }
+      await this.createSeriesHub({ name: NAME, folder, interval: ONCE, day: "Mon", start: date, deckKey: "deck_windows", deck: "" }, false);
       // Obsidian reads the new note's properties a moment after it exists: wait for them (up to 3 s) before saying it failed
       for (let tries = 0; tries < 20; tries++) {
         hub = this.seriesList().find(s => s.interval === ONCE);
@@ -241,14 +300,12 @@ export class PlanningCommands {
       if (!hub) { new Notice("The hub note for one-off meetings could not be made."); return; }
     }
     const since = new Date(parseDay(date)!.getFullYear(), parseDay(date)!.getMonth(), parseDay(date)!.getDate() - 7);
-    handoff().vtMeeting = { series: hub.name, folder: hub.folder, date, since: ymd(since), title: cleanName(title) || "", project };
-    try { await this.fromTemplateFile(this.seriesTemplate(hub), this.folders.meetings, hub.folder); }
-    finally { delete handoff().vtMeeting; }
+    await this.createMeeting(hub, { series: hub.name, folder: hub.folder, date, since: ymd(since), title: cleanName(title) || "", project, first: isFirstSeries(this.seriesList(), hub.name) });
   }
 
   /**
    * New meeting series: asks name, interval, day, first date and deck path (one box at a time; Esc at any point stops, nothing is made), then the
-   * Meeting series template makes the folder's hub note. Stops with a notice when a series or folder of that name exists. The template reads `vtSeries`.
+   * Meeting series template makes the folder's hub note. Stops with a notice when a series or folder of that name exists.
    */
   async newSeries(): Promise<void> {
     const root = this.folders.meetings;
@@ -263,14 +320,12 @@ export class PlanningCommands {
     });
     if (!answer || !series) return;
     const { name, interval, day, start, deck, template } = series as SeriesAnswer;
-    handoff().vtSeries = { name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck, template };
-    try { await this.fromTemplate(TPL.series, root, kitJoin(root, name)); }
-    finally { delete handoff().vtSeries; }
+    await this.createSeriesHub({ name, folder: kitJoin(root, name), interval, day: WEEKDAYS[day], start, deckKey: Platform.isMacOS ? "deck_mac" : "deck_windows", deck, template });
   }
 
   /**
    * New topic hub: the index note (`kind: hub`, named like its folder) of a topic folder under Knowledge. Pick a topic that has no hub yet, or a new topic
-   * (its folder is made); Esc stops, nothing is made. The template reads `vtTopicHub`.
+   * (its folder is made); Esc stops, nothing is made. The hub is made from the New topic hub template.
    */
   async newTopicHub(): Promise<void> {
     const root = this.folders.knowledge;
@@ -291,9 +346,20 @@ export class PlanningCommands {
     const name = folder.slice(root.length + 1);
     const taken = this.app.vault.getAbstractFileByPath(`${folder}/${name}.md`);
     if (taken) { new Notice(`${name} already has a hub note in ${folder}.`); return; }
-    handoff().vtTopicHub = { folder, name };
-    try { await this.fromTemplate(TPL.topicHub, root, folder); }
-    finally { delete handoff().vtTopicHub; }
+    await this.makeFromKit(TPL.topicHub, TOPIC_HUB_TEMPLATE, root, { name, folder }, false);
+  }
+
+  /** New project: asks its name (as its Zotero collection under Projects/) and makes the hub `<Projects>/<Name>/<Name>.md` from the Project hub template. */
+  async newProject(): Promise<void> {
+    const root = this.folders.projects;
+    if (!(await this.ready(root))) return;
+    const typed = await ask(this.app, "Project name (same as its Zotero collection under Projects/)");
+    const name = typed ? cleanProjectName(typed) : "";
+    if (!name) return;
+    const answers = projectHubAnswers(root, name);
+    if (this.app.vault.getAbstractFileByPath(`${answers.folder}/${name}.md`)) { new Notice(`${name} already exists in ${answers.folder}.`); return; }
+    await ensurePropertyType(this.app, "deadline", "date");   // an optional date property, set once (Obsidian keeps it in .obsidian/types.json)
+    await this.makeFromKit(TPL.project, PROJECT_HUB_TEMPLATE, root, answers, false);
   }
 
   /** New note in a project; `folder` (the project's folder) is used without asking: for project cards. */
@@ -305,16 +371,34 @@ export class PlanningCommands {
     if (!answer) return;
     const hub = hubs.find(f => f.basename === answer.values.project);
     if (!hub?.parent) return;
-    handoff().vtNote = { title: answer.title, folder: hub.parent.path };
-    try { await this.fromTemplate(TPL.projectNote, this.folders.projects, hub.parent.path); }
-    finally { delete handoff().vtNote; delete handoff().vtNewNoteFolder; }
+    const title = cleanNoteName(answer.title);
+    if (!title) return;
+    const at = hub.parent.path, hubName = at.split("/").pop() ?? "";
+    await this.makeFromKit(TPL.projectNote, PROJECT_NOTE_TEMPLATE, this.folders.projects, projectNoteAnswers(at, title, !!this.app.vault.getAbstractFileByPath(`${at}/${hubName}.md`)));
   }
 
-  /** New concept; `folder` (a topic hub's folder) files it there without asking the topic. */
+  /** New concept: asks its title and topic (a topic folder under Knowledge, or a new one); `folder` (a topic hub's folder) files it there without asking the topic. */
   async newConcept(folder?: string): Promise<void> {
-    if (folder) handoff().vtNewConceptFolder = folder;
-    try { await this.fromTemplate(TPL.concept, this.folders.knowledge); }
-    finally { delete handoff().vtNewConceptFolder; }
+    const root = this.folders.knowledge;
+    if (!(await this.ready(root))) return;
+    const preset = folder && folder.startsWith(root + "/") ? folder : undefined;
+    const topics = (this.app.vault.getFolderByPath(root)?.children ?? []).filter((c): c is TFolder => c instanceof TFolder).map(c => c.name).sort((a, b) => a.localeCompare(b));
+    const exists = (path: string): boolean => !!this.app.vault.getAbstractFileByPath(path);
+    let concept: { title: string; folder: string } | null = null;
+    const answer = await openEntry(this.app, "New concept", conceptFields(topics, !!preset), {
+      requireTitle: true,
+      validate: a => { const r = readConcept(root, a.title, a.values, preset, exists); if ("error" in r) return r.error; concept = r; return null; },
+    });
+    if (!answer || !concept) return;
+    const { title, folder: at } = concept as { title: string; folder: string };
+    await this.makeFromKit(TPL.concept, CONCEPT_TEMPLATE, root, { title, folder: at }, false);
+  }
+
+  /** Makes a note from a kit template (the vault's token text, else the bundled one) inside the setting folder `root`, in the folder its answers name (made if needed), and opens it. `unique`: a taken name gets ` 2`, ` 3`...; false when the caller has checked. */
+  private async makeFromKit(tpl: { id: string; dest: string }, bundled: string, root: string, answers: Record<string, string>, unique = true): Promise<void> {
+    if (!(await this.ready(root, answers.folder))) return;
+    const file = await createMadeNote(this.app.vault, await this.kitText(tpl, bundled), parseYaml, answers, new Date(), answers.name ?? answers.title ?? "", answers.folder, unique);
+    await this.app.workspace.getLeaf(false).openFile(file);
   }
 
   /** Where the planning kit installed this template, else where it would install it. */
@@ -325,30 +409,60 @@ export class PlanningCommands {
       .map(p => (p ? this.app.vault.getFileByPath(p) : null)).find(f => f) ?? null;
   }
 
-  /** The meeting note template of a series: the one named on its hub (`template`), else the kit's One-off meeting for a one-off hub, else the kit's Meeting. A name that finds no note falls back with a notice. */
-  private seriesTemplate(series: Series): TFile | null {
+  /**
+   * What a series' meeting note is made from: the token text of the template named on its hub (`template`), else of the kit's One-off meeting for a one-off hub, else of the kit's Meeting
+   * (the bundled text when the vault has none or only an old Templater one: Q7). A hub's own template that still holds Templater code is never run (owner,
+   * 2026-10-21): the kit's text is used and a notice says so. A name that finds no note falls back with a notice.
+   */
+  private async meetingSource(series: Series): Promise<{ text: string } | { old: TFile }> {
     if (series.template) {
       const own = this.app.metadataCache.getFirstLinkpathDest(series.template, series.path) ?? this.app.vault.getFileByPath(normalizePath(series.template + ".md"));
-      if (own) return own;
-      new Notice(`Template "${series.template}" for ${series.name} was not found. Using the kit's template.`);
+      if (!own) new Notice(`Template "${series.template}" for ${series.name} was not found. Using the kit's template.`);
+      else {
+        const text = await this.app.vault.cachedRead(own);
+        if (isTokenTemplate(text, parseYaml)) return { text };
+        // never run, as an edited kit template (owner, 2026-10-21: "Never run it"); the `old` path stays for Phase 13 to remove
+        new Notice(`Template "${series.template}" for ${series.name} holds Templater code, which Lab Kit no longer runs. Using the kit's template; convert yours to the new template format.`);
+      }
     }
-    return this.templateFile(series.interval === ONCE ? TPL.oneOff : TPL.meeting);
+    return { text: await this.kitText(series.interval === ONCE ? TPL.oneOff : TPL.meeting, series.interval === ONCE ? ONE_OFF_TEMPLATE : MEETING_TEMPLATE) };
   }
 
-  /** Creates a note from a kit template with Templater in `folderPath` (inside the setting folder `root`; the template then files it where it belongs). */
-  private async fromTemplate(tpl: { id: string; dest: string }, root: string, folderPath = root, open = true): Promise<void> {
-    const template = this.templateFile(tpl);
-    if (!template && hasTemplater(this.app)) { new Notice(`Template not found: ${tpl.dest}`); return; }
-    await this.fromTemplateFile(template, root, folderPath, open);
+  /** The vault's copy of a kit note template when it is a token template, else the bundled text. */
+  private async kitText(tpl: { id: string; dest: string }, bundled: string): Promise<string> {
+    const file = this.templateFile(tpl);
+    return tokenTemplate(file ? await this.app.vault.cachedRead(file) : null, bundled, parseYaml);
   }
 
-  private async fromTemplateFile(template: TFile | null, root: string, folderPath = root, open = true): Promise<void> {
+  /** Makes one meeting note of `hub` and opens it. */
+  private async createMeeting(hub: Series, m: MeetingNote): Promise<void> {
+    const source = await this.meetingSource(hub);
+    if ("old" in source) {   // the series' own Templater-code template: the hand-over it reads
+      handoff().vtMeeting = { series: m.series, folder: m.folder, date: m.date, since: m.since, ...(m.title !== undefined ? { title: m.title } : {}), ...(m.project !== undefined ? { project: m.project } : {}) };
+      try { await this.fromTemplateFile(source.old, this.folders.meetings, hub.folder); }
+      finally { delete handoff().vtMeeting; }
+      return;
+    }
+    if (!(await this.ready(this.folders.meetings, hub.folder))) return;
+    const file = await createMadeNote(this.app.vault, source.text, parseYaml, meetingAnswers(m), new Date(), `${m.date} ${m.title || m.series}`, hub.folder);
+    await this.app.workspace.getLeaf(false).openFile(file);
+  }
+
+  /** Makes a series' hub note from the Meeting series template (the bundled text when the vault's is missing or an old Templater one). */
+  private async createSeriesHub(note: SeriesNote, open = true): Promise<void> {
+    const root = this.folders.meetings;
+    if (!(await this.ready(root, note.folder))) return;
+    const file = await createMadeNote(this.app.vault, await this.kitText(TPL.series, SERIES_TEMPLATE), parseYaml, seriesAnswers(note), new Date(), note.name, note.folder, false);
+    if (open) await this.app.workspace.getLeaf(false).openFile(file);
+  }
+
+  private async fromTemplateFile(template: TFile | null, root: string, folderPath = root, open = true, filename?: string): Promise<void> {
     if (!hasTemplater(this.app)) { new Notice("Templater is needed for this: install and enable it, then try again."); return; }
     if (!template) { new Notice("Meeting template not found."); return; }
     if (!(await this.ready(root, folderPath))) return;
     const folder = this.app.vault.getFolderByPath(folderPath);
     if (!folder) { new Notice(`Could not use the folder ${folderPath}.`); return; }
-    if (!(await templaterCreateNote(this.app, template, folder, open))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
+    if (!(await templaterCreateNote(this.app, template, folder, open, filename))) new Notice("Templater couldn't create the note. Update it to the latest version, then try again.");
   }
 
   /** An empty note in the inbox, opened. */
@@ -411,7 +525,8 @@ export class PlanningCommands {
     const f = this.folders;
     const roots = { knowledge: f.knowledge, howto: f.howtos, meetings: f.meetings };
     let sorted = 0, skipped = 0;
-    for (const file of this.inboxNotes()) {
+    const queue = this.inboxNotes();
+    for (const [i, file] of queue.entries()) {
       await this.app.workspace.getLeaf(false).openFile(file);
       const where = await pick(this.app,
         ["To-do (goes to Backlog)", "Project...", "Knowledge...", "How-to...", "Meetings...", "Archive", "Delete", "Skip for now", "Stop"],
@@ -442,6 +557,8 @@ export class PlanningCommands {
       } else if (where === "delete") {
         const sure = await pick(this.app, ["Yes, delete it", "No, keep it"], [true, false], `Delete "${file.basename}"?`, true);
         if (!sure) { skipped++; continue; }
+        // The next note opens in this leaf first: trashing the open note closes its leaf and the workspace falls back to the homepage
+        if (queue[i + 1]) await this.app.workspace.getLeaf(false).openFile(queue[i + 1]);
         await this.app.fileManager.trashFile(file);   // the trash setting the user chose (system or .trash), never a hard delete
       }
       sorted++;

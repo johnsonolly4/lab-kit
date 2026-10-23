@@ -1,6 +1,7 @@
 // Phase 4a: the to-do board rules (src/planning/todo.ts), including the 2026-10-07 Obsidian Sync scenarios.
 import { describe, it, expect } from "vitest";
-import { applyPatch, cardDate, cardTag, changePatch, dueCountdown, emptyTodoCursorLine, parseDay, rollOverPatch, snapOf, todayColumn, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { applyPatch, cardTag, dueCountdown, emptyTodoCursorLine, parseDay, todayMark, weekStart, ymd, type TodoFm } from "../src/planning/todo";
+import { cardDate, changePatch, rollOverPatch, snapOf, todayColumn } from "./helpers/old-todo";
 
 const day = (s: string): Date => parseDay(s)!;
 const WED = day("2026-10-07");   // a Wednesday
@@ -45,6 +46,15 @@ describe("changes (Obsidian Sync safe)", () => {
   it("untick removes done_on; an untick without done_on writes nothing", () => {
     expect(after(todo({ day: "Wed", done: false, done_on: "2026-10-07" }), todo({ day: "Wed", done: true }))).not.toHaveProperty("done_on");
     expect(changePatch(todo({ day: "Wed", done: false }), { day: "Wed", done: true }, { day: "Wed", done: false }, WED)).toBeNull();
+  });
+  it("untick of a cleared card (day Done) goes back to Backlog, so the next roll-over does not tick it again", () => {
+    const cleared = todo({ day: "Done", done: true, done_on: "2026-09-20" });
+    const unticked = after(todo({ ...cleared, done: false }), cleared);
+    expect(unticked).toMatchObject({ day: "Backlog" });
+    expect(unticked).not.toHaveProperty("done_on");
+    expect(rollOverPatch(unticked as TodoFm, WED, WED)).toBeNull();
+    // without the fix the card stays on Done and the roll-over ticks it
+    expect(rollOverPatch(todo({ day: "Done", done: false }), WED, WED)?.kind).toBe("ticked");
   });
   it("local drag: stamps planned today and clears rolled", () => {
     expect(after(todo({ day: "Fri", planned: "2026-10-05" }), todo({ day: "Mon", planned: "2026-10-05" }))).toMatchObject({ planned: "2026-10-07", rolled: false });
@@ -128,19 +138,8 @@ describe("changes: more cases", () => {
   });
 });
 
-describe("which devices roll over", () => {
-  it("the per-device switch wins; unset = computers yes, phones and tablets no", async () => {
-    const { rollsOnDevice } = await import("../src/planning/engine");
-    expect(rollsOnDevice("on", true)).toBe(true);
-    expect(rollsOnDevice("off", false)).toBe(false);
-    expect(rollsOnDevice(null, false)).toBe(true);
-    expect(rollsOnDevice(null, true)).toBe(false);
-    expect(rollsOnDevice("maybe", false)).toBe(false);   // like the old template: any other stored value means off
-  });
-});
-
 describe("due-date countdown", () => {
-  const cd = (fm: Partial<TodoFm>, mode: "off" | "marked" | "all" = "all", now = WED) => dueCountdown(todo(fm), mode, now);
+  const cd = (fm: Partial<TodoFm>, mode: "off" | "all" = "all", now = WED) => dueCountdown(todo(fm), mode, now);
   it("counts whole days", () => {
     expect(cd({ due: "2026-10-07" })).toEqual({ text: "Today", level: "soon" });
     expect(cd({ due: "2026-10-08" })).toEqual({ text: "Tomorrow", level: "soon" });
@@ -156,12 +155,11 @@ describe("due-date countdown", () => {
   it("ignores the time of day", () => {
     expect(cd({ due: "2026-10-08" }, "all", new Date(2026, 9, 7, 23, 59))?.text).toBe("Tomorrow");
   });
-  it("shows nothing when off, done, unmarked or without a valid date", () => {
+  it("shows nothing when off, done or without a valid date; an old countdown property changes nothing (I2-S2 a)", () => {
     expect(cd({ due: "2026-10-09" }, "off")).toBeNull();
     expect(cd({ due: "2026-10-09", done: true })).toBeNull();
-    expect(cd({ due: "2026-10-09" }, "marked")).toBeNull();
-    expect(cd({ due: "2026-10-09", countdown: false }, "marked")).toBeNull();
-    expect(cd({ due: "2026-10-09", countdown: true }, "marked")?.text).toBe("2d");
+    expect(cd({ due: "2026-10-09", countdown: false })?.text).toBe("2d");
+    expect(cd({ due: "2026-10-09", countdown: true }, "off")).toBeNull();
     expect(cd({ due: "" })).toBeNull();
     expect(cd({ due: "2026-02-30" })).toBeNull();
     expect(cd({})).toBeNull();
@@ -169,15 +167,14 @@ describe("due-date countdown", () => {
 });
 
 describe("To-do template due date and countdown", () => {
-  it("asks for a due date (Esc cancels), no countdown question (one setting for all), sets due to a date property", async () => {
+  it("asks for a due date (Esc cancels), no countdown question or property (one setting for all, I2), writes due only when set as a date property", async () => {
     const { readFileSync } = await import("fs");
-    const tpl = readFileSync("kits/planning/Extras/Templates/To-do.md", "utf8");
+    const tpl = readFileSync("tests/fixtures/templates/old/To-do.md", "utf8");
     expect(tpl).toContain('d === null) { await trashIfBlank(); throw new Error("Cancelled');
     expect(tpl).not.toContain("Countdown on the board card?");
-    expect(tpl).toContain("const countdown = false;");
-    expect(tpl).toMatch(/^due: <% due %>$/m);
-    expect(tpl).toMatch(/^countdown: <% countdown %>$/m);
-    expect(tpl).toContain('setType?.("due", "date")');
+    expect(tpl).not.toMatch(/countdown/i);
+    expect(tpl).toMatch(/^<% due \? `due: \$\{due\}\\n` : "" -%>$/m);
+    expect(tpl).toContain('vtEnsureType?.("due", "date")');
   });
 });
 

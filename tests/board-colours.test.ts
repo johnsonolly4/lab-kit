@@ -11,6 +11,7 @@ describe("board colours", () => {
   });
   it("is on by default with no custom colours, and an old data.json gets that", () => {
     expect(KIT_DEFAULTS.boardColours).toEqual({ enabled: true, colours: {} });
+    expect([kitLoad({ dueCountdown: "marked" }).dueCountdown, kitLoad({ dueCountdown: "off" }).dueCountdown, kitLoad({}).dueCountdown, kitLoad({ dueCountdown: 3 }).dueCountdown]).toEqual(["all", "off", "all", "all"]);   // I2-S2 a: Marked reads as All
     expect(kitLoad({}).boardColours).toEqual({ enabled: true, colours: {} });
     expect(kitLoad({ boardColours: { enabled: false, colours: { planned: "#000000" } } }).boardColours).toEqual({ enabled: false, colours: { planned: "#000000" } });
   });

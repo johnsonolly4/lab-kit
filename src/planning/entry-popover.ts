@@ -2,7 +2,9 @@
 // Esc closes only this box (it takes its own keymap scope, so the window behind it stays); a click anywhere else closes it too.
 import { Scope, type App } from "obsidian";
 import type { EntryField, EntryValue } from "./entry-fields";
-import { readDueText } from "./todo-bar";
+import { datePill } from "./board-card";
+import { ymd, parseDay } from "./todo";
+import { readDayText, readDueText } from "./todo-bar";
 
 const SEARCH_FROM = 7;   // a list longer than this gets a search box
 let lastClosed: { anchor: HTMLElement; at: number } | null = null;
@@ -72,22 +74,32 @@ export function openFieldPopover(app: App, anchor: HTMLElement, field: EntryFiel
       input.addEventListener("keydown", e => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); close(input.value.trim()); } });
       window.setTimeout(() => { input.focus(); input.select(); }, 0);
     } else {
-      const input = pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: "A date, or words like next friday" } });
+      const day = !!field.day;   // a to-do's planned day: `backlog` clears, a past day is refused
+      const input = pop.createEl("input", { type: "text", cls: "vt-pop-search", attr: { placeholder: day ? field.prompt : "A date, or words like next friday" } });
       const hint = pop.createDiv({ cls: "vt-pop-hint", text: typeof current === "string" && current ? `Now ${nice(current)}. Empty clears.` : "Type words or pick a date." });
       const picker = pop.createEl("input", { type: "date", cls: "vt-pop-date", attr: { "aria-label": "Pick a date" } });
+      if (day) picker.min = ymd(new Date());
       if (typeof current === "string") picker.value = current;
+      const read = (text: string): { date: string | null } | { past: string } | null => (day ? readDayText(text, new Date()) : readDueText(text, new Date()));
+      const gone = (iso: string): string => `${datePill(parseDay(iso)!)} has passed: pick today or a later day.`;
       input.addEventListener("input", () => {
-        const r = readDueText(input.value, new Date());
-        hint.setText(!input.value.trim() ? "Empty clears the date." : r?.date ? `Reads as ${nice(r.date)}` : "Not a date yet");
-        hint.toggleClass("is-bad", !!input.value.trim() && !r);
+        const r = read(input.value);
+        hint.setText(!input.value.trim() ? "Empty clears the date." : r && "past" in r ? gone(r.past) : r && r.date ? `Reads as ${nice(r.date)}` : r ? "Backlog: no day." : "Not a date yet");
+        hint.toggleClass("is-bad", !!input.value.trim() && (!r || "past" in r));
       });
       input.addEventListener("keydown", e => {
         if (e.key !== "Enter" || e.isComposing) return;
         e.preventDefault();
-        const r = readDueText(input.value, new Date());
-        if (r) close(r.date ?? ""); else { hint.setText("Not a date. Try 15 nov, 15/11 or 2026-11-15."); hint.addClass("is-bad"); }
+        const r = read(input.value);
+        if (r && "past" in r) { hint.setText(gone(r.past)); hint.addClass("is-bad"); }
+        else if (r) close(r.date ?? "");
+        else { hint.setText("Not a date. Try 15 nov, 15/11 or 2026-11-15."); hint.addClass("is-bad"); }
       });
-      picker.addEventListener("change", () => { if (picker.value) close(picker.value); });
+      picker.addEventListener("change", () => {
+        if (!picker.value) return;
+        if (day && picker.value < ymd(new Date())) { hint.setText(gone(picker.value)); hint.addClass("is-bad"); return; }
+        close(picker.value);
+      });
       window.setTimeout(() => input.focus(), 0);
     }
 

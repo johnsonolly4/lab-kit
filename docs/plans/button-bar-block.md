@@ -51,6 +51,9 @@ Every button bar in the planning kit is drawn by the plugin, so windows open und
 - Done when: fixture notes (BUTTON line in a bar, mixed with INPUT, unknown id) give the expected output and a second run changes nothing (idempotent); Check setup test updated; docs match the code; commit.
 - Depends on: Phase 3.
 
+## BUILT 2026-10-20 (cmd: ids)
+Owner's choice (b) (relayed from the Refpane session): an id `cmd:<command id>` runs any Obsidian command, so another plugin's commands can sit on the Home page. `cmdId` / `resolveBar(ids, lookup)` in `button-bar.ts`, `commandInfo` in `src/kit/obsidian-private.ts`, `tests/button-bar.test.ts`. Label and icon from `app.commands` (generic icon `zap`); missing command = the existing `"<id>" is not a button` muted line; click = `runCommand`. No modifier or event is passed (the existing buttons pass none). NOT seen in Obsidian.
+
 ## Order check
 1 → 2 → 3 is forced (table before the notes use it). 4 only needs 1 and can move before 3 if the user wants the project bar first. 5 last: the Tidy rule needs the final id list from 3.
 

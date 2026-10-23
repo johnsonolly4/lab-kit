@@ -9,7 +9,7 @@ show: back-to-hub
 ```
 
 > [!tip] One rule: `Alt` + the first letter of what you want
-> **H** home, **D** day, **F** find, **Z** Zotero paper, **N** note, **T** to-do, **L** lab entry, **U** update, **C** citation, **S** snippet, **M** meeting, **P** project note, **K** knowledge note, **B** board.
+> **H** home, **D** day, **F** find, **N** note, **T** to-do, **L** lab entry, **S** snippet, **M** meeting, **P** project note, **K** knowledge note, **B** board.
 
 These are suggestions. Nothing is set until you do it: by hand (see the end of this note), or with **Set the suggested keys…** in Settings → Lab Kit → **Check hotkeys…**, which lists the keys first, sets only commands that have no key and whose suggested key is free, and never changes a key you have.
 
@@ -18,20 +18,17 @@ These are suggestions. Nothing is set until you do it: by hand (see the end of t
 | `Alt+H` | Homepage | Notebook Navigator: Open homepage |
 | `Alt+D` | Today's note | Daily notes: Open today's daily note |
 | `Alt+F` | Search | Omnisearch: Vault search |
-| `Alt+Z` | Open a paper's note | ZotLit: Open literature note quick switcher |
 | `Alt+N` | Quick note into the inbox | Lab Kit: Quick capture |
 | `Alt+T` | New to-do | Lab Kit: New to-do |
 | `Alt+L` | New lab entry | Lab Kit: New lab entry |
-| `Alt+U` | Update this paper's highlights | ZotLit: Update literature note |
-| `Alt+C` | Insert a citation | ZotLit: Insert Markdown citation |
-| `Alt+S` | Insert a lab snippet | Templater: Insert snippet (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
+| `Alt+S` | Insert a lab snippet | Lab Kit: Insert snippet (Settings → Lab Kit → **Check hotkeys** shows which of these keys are set) |
 | `Alt+M` | New meeting note | Lab Kit: New meeting |
 | `Alt+P` | New note in a project | Lab Kit: New project note |
 | `Alt+K` | New knowledge note | Lab Kit: New concept |
 | `Alt+B` | To-do board | Lab Kit: Open to-do board |
 | `Ctrl+E` | Switch between reading and editing | Obsidian's own key, nothing to set |
 
-No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Roll over to-dos now, Archive old to-dos, Link to-dos in order, Add result, New chemical, New rig, Clone experiment.
+No key suggested (set your own if you use them a lot): Lab Kit: Add to shopping list, Sort inbox, New extra meeting now, New one-off meeting, New meeting series, Open meeting deck, New project, New topic hub, Archive old to-dos, Link to-dos in order, Add result, New chemical, New rig, Clone experiment.
 
 ## Editing
 
@@ -46,8 +43,6 @@ Obsidian's own commands (and one of Advanced Canvas). Check hotkeys does not loo
 | Toggle canvas read-only | `Alt+Shift+R` | Advanced Canvas |
 
 Rules: one key per command, no duplicates. Don't use `Ctrl+Alt` (it is AltGr on UK keyboards and types accented letters). Obsidian marks a clashing hotkey in red in Settings → Hotkeys.
-
-In Zotero: `1` yellow, `2` red, `3` green.
 
 ## Set one
 

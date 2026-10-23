@@ -49,7 +49,7 @@ describe("Change notes (Phase 7b)", () => {
   it("(a) no changes: nothing is written, no backup", async () => {
     const m = memory();
     const out = await applyTidy(m.io, []);
-    expect(m.writes).toEqual([]); expect(m.backups.size).toBe(0); expect(out).toEqual({ changed: [], moved: [], created: [], settings: [], skipped: [], backups: {} });
+    expect(m.writes).toEqual([]); expect(m.backups.size).toBe(0); expect(out).toEqual({ changed: [], moved: [], trashed: [], created: [], settings: [], skipped: [], backups: {} });
   });
 
   it("(b) a rule the user unticked is left alone", async () => {

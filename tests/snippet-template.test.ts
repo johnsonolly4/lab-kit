@@ -3,7 +3,7 @@ import { describe, it } from "vitest";
 import assert from "node:assert";
 import { readFileSync } from "node:fs";
 import {
-  TemplateError, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, type TemplateEnv,
+  TemplateError, answerOf, formValue, parseTemplate, defaultAnswers, fillTemplate, isCancelled, letter, listOf, oldStub, type TemplateEnv,
 } from "../src/kit/snippet-template";
 import { makeEnv } from "../src/kit/snippet-env";
 import { miniYaml, runToken } from "./token-snippets";
@@ -111,9 +111,55 @@ describe("parseTemplate", () => {
     assert.ok(!("mandatory" in p!.header.fields[1]));
     assert.ok(!("mandatory" in p!.header.fields[2]));
   });
+  it("reads group, and a header with run: needs no fields", () => {
+    const p = parseTemplate("---\nx: 1\n---\n", () => ({ title: "T", group: " Make up ", run: " solution ", icon: "i", desc: "d" }));
+    assert.deepStrictEqual(p?.header, { title: "T", icon: "i", desc: "d", group: "Make up", run: "solution", fields: [] });
+    const f = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [], group: "Samples" }));
+    assert.strictEqual(f?.header.group, "Samples");
+    assert.strictEqual(f?.header.run, undefined);
+    assert.strictEqual(parseTemplate("---\nx: 1\n---\n", () => ({ group: "Samples" })), null);
+  });
+  it("rejects run: with fields or without a name", () => {
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ run: "raft", fields: [] })), /has no fields/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ run: "" })), /needs the name/);
+  });
+  it("block: names a live block like run: names a calculator (the same code runs both)", () => {
+    const p = parseTemplate("---\nx: 1\n---\n", () => ({ title: "T", block: " raft ", group: "Make up" }));
+    assert.deepStrictEqual(p?.header, { title: "T", icon: undefined, desc: undefined, group: "Make up", run: "raft", fields: [] });
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ block: "raft", run: "raft" })), /run: or block:, not both/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ block: "raft", fields: [] })), /has no fields/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ block: "" })), /needs the name/);
+    assert.throws(() => parseTemplate("---\nx: 1\n---\n", () => ({ make: "note", block: "raft" })), /no run: or block:/);
+  });
   it("turns YAML numbers into text", () => {
     const p = parseTemplate("---\nx: 1\n---\n", () => ({ fields: [{ key: "n", label: "N", type: "number", value: 6 }] }));
     assert.strictEqual(p?.header.fields[0].value, "6");
+  });
+  it("new question types: toggle, select (texts or value / label), list, unit, wide, help", () => {
+    const p = parseTemplate("---\nx: 1\n---\nb", () => ({ fields: [
+      { key: "t", type: "toggle", value: true },
+      { key: "s", type: "select", options: ["A", { value: "b", label: "Bee" }], value: "b" },
+      { key: "l", type: "list", weights: "fraction", suggest: "chemicals", wide: true },
+      { key: "n", type: "number", unit: "g", help: "More words", hint: "short" },
+    ] }))!;
+    const [t, s, l, n] = p.header.fields;
+    assert.deepStrictEqual([t.type, t.value], ["toggle", "true"]);
+    assert.deepStrictEqual(s.options, [{ value: "A" }, { value: "b", label: "Bee" }]);
+    assert.strictEqual(s.value, "b");
+    assert.deepStrictEqual([l.type, l.weights, l.suggest, l.wide], ["list", "fraction", "chemicals", true]);
+    assert.deepStrictEqual([n.unit, n.help, n.hint], ["g", "More words", "short"]);
+  });
+  it("new question types as tokens: toggle yes or empty for #if, list A, B for #each", () => {
+    const f = (type: "toggle" | "list") => ({ key: "k", label: "K", type, value: "" });
+    assert.strictEqual(formValue(f("toggle"), "yes"), true);
+    assert.strictEqual(formValue(f("toggle"), ""), false);
+    assert.strictEqual(formValue(f("list"), "a"), "a");
+    assert.strictEqual(answerOf(f("toggle"), true), "yes");
+    assert.strictEqual(answerOf(f("toggle"), false), "");
+    assert.strictEqual(answerOf(f("list"), " A ,B\nC "), "A, B, C");
+    assert.strictEqual(fill("{{#if k}}on{{else}}off{{/if}}", { k: answerOf(f("toggle"), true) }), "on");
+    assert.strictEqual(fill("{{#if k}}on{{else}}off{{/if}}", { k: answerOf(f("toggle"), false) }), "off");
+    assert.strictEqual(fill("{{#each k}}[{{.}}]{{/each}}", { k: answerOf(f("list"), "A,B") }), "[A][B]");
   });
   it("rejects a bad header with a clear error", () => {
     const parse = (obj: unknown) => parseTemplate("---\nx: 1\n---\nb", () => obj);
@@ -123,6 +169,16 @@ describe("parseTemplate", () => {
     assert.throws(() => parse({ fields: [{ key: "a" }, { key: "a" }] }), /used twice/);
     assert.throws(() => parse({ fields: [{ key: "code" }] }), /reserved/);
     assert.throws(() => parse({ fields: [{ key: "a", type: "color" }] }), /unknown type/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "color" }] }), /use text, number, textarea, toggle, select, list/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select" }] }), /needs options/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: "x" }] }), /needs options/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: [{ label: "L" }] }] }), /option 1 needs a text/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: ["x", "x"] }] }), /listed twice/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "select", options: ["x"], value: "y" }] }), /not one of the options/);
+    assert.throws(() => parse({ fields: [{ key: "a", options: ["x"] }] }), /options needs type: select/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "list", weights: "mass" }] }), /weights: fraction needs type: list/);
+    assert.throws(() => parse({ fields: [{ key: "a", type: "text", unit: "g" }] }), /unit needs type: number/);
+    assert.throws(() => parse({ fields: [{ key: "a", wide: "yes" }] }), /wide must be true or false/);
     assert.throws(() => parse({ fields: [{ key: "a" }], required: "b" }), /not one of the fields/);
     assert.throws(() => parse({ fields: [{ key: "a", mandatory: "yes" }] }), /mandatory must be true or false/);
   });
@@ -201,5 +257,22 @@ describe("fillTemplate", () => {
     fails("{{@i}}", { a: "1" });
     fails("text {{ never closed");
     fails("{{#if a ^= h}}x{{/if}}", { a: "1" });
+  });
+});
+
+describe("oldStub", () => {
+  const stub = (body: string) => `<%*\n${body}\n%>`;
+  it("reads the key, icon and description of the old calculator file", () => {
+    assert.deepStrictEqual(oldStub(stub('// icon: magnet\n// desc: Sample table\ntR += await tp.user.labSnippets(tp, "nmr");')), { run: "nmr", icon: "magnet", desc: "Sample table" });
+    assert.deepStrictEqual(oldStub(stub('tR += await tp.user.labSnippets(tp, "raft")')), { run: "raft" });
+  });
+  it("takes Windows line endings and other comment lines", () => {
+    assert.deepStrictEqual(oldStub(stub('// icon: x\n// note to self\ntR += await tp.user.labSnippets(tp, "dls");').replace(/\n/g, "\r\n")), { run: "dls", icon: "x" });
+  });
+  it("is null for anything else: other code, two calls, no call, plain text", () => {
+    assert.strictEqual(oldStub(stub('const a = 1;\ntR += await tp.user.labSnippets(tp, "nmr");')), null);
+    assert.strictEqual(oldStub(stub('tR += await tp.user.labSnippets(tp, "nmr");\ntR += await tp.user.labSnippets(tp, "gpc");')), null);
+    assert.strictEqual(oldStub(stub("// icon: x")), null);
+    assert.strictEqual(oldStub("plain text\n"), null);
   });
 });

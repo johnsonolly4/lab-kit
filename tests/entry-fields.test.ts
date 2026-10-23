@@ -8,8 +8,8 @@ const keys = (v: Record<string, string | number | boolean>) => visibleFields(fie
 
 describe("entry fields", () => {
   it("the to-do fields are Project, Meeting, Due and Priority, and Experiment once there is a list of lab notes", () => {
-    expect(keys({})).toEqual(["project", "meeting", "due", "priority"]);
-    expect(todoFields([], [], [{ label: "ABC0014-A", value: "ABC0014-A" }]).map(f => f.key)).toEqual(["project", "meeting", "due", "priority", "experiment"]);
+    expect(keys({})).toEqual(["project", "meeting", "due", "scheduled", "priority", "waiting"]);
+    expect(todoFields([], [], [{ label: "ABC0014-A", value: "ABC0014-A" }]).map(f => f.key)).toEqual(["project", "meeting", "due", "scheduled", "priority", "experiment", "waiting"]);
   });
   it("a field with showWhen is visible only once the field it names has a value", () => {
     const extra = [...fields, { key: "flag", name: "Flag", icon: "flag", kind: "toggle" as const, prompt: "", showWhen: "due" }];
@@ -41,9 +41,14 @@ describe("entry fields", () => {
     expect(entryResult(extra, v)).toEqual({ project: "Alpha" });
     expect(entryResult(fields, {})).toEqual({});
   });
+  it("the Day chip reads Tue 27 Oct once set, + Day when empty", () => {
+    const day = fields.find(f => f.key === "scheduled")!;
+    expect(chipView(day, "")).toEqual({ text: "+ Day", set: false });
+    expect(chipView(day, "2026-10-27")).toEqual({ text: "Tue 27 Oct", set: true });
+  });
   it("a to-do's properties as values and back", () => {
     const fm = { project: "[[Alpha]]", meeting: false, due: "2026-11-15", priority: 2, experiment: "[[ABC0014-A]]" };
-    expect(todoValues(fm)).toEqual({ project: "Alpha", meeting: "", due: "2026-11-15", priority: 2, experiment: "ABC0014-A" });
+    expect(todoValues(fm)).toEqual({ project: "Alpha", meeting: "", due: "2026-11-15", scheduled: "", priority: 2, experiment: "ABC0014-A", waiting: "" });
     const out: Record<string, unknown> = {};
     applyTodoValue(out, "project", "Beta"); applyTodoValue(out, "priority", ""); applyTodoValue(out, "due", "2026-12-01");
     expect(out).toEqual({ project: "[[Beta]]", priority: null, due: "2026-12-01" });
@@ -63,11 +68,10 @@ describe("required fields (New project note, New one-off meeting)", () => {
     expect(projectField(["Alpha"]).options?.[0].label).toBe("(none)");
     expect(missingRequired([projectField(["Alpha"])], {})).toBeNull();
   });
-  it("the New project note template takes the window's answers (window.vtNote) and still asks without them", () => {
+  it("the New project note template takes the window's answers as fields (title, folder, hub)", () => {
     const tpl = readFileSync("kits/planning/Extras/Templates/New project note.md", "utf8");
-    expect(tpl).toContain("const preset = window.vtNote;");
-    expect(tpl).toContain("let folder = preset ? preset.folder : window.vtNewNoteFolder;");
-    expect(tpl).toContain('let title = preset ? preset.title : await tp.user.vtAsk(tp, "Note title");');
-    expect(tpl).toContain("Cancelled - no title");
+    expect(tpl.startsWith('---\nmake: note\nname: "{{title}}"\nfolder: "{{folder}}"\n')).toBe(true);
+    expect(tpl).toContain("  - key: hub\n");
+    expect(tpl).not.toContain("<%");
   });
 });

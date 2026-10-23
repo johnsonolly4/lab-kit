@@ -13,7 +13,19 @@ export interface TemplateField {
   /** REMOVING: see docs/decisions.md, "Removing experimental features". `mandatory: true`: the form marks the field with * and does not close while it is empty. Only the form checks it; `required` in the header is a different rule. */
   mandatory?: boolean;
   placeholder?: string;
-  type: "text" | "number" | "textarea";
+  type: "text" | "number" | "textarea" | "toggle" | "select" | "list";
+  /** `type: select`: the choices (`value`, shown as `label` when given). The default answer is `value:`, else the first option. */
+  options?: { value: string; label?: string }[];
+  /** `type: list` with `weights: fraction`: the items may carry a share, "A: 0.7, B: 0.3". Stored as typed. */
+  weights?: "fraction";
+  /** `type: number`: the unit written after the value in a live block (the form has no place for it yet). */
+  unit?: string;
+  /** Key of another question: this one is stored in a live block (and later shown in the window) only while that one is filled. */
+  when?: string;
+  /** The question spans the window's grid (the form has no grid yet: parsed and kept). */
+  wide?: boolean;
+  /** A longer help text shown on demand behind an (i) (CQ22 a). Parsed and kept; the form has no place for it yet. */
+  help?: string;
   /** The default answer; may hold computed tokens such as {{next-letter:sampling}}. */
   value: string;
   /** `suggest: chemicals` = the field suggests the chemical notes while typing. `suggest: codes` = the box is filled with the sample codes of the note's tables, with a "Codes from" choice when there are several. `suggest: notes` = the field lists the notes of a settings folder (`folder`). */
@@ -32,6 +44,15 @@ export interface TemplateHeader {
   required?: string;
   /** `set:` properties written on the note after the insert: name and value (the value may hold tokens; an empty one is not written). */
   set?: { name: string; value: string }[];
+  /** The Alt+S menu section (`Make up`, `Samples`, …). Anything else is listed under My snippets. */
+  group?: string;
+  /** `run: solution` = a calculator (`block: raft` is the same for a live block; both fill this): Lab Kit runs that key of labSnippets.js, which asks its own questions, so the header has no `fields` and the note has no body. */
+  run?: string;
+  /** `make: note` = a note template (src/kit/note-template.ts): the body is a whole note, front matter included. */
+  make?: "note";
+  /** With `make: note`: the new note's name and folder (may hold tokens); empty = the caller decides. */
+  name?: string;
+  folder?: string;
   fields: TemplateField[];
 }
 
@@ -58,8 +79,15 @@ export interface TemplateEnv {
   rigTables(note: string, hashes: string): string;
   /** The diagram of the rig note called `note` as a Mermaid code block. Throws a TemplateError when it has no parts table. */
   rigDiagram(note: string): string;
+  /** The snapshot of the rig note called `note` taken for this insert: its link (as Obsidian writes it) and its date. Throws a TemplateError when there is none. */
+  rigSnapshot(note: string): { link: string; date: string };
   /** The Summary table of the rig note called `note`, or "" when it has none. */
   rigSummary(note: string): string;
+  /** The moment `{{today}}` and `{{date:today…}}` use (local time); the real clock when it is left out. */
+  now?: Date;
+  /** The note's own name and folder (`{{note-name}}`, `{{folder}}`); only a note template has them, so the tokens fail without. */
+  noteName?: string;
+  folder?: string;
 }
 
 /** The key of the "Codes from" choice the form adds after a `suggest: codes` field (not a template field, so templates never see it). */
@@ -88,28 +116,62 @@ const asText = (v: unknown): string | undefined => typeof v === "string" ? v : t
 
 /**
  * Splits a snippet note into its header and body. null = a plain snippet (no header between `---` lines, or a header
- * without `fields`), which is inserted as it is. A header that is not valid throws a TemplateError.
+ * with neither `fields` nor `run`), which is inserted as it is. A header that is not valid throws a TemplateError.
  */
 export function parseTemplate(text: string, parseYaml: (yaml: string) => unknown): ParsedTemplate | null {
   const m = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(text);
   if (!m) return null;
   let raw: unknown;
   try { raw = parseYaml(m[1]); } catch (e) { throw new TemplateError(`The header is not valid YAML: ${e instanceof Error ? e.message : "unreadable"}`); }
-  if (!isRecord(raw) || !("fields" in raw)) return null;
+  if (!isRecord(raw) || !("fields" in raw || "run" in raw || "block" in raw || "make" in raw)) return null;
   return { header: readHeader(raw), body: text.slice(m[0].length) };
 }
 
+const FIELD_TYPES = ["text", "number", "textarea", "toggle", "select", "list"];
+
+/** `options:` of a select: a list of texts, or of `value` / `label` pairs. */
+function readOptions(key: string, raw: unknown): { value: string; label?: string }[] {
+  if (!Array.isArray(raw) || raw.length === 0) throw new TemplateError(`Field "${key}": a select needs options: a list of choices, for example options: [Yes, No] or a list of value / label lines.`);
+  const out = raw.map((o, i) => {
+    const value = isRecord(o) ? asText(o.value)?.trim() : asText(o)?.trim();
+    if (!value) throw new TemplateError(`Field "${key}": option ${i + 1} needs a text, or a line with value: (and label:).`);
+    const label = isRecord(o) ? asText(o.label)?.trim() : undefined;
+    return { value, ...(label ? { label } : {}) };
+  });
+  const dup = out.find((o, i) => out.findIndex(x => x.value === o.value) !== i);
+  if (dup) throw new TemplateError(`Field "${key}": the option "${dup.value}" is listed twice.`);
+  return out;
+}
+
 function readHeader(raw: Record<string, unknown>): TemplateHeader {
-  if (!Array.isArray(raw.fields)) throw new TemplateError("The header's fields must be a list.");
+  const group = asText(raw.group)?.trim() || undefined;
+  const make = "make" in raw;
+  if (make && asText(raw.make)?.trim() !== "note") throw new TemplateError("make: must be note (a template that makes a whole note).");
+  if (make && ("run" in raw || "block" in raw)) throw new TemplateError("A header with make: has no run: or block:.");
+  if ("run" in raw || "block" in raw) {
+    if ("run" in raw && "block" in raw) throw new TemplateError("A header has run: or block:, not both.");
+    const run = asText("run" in raw ? raw.run : raw.block)?.trim();
+    if (!run) throw new TemplateError("run: needs the name of a Lab Kit calculator, for example run: solution. block: names a live block, for example block: raft.");
+    if ("fields" in raw) throw new TemplateError("A header with run: or block: has no fields: the calculator asks its own questions.");
+    return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, run, fields: [] };
+  }
+  if (!Array.isArray(raw.fields) && !(make && raw.fields === undefined)) throw new TemplateError("The header's fields must be a list.");
   const fields: TemplateField[] = [];
-  for (const [n, f] of (raw.fields as unknown[]).entries()) {
+  for (const [n, f] of ((raw.fields ?? []) as unknown[]).entries()) {
     if (!isRecord(f)) throw new TemplateError(`Field ${n + 1} is not a key with a label.`);
     const key = asText(f.key)?.trim() ?? "";
     if (!NAME.test(key)) throw new TemplateError(`Field ${n + 1} needs a key made of letters, digits, - and _.`);
     if (RESERVED.includes(key)) throw new TemplateError(`The field key "${key}" is reserved.`);
     if (fields.some(x => x.key === key)) throw new TemplateError(`The field key "${key}" is used twice.`);
     const type = asText(f.type) ?? "text";
-    if (type !== "text" && type !== "number" && type !== "textarea") throw new TemplateError(`Field "${key}" has an unknown type "${type}".`);
+    if (!FIELD_TYPES.includes(type)) throw new TemplateError(`Field "${key}" has an unknown type "${type}" (use ${FIELD_TYPES.join(", ")}).`);
+    const options = type === "select" ? readOptions(key, f.options) : undefined;
+    if (type !== "select" && f.options !== undefined) throw new TemplateError(`Field "${key}": options needs type: select.`);
+    const weights = asText(f.weights)?.trim();
+    if (weights !== undefined && (type !== "list" || weights !== "fraction")) throw new TemplateError(`Field "${key}": weights: fraction needs type: list.`);
+    const unit = asText(f.unit)?.trim();
+    if (unit && type !== "number") throw new TemplateError(`Field "${key}": unit needs type: number.`);
+    if (f.wide !== undefined && typeof f.wide !== "boolean") throw new TemplateError(`Field "${key}": wide must be true or false.`);
     const suggest = asText(f.suggest)?.trim();
     if (suggest && suggest !== "chemicals" && suggest !== "codes" && suggest !== "notes") throw new TemplateError(`Field "${key}" has an unknown suggest "${suggest}" (only "chemicals", "codes" or "notes").`);
     const folder = asText(f.folder)?.trim();
@@ -119,9 +181,17 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
     if (classes.some(c => !c)) throw new TemplateError(`Field "${key}": class must be text or a list of texts.`);
     if (classes.length && suggest !== "chemicals") throw new TemplateError(`Field "${key}": class needs suggest: chemicals.`);
     if (f.mandatory !== undefined && typeof f.mandatory !== "boolean") throw new TemplateError(`Field "${key}": mandatory must be true or false.`);
-    fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type, value: asText(f.value) ?? "",
+    const value = asText(f.value) ?? "";
+    if (options && value && !options.some(o => o.value === value)) throw new TemplateError(`Field "${key}": value "${value}" is not one of the options.`);
+    fields.push({ key, label: asText(f.label) ?? key, hint: asText(f.hint), placeholder: asText(f.placeholder), type: type as TemplateField["type"], value,
+      ...(options ? { options } : {}), ...(weights ? { weights: "fraction" as const } : {}), ...(unit ? { unit } : {}), ...(f.wide ? { wide: true } : {}),
+      ...(asText(f.help) ? { help: asText(f.help) } : {}),
       ...(f.mandatory ? { mandatory: true } : {}),
+      ...(asText(f.when)?.trim() ? { when: asText(f.when)!.trim() } : {}),
       ...(suggest === "chemicals" || suggest === "codes" || suggest === "notes" ? { suggest } : {}), ...(classes.length ? { classes } : {}), ...(folder ? { folder } : {}) });
+  }
+  for (const f of fields) {
+    if (f.when !== undefined && (f.when === f.key || !fields.some(x => x.key === f.when))) throw new TemplateError(`Field "${f.key}": when: "${f.when}" is not another one of the fields.`);
   }
   for (const f of fields.filter(x => x.suggest === "codes")) {
     if (fields.some(x => x.key === codesFromKey(f.key))) throw new TemplateError(`The field key "${codesFromKey(f.key)}" is reserved: the "Codes from" choice of "${f.key}" uses it.`);
@@ -137,7 +207,40 @@ function readHeader(raw: Record<string, unknown>): TemplateHeader {
       return { name, value };
     });
   }
-  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), required, ...(set ? { set } : {}), fields };
+  const name = make ? asText(raw.name)?.trim() || undefined : undefined, folder = make ? asText(raw.folder)?.trim() || undefined : undefined;
+  return { title: asText(raw.title), icon: asText(raw.icon), desc: asText(raw.desc), group, required, ...(set ? { set } : {}),
+    ...(make ? { make: "note" as const, ...(name ? { name } : {}), ...(folder ? { folder } : {}) } : {}), fields };
+}
+
+/**
+ * The old stub form of a calculator file (Lab Kit before 1.5, files 01-03 and 07-10): `<%*`, comment lines (`// icon:`, `// desc:`, any other), one
+ * `tR += await tp.user.labSnippets(tp, "<key>");` line, `%>`. Anything else (more code, no call, two calls) is not a stub: null.
+ * Kit updates leave an edited stub alone, so the menu reads this form as `run: <key>`.
+ */
+export function oldStub(text: string): { run: string; icon?: string; desc?: string } | null {
+  const lines = text.replace(/\r\n/g, "\n").split("\n").map(l => l.trim()).filter(Boolean);
+  if (lines.length < 3 || lines[0] !== "<%*" || lines[lines.length - 1] !== "%>") return null;
+  let run: string | undefined, icon: string | undefined, desc: string | undefined;
+  for (const l of lines.slice(1, -1)) {
+    const call = /^tR\s*\+=\s*await\s+tp\.user\.labSnippets\(\s*tp\s*,\s*"([^"]+)"\s*\)\s*;?$/.exec(l);
+    if (call) { if (run) return null; run = call[1]; continue; }
+    const note = /^\/\/\s*(icon|desc):\s*(.+)$/.exec(l);
+    if (note) { if (note[1] === "icon") icon ??= note[2].trim(); else desc ??= note[2].trim(); continue; }
+    if (!l.startsWith("//")) return null;
+  }
+  return run ? { run, ...(icon ? { icon } : {}), ...(desc ? { desc } : {}) } : null;
+}
+
+/** What the form starts a field on: a toggle takes a boolean (`yes` / `true` = on), the others the default text. */
+export function formValue(f: TemplateField, def: string): string | boolean {
+  return f.type === "toggle" ? /^(yes|true)$/i.test(def.trim()) : def;
+}
+
+/** The token a form answer becomes: toggle `yes` or empty, list `A, B` (items as typed when they carry weights), anything else the trimmed text. */
+export function answerOf(f: TemplateField, got: unknown): string {
+  if (f.type === "toggle") return got === true || got === "yes" ? "yes" : "";
+  const box = (typeof got === "string" || typeof got === "number" ? String(got) : "").trim();
+  return f.type === "list" ? listOf(box).join(", ") : box;
 }
 
 /** True when the required field has no list item: nothing is inserted. */
@@ -161,6 +264,12 @@ type Alt =
   | { k: "idx"; of: "i" | "n" | "seq"; add: number }
   | { k: "prefix" }
   | { k: "code" }
+  | { k: "today" }
+  | { k: "noteName" }
+  | { k: "folder" }
+  | { k: "json"; name: string }
+  | { k: "yaml"; name: string }
+  | { k: "date"; of: string; add: number; fmt: string; src: string }
   | { k: "table"; bases: Alt[]; suffix: string }
   | { k: "linked"; table: string; ref: string }
   | { k: "nextLetter"; table: string }
@@ -170,6 +279,7 @@ type Alt =
   | { k: "noteLine"; field: string; property: string }
   | { k: "rigTables"; field: string; hashes: string }
   | { k: "rigDiagram"; field: string }
+  | { k: "rigSnapshot"; field: string; part: "link" | "date" }
   | { k: "rigSummary"; field: string };
 
 type Node =
@@ -177,7 +287,7 @@ type Node =
   | { t: "expr"; alts: Alt[] }
   | { t: "each"; key: string; as?: string; or?: string; sep?: string; body: Node[] }
   | { t: "repeat"; key: string; fallback: number; body: Node[] }
-  | { t: "if"; key: string; starts?: string; yes: Node[]; no: Node[] }
+  | { t: "if"; key: string; starts?: string; nonEmpty?: boolean; yes: Node[]; no: Node[] }
   | { t: "append"; heading: string; level: number; from?: { field: string; property: string }; body: Node[] };
 
 type Tok = { text: string } | { tag: string };
@@ -228,6 +338,14 @@ function splitTop(s: string): string[] {
   return out.map(x => x.trim());
 }
 
+const SNAPSHOT_TOKEN = /^rig-snapshot(-date)?:([A-Za-z_][\w-]*)$/;
+
+/** The fields whose rig a template takes a snapshot of (`{{rig-snapshot:key}}`, `{{rig-snapshot-date:key}}`), once each: the runner takes them before filling in, since writing a file cannot happen inside the engine. */
+export function rigSnapshotFields(texts: string[]): string[] {
+  const keys = texts.flatMap(t => [...t.matchAll(/\{\{\s*([^{}]*?)\s*\}\}/g)].flatMap(m => m[1].split("|").map(x => SNAPSHOT_TOKEN.exec(x.trim())?.[2] ?? "")));
+  return [...new Set(keys.filter(Boolean))];
+}
+
 function parseAlt(src: string): Alt {
   const s = src.trim();
   let m: RegExpExecArray | null;
@@ -236,6 +354,8 @@ function parseAlt(src: string): Alt {
   if (s === ".") return { k: "item" };
   if (s === "prefix") return { k: "prefix" };
   if (s === "code") return { k: "code" };
+  if ((m = /^json:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "json", name: m[1] };
+  if ((m = /^yaml:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "yaml", name: m[1] };
   if ((m = /^linked:([^!\s]+)!(\S+)$/.exec(s))) return { k: "linked", table: m[1], ref: m[2] };
   if ((m = /^next-letter:(\S+)$/.exec(s))) return { k: "nextLetter", table: m[1] };
   if ((m = /^note-number:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteNumber", field: m[1], property: m[2].trim() };
@@ -244,12 +364,56 @@ function parseAlt(src: string): Alt {
   if ((m = /^note-line:([A-Za-z_][\w-]*)\.(.+)$/.exec(s))) return { k: "noteLine", field: m[1], property: m[2].trim() };
   if ((m = /^rig-tables:([A-Za-z_][\w-]*)(?:\s+(#{1,6}))?$/.exec(s))) return { k: "rigTables", field: m[1], hashes: m[2] ?? "##" };
   if ((m = /^rig-diagram:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigDiagram", field: m[1] };
+  if ((m = SNAPSHOT_TOKEN.exec(s))) return { k: "rigSnapshot", field: m[2], part: m[1] ? "date" : "link" };
   if ((m = /^rig-summary:([A-Za-z_][\w-]*)$/.exec(s))) return { k: "rigSummary", field: m[1] };
   if (NAME.test(s)) return { k: "ref", name: s };
   throw new TemplateError(`Unknown token {{${s}}}.`);
 }
 
+/** `date:today`, `date:key`, with `+3d` / `-1d` after it, then `|` and a format (default YYYY-MM-DD). */
+function parseDate(src: string): Alt {
+  const bar = src.indexOf("|");
+  const spec = (bar < 0 ? src : src.slice(0, bar)).trim(), fmt = bar < 0 ? "YYYY-MM-DD" : src.slice(bar + 1).trim();
+  const m = /^([A-Za-z_][\w-]*?)(?:\s*([+-])\s*(\d+)d)?$/.exec(spec);
+  if (!m || !fmt) throw new TemplateError(`Unknown token {{date:${src}}}. Write {{date:today}}, {{date:key}} or {{date:key+7d|DD MMM YYYY}}.`);
+  return { k: "date", of: m[1], add: m[2] ? (m[2] === "-" ? -1 : 1) * Number(m[3]) : 0, fmt, src: `date:${src.trim()}` };
+}
+
+/* ---------- dates: YYYY-MM-DD in, a day of the week and month names out (English), no time zones ---------- */
+
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/** The day as UTC midnight, or null when the text does not start with a real YYYY-MM-DD (a time after it is ignored). */
+function parseDay(s: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T ])/.exec(s.trim());
+  if (!m) return null;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]) ? d : null;
+}
+
+/** YYYY YY MMMM MMM MM M DD D dddd ddd; text in [brackets] stays as written; anything else is copied. */
+function formatDay(d: Date, fmt: string): string {
+  const p2 = (n: number): string => String(n).padStart(2, "0");
+  return fmt.replace(/\[([^\]]*)\]|YYYY|YY|MMMM|MMM|MM|M|dddd|ddd|DD|D/g, (t: string, lit?: string) => {
+    if (lit !== undefined) return lit;
+    switch (t) {
+      case "YYYY": return String(d.getUTCFullYear());
+      case "YY": return p2(d.getUTCFullYear() % 100);
+      case "MMMM": return MONTHS[d.getUTCMonth()];
+      case "MMM": return MONTHS[d.getUTCMonth()].slice(0, 3);
+      case "MM": return p2(d.getUTCMonth() + 1);
+      case "M": return String(d.getUTCMonth() + 1);
+      case "dddd": return WEEKDAYS[d.getUTCDay()];
+      case "ddd": return WEEKDAYS[d.getUTCDay()].slice(0, 3);
+      case "DD": return p2(d.getUTCDate());
+      default: return String(d.getUTCDate());
+    }
+  });
+}
+
 function parseExpr(src: string): Alt[] {
+  if (src.startsWith("date:")) return [parseDate(src.slice(5))];
   if (src.startsWith("table:")) {
     const bases = splitTop(src.slice(6)).map((b): Alt => {
       if (b.startsWith("$")) return { k: "ref", name: b.slice(1) };
@@ -284,8 +448,15 @@ function parseBody(src: string, known: Set<string>): Node[] {
   const check = (a: Alt, tag: string) => {
     if (a.k === "ref" && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
     if ((a.k === "item" || a.k === "idx") && !vars.length) throw new TemplateError(`{{${tag}}} only works inside {{#each}} or {{#repeat}}.`);
-    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSummary") field(a.field, tag);
+    if (a.k === "noteNumber" || a.k === "liveProp" || a.k === "noteProp" || a.k === "noteLine" || a.k === "rigTables" || a.k === "rigDiagram" || a.k === "rigSnapshot" || a.k === "rigSummary") field(a.field, tag);
     if (a.k === "table") a.bases.forEach(b => check(b, tag));
+    if ((a.k === "json" || a.k === "yaml") && !known.has(a.name) && !vars.includes(a.name)) throw new TemplateError(`{{${tag}}} uses "${a.name}", which is not a field of this snippet.`);
+    if (a.k === "date" && a.of !== "today" && !known.has(a.of) && !vars.includes(a.of)) throw new TemplateError(`{{${tag}}} uses "${a.of}", which is not a field of this snippet.`);
+  };
+  // today, folder and note-name are tokens unless the snippet has a field of that name (older snippets keep working)
+  const named = (a: Alt): Alt => {
+    if (a.k !== "ref" || known.has(a.name) || vars.includes(a.name)) return a;
+    return a.name === "today" ? { k: "today" } : a.name === "folder" ? { k: "folder" } : a.name === "note-name" ? { k: "noteName" } : a;
   };
   for (const tok of tokenize(src)) {
     if ("text" in tok) { list().push({ t: "text", s: tok.text }); continue; }
@@ -299,9 +470,9 @@ function parseBody(src: string, known: Set<string>): Node[] {
       field(m[1], tag);
       const node = { t: "repeat" as const, key: m[1], fallback: m[2] ? Number(m[2]) : 1, body: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false }); vars.push("");
-    } else if ((m = /^#if\s+([A-Za-z_][\w-]*)(?:\s*\^=\s*"([^"]*)")?$/.exec(tag))) {
+    } else if ((m = /^#if\s+([A-Za-z_][\w-]*)(?:\s*\^=\s*"([^"]*)"|(\s*!=\s*""))?$/.exec(tag))) {
       field(m[1], tag);
-      const node = { t: "if" as const, key: m[1], starts: m[2], yes: [] as Node[], no: [] as Node[] };
+      const node = { t: "if" as const, key: m[1], starts: m[2], ...(m[3] ? { nonEmpty: true } : {}), yes: [] as Node[], no: [] as Node[] };
       list().push(node); open.push({ node, tag, inElse: false });
     } else if ((m = /^#append\s+"\s*(#{1,6})?\s*([^"#][^"]*?)\s*"(?:\s+from\s+([A-Za-z_][\w-]*)\.(.+?))?$/.exec(tag))) {
       if (open.length) throw new TemplateError("{{#append}} cannot be inside another block.");
@@ -321,7 +492,7 @@ function parseBody(src: string, known: Set<string>): Node[] {
     } else if (tag.startsWith("#")) {
       throw new TemplateError(`Unknown block {{${tag}}}.`);
     } else {
-      const alts = parseExpr(tag);
+      const alts = parseExpr(tag).map(named);
       alts.forEach(a => check(a, tag));
       list().push({ t: "expr", alts });
     }
@@ -362,7 +533,7 @@ class Filler {
       else if (n.t === "append") this.appends.push({ heading: this.appendHeading(n), level: n.level, text: this.render(n.body) });
       else if (n.t === "if") {
         const v = this.answers[n.key] ?? "";
-        const yes = n.starts !== undefined ? v !== "" && v.toLowerCase().startsWith(n.starts.toLowerCase()) : listOf(v).length > 0;
+        const yes = n.nonEmpty ? v !== "" : n.starts !== undefined ? v !== "" && v.toLowerCase().startsWith(n.starts.toLowerCase()) : listOf(v).length > 0;
         out += this.render(yes ? n.yes : n.no);
       } else if (n.t === "each") {
         let items = listOf(this.answers[n.key]);
@@ -387,6 +558,18 @@ class Filler {
     try { return this.render(body); } finally { this.frames.pop(); }
   }
 
+  /** A loop variable of that name (the innermost), else the answer; undefined when there is neither. */
+  private lookup(name: string): string | undefined {
+    for (let i = this.frames.length - 1; i >= 0; i--) if (this.frames[i].name === name) return this.frames[i].item;
+    return this.answers[name];
+  }
+
+  /** Today in local time, as the day itself at UTC midnight (what parseDay gives). */
+  private day(): Date {
+    const n = this.env.now ?? new Date();
+    return new Date(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()));
+  }
+
   /** The first alternative that is not empty. */
   private expr(alts: Alt[]): string {
     for (const a of alts) { const v = this.alt(a).trim(); if (v) return v; }
@@ -396,9 +579,19 @@ class Filler {
   private alt(a: Alt): string {
     switch (a.k) {
       case "lit": return a.s;
-      case "ref": {
-        for (let i = this.frames.length - 1; i >= 0; i--) if (this.frames[i].name === a.name) return this.frames[i].item;
-        return this.answers[a.name] ?? "";
+      case "ref": return this.lookup(a.name) ?? "";
+      case "json": return JSON.stringify(this.lookup(a.name) ?? "");
+      case "yaml": { const v = (this.lookup(a.name) ?? "").trim(); return /^[\w .-]+$/.test(v) ? v : JSON.stringify(v); }   // plain when it is safe as a property value
+      case "today": return formatDay(this.day(), "YYYY-MM-DD");
+      case "noteName": if (this.env.noteName === undefined) throw new TemplateError("{{note-name}} only works in a note template."); return this.env.noteName;
+      case "folder": if (this.env.folder === undefined) throw new TemplateError("{{folder}} only works in a note template."); return this.env.folder;
+      case "date": {
+        const raw = this.lookup(a.of) ?? (a.of === "today" ? formatDay(this.day(), "YYYY-MM-DD") : "");
+        if (!raw) return "";
+        const d = parseDay(raw);
+        if (!d) throw new TemplateError(`{{${a.src}}}: "${raw}" is not a date (write it as YYYY-MM-DD).`);
+        d.setUTCDate(d.getUTCDate() + a.add);
+        return formatDay(d, a.fmt);
       }
       case "item": return this.frames[this.frames.length - 1].item;
       case "idx": {
@@ -425,6 +618,7 @@ class Filler {
       case "noteProp": { const note = this.answers[a.field] ?? ""; return note ? this.env.noteText(note, a.property) : ""; }
       case "rigTables": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigTables(note, a.hashes) : ""; }
       case "rigDiagram": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigDiagram(note) : ""; }
+      case "rigSnapshot": { const note = this.answers[a.field] ?? ""; return note ? this.env.rigSnapshot(note)[a.part] : ""; }
       case "rigSummary": { const note = this.answers[a.field] ?? ""; const v = note ? this.env.rigSummary(note) : ""; return v; }
     }
   }

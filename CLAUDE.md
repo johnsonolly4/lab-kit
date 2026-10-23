@@ -10,23 +10,25 @@ Listed in the Obsidian community plugin store (since 2026-10-04); every release 
 **End** (you cannot run `/clear`; only the user can):
 1. `npm test` and `npm run lint` (0 errors). Nothing is done until they pass.
 2. Update docs per `docs/maintenance.md`.
-3. Update `STATUS.md` (≤ 40 lines; the Version line only changes at release). Anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) → `BACKLOG.md` as an unticked item with file:line pointers; STATUS just points to it.
+3. Update `STATUS.md` (no size limit until the trim step; the Version line only changes at release). Anything left unchanged or unfinished (skipped on purpose, out of scope, not verified) → `BACKLOG.md` as an unticked item with file:line pointers; STATUS just points to it.
 4. Commit on the feature branch (final commit; during the work, commit after each change as in **Work**).
-5. Run `/handoff`. Then **STOP**: don't start the next task, even if it is obvious or small. End your reply with exactly:
+5. Run `/handoff`: it adds the session's entry to `my_work/notes/LOG.md` (commit in `my_work/`) and shows the next prompt and the model to pick, in a code block, in a message written **before** any closing box (the box ends the turn, so text after it is never shown). Then **STOP**: don't start the next task, even if it is obvious or small. End your reply with exactly:
    > [!done] Task finished
    > Type `/clear`, then say **Read STATUS.md and continue**.
 
 If the user asks for another task without clearing, remind them to `/clear` first, once, then do what they decide.
 
 ## Commands
+- Check (kit manifest + tests + lint in one run, failures only; `--build` adds the build): `python3 scripts/check.py` (skill `check`). Use it instead of the separate commands below.
 - Tests: `npm test` (vitest, failures only) · Lint: `npm run lint` · Build: `npm run build`
 - Run: `npm run dev` (watch build into `test-vault/.obsidian/plugins/lab-kit/`)
+- See a change in real Obsidian without the user (throwaway vault, separate hidden Obsidian): `node scripts/obsidian-check.mjs start` … `stop` (skill `obsidian-check`)
 - After editing anything in `kits/`: `npm run kit:manifest`
 - New-vault starter (settings + plugin list, from the kits): `npm run starter` (writes `dist/starter/`)
 - Old-style notes to try Tidy up notes on: `npm run tidy-fixture` (writes `test-vault-tidy/`, gitignored; open it as its own vault)
 
 ## Hard rules
-- Never read or write the user's real vault. Only `test-vault/`.
+- `test-vault/` is fine to read and write; never read or write the user's real vault. In `test-vault/.obsidian/plugins/lab-kit/` (where `npm run dev` writes) `data.json`, `kit-base/` and `backups/` may be read for bug hunts; `main.js` there is the bundle and is denied in `.claude/settings.json`: read `src/` instead, or `grep -c` the repo-root `main.js` after `npm run build`.
 - Never push, merge to `main`, tag, release or delete without asking.
 - Plugin code follows `.claude/rules/obsidian-plugin.md` (loads automatically for `src/`); it must work on desktop (Windows, macOS, Linux) and mobile (`hasNode()`).
 - Engine changes need a test against fixtures. Known answers: 0005 RAFT Mn = 19990.14; 0011 reactor volume = 1.7591 mL.
@@ -40,7 +42,19 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - Make claims (docs, UI text, reports) only from measured results. Say what was not verified (e.g. "not seen in Obsidian").
 - If the user's short reply could answer more than one open question, say which one you think it answers before acting.
 - Multi-line edits: use the Edit tool, not escaped shell scripts.
-- Anything that changes how a window, chip, menu, tile or button looks: read `docs/design-standard.md` (corner sizes) and `docs/reference/visual/README.md` (screenshots the user approved; kept on this machine only, gitignored, so it may be missing: then say so), open the matching image, and match it. New approved looks are saved there when the user says a screen is right.
+- Anything that changes how a window, chip, menu, tile or button looks: read `docs/design-standard.md` (corner sizes) and `my_work/reference_visual/README.md` (screenshots the user approved, indexed; private, so it may be missing on another machine: then say so), open the matching image, and match it. When the user says a screen or mock-up is right, save the image there and add its row to the README in the same session.
+- Visuals or existing behaviour: never change them on your own judgement. Ask the user first, as a multiple-choice question (a feedback page with `my_work/agent_kit/render_check.py feedback` when it is visual), and record the question in BACKLOG "Questions for the owner" so it is not lost; tick it there with the answer and put a decision line in `docs/decisions.md`.
+
+## Shell on this Mac (zsh, BSD tools)
+- No `sed -i` for edits (BSD `sed` needs `-i ''`): use the Edit tool, or a short `python3 -` script.
+- No `echo ====` lines (zsh treats a word starting with `=` as a path lookup): use `echo '---'`.
+- Quote every path. No command in a variable (`Z="python3 x.py"; $Z` fails in zsh).
+- No `sleep` to wait: run long jobs in the background.
+- `git commit -a` takes no paths: `git add PATHS` first, then `git commit`.
+- Read files with the Read tool (offset and limit), not `sed -n`, `cat` or `head` (past chats: 792 `sed -n` and 261 `cat` reads).
+- `grep`, `diff` and `cmp` exit 1 on "no match" / "differs": add `|| true` when that is an expected answer, so the call is not a failure.
+- `python3 -` edit scripts with `assert old in s` fail when the old text is not exact: read those lines first; for one file use the Edit tool.
+- `rm -rf` is denied: use `rm -r` on scratch or temp paths only.
 
 ## Terse commands
 - "continue" → top item in `STATUS.md` → Next
@@ -48,12 +62,19 @@ If the user asks for another task without clearing, remind them to `/clear` firs
 - "merge" → merge the open PR for this branch
 - "release" → `/release` · user feedback → `/feedback` (→ `BACKLOG.md`)
 
+## Git layout
+- Allow-list `.gitignore` (`/*`, then `!/src/` ...): a new top-level file or folder needs a `!/name` line, after a check that it holds nothing personal. Files inside an allowed folder are tracked as usual.
+- `my_work/` is the owner's private folder with its **own git**, never pushed, ignored here: `notes/` (LOG.md, DECISIONS.md pointing to `docs/decisions.md`), `analyses/`, `private/`, `reference_visual/`, `agent_kit/`. Commit there too, after every change. Nothing in it is read unless a prompt names it.
+- Decisions live in `docs/decisions.md`; the next task is `STATUS.md`. There is no NEXT_SESSION file.
+
 ## Where things are
 Read only what the request needs: `docs/INDEX.md` says which file covers what; `docs/architecture.md` is the code map.
 Searching the code: use the `explorer` agent. Long test or log output: run it in a subagent.
+Big files (`src/kit/managed-ui.ts`, `styles.css`, `src/kit/tidy.ts`, `src/kit/ui.ts`, `src/planning/blocks.ts`, `src/planning/plan-map-render.ts`): don't read whole. Run `python3 scripts/codemap.py FILE` (functions or CSS rules with line numbers; `--grep word` to narrow), then read only those lines with the Read tool's offset and limit.
+`BACKLOG.md` is long: search it (Grep for the topic or id), never read it whole.
 
 ## Models
-Default Sonnet; Opus only for design decisions and root-cause hunts. Agents are pinned in `.claude/agents/`.
+Default Sonnet; Opus only for design decisions and root-cause hunts; Haiku for mechanical work (docs, renames, tidying, searches, running checks). Agents are pinned in `.claude/agents/`.
 
 ## Talking to the user
 - Short, scannable answers: summary first, bullets over paragraphs.

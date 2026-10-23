@@ -1,7 +1,6 @@
 // The plan of one project (planning kit): its to-dos with `after` (links to the to-dos that come first), `result` (one line) and `order` (a number).
 // Pure (no Obsidian runtime). Gives the rows in plan order, which are blocked, and what is wrong (missing links, cycles).
-import { isFinished } from "./actions";
-import { parseDay } from "./todo";
+import { isFinishedTodo, parseDay, waitingOf } from "./todo";
 import { linkTarget, pointsTo, type Badge, type ListLine, type NoteRec } from "./lists";
 
 export interface PlanRow {
@@ -19,8 +18,10 @@ export interface PlanRow {
   order: number | null;
   /** `priority` 1, 2 or 3 (1 = highest); none otherwise. */
   priority: number | null;
-  /** Open, and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
+  /** Open, not waiting on something outside the plan (`waiting`), and some to-do before it (any number of `after` links back) is not done, even if its own `after` to-do was ticked out of order. */
   blocked: boolean;
+  /** What it waits on outside the plan (`waiting`, trimmed), "" when nothing. */
+  waiting: string;
   /** The to-do this one is a subtask of (`sub`; its path), or null. One level only. */
   parent: string | null;
   /** The to-do its `sub` names, found in this project, even when that `sub` is refused (a subtask of a subtask, a loop): null when `sub` is empty or names nothing found. */
@@ -116,7 +117,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
     issue(left.map(t => t.path), `These wait on each other, so none can start: ${left.map(t => `"${t.name}"`).join(", ")}. Remove one "comes after" link.`);
     placed.push(...left);
   }
-  const finished = (n: NoteRec): boolean => isFinished({ done: n.fm.done, day: n.fm.day });
+  const finished = (n: NoteRec): boolean => isFinishedTodo(n.fm);
   /** Some to-do before `t`, through any number of links, is not finished. */
   const openBefore = (t: NoteRec): boolean => {
     const seen = new Set<NoteRec>(), todo = [...parents.get(t.path)!];
@@ -131,7 +132,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
   };
   const rows = placed.map((t): PlanRow => {
     const ps = parents.get(t.path)!;
-    const done = isFinished({ done: t.fm.done, day: t.fm.day });
+    const done = isFinishedTodo(t.fm);
     let experiment: PlanRow["experiment"] = null;
     const target = labNotes ? afterItems(t.fm.experiment)[0] : undefined;
     if (target) {
@@ -140,7 +141,7 @@ export function readPlan(todos: NoteRec[], hub: NoteRec, labNotes?: NoteRec[]): 
       if (!lab) issue([t.path], `"${t.name}" links to the experiment "${target}", which wasn't found.`, [{ path: t.path, key: "experiment", label: "Remove the experiment link", does: `Removes the experiment link from "${t.name}".`, done: `Removed the experiment link from "${t.name}".` }]);
     }
     return { path: t.path, name: t.name, done, experiment, parent: parentOf.get(t)?.path ?? null, subOf: wanted.get(t)?.path ?? null, subs: [], after: ps.map(p => p.name), afterPaths: ps.map(p => p.path), due: dueOf(t.fm.due), result: text(t.fm.result),
-      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), blocked: !done && openBefore(t) };
+      order: orderOf(t.fm.order), priority: priorityOf(t.fm.priority), waiting: waitingOf(t.fm), blocked: !done && !waitingOf(t.fm) && openBefore(t) };
   });
   for (const r of rows) if (r.parent) byPathRow(rows, r.parent)?.subs.push({ path: r.path, name: r.name, done: r.done });
   for (const r of rows) {   // ticked on the board, in the note or on the map without ticking the subtasks

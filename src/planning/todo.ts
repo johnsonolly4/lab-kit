@@ -1,4 +1,4 @@
-// To-do board rules (planning kit): what to write when a card is dragged or ticked, and what roll-over does to each card.
+// To-do board rules (planning kit): what to write when a card is dragged, ticked or arrives in the To-dos folder.
 // Pure (no Obsidian runtime): dates are local calendar days, "YYYY-MM-DD" strings, compared as text.
 // Ported from the planning suite's To-do roll-over startup template (2026-10-07); see docs/plans/phase-4a-todo-engine.md.
 
@@ -6,9 +6,7 @@
 export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"] as const;
 
 /** The properties of a to-do note this engine reads. */
-export interface TodoFm { kind?: unknown; day?: unknown; done?: unknown; done_on?: unknown; planned?: unknown; rolled?: unknown; due?: unknown; countdown?: unknown; project?: unknown; priority?: unknown }
-/** What the engine last saw of a card: tells a drag or tick from its own writes. */
-export interface TodoSnap { day: string; done: boolean }
+export interface TodoFm { kind?: unknown; day?: unknown; done?: unknown; done_on?: unknown; planned?: unknown; rolled?: unknown; due?: unknown; countdown?: unknown; project?: unknown; priority?: unknown; waiting?: unknown; scheduled?: unknown; meeting?: unknown }
 /** Properties to set and to remove in one write. */
 export interface TodoPatch { set: Record<string, string | boolean>; remove: string[] }
 
@@ -32,14 +30,12 @@ export function parseDay(v: unknown): Date | null {
   return ymd(d) === m[0] ? d : null;   // 2026-02-30 is not a day
 }
 
-/** Today's column: the weekday, or Mon at the weekend. */
-export const todayColumn = (d: Date): string => { const wd = isoWeekday(d); return wd <= 5 ? DAYS[wd - 1] : "Mon"; };
 /** Today's column for the CSS (`body[data-vt-today]`): empty at the weekend. */
 export const todayMark = (d: Date): string => { const wd = isoWeekday(d); return wd <= 5 ? DAYS[wd - 1] : ""; };
 
-/** A note the board just made and nothing was typed in: no text, and no properties but `day`. The To-do template's `trashIfBlank` does the same on Esc (change both). */
+/** A note the board just made and nothing was typed in: no text, and no properties but `day` / `scheduled` and empty ones (the board's New also writes `done:`). The To-do template's `trashIfBlank` does the same on Esc (change both). */
 export function isBlankBoardNote(raw: string): boolean {
-  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm: string) => fm.split(/\r?\n/).every(l => !l.trim() || /^day:/.test(l.trim())) ? "" : m);
+  const rest = raw.replace(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/, (m, fm: string) => fm.split(/\r?\n/).every(l => !l.trim() || /^(?:day:|scheduled:|[\w .-]+:\s*$)/.test(l.trim())) ? "" : m);
   return rest.trim() === "";
 }
 
@@ -53,75 +49,122 @@ export function emptyTodoCursorLine(raw: string): number | null {
   return raw.split("\n").length - 1;   // the text ends with a newline: the last line is empty
 }
 
-export const snapOf = (fm: TodoFm): TodoSnap => ({ day: str(fm.day), done: fm.done === true });
+// ---- Planned dates (I2, slim model): `scheduled` is the one planned-day key. Plan: docs/plans/planned-dates.md.
+// The old `day` rules (changePatch, rollOverPatch) were removed in Phase 2; a frozen copy for the old-vault tests is in tests/helpers/old-todo.ts.
 
-/** The date a card's day refers to: the first such weekday on or after the day it was planned. */
-export function cardDate(fm: TodoFm): Date | null {
-  const i = (DAYS as readonly string[]).indexOf(str(fm.day));
-  const p = parseDay(fm.planned);
-  if (i < 0 || !p) return null;
-  return dayOf(p, (i + 1 - isoWeekday(p) + 7) % 7);
+/** Every weekday name an old `day` can hold, Mon … Sun. */
+export const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+/** `Mon` … `Sun` for a date. */
+export const weekdayOf = (d: Date): string => WEEKDAYS[isoWeekday(d) - 1];
+/** Keys of the old model, removed whenever a card is written (drag, normalise). */
+const OLD_KEYS = ["day", "planned", "rolled"] as const;
+const has = (fm: TodoFm, k: string): boolean => Object.keys(fm).includes(k);
+/** No value: absent, null, blank text or an empty list. */
+const isEmpty = (v: unknown): boolean => v == null || (typeof v === "string" && v.trim() === "") || (Array.isArray(v) && v.length === 0);
+
+/**
+ * The date a to-do is planned for, or null (Backlog). `scheduled` when it has a value (a value that is not a date: null, the tray);
+ * else an old weekday `day`, read as the old roll-over read it: the first such weekday on or after `planned`, or on or after this week's Monday.
+ */
+export function dateOf(fm: TodoFm, now: Date): Date | null {
+  if (!isEmpty(fm.scheduled)) return parseDay(fm.scheduled);
+  const i = (WEEKDAYS as readonly string[]).indexOf(str(fm.day));
+  if (i < 0) return null;
+  const from = parseDay(fm.planned) ?? weekStart(now);
+  return dayOf(from, (i + 1 - isoWeekday(from) + 7) % 7);
+}
+
+/** Finished: ticked, or an old card on `day: Done` from before the tick box. */
+export const isFinishedTodo = (fm: TodoFm): boolean => fm.done === true || fm.day === "Done";
+
+/** Carried over: open and planned for a day before today. Worked out, never stored. */
+export function isCarried(fm: TodoFm, now: Date): boolean {
+  if (isFinishedTodo(fm)) return false;
+  const d = dateOf(fm, now);
+  return !!d && d < dayOf(now);
+}
+
+export type DropResult = { patch: TodoPatch } | { refused: "past" } | null;
+/** A card dropped on `target` (a column's date) or on the tray (null): the write, a refusal for a past day, or null when nothing changes. */
+export function dropPatch(fm: TodoFm, target: Date | null, now: Date): DropResult {
+  if (target && dayOf(target) < dayOf(now)) return { refused: "past" };
+  const old = OLD_KEYS.filter(k => has(fm, k));
+  if (target) {
+    const t = ymd(target);
+    return str(fm.scheduled) === t && !old.length ? null : { patch: { set: { scheduled: t }, remove: old } };
+  }
+  const remove = [...(has(fm, "scheduled") ? ["scheduled"] : []), ...old];
+  return remove.length ? { patch: { set: {}, remove } } : null;
 }
 
 /**
- * A card changed (`before` → `now`, as last seen): the stamps to write, or null.
- * A change that arrives through Obsidian Sync already carries its stamps (the other device wrote them), so this writes only when a
- * stamp is missing or wrong: otherwise devices would answer each other's changes (write-back loops, carried-over cards losing amber).
- * A card seen for the first time (`before` undefined) is left to the To-do template.
+ * The stamps after a tick or untick (`wasDone` = done as last seen; undefined = first sight, left alone): `done_on` on tick, removed on untick.
+ * `scheduled` is kept both ways, so an unticked card goes back to its day. A synced change already carries its stamps, so it writes nothing.
  */
-export function changePatch(fm: TodoFm, before: TodoSnap | undefined, now: TodoSnap, today: Date): TodoPatch | null {
-  if (!before || fm.kind !== "todo") return null;
-  if (now.done !== before.done) {
-    if (now.done && (fm.done_on == null || fm.rolled === true)) return { set: { ...(fm.done_on == null ? { done_on: ymd(today) } : {}), rolled: false }, remove: [] };
-    if (!now.done && fm.done_on != null) return { set: {}, remove: ["done_on"] };
-    return null;
+export function tickPatch(fm: TodoFm, wasDone: boolean | undefined, now: Date): TodoPatch | null {
+  if (wasDone === undefined || fm.kind !== "todo") return null;
+  const done = fm.done === true;
+  if (done === wasDone) return null;
+  const set: Record<string, string | boolean> = {}, remove: string[] = [];
+  if (done) {
+    if (isEmpty(fm.done_on)) set.done_on = ymd(now);
+    if (has(fm, "rolled")) remove.push("rolled");
+  } else {
+    if (has(fm, "done_on")) remove.push("done_on");
+    // Unticked on the old Done column: drop `day` too, else the card would still read as finished
+    if (fm.day === "Done") remove.push("day");
   }
-  if (now.day !== before.day) {
-    // Dragged here: planned is not today yet, or a carried-over card was moved off today's column.
-    // Rolled over on another device: planned is today and the card sits in today's column, so leave it.
-    const stale = str(fm.planned) !== ymd(today);
-    const movedOffRoll = fm.rolled === true && now.day !== todayColumn(today);
-    if (stale || movedOffRoll) return { set: { planned: ymd(today), rolled: false }, remove: [] };
-  }
-  return null;
+  return Object.keys(set).length || remove.length ? { set, remove } : null;
 }
 
-export type RollKind = "ticked" | "cleared" | "rolled" | "planned";
-/** Roll-over for one card: the write and what it was, or null. `mtime` = the note's last change (for cards from before the tick box). */
-export function rollOverPatch(fm: TodoFm, mtime: Date, now: Date): { patch: TodoPatch; kind: RollKind; snap?: TodoSnap } | null {
-  if (fm.kind !== "todo") return null;
-  const today = dayOf(now), monday = weekStart(today);
-  if (fm.day === "Done" && fm.done !== true) {
-    // Finished before the tick box existed: tick it, keeping the day it was finished
-    return { patch: { set: { done: true, done_on: ymd(mtime), rolled: false }, remove: [] }, kind: "ticked", snap: { day: "Done", done: true } };
+/** Keys removed when they hold no value. */
+const EMPTY_KEYS = ["day", "scheduled", "project", "due", "waiting", "priority"] as const;
+
+/**
+ * A note that arrived in the To-dos folder (made, moved or renamed in) brought to the slim model, or null when it already is.
+ * Notes of another kind are left alone. Unknown `day` values (a typo) are kept. Running it on its own result gives null.
+ */
+export function normalisePatch(fm: TodoFm, now: Date): TodoPatch | null {
+  if (!isEmpty(fm.kind) && fm.kind !== "todo") return null;
+  const set: Record<string, string | boolean> = {};
+  const remove = new Set<string>();
+  if (fm.kind !== "todo") set.kind = "todo";
+  const day = str(fm.day);
+  const done = day === "Done" ? true : fm.done === true;
+  if (fm.done !== done) set.done = done;
+  if (day === "Done" || day === "Backlog") remove.add("day");
+  if ((WEEKDAYS as readonly string[]).includes(day)) {
+    if (isEmpty(fm.scheduled)) set.scheduled = ymd(dateOf(fm, now)!);
+    remove.add("day");
   }
-  if (fm.done === true) {
-    const d = parseDay(fm.done_on) ?? dayOf(mtime);
-    if (fm.day === "Done" || d >= monday) return null;
-    return { patch: { set: { day: "Done", ...(fm.done_on ? {} : { done_on: ymd(d) }) }, remove: [] }, kind: "cleared", snap: { day: "Done", done: true } };
-  }
-  if (!(DAYS as readonly string[]).includes(str(fm.day))) return null;   // Backlog stays put
-  // A card from before roll-over existed counts as planned this week, so a Mon card seen on Tuesday rolls over now
-  const planned = parseDay(fm.planned) ? str(fm.planned) : null;
-  const due = cardDate({ ...fm, planned: planned ?? ymd(monday) });
-  if (due && due < today) {
-    const col = todayColumn(today);
-    return { patch: { set: { day: col, planned: ymd(today), rolled: true }, remove: [] }, kind: "rolled", snap: { day: col, done: false } };
-  }
-  if (!planned) return { patch: { set: { planned: ymd(monday) }, remove: [] }, kind: "planned" };
-  return null;
+  for (const k of ["planned", "rolled", "countdown"]) if (has(fm, k)) remove.add(k);
+  if (!done && has(fm, "done_on")) remove.add("done_on");
+  for (const k of EMPTY_KEYS) if (has(fm, k) && isEmpty((fm as Record<string, unknown>)[k]) && !(k in set)) remove.add(k);
+  if (fm.meeting === false) remove.add("meeting");
+  return Object.keys(set).length || remove.size ? { set, remove: [...remove] } : null;
+}
+
+/** A patch that turns front matter `after` back into `before` (Undo after a tick): changed keys set back, added keys removed. */
+export function undoPatch(before: Record<string, unknown>, after: Record<string, unknown>): { set: Record<string, unknown>; remove: string[] } {
+  const set: Record<string, unknown> = {}, remove: string[] = [];
+  for (const k of Object.keys(before)) if (JSON.stringify(before[k]) !== JSON.stringify(after[k]) || !(k in after)) set[k] = before[k];
+  for (const k of Object.keys(after)) if (!(k in before)) remove.push(k);
+  return { set, remove };
 }
 
 /** Applies a patch to a frontmatter object (inside processFrontMatter). */
-export function applyPatch(x: Record<string, unknown>, p: TodoPatch): void {
+export function applyPatch(x: Record<string, unknown>, p: { set: Record<string, unknown>; remove: string[] }): void {
   for (const [k, v] of Object.entries(p.set)) x[k] = v;
   for (const k of p.remove) delete x[k];
 }
 
-/** Due-date countdown on the board: off, only to-dos that set `countdown: true`, or every to-do with a due date. */
-export type CountdownMode = "off" | "marked" | "all";
+/** Due-date countdown on the board: off, or every to-do with a due date. */
+export type CountdownMode = "off" | "all";
 /** `level`: "late" (overdue), "soon" (today to 2 days), "later". */
 export interface Countdown { text: string; level: "late" | "soon" | "later" }
+
+/** What a to-do waits on (`waiting: instrument booking`): the trimmed text, "" when the property is absent, empty or not text. */
+export const waitingOf = (fm: { waiting?: unknown }): string => (typeof fm.waiting === "string" ? fm.waiting.trim() : "");
 
 /** The marker for each priority: an up arrow, a dash, a down arrow (visual only: no "P1" text). */
 const PRIORITY_MARK = { "1": "\u2191", "2": "\u2013", "3": "\u2193" } as const;
@@ -137,10 +180,9 @@ export function cardTag(fm: TodoFm): { text: string; level: "1" | "2" | "3" | ""
   return text ? { text, level } : null;
 }
 
-/** The badge for a card: null when off, done, not marked (mode "marked") or with no valid `due`. Whole local days, so DST can't shift it. */
+/** The badge for a card: null when off, done or with no valid `due`. Whole local days, so DST can't shift it. */
 export function dueCountdown(fm: TodoFm, mode: CountdownMode, now: Date): Countdown | null {
   if (mode === "off" || fm.done === true) return null;
-  if (mode === "marked" && fm.countdown !== true) return null;
   const due = parseDay(fm.due);
   if (!due) return null;
   const n = Math.round((due.getTime() - dayOf(now).getTime()) / 864e5);

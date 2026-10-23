@@ -3,20 +3,17 @@
 import { Modal, Notice, Setting, parseYaml, setIcon, type App, type Plugin, type TFile } from "obsidian";
 import {
   SAFE_ACTIONS, applyManaged, disableManaged, firstInstallOptions, forgetManaged, inFolders, kitSha1, patchFolders, patchManagedFolders, planFolderReapply, previewInstall, relocateRole, templaterScriptsAction, templaterScriptsNeedChange, templaterTemplatesTarget, planManaged, planRetired, offIds, resolveManaged, restoreManaged, setDetached, sortByAttention, statusOf, trackedRoles,
-  kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
+  ICON_ONLY_LINE, kitBackupPath, kitHasNewer, kitKept, newerKitItems, type ApplyOptions, type EmbeddedKit, type InstallPreview, type LegacyRecord, type ManagedAction, type ManagedFileState, type ManagedItem, type ManagedResult, type RetiredItem
 } from "./managed";
 import { KitMergeModal } from "./merge-ui";
-import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "./managed-look";
+import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary, tickAllLine, updateLabel } from "./managed-look";
 import { cardWindow, winFold, winFoot, winIntro, winRow, winSummary } from "./window-look";
 import { kitStatusLine, orderKits, type SafeKit } from "./kit-set";
-import { addTemplaterHotkey, withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, hasTemplaterHotkey, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
+import { withoutTemplaterTrigger, cssSnippetsSupported, hasTemplater, isCssSnippetEnabled, loadedPlugins, setCssSnippets, setTemplaterTemplatesFolder, setTemplaterUserScripts, templaterTemplatesFolder, templaterUserScriptsFolder } from "./obsidian-private";
 import { ensureFolder } from "./ensure-folder";
 import { makeMyCopy } from "./snippet-copy-ui";
 import { canCopy, isStubSnippet, isTokenTemplate, snippetKey } from "./snippet-copy";
-import { LAB_KIT, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
-
-/** Id of the Alt+S menu template in kit-manifest.json. */
-const MENU_ID = "tpl-insert-snippet-md";
+import { LAB_KIT, OLD_MENU_ID, PLANNING_KIT, kitCompare, kitDetectRoles, kitFolderRoles, kitInBackup, kitJoin, kitSlot, labFolders, planningFolders, planningRoles, type KitFolder, type KitData, type KitRecord, type KitSlot, type Roles } from "./paths";
 
 /** Names of the settings a kit file can need (`needs` in kit-manifest.json), as the settings tab shows them. */
 const NEEDS_NAME: Record<string, string> = { chemicalFolder: "Chemical folder", labFolder: "Lab notes folder", rigsFolder: "Rigs folder" };
@@ -28,6 +25,9 @@ export type ClosingModal = Modal & { onClosed?: () => void };
 
 export class KitManaged {
   constructor(private plugin: Plugin, private host: ManagedHost, readonly bundle: EmbeddedKit) {}
+
+  /** The plugin's settings (the folders the Alt+S snippets read). */
+  settings(): KitData { return this.host.kit; }
 
   get app(): App { return this.plugin.app; }
   get version(): string { return this.bundle.manifest.kitVersion; }
@@ -51,11 +51,13 @@ export class KitManaged {
       return { ...planningRoles(this.app, tracked, pf, this.host.kit.labFolder), ...ownOther };
     }
     // Lab notes / chemical folders from the Lab notebook settings; a .base already installed stays where it is
-    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked), ...own };
+    return { ...kitFolderRoles(this.host.kit), ...tracked, ...kitDetectRoles(this.app, record, tracked, !!slot.managed?.files[OLD_MENU_ID] || !!old), ...own };
   }
 
-  /** Where the templates (Insert snippet.md, Snippets/) are: the Alt+S menu scans the Snippets folder next to it. */
+  /** Where the kit's note templates are (Lab Book Template, Chemical database template, Rig template). */
   templatesFolder(): string { return this.roles().templates; }
+  /** Where the Alt+S snippets are: the menu lists the notes directly in it (`Extras/Snippets` in a new vault, `<templates>/Snippets` in an older one). */
+  snippetsFolder(): string { return this.roles().snippets ?? ""; }
 
   isOff(id: string): boolean { return this.offIds().has(id); }
   /** Switched off by you, or waiting for a folder setting (`needs`) that is empty. */
@@ -134,7 +136,7 @@ export class KitManaged {
 
   /** Folders this kit makes empty at its first install so the layout is complete (the planning kit's folder contract; the lab kit's note folders). */
   kitFolders(): KitFolder[] {
-    return this.bundle.manifest.id === PLANNING_KIT ? planningFolders(this.roles(), loadedPlugins(this.app).has("zotlit")) : labFolders(this.host.kit);
+    return this.bundle.manifest.id === PLANNING_KIT ? planningFolders(this.roles(), loadedPlugins(this.app).has("literature")) : labFolders(this.host.kit);
   }
 
   /** Settings a kit's first install offers to change: its CSS snippet, and Templater's user scripts folder when Templater has none. */
@@ -146,14 +148,6 @@ export class KitManaged {
     // The folder above the kit's own subfolder (templaterScriptsTarget), so it covers lab-kit/ and vault/ alike
     if (folder) out.push({ name: "Set Templater's user scripts folder", desc: `To ${folder}. Templater has none yet; the kit's templates need it.`, apply: () => setTemplaterUserScripts(this.app, folder) });
     return out;
-  }
-
-  /** The Alt+S menu template goes into Templater's Template hotkeys when it is written and isn't listed there yet (nothing is ever removed). */
-  private hotkeySetting(items: ManagedItem[], select: (it: ManagedItem) => boolean): SettingChange[] {
-    const menu = items.find(i => i.file.id === MENU_ID && select(i));
-    if (!menu || !hasTemplater(this.app) || hasTemplaterHotkey(this.app, menu.dest)) return [];
-    return [{ name: "Add Insert snippet to Templater's Template hotkeys", desc: `${menu.dest}. Then set Alt+S for it in Obsidian → Hotkeys.`,
-      apply: async () => { await addTemplaterHotkey(this.app, menu.dest); } }];
   }
 
   /** Once nothing is left to create or update, the whole kit counts as installed (a single-file action doesn't bump the version). */
@@ -204,7 +198,7 @@ export class KitManaged {
     const go = (it: ManagedItem): boolean => it.file.id === id && (it.action === "create" || it.action === "fast-forward" || it.action === "missing" || it.action === "merge");
     let results: ManagedResult[] = [];
     const item = items.find(go);
-    await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, settings: this.hotkeySetting(items, go), run: async () => {
+    await this.confirmThen({ title: `Install ${item?.dest ?? id}?`, yes: "Install", items, select: go, run: async () => {
       const out = await this.quietly(items, this.applyOptions({ select: go, keepVersion: true }), o => applyManaged(this.app.vault.adapter, this.bundle, items, kit.managed, o));
       kit.managed = out.state;
       await this.settleVersion();
@@ -339,13 +333,13 @@ export class KitManaged {
     const select = (it: ManagedItem): boolean => SAFE_ACTIONS.includes(it.action);
     const writes = items.filter(i => i.action === "create" || i.action === "fast-forward").length;
     const first = !this.slot.managed && writes > 0;
-    return { items, select, writes, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] };
+    return { items, select, writes, first, settings: [...(first ? this.firstInstallSettings() : [])], folders: first ? this.kitFolders() : [] };
   }
 
   /** The same for the files the review window has ticked. */
   private pickedSpec(items: ManagedItem[], select: (it: ManagedItem) => boolean): Promise<{ items: ManagedItem[]; select: (it: ManagedItem) => boolean; first: boolean; settings: SettingChange[]; folders: KitFolder[] }> {
     const first = !this.slot.managed;
-    return Promise.resolve({ items, select, first, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [] });
+    return Promise.resolve({ items, select, first, settings: [...(first ? this.firstInstallSettings() : [])], folders: first ? this.kitFolders() : [] });
   }
 
   /** This kit for "Update all safe files" across both kits (src/kit/kit-set.ts `runSafeUpdate`). */
@@ -368,7 +362,7 @@ export class KitManaged {
     const first = !this.slot.managed;
     await this.confirmThen({
       title: first ? "Install the kit?" : "Update these files?", yes: "Update", ask: first,
-      items, select, settings: [...(first ? this.firstInstallSettings() : []), ...this.hotkeySetting(items, select)], folders: first ? this.kitFolders() : [],
+      items, select, settings: [...(first ? this.firstInstallSettings() : [])], folders: first ? this.kitFolders() : [],
       run: async () => report(await this.apply(items, select)),
     });
   }
@@ -376,14 +370,13 @@ export class KitManaged {
   /**
    * The "Set up Templater" button. Lists every change first and makes them only when confirmed: Templater's user scripts folder (only when
    * it has none; a folder that is set is never changed, issue #34: when the kit's scripts are outside it, fresh copies go into a lab-kit folder
-   * inside it and the old copies stay), its template folder (only when empty), and Insert snippet in its Template hotkeys.
+   * inside it and the old copies stay), and its template folder (only when empty). Alt+S is not a Templater hotkey any more.
    */
   async setupTemplater(): Promise<void> {
     if (!hasTemplater(this.app)) { new Notice("Templater isn't installed or turned on. Install and enable it first."); return; }
     try {
       const roles = this.roles();
-      const menu = kitJoin(roles.templates, "Insert snippet.md");
-      if (!this.app.vault.getFileByPath(menu)) { new Notice("The kit isn't installed yet. Install it first."); return; }
+      if (!this.installedVersion) { new Notice("The kit isn't installed yet. Install it first."); return; }
       const done: string[] = [];
       const settings: SettingChange[] = [];
       const current = kitInBackup(templaterUserScriptsFolder(this.app) ?? "") ? "" : templaterUserScriptsFolder(this.app);   // a folder inside a backup is a leftover mistake
@@ -396,8 +389,6 @@ export class KitManaged {
       if (!tplFolder && target) settings.push({ name: "Set Templater's template folder", desc: `To ${target}. Templater has none yet.`,
         apply: async () => { await setTemplaterTemplatesFolder(this.app, target); done.push(`Template folder set to ${target}.`); } });
       else if (tplFolder && templaterScriptsNeedChange(tplFolder, roles.templates)) done.push(`Template folder left as ${tplFolder} (the kit's templates are in ${roles.templates}).`);
-      if (!hasTemplaterHotkey(this.app, menu)) settings.push({ name: "Add Insert snippet to Templater's Template hotkeys", desc: menu,
-        apply: async () => { if (await addTemplaterHotkey(this.app, menu)) done.push("Insert snippet added to Template hotkeys."); } });
 
       // The kit's scripts are outside the folder Templater reads (an older install): fresh copies into <folder>/lab-kit, tracked there
       const kit = this.slot;
@@ -425,7 +416,7 @@ export class KitManaged {
         },
       });
       if (report) new KitReportModal(this.app, report).open();
-      if (ran && done.length) new Notice(done.join("\n") + "\nLast step: set Alt+S for Insert snippet in Obsidian → Hotkeys.", 15000);
+      if (ran && done.length) new Notice(done.join("\n"), 15000);
     } catch (e) { this.failed(e); }
   }
 
@@ -513,7 +504,7 @@ class KitReviewSection {
   /** Draws one top-box row for `it`: the same boxes as before (recreate / merge / add / update), at the row's right end, centred. `tag` is the kit's name when there are several kits. */
   drawTopRow(parent: HTMLElement, it: ManagedItem, tag: string): void {
     const note = it.action === "needs-merge" && it.conflicts === undefined ? "No original copy to merge with." : it.action === "merge" && it.file.kind === "script" ? "Merged code: please test it." : "";
-    const { row, text } = winRow(parent, { state: actionWinState(it.action), title: it.dest, detail: [TOP_LINES[it.action], it.file.desc, note].filter(Boolean).join(" · ") });
+    const { row, text } = winRow(parent, { state: actionWinState(it.action), title: it.dest, detail: [it.iconOnly ? ICON_ONLY_LINE : TOP_LINES[it.action], it.file.desc, note].filter(Boolean).join(" · ") });
     if (tag) text.querySelector(".lab-kit-win-title")?.createSpan({ cls: "lab-kit-badge", text: tag });
     const box = (word: string, on: boolean, set: (on: boolean) => void): void => {
       const label = row.createEl("label", { cls: "lab-kit-win-tick" });
@@ -594,7 +585,7 @@ export class KitManagedModal extends Modal {
     const body = winFold(this.top, { title: "To update", count: rows.length, open: this.topOpen, onToggle: open => { this.topOpen = open; } }).body;
     if (boxed) {
       const bar = body.createDiv({ cls: "lab-kit-win-bar" });
-      bar.createSpan({ text: `Tick or untick all ${boxed} files with a box` });
+      bar.createSpan({ text: tickAllLine(boxed) });
       const buttons = bar.createDiv({ cls: "lab-kit-win-actions" });
       const all = (on: boolean): void => { for (const sec of this.sections) sec.tickAll(on); this.drawTop(); this.drawFoot(); };
       buttons.createEl("button", { text: "Tick all", cls: "mod-cta" }).addEventListener("click", () => all(true));
@@ -610,7 +601,7 @@ export class KitManagedModal extends Modal {
     this.foot.addClass("lab-kit-sticky-foot");   // the wrapper sticks, not the row inside it (a sticky child cannot leave a wrapper that is only as tall as itself)
     const foot = winFoot(this.foot);
     foot.createEl("button", { text: "Close" }).addEventListener("click", () => this.close());
-    const apply = foot.createEl("button", { text: todo ? `Update (${todo} files)` : "Update", cls: "mod-cta" });
+    const apply = foot.createEl("button", { text: updateLabel(todo), cls: "mod-cta" });
     apply.disabled = !todo && !any;
     apply.addEventListener("click", () => void this.apply());
   }
@@ -730,10 +721,10 @@ class KitFilesSection {
       }
       if (it.action === "detached") button("Re-attach", () => void this.run(() => this.managed.detach(id, false)));
       else if (!it.untracked && it.action !== "off") button("Detach", () => void this.run(() => this.managed.detach(id, true)));
-      // A code snippet's .md is only a stub that calls labSnippets.js: opening it is no use, so those rows have no Open button (token templates do)
-      const isSnippet = it.file.dest.startsWith("Snippets/");
+      // A code snippet's .md is only a stub that names a calculator (`run:`): opening it is no use, so those rows have no Open button (token templates do)
+      const isSnippet = it.file.role === "snippets";
       if (isSnippet && (canCopy(snippetKey(it.text)) || isTokenTemplate(it.text, parseYaml)) && this.app.vault.getFileByPath(it.dest)) {
-        button("Make my own copy", () => void makeMyCopy(this.app, it.dest).then(() => this.refresh()));
+        button("Make my own copy", () => void makeMyCopy(this.app, this.managed.settings(), it.dest).then(() => this.refresh()));
       }
       const file = isSnippet && isStubSnippet(it.text) ? null : this.app.vault.getFileByPath(it.dest);
       if (file) this.openButton(actions, file);
@@ -813,7 +804,7 @@ export class KitReportModal extends Modal {
       if (!group.length) continue;
       const open = o === "created" || o === "updated" || o === "merged" || o === "moved" || (o === "skipped" && group.some(r => r.action !== "up-to-date"));
       const det = winFold(contentEl, { title: names[o], count: group.length, open }).body;
-      for (const r of group) winRow(det, { state: outcomeWinState(o), title: r.dest, detail: r.backup ? `Old copy: ${r.backup}` : o === "skipped" ? r.action : undefined });
+      for (const r of group) winRow(det, { state: outcomeWinState(o), title: r.dest, detail: r.backup ? `${r.iconOnly ? `${ICON_ONLY_LINE} ` : ""}Old copy: ${r.backup}` : o === "skipped" ? r.action : undefined });
     }
     const foot = winFoot(contentEl);
     foot.addClass("lab-kit-sticky-foot");   // Close stays on screen, as in the Kit files window

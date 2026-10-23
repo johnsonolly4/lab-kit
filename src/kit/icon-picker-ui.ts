@@ -1,11 +1,11 @@
-// Icon picker for Settings → Lab Kit → Snippet icons: a search box and a grid of the real icons. Icons come from Obsidian's own set (Lucide).
+// Icon picker (Alt+S → right-click a snippet → Change icon…): a search box and a grid of the real icons. Icons come from Obsidian's own set (Lucide).
 import { Modal, getIconIds, setIcon, type App } from "obsidian";
 import { lucideNames, matchIcons } from "./icon-list";
 
 export class IconPickerModal extends Modal {
   private names: string[];
 
-  constructor(app: App, private current: string, private onPick: (name: string) => void) {
+  constructor(app: App, private current: string, private onPick: (name: string) => void, private onClosed?: () => void) {
     super(app);
     this.names = lucideNames(getIconIds());
   }
@@ -33,5 +33,5 @@ export class IconPickerModal extends Modal {
     search.focus();
   }
 
-  onClose(): void { this.contentEl.empty(); }
+  onClose(): void { this.contentEl.empty(); this.onClosed?.(); }
 }

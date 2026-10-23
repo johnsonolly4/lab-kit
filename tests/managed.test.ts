@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import {
-  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, kitKept, newerKitItems, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook,
+  applyManaged, emptyManagedState, followRename, forgetManaged, kitNormalise, kitSha1, kitSha256, planManaged, planRetired, resolveManaged, kitHasNewer, kitKept, newerKitItems, restoreManaged, setDetached, sortByAttention, statusOf, attentionRank, actionLook, SAFE_ACTIONS,
   type EmbeddedKit, type ManagedAction, type ManagedAdapter, type ManagedItem
 } from "../src/kit/managed";
 // @ts-expect-error plain .mjs build helper
@@ -597,5 +597,41 @@ describe("actionLook (symbol + word + tone for what Apply does)", () => {
     expect(actionLook("needs-merge").tone).toBe("conflict");
     expect(actionLook("user-modified").tone).toBe("leave");
     expect(actionLook("keep").tone).toBe("leave");
+  });
+});
+
+describe("only your icon changed", () => {
+  const snip = (icon: string, body: string, desc = "x"): string => `---\ntitle: Sample\nicon: ${icon}\ndesc: ${desc}\n---\n${body}\n`;
+  const K1 = kit("0.1.0", { "tpl-menu": snip("list", "a"), "tpl-book": "b\n", "script-snip": "s\n", "script-config": "{}\n" });
+  const K2 = kit("0.2.0", { "tpl-menu": snip("list", "a2", "y"), "tpl-book": "b\n", "script-snip": "s\n", "script-config": "{}\n" });
+  const setup = async (cur: string) => {
+    const v = memVault(); const { state } = await install(v, K1);
+    v.files["Templates/Menu.md"] = cur;
+    // the base copy the kit keeps (the plugin writes it at install)
+    v.files[`${opts.baseDir}/tpl-menu.txt`] = snip("list", "a");
+    return { v, state };
+  };
+  it("keeps your icon, updates the rest, backs up first and says so", async () => {
+    const { v, state } = await setup(snip("flask-conical", "a"));
+    const plan = await planManaged(v, K2, state, roles, null, opts.baseDir);
+    const item = by(plan, "tpl-menu");
+    expect(item.action).toBe("merge");
+    expect(item.iconOnly).toBe(true);
+    expect(statusOf(item).label).toBe("Only your icon changed: kept.");
+    expect(SAFE_ACTIONS.includes(item.action)).toBe(false);
+    const out = await applyManaged(v, K2, plan, state, { ...opts, select: it => it.action === "merge" });
+    expect(v.files["Templates/Menu.md"]).toBe(snip("flask-conical", "a2", "y"));
+    expect(out.results.find(r => r.id === "tpl-menu")?.iconOnly).toBe(true);
+    expect(out.results.find(r => r.id === "tpl-menu")?.backup).toBeTruthy();
+  });
+  it("is left to the normal path when another line changed too", async () => {
+    const { v, state } = await setup(snip("flask-conical", "a", "mine"));
+    const item = by(await planManaged(v, K2, state, roles, null, opts.baseDir), "tpl-menu");
+    expect(item.iconOnly).toBeUndefined();
+    expect(statusOf(item).label).not.toBe("Only your icon changed: kept.");
+  });
+  it("an untouched file still updates as before", async () => {
+    const { v, state } = await setup(snip("list", "a"));
+    expect(by(await planManaged(v, K2, state, roles, null, opts.baseDir), "tpl-menu").action).toBe("fast-forward");
   });
 });

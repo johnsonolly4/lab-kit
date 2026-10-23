@@ -1,11 +1,8 @@
 // v0.4: chemical fields and the NMR dataset start empty. (Initials and the experiment number are tested in snippet-run.test.ts.)
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 import { runToken, shippedTemplate } from "./token-snippets";
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";

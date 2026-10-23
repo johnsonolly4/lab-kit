@@ -1,0 +1,13 @@
+Acid solution for pH 4.00 in progress · step 2 of 2
+Acetic acid (99.7 %, pKa 4.76) · aqueous phase 15.00 g · 60 % acid solution, 50 % used · balance 0.1 mg
+1. Make the acid solution (18.00 g): acid first ✓
+ | Target | Actual
+Acetic acid | 1.22 mg | 1.30 mg
+Water to a total of | 18.00 g | 18.0012 g
+2. Into the aqueous phase
+ | Target | Actual
+Acid solution | 9.00 g | 
+Water | 6.00 g | 
+Estimated pH from what you've entered: 3.99* (±0.02 from the balance)
+Estimate for acetic acid in water alone; monomer, initiator or salts shift it. Check with a pH meter.
+* Approximate: mol/kg is taken as mol/L.

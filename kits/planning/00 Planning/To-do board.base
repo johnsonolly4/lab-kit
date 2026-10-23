@@ -1,12 +1,28 @@
+# The to-dos of the board. "Lab Kit board" is the board (it reads and writes `scheduled`).
+# "Board" is the built-in kanban, kept as a view only: its columns are a weekday worked out from `scheduled`
+# (an old note's weekday `day` when it has no `scheduled`; anything else is the Backlog, as on the board), so dragging a card there writes nothing useful. Plan in Lab Kit board.
 filters:
   and:
     - file.inFolder("00 Planning/To-dos")
+    - kind == "todo"
     - day != "Done"
+formulas:
+  weekday: 'if(scheduled, date(scheduled).format("ddd"), if(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].contains(day), day, "Backlog"))'
 views:
+  - type: lab-kit-board
+    name: Lab Kit board
+    order:
+      - file.name
+      - done
+    sort:
+      - property: done
+        direction: ASC
+      - property: priority
+        direction: ASC
   - type: kanban
     name: Board
     groupBy:
-      property: day
+      property: formula.weekday
       direction: ASC
     groupOrder:
       - Backlog
@@ -15,6 +31,8 @@ views:
       - Wed
       - Thu
       - Fri
+      - Sat
+      - Sun
     columnWidth: 270
     order:
       - file.name

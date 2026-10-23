@@ -1,9 +1,18 @@
 // Tidy up notes (Phase 7a, plan docs/plans/phase-7-tidy-notes.md): scans a vault's notes against the kit layout and lists what would change, as
 // before / after text, plus what is only reported. Pure and read-only: the caller reads the vault into `files`; nothing here writes.
 // Simple rules are data (`migrations` in a kit's manifest); rules that look across notes (hubs, meetings, leftovers, note bodies) are code.
+import { swapRefpaneBlocks } from "./tidy-refpane-boxes";
+import { isOldZotlitTemplate, isZotlitTemplatePath } from "./tidy-zotlit-files";
 import { BAR_BUTTONS } from "../planning/button-bar";
 import { unnumbered } from "../planning/lists";
 import { firstSeries } from "../planning/meetings";
+import { normalisePatch, parseDay, type TodoPatch } from "../planning/todo";
+import { freezeBody, raisedStamp, FROZEN, RAISED, type FreezeData } from "../planning/freeze";
+import { normaliseDate } from "./exp-end";
+import { kitIsBackup } from "./paths";
+import { headerIcon } from "./icon-list";
+import { withIcon } from "./snippet-icon";
+import { oldStub } from "./snippet-template";
 import { asBody, newHubPage, pageDiffers, templatePage, type HubKind } from "./tidy-hubs";
 import type { WinState } from "./window-look";
 
@@ -41,6 +50,8 @@ export interface TidyContext {
   hubFolders?: string[];
   /** Meetings rule (Phase 7c): the meetings and to-do folders, today (YYYY-MM-DD) and what the user chose for the old hub. Missing = the rule is off. */
   meetings?: { folder: string; todos: string; today: string; interval: string; day: string };
+  /** The lists of a meeting note as they are now (null: no since and date). Missing = the freeze rule is off. */
+  freeze?: (path: string) => FreezeData | null;
   /** Folders whose notes (directly in them) and the root notes are read for old `BUTTON[...]` lines. Missing = the button rule has nothing to read. */
   buttonFolders?: string[];
   /** The Projects folder (project hubs). Missing = the project rule is off. */
@@ -51,6 +62,18 @@ export interface TidyContext {
   hubTemplates?: { project: string; topic: string; series: string };
   /** Plugin settings the settings rules look at (Phase 7c-2); each part missing when that plugin isn't loaded. */
   settings?: TidySettings;
+  /** The Snippets folder of the Lab kit's templates. Missing = the old-stub rule is off. */
+  snippetsFolder?: string;
+  /** The icons saved under the old Settings → Snippet icons page (`kit.snippetIcons`, snippet name → icon). Missing or empty = the icons rule is off. */
+  snippetIcons?: Record<string, string>;
+  /** Paths of the kit's snippet files nobody has edited: their icon is not written (a kit update would meet it). */
+  kitSnippets?: string[];
+  /** Folders of Lab Kit's own folder templates (Settings → Folder templates) whose template is a token template (`make: note`) that Lab Kit fills itself. Missing = the Templater folder-template rule is off. */
+  fillFolders?: string[];
+  /** I2: every note is read, for kept kit queries and your own queries that read the old to-do `day`. Missing = those rules are off. */
+  todoQueries?: boolean;
+  /** Empty folders the kit no longer makes (`Extras/attachments`, CI2): the old-kit-files rule offers them. Missing = none. */
+  emptyOldFolders?: string[];
 }
 
 /** A Meta Bind button action as saved (`type` plus its own fields). */
@@ -61,7 +84,7 @@ export interface TidySettings {
   /** Ids of the commands that have an Obsidian hotkey (only `templater-obsidian:` ones matter). */
   hotkeyCommands?: string[];
 }
-export type TidySettingTarget = "templater-startup" | "templater-folder" | "templater-hotkey" | "metabind-button";
+export type TidySettingTarget = "templater-startup" | "templater-folder" | "templater-folder-remove" | "templater-hotkey" | "metabind-button";
 /** One settings value to change: `key` finds it (the old path, the folder, the button id); it is changed only while it still equals `from`. */
 export interface TidySetting { target: TidySettingTarget; key: string; from: unknown; to: unknown }
 
@@ -79,6 +102,10 @@ export interface TidyChange {
   text?: string;
   /** The page below the properties is replaced: `before` / `after` are that page's text, not the properties. */
   body?: boolean;
+  /** The file goes to Obsidian's trash (the user's own trash setting decides where); `before` / `after` are empty. A copy goes to the backups folder first. */
+  trash?: boolean;
+  /** With `trash`: `path` is an empty folder (nothing to back up; skipped if it holds a file by then). */
+  folder?: boolean;
   /** A plugin setting rather than a note: `path` is the label shown, `before` / `after` the lines shown. */
   setting?: TidySetting;
 }
@@ -196,6 +223,44 @@ export function replaceProperties(text: string, before: string, after: string): 
   return crlf ? out.replace(/\n/g, "\r\n") : out;
 }
 
+/* ---- To-dos on planned dates (I2) ---- */
+
+/** The kit's to-do query lines as shipped before I2, and what they read now (Weekly review Backlog; the Daily note's Planned for today). */
+export const OLD_TODO_QUERIES: [string, string][] = [
+  ['WHERE kind = "todo" AND day = "Backlog" AND !done',
+    'WHERE kind = "todo" AND !scheduled AND !contains(list("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Done"), day) AND !done'],
+  ['WHERE kind = "todo" AND !done AND day != "Done" AND (day = dateformat(date(this.file.name), "ccc") OR (due AND due <= date(this.file.name)))',
+    'WHERE kind = "todo" AND !done AND day != "Done" AND ((scheduled AND scheduled <= date(this.file.name)) OR (!scheduled AND day = dateformat(date(this.file.name), "ccc")) OR (due AND due <= date(this.file.name)))'],
+];
+/** What the kit's own queries say about `day` (they stay right on dates): taken out before looking for another use of `day`. */
+const KIT_DAY_READS = [/day\s*!=\s*"Done"/g, /day\s*=\s*"Done"/g, /contains\(list\([^)]*\),\s*day\)/g, /!scheduled AND day = dateformat\(date\(this\.file\.name\),\s*"ccc"\)/g, /dur\([^)]*\)/g, /"[^"]*"/g];
+/** A query line (inside a code block) that reads the to-do property `day` in a way the kit's queries don't. */
+function readsDay(l: string): boolean {
+  const rest = KIT_DAY_READS.reduce((t, re) => t.replace(re, ""), l);
+  return /(^|[^\w.])day\b(?!\s*\()/.test(rest) && !/^\s*(\/\/|%%)/.test(l);
+}
+
+/** The properties as the to-do rules read them: true / false, a list, text; an empty value is null. */
+function fmObject(lines: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const p of props(lines)) {
+    const v = unquote(p.inline);
+    out[p.key.trim()] = p.inline.startsWith("[") || (p.inline === "" && p.end > p.start + 1) ? p.items ?? []
+      : p.inline === "" ? null : v === "true" ? true : v === "false" ? false : v;
+  }
+  return out;
+}
+/** A to-do patch on the properties lines: removed keys go, a changed key keeps its place, a new one goes before `cssclasses` (else last). */
+function patchLines(lines: string[], p: TodoPatch): string[] {
+  let fm = lines;
+  for (const k of p.remove) { const q = find(fm, k); if (q) fm = [...fm.slice(0, q.start), ...fm.slice(q.end)]; }
+  for (const [k, v] of Object.entries(p.set)) {
+    const q = find(fm, k), l = line(k, String(v)), c = find(fm, "cssclasses");
+    fm = q ? [...fm.slice(0, q.start), l, ...fm.slice(q.end)] : c ? [...fm.slice(0, c.start), l, ...fm.slice(c.start)] : [...fm, l];
+  }
+  return fm;
+}
+
 /* ---- Scan ---- */
 
 export const inFolder = (path: string, folder: string): boolean => !!folder && path.startsWith(folder.replace(/\/+$/, "") + "/");
@@ -210,10 +275,21 @@ function isHubName(path: string): boolean {
   return name === "index" || name.endsWith(" index") || (!!parent && name === parent);
 }
 
-/** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js.) */
+/** Does the scan need this note's text? (The caller reads only those: a whole-vault read is for finding unused view.js, and for the to-do query rules.) */
+/** Kit files no longer shipped (2026-10-21, CI2) that the old-kit-files rule offers to trash; labForm.js only while no note calls the kit's Templater scripts. */
+const OLD_KIT_FILE = /(^|\/)(labPick|labForm)\.js$/;
+/** A note that runs the kit's Templater scripts (a template of your own): labForm.js stays while one does. */
+const CALLS_KIT_SCRIPTS = /tp\.user\.(labSnippets|labForm)\b/;
+/** A labForm.js is there: the scan reads every note, to see whether one still calls the kit's Templater scripts. */
+export const readsAllForOldScripts = (paths: string[]): boolean => paths.some(p => /(^|\/)labForm\.js$/.test(p) && !kitIsBackup(p));
+
 export function wantsText(path: string, ctx: TidyContext, readAll: boolean): boolean {
   if (!isNote(path) || hidden(path)) return false;
-  return readAll || inFolder(path, ctx.labFolder) || (!!ctx.chemicalFolder && inFolder(path, ctx.chemicalFolder)) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
+  return readAll || !!ctx.todoQueries || readForRules(path, ctx) || (!!ctx.snippetsFolder && parentOf(path) === ctx.snippetsFolder.replace(/\/+$/, ""));
+}
+/** The notes the folder rules read (the button rule looks only at these, unless a view.js made the scan read every note). */
+function readForRules(path: string, ctx: TidyContext): boolean {
+  return inFolder(path, ctx.labFolder) || (!!ctx.chemicalFolder && inFolder(path, ctx.chemicalFolder)) || inFolder(path, ctx.knowledgeFolder) || isHubName(path)
     || (!!ctx.meetings && (inFolder(path, ctx.meetings.folder) || inFolder(path, ctx.meetings.todos)))
     || (!!ctx.projectsFolder && inFolder(path, ctx.projectsFolder))
     || (ctx.hubFolders ?? []).some(f => parentOf(path) === f)
@@ -281,6 +357,31 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   };
   const fmOf = (path: string): string[] => split(effective.get(path) ?? "")?.fm ?? [];
   const kindOf = (path: string): string => values(find(fmOf(path), "kind")).map(lower)[0] ?? "";
+  // Exp. End is retired (Q7b): a hand-typed date moves to `closed_on` (ended, not formally closed). Opt-in: it rewrites a property in old notes.
+  {
+    const g: TidyGroup = { id: "exp-end", title: "Lab notes: Exp. End becomes closed_on", detail: "A lab note with a typed Exp. End date and no closed_on gets that date as closed_on, and the Exp. End line goes. An empty Exp. End line just goes. A date that cannot be read, or a note that has both, is listed and left. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes.filter(x => inFolder(x.path, ctx.labFolder) && /^[A-Za-z]*[0-9]{2,}/.test(baseName(x.path)))) {
+      const fm = fmOf(n.path), e = find(fm, "Exp. End");
+      if (!e) continue;
+      const typed = values(e), c = find(fm, "closed_on");
+      let next: string[];
+      if (!typed.length) next = [...fm.slice(0, e.start), ...fm.slice(e.end)];
+      else if (typed.length > 1) { skipped.items.push({ path: n.path, note: `Exp. End has ${typed.length} values: left as it is` }); continue; }
+      else if (c && values(c).length) { skipped.items.push({ path: n.path, note: `Exp. End (${typed[0]}) and closed_on are both set: left as it is` }); continue; }
+      else {
+        const date = normaliseDate(typed[0]);
+        if (!date) { skipped.items.push({ path: n.path, note: `Exp. End "${typed[0]}" is not a date I can read: left as it is` }); continue; }
+        const rest = c ? [...fm.slice(0, c.start), ...fm.slice(c.end)] : fm;   // an empty closed_on line is replaced by the new one
+        const at = find(rest, "Exp. End");
+        if (!at) continue;
+        next = [...rest.slice(0, at.start), line("closed_on", date), ...rest.slice(at.end)];
+      }
+      g.changes.push({ path: n.path, before: fm.join("\n"), after: next.join("\n") });
+      put(n.path, next.join("\n"));
+    }
+    if (g.changes.length) groups.push(g);
+  }
+
   const mt = ctx.meetings;
   if (mt) {
     const g: TidyGroup = { id: "meetings", title: "Meetings: series hub and links", detail: "The old weekly-meeting hub becomes a meeting series, meeting notes get a series link and to-dos flagged with meeting: true link to the first series.", changes: [], ask: "meetings" };
@@ -396,19 +497,50 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
 
   // To-dos: a note in the to-dos folder with no `kind` (a quick capture, a hand-made note) gets the properties the board reads. Notes that have a kind are left alone.
   if (mt) {
-    const g: TidyGroup = { id: "todo-properties", title: "To-dos: add the properties the board needs", detail: "Notes in the to-dos folder without a kind property (or with an empty one) get kind: todo, day: Backlog, done: false and rolled: false (only the ones they lack).", changes: [] };
+    const g: TidyGroup = { id: "todo-properties", title: "To-dos: add the properties the board needs", detail: "Notes in the to-dos folder without a kind property (or with an empty one) get kind: todo and done: false (only the ones they lack); no date puts them in the Backlog.", changes: [] };
     for (const n of notes.filter(x => inFolder(x.path, mt.todos))) {
       const fm = fmOf(n.path);
       const kind = find(fm, "kind");
       if (kind && values(kind).length) continue;
       // an empty `kind:` (Obsidian shows "Empty") counts as no kind: fill that line in place
       const base = kind ? [...fm.slice(0, kind.start), line("kind", "todo"), ...fm.slice(kind.end)] : fm;
-      const add = ([["kind", "todo"], ["day", "Backlog"], ["done", "false"], ["rolled", "false"]] as const).filter(([k]) => !find(base, k)).map(([k, v]) => line(k, v));
+      const add = ([["kind", "todo"], ["done", "false"]] as const).filter(([k]) => !find(base, k)).map(([k, v]) => line(k, v));
       const full = withClasses([...base, ...add], ["vt"]);
       g.changes.push({ path: n.path, before: fm.join("\n"), after: full.join("\n") });
       put(n.path, full.join("\n"));
     }
     if (g.changes.length) groups.push(g);
+
+    // Meeting notes before the newest of their series are frozen (I19, I20): lists written out as links, `frozen` set, flagged to-dos stamped `raised_on`. Opt-in: it replaces generated text in many notes.
+    if (ctx.freeze) {
+      const fz: TidyGroup = { id: "meeting-freeze", title: "Meetings: freeze old meeting notes", detail: "Meeting notes dated before the newest one of their series get their generated lists (experiments, done, papers, waiting, flagged) written out as plain links, and the date frozen. What you wrote is kept. To-dos in the flagged list are stamped with raised_on. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+      const dateOf = (path: string): string => (values(find(fmOf(path), "date"))[0] ?? "").slice(0, 10);
+      const meet = notes.filter(n => inFolder(n.path, mt.folder) && kindOf(n.path) === "meeting" && dateOf(n.path));
+      const oneOff = new Set(notes.filter(n => kindOf(n.path) === "meeting-series" && (values(find(fmOf(n.path), "interval"))[0] ?? "").toLowerCase() === "once").map(n => parentOf(n.path)));
+      const newest = new Map<string, string>();
+      for (const n of meet) newest.set(parentOf(n.path), [newest.get(parentOf(n.path)) ?? "", dateOf(n.path)].sort()[1]);
+      // Worked out from each note as it is on disk, not from the other rules' proposals, so the rule works when it is the only one ticked (a note another ticked rule also changes is skipped by Change notes… and found again by the next scan)
+      const disk = new Map(notes.map(n => [n.path, n.text ?? ""]));
+      const stamps = new Map<string, { change: TidyChange; fm: string[] }>();
+      for (const n of meet.filter(x => !oneOff.has(parentOf(x.path)) && dateOf(x.path) < (newest.get(parentOf(x.path)) ?? "") && !find(fmOf(x.path), FROZEN)).sort((a, b) => dateOf(a.path).localeCompare(dateOf(b.path)) || a.path.localeCompare(b.path))) {
+        const data = ctx.freeze(n.path), date = dateOf(n.path);
+        if (!data) { skipped.items.push({ path: n.path, note: "meeting note without since and date properties: not frozen" }); continue; }
+        const s = split(disk.get(n.path) ?? "");
+        if (!s) continue;
+        const body = freezeBody(s.body, data.lists, data.pictures);
+        fz.changes.push({ path: n.path, before: s.fm.join("\n"), after: [...s.fm, line(FROZEN, mt.today)].join("\n") });
+        if (body !== s.body) fz.changes.push({ path: n.path, before: s.body, after: body, body: true });
+        for (const t of data.flagged) {
+          const prior = stamps.get(t.path), tf = prior?.fm ?? split(disk.get(t.path) ?? "")?.fm;
+          const stamp = tf ? raisedStamp(values(find(tf, RAISED))[0], date) : null;
+          if (!tf || !stamp) continue;
+          const had = find(tf, RAISED), next = had ? [...tf.slice(0, had.start), line(RAISED, stamp), ...tf.slice(had.end)] : [...tf, line(RAISED, stamp)];
+          if (prior) { prior.change.after = next.join("\n"); prior.fm = next; }
+          else { const change = { path: t.path, before: tf.join("\n"), after: next.join("\n") }; stamps.set(t.path, { change, fm: next }); fz.changes.push(change); }
+        }
+      }
+      if (fz.changes.length) groups.push(fz);
+    }
 
     // The chip bar at the top of each to-do (show: todo-bar): opt-in, because it touches every to-do
     const bar: TidyGroup = { id: "todo-bar", title: "To-dos: add the chip bar", detail: "Every to-do (kind: todo) gets the bar of chips (project, meeting, due, priority) at the top of the page, like the To-do template writes now. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
@@ -417,14 +549,61 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
       if (body !== undefined && !body.includes("show: todo-bar")) bar.changes.push({ path: n.path, before: body, after: `\n\n${TODO_BAR}\n${body.replace(/^\n+/, "\n")}`, body: true });
     }
     if (bar.changes.length) groups.push(bar);
+
+    // I2 planned dates: old to-do properties brought to the slim model, as the engine does for a note arriving in the to-dos folder (the same normalisePatch).
+    // Opt-in (Q9: old notes are read as they are). Worked out from each note on disk, like the freeze rule.
+    const now = parseDay(mt.today) ?? new Date();
+    const dates: TidyGroup = { id: "todo-dates", title: "To-dos: give each card a date", detail: "To-dos with the old day property get the date the board reads it as (scheduled), and lose day, planned, rolled, countdown and empty properties; an old Done card is ticked. The board looks the same afterwards. A day value Lab Kit can't read is kept. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes.filter(x => inFolder(x.path, mt.todos))) {
+      const s = split(n.text ?? "");
+      const p = s ? normalisePatch(fmObject(s.fm), now) : null;
+      if (s && p) dates.changes.push({ path: n.path, before: s.fm.join("\n"), after: patchLines(s.fm, p).join("\n") });
+    }
+    if (dates.changes.length) groups.push(dates);
+  }
+
+  // Kept copies of the kit's to-do lists (Weekly review, daily notes) whose query still reads the old `day`: the line becomes the kit's new one. Opt-in.
+  // Any other query in a note that reads `day` is only listed.
+  const ownQueries: { path: string; note?: string }[] = [];
+  if (ctx.todoQueries) {
+    const kept: TidyGroup = { id: "todo-queries", title: "To-dos: lists read the planned date", detail: "Your copies of the Weekly review and daily notes list to-dos by the old day property; their query line becomes the kit's new one, which reads scheduled (the rest of the note is kept). Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes) {
+      const text = effective.get(n.path) ?? "", s = split(text), body = s ? s.body : text.replace(/\r\n/g, "\n");
+      let fence = false, first = "";
+      const out = body.split("\n").map(l => {
+        const bare = l.replace(/^(\s*>)*\s?/, "");
+        if (/^\s*(```|~~~)/.test(bare)) { fence = !fence; return l; }
+        if (!fence) return l;
+        const swap = OLD_TODO_QUERIES.find(([old]) => bare.trim() === old);
+        if (swap) return l.slice(0, l.length - bare.length) + bare.replace(swap[0], swap[1]);
+        if (!first && readsDay(bare)) first = bare.trim();
+        return l;
+      }).join("\n");
+      if (out !== body && s) kept.changes.push({ path: n.path, before: body, after: out, body: true });   // a body change needs a properties block (as the button rule)
+      if (first) ownQueries.push({ path: n.path, note: first });
+    }
+    if (kept.changes.length) groups.push(kept);
+  }
+
+  // Paper boxes: Lab Kit's `recently-read` / `meeting-papers` blocks and its old Dataview paper queries become refpane blocks (refpane owns the paper boxes). Opt-in.
+  if (ctx.todoQueries) {
+    const papers: TidyGroup = { id: "refpane-blocks", title: "Paper boxes: use refpane's blocks", detail: "Home, meeting notes, Literature, Projects overview and project hubs: the paper lists (Recently read, Papers read, To process, Key papers, Papers by Zotero tag, Papers) become refpane blocks. A Dataview query you changed is left alone. Without refpane the boxes are empty. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    for (const n of notes) {
+      const text = effective.get(n.path) ?? "", s = split(text), body = s ? s.body : text.replace(/\r\n/g, "\n");
+      if (!/vault-card|dataview/.test(body)) continue;
+      const out = swapRefpaneBlocks(body);
+      if (out !== body && s) papers.changes.push({ path: n.path, before: body, after: out, body: true });
+    }
+    if (papers.changes.length) groups.push(papers);
   }
 
   // Buttons: a line that is only Meta Bind buttons becomes the plugin's button bar (the window a button opens then appears under it). Opt-in: it replaces text in many notes. Off with the planning kit.
   if (ctx.buttonFolders) {
     const bar: TidyGroup = { id: "button-bar", title: "Buttons: use the Lab Kit button bar", detail: "A line that holds only Meta Bind buttons (like `BUTTON[new-meeting, go-deck]`) becomes a button-bar block, so the window a button opens appears under it. Lines with other text, buttons Lab Kit does not know, notes in Extras and hub pages (the hub rule rewrites those) are left as they are. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
     const hubPages = new Set((groups.find(g => g.id === "hub-body")?.changes ?? []).map(c => c.path));
+    const readAll = files.some(f => /(^|\/)view\.js$/.test(f.path));
     for (const n of notes) {
-      if (inFolder(n.path, "Extras") || hubPages.has(n.path)) continue;
+      if (inFolder(n.path, "Extras") || hubPages.has(n.path) || (!readAll && !readForRules(n.path, ctx))) continue;
       const text = effective.get(n.path) ?? "", s = split(text);
       const body = s ? s.body : text.replace(/\r\n/g, "\n");
       if (!body.includes("BUTTON[")) continue;
@@ -465,6 +644,60 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
   }
   if (missing.changes.length) groups.push(missing);
 
+  // Snippets: the old NMR / GPC / DLS stub files (the Alt+S menu lists those three itself since Phase 3). Opt-in: a file goes to the trash.
+  if (ctx.snippetsFolder) {
+    const folder = ctx.snippetsFolder.replace(/\/+$/, "");
+    const stubs: TidyGroup = { id: "snippet-stubs", title: "Snippets: old NMR, GPC and DLS files", detail: "The menu now lists NMR, GPC and DLS itself. These files show them a second time. Moved to Obsidian's trash (you can get them back). Not ticked until you tick it; each file is copied to the backups folder first.", changes: [], optIn: true };
+    for (const n of notes) {
+      if (parentOf(n.path) !== folder) continue;
+      const stub = oldStub(n.text ?? "");
+      if (stub && ["nmr", "gpc", "dls"].includes(stub.run)) stubs.changes.push({ path: n.path, before: "", after: "", trash: true, note: stub.run.toUpperCase() });
+    }
+    if (stubs.changes.length) groups.push(stubs);
+  }
+
+  // Kit files no longer shipped (CI2): labPick.js (nothing calls it), labForm.js (only while no note calls the kit's Templater scripts), an empty Extras/attachments. Opt-in.
+  const oldFiles: TidyGroup = { id: "old-kit-files", title: "Old kit files nothing uses", detail: "The kit no longer installs labPick.js, labForm.js or an empty Extras/attachments folder: Alt+S uses the plugin's own menu and form. Moved to Obsidian's trash (you can get them back). Not ticked until you tick it; each file is copied to the backups folder first.", changes: [], optIn: true };
+  const callers = notes.filter(n => CALLS_KIT_SCRIPTS.test(n.text ?? ""));
+  for (const f of files) {
+    if (!OLD_KIT_FILE.test(f.path) || hidden(f.path) || kitIsBackup(f.path)) continue;
+    if (f.path.endsWith("labForm.js") && callers.length) { skipped.items.push({ path: f.path, note: `kept: ${callers[0].path}${callers.length > 1 ? ` and ${callers.length - 1} more call` : " calls"} the kit's Templater scripts` }); continue; }
+    oldFiles.changes.push({ path: f.path, before: "", after: "", trash: true });
+  }
+  for (const folder of ctx.emptyOldFolders ?? []) oldFiles.changes.push({ path: folder, before: "", after: "", trash: true, folder: true, note: "empty folder" });
+  if (oldFiles.changes.length) groups.push(oldFiles);
+
+  // ZotLit templates Lab Kit used to install (refpane writes files of the same names now): trashed only while a copy still holds Lab Kit's untouched text. Opt-in (owner board 9 R1 a).
+  const zot: TidyGroup = { id: "old-zotlit-templates", title: "Old ZotLit templates from Lab Kit", detail: "Lab Kit no longer installs its ZotLit templates (the Refpane plugin sets ZotLit up). A copy that is still exactly Lab Kit's text is moved to Obsidian's trash (you can get it back); a copy you or Refpane changed stays. Not ticked until you tick it; each file is copied to the backups folder first.", changes: [], optIn: true };
+  for (const f of files) {
+    if (!isZotlitTemplatePath(f.path) || hidden(f.path) || kitIsBackup(f.path) || f.text === undefined) continue;
+    if (isOldZotlitTemplate(f.path, f.text)) zot.changes.push({ path: f.path, before: "", after: "", trash: true });
+    else skipped.items.push({ path: f.path, note: "kept: this ZotLit template is not Lab Kit's text any more (yours or Refpane's)" });
+  }
+  if (zot.changes.length) groups.push(zot);
+
+  // Snippets: icons saved under the old Settings → Snippet icons page go into each snippet's header (`icon:`). Opt-in; a note is backed up first.
+  const savedIcons = Object.entries(ctx.snippetIcons ?? {}).map(([name, icon]) => [name.trim(), icon.trim()] as const).filter(([name, icon]) => name && icon);
+  if (ctx.snippetsFolder && savedIcons.length) {
+    const folder = ctx.snippetsFolder.replace(/\/+$/, "");
+    const icons: TidyGroup = { id: "snippet-icons", title: "Snippets: icons from settings into the notes", detail: "Icons picked under Settings → Snippet icons are written into each snippet's header (icon:). The settings page goes. Not ticked until you tick it; each note is backed up first.", changes: [], optIn: true };
+    const kit = new Set(ctx.kitSnippets ?? []);
+    const nameOf = (path: string): string => baseName(path).replace(/^\d+\s*[-.]?\s*/, "");
+    for (const [name, icon] of savedIcons) {
+      const hit = notes.find(n => parentOf(n.path) === folder && nameOf(n.path) === name);
+      if (!hit) { skipped.items.push({ path: name, note: `Snippet icon “${icon}”: there is no snippet of that name in the Snippets folder: left as it is` }); continue; }
+      if (kit.has(hit.path)) { skipped.items.push({ path: hit.path, note: `Snippet icon “${icon}”: a kit file nobody has edited keeps the kit's icon. Make my own copy of it to give the copy an icon` }); continue; }
+      const text = hit.text ?? "";
+      const s = split(text);
+      if (headerIcon(text) === icon) continue;
+      const next = s ? withIcon(text, icon) : null;
+      const after = next ? split(next) : null;
+      if (!s || !after) { skipped.items.push({ path: hit.path, note: `Snippet icon “${icon}”: this snippet has no header to hold it: left as it is` }); continue; }
+      icons.changes.push({ path: hit.path, before: s.fm.join("\n"), after: after.fm.join("\n") });
+    }
+    if (icons.changes.length) groups.push(icons);
+  }
+
   // Plugin settings (Phase 7c-2): Templater paths into moved folders, Meta Bind buttons that run a template file
   const settingsReported: TidyReported[] = [];
   const st = ctx.settings;
@@ -482,6 +715,14 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     for (const f of st.templater?.folders ?? []) { const n = remap(f.template); if (n) add("templater-folder", `Templater › Folder template for ${f.folder}`, f.folder, f.template, n); }
     for (const v of st.templater?.hotkeys ?? []) { const n = remap(v); if (n) add("templater-hotkey", "Templater › Template hotkeys", v, v, n); }
     if (tp.changes.length) groups.push(tp);
+
+    // Templater's folder-template rows for folders whose template Lab Kit now fills itself (plan Phase 2, rule 1): the row is removed, the list backed up first
+    const fillFolders = ctx.fillFolders ?? [];
+    const own: TidyGroup = { id: "templater-folder-templates", title: "Templater folder templates for kit folders: Lab Kit fills these", detail: "Folders where Lab Kit fills new notes itself (Settings → Folder templates) and Templater also has a folder template. The Templater row is removed; a copy of Templater's list is saved first. Not ticked until you tick it.", changes: [], optIn: true };
+    for (const f of st.templater?.folders ?? []) {
+      if (fillFolders.includes(f.folder)) own.changes.push({ path: `Templater › Folder template for ${f.folder}`, before: f.template, after: "(removed: Lab Kit fills new notes here)", setting: { target: "templater-folder-remove", key: f.folder, from: f.template, to: null } });
+    }
+    if (own.changes.length) groups.push(own);
 
     const mb: TidyGroup = { id: "metabind-buttons", title: "Meta Bind: buttons that run a template", detail: "A button that runs a Templater file becomes a button that runs the matching Lab Kit command.", changes: [] };
     const unknown: { path: string; note: string }[] = [];
@@ -533,10 +774,17 @@ export function scan(files: TidyFile[], ctx: TidyContext): TidyScan {
     rep("knowledge-headings", "Knowledge notes with ### headings", "Section headings use ## in the kit's concept notes. Change them by hand.", heads),
     rep("knowledge-summary", "Knowledge notes without a summary", "Write one line in the summary property.", noSummary),
     rep("knowledge-sources", "Knowledge notes without sources", "Add the sources property (links or references).", noSources));
+  reported.push(rep("todo-own-queries", "Your own queries that read day", "A Dataview query in these notes reads the to-do day property. To-dos planned on the board have scheduled (a date) instead; old ones keep day until they are given a date. Change the query by hand (Lab Kit does not rewrite it).", ownQueries));
   reported.push(...settingsReported);
   if (skipped.items.length) reported.unshift(skipped);
 
   return { groups, reported: reported.filter((r): r is TidyReported => !!r) };
+}
+
+/** How many to-dos the applied changes of "To-dos: give each card a date" gave a planned date (`changed`: the notes Change notes… wrote). */
+export function datedTodos(s: TidyScan, applied: readonly TidyChange[], changed: readonly string[]): number {
+  const g = s.groups.find(x => x.id === "todo-dates");
+  return (g?.changes ?? []).filter(c => applied.includes(c) && changed.includes(c.path) && !/^scheduled:/m.test(c.before) && /^scheduled:/m.test(c.after)).length;
 }
 
 /** The changes of the rules the user left ticked: the only ones Change notes… may carry out. */
@@ -627,7 +875,7 @@ export function pageSummary(before: string, after: string): PageSummary {
 export function batchChanges(changes: TidyChange[]): { indices: number[] }[] {
   const out: { indices: number[] }[] = [], at = new Map<string, number>();
   changes.forEach((c, i) => {
-    if (c.to !== undefined || c.setting) { out.push({ indices: [i] }); return; }
+    if (c.to !== undefined || c.setting || c.trash) { out.push({ indices: [i] }); return; }
     // a replaced page is the same change when it loses and gains the same lines, whatever it keeps (hubs differ in their goal)
     const sum = replacesPage(c) ? pageSummary(c.before, c.after) : null;
     const key = sum ? `replace\n${JSON.stringify([sum.lost, sum.added])}`
@@ -661,7 +909,7 @@ export function reportMarkdown(s: TidyScan, ticked?: ReadonlySet<string>): strin
 /** How a rule reads in the window: red when it removes lines of the user's (a replaced page that drops some, or a change that only deletes), else amber. */
 export function tidyGroupState(g: TidyGroup): WinState {
   const removes = g.changes.some(c => {
-    if (c.to !== undefined || c.create || c.setting) return false;
+    if (c.to !== undefined || c.create || c.setting || c.trash) return false;
     if (replacesPage(c)) return pageSummary(c.before, c.after).lost.length > 0;
     return countRows(diffRows(c.before, c.after)).removed > 0;
   });

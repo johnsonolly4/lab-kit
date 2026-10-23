@@ -62,15 +62,18 @@ export async function renderCopy(run: (tp: HeadlessTp) => Promise<string>, user:
   return "";
 }
 
-/** The snippet a stub note runs: `tp.user.labSnippets(tp, "solution")` → "solution". */
-export const snippetKey = (stub: string): string | null => stub.match(/labSnippets\(\s*tp\s*,\s*"([^":]+)"/)?.[1] ?? null;
+/** The snippet a stub note runs: `tp.user.labSnippets(tp, "solution")` → "solution", or a header's `run: solution` / `block: raft`. */
+export const snippetKey = (stub: string): string | null =>
+  stub.match(/labSnippets\(\s*tp\s*,\s*"([^":]+)"/)?.[1]
+  ?? /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/.exec(stub)?.[1].match(/^(?:run|block):[ \t]*["']?([^\s"':]+)["']?[ \t]*$/m)?.[1]
+  ?? null;
 
-/** True for a snippet note that is only a stub calling labSnippets.js; a token template is a real note (opening it is useful). */
+/** True for a snippet note that is only a stub calling labSnippets.js (the old `<%*` form or a `run:` header); a token template is a real note (opening it is useful). */
 export const isStubSnippet = (text: string): boolean => snippetKey(text) !== null;
 
-/** True for a token template (a header with `fields`). A header that cannot be read counts as not copyable. */
+/** True for a token template (a header with `fields`; a `run:` header is a calculator, copied by its output). A header that cannot be read counts as not copyable. */
 export function isTokenTemplate(text: string, parseYaml: (yaml: string) => unknown): boolean {
-  try { return parseTemplate(text, parseYaml) !== null; } catch { return false; }
+  try { const p = parseTemplate(text, parseYaml); return p !== null && !p.header.run; } catch { return false; }
 }
 
 /** Row 14 (key `method`) is left out: run without answers it only gives the NMR table (user, 2026-10-09). */

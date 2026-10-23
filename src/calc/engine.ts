@@ -239,10 +239,35 @@ function parseClock(s: unknown): number | null {
   return m ? (+m[1]) * 60 + (+m[2]) : null;
 }
 
+/** Excel's SLOPE / INTERCEPT / RSQ: pairs with a blank or text value on either side are skipped; unequal lengths #N/A; under 2 pairs or no spread in x #DIV/0! (RSQ also when y has no spread). */
+function fitStat(ys: Value, xs: Value, pick: (slope: number, intercept: number, sxx: number, syy: number, sxy: number) => Value): Value {
+  const y = Array.isArray(ys) ? ys : [ys], x = Array.isArray(xs) ? xs : [xs];
+  const e = firstErr(y) || firstErr(x); if (e) return e;
+  if (y.length !== x.length) return ERR("#N/A", "the two ranges must be the same size");
+  const p: [number, number][] = [];
+  y.forEach((v, i) => { if (typeof v === "number" && typeof x[i] === "number") p.push([v, x[i]]); });
+  if (p.length < 2) return ERR("#DIV/0!", "needs at least 2 pairs of numbers");
+  const my = p.reduce((s, q) => s + q[0], 0) / p.length, mx = p.reduce((s, q) => s + q[1], 0) / p.length;
+  let sxx = 0, syy = 0, sxy = 0;
+  for (const [vy, vx] of p) { sxx += (vx - mx) ** 2; syy += (vy - my) ** 2; sxy += (vx - mx) * (vy - my); }
+  if (sxx === 0) return ERR("#DIV/0!", "all x values are the same");
+  const slope = sxy / sxx;
+  return pick(slope, my - slope * mx, sxx, syy, sxy);
+}
+
 const FUNCS: Record<string, (a: Value[]) => Value> = {
   SUM: (a) => { const v = flat(a); return firstErr(v) || numsOnly(v).reduce((s, x) => s + x, 0); },
   PRODUCT: (a) => { const v = flat(a); return firstErr(v) || numsOnly(v).reduce((s, x) => s * x, 1); },
   AVERAGE: (a) => { const v = flat(a); const e = firstErr(v); if (e) return e; const n = numsOnly(v); return n.length ? n.reduce((s, x) => s + x, 0) / n.length : ERR("#DIV/0!"); },
+  STDEV: (a) => {
+    const v = flat(a); const e = firstErr(v); if (e) return e;
+    const n = numsOnly(v); if (n.length < 2) return ERR("#DIV/0!", "needs at least 2 numbers");
+    const m = n.reduce((t, x) => t + x, 0) / n.length;
+    return Math.sqrt(n.reduce((t, x) => t + (x - m) ** 2, 0) / (n.length - 1));
+  },
+  SLOPE: ([y, x]) => fitStat(y, x, (sl) => sl),
+  INTERCEPT: ([y, x]) => fitStat(y, x, (_sl, ic) => ic),
+  RSQ: ([y, x]) => fitStat(y, x, (_sl, _ic, sxx, syy, sxy) => syy === 0 ? ERR("#DIV/0!", "all y values are the same") : sxy * sxy / (sxx * syy)),
   MIN: (a) => { const v = flat(a); return firstErr(v) || (numsOnly(v).length ? Math.min(...numsOnly(v)) : 0); },
   MAX: (a) => { const v = flat(a); return firstErr(v) || (numsOnly(v).length ? Math.max(...numsOnly(v)) : 0); },
   COUNT: (a) => numsOnly(flat(a)).length,
@@ -295,7 +320,66 @@ const FUNCS: Record<string, (a: Value[]) => Value> = {
   }
 };
 export const SUPPORTED_FUNCTIONS = [...Object.keys(FUNCS), "IF", "XLOOKUP", "INDEX", "MW", "PROP"];
-const MW_KEYS = ["mw", "mr", "molecular weight", "molecular_weight", "molar mass", "molar_mass", "m_w"];
+export const MW_KEYS = ["mw", "mr", "molecular weight", "molecular_weight", "molar mass", "molar_mass", "m_w"];
+
+/** One binary operator on two evaluated values (shared by the table evaluator and `evaluate`). */
+function binary(op: string, a: Value, b: Value): Value {
+  if (op === "&") { if (isErr(a)) return a; if (isErr(b)) return b; return `${text(a)}${text(b)}`; }
+  if (["=", "<>", "<", ">", "<=", ">="].includes(op)) {
+    if (isErr(a)) return a; if (isErr(b)) return b;
+    const str = typeof a === "string" || typeof b === "string";
+    const x = (str ? cleanLink(a ?? "").toLowerCase() : toNum(a)) as string | number;
+    const y = (str ? cleanLink(b ?? "").toLowerCase() : toNum(b)) as string | number;
+    const res: Record<string, boolean> = { "=": x === y, "<>": x !== y, "<": x < y, ">": x > y, "<=": x <= y, ">=": x >= y };
+    return res[op];
+  }
+  const x = toNum(a), y = toNum(b);
+  if (isErr(x)) return x; if (isErr(y)) return y;
+  switch (op) {
+    case "+": return x + y;
+    case "-": return x - y;
+    case "*": return x * y;
+    case "/": return y === 0 ? ERR("#DIV/0!", "dividing by zero or an empty cell") : x / y;
+    case "^": return x ** y;
+  }
+  return ERR("#ERROR!");
+}
+
+/** Evaluates a parsed formula that has no cells: names come from `resolve` (undefined = unknown name), functions are the calc engine's `FUNCS` plus IF. Cell references, ranges and the table look-ups (XLOOKUP, INDEX, MW, PROP) give #NAME? / #REF!; `checkFormula` (src/blocks/def/formula.ts) refuses them before. */
+export function evaluate(node: Node, resolve: (name: string) => Value | undefined): Value {
+  const scalar = (n: Node): Value => {
+    const v = evaluate(n, resolve);
+    return Array.isArray(v) ? (v.length === 1 ? v[0] : ERR("#VALUE!", "a list where one value was expected")) : v;
+  };
+  switch (node.t) {
+    case "num": return node.v;
+    case "str": return node.v;
+    case "const": {
+      if (node.name === "PI") return Math.PI;
+      if (node.name === "TRUE") return true;
+      if (node.name === "FALSE") return false;
+      const v = resolve(node.name);
+      return v === undefined ? ERR("#NAME?", `unknown name ${node.name}`) : v;
+    }
+    case "neg": { const v = toNum(scalar(node.a)); return isErr(v) ? v : -v; }
+    case "pct": { const v = toNum(scalar(node.a)); return isErr(v) ? v : v / 100; }
+    case "bin": return binary(node.op, scalar(node.a), scalar(node.b));
+    case "fn": {
+      if (node.name === "IF") {
+        const cond = scalar(node.args[0]);
+        if (isErr(cond)) return cond;
+        const t = typeof cond === "string" ? cond !== "" : toNum(cond);
+        if (isErr(t)) return t;
+        const branch = t ? node.args[1] : node.args[2];
+        return branch ? scalar(branch) : !!t;
+      }
+      const f = Object.prototype.hasOwnProperty.call(FUNCS, node.name) ? FUNCS[node.name] : undefined;
+      if (!f) return ERR("#NAME?", `unknown function ${node.name}()`);
+      return f(node.args.map(a => evaluate(a, resolve)));
+    }
+    default: return ERR("#REF!", "cells are not available here");
+  }
+}
 
 /** A workbook = every calc block in one note. env.prop(note, keys) reads note properties. */
 export class Workbook {
@@ -395,27 +479,7 @@ export class Workbook {
       case "neg": { const v = toNum(this.scalar(n.a, bi, r, c)); return isErr(v) ? v : -v; }
       case "pct": { const v = toNum(this.scalar(n.a, bi, r, c)); return isErr(v) ? v : v / 100; }
       case "fn": return this.evalFn(n, bi, r, c);
-      case "bin": {
-        const a = this.scalar(n.a, bi, r, c), b = this.scalar(n.b, bi, r, c);
-        if (n.op === "&") { if (isErr(a)) return a; if (isErr(b)) return b; return `${text(a)}${text(b)}`; }
-        if (["=", "<>", "<", ">", "<=", ">="].includes(n.op)) {
-          if (isErr(a)) return a; if (isErr(b)) return b;
-          const str = typeof a === "string" || typeof b === "string";
-          const x = (str ? cleanLink(a ?? "").toLowerCase() : toNum(a)) as string | number;
-          const y = (str ? cleanLink(b ?? "").toLowerCase() : toNum(b)) as string | number;
-          const res: Record<string, boolean> = { "=": x === y, "<>": x !== y, "<": x < y, ">": x > y, "<=": x <= y, ">=": x >= y };
-          return res[n.op];
-        }
-        const x = toNum(a), y = toNum(b);
-        if (isErr(x)) return x; if (isErr(y)) return y;
-        switch (n.op) {
-          case "+": return x + y;
-          case "-": return x - y;
-          case "*": return x * y;
-          case "/": return y === 0 ? ERR("#DIV/0!", "dividing by zero or an empty cell") : x / y;
-          case "^": return x ** y;
-        }
-      }
+      case "bin": return binary(n.op, this.scalar(n.a, bi, r, c), this.scalar(n.b, bi, r, c));
     }
     return ERR("#ERROR!");
   }

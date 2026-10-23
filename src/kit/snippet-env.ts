@@ -25,9 +25,17 @@ export function calcTables(note: string): { name: string; title: string; codes: 
   return out;
 }
 
-/** The notes picked in `suggest: notes` fields: their text (null = no such note) and a property as text. */
-export interface NoteLookup { text(name: string): string | null; prop(name: string, property: string): string }
+/** The notes picked in `suggest: notes` fields: their text (null = no such note), a property as text, and the rig snapshot the runner took of one (null = none taken). */
+export interface NoteLookup { text(name: string): string | null; prop(name: string, property: string): string; snapshot?(name: string): { link: string; date: string } | null }
 const NO_NOTES: NoteLookup = { text: () => null, prop: () => "" };
+
+/** An environment that reads nothing from a note or the vault (a note template with no lookups); `extra` replaces parts of it. */
+export function emptyEnv(extra: Partial<TemplateEnv> = {}): TemplateEnv {
+  return {
+    prefix: "", nextFreeIndex: () => 0, uniqueTable: b => b, tableRows: () => 0, noteProperty: () => "", noteText: () => "",
+    rigTables: () => "", rigDiagram: () => "", rigSnapshot: () => ({ link: "", date: "" }), rigSummary: () => "", ...extra,
+  };
+}
 
 /**
  * The engine's environment for one insert. `note` is the text of the note being edited, `prefix` its sample-code prefix (ABC0016-),
@@ -69,6 +77,12 @@ export function makeEnv(note: string, prefix: string, noteProperty: (noteName: s
     rigDiagram(name) {
       const { mermaid } = rigOf(name);
       return mermaid ? F + "mermaid\n" + mermaid + "\n" + F : "";
+    },
+    rigSnapshot(name) {
+      rigOf(name);
+      const snap = notes.snapshot?.(name);
+      if (!snap) throw new TemplateError(`No snapshot of "${name}" could be made: it has no parts to draw yet.`);
+      return snap;
     },
     rigSummary: name => readSummary(notes.text(name) ?? ""),
   };

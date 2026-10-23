@@ -1,15 +1,12 @@
 // Ported from the v0.3 plain-Node test of the same name.
 // Drives the real Templater snippets in kit/ and evaluates the generated calc tables with the src/ engine.
 // Known answers: 0005 RAFT Mn = 19990.14, 0011 reactor volume = 1.7591 mL.
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 import { extractBlocks, parseBlock, Workbook, type Env } from "../src/calc/engine";
 import { editRows } from "../src/calc/rewrite";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 import { isTokenSnippet, runToken } from "./token-snippets";
 
 const MW: Record<string, number> = { "lipoic acid": 206.32, "benzyl alcohol": 108.14, "dcm": 84.93, "pabtc": 238.39, "dmam": 99.13, "daam": 169.23, "va-044": 323.33, "a": 100, "b": 200, "c": 50 };

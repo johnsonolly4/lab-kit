@@ -55,8 +55,19 @@ describe("plain prompt corners", () => {
   it("ask and pick add the lab-kit-prompt class and styles.css styles it", () => {
     const ask = readFileSync("src/planning/ask.ts", "utf8");
     expect((ask.match(/lab-kit-prompt/g) ?? []).length).toBeGreaterThanOrEqual(2);
-    expect(css).toMatch(/\.modal\.lab-kit-prompt \{[^}]*--lk-radius-card/);
+    expect(css).toMatch(/\.modal\.lab-kit-prompt, \.prompt\.lab-kit-prompt \{[^}]*--lk-radius-card/);   // a SuggestModal's box has the class "prompt", not "modal"
     expect(css).toMatch(/\.lab-kit-prompt \.prompt-input \{[^}]*--lk-radius-control/);
+  });
+});
+
+describe("project hub bar chips", () => {
+  it("the Status / Deadline chips are pills and the snippet's button look skips them", () => {
+    expect(css).toMatch(/\.vt-todo-chip \{[^}]*border-radius: var\(--lk-radius-pill\)/);
+    expect(css).toMatch(/\.vt-todo-chip\.is-empty \{[^}]*dashed/);
+    // every snippet rule that styles ".vt-hub-bar button" must exclude the chips (it would out-rank .vt-todo-chip)
+    const rules = snippet.split("\n").filter(l => /\.vt-hub-bar button/.test(l));
+    expect(rules.length).toBeGreaterThan(0);
+    for (const l of rules) expect(l).toContain(".vt-hub-bar button:not(.vt-todo-chip)");
   });
 });
 
@@ -93,6 +104,6 @@ describe("lab-kit windows corner", () => {
       windows += classes;
       expect(text.match(/\bcardWindow\(this\)/g)?.length ?? 0, f).toBe(classes);
     }
-    expect(windows).toBe(9);   // five in managed / merge, three Check setup / hotkeys, Tidy
+    expect(windows).toBe(10);   // five in managed / merge, three Check setup / hotkeys, Tidy, Close experiment
   });
 });

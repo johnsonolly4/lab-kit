@@ -2,17 +2,19 @@
    vault-theme.css - the vault's look. Sets NO colours itself:
    every colour, tint and contrast setting is in vault-colours.css.
    Turn BOTH snippets on (Settings > Appearance > CSS snippets).
+   Notes: rules that restyle a note apply to kit notes (cssclasses: vt) only; Settings > Lab Kit >
+   Style all notes adds the body class lab-kit-style-all-notes and they apply to every note.
    Rules live in: 07 How-tos/Obsidian/Vault spec.md
    (scrolling-mermaid.css stays separate - the lab kit manages it)
 
    Sections
      1. (Palette moved to vault-colours.css)
-     2. Reading comfort (every note)
-     3. Links
+     2. Reading comfort (kit notes, or every note with "Style all notes")
+     3. Links (same)
      4. Callout types
      5. [!columns]
      6. Status badges
-     7. Vault look (cssclasses: vt)
+     7. Vault look (cssclasses: vt, or every note with "Style all notes")
      8. Sticky tabs
      9. Homepage (cssclasses: home)
     10. Project cards (Projects overview)
@@ -20,47 +22,50 @@
     12. Text box (vtAsk) looks like the pickers
    ========================================================= */
 
-/* ---- 2. Reading comfort (every note) ----
-   - Every note is wide (1200px) and has roomier line spacing.
+/* ---- 2. Reading comfort (kit notes; every note with Settings > Lab Kit > Style all notes) ----
+   These rules restyle a note, so they apply only to kit notes (cssclasses: vt), unless the plugin
+   has put the class lab-kit-style-all-notes on <body> (the setting, off by default).
+   - Kit notes are wide (1200px) and have roomier line spacing.
    - Headings coloured by level (vault-colours.css: --vt-h2 / h3 / h4).
    - Tints the line the cursor is on, so you don't lose your place. */
-body {
-  --file-line-width: 1200px; /* every note is wide; use 100% to fill the whole pane */
+.vt, .lab-kit-style-all-notes {
+  --file-line-width: 1200px; /* use 100% to fill the whole pane */
   --line-height-normal: 1.7;
 }
-.markdown-rendered h1, .cm-header-1 { color: var(--text-normal); }
-.markdown-rendered h2, .cm-header-2 { color: rgb(var(--vt-h2)); }
-.markdown-rendered h3, .cm-header-3 { color: rgb(var(--vt-h3)); }
-.markdown-rendered h4, .cm-header-4 { color: rgb(var(--vt-h4)); }
-.cm-active { background-color: rgba(var(--vt-doing), var(--vt-line-tint)); }
+:is(.vt, .lab-kit-style-all-notes) :is(h1, .cm-header-1) { color: var(--text-normal); }
+:is(.vt, .lab-kit-style-all-notes) :is(h2, .cm-header-2) { color: rgb(var(--vt-h2)); }
+:is(.vt, .lab-kit-style-all-notes) :is(h3, .cm-header-3) { color: rgb(var(--vt-h3)); }
+:is(.vt, .lab-kit-style-all-notes) :is(h4, .cm-header-4) { color: rgb(var(--vt-h4)); }
+:is(.vt, .lab-kit-style-all-notes) .cm-active { background-color: rgba(var(--vt-doing), var(--vt-line-tint)); }
 
 /* ---- 3. Links ----
    Internal links (notes) and external links (websites) have their own colour,
    both change on hover. Inside vt cards, internal links read as plain text (section 7). */
-body {
+.vt, .lab-kit-style-all-notes {
   --link-color: rgb(var(--vt-link));
   --link-color-hover: rgb(var(--vt-link-hover));
   --link-external-color: rgb(var(--vt-link-external));
   --link-external-color-hover: rgb(var(--vt-link-hover));
 }
-.cm-s-obsidian span.cm-hmd-internal-link,
-.cm-s-obsidian span.cm-url:has([data-link-path$="md"]),
-.cm-s-obsidian span.cm-link:has([data-link-path$="md"]),
-.markdown-rendered .internal-link { color: rgb(var(--vt-link)); }
+:is(.vt, .lab-kit-style-all-notes) :is(span.cm-hmd-internal-link,
+span.cm-url:has([data-link-path$="md"]),
+span.cm-link:has([data-link-path$="md"]),
+.internal-link) { color: rgb(var(--vt-link)); }
 /* Keep the brackets around external URLs faint in the editor */
-.cm-s-obsidian span.cm-url.cm-formatting-link-string { color: var(--text-faint); }
+:is(.vt, .lab-kit-style-all-notes) span.cm-url.cm-formatting-link-string { color: var(--text-faint); }
 
 /* ---- 4. Callout types ----
-   Text shades, so callout titles stay readable in light and dark mode. */
-.callout[data-callout="focus"]    { --callout-color: var(--vt-doing-text);   --callout-icon: lucide-target; }
-.callout[data-callout="projects"] { --callout-color: var(--vt-project-text); --callout-icon: lucide-folder-kanban; }
-.callout[data-callout="planning"] { --callout-color: var(--vt-waiting-text); --callout-icon: lucide-calendar-clock; }
-.callout[data-callout="lab"]      { --callout-color: var(--vt-done-text);    --callout-icon: lucide-flask-conical; }
-.callout[data-callout="goto"]     { --callout-color: var(--vt-neutral-text); --callout-icon: lucide-compass; }
-.callout[data-callout="overdue"]  { --callout-color: var(--vt-overdue-text); --callout-icon: lucide-alarm-clock; }
-.callout[data-callout="summary"]  { --callout-color: var(--vt-neutral-text); --callout-icon: lucide-list; }
-.callout[data-callout="question"] { --callout-color: var(--vt-waiting-text); --callout-icon: lucide-circle-help; }
-.callout[data-callout="comment"]  { --callout-color: var(--vt-neutral-text); --callout-icon: lucide-message-square; }
+   Text shades, so callout titles stay readable in light and dark mode.
+   --callout-color must be a real colour (Obsidian 1.13+ reads it as one; the old "r, g, b" form shows grey). */
+.callout[data-callout="focus"]    { --callout-color: rgb(var(--vt-doing-text));   --callout-icon: lucide-target; }
+.callout[data-callout="projects"] { --callout-color: rgb(var(--vt-project-text)); --callout-icon: lucide-folder-kanban; }
+.callout[data-callout="planning"] { --callout-color: rgb(var(--vt-waiting-text)); --callout-icon: lucide-calendar-clock; }
+.callout[data-callout="lab"]      { --callout-color: rgb(var(--vt-done-text));    --callout-icon: lucide-flask-conical; }
+.callout[data-callout="goto"]     { --callout-color: rgb(var(--vt-neutral-text)); --callout-icon: lucide-compass; }
+.callout[data-callout="overdue"]  { --callout-color: rgb(var(--vt-overdue-text)); --callout-icon: lucide-alarm-clock; }
+.callout[data-callout="summary"]  { --callout-color: rgb(var(--vt-neutral-text)); --callout-icon: lucide-list; }
+.callout[data-callout="question"] { --callout-color: rgb(var(--vt-waiting-text)); --callout-icon: lucide-circle-help; }
+.callout[data-callout="comment"]  { --callout-color: rgb(var(--vt-neutral-text)); --callout-icon: lucide-message-square; }
 
 /* ---- 5. [!columns]: callouts inside sit side by side - at most 2 per row, equal height ----
    !important because themes add their own callout margins and title bars */
@@ -114,7 +119,7 @@ body {
   background: rgba(var(--vt-badge), var(--vt-tint));
 }
 .vt-badge:is(.vt-active, .vt-closed, .vt-done)          { --vt-badge: var(--vt-done);    --vt-badge-text: var(--vt-done-text); }
-.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
+.vt-badge:is(.vt-paused, .vt-processing-results, .vt-rolled, .vt-waiting, .vt-nonext) { --vt-badge: var(--vt-waiting); --vt-badge-text: var(--vt-waiting-text); }
 .vt-badge:is(.vt-started, .vt-today)                    { --vt-badge: var(--vt-doing);   --vt-badge-text: var(--vt-doing-text); }
 .vt-badge:is(.vt-planned, .vt-backlog)                  { --vt-badge: var(--vt-neutral); --vt-badge-text: var(--vt-neutral-text); }
 .vt-badge.vt-overdue                                    { --vt-badge: var(--vt-overdue); --vt-badge-text: var(--vt-overdue-text); }
@@ -123,12 +128,13 @@ body {
 
 /* =========================================================
    7. Vault look (cssclasses: vt) - flat cards.
-   Used by the homepage, hubs, meetings, review, literature and lab notes.
+   Used by the homepage, hubs, meetings, review, literature and lab notes. Other notes only with
+   Settings > Lab Kit > Style all notes (the body class lab-kit-style-all-notes).
    Card fill, border, title and icon strength: vault-colours.css dials.
    ========================================================= */
-.vt :is(.markdown-rendered h1, .HyperMD-header-1, .cm-header-1) { color: var(--text-normal) !important; }
+:is(.vt, .lab-kit-style-all-notes) :is(h1, .HyperMD-header-1, .cm-header-1) { color: var(--text-normal) !important; }
 
-.vt .callout:not([data-callout="columns"]) {
+:is(.vt, .lab-kit-style-all-notes) .callout:not([data-callout="columns"]) {
   background: var(--vt-card-bg) !important;
   border: 1px solid var(--vt-card-border) !important;
   border-radius: var(--vt-card-radius) !important;
@@ -136,53 +142,53 @@ body {
   padding: 14px 18px !important;
   mix-blend-mode: normal !important;
 }
-.vt .callout:not([data-callout="columns"]) > .callout-title {
+:is(.vt, .lab-kit-style-all-notes) .callout:not([data-callout="columns"]) > .callout-title {
   background: transparent !important;
   border: none !important;
   padding: 0 0 8px 0 !important;
   gap: 8px;
 }
-.vt .callout.is-collapsed:not([data-callout="columns"]) > .callout-title { padding-bottom: 0 !important; }
-.vt .callout:not([data-callout="columns"]) > .callout-title .callout-title-inner {
+:is(.vt, .lab-kit-style-all-notes) .callout.is-collapsed:not([data-callout="columns"]) > .callout-title { padding-bottom: 0 !important; }
+:is(.vt, .lab-kit-style-all-notes) .callout:not([data-callout="columns"]) > .callout-title .callout-title-inner {
   color: var(--vt-card-title) !important;
   font-weight: 500 !important;
   font-size: 0.95em;
 }
-.vt .callout:not([data-callout="columns"]) > .callout-title .callout-icon { color: rgb(var(--callout-color)) !important; opacity: var(--vt-card-icon-opacity); }
-.vt .callout:not([data-callout="columns"]) > .callout-content {
+:is(.vt, .lab-kit-style-all-notes) .callout:not([data-callout="columns"]) > .callout-title .callout-icon { color: var(--callout-color) !important; opacity: var(--vt-card-icon-opacity); }
+:is(.vt, .lab-kit-style-all-notes) .callout:not([data-callout="columns"]) > .callout-content {
   padding: 0 !important;
   background: transparent !important;
   border: none !important;
 }
-.vt .callout[data-callout="focus"] { border: 2px solid rgb(var(--vt-doing)) !important; }
-.vt .callout[data-callout="comment"] { padding: 8px 14px !important; margin-left: 1.5em; }
+:is(.vt, .lab-kit-style-all-notes) .callout[data-callout="focus"] { border: 2px solid rgb(var(--vt-doing)) !important; }
+:is(.vt, .lab-kit-style-all-notes) .callout[data-callout="comment"] { padding: 8px 14px !important; margin-left: 1.5em; }
 
 /* Lists inside cards: plain rows with a divider, no bullets */
-.vt .callout .dataview.list-view-ul { list-style: none; padding: 0; margin: 0; }
-.vt .callout .dataview.list-view-ul > li {
+:is(.vt, .lab-kit-style-all-notes) .callout .dataview.list-view-ul { list-style: none; padding: 0; margin: 0; }
+:is(.vt, .lab-kit-style-all-notes) .callout .dataview.list-view-ul > li {
   padding: 6px 0;
   margin: 0;
   border-bottom: 1px solid var(--vt-divider);
 }
-.vt .callout .dataview.list-view-ul > li:last-child { border-bottom: none; }
-.vt .callout .dataview.list-view-ul > li::marker { content: ""; }
-.vt .callout .dataview.list-view-ul > li::before,
-.vt .callout .dataview.list-view-ul .list-bullet { display: none !important; }
+:is(.vt, .lab-kit-style-all-notes) .callout .dataview.list-view-ul > li:last-child { border-bottom: none; }
+:is(.vt, .lab-kit-style-all-notes) .callout .dataview.list-view-ul > li::marker { content: ""; }
+:is(.vt, .lab-kit-style-all-notes) .callout .dataview.list-view-ul > li::before,
+:is(.vt, .lab-kit-style-all-notes) .callout .dataview.list-view-ul .list-bullet { display: none !important; }
 
 /* Links inside cards read as text */
-.vt .callout a.internal-link { color: var(--text-normal); text-decoration: none; }
-.vt .callout a.internal-link:hover { text-decoration: underline; }
+:is(.vt, .lab-kit-style-all-notes) .callout a.internal-link { color: var(--text-normal); text-decoration: none; }
+:is(.vt, .lab-kit-style-all-notes) .callout a.internal-link:hover { text-decoration: underline; }
 
 /* Buttons: separate outlined pills */
-.vt :is(code, .cm-inline-code):has(.mb-button) { background: transparent !important; padding: 0 !important; border: none !important; }
-.vt .mb-button-group.mb-button-group {
+:is(.vt, .lab-kit-style-all-notes) :is(code, .cm-inline-code):has(.mb-button) { background: transparent !important; padding: 0 !important; border: none !important; }
+:is(.vt, .lab-kit-style-all-notes) .mb-button-group.mb-button-group {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 8px;
   background: transparent !important;
 }
-.vt .mb-button-group > .mb-button > .mb-button-inner,
-.vt .mb-button > .mb-button-inner {
+:is(.vt, .lab-kit-style-all-notes) .mb-button-group > .mb-button > .mb-button-inner,
+:is(.vt, .lab-kit-style-all-notes) .mb-button > .mb-button-inner {
   border-radius: var(--lk-radius-control, 10px) !important;
   background: transparent !important;
   border: 1px solid var(--vt-card-border) !important;
@@ -191,8 +197,8 @@ body {
   padding: 6px 14px;
   height: auto;
 }
-.vt .mb-button > .mb-button-inner:hover { background: var(--background-modifier-hover) !important; }
-.vt .mb-button > .mb-button-inner.mod-plain { border: none !important; color: var(--text-muted) !important; padding: 4px 0; }
+:is(.vt, .lab-kit-style-all-notes) .mb-button > .mb-button-inner:hover { background: var(--background-modifier-hover) !important; }
+:is(.vt, .lab-kit-style-all-notes) .mb-button > .mb-button-inner.mod-plain { border: none !important; color: var(--text-muted) !important; padding: 4px 0; }
 
 /* ---- 8. Sticky tabs (every note) ----
    For tabs on the left of a ```tabs block (Tabbed plugin), the tab list stays
@@ -255,7 +261,7 @@ body {
 /* In Live Preview Obsidian's "Edit this block" icon sits in the same corner: hidden on blocks that hold the button */
 .cm-embed-block:has(.vt-tile-toggle) .edit-block-button, .cm-embed-block:has(.vt-tile-toggle) + .edit-block-button { display: none; }
 .vt-card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
-.vt-card-actions button, .vt-hub-bar button {
+.vt-card-actions button, .vt-hub-bar button:not(.vt-todo-chip) {  /* the hub bar's Status / Deadline chips keep the plugin's pill look (styles.css .vt-todo-chip) */
   border-radius: var(--lk-radius-control, 10px);
   background: transparent;
   border: 1px solid var(--vt-card-border);
@@ -265,7 +271,7 @@ body {
   height: auto;
   cursor: pointer;
 }
-.vt-card-actions button:hover, .vt-hub-bar button:hover { background: var(--background-modifier-hover); }
+.vt-card-actions button:hover, .vt-hub-bar button:not(.vt-todo-chip):hover { background: var(--background-modifier-hover); }
 /* The top row of a hub: back link and the hub's buttons on one line (show: hub-bar / meeting-bar) */
 .vt-hub-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 
@@ -303,6 +309,12 @@ body[data-vt-today="Fri"] .bases-kanban-column[data-vt-group="Fri"] { --vt-col: 
   background-color: rgba(var(--vt-waiting), var(--vt-tint));
   border-left: 3px solid rgb(var(--vt-waiting));
 }
+/* Waiting (the plugin sets data-vt-waiting="<what>" on an open card whose to-do has a waiting property): greyed text and the waiting colour as a left bar. */
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-waiting] {
+  border-left: 3px solid rgb(var(--vt-waiting));
+  color: var(--text-faint);
+}
+.bases-view[data-view-name="Board"] .bases-kanban-card[data-vt-waiting] .mod-title .bases-kanban-card-line { color: var(--text-muted); }
 
 /* The done property becomes a small round tick box (clickable - the roll-over
    script handles the click). The label and the "-" for empty are hidden. */

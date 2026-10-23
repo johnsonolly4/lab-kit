@@ -19,8 +19,8 @@ describe("nextLabNumber", () => {
   it("ignores another person's initials followed by digits only when they do not start the name", () => {
     expect(nextLabNumber(["XYZ0020 - other"], "ABC")).toBe("0001");
   });
-  it("uses the rule written in the Lab Book Template", () => {
-    const template = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  it("uses the rule written in the old Templater Lab Book Template (kept as a fixture)", () => {
+    const template = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
     expect(template).toContain("const numbered = new RegExp(`^(?:${initials.replace(/[.*+?^${}()|[\\]\\\\]/g, \"\\\\$&\")})?(\\\\d+)`);");
     expect(template).toContain('String(Math.max(0, ...nums) + 1).padStart(4, "0")');
     expect(template).toContain('.replace(/[\\\\/:*?"<>|]/g, "-")');
@@ -61,7 +61,7 @@ describe("cloneLabNote", () => {
     expect(t).toContain("Status: Planned\n");
     expect(t).toContain("Plan date: 2026-10-13\n");
     expect(t).toMatch(/\nExp\. Start:\n/);
-    expect(t).toMatch(/\nExp\. End:\n/);
+    expect(t).not.toContain("Exp. End");   // retired: the clone neither writes nor resets it
     expect(t).toMatch(/\nOutcome:\n/);
     expect(t).not.toContain("Worked, Mn");
     for (const kept of ["Type: Experiment", "Exp. Class: Flow RAFT", 'Rig: "[[Rig one]]"', "CoSHH: C-12", "RA: RA-7", "Objective: Test the reactor", '  - "[[Styrene]]"', '  - "[[AIBN]]"', "  - vt"])

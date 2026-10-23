@@ -1,4 +1,6 @@
 // The entry window's fields (a title box with a row of chips under it): what each chip shows and which ones are visible. Pure; the window is entry-window.ts.
+import { datePill } from "./board-card";
+import { parseDay } from "./todo";
 
 export type EntryValue = string | number | boolean;
 export type EntryValues = Record<string, EntryValue>;
@@ -14,6 +16,8 @@ export interface EntryField {
   /** pick: a list of `options`; date: a text box that reads dates and words; text: a text box; toggle: click to turn on / off. */
   kind: "pick" | "date" | "toggle" | "text";
   options?: EntryOption[];
+  /** A date field that is a to-do's planned day: `backlog` clears it, a day already past is refused, a set day reads `Tue 27 Oct`. */
+  day?: boolean;
   /** The box's placeholder. */
   prompt: string;
   /** Visible only once the field with this key has a value. */
@@ -36,6 +40,7 @@ export function chipView(f: EntryField, v: EntryValue | undefined): { text: stri
   if (f.kind === "toggle") return { text: `${f.name} ${v === true ? "on" : "off"}`, set: v === true };
   if (empty(v)) return { text: `+ ${f.name}`, set: false };
   if (f.kind === "pick") return { text: f.options?.find(o => o.value === v)?.label ?? String(v), set: true };
+  if (f.day && typeof v === "string" && parseDay(v)) return { text: datePill(parseDay(v)!), set: true };
   if (f.kind === "date" && typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return { text: `${v.slice(8)}-${v.slice(5, 7)}-${v.slice(0, 4)}`, set: true };   // shown as DD-MM-YYYY; the property stays YYYY-MM-DD
   return { text: String(v), set: true };
 }

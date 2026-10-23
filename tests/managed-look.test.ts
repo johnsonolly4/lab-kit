@@ -1,6 +1,6 @@
 // The mark and summary line of the kit-file windows (docs/plans/windows-look.md, Phase 2).
 import { describe, it, expect } from "vitest";
-import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary } from "../src/kit/managed-look";
+import { actionWinState, installSummary, outcomeWinState, reportSummary, reviewSummary, tickAllLine, updateLabel } from "../src/kit/managed-look";
 import { backupsSummary } from "../src/kit/backups";
 import { movedSummary } from "../src/kit/moved-folders";
 import { tidyGroupState, tidySummary, type TidyGroup, type TidyScan } from "../src/kit/tidy";
@@ -70,5 +70,15 @@ describe("kit file windows: marks and summary", () => {
     expect(tidySummary(scan(2, 2))).toBe("2 things will change, 2 need a look.");
     expect(tidySummary(scan(0, 1))).toBe("1 thing needs a look.");
     expect(tidySummary(scan(0, 3))).toBe("3 things need a look.");
+  });
+});
+
+describe("Kit files window: file plurals", () => {
+  it("says 1 file, 2 files", () => {
+    expect(updateLabel(1)).toBe("Update (1 file)");
+    expect(updateLabel(2)).toBe("Update (2 files)");
+    expect(updateLabel(0)).toBe("Update");
+    expect(tickAllLine(1)).toBe("Tick or untick all 1 file with a box");
+    expect(tickAllLine(2)).toBe("Tick or untick all 2 files with a box");
   });
 });

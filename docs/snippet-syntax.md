@@ -6,15 +6,15 @@ Everything you can write in a Lab Kit snippet, a calc block or a method note. On
 
 | I want… | Use | Where it lives |
 |---|---|---|
-| A table or text with a few questions asked first | a **token template** | a note in the `Snippets` folder with a header and `{{tokens}}` |
-| A sample table for an analysis (columns, defaults, machines) that also feeds Combined results | a **method note** | a note in the Methods folder (Settings → Lab Kit) |
-| Anything the first two cannot do (reads many notes, calls other code) | a **code snippet** | a section of `labSnippets.js` (only NMR, GPC, DLS, Combined results, solution, recipe, RAFT use it) |
+| A table or text built from a few answers (a **calculator**) | a **token template**: a header with `fields` and `{{tokens}}` | a note in the `Snippets` folder |
+| Anything a token template cannot do (reads many notes, row maths, calls other code): Solution prep, Recipe by equivalents, RAFT recipe generator, Combined results | a **calculator by name**: a header with `run: <key>` and no fields or body | a note in the `Snippets` folder; the key names a calculator in `src/snippets/` (`solution-volume`, `recipe`, `raft-table`, `results`, `nmr`, `gpc`, `dls`) or a live block (`solution`, `raft`) |
+| A sample table for an analysis (columns, defaults, machines) that also feeds Combined results | a **method**: a note in the Methods folder (Settings → Lab Kit). NMR, GPC and DLS are built in and listed by the menu itself | the Methods folder |
 
-A token template can build a table but Combined results does not know about it (see "Sample codes" below for what it can still share).
+A token template can build a table but Combined results does not know about it (see "Sample codes" below for what it can still share). An old calculator file that starts with `<%*` and calls `labSnippets(tp, "nmr")` still works: the menu reads it as `run: nmr`. Tidy up notes offers to move kept NMR, GPC and DLS files to the trash, because the menu lists those three itself.
 
 ## 1. Token templates
 
-A note in the `Snippets` folder whose first lines are a header between `---` lines (valid YAML) with a `fields` key. A note without `fields` is a plain snippet and is inserted as written. Esc in the form inserts nothing.
+A note in the `Snippets` folder whose first lines are a header between `---` lines (valid YAML) with a `fields` key (or `run`, below). A note with neither is a plain snippet and is inserted as written. Esc in the form inserts nothing.
 
 ### Header keys
 
@@ -22,11 +22,25 @@ A note in the `Snippets` folder whose first lines are a header between `---` lin
 |---|---|
 | `title` | form title and the name in the Alt+S menu |
 | `icon`, `desc` | menu icon (a Lucide name) and the one-line description |
+| `group` | the Alt+S menu section: `Make up`, `Samples`, `Characterise`, `Flow` or `Tables` (any other text, or none, lists the snippet under My snippets; every kit snippet carries its group, and Settings → Lab Kit → Snippets has a switch per group that hides it in the menu) |
+| `block` | the same as `run`, written for a live block (`block: raft`); a header has `run` or `block`, not both |
+| `run` | a calculator of Lab Kit by name (`solution`, `recipe`, `raft`, `raft-table` (the old RAFT calc tables), `results`, `nmr`, `gpc`, `dls`): it asks its own questions and builds the text, so a header with `run` has no `fields` and the note has no body. An unknown name shows `“Title”: Lab Kit has no calculator called “name”.` and inserts nothing |
 | `required` | key of a field that must hold at least one list item, else nothing is inserted (silently; to make the form refuse an empty field, give that field `mandatory: true`, below) |
 | `set` | properties written on the note you are in when the snippet is inserted, one `Name: value` line each; the value may hold tokens (`Rig: "[[{{rig}}]]"`). An existing property is replaced; an empty value is not written |
 | `fields` | the questions (below); an empty list is allowed |
+| `make` | `make: note` = a **note template**: the body is a whole note (its own front matter included) and the header may also hold `name` and `folder` (below). Not for Alt+S: it is made into a note, not inserted at the cursor. Built and tested, not yet used by any command |
+| `name`, `folder` | with `make: note`: the new note's name (no folder, no `.md`) and folder, each may hold tokens; left out, the command that makes the note decides |
 
-A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint` (the help text under the label), `placeholder`, `mandatory: true` (the form marks the label with `*` and stays open, with "Needs an answer" under the field, until it holds text; Esc still inserts nothing; any field you do not mark can simply be left empty to skip it), `type` (`text` default, `number`, `textarea`), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered). A field with `suggest: notes` and `folder: <setting>` lists the notes of one of your Lab Kit folders (`rigsFolder`, `methodsFolder`, `chemicalFolder`, `labFolder`); the answer must be one of those notes, and the snippet stops with a message while the folder setting is empty or has no notes.
+A field has `key` (letters, digits, `-`, `_`; not `prefix` or `code`), `label`, optional `hint` (the help text under the label), `placeholder`, `mandatory: true` (the form marks the label with `*` and stays open, with "Needs an answer" under the field, until it holds text; Esc still inserts nothing; any field you do not mark can simply be left empty to skip it), `type` (`text` default, `number`, `textarea`, `toggle`, `select`, `list`; see "Question types" below), `value` (the default answer; it may hold computed tokens) and for chemical names `suggest: chemicals` with `class: <name or list>` (a Chemical class; Settings → Lab Kit decides whether other chemicals are still offered). A field with `suggest: notes` and `folder: <setting>` lists the notes of one of your Lab Kit folders (`rigsFolder`, `methodsFolder`, `chemicalFolder`, `labFolder`); the answer must be one of those notes, and the snippet stops with a message while the folder setting is empty or has no notes.
+
+**Question types.** Every key below is optional except where it says "needs".
+- `type: toggle`: a Yes / No pill. In the body `{{#if key}}` is true when it is Yes (the token itself is `yes`, or empty). `value: yes` starts it on. Example: `- {key: dry, label: Dry run, type: toggle}`.
+- `type: select` + `options:` (needs `options`): a list of texts, or of lines with `value:` and `label:` (the label is shown, the value is written). Up to 3 options are pills, more are a dropdown. The first option is the default unless `value:` names one. Example: `options: [Batch, Flow]` or `options: [{value: thf, label: THF}, dmf]`.
+- `type: list`: one box; the token is `A, B` (commas or new lines), for `{{#each key}}`. `weights: fraction` says the items may carry a share (`DAAm: 0.7, DMAm: 0.3`; each item is kept as typed). `suggest: chemicals` works as on a text box. Example: `- {key: monomers, label: Monomers, type: list, weights: fraction, suggest: chemicals}`.
+- `unit:` on a `type: number` field (`unit: g`): the unit for a live block that stores the value; a plain token template ignores it.
+- `wide: true` (`wide: true`): the question should span the window's grid. Read and kept; the window has no grid yet, so it changes nothing today.
+- `help:` (`help: A longer text`): a longer help on demand behind an (i) (owner CQ22 a). Read and kept; the window has no (i) yet, so it is not shown today. `hint:` stays the one-line text under the box.
+- A wrong `options`, an unknown `type`, or `unit` / `weights` / `options` on the wrong type stops the snippet with a one-line message naming the field.
 
 ### Tokens (`{{…}}` in the body and in a field's `value`)
 
@@ -40,6 +54,12 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{@i}}` `{{@n}}` `{{@seq}}`     | index from 0, from 1, and a running count over all repeats of the block; `{{@i+2}}` adds a number (spreadsheet rows)                                                                                                                                           |
 | `{{#repeat key\|3}}…{{/repeat}}` | repeat a number of times; without a usable number the fallback is used (1 when none is given)                                                                                                                                                                  |
 | `{{#if key}}…{{else}}…{{/if}}`   | true when the answer has at least one item; `{{#if key ^= "h"}}` = starts with (ignoring case; false for an empty answer)                                                                                                                                      |
+| `{{#if key != ""}}…{{/if}}`    | true when the answer is not empty (any text, also only commas or line breaks, counts); only spaces are empty. `{{else}}` works the same |
+| `{{today}}`                      | today's date, `YYYY-MM-DD`, from the clock of this device (local time) |
+| `{{date:key}}` `{{date:today}}`  | the date answered in `key` (written `YYYY-MM-DD`; a time after it is ignored), or today. Empty answer gives nothing; text that is not a real date (`2026-02-30`, `tomorrow`) stops the snippet with a message. `{{date:key+7d}}` / `{{date:today-1d}}` add or take days; `{{date:key\|DD MMM YYYY}}` sets the format |
+| `{{json:key}}`                   | the answer as one JSON string: in double quotes, `"` `\` and line breaks escaped (`"say \"hi\""`). An empty answer gives `""`. For a property value that may hold anything |
+| `{{yaml:key}}`                   | the answer as a property value: plain when it only holds letters, digits, spaces, `.` and `-` (`Started`), else one JSON string as `{{json:key}}` gives. An empty answer gives `""`. For a value that is usually a plain word but may hold anything (a lab note's `Status`) |
+| `{{note-name}}` `{{folder}}`     | note templates only (`make: note`): the new note's name and folder, in its text (not in the header's own `name` / `folder`). A snippet field called `today`, `folder` or `note-name` still wins over these |
 | `{{prefix}}`                     | your initials + the note's number + `-` (`ABC0016-`)                                                                                                                                                                                                           |
 | `{{code}}`                       | `prefix` + the next free sample letter; continues from earlier codes in the note and advances on each use                                                                                                                                                      |
 | `{{table:base}}`                 | a table id that is unique in the note (`base`, `base2`…); the same `base` gives the same id again within one insert. `{{table:$key\|"base"}}` takes the base from a field; `{{table:sampling>_start}}` = the id of `sampling` plus `_start`                    |
@@ -48,7 +68,9 @@ A block tag alone on a line removes its line. Write `\{{` for a literal `{{`. An
 | `{{note-number:key.Density}}`    | a number from a property of the chemical note named by field `key`, else empty                                                                                                                                                                                 |
 | `{{live-prop:key.Density@B5}}`   | a live formula for the same property: the cell stays up to date with the chemical note. `B5` is the cell that holds the note's name; empty when the note has no such number                                                                                    |
 | `{{note-prop:key.Tubing}}`       | a property of the note picked in field `key` (a `suggest: notes` field) as text; a list is joined with `, `; empty when the note has no such property |
-| `{{rig-diagram:key}}`            | the flow diagram of the rig note picked in field `key`, as a fixed Mermaid block (it does not change when the rig note changes later) |
+| `{{rig-diagram:key}}`            | the flow diagram of the rig note picked in field `key`, as a fixed Mermaid block (it does not change when the rig note changes later). Kept for older copies of the Rig snippet; the kit's Rig snippet uses `{{rig-snapshot:key}}` instead |
+| `{{rig-snapshot:key}}`           | the link to a dated picture of that rig note as it is now (`<rig> YYYY-MM-DD.svg` in the `<rig> history` folder beside it, with the parts tables inside the file); write `!{{rig-snapshot:key}}` to show it. When the rig has not changed since its latest snapshot, that one is linked again; a new file also gets a row in the rig note's `## Rig history`. One snapshot per rig per insert, however often the token is used (also in `set:`). The kit's Rig snippet uses this |
+| `{{rig-snapshot-date:key}}`      | the date of that snapshot (`YYYY-MM-DD`): the day the rig was last saved as changed, which can be before today |
 | `{{rig-summary:key}}`            | the table under a `Summary` heading in that rig note, as written; nothing (and no blank line) when it has none |
 | `{{rig-tables:key}}`             | the parts tables of that rig note as they are now, each under its heading (`## Pumps`); `{{rig-tables:key ###}}` sets the heading level. A note without a parts table shows a message and inserts nothing |
 | `{{note-line:key.Tubing}}`        | `Tubing: value` for that property of the picked note, or nothing (and no empty line) when it has none |
@@ -64,6 +86,34 @@ fields:
     suggest: codes
     value: ""   # used when the note has no table with codes
 ```
+
+### Dates in tokens
+
+`{{date:…}}` formats with these letters; text in `[brackets]` stays as written and anything else is copied: `YYYY` 2026 · `YY` 26 · `MMMM` October · `MMM` Oct · `MM` 10 · `M` 10 · `DD` 05 · `D` 5 · `dddd` Monday · `ddd` Mon. Names are English. `{{date:today|dddd D MMMM YYYY}}` gives `Monday 19 October 2026`; `{{date:d+1d|[Week of] D MMM}}` with `d` = `2026-12-31` gives `Week of 1 Jan`. A field key that ends in `-` and digits and `d` (such as `last-1d`) is read as a sum: pick another key.
+
+### Note templates (`make: note`)
+
+A note template is a token template whose header says `make: note`. The header sits first, between `---` lines; the note's own text follows it, and its own front matter (`---` … `---`) is plain text there, written byte for byte:
+
+```
+---
+make: note
+name: "{{date:date}} {{series}}"
+folder: "Meetings/{{series}}"
+fields:
+  - key: series
+    label: Series
+  - key: date
+    label: Date
+---
+---
+series: "[[{{series}}]]"
+date: {{date:date}}
+---
+# {{note-name}}
+```
+
+Obsidian shows the header as properties and the rest as text, so the template stays editable; a `{{token}}` as a property value outside quotes is not valid YAML, which is why the questions sit in this header and not in the note's own properties (measured in `docs/plans/templater-replacement-and-live-snippets.md`, "Phase 0 result"). The code is `noteFromTemplate` in `src/kit/note-template.ts`: it fills `name` and `folder` first, then the text, and returns all three; a field left out of the answers has its default, a `required` field that is empty and an `{{#append}}` part stop it. It makes no file: the command that calls it checks the name and creates the note.
 
 ## 2. Calc block options
 

@@ -1,10 +1,10 @@
-// Test helper: runs the six token-template snippets (the shipped files in kits/lab/Templates/Snippets/) the way Alt+S does,
+// Test helper: runs the six token-template snippets (the shipped files in kits/lab/Snippets/) the way Alt+S does,
 // with the form's defaults and the given answers on top. Other snippet keys still go through labSnippets.js.
 import { readFileSync } from "node:fs";
 import { defaultAnswers, fillTemplate, isCancelled, parseTemplate } from "../src/kit/snippet-template";
 import { makeEnv } from "../src/kit/snippet-env";
 
-const DIR = "kits/lab/Templates/Snippets/";
+const DIR = "kits/lab/Snippets/";
 
 /** Snippet key (as the old labSnippets.js called it) → shipped file. */
 export const TOKEN_FILES: Record<string, string> = {

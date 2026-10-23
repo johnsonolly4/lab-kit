@@ -4,7 +4,6 @@ Status: Finished
 Exp. Class: Flow RAFT
 Plan date: 2026-09-01
 Exp. Start: 2026-09-02
-Exp. End: 2026-09-03
 Chemicals:
   - "[[Styrene]]"
   - "[[AIBN]]"

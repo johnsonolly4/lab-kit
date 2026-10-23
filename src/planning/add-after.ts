@@ -116,7 +116,7 @@ async function createAfter(env: AddAfterEnv, from: string, fromName: string, typ
 /** The chips of the window: a to-do's, without Project (this map's project is the project). */
 function entryFields(env: AddAfterEnv): ReturnType<typeof todoFields> {
   const series = env.app.vault.getMarkdownFiles().filter(f => env.app.metadataCache.getFileCache(f)?.frontmatter?.kind === "meeting-series").map(f => f.basename).sort((a, b) => a.localeCompare(b));
-  return todoFields([], series, env.experiments).filter(f => f.key !== "project");
+  return todoFields([], series, env.experiments).filter(f => f.key !== "project" && f.key !== "scheduled");
 }
 
 /** Makes the note of a new to-do in this map's project from the window's answer: its file name (a number added when taken) and text, coming after the to-dos `after` (paths). Null when the title is empty. */
@@ -127,7 +127,7 @@ async function makeTodo(env: AddAfterEnv, answer: EntryAnswer, after: string[]):
   let name = base, n = 2;
   while (env.app.vault.getFileByPath(`${env.folder}/${name}.md`)) name = `${base} ${n++}`;
   const path = `${env.folder}/${name}.md`;
-  const text = newTodoText(env.hub.name, after.map(a => linkText(env.app, a, path)), new Date(), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? ""), experiment: String(v.experiment ?? "") });
+  const text = newTodoText(env.hub.name, after.map(a => linkText(env.app, a, path)), { due: String(v.due ?? ""), priority: typeof v.priority === "number" ? v.priority : "", meeting: String(v.meeting ?? ""), experiment: String(v.experiment ?? ""), waiting: String(v.waiting ?? "") });
   await env.app.vault.create(path, text);
   return { name, path, text };
 }

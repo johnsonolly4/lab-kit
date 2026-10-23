@@ -1,13 +1,10 @@
 // Analysis methods as vault notes: the descriptor module (labMethods.js) and the snippets that use it.
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { extractBlocks, parseBlock, Workbook } from "../src/calc/engine";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 const { parseMethod, loadMethods, planColumns, buildRows } = labMethods;
 
 type Fm = Record<string, unknown>;
@@ -171,10 +168,18 @@ describe("snippets with a Methods folder", () => {
     assert.ok(md.trimEnd().endsWith("- [ ] Submitted\n- [ ] Results processed\n- [ ] Results saved"));
   });
 
-  it("picking another machine changes the fields left at the default machine's values, not the ones typed", async () => {
+  it("the boxes follow the machine in the form (follows), and the table gets exactly the answers", async () => {
     const h = harness();
-    const md = await h.run("method:mass_spec", { codes: "ABC0001-A", machine: "Machine B", calibrant: "typed" });
+    let md = await h.run("method:mass_spec", { codes: "ABC0001-A", machine: "Machine B", ionisation: "APCI", calibrant: "typed" });
+    const fields = h.forms["Mass spec samples"];
+    assert.deepStrictEqual(fields.slice(2).map((f: any) => f.follows), [
+      { key: "machine", values: { "Machine A": "ESI", "Machine B": "APCI" } },
+      { key: "machine", values: { "Machine A": "NaI", "Machine B": "Ref B" } },
+    ]);
     assert.ok(md.includes("| ABC0001-A | [[Machine B]] | APCI | typed |"), md);
+    // a box typed back to the default machine's value is kept: nothing is swapped after Insert
+    md = await h.run("method:mass_spec", { codes: "ABC0001-B", machine: "Machine B", ionisation: "ESI", calibrant: "Ref B" });
+    assert.ok(md.includes("| ABC0001-B | [[Machine B]] | ESI | Ref B |"), md);
   });
 
   it("the formula column follows the Machine column and evaluates", async () => {
@@ -227,51 +232,5 @@ describe("snippets with a Methods folder", () => {
       ["nmr", "NMR conversion", "typed in", true], ["gpc", "GPC Mn, Mw, Đ", "typed in", true], ["dls", "DLS Dh, PDI", "typed in", false],
       ["mass_spec", "Mass spec m/z, Mass error (ppm)", "typed in", false]]);
     assert.ok(md.includes("| Sample | m/z | Mass error (ppm) |") && !md.includes("XLOOKUP"), md);
-  });
-});
-
-describe("Alt+S menu (Insert snippet.md)", () => {
-  const AsyncFunction = Object.getPrototypeOf(async function () { /* */ }).constructor;
-  const code = readFileSync("kits/lab/Templates/Insert snippet.md", "utf8").replace(/^<%\*/, "").replace(/%>\s*$/, "");
-  const menu = new AsyncFunction("tp", "app", "Notice", `let tR = ""; ${code}\n return tR;`);
-  const snippetFile = (n: string) => ({ basename: n, parent: { path: "Templates/Snippets" } });
-
-  async function open(data: Record<string, unknown>, pickName: string) {
-    const shown: any[] = [], calls: string[] = [];
-    const base = appFor(vault([file("Methods/Mass spec.md", MASS_SPEC)]), () => "", data);
-    const app = { ...base, vault: { ...base.vault,
-      getMarkdownFiles: () => [snippetFile("02 Beta"), snippetFile("01 Alpha")],
-      cachedRead: async (f: any) => `// icon: star\n// desc: about ${f.basename}` } };
-    const tp = {
-      config: { template_file: { parent: { path: "Templates" } } },
-      user: {
-        labMethods,
-        labPick: async (_tp: unknown, items: any[]) => { shown.push(...items); return items.find(i => i.name === pickName)?.value ?? null; },
-        labSnippets: async (_tp: unknown, key: string) => { calls.push(key); return "RAN " + key; },
-      },
-      file: { include: async (f: any) => "INCLUDED " + f.basename },
-    };
-    const out: string = await menu(tp, app, class { constructor(_m: string) { /* silent */ } });
-    return { shown, out, calls };
-  }
-
-  it("lists the snippet files, then one entry per method of the Methods folder (not the built-in three)", async () => {
-    const r = await open({ methodsFolder: "Methods" }, "Alpha");
-    assert.deepStrictEqual(r.shown.map(i => i.name), ["Alpha", "Beta", "Mass spec samples"]);
-    const m = r.shown[2];
-    assert.strictEqual(m.icon, "microscope");
-    assert.strictEqual(m.desc, "Sample table for Mass spec · Machine A, Machine B");
-    assert.strictEqual(r.out, "INCLUDED 01 Alpha");
-  });
-
-  it("picking a method entry builds that method's table", async () => {
-    const r = await open({ methodsFolder: "Methods" }, "Mass spec samples");
-    assert.deepStrictEqual(r.calls, ["method:mass_spec"]);
-    assert.strictEqual(r.out, "RAN method:mass_spec");
-  });
-
-  it("no Methods folder: the menu is only the snippet files", async () => {
-    const r = await open({}, "Beta");
-    assert.deepStrictEqual(r.shown.map(i => i.name), ["Alpha", "Beta"]);
   });
 });

@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "
 import { join, relative, sep } from "path";
 import { KITS, sha256 } from "./embed-kit.mjs";
 
-const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", scripts: "script", userScripts: "script", labBase: "note", chemicalBase: "note" };
+const KIND_BY_ROLE = { cssSnippets: "snippet", templates: "template", snippets: "template", scripts: "script", userScripts: "script", labBase: "note", chemicalBase: "note" };
 const PREFIX = { snippet: "snip", template: "tpl", script: "script", note: "note" };
 
 /* ---- Per kit: which source folder holds which role, and the one-line descriptions ---- */
@@ -14,19 +14,15 @@ const LAB_ROLE_BY_PREFIX = [
   [".obsidian/snippets/", "cssSnippets"],
   ["Extras/scripts/templater/", "userScripts"],
   ["Extras/scripts/", "scripts"],
+  ["Snippets/", "snippets"],
   ["Templates/", "templates"],
   ["03 Lab Book/", "labBase"],
   ["05 Chemicals/", "chemicalBase"],
 ];
-// One line per kit file, shown in Manage kit files. Snippets (Templates/Snippets/) use their own "// desc:" line.
+// One line per kit file, shown in Manage kit files. Snippets (Snippets/) use their own "// desc:" line.
 const LAB_DESC = {
   ".obsidian/snippets/scrolling-mermaid.css": "Lets wide Mermaid diagrams scroll sideways inside a note",
   "Extras/scripts/excel_to_calc.py": "Command-line tool that turns an Excel file into calc tables",
-  "Extras/scripts/templater/labForm.js": "The pop-up form every snippet uses",
-  "Extras/scripts/templater/labMethods.js": "Analysis methods and machines (NMR, GPC, DLS and the notes in your Methods folder)",
-  "Extras/scripts/templater/labPick.js": "The searchable snippet menu with icons",
-  "Extras/scripts/templater/labSnippets.js": "The code behind every snippet",
-  "Templates/Insert snippet.md": "The Alt+S menu: lists the snippets and inserts the one you pick",
   "Templates/Lab Book Template.md": "New experiment note: number, hazards, data folder button and sections",
   "Templates/Chemical database template.md": "New chemical note: names, class, hazards, CAS number, MW and physical data",
   "Templates/Rig template.md": "New rig note: tubing, control, the diagram and the parts tables (pumps, reactor line, analysis)",
@@ -37,11 +33,11 @@ const CONFIG = {
   lab: {
     roleByPrefix: LAB_ROLE_BY_PREFIX, desc: LAB_DESC,
     // Snippets carry their own "// desc:" line and can be switched off; so can the Excel converter (not part of the plugin itself)
-    optionalPrefix: "Templates/Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py", "Templates/Chemical database template.md", "Templates/Rig template.md", "03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
+    optionalPrefix: "Snippets/", optionalFiles: new Set(["Extras/scripts/excel_to_calc.py", "Templates/Chemical database template.md", "Templates/Rig template.md", "03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // policy "keep": installed once, never updated (notes that become the user's own)
     keepFiles: new Set(["03 Lab Book/Lab book base.base", "05 Chemicals/Chemical database.base"]),
     // "needs": the setting (kit data key) that must be set for the file to be installed; empty = treated as switched off
-    needs: { "Templates/Chemical database template.md": "chemicalFolder", "Templates/Rig template.md": "rigsFolder", "Templates/Snippets/14 Rig.md": "rigsFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
+    needs: { "Templates/Chemical database template.md": "chemicalFolder", "Templates/Rig template.md": "rigsFolder", "Snippets/14 Rig.md": "rigsFolder", "03 Lab Book/Lab book base.base": "labFolder", "05 Chemicals/Chemical database.base": "chemicalFolder" },
   },
 };
 // Planning kit: the planning suite (homepage, to-do board, planning notes, templates, Actions, vtAsk.js, theme). Source:
@@ -72,9 +68,6 @@ const PLANNING_DESC = {
   "Extras/Templates/Meeting series.md": "New meeting series: its hub note",
   "Extras/Templates/New concept.md": "New concept: a knowledge note in a topic folder",
   "Extras/Templates/New topic hub.md": "New topic hub: the index note of a topic folder",
-  "Extras/Templates/ZotLit/zotlit-note.liquid.md": "ZotLit literature note template",
-  "Extras/Templates/ZotLit/zotlit-lititem.liquid.md": "ZotLit template: one literature item",
-  "Extras/Templates/ZotLit/zotlit-content.liquid.md": "ZotLit template: annotations",
   "00 Home.md": "Homepage: today, focus, this week, experiments, projects, recently read",
   "00 Planning/To-do board.base": "To-do board: one column per day",
   "00 Planning/Weekly review.md": "Weekly review note",
@@ -86,12 +79,11 @@ const PLANNING_DESC = {
   "07 How-tos/Obsidian/How my vault works.md": "Guide to the vault layout and daily routine",
   "07 How-tos/Obsidian/Setting up a computer.md": "Steps to set up Obsidian on a new computer",
   "07 How-tos/Obsidian/Hotkeys.md": "Recommended hotkeys (Alt + first letter); never set for you",
-  "07 How-tos/Obsidian/Set up ZotLit.md": "Checklist: ZotLit's note folder and template folder",
   "07 How-tos/Obsidian/Vault spec.md": "Full specification of the vault",
   "08 Meetings/Meetings.md": "Meetings hub: next meeting of each series",
 };
 const GUIDES = "07 How-tos/Obsidian/";
-const ZOTLIT = ["04 Literature/Literature.md", "07 How-tos/Obsidian/Set up ZotLit.md", "Extras/Templates/ZotLit/zotlit-note.liquid.md", "Extras/Templates/ZotLit/zotlit-lititem.liquid.md", "Extras/Templates/ZotLit/zotlit-content.liquid.md"];
+const ZOTLIT = ["04 Literature/Literature.md"];
 CONFIG.planning = {
   roleByPrefix: PLANNING_ROLE_BY_PREFIX, desc: PLANNING_DESC,
   // Only the ZotLit files can be off (and are, without the ZotLit plugin)
@@ -99,7 +91,7 @@ CONFIG.planning = {
   // Notes become the user's own: installed once, never updated. Templates, Actions, scripts and CSS are updated, and so are the
   // guide notes in 07 How-tos/Obsidian (user, 2026-10-12): they describe the kit, so an unedited one follows it like a template.
   keepFiles: new Set(Object.keys(PLANNING_DESC).filter((rel) => !rel.startsWith("Extras/") && !rel.startsWith(".obsidian/") && !rel.startsWith(GUIDES))),
-  needs: Object.fromEntries(ZOTLIT.map((rel) => [rel, "plugin:zotlit"])),
+  needs: Object.fromEntries(ZOTLIT.map((rel) => [rel, "plugin:literature"])),
 };
 const SKIP = new Set(["kit-manifest.json"]);
 

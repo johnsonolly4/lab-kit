@@ -1,0 +1,316 @@
+{
+ "about": "S2 of docs/plans/obsidian-update-robustness.md. Obsidian internals Lab Kit relies on (classes Obsidian draws, members of app missing from its typings, files that cast app). tests/obsidian-internals.test.ts fails when src/, styles.css or the kits use one that is not listed, or a listed one is gone.",
+ "entries": [
+  {
+   "name": "bases-view",
+   "kind": "selector",
+   "files": [
+    "src/kit/board-colours.ts",
+    "src/planning/engine.ts",
+    "styles.css",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Bases view container; board colours, the done circle and card styling hang off it (audit high row 2)"
+  },
+  {
+   "name": "bases-header",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "low",
+   "note": "Bases toolbar row (view button, Sort, Filter, ...); the lab board's Hide toolbar hides it (src/lab/lab-board-view.ts). If renamed, the toolbar just shows"
+  },
+  {
+   "name": "bases-search-row",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "low",
+   "note": "Bases toolbar search row; hidden with the toolbar by the lab board's Hide toolbar. If renamed, it just shows"
+  },
+  {
+   "name": "bases-kanban-column",
+   "kind": "selector",
+   "files": [
+    "src/kit/board-colours.ts",
+    "src/planning/engine.ts",
+    "styles.css",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Core kanban column; colours, carried-over amber, counts (audit high row 2)"
+  },
+  {
+   "name": "bases-group-value",
+   "kind": "selector",
+   "files": [
+    "src/kit/board-colours.ts",
+    "src/planning/engine.ts",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Group heading text; the engine reads it to know the column"
+  },
+  {
+   "name": "bases-kanban-card",
+   "kind": "selector",
+   "files": [
+    "src/kit/board-colours.ts",
+    "src/planning/engine.ts",
+    "styles.css",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Core kanban card; click target, tag badges and the done circle (audit high row 2)"
+  },
+  {
+   "name": "modal-bg",
+   "kind": "selector",
+   "files": [
+    "src/blocks/raft/setup.ts",
+    "src/kit/snippet-form.ts",
+    "src/kit/snippet-menu-ui.ts",
+    "src/planning/board-close-ui.ts",
+    "src/planning/entry-window.ts",
+    "src/rig/figure-ui.ts",
+    "src/rig/snapshot-ui.ts",
+    "src/solution/setup.ts",
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Window backdrop; hidden for popovers (vt-entry-nobg)"
+  },
+  {
+   "name": "modal",
+   "kind": "selector",
+   "files": [
+    "src/kit/window-look.ts",
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Obsidian window frame; our windows add their own class and styles.css scopes by it (audit medium row 2)"
+  },
+  {
+   "name": "bases-kanban",
+   "kind": "selector",
+   "files": [
+    "src/planning/engine.ts"
+   ],
+   "risk": "high",
+   "note": "Core kanban prefix, only in a comment or string in engine.ts; the audit's kanban markup row"
+  },
+  {
+   "name": "bases-kanban-card-line",
+   "kind": "selector",
+   "files": [
+    "src/planning/engine.ts",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "A card's property line; countdown and tag badges are placed by it"
+  },
+  {
+   "name": "setting-item",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Settings row; Lab Kit settings tab layout"
+  },
+  {
+   "name": "setting-item-info",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Settings row text block"
+  },
+  {
+   "name": "setting-item-control",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Settings row control block"
+  },
+  {
+   "name": "prompt-results",
+   "kind": "selector",
+   "files": [
+    "styles.css",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "medium",
+   "note": "Picker result list"
+  },
+  {
+   "name": "prompt",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Suggester / picker window (pickers carry .prompt, not .modal)"
+  },
+  {
+   "name": "prompt-input",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Picker search box"
+  },
+  {
+   "name": "modal-container",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Window overlay; the phone sheet and bottom-sheet rules"
+  },
+  {
+   "name": "setting-item-name",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Settings row title"
+  },
+  {
+   "name": "bases-kanban-card-label",
+   "kind": "selector",
+   "files": [
+    "styles.css",
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Property label inside a card (hidden by the kit theme)"
+  },
+  {
+   "name": "modal-content",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Window body padding"
+  },
+  {
+   "name": "modal-close-button",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Window close X, hidden or moved on our windows"
+  },
+  {
+   "name": "modal-header-button",
+   "kind": "selector",
+   "files": [
+    "styles.css"
+   ],
+   "risk": "medium",
+   "note": "Window close X in Obsidian 1.14.4 and later (drawn as a header button), hidden on the Alt+S picker"
+  },
+  {
+   "name": "bases-kanban-card-cover",
+   "kind": "selector",
+   "files": [
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Card cover image area (kit theme)"
+  },
+  {
+   "name": "bases-kanban-card-property",
+   "kind": "selector",
+   "files": [
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Card property cell (kit theme)"
+  },
+  {
+   "name": "bases-kanban-column-header",
+   "kind": "selector",
+   "files": [
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Column header row (kit theme)"
+  },
+  {
+   "name": "bases-group-heading",
+   "kind": "selector",
+   "files": [
+    "kits/planning/.obsidian/snippets/vault-theme.css"
+   ],
+   "risk": "high",
+   "note": "Group heading row (kit theme)"
+  },
+  {
+   "name": "metadataTypeManager",
+   "kind": "member",
+   "files": [
+    "src/kit/obsidian-private.ts"
+   ],
+   "risk": "medium",
+   "note": "Sets property types (due, priority, deadline, Chemical class); only src/kit/obsidian-private.ts reads it (ensurePropertyType / setPropertyType / assignedType, feature-checked, soft-fail); kit templates call window.vtEnsureType (audit medium row 4, S3)"
+  },
+  {
+   "name": "plugins",
+   "kind": "member",
+   "files": [
+    "src/kit/obsidian-private.ts"
+   ],
+   "risk": "high",
+   "note": "Other plugins' instances, Templater settings and its create-note function (audit high row 4)"
+  },
+  {
+   "name": "customCss",
+   "kind": "member",
+   "files": [
+    "src/kit/obsidian-private.ts"
+   ],
+   "risk": "medium",
+   "note": "CSS snippet manager (Check setup snippet rows)"
+  },
+  {
+   "name": "hotkeyManager",
+   "kind": "member",
+   "files": [
+    "src/kit/obsidian-private.ts"
+   ],
+   "risk": "medium",
+   "note": "Hotkey manager (Check hotkeys, Set suggested keys)"
+  },
+  {
+   "name": "internalPlugins",
+   "kind": "member",
+   "files": [
+    "src/kit/obsidian-private.ts"
+   ],
+   "risk": "medium",
+   "note": "Core plugin on / off and options (Check setup core-plugin rows)"
+  },
+  {
+   "name": "src/kit/obsidian-private.ts",
+   "kind": "cast",
+   "files": [
+    "src/kit/obsidian-private.ts"
+   ],
+   "risk": "medium",
+   "note": "The one isolation layer: typed casts of app / vault / metadataCache to the private shapes (audit S3)"
+  }
+ ]
+}

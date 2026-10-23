@@ -5,6 +5,8 @@ import type { NoteRec } from "../src/planning/lists";
 import { checkFirstDate, checkSeriesName, cleanDeckPath, firstDefaultDate, firstSeries, flaggedFor, intervalWeeks, nextDate, nextMeetingLines, nextMeetings, parseInterval, parseSeries, sinceLast, templateRef, WEEKDAYS, type Series } from "../src/planning/meetings";
 import { readFileSync } from "fs";
 import { ymd } from "../src/planning/todo";
+import { madeNote, seriesAnswers, type SeriesNote } from "../src/planning/meeting-note";
+import { miniYaml } from "./token-snippets";
 
 const hub = (name: string, fm: Record<string, unknown>): NoteRec =>
   ({ path: `08 Meetings/${name}/${name}.md`, name, folder: `08 Meetings/${name}`, fm: { kind: "meeting-series", ...fm }, ctime: 0, mtime: 0 });
@@ -134,14 +136,14 @@ describe("New meeting series: defaults and checks", () => {
 });
 
 describe("New meeting series: the template's hub note reads back", () => {
-  /** The template's front matter with its <% vt.x %> places filled as Templater would. */
+  /** The template's front matter, as the plugin fills the token template (the old Templater one: tests/fixtures/templates/old/). */
   const render = (vt: Record<string, string>): Record<string, string> => {
-    const raw = readFileSync("kits/planning/Extras/Templates/Meeting series.md", "utf8");
-    const front = /^---\n([\s\S]*?)\n---$/m.exec(raw.slice(raw.indexOf("-%>")))![1];
+    const made = madeNote(readFileSync("kits/planning/Extras/Templates/Meeting series.md", "utf8"), miniYaml, seriesAnswers(vt as unknown as SeriesNote), new Date(2026, 9, 21), "", "");
+    const front = /^---\n([\s\S]*?)\n---$/m.exec(made.text)![1];
     const out: Record<string, string> = {};
     for (const line of front.split("\n")) {
       const m = /^(\w+):[ \t]*(.*)$/.exec(line);
-      if (m) out[m[1]] = m[2].replace(/<% vt\.(\w+) %>/g, (_, k) => vt[k]).replace(/<% deck\("(\w+)"\) %>/, (_, k) => JSON.stringify(k === vt.deckKey ? vt.deck : ""));
+      if (m) out[m[1]] = m[2];
     }
     return out;
   };
@@ -213,6 +215,6 @@ describe("a series' own meeting note template", () => {
     expect(t).toContain("## Notes");
     expect(t).not.toContain("[!columns]");
     expect(t).toContain("kind: meeting");
-    expect(t).toContain("window.vtMeeting");   // same hand-over as Meeting.md
+    expect(t).toContain("make: note");   // a token template like Meeting.md
   });
 });

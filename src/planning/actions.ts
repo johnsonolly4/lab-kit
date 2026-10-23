@@ -1,6 +1,6 @@
 // Planning commands' rules (planning kit): shopping list text, which to-dos to archive, unique names, the meeting deck path.
 // Pure (no Obsidian runtime). Ported from the planning suite's Action templates (2026-10-07); see docs/plans/phase-4b-planning-commands.md.
-import { parseDay, type TodoFm } from "./todo";
+import { isFinishedTodo, parseDay, type TodoFm } from "./todo";
 
 /** Days after which a finished to-do is archived. */
 export const ARCHIVE_AFTER = 30;
@@ -20,16 +20,13 @@ export function uniquePath(folder: string, base: string, ext: string, exists: (p
   return path;
 }
 
-/** Finished: `done` ticked, or on the Done column. */
-export const isFinished = (fm: TodoFm): boolean => fm.done === true || fm.day === "Done";
-
 /**
  * A finished to-do whose finish date (`done_on`, else the note's last change) is more than ARCHIVE_AFTER days before `now`.
  * `projectActive`: the to-do belongs to a project whose Status is not Done; it is never archived then.
  * As the old template (moment().subtract(30, "days")): the cut-off keeps the time of day, so `done_on` exactly 30 days ago counts.
  */
 export function isArchivable(fm: TodoFm, mtime: Date, now: Date, projectActive = false): boolean {
-  if (!isFinished(fm) || projectActive) return false;   // a to-do of a project that is not Done stays: the project plan reads it
+  if (!isFinishedTodo(fm) || projectActive) return false;   // a to-do of a project that is not Done stays: the project plan reads it
   const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ARCHIVE_AFTER, now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
   const done = parseDay(fm.done_on) ?? mtime;
   return done.getTime() < cutoff.getTime();
@@ -59,10 +56,8 @@ export function topicsWithoutHub(folders: string[], notes: { path: string; kind:
     .filter(p => !notes.some(n => direct(n.path) === p && (n.kind === "hub" || n.path === `${p}/${p.slice(root.length + 1)}.md`)));
 }
 
-/** An inbox note made into a to-do: on the Backlog, open; project / due / meeting added only when missing. */
+/** An inbox note made into a to-do: open, in the Backlog (any planned day removed). Only set values are written (I2 slim model): project / due / meeting are kept when there, never added empty. */
 export function todoFields(fm: Record<string, unknown>): void {
-  fm.kind = "todo"; fm.day = "Backlog"; fm.done = false; fm.rolled = false;
-  if (!("project" in fm)) fm.project = "";
-  if (!("due" in fm)) fm.due = "";
-  if (!("meeting" in fm)) fm.meeting = false;
+  fm.kind = "todo"; fm.done = false;
+  for (const k of ["scheduled", "day", "planned", "rolled"]) delete fm[k];
 }

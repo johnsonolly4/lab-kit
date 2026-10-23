@@ -1,10 +1,9 @@
 // "+ add after this" on the plan map (planning kit): which to-dos the search offers, and the text of a new to-do.
 // Pure (no Obsidian runtime). Used by src/planning/add-after.ts.
-import { isFinished } from "./actions";
 import { linkTarget, type NoteRec } from "./lists";
 import { canLink } from "./plan-link";
 import type { Plan } from "./plan";
-import { ymd } from "./todo";
+import { isFinishedTodo } from "./todo";
 
 export interface Offered {
   path: string; name: string;
@@ -23,7 +22,7 @@ const has = (v: unknown): boolean => Array.isArray(v) ? v.some(i => linkTarget(i
 
 /** The open to-dos of the vault the search offers for "comes after `from`": this project's first (not itself, not already after it, not making a loop), then other projects' and the ones with no project, with the project named. A to-do of another project that has its own `after`, `sub` or subtasks is listed but cannot be moved here. */
 export function offeredTodos(all: NoteRec[], plan: Plan, hubName: string, from: string): Offered[] {
-  const todos = all.filter(t => t.fm.kind === "todo" && !isFinished({ done: t.fm.done, day: t.fm.day }) && t.path !== from);
+  const todos = all.filter(t => t.fm.kind === "todo" && !isFinishedTodo(t.fm) && t.path !== from);
   const subtasksOf = new Set(todos.map(t => linkTarget(t.fm.sub).split("/").pop() ?? "").filter(Boolean));   // names that some to-do names as its parent
   const out: Offered[] = [];
   for (const t of todos) {
@@ -47,20 +46,13 @@ const afterLines = (after: string | string[]): string => {
   return links.length === 0 ? "" : links.length === 1 ? `after: "${links[0]}"\n` : `after:\n${links.map(l => `  - "${l}"`).join("\n")}\n`;
 };
 
-/** The text of a new to-do, with the same properties as the To-do template makes with nothing asked: in Backlog, no due date or priority, in `project`, coming after `after` (a link like `[[Name]]`; several make a list, none leaves the line out like the To-do template does). */
-export function newTodoText(project: string, after: string | string[], today: Date, set: { due?: string; priority?: number | ""; meeting?: string; experiment?: string } = {}): string {
+/** The text of a new to-do in the Backlog (no `scheduled`), in `project`, coming after `after` (a link like `[[Name]]`; several make a list). Only set values are written (I2 slim model): no empty `project` / `due` / `priority`, no `meeting: false`. */
+export function newTodoText(project: string, after: string | string[], set: { due?: string; priority?: number | ""; meeting?: string; experiment?: string; waiting?: string } = {}): string {
+  const line = (key: string, v: string): string => (v ? `${key}: ${v}\n` : "");
   return `---
 kind: todo
-day: Backlog
-planned: ${ymd(today)}
 done: false
-rolled: false
-project: ${project ? `"[[${project}]]"` : ""}
-due: ${set.due ?? ""}
-countdown: false
-priority: ${set.priority ?? ""}
-${afterLines(after)}meeting: ${set.meeting ? `"[[${set.meeting}]]"` : "false"}
-${set.experiment ? `experiment: "[[${set.experiment}]]"\n` : ""}cssclasses:
+${line("project", project ? `"[[${project}]]"` : "")}${line("due", set.due ?? "")}${line("priority", String(set.priority ?? ""))}${afterLines(after)}${line("meeting", set.meeting ? `"[[${set.meeting}]]"` : "")}${set.experiment ? `experiment: "[[${set.experiment}]]"\n` : ""}${set.waiting?.trim() ? `waiting: ${JSON.stringify(set.waiting.trim())}\n` : ""}cssclasses:
   - vt
 ---
 

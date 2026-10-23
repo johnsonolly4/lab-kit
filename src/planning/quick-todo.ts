@@ -1,4 +1,5 @@
 import { parseDue } from "./due-words";
+import { ymd } from "./todo";
 
 /** What a line of highlighted text means as a to-do: the title, and the fields its marks set. */
 export interface QuickTodo {
@@ -11,18 +12,23 @@ export interface QuickTodo {
   due?: string;
   /** 1 (highest) to 3. */
   priority?: number;
+  /** The planned day (`>next tue`), YYYY-MM-DD, today or later. `>backlog` sets nothing. */
+  scheduled?: string;
+  /** A `>` date that is already past: not set, the caller says so (the Q1 notice). */
+  pastDay?: string;
 }
 
 const WORDS_AFTER_PERCENT = 3;   // "%next mon" and "%in 3 days" take up to three words
 const PRIORITY_WORDS: Record<string, number> = { "1": 1, "2": 2, "3": 3, high: 1, medium: 2, med: 2, low: 3 };
 
-/** Reads `+project`, `%date` and `!priority` marks out of `text`; everything else is the title. (Not `@`: ZotLit uses it for citations.)
+/** Reads `+project`, `%date`, `>day` and `!priority` marks out of `text`; everything else is the title. (Not `@`: ZotLit uses it for citations.)
  *  - `+Name` or `+"Name with spaces"`: matches a known project name (case-insensitive, the longest name first), else the longest run of words that starts exactly one name (`+plan map` for "Plan map example"); an unknown name stays in the title and is returned as `projectGuess`. One space after the mark is fine.
  *  - `%fri`, `%15 nov`, `%in 3 days`, `%"next mon"`: the longest run of words that reads as a date (see `parseDue`); a run that is not a date stays in the title.
+ *  - `>tue`, `>next tue`, `>27 oct`: the planned day, read like `%` (words up to the next mark); `>backlog` clears it. A day already past is returned as `pastDay`, not set. A leading `> ` (a quote the text was selected from) is dropped.
  *  - `!1`, `!2`, `!3`, `!high`, `!medium`, `!low`: the priority.
  *  Each mark counts once (the first); a mark that does not read is left as typed. A list marker the text was selected with (`- `, `1. `, `- [ ] `) is dropped. */
 export function parseQuickTodo(text: string, projects: string[], now: Date): QuickTodo {
-  let rest = text.replace(/\s+/g, " ").trim().replace(/^(?:[-*]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+)/, "");
+  let rest = text.replace(/\s+/g, " ").trim().replace(/^(?:[-*]\s+(?:\[[ xX]\]\s+)?|\d+[.)]\s+|>+\s+)/, "");
   const out: QuickTodo = { title: "" };
   const names = [...projects].sort((a, b) => b.length - a.length);
   const cut = (from: number, to: number): void => { rest = (rest.slice(0, from) + " " + rest.slice(to)).replace(/\s+/g, " ").trim(); };
@@ -46,26 +52,39 @@ export function parseQuickTodo(text: string, projects: string[], now: Date): Qui
     else if (after) out.projectGuess = quoted ? quoted[1] : after.split(" ")[0].replace(/[.,;:]$/, "") || undefined;
   }
 
-  const pm = at(/%/g);
-  if (pm) {
+  /** The words after the first `mark` that read as a date (a quoted run, else up to three words), cut out of the text; `backlog` (when `word`) reads as no date. null when there is no mark or nothing after it reads. */
+  const dateAfter = (mark: RegExp, word?: string): { date: string | null } | null => {
+    const pm = at(mark);
+    if (!pm) return null;
     const skip = rest[pm.index + 1] === " " ? 1 : 0, from = pm.index + 1 + skip, after = rest.slice(from);
+    const read = (run: string): { date: string | null } | null => { if (word && run.toLowerCase() === word) return { date: null }; const d = parseDue(run, now); return d ? { date: d } : null; };
     const quoted = /^"([^"]+)"/.exec(after);
-    if (quoted) {
-      const d = parseDue(quoted[1], now);
-      if (d) { out.due = d; cut(pm.index, from + quoted[0].length); }
-    } else {
-      const words = after.split(" ");
-      for (let n = Math.min(WORDS_AFTER_PERCENT, words.length); n >= 1 && !out.due; n--) {
-        const run = words.slice(0, n).join(" ").replace(/[.,;:]$/, "");
-        const d = parseDue(run, now);
-        if (d) { out.due = d; cut(pm.index, from + words.slice(0, n).join(" ").length); }
-      }
+    if (quoted) { const r = read(quoted[1]); if (r) cut(pm.index, from + quoted[0].length); return r; }
+    const words = after.split(" ");
+    for (let n = Math.min(WORDS_AFTER_PERCENT, words.length); n >= 1; n--) {
+      const r = read(words.slice(0, n).join(" ").replace(/[.,;:]$/, ""));
+      if (r) { cut(pm.index, from + words.slice(0, n).join(" ").length); return r; }
     }
-  }
+    return null;
+  };
+
+  const due = dateAfter(/%/g);
+  if (due?.date) out.due = due.date;
+
+  const day = dateAfter(/>/g, "backlog");
+  if (day?.date) { if (day.date < ymd(now)) out.pastDay = day.date; else out.scheduled = day.date; }
 
   const bm = at(/!\s?(1|2|3|high|medium|med|low)(?=$|[\s.,;:])[.,;:]?/gi);
   if (bm) { out.priority = PRIORITY_WORDS[bm[1].toLowerCase()]; cut(bm.index, bm.index + bm[0].length); }
 
   out.title = rest;
   return out;
+}
+
+/** The file name (no folder, no ".md") the To-do template gives a to-do titled `text`: forbidden characters become "-", 80 characters at most, " 2", " 3"... when `taken` says the name is used. The template makes the same name, so a note created under it is not renamed. */
+export function todoFileName(text: string, taken: (name: string) => boolean): string {
+  const base = (text.trim() || "Untitled to-do").replace(/[\\/:*?"<>|#^[\]]/g, "-").slice(0, 80);
+  let name = base, n = 2;
+  while (taken(name)) name = `${base} ${n++}`;
+  return name;
 }

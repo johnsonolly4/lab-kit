@@ -1,6 +1,7 @@
 // The card map layout (src/planning/plan-map.ts): steps, places, arrows, unlinked, start step, chains.
 import { describe, it, expect } from "vitest";
-import { CARD_H, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, openSubs, setDone, subsLabel } from "../src/planning/plan-map";
+import { CARD_H, CARD_SIZES, CARD_W, GAP_X, GAP_Y, PAD, chainOf, layoutPlan, mapGeometry, openSubs, setDone, subsLabel } from "../src/planning/plan-map";
+import type { MapSizes } from "../src/planning/plan-map";
 import { readPlan } from "../src/planning/plan";
 import type { NoteRec } from "../src/planning/lists";
 
@@ -115,15 +116,15 @@ describe("mapGeometry", () => {
 });
 
 describe("setDone", () => {
-  it("ticks; unticks; a to-do on the Done column goes back to Backlog", () => {
+  it("ticks; unticks; an old card on day: Done loses day, keeps scheduled", () => {
     const a: Record<string, unknown> = { day: "Mon", done: false };
     setDone(a, true);
     expect(a).toEqual({ day: "Mon", done: true });
     setDone(a, false);
     expect(a).toEqual({ day: "Mon", done: false });
-    const b: Record<string, unknown> = { day: "Done", done: true };
+    const b: Record<string, unknown> = { day: "Done", done: true, scheduled: "2026-10-21" };
     setDone(b, false);
-    expect(b).toEqual({ day: "Backlog", done: false });
+    expect(b).toEqual({ done: false, scheduled: "2026-10-21" });
   });
 });
 
@@ -245,6 +246,59 @@ describe("vertical layout", () => {
     const m = map([td("A", { done: true }), td("B", { after: "[[A]]" })]);
     expect(mapGeometry(m, 0, "down")).toMatchObject({ scrollLeft: 0, scrollTop: CARD_H + GAP_X });
     expect(mapGeometry(m)).toMatchObject({ scrollLeft: CARD_W + GAP_X, scrollTop: 0 });
+  });
+});
+
+describe("given sizes (plan map M1-3: chips of the open-work picture)", () => {
+  const sizes = (heights: [string, number][] = []): MapSizes => ({ width: 100, height: 40, heights: new Map(heights.map(([n, h]) => [T + n + ".md", h])), stepGap: 30, placeGap: 20, pad: 0 });
+  const chain = () => map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: "[[B]]" }), td("D", { after: "[[A]]" })]);
+  const inside = (p: { x: number; y: number }, r: { x: number; y: number }, w: number, h: number) => p.x > r.x && p.x < r.x + w && p.y > r.y && p.y < r.y + h;
+  it("the card sizes by default are the map's own", () => {
+    const m = chain();
+    for (const dir of ["across", "down"] as const) expect(mapGeometry(m, 10, dir, undefined, CARD_SIZES)).toEqual(mapGeometry(m, 10, dir));
+    expect(CARD_SIZES).toMatchObject({ width: CARD_W, height: CARD_H, stepGap: GAP_X, placeGap: GAP_Y, pad: PAD });
+  });
+  it("down: each step row is as tall as its tallest chip; places use the given width and gap", () => {
+    const g = mapGeometry(chain(), 0, "down", undefined, sizes([["B", 90], ["D", 130]]));
+    expect(g.pos.get(T + "A.md")).toEqual({ x: 0, y: 0 });
+    expect(g.pos.get(T + "B.md")).toEqual({ x: 0, y: 40 + 30 });
+    expect(g.pos.get(T + "D.md")).toEqual({ x: 100 + 20, y: 40 + 30 });
+    expect(g.pos.get(T + "C.md")).toEqual({ x: 0, y: 40 + 30 + 130 + 30 });   // below the tallest chip of step 1 (D)
+    expect(g.width).toBe(2 * 100 + 20);
+    expect(g.height).toBe(40 + 130 + 40 + 2 * 30);
+    expect(g.scrollTop).toBe(0);
+  });
+  it("across: each place row is as tall as its tallest card", () => {
+    const g = mapGeometry(chain(), 0, "across", undefined, sizes([["D", 70]]));
+    expect(g.pos.get(T + "D.md")).toEqual({ x: 100 + 30, y: 40 + 20 });
+    expect(g.height).toBe(40 + 70 + 20);
+    expect(g.width).toBe(3 * 100 + 2 * 30);
+  });
+  it("arrows leave a chip's bottom centre and enter the top centre of the given size", () => {
+    const g = mapGeometry(chain(), 0, "down", undefined, sizes());
+    expect(g.curves.find(c => c.from === T + "A.md" && c.to === T + "B.md")!.d.startsWith("M50 40 C")).toBe(true);
+    expect(g.curves.find(c => c.from === T + "A.md" && c.to === T + "B.md")!.samples.at(-1)).toEqual({ x: 50, y: 70 });
+  });
+  it("a chip shorter than its row: the arrow first runs straight down to the row's bottom, so it never crosses a taller chip beside it", () => {
+    // B (short) and D (tall) in step 1; B → C goes from B's bottom to the row bottom, then on
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("D", { after: "[[A]]" }), td("C", { after: ["[[B]]", "[[D]]"] })]);
+    const s = sizes([["D", 200]]);
+    const g = mapGeometry(m, 0, "down", undefined, s);
+    const bc = g.curves.find(c => c.from === T + "B.md")!;
+    const b = g.pos.get(T + "B.md")!;
+    expect(bc.d.startsWith(`M${b.x + 50} ${b.y + 40} L${b.x + 50} ${b.y + 200} C`)).toBe(true);
+    for (const c of g.curves) for (const [p, r] of g.pos) if (p !== c.from && p !== c.to) expect(c.samples.some(q => inside(q, r, 100, s.heights!.get(p) ?? 40))).toBe(false);
+  });
+  it("a skip arrow is routed around a tall chip by its given size, down a lane between the given columns", () => {
+    const m = map([td("A"), td("B", { after: "[[A]]" }), td("C", { after: ["[[B]]", "[[A]]"] })]);
+    const s = sizes([["B", 150]]);
+    const g = mapGeometry(m, 0, "down", undefined, s);
+    const long = g.curves.find(c => c.from === T + "A.md" && c.to === T + "C.md")!;
+    expect(long.routed).toBe(true);
+    const b = g.pos.get(T + "B.md")!;
+    expect(long.samples.some(q => inside(q, b, 100, 150))).toBe(false);
+    const laneX = [-10, 110];   // left of column 0 or right of it: pad + k (width + gap) − gap / 2
+    expect(long.samples.some(q => laneX.some(x => Math.abs(q.x - x) < 0.5))).toBe(true);
   });
 });
 

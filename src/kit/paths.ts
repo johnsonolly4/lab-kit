@@ -25,8 +25,16 @@ export interface KitData {
   /** Old folder updater's install record, read only for migration. */
   installed: KitRecord | null;
   seenChangelog: string; initials: string; snippetIcons: Record<string, string>;
+  /** The Alt+S menu's Recent section: the last snippets picked, by name, newest first (snippet-menu.ts). */
+  snippetRecent: string[];
+  /** Groups of the Alt+S menu switched off under Settings → Snippets, by name (Make up, Samples…). Hidden from the menu, its search and Recent only; no file is removed. */
+  snippetGroupsOff: string[];
+  /** Alt+S question windows open under the cursor (desktop). Off: in the middle of the window. On by default (owner 2026-10-20, N4 Q8). */
+  snippetFormsAtCursor: boolean;
   /** Built-in kits (embedded in the plugin), by kit id: installed files, folders, files switched off. */
   kits: Record<string, KitSlot>;
+  /** Close experiment: absolute folders on this device that get a PDF of the closed note (desktop only; empty = Close experiment asks for one first). */
+  closePdfFolders: string[];
   /** Show a notice at startup when the plugin brings a newer kit. */
   notifyKitUpdate: boolean;
   debug: boolean;
@@ -34,12 +42,22 @@ export interface KitData {
   chemicalFolder: string;
   /** A form field that asks for a Chemical class lists only chemicals of that class (true), or lists them first and then all the others (false). */
   chemClassOnly: boolean;
-  /** Board countdown to a to-do's due date: off, only to-dos with `countdown: true`, or every to-do with a due date. */
-  dueCountdown: "off" | "marked" | "all";
+  /** Board countdown to a to-do's due date: off, or every to-do with a due date. A vault saved with the old "marked" reads as "all" (I2-S2 a). */
+  dueCountdown: "off" | "all";
   /** The plan map's direction: steps left to right (across) or top to bottom (down). A toggle on the map flips it for the open note. */
   planDirection: "across" | "down";
+  /** The to-do board shows Saturday and Sunday columns. */
+  boardWeekend: boolean;
+  /** The board's day count turns amber from this many open to-dos (0 = never). */
+  boardBusyFrom: number;
+  /** I2 (Q18 a): the one-off notice "Gave N to-dos a planned date" was shown in this vault. */
+  todoDatesNoticed: boolean;
   /** Write `progress: 3/7` (ticked / all check boxes) into lab notes and the Shopping list, for the kanban cards. Off by default. */
   checklistProgress: boolean;
+  /** I19: freeze a meeting note the day after its date (default on). Off: only the Freeze command and the Tidy rule freeze. */
+  freezeAuto: boolean;
+  /** TC4: apply the planning kit snippet's every-note rules to all notes (body class `lab-kit-style-all-notes`), not only to kit notes (`cssclasses: vt`). Off by default. */
+  styleAllNotes: boolean;
   /** Colour the columns of Bases kanban boards by status name (on), and the colour of each status (hex; missing = the default). */
   boardColours: { enabled: boolean; colours: Record<string, string> };
   /** Vault folder of lab notes (New lab entry; the kit's Lab book base goes next to it). Empty = not set. */
@@ -50,6 +68,12 @@ export interface KitData {
   methodsFolder: string;
   /** Vault folder of rig notes (New rig; the kit's Rig template is installed once it is set). Empty = not set. */
   rigsFolder: string;
+  /** Vault folder where the rig figure's SVG and PNG are saved. Empty = the rig note's own folder. */
+  figuresFolder: string;
+  /** Vault folder of the rig figure's module pack (symbol files + Pack list.md). Empty = the generic symbols. */
+  modulePackFolder: string;
+  /** Lab Kit's own folder → template list for new notes (Settings → Folder templates; the template is a file name in the kit's templates folder). null = today's rows: Daily notes, To-dos (planning kit on), Lab notes, Chemical folder. */
+  folderTemplates: { folder: string; file: string }[] | null;
   /** Planning kit note folders (Settings → Planning folders). Never empty: an empty box means the default. */
   planningFolders: PlanningFolders;
 }
@@ -101,8 +125,10 @@ export function followFolderRename(folder: string, oldPath: string, newPath: str
 
 /** Where rig notes live unless the Rigs folder setting says otherwise (shown greyed in the settings, like the Templates folder). */
 export const RIGS_DEFAULT = "03 Lab Book/Rigs";
+/** The Methods folder of a new vault (CI3, 2026-10-21: made at install next to Rigs). A vault saved before keeps what it had (empty = only NMR, GPC, DLS). */
+export const METHODS_DEFAULT = "03 Lab Book/Methods";
 
-export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", checklistProgress: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: "", rigsFolder: RIGS_DEFAULT, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
+export const KIT_DEFAULTS: KitData = { installed: null, seenChangelog: "", initials: "", snippetIcons: {}, snippetRecent: [], snippetGroupsOff: [], snippetFormsAtCursor: true, closePdfFolders: [], kits: {}, notifyKitUpdate: true, debug: false, chemicalFolder: "05 Chemicals/Chemicals", chemClassOnly: false, dueCountdown: "all", planDirection: "across", boardWeekend: false, boardBusyFrom: 6, todoDatesNoticed: false, checklistProgress: false, freezeAuto: true, styleAllNotes: false, boardColours: { enabled: true, colours: {} }, labFolder: "03 Lab Book/Notes", mwProperty: "", methodsFolder: METHODS_DEFAULT, rigsFolder: RIGS_DEFAULT, figuresFolder: "", modulePackFolder: "", folderTemplates: null, planningFolders: { ...PLANNING_FOLDER_DEFAULTS } };
 
 /** The saved state of one kit, created (nothing installed) when there is none yet: the lab kit starts switched on, any other kit off. */
 export function kitSlot(kit: KitData, id: string): KitSlot {
@@ -118,12 +144,26 @@ export function kitLoad(saved: unknown): KitData {
   const old = { ...((saved ?? {}) as Record<string, unknown>) };
   // Saved by v0.5.2 or older: no folder default is put on a vault that already uses Lab Kit (Lab book base, New lab entry stay off until set)
   if (saved && typeof saved === "object" && old.labFolder === undefined) old.labFolder = "";
+  // Saved before the Methods folder had a default (2026-10-21): it stays as it was (unset = empty)
+  if (saved && typeof saved === "object" && old.methodsFolder === undefined) old.methodsFolder = "";
   if (old.checkOnStartup === false && old.notifyKitUpdate === undefined) old.notifyKitUpdate = false;
   const single = { managed: old.managed, paths: old.paths, off: old.off };
   for (const k of ["source", "checkOnStartup", "makeBackups", "managed", "paths", "off"]) delete old[k];
   const kit = Object.assign({}, KIT_DEFAULTS, old) as KitData;
+  kit.dueCountdown = kit.dueCountdown === "off" ? "off" : "all";   // the old "marked" (it read `countdown: true`, dropped in I2) and anything unknown: all
   if (typeof kit.rigsFolder !== "string" || !kit.rigsFolder.trim()) kit.rigsFolder = RIGS_DEFAULT;   // a cleared box means the default
+  if (typeof kit.figuresFolder !== "string") kit.figuresFolder = "";
+  if (typeof kit.modulePackFolder !== "string") kit.modulePackFolder = "";
+  kit.folderTemplates = Array.isArray(kit.folderTemplates)
+    ? kit.folderTemplates.filter(r => r && typeof r.folder === "string" && typeof r.file === "string").map(r => ({ folder: r.folder.trim().replace(/\\/g, "/").replace(/^\/+|\/+$/g, ""), file: r.file.trim() }))
+    : null;
   kit.snippetIcons = { ...kit.snippetIcons };
+  kit.snippetRecent = Array.isArray(kit.snippetRecent) ? kit.snippetRecent.filter(n => typeof n === "string") : [];
+  kit.snippetGroupsOff = Array.isArray(kit.snippetGroupsOff) ? kit.snippetGroupsOff.filter(n => typeof n === "string") : [];
+  kit.snippetFormsAtCursor = kit.snippetFormsAtCursor !== false;
+  kit.freezeAuto = kit.freezeAuto !== false;
+  kit.styleAllNotes = kit.styleAllNotes === true;
+  kit.closePdfFolders = Array.isArray(kit.closePdfFolders) ? kit.closePdfFolders.filter(f => typeof f === "string" && f.trim()).map(f => f.trim()) : [];
   kit.boardColours = { enabled: kit.boardColours?.enabled !== false, colours: { ...(kit.boardColours?.colours ?? {}) } };
   kit.kits = Object.fromEntries(Object.entries(kit.kits ?? {}).filter(([, slot]) => slot && typeof slot === "object").map(([id, slot]) => [id, { enabled: slot.enabled !== false, managed: slot.managed ?? null, paths: { ...slot.paths }, off: { ...slot.off } }]));
   // Saved before Phase 5a: a planning note folder set as a per-kit override (Review window) becomes the setting
@@ -162,8 +202,8 @@ export async function kitEnsureDir(adapter: Pick<DataAdapter, "exists" | "mkdir"
  * Where each part of the kit lives in this vault.
  * `tracked`: the folders where the kit already put files. Templates and user scripts follow the files that are already there, so a file
  * added by a later kit version lands beside them; only a vault with no kit files yet gets the default layout (the folder contract in
- * docs/plans/planning-suite-kit.md, see LAB_LAYOUT): a `Lab Kit` subfolder of Templater's templates folder (else `Extras/Templates/Lab Kit`)
- * for the templates, a `lab-kit` subfolder of Templater's user scripts folder (else of `Extras/scripts/templater`) for the Templater scripts,
+ * docs/plans/planning-suite-kit.md, see LAB_LAYOUT): Templater's templates folder (else `Extras/Templates`) for the templates, `Extras/Snippets`
+ * for the Alt+S snippets (CI1, 2026-10-21; a vault that already has kit files keeps them in `<templates>/Snippets`), a `lab-kit` subfolder of Templater's user scripts folder (else of `Extras/scripts/templater`) for the Templater scripts,
  * and `Extras/scripts/lab-kit` for the other scripts. A user scripts folder that is set is never changed (issue #34), so a hand copy of
  * labForm.js outside it is not followed. `record` (old folder updater) supplies scripts and backups.
  */
@@ -174,9 +214,15 @@ export function kitFolderRoles(kit: Pick<KitData, "labFolder" | "chemicalFolder"
 }
 
 /** Where the lab kit goes in a vault with no kit files yet (the folder contract). */
-export const LAB_LAYOUT = { templates: "Extras/Templates", templatesSub: "Lab Kit", userScripts: "Extras/scripts/templater", userScriptsSub: "lab-kit", scripts: "Extras/scripts/lab-kit" };
+export const LAB_LAYOUT = { templates: "Extras/Templates", snippets: "Extras/Snippets", userScripts:"Extras/scripts/templater", userScriptsSub: "lab-kit", scripts: "Extras/scripts/lab-kit" };
 
-export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>): Roles {
+/**
+ * Id of Insert snippet.md, a core lab kit file until 2026-10-21: an install record that has it was made with the old layout (snippets in `<templates>/Snippets`).
+ * `oldInstall` (kitDetectRoles): that record, or the old folder updater's record. Not `record` itself: KitManaged.roles() always passes one.
+ */
+export const OLD_MENU_ID = "tpl-insert-snippet-md";
+
+export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Partial<Roles>, oldInstall = false): Roles {
   const files = app.vault.getFiles().filter(f => !kitIsBackup(f.path));   // a backup copy of labForm.js must not look like the real one
   // Folders that sit inside a backup are mistakes (an earlier version copied one into Templater's settings): ignored
   const sane = (p?: string): string => (p && !kitInBackup(p) ? p : "");
@@ -186,14 +232,20 @@ export function kitDetectRoles(app: App, record: KitRecord | null, tracked: Part
   const find = (name: string, test?: (f: (typeof files)[number]) => boolean) => files.find(f => f.name === name && (!test || test(f)));
   const scriptsFound = find("excel_to_calc.py");
   const scripts = tracked.scripts ?? remembered.scripts ?? (scriptsFound ? scriptsFound.parent!.path : LAB_LAYOUT.scripts);
-  const menu = find("Insert snippet.md");
+  // Anchors in a vault the kit has no record for: Insert snippet.md and labForm.js (no longer shipped, 2026-10-21) are still found in older vaults
+  const menu = find("Insert snippet.md") ?? find("Lab Book Template.md");
   const userFolder = kitJoin(tpl.user_scripts_folder.trim().replace(/\\/g, "/"));
-  const formScript = find("labForm.js", f => !userFolder || f.path.startsWith(userFolder + "/"));
+  const inUserFolder = (f: (typeof files)[number]): boolean => !userFolder || f.path.startsWith(userFolder + "/");
+  const formScript = find("labSnippets.js", inUserFolder) ?? find("labForm.js", inUserFolder);
+  const templates = tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || LAB_LAYOUT.templates));
+  // Snippets sat in `<templates>/Snippets` until 2026-10-21: a vault installed before (`oldInstall`, or Insert snippet.md found) keeps them there
+  const hasKit = oldInstall || !!find("Insert snippet.md");
   return {
     cssSnippets: kitJoin(app.vault.configDir, "snippets"),
     scripts,
     userScripts: tracked.userScripts ?? (formScript ? formScript.parent!.path : kitJoin(userFolder || LAB_LAYOUT.userScripts, LAB_LAYOUT.userScriptsSub)),
-    templates: tracked.templates ?? (menu ? menu.parent!.path : kitJoin(tpl.templates_folder || LAB_LAYOUT.templates, LAB_LAYOUT.templatesSub)),
+    templates,
+    snippets: tracked.snippets ?? (hasKit ? kitJoin(templates, "Snippets") : LAB_LAYOUT.snippets),
     backups: remembered.backups ?? kitJoin(app.vault.configDir, "plugins", "lab-kit", "backups"),   // inside the plugin folder: out of the file tree
   };
 }
@@ -236,27 +288,22 @@ export function planningFolders(roles: Roles, zotlit: boolean): KitFolder[] {
     { path: roles.daily, desc: "Daily notes (Templater fills them from the Daily note template)." },
     { path: kitJoin(roles.planning, "To-dos"), desc: "One note per to-do; the to-do board shows them." },
     { path: roles.projects, desc: "One folder per project, with its hub note." },
-    ...(zotlit ? [{ path: roles.literature, desc: "Literature notes from ZotLit." }] : []),
+    ...(zotlit ? [{ path: roles.literature, desc: "Literature notes, made by Refpane (with ZotLit)." }] : []),
     { path: roles.knowledge, desc: "Concept notes, one folder per topic." },
     { path: roles.howtos, desc: "How-to notes, one folder per topic." },
     { path: roles.meetings, desc: "Meeting series and their notes." },
-    { path: "Extras/attachments", desc: "Pasted images and files." },
   ];
   return list.filter(f => f.path);
 }
 
-/** The lab kit's note folders from the Lab notebook settings (empty = not set, not made). */
-export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder">): KitFolder[] {
+/** The lab kit's note folders from the Lab notebook settings (empty = not set, not made). Rigs and Methods sit under 03 Lab Book in a new vault (CI3). */
+export function labFolders(kit: Pick<KitData, "labFolder" | "chemicalFolder" | "rigsFolder" | "methodsFolder">): KitFolder[] {
   return [
     { path: kit.labFolder, desc: "Your experiment notes (New lab entry puts them here)." },
     { path: kit.chemicalFolder, desc: "Your chemical notes (suggested in calc cells and forms)." },
+    { path: kit.rigsFolder, desc: "Your rig notes (New rig puts them here)." },
+    { path: kit.methodsFolder, desc: "Your own analysis methods (the Alt+S menu lists them next to NMR, GPC and DLS)." },
   ].filter(f => f.path);
-}
-
-/** True for a note directly in the Snippets folder of the templates folder: the files the Alt+S menu and the Snippet icons page list. */
-export function inSnippetsFolder(path: string, templatesFolder: string): boolean {
-  const folder = kitJoin(templatesFolder, "Snippets");
-  return path.endsWith(".md") && kitParent(path) === folder;
 }
 
 /** Id of the Lab Book Template in kits/lab/kit-manifest.json. */
@@ -264,23 +311,19 @@ export const LAB_TEMPLATE_ID = "tpl-lab-book-template-md";
 export const CHEMICAL_TEMPLATE_ID = "tpl-chemical-database-template-md";
 export const RIG_TEMPLATE_ID = "tpl-rig-template-md";
 
-/** What New lab entry needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
-export function newLabEntryTarget(o: { templater: boolean; template: string | null; labFolder: string; initials?: string }): { template: string; folder: string } | { error: string } {
-  if (!o.templater) return { error: "New lab entry needs the Templater plugin. Install and enable it, then try again." };
+/** What New lab entry needs before it can run: the folder to use, or the reason it can't (shown as a notice). No Templater: Lab Kit makes the note from the Lab Book Template's text (or its own copy of it when the file is missing or still written for Templater). */
+export function newLabEntryTarget(o: { labFolder: string; initials?: string }): { folder: string } | { error: string } {
   if (o.initials !== undefined && !o.initials.trim()) return { error: "Set your initials in Lab Kit settings first: lab notes are named ABC0001 - Title." };
   const folder = kitJoin(o.labFolder.trim());
   if (!folder) return { error: "Set the Lab notes folder in Lab Kit settings first." };
-  if (!o.template) return { error: "The Lab Book Template is not installed. Install it from Manage kit files." };
-  return { template: o.template, folder };
+  return { folder };
 }
 
-/** What New chemical needs before it can run: the template and folder to use, or the reason it can't (shown as a notice). */
-export function newChemicalTarget(o: { templater: boolean; template: string | null; chemicalFolder: string }): { template: string; folder: string } | { error: string } {
-  if (!o.templater) return { error: "New chemical needs the Templater plugin. Install and enable it, then try again." };
+/** What New chemical needs before it can run: the folder to use, or the reason it can't (shown as a notice). No Templater (see `newLabEntryTarget`). */
+export function newChemicalTarget(o: { chemicalFolder: string }): { folder: string } | { error: string } {
   const folder = kitJoin(o.chemicalFolder.trim());
   if (!folder) return { error: "Set the Chemical folder in Lab Kit settings first." };
-  if (!o.template) return { error: "The Chemical database template is not installed. Install it from Manage kit files." };
-  return { template: o.template, folder };
+  return { folder };
 }
 
 /** What Clone experiment needs before it can run: the folder of lab notes and the initials, or the reason it can't (shown as a notice). No Templater: the old note's text is copied. */
@@ -298,4 +341,9 @@ export function newRigTarget(o: { template: string | null; rigsFolder: string })
   if (!folder) return { error: "Set the Rigs folder in Lab Kit settings first." };
   if (!o.template) return { error: "The Rig template is not installed. Install it from Manage kit files." };
   return { template: o.template, folder };
+}
+
+/** Where a rig note's figure files are saved: the Figures folder setting, or (empty) the folder of the rig note itself. "" is the vault root. */
+export function figuresTarget(o: { figuresFolder: string; notePath: string }): string {
+  return kitJoin(o.figuresFolder.trim()) || kitParent(o.notePath);
 }

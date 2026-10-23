@@ -1,25 +1,22 @@
-// To-do engine (planning kit): stamps dragged / ticked cards, rolls unfinished cards over, and tags the board for vault-theme.css.
-// Replaces the planning suite's To-do roll-over startup template. Rules: src/planning/todo.ts. Plan: docs/plans/phase-4a-todo-engine.md.
+// To-do engine (planning kit): stamps ticked cards, normalises notes arriving in the To-dos folder, and tags the board for vault-theme.css.
+// Replaced the planning suite's To-do roll-over startup template; the roll-over itself is retired (I2-S1: carried-over cards are drawn from the date).
+// Rules: src/planning/todo.ts. Plans: docs/plans/phase-4a-todo-engine.md, docs/plans/planned-dates.md.
 // Uses Bases' board markup (.bases-kanban-*, data-property): not a documented API, may change between Obsidian versions.
 import { trackPointer } from "./entry-window";
-import { MarkdownView, Notice, Platform, TFile, normalizePath, type App, type Plugin } from "obsidian";
+import { MarkdownView, Notice, TFile, normalizePath, type App, type Plugin } from "obsidian";
 import { metadataResolved } from "../kit/obsidian-private";
-import { applyPatch, cardTag, changePatch, emptyTodoCursorLine, rollOverPatch, snapOf, todayColumn, todayMark, ymd, dueCountdown, type CountdownMode, type TodoFm, type TodoSnap } from "./todo";
+import { toggleDoneWithUndo } from "./undo-notice";
+import { applyPatch, cardTag, emptyTodoCursorLine, isBlankBoardNote, isCarried, normalisePatch, tickPatch, todayMark, ymd, dueCountdown, waitingOf, type CountdownMode, type TodoFm } from "./todo";
 
-/** Per-device switch (this vault's local storage, not synced): "on" / "off"; unset = computers roll over, phones and tablets don't. */
-export const ROLL_KEY = "vt-rollover";
-const START_DELAY = 90 * 1000;      // let Obsidian Sync bring other devices' changes down first
 const RECHECK = 15 * 60 * 1000;     // a new day while Obsidian stays open
 const BOARD = '.bases-view[data-view-name="Board"]';
-
-/** Whether this device rolls cards over: the per-device switch, else not on phones and tablets. */
-export const rollsOnDevice = (stored: unknown, mobile: boolean): boolean => (stored ? stored === "on" : !mobile);
 
 /** The old startup template's engine is running in this window (it sets window.vtTodoEngine). */
 const templateRunning = (): boolean => !!(window as unknown as { vtTodoEngine?: unknown }).vtTodoEngine;
 
 export class TodoEngine {
-  private seen = new Map<string, TodoSnap>();   // path -> last seen { day, done }: tells a drag or tick from our own writes
+  private seen = new Map<string, boolean>();   // path -> `done` as last seen: tells a tick from a synced or our own write
+  private arrived = new Set<string>();          // made, moved or renamed into the folder: normalised on the next change with text in it
   private tagQueued = false;
   private warned = false;
 
@@ -45,12 +42,6 @@ export class TodoEngine {
     return true;
   }
 
-  private rollsHere(): boolean {
-    let stored: unknown = null;
-    try { stored = this.app.loadLocalStorage(ROLL_KEY); } catch { /* no local storage: use the device default */ }
-    return rollsOnDevice(stored, Platform.isMobile);
-  }
-
   start(): void {
     const plugin = this.plugin, app = this.app;
     trackPointer(plugin);   // windows can open where the cursor is
@@ -60,7 +51,7 @@ export class TodoEngine {
       const begin = (): void => {
         if (begun) return;
         begun = true;
-        for (const f of this.todos()) this.seen.set(f.path, snapOf(this.fm(f)));
+        for (const f of this.todos()) this.seen.set(f.path, this.fm(f).done === true);
         this.markToday();
         this.queueTag();
       };
@@ -74,12 +65,16 @@ export class TodoEngine {
         void this.onChanged(f).catch(e => console.error("Lab Kit to-do engine", e));
         if (this.isTodo(f)) this.queueTag();
       }));
+      // A note arriving in the folder (any source: a template, the file explorer, an Inbox move) is normalised once (Q14)
+      plugin.registerEvent(app.vault.on("create", f => { if (this.isTodo(f)) this.arrived.add(f.path); }));
       plugin.registerEvent(app.vault.on("rename", (f, old) => {
-        const s = this.seen.get(old);
+        const s = this.seen.get(old), wasHere = this.arrived.delete(old);
         this.seen.delete(old);
-        if (s && this.isTodo(f)) this.seen.set(f.path, s);
+        if (!this.isTodo(f)) return;
+        if (s !== undefined) this.seen.set(f.path, s);
+        if (wasHere || !old.startsWith(normalizePath(this.folder()) + "/")) this.arrived.add(f.path);
       }));
-      plugin.registerEvent(app.vault.on("delete", f => { this.seen.delete(f.path); }));
+      plugin.registerEvent(app.vault.on("delete", f => { this.seen.delete(f.path); this.arrived.delete(f.path); }));
 
       // A to-do with nothing typed yet opens with the cursor under the chip bar, not above it.
       // A note made by the template is opened before Templater has written it, so look again for a moment
@@ -111,12 +106,10 @@ export class TodoEngine {
       observer.observe(app.workspace.containerEl, { childList: true, subtree: true, characterData: true });   // characterData: a re-used column changes only its header text
       plugin.register(() => observer.disconnect());
 
-      let lastRun = ymd(new Date());
-      const timer = window.setTimeout(() => this.runRollOver(), START_DELAY);
-      plugin.register(() => window.clearTimeout(timer));
+      let lastDay = ymd(new Date());
       plugin.registerInterval(window.setInterval(() => {
         const today = ymd(new Date());
-        if (today !== lastRun) { lastRun = today; this.runRollOver(); this.queueTag(); }   // the countdown counts days
+        if (today !== lastDay) { lastDay = today; this.markToday(); this.queueTag(); }   // the countdown and carried-over cards count days
       }, RECHECK));
       plugin.register(() => this.cleanUp());
     });
@@ -124,41 +117,22 @@ export class TodoEngine {
 
   private async onChanged(f: TFile): Promise<void> {
     if (!this.isTodo(f)) return;
-    const fm = this.fm(f), now = snapOf(fm), before = this.seen.get(f.path);
-    this.seen.set(f.path, now);
+    const fm = this.fm(f), was = this.seen.get(f.path);
+    this.seen.set(f.path, fm.done === true);
     if (this.standDown()) return;
-    const patch = changePatch(fm, before, now, new Date());
+    if (this.arrived.has(f.path)) { await this.normalise(f); return; }
+    const patch = tickPatch(fm, was, new Date());
     if (patch) await this.app.fileManager.processFrontMatter(f, x => applyPatch(x as Record<string, unknown>, patch));
   }
 
-  private runRollOver(): void {
-    this.markToday();
-    if (this.rollsHere() && !this.standDown()) void this.rollOver().catch(e => console.error("Lab Kit to-do engine", e));
-  }
-
-  /** "Roll over to-dos now": on any device (the per-device switch is for the automatic run), unless the old startup template runs. */
-  async rollOverNow(): Promise<void> {
-    this.markToday();
-    if (this.standDown()) return;
-    const { rolled, cleared } = await this.rollOver();
-    if (!rolled && !cleared) new Notice("Nothing to roll over");
-  }
-
-  /** Rolls unfinished cards over to today and clears last week's finished cards. */
-  async rollOver(now = new Date()): Promise<{ rolled: number; cleared: number }> {
-    let rolled = 0, cleared = 0;
-    for (const f of this.todos()) {
-      const out = rollOverPatch(this.fm(f), new Date(f.stat.mtime), now);
-      if (!out) continue;
-      if (out.snap) this.seen.set(f.path, out.snap);   // our own write: not a drag or tick
-      await this.app.fileManager.processFrontMatter(f, x => applyPatch(x as Record<string, unknown>, out.patch));
-      if (out.kind === "rolled") rolled++;
-      if (out.kind === "cleared") cleared++;
-    }
-    const col = todayColumn(now);
-    if (rolled) new Notice(`Moved ${rolled} unfinished to-do${rolled === 1 ? "" : "s"} to ${col}`);
-    if (cleared) new Notice(`Cleared ${cleared} finished to-do${cleared === 1 ? "" : "s"} from last week`);
-    return { rolled, cleared };
+  /** An arrived note with text in it (so Templater has written it; a blank board note waits until something is typed): `normalisePatch`, once. */
+  private async normalise(f: TFile): Promise<void> {
+    if (isBlankBoardNote(await this.app.vault.cachedRead(f))) return;
+    this.arrived.delete(f.path);
+    const now = new Date(), patch = normalisePatch(this.fm(f), now);
+    if (!patch) return;
+    if (typeof patch.set.done === "boolean") this.seen.set(f.path, patch.set.done);   // our own write: not a tick (an old `day: Done` card gets no `done_on`)
+    await this.app.fileManager.processFrontMatter(f, (x: Record<string, unknown>) => { const p = normalisePatch(x, now); if (p) applyPatch(x, p); });
   }
 
   /** Today's column for vault-theme.css (blue). Every device does this; it writes nothing. */
@@ -183,7 +157,7 @@ export class TodoEngine {
     e.preventDefault(); e.stopPropagation();
     const f = this.cardFile(box.closest(".bases-kanban-card"));
     if (!f) { new Notice("Couldn't find this card's note: open it to tick done."); return; }
-    void this.app.fileManager.processFrontMatter(f, (x: Record<string, unknown>) => { x.done = x.done !== true; }).catch(err => console.error("Lab Kit to-do engine", err));
+    toggleDoneWithUndo(this.app, f).catch(err => console.error("Lab Kit to-do engine", err));
   }
 
   private queueTag(): void {
@@ -192,7 +166,7 @@ export class TodoEngine {
     window.requestAnimationFrame(() => this.tag());
   }
 
-  /** Every kanban column gets data-vt-group="<its name>" (the hidden measuring column has none); carried-over cards get vt-rolled; cards with a countdown get data-vt-due. */
+  /** Every kanban column gets data-vt-group="<its name>" (the hidden measuring column has none); carried-over cards (open, planned before today) get vt-rolled; open cards that wait on something get data-vt-waiting="<what>"; cards with a countdown get data-vt-due. */
   private tag(): void {
     this.tagQueued = false;
     const root = this.app.workspace.containerEl;
@@ -205,11 +179,13 @@ export class TodoEngine {
       try {
         const f = this.cardFile(card);
         const fm = f ? this.fm(f) : null;
-        card.classList.toggle("vt-rolled", !!fm && fm.rolled === true && fm.done !== true);
+        card.classList.toggle("vt-rolled", !!fm && isCarried(fm, new Date()));
         const cd = fm ? dueCountdown(fm, this.countdown(), new Date()) : null;
         const el = card as HTMLElement;
         if (cd) { el.dataset.vtDue = cd.text; el.dataset.vtDueLevel = cd.level; }
         else { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
+        const waiting = fm && fm.done !== true ? waitingOf(fm) : "";
+        if (waiting) el.dataset.vtWaiting = waiting; else delete el.dataset.vtWaiting;
         const tag = fm ? cardTag(fm) : null;
         if (tag) { el.dataset.vtTag = tag.text; el.dataset.vtPrio = tag.level; }
         else { delete el.dataset.vtTag; delete el.dataset.vtPrio; }
@@ -223,6 +199,7 @@ export class TodoEngine {
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-group]"))) delete el.dataset.vtGroup;
     for (const el of Array.from(root.querySelectorAll(".vt-rolled"))) el.classList.remove("vt-rolled");
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-due]"))) { delete el.dataset.vtDue; delete el.dataset.vtDueLevel; }
+    for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-waiting]"))) delete el.dataset.vtWaiting;
     for (const el of Array.from(root.querySelectorAll<HTMLElement>("[data-vt-tag]"))) { delete el.dataset.vtTag; delete el.dataset.vtPrio; }
   }
 }

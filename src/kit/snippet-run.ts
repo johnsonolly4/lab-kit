@@ -1,23 +1,40 @@
-// Alt+S for token templates: read a snippet note's header, ask its questions with the kit's form (labForm.js), fill the body.
+// Alt+S for token templates: read a snippet note's header, ask its questions with the plugin's form, fill the body.
 // Insert snippet.md calls this through the plugin (`plugin.snippets`); plain snippets never come here. See docs/plans/snippet-token-templates.md.
 import { Notice, TFile, TFolder, parseYaml, type App } from "obsidian";
 import { text } from "../calc/engine";
 import { prop, toList } from "../frontmatter";
 import { classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "./snippet-env";
-import { TemplateError, codesFromKey, defaultAnswers, fillParts, fillTemplate, isCancelled, parseTemplate, type ParsedTemplate, type TemplateField } from "./snippet-template";
+import { TemplateError, codesFromKey, answerOf, defaultAnswers, fillParts, formValue, fillTemplate, isCancelled, oldStub, parseTemplate, rigSnapshotFields, type ParsedTemplate, type TemplateField } from "./snippet-template";
+import { saveSnapshot } from "../rig/snapshot-io";
+import { readSnapshotMeta } from "../rig/snapshot";
 import { noteEdits } from "./snippet-note";
 import type { KitData } from "./paths";
+import { hideShadowedStubs, pushRecent, visibleItems, type MenuItem } from "./snippet-menu";
+import { openSnippetMenu, type MenuIcons } from "./snippet-menu-ui";
+import type { FormField, FormFn } from "./snippet-form";
+import { openSetup, reagentChoices, setupAnchor, SETUP_HINT, type SetupFn } from "../solution/setup";
+import { DEFAULT_SETUP, solutionBlock } from "../solution/setup-text";
+import { lookupMw } from "../blocks/raft/render";
+import { openRaftSetup, type RaftSetupFn } from "../blocks/raft/setup";
+import { DEFAULT_RAFT, raftBlock, workedFor } from "../blocks/raft/text";
+import { runCalculator } from "../snippets/run";
+import { isoToday } from "../snippets/util";
 
 /** What a snippet needs from Templater's `tp`: the note being written and the form. */
 export interface SnippetTp {
-  config?: { target_file?: { basename?: string } };
+  config?: { target_file?: { basename?: string; path?: string } | null };
   file?: { title?: string };
-  user: { labForm?: (tp: unknown, title: string, fields: FormField[], opts?: unknown) => Promise<Record<string, unknown> | null> };
+  user: {
+    labForm?: (tp: unknown, title: string, fields: FormField[], opts?: unknown) => Promise<Record<string, unknown> | null>;
+  };
+  date?: { now: (format?: string) => string };
 }
-interface FormField { key: string; label: string; hint?: string; required?: boolean; placeholder?: string; type: string; value: string; suggest?: { name: string; aliases: string[] }[] }
 
-/** Title, icon and description for the Alt+S menu. */
-export interface SnippetMeta { title?: string; icon?: string; desc?: string }
+/** Title, icon, description and group for the Alt+S menu. */
+export interface SnippetMeta { title?: string; icon?: string; desc?: string; group?: string; /** An old-form stub file (`<%*` … `labSnippets(tp, "nmr")`): the key it runs. */ oldStub?: string }
+
+/** The keys a header's `run:` may name. `solution` is the live ```solution block (N4: Solution prep IS the block, its own set-up window); the old volume tables run on as `solution-volume`. `raft` is the live block, the old tables are `raft-table`. The rest are src/snippets/ calculators. */
+export const CALCULATORS = ["solution", "solution-volume", "recipe", "raft", "raft-table", "results", "nmr", "gpc", "dls"];
 
 const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("|")[0].trim();
 
@@ -25,17 +42,36 @@ const plain = (name: string): string => name.replace(/^\[\[|\]\]$/g, "").split("
 const NOTE_FOLDERS: Record<string, string> = { rigsFolder: "Rigs folder", methodsFolder: "Methods folder", chemicalFolder: "Chemical folder", labFolder: "Lab notes folder" };
 
 export class SnippetTemplates {
-  constructor(private app: App, private kit: () => KitData) {}
+  /** `form` = the plugin's question window (main.ts); without it the answers come from Templater's labForm.js on `tp` (tests, old setups). */
+  constructor(private app: App, private kit: () => KitData, private save: () => Promise<void> = async () => {}, private form?: FormFn, private setup: SetupFn = openSetup, private version: () => string = () => "", private raftSetup: RaftSetupFn = openRaftSetup) {}
+
+  /** Right-click → Change icon… in the menu (set by the kit controller; without it the menu has no right-click). */
+  icons: MenuIcons | null = null;
+
+  /** The Alt+S menu (Insert snippet.md calls it in place of labPick.js): the picked entry's `value`, or null. Remembers the pick for Recent. */
+  async menu(all: MenuItem[]): Promise<unknown> {
+    const items = visibleItems(hideShadowedStubs(all), this.kit().snippetGroupsOff ?? []);
+    const kit = this.kit();
+    const names = new Set(items.map(it => it.name));
+    const recent = (kit.snippetRecent ?? []).filter(n => names.has(n));
+    const it = await openSnippetMenu(this.app, items, recent, this.icons);
+    if (!it) return null;
+    kit.snippetRecent = pushRecent(recent, it.name);
+    await this.save();
+    return it.value;
+  }
 
   private async parse(file: TFile): Promise<ParsedTemplate | null> {
     return parseTemplate(await this.app.vault.cachedRead(file), parseYaml);
   }
 
-  /** null = a plain snippet (inserted as it is). A token template with a bad header is still listed (empty meta); picking it shows the error. */
+  /** null = a plain snippet (inserted as it is). A token template with a bad header is still listed (empty meta); picking it shows the error. An old-form calculator stub counts as `run: <key>` with its own icon and description. */
   async meta(file: TFile): Promise<SnippetMeta | null> {
     try {
       const p = await this.parse(file);
-      return p ? { title: p.header.title, icon: p.header.icon, desc: p.header.desc } : null;
+      if (p) return { title: p.header.title, icon: p.header.icon, desc: p.header.desc, group: p.header.group };
+      const stub = oldStub(await this.app.vault.cachedRead(file));
+      return stub ? { icon: stub.icon, desc: stub.desc, oldStub: stub.run } : null;
     } catch (e) {
       if (e instanceof TemplateError) return {};
       throw e;
@@ -86,8 +122,13 @@ export class SnippetTemplates {
   async run(tp: SnippetTp, file: TFile): Promise<string> {
     let parsed: ParsedTemplate | null;
     try { parsed = await this.parse(file); } catch (e) { return this.fail(file, e); }
-    if (!parsed) return await this.app.vault.cachedRead(file);
+    if (!parsed) {
+      const text = await this.app.vault.cachedRead(file);
+      const stub = oldStub(text);
+      return stub ? await this.calculator(tp, file, undefined, stub.run) : text;
+    }
     const { header, body } = parsed;
+    if (header.run) return await this.calculator(tp, file, header.title, header.run);
     const kit = this.kit();
     try {
       const target = tp.config?.target_file;
@@ -99,7 +140,8 @@ export class SnippetTemplates {
       const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
       // suggest: notes: the notes of each such field's folder, and the ones picked (read once the form is answered)
       const listed = new Map(header.fields.filter(f => f.suggest === "notes").map(f => [f.key, this.notesFor(f)]));
-      const picked = new Map<string, { text: string; fm: Record<string, unknown> | undefined }>();
+      const picked = new Map<string, { file: TFile; text: string; fm: Record<string, unknown> | undefined }>();
+      const snapshots = new Map<string, { link: string; date: string }>();
       const env = makeEnv(note, `${initials}${num}-`, (name, property) => {
         const n = this.app.metadataCache.getFirstLinkpathDest(plain(name), sourcePath);
         const v = n ? prop(this.app.metadataCache.getFileCache(n)?.frontmatter, property) : undefined;
@@ -108,17 +150,21 @@ export class SnippetTemplates {
       }, {
         text: name => picked.get(name.toLowerCase())?.text ?? null,
         prop: (name, property) => toList(prop(picked.get(name.toLowerCase())?.fm, property)).join(", "),
+        snapshot: name => snapshots.get(name.toLowerCase()) ?? null,
       });
       const defaults = defaultAnswers(header, env);
       const chems = header.fields.some(f => f.suggest === "chemicals") ? this.chemicals() : [];
       // suggest: codes: the box holds the note's sample codes and, with several tables, a "Codes from" choice follows it
       const sources = header.fields.some(f => f.suggest === "codes") ? codeSources(note) : [];
       const parts = codeFormParts(sources);
-      if (!tp.user.labForm) throw new TemplateError("The form script labForm.js was not found. Run Check setup.");
+      const labForm = tp.user.labForm;
+      if (!this.form && !labForm) throw new TemplateError("The form script labForm.js was not found. Run Check setup.");
+      const ask: FormFn = this.form ?? ((t, f, o) => labForm!(tp, t, f, o));
       const title = header.title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "");
-      const got = await tp.user.labForm(tp, title, header.fields.flatMap(f => {
+      const got = await ask(title, header.fields.flatMap(f => {
         const isCodes = f.suggest === "codes";
-        const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type, value: isCodes && parts.prefill ? parts.prefill : defaults[f.key],
+        const field = { key: f.key, label: f.label, hint: f.hint, placeholder: f.placeholder, type: f.type === "list" ? "text" : f.type, value: formValue(f, isCodes && parts.prefill ? parts.prefill : defaults[f.key]),
+          ...(f.options ? { options: f.options } : {}),
           ...(f.mandatory ? { required: true } : {}),
           ...(f.suggest === "chemicals" ? { suggest: classFilter(chems, f.classes, kit.chemClassOnly) } : {}),
           ...(f.suggest === "notes" ? { suggest: listed.get(f.key)!.map(n => ({ name: n.basename, aliases: [] })) } : {}) };
@@ -128,7 +174,7 @@ export class SnippetTemplates {
       if (!got) return "";
       const answers: Record<string, string> = {};
       for (const f of header.fields) {
-        const box = text(got[f.key]).trim();
+        const box = answerOf(f, got[f.key]);
         answers[f.key] = f.suggest === "codes" ? resolveCodes(sources, parts.prefill, box, text(got[codesFromKey(f.key)]) || undefined) : box;
       }
       if (isCancelled(header, answers)) return "";
@@ -138,7 +184,15 @@ export class SnippetTemplates {
         const hit = files.find(n => n.basename.toLowerCase() === name.toLowerCase());
         if (!hit) throw new TemplateError(`No note called "${name}" in the ${NOTE_FOLDERS[header.fields.find(f => f.key === key)!.folder!]}.`);
         answers[key] = hit.basename;
-        picked.set(hit.basename.toLowerCase(), { text: await this.app.vault.cachedRead(hit), fm: this.app.metadataCache.getFileCache(hit)?.frontmatter });
+        picked.set(hit.basename.toLowerCase(), { file: hit, text: await this.app.vault.cachedRead(hit), fm: this.app.metadataCache.getFileCache(hit)?.frontmatter });
+      }
+      // {{rig-snapshot:key}}: the snapshot is written (or the latest equal one reused) before filling in, once per rig
+      for (const key of rigSnapshotFields([body, ...(header.set ?? []).map(p => p.value)])) {
+        const rig = picked.get((answers[key] ?? "").toLowerCase());
+        if (rig && !snapshots.has(rig.file.basename.toLowerCase())) {
+          const snap = await this.rigSnapshot(rig.file, sourcePath);
+          if (snap) snapshots.set(rig.file.basename.toLowerCase(), snap);
+        }
       }
       const out = fillParts(body, answers, env);
       const props = (header.set ?? []).map(p => ({ name: p.name, value: fillTemplate(p.value, answers, env).trim() })).filter(p => p.value);
@@ -148,6 +202,53 @@ export class SnippetTemplates {
       for (const e of edits) editor!.replaceRange(e.text, editor!.offsetToPos(e.from), editor!.offsetToPos(e.to));
       return out.text;
     } catch (e) { return this.fail(file, e); }
+  }
+
+  /** `run: <key>`: the calculator of that name (src/snippets/) asks its questions and builds the text, exactly as the stub files did. */
+  private async calculator(tp: SnippetTp, file: TFile, title: string | undefined, key: string): Promise<string> {
+    if (key === "solution") return await this.solutionBlock(tp, file, title);
+    if (key === "raft") return await this.raftBlock();
+    if (!CALCULATORS.includes(key)) {
+      new Notice(`“${title ?? file.basename.replace(/^\d+\s*[-.]?\s*/, "")}”: Lab Kit has no calculator called “${key}”.`);
+      return "";
+    }
+    const labForm = tp.user.labForm;
+    const ask: FormFn | undefined = this.form ?? (labForm ? (t, f, o) => labForm(tp, t, f, o) : undefined);
+    if (!ask) { new Notice("The question window was not found."); return ""; }
+    const target = (tp.config?.target_file ?? this.app.workspace.getActiveFile()) as TFile | null;
+    return await runCalculator({ app: this.app, kit: this.kit(), form: ask, file: target, today: () => tp.date?.now("YYYY-MM-DD") ?? isoToday() }, key);
+  }
+
+  /** `run: solution`: the set-up window at the cursor, then the live block (set-up filled in, actuals empty). "" when it was closed. */
+  private async solutionBlock(tp: SnippetTp, file: TFile, title: string | undefined): Promise<string> {
+    const kit = this.kit();
+    const got = await this.setup(this.app, { values: DEFAULT_SETUP, choices: reagentChoices(this.app, kit.chemicalFolder, kit.mwProperty), anchor: setupAnchor(this.app, kit.snippetFormsAtCursor !== false), submit: "Insert", hint: SETUP_HINT.insert, methods: true });
+    if (!got) return "";
+    if (got.method === "volume") return await this.calculator(tp, file, title, "solution-volume");   // Method: by volume = the old volume form, as before
+    const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
+    return (at && at.ch > 0 ? "\n" : "") + solutionBlock(got.lines);   // a fence starts on a line of its own
+  }
+
+  /** `run: raft` / `block: raft`: the set-up window at the cursor, then the live ```raft block (set-up filled in, `used:` empty, the worked-out `#` lines written). "" when it was closed.
+   *  The old calc-table generator runs on as `run: raft-table`. */
+  private async raftBlock(): Promise<string> {
+    const kit = this.kit();
+    const got = await this.raftSetup(this.app, { values: DEFAULT_RAFT, names: reagentChoices(this.app, kit.chemicalFolder, kit.mwProperty).map(c => c.name), anchor: setupAnchor(this.app, kit.snippetFormsAtCursor !== false), submit: "Insert", hint: SETUP_HINT.insert });
+    if (!got) return "";
+    const sourcePath = this.app.workspace.getActiveFile()?.path ?? "";
+    const worked = workedFor(got.lines, n => lookupMw(this.app, kit.mwProperty, n, sourcePath).mw);
+    const at = this.app.workspace.activeEditor?.editor?.getCursor("from");
+    return (at && at.ch > 0 ? "\n" : "") + raftBlock(got.lines, worked);   // a fence starts on a line of its own
+  }
+
+  /** A snapshot of the rig for this lab note (a new file and history row, or the latest equal one): its link from the lab note and its date. null when the rig has no parts to draw. */
+  private async rigSnapshot(rig: TFile, sourcePath: string): Promise<{ link: string; date: string } | null> {
+    let saved;
+    try { saved = await saveSnapshot(this.app, rig, this.version(), ""); } catch (e) { throw new TemplateError(`Could not save the snapshot of ${rig.basename}: ${e instanceof Error ? e.message : String(e)}`); }
+    if (!saved) return null;
+    if (saved.rowNote) new Notice(saved.rowNote, 10000);
+    const read = readSnapshotMeta(await this.app.vault.cachedRead(saved.file));
+    return { link: this.app.fileManager.generateMarkdownLink(saved.file, sourcePath), date: read.status === "ok" ? read.meta.date : "" };
   }
 
   private fail(file: TFile, e: unknown): string {

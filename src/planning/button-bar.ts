@@ -74,10 +74,30 @@ export function parseAlignEnd(source: string): boolean {
   return /^\s*align\s*:\s*end\s*$/im.test(source);
 }
 
-/** The buttons to draw, and the ids that name no button (or one whose edit is not built yet) for a plain line under the bar. */
-export function resolveBar(ids: string[]): { buttons: BarButton[]; problems: string[] } {
+/** The prefix of an id that runs any Obsidian command: `cmd:refpane:toggle-queue` runs the command `refpane:toggle-queue` (everything after the first `cmd:`). */
+const CMD_PREFIX = "cmd:";
+/** The icon of a `cmd:` button whose command has none (already used by the table's Quick capture). */
+const CMD_ICON = "zap";
+
+/** The command id inside a `cmd:` id, or null when `id` is not one. */
+export function cmdId(id: string): string | null {
+  return id.startsWith(CMD_PREFIX) && id.length > CMD_PREFIX.length ? id.slice(CMD_PREFIX.length) : null;
+}
+
+/** What Obsidian knows of a command (`name`, `icon`); undefined when it is not registered. */
+export type CommandLookup = (commandId: string) => { name: string; icon?: string } | undefined;
+
+/** The buttons to draw, and the ids that name no button (or one whose edit is not built yet) for a plain line under the bar. A `cmd:<command id>` id is a button for that Obsidian command, named and drawn from `lookup`; no `lookup` or no such command is a wrong id. */
+export function resolveBar(ids: string[], lookup?: CommandLookup): { buttons: BarButton[]; problems: string[] } {
   const buttons: BarButton[] = [], problems: string[] = [];
   for (const id of ids) {
+    const cmd = cmdId(id);
+    if (cmd) {
+      const c = lookup?.(cmd);
+      if (c) buttons.push({ id, label: c.name, icon: c.icon || CMD_ICON, plain: false, kind: "command", target: cmd });
+      else problems.push(`"${id}" is not a button`);
+      continue;
+    }
     const b = BAR_BUTTONS.get(id);
     if (!b) problems.push(`"${id}" is not a button`);
     else if (b.kind === "own") problems.push(`"${id}" is not available in a button bar yet`);

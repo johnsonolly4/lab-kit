@@ -7,7 +7,8 @@ interface TemplaterPlugin {
   settings?: { user_scripts_folder?: string; templates_folder?: string; enabled_templates_hotkeys?: (string | { template?: string })[];
     folder_templates?: { folder?: string; template?: string }[]; trigger_on_file_creation_mode?: string; startup_templates?: string[] };
   command_handler?: { sync_template_hotkeys?: () => void; add_template_hotkey?: (old: string | null, template: string) => void };
-  templater?: { files_with_pending_templates?: Set<string>; create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined> };
+  templater?: { files_with_pending_templates?: Set<string>; create_new_note_from_template?: (template: TFile, folder?: TFolder, filename?: string, open?: boolean) => Promise<TFile | undefined>;
+    append_template_to_active_file?: (template: TFile) => Promise<void> };
   save_settings?: () => Promise<void>;
   saveSettings?: () => Promise<void>;
 }
@@ -29,7 +30,7 @@ interface PrivateApp {
   /** Obsidian's own (core) plugins, by id; `instance.options` is that plugin's saved settings. */
   internalPlugins?: { plugins?: Record<string, { enabled?: boolean; instance?: { options?: Record<string, unknown> } }> };
   /** Property types (Settings → Properties, saved in types.json). */
-  metadataTypeManager?: { setType?: (name: string, type: string) => Promise<void> | void };
+  metadataTypeManager?: { getAssignedType?: (name: string) => string | null; setType?: (name: string, type: string) => Promise<void> | void };
   customCss?: {
     requestLoadSnippets?: () => Promise<void>;
     setCssEnabledStatus?: (name: string, enabled: boolean) => void;
@@ -42,8 +43,8 @@ const templater = (app: App): TemplaterPlugin | undefined => priv(app).plugins?.
 /** True when Obsidian has read every note's properties (`metadataCache.resolved`, not in the public typings). False when unknown. */
 export const metadataResolved = (app: App): boolean => (app.metadataCache as unknown as { resolved?: boolean }).resolved === true;
 
-/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`) that differ from the plugin id (none today: ZotLit's id is `zotlit`, checked in its manifest). */
-const PLUGIN_ALIASES: Record<string, string[]> = {};
+/** Names the kit manifests use for other plugins (`needs: "plugin:<name>"`) that differ from the plugin id. `literature`: either plugin that makes literature notes (ZotLit, or Refpane, owner board 9 R2 a). */
+const PLUGIN_ALIASES: Record<string, string[]> = { literature: ["zotlit", "refpane"] };
 /** Other plugins that are loaded (installed and on), as plugin ids plus the kit names in PLUGIN_ALIASES. */
 export function loadedPlugins(app: App): Set<string> {
   const ids = new Set(Object.keys(priv(app).plugins?.plugins ?? {}));
@@ -57,11 +58,19 @@ export const hasTemplater = (app: App): boolean => !!templater(app);
 export const templaterTemplatesFolder = (app: App): string | undefined => templater(app)?.settings?.templates_folder;
 export const templaterUserScriptsFolder = (app: App): string | undefined => templater(app)?.settings?.user_scripts_folder;
 
-/** Creates a note from `template` in `folder` with Templater and opens it (unless `open` is false). False when this Templater has no such function (private API). */
-export async function templaterCreateNote(app: App, template: TFile, folder: TFolder, open = true, filename?: string): Promise<boolean> {
+/** Creates a note from `template` in `folder` with Templater and opens it (unless `open` is false). The new note (true when this Templater does not return it); false when this Templater has no such function (private API). */
+export async function templaterCreateNote(app: App, template: TFile, folder: TFolder, open = true, filename?: string): Promise<TFile | boolean> {
   const create = templater(app)?.templater?.create_new_note_from_template;
   if (typeof create !== "function") return false;
-  await create.call(templater(app)?.templater, template, folder, filename, open);
+  const made = (await create.call(templater(app)?.templater, template, folder, filename, open)) as TFile | undefined;
+  return made ?? true;
+}
+
+/** Runs `template` with Templater and inserts the result at the cursor of the open note (Templater's own "Insert template"). False when this Templater has no such function (private API). */
+export async function templaterInsert(app: App, template: TFile): Promise<boolean> {
+  const insert = templater(app)?.templater?.append_template_to_active_file;
+  if (typeof insert !== "function") return false;
+  await insert.call(templater(app)?.templater, template);
   return true;
 }
 
@@ -174,6 +183,12 @@ export function commandNames(app: App): Record<string, string> {
   return Object.fromEntries(Object.entries(cmds).map(([id, c]) => [id, c?.name ?? id]));
 }
 
+/** One registered command's name and icon (`app.commands.commands[id]`, private); undefined when there is none (its plugin is not installed or off). */
+export function commandInfo(app: App, id: string): { name: string; icon?: string } | undefined {
+  const c = (app as unknown as { commands?: { commands?: Record<string, { name?: string; icon?: string } | undefined> } }).commands?.commands?.[id];
+  return c ? { name: c.name || id, icon: c.icon || undefined } : undefined;
+}
+
 /** Runs a command by id (`app.commands.executeCommandById`, private): for Go to links that name a command. False when it can't. */
 export function runCommand(app: App, id: string): boolean {
   const cmds = (app as unknown as { commands?: { executeCommandById?: (id: string) => boolean } }).commands;
@@ -219,6 +234,19 @@ export async function removeTemplaterStartup(app: App, template: string): Promis
   return true;
 }
 
+/** Removes Templater's folder-template rows for these folders and saves. Returns how many were removed (the caller backs the list up first). */
+export async function removeTemplaterFolderTemplates(app: App, folders: string[]): Promise<number> {
+  const tpl = templater(app);
+  const list = tpl?.settings?.folder_templates;
+  if (!tpl?.settings || !list) return 0;
+  const keep = list.filter(e => !folders.includes(e?.folder ?? ""));
+  const removed = list.length - keep.length;
+  if (!removed) return 0;
+  tpl.settings.folder_templates = keep;
+  try { await (tpl.save_settings?.() ?? tpl.saveSettings?.()); } catch (e) { console.error(e); }
+  return removed;
+}
+
 /** Templater's startup templates, folder templates and template hotkeys as paths, or undefined without Templater. */
 export function templaterPaths(app: App): { startup: string[]; folders: { folder: string; template: string }[]; hotkeys: string[] } | undefined {
   const st = templater(app)?.settings;
@@ -231,9 +259,9 @@ export function templaterPaths(app: App): { startup: string[]; folders: { folder
 }
 
 /** The saved value of one Templater / Meta Bind setting as JSON text (for a backup before it is changed). "" when the plugin isn't there. */
-export function settingSnapshot(app: App, target: "templater-startup" | "templater-folder" | "templater-hotkey" | "metabind-button"): string {
+export function settingSnapshot(app: App, target: "templater-startup" | "templater-folder" | "templater-folder-remove" | "templater-hotkey" | "metabind-button"): string {
   const st = templater(app)?.settings;
-  const value = target === "templater-startup" ? st?.startup_templates : target === "templater-folder" ? st?.folder_templates
+  const value = target === "templater-startup" ? st?.startup_templates : target === "templater-folder" || target === "templater-folder-remove" ? st?.folder_templates
     : target === "templater-hotkey" ? st?.enabled_templates_hotkeys : pluginOf(app, META_BIND)?.settings?.buttonTemplates;
   return value === undefined ? "" : JSON.stringify(value, null, 2);
 }
@@ -321,26 +349,6 @@ export async function resetMetaBindActions(app: App, buttons: { id: string; acti
   return n;
 }
 
-const ZOTLIT = "zotlit";
-const zotlitFile = (app: App): string => `${app.vault.configDir}/plugins/${ZOTLIT}/data.json`;
-/** ZotLit's saved settings (its data.json, read as a file): the parsed object, null when it has none yet, "unreadable" when it isn't JSON. */
-export async function readZotlitData(app: App): Promise<Record<string, unknown> | null | "unreadable"> {
-  const path = zotlitFile(app);
-  try {
-    if (!(await app.vault.adapter.exists(path))) return null;
-    const parsed: unknown = JSON.parse(await app.vault.adapter.read(path));
-    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : "unreadable";
-  } catch { return "unreadable"; }
-}
-/** Writes ZotLit's settings file and turns ZotLit off and on again so it reads them (it only reads the file when it starts). Always turns it back on. */
-export async function writeZotlitData(app: App, data: Record<string, unknown>): Promise<void> {
-  const plugins = priv(app).plugins;
-  const loaded = !!plugins?.plugins?.[ZOTLIT];
-  if (loaded) await plugins?.disablePlugin(ZOTLIT);
-  try { await app.vault.adapter.write(zotlitFile(app), JSON.stringify(data, null, 2)); }
-  finally { if (loaded) await plugins?.enablePlugin(ZOTLIT); }
-}
-
 /** Opens Obsidian's settings on a plugin's tab (`app.setting`, private). False when it can't. */
 export function openPluginSettings(app: App, id: string): boolean {
   const setting = (app as unknown as { setting?: { open?: () => void; openTabById?: (id: string) => void } }).setting;
@@ -388,6 +396,17 @@ export async function propertyTypes(app: App, names: string[]): Promise<Record<s
     return Object.fromEntries(names.map(n => { const t = lower.get(n.toLowerCase()); return [n, typeof t === "string" ? t : null]; }));
   } catch (e) { console.error(e); return null; }
 }
+/** The type the manager reports for a property (`metadataTypeManager.getAssignedType`, private). undefined when this Obsidian has no such call. */
+export function assignedType(app: App, name: string): string | null | undefined {
+  const m = priv(app).metadataTypeManager;
+  if (typeof m?.getAssignedType !== "function") return undefined;
+  try { return m.getAssignedType(name); } catch (e) { console.error(e); return undefined; }
+}
+/** Gives a property a type unless the manager already reports it (kit templates call this through `window.vtEnsureType`). True when the type was set, false when it was already right, missing or failed (the property then stays as it is). */
+export async function ensurePropertyType(app: App, name: string, type: string): Promise<boolean> {
+  if (assignedType(app, name) === type) return false;
+  return setPropertyType(app, name, type);
+}
 /** Sets a property's type (as Settings → Properties does). False when this Obsidian has no such call or it fails. */
 export async function setPropertyType(app: App, name: string, type: string): Promise<boolean> {
   const m = priv(app).metadataTypeManager;
@@ -400,6 +419,19 @@ interface VaultConfig { getConfig?: (key: string) => unknown; setConfig?: (key: 
 export function propertiesInDocument(app: App): string | undefined {
   const v = (app.vault as unknown as VaultConfig).getConfig?.("propertiesInDocument");
   return typeof v === "string" ? v : undefined;
+}
+/** Settings → Files & links → Automatically update internal links (`alwaysUpdateLinks`, `app.vault.getConfig`, private). Obsidian leaves the key out until it is switched on, so a missing key means off. undefined when Obsidian has no getConfig. */
+export function alwaysUpdateLinks(app: App): boolean | undefined {
+  const vault = app.vault as unknown as VaultConfig;
+  if (typeof vault.getConfig !== "function") return undefined;
+  return vault.getConfig("alwaysUpdateLinks") === true;
+}
+/** Switches Automatically update internal links on. False when Obsidian has no setConfig. */
+export function setAlwaysUpdateLinks(app: App): boolean {
+  const vault = app.vault as unknown as VaultConfig;
+  if (!vault.setConfig) return false;
+  vault.setConfig("alwaysUpdateLinks", true);
+  return true;
 }
 /** Sets Properties in document to Hidden. False when Obsidian has no setConfig. */
 export function hidePropertiesInDocument(app: App): boolean {

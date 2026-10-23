@@ -1,11 +1,8 @@
 // Chemical class on the form fields of the code snippets: a field that asks for a class suggests those chemicals (first, or only).
+import { labSnippets, labMethods } from "./helpers/lab-scripts";
 import { describe, it } from "vitest";
 import assert from "node:assert";
-import { createRequire } from "node:module";
 
-const require = createRequire(import.meta.url);
-const labSnippets = require("../kits/lab/Extras/scripts/templater/labSnippets.js");
-const labMethods = require("../kits/lab/Extras/scripts/templater/labMethods.js");
 
 const DATA = ".obsidian/plugins/lab-kit/data.json";
 const CHEMS: Record<string, Record<string, unknown>> = {

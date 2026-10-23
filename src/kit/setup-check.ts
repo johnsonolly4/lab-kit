@@ -1,10 +1,10 @@
 // Setup check (Phase 6): what the kits need from other plugins, Templater, CSS snippets, folders and hotkeys, as a list of ok / missing items.
 // Pure: the caller reads the vault and Obsidian into a SetupState; each missing item carries a fix the settings UI carries out after a confirmation.
 import type { KitHotkey } from "./obsidian-private";
-import type { ZotlitScan } from "./zotlit";
-import { RIGS_DEFAULT, todoFolder, type PlanningFolders } from "./paths";
+import { METHODS_DEFAULT, RIGS_DEFAULT, todoFolder, type KitData, type PlanningFolders } from "./paths";
 import { actionsDiffer } from "../planning/buttons";
 import { WIN_MARK } from "./window-look";
+import type { ClosedScan } from "../close/scan";
 
 /** Planning folder templates (folder → template file name in the kit's templates folder), from the planning kit's Templater settings. */
 export const planningFolderTemplates = (f: PlanningFolders): { folder: string; file: string }[] => [
@@ -21,6 +21,10 @@ export const labFolderTemplates = (labFolder: string, chemicalFolder = ""): { fo
   ...(chemicalFolder.trim() ? [{ folder: chemicalFolder.trim(), file: "Chemical database template.md" }] : []),
 ];
 
+/** Lab Kit's folder → template rows (`kit.folderTemplates`): the saved list, else today's rows (the planning rows only while the planning kit is on). */
+export const folderTemplateRows = (kit: Pick<KitData, "folderTemplates" | "labFolder" | "chemicalFolder" | "planningFolders">, planningOn: boolean): { folder: string; file: string }[] =>
+  kit.folderTemplates ?? [...(planningOn ? planningFolderTemplates(kit.planningFolders) : []), ...labFolderTemplates(kit.labFolder, kit.chemicalFolder)];
+
 /** Plugins the kits use, by plugin id (each id checked against the plugin's manifest.json, 2026-10-07), with what each is for. */
 export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning"; optional?: boolean; alias?: string; why: string }[] = [
   { id: "templater-obsidian", name: "Templater", kit: "lab", why: "Runs the kit's templates and the Alt+S snippet forms." },
@@ -30,7 +34,8 @@ export const SETUP_PLUGINS: { id: string; name: string; kit: "lab" | "planning";
   { id: "obsidian-view-mode-by-frontmatter", name: "Force note view mode", kit: "planning", why: "Opens the homepage read-only, so a click can't edit it." },
   { id: "omnisearch", name: "Omnisearch", kit: "planning", why: "Searches the whole vault by content, PDFs included." },
   { id: "notebook-navigator", name: "Notebook Navigator", kit: "planning", why: "The folder and note list, and sets the homepage." },
-  { id: "zotlit", name: "ZotLit", kit: "planning", optional: true, why: "Literature notes and annotations from Zotero." },
+  { id: "zotlit", name: "ZotLit", kit: "planning", optional: true, why: "Makes the literature notes and annotations from Zotero; Refpane sets it up." },
+  { id: "refpane", name: "Refpane", kit: "planning", optional: true, why: "Your reading queue and the paper boxes (Recently read, Key papers, Papers...). Without it those boxes stay empty." },
   { id: "obsidian-outliner", name: "Outliner", kit: "planning", optional: true, why: "Move and fold list items with the keyboard." },
   { id: "editing-toolbar", name: "Editing Toolbar", kit: "planning", optional: true, why: "A formatting toolbar above notes (handy on a phone)." },
   { id: "css-editor", name: "CSS Editor", kit: "planning", optional: true, why: "Edit the vault's CSS snippets inside Obsidian." },
@@ -63,24 +68,20 @@ export interface SetupState {
   metaBind: { missing: number; total: number; /** Ids of the missing buttons, for the row's text. */ names?: string[] } | null;
   /** Meta Bind buttons that exist but do something else than the kit's button of that id (see `differingButtons`). */
   metaBindDiffers?: { id: string; now: string; kit: string }[];
-  /** ZotLit's frontmatter fields and folders against the kit's (see `zotlitScan`); null when ZotLit has no settings file or it can't be read. */
-  zotlitData?: ZotlitScan | null;
-  /** Path of the "Set up ZotLit" checklist note when it is installed. */
-  zotlitGuide: string | null;
   /** Obsidian's Properties in document (visible / hidden / source); undefined when it can't be read. */
   propertiesView?: string;
+  /** Obsidian's Automatically update internal links; undefined when it can't be read (no row when the planning kit is off). */
+  updateLinks?: boolean;
   /** Notebook Navigator's homepage (null without the plugin) and the planning kit's homepage note. */
   navigator?: { homepage: { source: string; file: string | null } | null; home: string };
   /** Loaded plugin ids (plus kit names such as `zotlit`). */
   plugins: ReadonlySet<string>;
   planning: boolean;
-  templater: { templatesFolder: string; userScriptsFolder: string; menuHotkey: boolean; folderTemplates: { folder: string; template: string }[]; matchingMode?: string; startupTemplates?: string[] };
+  templater: { templatesFolder: string; userScriptsFolder: string; folderTemplates: { folder: string; template: string }[]; matchingMode?: string; startupTemplates?: string[] };
   /** The kits' Templater user scripts (tp.user.<name>): `exists` is false when the file isn't where the kit put it. */
   scripts?: { name: string; kit: "lab" | "planning"; exists: boolean }[];
   /** The homepage note's `obsidianUIMode` (Force note view mode reads it); null when the note isn't there. */
   homepageMode?: string | null;
-  /** Path of the installed Insert snippet template; null when the lab kit isn't installed. */
-  menu: string | null;
   /** Kit installed (has tracked files), per kit. */
   installed: { lab: boolean; planning: boolean };
   /** The kits' CSS snippets; `enabled` undefined when Obsidian can't tell. */
@@ -104,7 +105,15 @@ export interface SetupState {
   dataviewInline?: boolean | null;
   /** The type Obsidian has assigned to each property of `PROPERTY_TYPES` (null = none assigned); null when it can't be read; undefined = no rows. */
   propertyTypes?: Record<string, string | null> | null;
+  /** Lab Kit's own folder templates (Settings → Folder templates) and the notes whose front matter mixes a template header with their own keys; undefined until scanned (no rows). */
+  fill?: FillScan;
+  /** Lab notes closed with Close experiment (see `scanClosed`); `canPdf`: this device can make a PDF. undefined until scanned (no rows). */
+  closed?: ClosedScan & { canPdf: boolean };
 }
+
+/** One Lab Kit folder-template row as the Check setup rows see it. `kind`: what the template file is (a token template Lab Kit fills, a Templater template Templater still runs, or not there). */
+export interface FillScanRow { folder: string; file: string; folderExists: boolean; kind: "token" | "templater" | "missing"; templaterRow: boolean }
+export interface FillScan { rows: FillScanRow[]; mixed: string[] }
 
 export type SetupFix =
   | { kind: "plugin"; id: string }
@@ -114,10 +123,12 @@ export type SetupFix =
   | { kind: "folder"; path: string }
   | { kind: "find-moved" }
   | { kind: "folder-template"; folder: string; template: string }
+  | { kind: "fill-move"; folders: string[] }
   | { kind: "settings" }
   | { kind: "methods-folder"; path: string }
   | { kind: "rigs-folder"; path: string }
   | { kind: "hide-properties" }
+  | { kind: "update-links" }
   | { kind: "navigator-home"; path: string }
   | { kind: "matching-mode" }
   | { kind: "startup-remove"; template: string }
@@ -125,8 +136,9 @@ export type SetupFix =
   | { kind: "meta-bind-reset"; ids: string[] }
   | { kind: "open-note"; path: string }
   | { kind: "manage" }
-  | { kind: "zotlit-fields" }
-  | { kind: "property-type"; name: string; type: string };
+  | { kind: "property-type"; name: string; type: string }
+  | { kind: "close-notes"; paths: string[] }
+  | { kind: "make-pdfs"; paths: string[] };
 
 /** `warn`: can't be checked (shown with "!"), not counted as something to fix. */
 export interface SetupItem { id: string; group: string; label: string; ok: boolean; optional?: boolean; warn?: boolean; detail: string; fix?: SetupFix }
@@ -148,9 +160,6 @@ export function setupSummary(items: SetupItem[]): string {
   const n = items.filter(it => { const s = setupRowState(it); return s === "missing" || s === "todo"; }).length;
   return n ? `${n} ${n === 1 ? "thing" : "things"} to do.` : "Everything the kits need is in place.";
 }
-
-/** Where the Methods folder Fix puts it (the folder contract's default; the setting's own default stays empty). */
-export const METHODS_DEFAULT = "Extras/methods";
 
 const names1 = (list: unknown[], one: string, many: string): string => list.length === 1 ? one : many;
 
@@ -193,6 +202,16 @@ export function checkSetup(s: SetupState): SetupItem[] {
       ? "Can't read it in this Obsidian version: set Settings → Editor → Properties in document to Hidden."
       : `Set to ${pv}. The kit's notes keep their details in properties, which fill the top of every note.`,
     fix: pv && pv !== "hidden" ? { kind: "hide-properties" } : undefined });
+
+  if (s.planning) {
+    // After, sub, project and experiment links between to-dos are wikilinks matched by name: a rename only keeps them when Obsidian rewrites links itself
+    const u = s.updateLinks;
+    out.push({ id: "obsidian:update-links", group: "Obsidian", label: "Links follow renames", ok: u === true, warn: u === undefined || undefined,
+      detail: u === true ? "On (Automatically update internal links). Renaming a to-do or hub keeps the after, sub and project links." : u === undefined
+        ? "Can't read it in this Obsidian version: switch on Settings → Files & links → Automatically update internal links."
+        : "Off. Renaming a to-do or hub breaks the after, sub and project links that point to it. Fix switches on Automatically update internal links (Settings → Files & links).",
+      fix: u === false ? { kind: "update-links" } : undefined });
+  }
 
   if (s.corePlugins !== undefined) for (const c of CORE_PLUGINS.filter(c => kitOn(c.kit))) {
     const on = s.corePlugins?.[c.id];
@@ -256,12 +275,10 @@ export function checkSetup(s: SetupState): SetupItem[] {
     const items: [string, string, boolean][] = [
       ["templates-folder", "Templater template folder", !!t.templatesFolder.trim()],
       ["user-scripts", "Templater user scripts folder", !!t.userScriptsFolder.trim()],
-      ["menu-hotkey", "Insert snippet in Templater's Template hotkeys", t.menuHotkey],
     ];
     for (const [id, label, ok] of items) {
-      if (id === "menu-hotkey" && !s.menu) continue;
-      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.menu ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
-        fix: ok || !s.menu ? undefined : { kind: "templater" } });
+      out.push({ id: `templater:${id}`, group: "Templater", label, ok, detail: ok ? "Set." : s.installed.lab ? "Not set. Fix fills in only what is empty." : "Not set. Install the lab kit first, then Fix runs Set up.",
+        fix: ok || !s.installed.lab ? undefined : { kind: "templater" } });
     }
     for (const sc of s.scripts ?? []) {
       if (!kitOn(sc.kit)) continue;
@@ -273,6 +290,7 @@ export function checkSetup(s: SetupState): SetupItem[] {
     for (const ft of s.folderTemplates) {
       const kit = ft.kit ?? "planning";
       if (kit === "planning" && !s.planning) continue;
+      if (s.fill?.rows.some(r => r.folder === ft.folder && r.kind === "token")) continue;   // a token template: Lab Kit fills these itself, Templater needs no row
       const installed = s.installed[kit];
       const have = t.folderTemplates.find(e => e.folder === ft.folder);
       const ok = !!have;
@@ -328,24 +346,6 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: d.length ? { kind: "meta-bind-reset", ids: d.map(b => b.id) } : undefined });
   }
 
-  if (s.planning && s.plugins.has("zotlit") && s.zotlitData?.readable) {
-    const z = s.zotlitData;
-    const bits = [...z.missing.map(f => `${f.key} is missing`), ...z.differing.map(f => `${f.key} differs (yours: ${f.now}; kit: ${f.kit})`)];
-    const clean = !z.missing.length && !z.differing.length;
-    // a missing field is something to fix; a field of yours that only differs is a warning: Lab Kit never changes it, so check it by hand
-    out.push({ id: "zotlit:fields", group: "ZotLit", label: "ZotLit frontmatter fields", ok: clean, warn: (!clean && !z.missing.length) || undefined,
-      detail: bits.length ? `${bits.join("; ")}.${z.missing.length ? " Fix adds the missing ones, then turns ZotLit off and on so it reads them." : ""}${z.differing.length ? " Lab Kit never changes a field you have: check the ones that differ in Settings → ZotLit → Templates → Frontmatter." : ""}` : "All the kit's fields are there.",
-      fix: z.missing.length ? { kind: "zotlit-fields" } : undefined });
-    const f = [z.literature === "other" ? "Literature note folder is your own (left alone)" : z.literature === "empty" ? "Literature note folder is not set" : "",
-      z.templates === "other" ? "Template folder is your own (left alone)" : z.templates === "empty" ? "Template folder is not set" : ""].filter(Boolean);
-    out.push({ id: "zotlit:folders", group: "ZotLit", label: "ZotLit folders", ok: !f.length, warn: !!f.length || undefined,
-      detail: f.length ? `${f.join("; ")}.${z.literature === "empty" || z.templates === "empty" ? (z.missing.length ? " The Fix on the fields row sets the empty ones." : " Fix sets the empty ones.") : ""}` : "ZotLit uses the kit's literature and template folders.",
-      fix: !z.missing.length && (z.literature === "empty" || z.templates === "empty") ? { kind: "zotlit-fields" } : undefined });
-  } else if (s.planning && s.plugins.has("zotlit")) out.push({ id: "zotlit:settings", group: "ZotLit", label: "ZotLit settings", ok: false, warn: true,
-    detail: s.zotlitGuide ? `Lab Kit can't read ZotLit's settings. Check them against the checklist note ${s.zotlitGuide} (Open shows it).`
-      : "Lab Kit can't read ZotLit's settings. Install the planning kit (Review update…) to get its checklist note, Set up ZotLit.",
-    fix: s.zotlitGuide ? { kind: "open-note", path: s.zotlitGuide } : undefined });
-
   // Meeting series hubs: a wrong interval / day / start would make New meeting skip the series, so name the field
   if (s.planning) {
     const series = s.meetings ?? [];
@@ -361,12 +361,27 @@ export function checkSetup(s: SetupState): SetupItem[] {
     }
   }
 
+  // Close experiment: three cases that need a look. A row appears only when a note is in its case.
+  if (s.closed) {
+    const { edited, unclosed, noPdf, canPdf } = s.closed;
+    const named = (list: { name: string }[]): string => ` ${list.map(n => n.name).join(", ")}.`;
+    const nNotes = (n: number): string => `${n} note${n === 1 ? "" : "s"}`;
+    if (edited.length) out.push({ id: "closed:edited", group: "Lab notes", label: "Closed lab notes edited after closing", ok: false, warn: true,
+      detail: `${nNotes(edited.length)} changed since they were closed.${named(edited)}` });
+    if (unclosed.length) out.push({ id: "closed:unclosed", group: "Lab notes", label: "Lab notes marked Closed but not closed", ok: false, warn: true,
+      detail: `${nNotes(unclosed.length)} marked Closed but not closed.${named(unclosed)}`, fix: { kind: "close-notes", paths: unclosed.map(n => n.path) } });
+    if (noPdf.length) out.push({ id: "closed:no-pdf", group: "Lab notes", label: "Closed lab notes without a PDF", ok: false, warn: true,
+      detail: `${nNotes(noPdf.length)} closed without a PDF.${named(noPdf)}`, fix: canPdf ? { kind: "make-pdfs", paths: noPdf.map(n => n.path) } : undefined });
+  }
+
   for (const c of s.css) {
     const ok = c.enabled === true;
     out.push({ id: `css:${c.name}`, group: "Appearance", label: `CSS snippet ${c.name}`, ok,
       detail: c.enabled === undefined ? "Can't tell in this Obsidian version: check Settings → Appearance → CSS snippets." : ok ? "On." : "Off.",
       fix: c.enabled === false ? { kind: "css", names: [c.name] } : undefined });
   }
+
+  if (s.fill) out.push(...fillRows(s.fill));
 
   // A settings folder that is missing after the install was most likely moved outside Obsidian: look for it rather than make it again
   const installed = s.installed.lab || s.installed.planning;
@@ -377,6 +392,26 @@ export function checkSetup(s: SetupState): SetupItem[] {
       fix: f.exists ? undefined : moved ? { kind: "find-moved" } : { kind: "folder", path: f.path } });
   }
 
+  return out;
+}
+
+/**
+ * Rows for Lab Kit's own folder templates. One row confirms the folders (each: folder there, template there, who fills it); a Fix removes
+ * Templater's row for the folders whose template Lab Kit now fills itself. A second row lists mixed notes, which are never guessed.
+ */
+export function fillRows(f: FillScan): SetupItem[] {
+  const out: SetupItem[] = [];
+  if (f.rows.length) {
+    const line = (r: FillScanRow): string => `${r.folder || "(no folder)"} → ${r.file || "(no file)"}: ${!r.file ? "no template file named" : r.kind === "missing" ? "template file not found" : r.kind === "token" ? (r.templaterRow ? "filled by Lab Kit; Templater has a row too" : "filled by Lab Kit") : (r.templaterRow ? "Templater fills it" : "Templater template, no Templater row for this folder")}${r.folderExists ? "" : "; folder not found"}`;
+    const bad = f.rows.filter(r => !r.folderExists || r.kind === "missing" || (r.kind === "templater" && !r.templaterRow));
+    const move = f.rows.filter(r => r.kind === "token" && r.templaterRow).map(r => r.folder);
+    out.push({ id: "fill:rows", group: "Folder templates", label: "Folder templates run by Lab Kit", ok: !bad.length && !move.length, warn: true,
+      detail: `${f.rows.map(line).join(". ")}.${move.length ? " Fix removes Templater's row for the folders Lab Kit fills itself (a copy of Templater's list is saved first)." : ""}`,
+      fix: move.length ? { kind: "fill-move", folders: move } : undefined });
+  }
+  if (f.mixed.length) out.push({ id: "fill:mixed", group: "Folder templates", label: "Notes with a template header mixed into their properties", ok: false, warn: true,
+    detail: `${f.mixed.length} ${f.mixed.length === 1 ? "note" : "notes"} (${f.mixed.slice(0, 5).join(", ")}${f.mixed.length > 5 ? ", …" : ""}). Lab Kit does not fill or change them: tidy the properties by hand.`,
+    fix: { kind: "open-note", path: f.mixed[0] } });
   return out;
 }
 

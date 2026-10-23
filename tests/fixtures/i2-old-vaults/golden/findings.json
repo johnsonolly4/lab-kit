@@ -1,0 +1,1340 @@
+{
+  "caseCounts": {
+    "Backlog": 2,
+    "day Done, ticked": 1,
+    "day Done, not ticked": 1,
+    "day typo / empty / lower case": 3,
+    "done, with done_on": 3,
+    "done, no done_on": 2,
+    "Mon-Fri, with planned": 7,
+    "due only (Backlog)": 2,
+    "meeting-flagged": 3,
+    "Mon-Fri, no planned": 3,
+    "no kind": 1,
+    "subtask with after": 3,
+    "rolled": 2,
+    "weekend planned": 2
+  },
+  "views": {
+    "wed": {
+      "today": "2026-10-21",
+      "vsToday_phone_a": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 3,
+          "cards": [
+            "Mon planned this week: Mon -> Wed",
+            "Thu planned last week: Thu -> Wed",
+            "Tue planned this week: Tue -> Wed"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Mon no planned: Mon -> Wed"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 1,
+          "cards": [
+            "No kind with day: Mon -> Wed"
+          ]
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Tue -> Wed"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 1,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Wed"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "vsToday_phone_b": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 3,
+          "cards": [
+            "Mon planned this week: Mon -> Wed",
+            "Thu planned last week: Thu -> Wed",
+            "Tue planned this week: Tue -> Wed"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Mon no planned: Mon -> Wed"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 1,
+          "cards": [
+            "No kind with day: Mon -> Wed"
+          ]
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Tue -> Wed"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 1,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Wed"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "vsToday_computer_a": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 0,
+          "cards": []
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 1,
+          "cards": [
+            "No kind with day: Mon -> Wed"
+          ]
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "aVsB": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 0,
+          "cards": []
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "weekendOn": {
+        "done, with done_on": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden"
+          ]
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 3,
+          "cards": [
+            "Mon planned this week: Mon -> Wed",
+            "Thu planned last week: Thu -> Wed",
+            "Tue planned this week: Tue -> Wed"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Mon no planned: Mon -> Wed"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 1,
+          "cards": [
+            "No kind with day: Mon -> Wed"
+          ]
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Tue -> Wed"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 1,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Wed"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Weekend Sat planned: Sat -> tray",
+            "Weekend Sun planned: Sun -> tray"
+          ]
+        }
+      }
+    },
+    "sat": {
+      "today": "2026-10-24",
+      "vsToday_phone_a": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 6,
+          "cards": [
+            "Due and Fri: Fri -> Mon",
+            "Fri planned this week: Fri -> Mon",
+            "Thu planned last week: Thu -> Mon",
+            "Thu planned this week: Thu -> Mon",
+            "Tue planned this week: Tue -> Mon",
+            "Wed planned today: Wed -> Mon"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Thu -> Mon"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Fri no planned: Fri -> Mon",
+            "Wed no planned: Wed -> Mon"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Tue -> Mon"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Mon",
+            "Rolled to Wed: Wed -> Mon"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "vsToday_phone_b": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 6,
+          "cards": [
+            "Due and Fri: Fri -> Mon",
+            "Fri planned this week: Fri -> Mon",
+            "Thu planned last week: Thu -> Mon",
+            "Thu planned this week: Thu -> Mon",
+            "Tue planned this week: Tue -> Mon",
+            "Wed planned today: Wed -> Mon"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Thu -> Mon"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Fri no planned: Fri -> Mon",
+            "Wed no planned: Wed -> Mon"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Tue -> Mon"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Mon",
+            "Rolled to Wed: Wed -> Mon"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "vsToday_computer_a": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 7,
+          "cards": [
+            "Due and Fri: Mon -> tray",
+            "Fri planned this week: Mon -> tray",
+            "Mon planned this week: Mon -> tray",
+            "Thu planned last week: Mon -> tray",
+            "Thu planned this week: Mon -> tray",
+            "Tue planned this week: Mon -> tray",
+            "Wed planned today: Mon -> tray"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Mon -> tray"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 3,
+          "cards": [
+            "Fri no planned: Mon -> tray",
+            "Mon no planned: Mon -> tray",
+            "Wed no planned: Mon -> tray"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Mon -> tray"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Mon -> tray",
+            "Rolled to Wed: Mon -> tray"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "aVsB": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 0,
+          "cards": []
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "weekendOn": {
+        "done, with done_on": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden"
+          ]
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 6,
+          "cards": [
+            "Due and Fri: Fri -> Mon",
+            "Fri planned this week: Fri -> Mon",
+            "Thu planned last week: Thu -> Mon",
+            "Thu planned this week: Thu -> Mon",
+            "Tue planned this week: Tue -> Mon",
+            "Wed planned today: Wed -> Mon"
+          ]
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Thu -> Mon"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Fri no planned: Fri -> Mon",
+            "Wed no planned: Wed -> Mon"
+          ]
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Plan step 2: Tue -> Mon"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Mon",
+            "Rolled to Wed: Wed -> Mon"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Weekend Sat planned: Sat -> tray",
+            "Weekend Sun planned: Sun -> tray"
+          ]
+        }
+      }
+    },
+    "mon": {
+      "today": "2026-10-26",
+      "vsToday_phone_a": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden",
+            "Done this week with done_on: done@Tue -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 1,
+          "cards": [
+            "Done no done_on today column: done@Wed -> hidden"
+          ]
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 6,
+          "cards": [
+            "Due and Fri: Fri -> Mon",
+            "Fri planned this week: Fri -> Mon",
+            "Thu planned last week: Thu -> Mon",
+            "Thu planned this week: Thu -> Mon",
+            "Tue planned this week: Tue -> Mon",
+            "Wed planned today: Wed -> Mon"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Thu -> Mon"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Plan step 1: done@Mon -> hidden",
+            "Plan step 2: Tue -> Mon"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Mon",
+            "Rolled to Wed: Wed -> Mon"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "vsToday_phone_b": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden",
+            "Done this week with done_on: done@Tue -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Done no done_on old week: done@Mon -> hidden",
+            "Done no done_on today column: done@Wed -> hidden"
+          ]
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 6,
+          "cards": [
+            "Due and Fri: Fri -> Mon",
+            "Fri planned this week: Fri -> Mon",
+            "Thu planned last week: Thu -> Mon",
+            "Thu planned this week: Thu -> Mon",
+            "Tue planned this week: Tue -> Mon",
+            "Wed planned today: Wed -> Mon"
+          ]
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Thu -> Mon"
+          ]
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Fri no planned: Fri -> Mon",
+            "Wed no planned: Wed -> Mon"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Plan step 1: done@Mon -> hidden",
+            "Plan step 2: Tue -> Mon"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Mon",
+            "Rolled to Wed: Wed -> Mon"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "vsToday_computer_a": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 0,
+          "cards": []
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "aVsB": {
+        "Backlog": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day Done, not ticked": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "day typo / empty / lower case": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, with done_on": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 1,
+          "cards": [
+            "Done no done_on old week: done@Mon -> hidden(done before this week)"
+          ]
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 0,
+          "cards": []
+        },
+        "due only (Backlog)": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "Mon-Fri, no planned": {
+          "n": 3,
+          "changed": 3,
+          "cards": [
+            "Fri no planned: Fri -> Mon*",
+            "Mon no planned: Mon -> Mon*",
+            "Wed no planned: Wed -> Mon*"
+          ]
+        },
+        "no kind": {
+          "n": 1,
+          "changed": 0,
+          "cards": []
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 0,
+          "cards": []
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 0,
+          "cards": []
+        }
+      },
+      "weekendOn": {
+        "done, with done_on": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Done last week with done_on: done@Thu -> hidden",
+            "Done this week with done_on: done@Tue -> hidden"
+          ]
+        },
+        "done, no done_on": {
+          "n": 2,
+          "changed": 1,
+          "cards": [
+            "Done no done_on today column: done@Wed -> hidden"
+          ]
+        },
+        "Mon-Fri, with planned": {
+          "n": 7,
+          "changed": 6,
+          "cards": [
+            "Due and Fri: Fri -> Mon",
+            "Fri planned this week: Fri -> Mon",
+            "Thu planned last week: Thu -> Mon",
+            "Thu planned this week: Thu -> Mon",
+            "Tue planned this week: Tue -> Mon",
+            "Wed planned today: Wed -> Mon"
+          ]
+        },
+        "meeting-flagged": {
+          "n": 3,
+          "changed": 1,
+          "cards": [
+            "Flagged for group meeting: Thu -> Mon"
+          ]
+        },
+        "subtask with after": {
+          "n": 3,
+          "changed": 2,
+          "cards": [
+            "Plan step 1: done@Mon -> hidden",
+            "Plan step 2: Tue -> Mon"
+          ]
+        },
+        "rolled": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Rolled to Tue yesterday: Tue -> Mon",
+            "Rolled to Wed: Wed -> Mon"
+          ]
+        },
+        "weekend planned": {
+          "n": 2,
+          "changed": 2,
+          "cards": [
+            "Weekend Sat planned: Sat -> tray",
+            "Weekend Sun planned: Sun -> tray"
+          ]
+        }
+      }
+    }
+  },
+  "doneFlips": [
+    "Day Done not ticked: finished (day Done) -> open without day"
+  ],
+  "devices": [
+    {
+      "name": "Sync agree",
+      "scheduledLaptop": "2026-10-22",
+      "scheduledPhone": "2026-10-22",
+      "sameDate": true,
+      "sameDone": true,
+      "shownLaptop": "Thu",
+      "shownPhone": "Thu",
+      "nowLaptop": "Thu",
+      "nowPhone": "Thu"
+    },
+    {
+      "name": "Sync move report",
+      "scheduledLaptop": "2026-10-21",
+      "scheduledPhone": "2026-10-23",
+      "sameDate": false,
+      "sameDone": true,
+      "shownLaptop": "Wed",
+      "shownPhone": "Fri",
+      "nowLaptop": "Wed*",
+      "nowPhone": "Fri"
+    },
+    {
+      "name": "Sync tick samples",
+      "scheduledLaptop": "2026-10-20",
+      "scheduledPhone": "2026-10-20",
+      "sameDate": true,
+      "sameDone": false,
+      "shownLaptop": "Wed*",
+      "shownPhone": "done@Wed",
+      "nowLaptop": "Tue",
+      "nowPhone": "done@Tue"
+    }
+  ],
+  "oldPlugin": {
+    "drag to Fri": {
+      "n": 22,
+      "stale": 11,
+      "afterRepair": 0,
+      "samples": [
+        "Flagged for group meeting: old plugin intends Fri, I2 shows Thu (scheduled 2026-10-22, day Fri)",
+        "Mon no planned: old plugin intends Fri, I2 shows Wed (scheduled 2026-10-19, day Fri)",
+        "Mon planned this week: old plugin intends Fri, I2 shows Wed (scheduled 2026-10-19, day Fri)"
+      ]
+    },
+    "drag to Backlog": {
+      "n": 19,
+      "stale": 14,
+      "afterRepair": 0,
+      "samples": [
+        "Due and Fri: old plugin intends tray, I2 shows Fri (scheduled 2026-10-23, day Backlog)",
+        "Flagged for group meeting: old plugin intends tray, I2 shows Thu (scheduled 2026-10-22, day Backlog)",
+        "Fri no planned: old plugin intends tray, I2 shows Fri (scheduled 2026-10-23, day Backlog)"
+      ]
+    },
+    "roll-over": {
+      "n": 8,
+      "stale": 0,
+      "afterRepair": 0,
+      "samples": []
+    }
+  },
+  "futureMeetsOldRoll": [
+    "Mon 2026-10-26: old roll-over moves it to Wed (today); the old board draws it in this week's Mon column",
+    "Tue 2026-10-27: old roll-over moves it to Wed (today); the old board draws it in this week's Tue column",
+    "Wed 2026-10-28: old roll-over leaves it; the old board draws it in this week's Wed column",
+    "Thu 2026-10-29: old roll-over leaves it; the old board draws it in this week's Thu column",
+    "Fri 2026-10-30: old roll-over leaves it; the old board draws it in this week's Fri column"
+  ],
+  "futureMeetsOldRollWithPlannedShim": [
+    "Mon 2026-10-26: old roll-over leaves it; the old board draws it in this week's Mon column",
+    "Tue 2026-10-27: old roll-over leaves it; the old board draws it in this week's Tue column",
+    "Wed 2026-10-28: old roll-over leaves it; the old board draws it in this week's Wed column",
+    "Thu 2026-10-29: old roll-over leaves it; the old board draws it in this week's Thu column",
+    "Fri 2026-10-30: old roll-over leaves it; the old board draws it in this week's Fri column"
+  ],
+  "readers": {
+    "Weekly review: Backlog list (day = Backlog, open)": {
+      "today": 6,
+      "mirror": 6,
+      "dropped": 6,
+      "mirrorWrong": [],
+      "droppedWrong": [
+        "+Backlog with planned stamp",
+        "-Wed planned today"
+      ]
+    },
+    "Daily note 2026-10-21: Planned for today (day = Wed, open)": {
+      "today": 3,
+      "mirror": 3,
+      "dropped": 3,
+      "mirrorWrong": [],
+      "droppedWrong": [
+        "+Wed planned today",
+        "-New card for today"
+      ]
+    },
+    "Project hub: Done to-dos (done or day = Done)": {
+      "today": 1,
+      "mirror": 2,
+      "dropped": 2,
+      "mirrorWrong": [],
+      "droppedWrong": []
+    },
+    "Own query 1: open, grouped by day (not Backlog)": {
+      "today": 18,
+      "mirror": 19,
+      "dropped": 17,
+      "mirrorWrong": [],
+      "droppedWrong": [
+        "+Wed planned today",
+        "-Backlog with planned stamp",
+        "-New card for today",
+        "-New card next Tue"
+      ]
+    },
+    "Own query 2: open on Fri": {
+      "today": 3,
+      "mirror": 4,
+      "dropped": 3,
+      "mirrorWrong": [],
+      "droppedWrong": [
+        "-Backlog with planned stamp"
+      ]
+    },
+    "Own query 3: TASK where day = Mon": {
+      "today": 4,
+      "mirror": 4,
+      "dropped": 4,
+      "mirrorWrong": [],
+      "droppedWrong": []
+    }
+  }
+}

@@ -5,18 +5,21 @@ import {
   type EmbeddedKit, type ManagedAdapter, type ManagedState
 } from "../src/kit/managed";
 import { readFileSync } from "fs";
-import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot, inSnippetsFolder, cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget } from "../src/kit/paths";
+import { KIT_DEFAULTS, kitCompare, kitDetectRoles, kitFolderRoles, kitLoad, kitSlot,cloneExperimentTarget, newChemicalTarget, newLabEntryTarget, newRigTarget, figuresTarget } from "../src/kit/paths";
 import { readRig } from "../src/rig/parts";
 // @ts-expect-error plain .mjs build helper
 import { embeddedKit } from "../scripts/embed-kit.mjs";
 
 const real = embeddedKit() as EmbeddedKit;
+// The planning kit ships the one Templater user script (vtAsk.js); the lab kit has none since 2026-10-21
+const planningKit = embeddedKit(new URL("../kits/planning", import.meta.url).pathname) as EmbeddedKit;
 const bare: EmbeddedKit = { manifest: { schema: 1, kitVersion: "1.0.0", files: [], removed: [] }, contents: {} };
 
 describe("first install options", () => {
-  it("the real kit carries its CSS snippet and Templater settings into main.js", () => {
+  it("the real kits carry their CSS snippet and Templater settings into main.js", () => {
     expect(real.manifest.enableCss).toContain("scrolling-mermaid.css");
-    expect(real.manifest.templater?.userScripts).toBe(true);
+    expect(real.manifest.templater?.userScripts).toBeUndefined();   // no lab Templater script to place
+    expect(planningKit.manifest.templater?.userScripts).toBe(true);
   });
 
   it("offers the CSS snippet from the kit", () => {
@@ -26,9 +29,10 @@ describe("first install options", () => {
   });
 
   it("offers Templater's folder only when Templater is installed and has none: the folder above lab-kit", () => {
-    expect(firstInstallOptions(real, { installed: true }, "Scripts/lab-kit").templaterFolder).toBe("Scripts");
-    expect(firstInstallOptions(real, { installed: true, folder: "  " }, "Scripts/lab-kit").templaterFolder).toBe("Scripts");
-    expect(firstInstallOptions(real, { installed: true }, "Mine/js").templaterFolder).toBe("Mine/js");
+    expect(firstInstallOptions(planningKit, { installed: true }, "Scripts/vault").templaterFolder).toBe("Scripts");
+    expect(firstInstallOptions(planningKit, { installed: true, folder: "  " }, "Scripts/lab-kit").templaterFolder).toBe("Scripts");
+    expect(firstInstallOptions(planningKit, { installed: true }, "Mine/js").templaterFolder).toBe("Mine/js");
+    expect(firstInstallOptions(real, { installed: true }, "Scripts/lab-kit").templaterFolder).toBeNull();
   });
 
   it("never replaces a folder Templater already has", () => {
@@ -89,7 +93,7 @@ describe("Templater's user scripts folder (issue #34)", () => {
     const kitFolder = trackedRoles(kit, state).userScripts;
     expect(kitFolder).toBe("Extras/scripts/templater/lab-kit");
     expect(v.files["Extras/scripts/templater/lab-kit/labForm.js"]).toBe("form\n");
-    expect(firstInstallOptions(real, { installed: true }, kitFolder).templaterFolder).toBe("Extras/scripts/templater");
+    expect(firstInstallOptions(planningKit, { installed: true }, kitFolder).templaterFolder).toBe("Extras/scripts/templater");
     expect(templaterScriptsAction("", kitFolder)).toEqual({ kind: "set", folder: "Extras/scripts/templater" });
     expect(templaterScriptsAction("Extras/scripts/templater", kitFolder)).toEqual({ kind: "ok" });
   });
@@ -235,9 +239,9 @@ describe("install preview and folder contract (Phase 1b)", () => {
     const roles = kitDetectRoles(app(v), null, {});
     const items = await planManaged(readOnly(v), lab, null, roles);
     const preview = await previewInstall(readOnly(v), items);
-    expect(preview.create.sort()).toEqual(["Extras/Templates/Lab Kit/Insert snippet.md", "Extras/scripts/lab-kit/excel_to_calc.py", "Extras/scripts/templater/lab-kit/labForm.js"]);
+    expect(preview.create.sort()).toEqual(["Extras/Templates/Insert snippet.md", "Extras/scripts/lab-kit/excel_to_calc.py", "Extras/scripts/templater/lab-kit/labForm.js"]);
     expect(preview.leftAlone).toEqual([]);
-    expect(preview.folders).toEqual(["Extras", "Extras/Templates", "Extras/Templates/Lab Kit", "Extras/scripts", "Extras/scripts/lab-kit", "Extras/scripts/templater", "Extras/scripts/templater/lab-kit"]);
+    expect(preview.folders).toEqual(["Extras", "Extras/Templates", "Extras/scripts", "Extras/scripts/lab-kit", "Extras/scripts/templater", "Extras/scripts/templater/lab-kit"]);
     await applyManaged(v, lab, items, null, opts);
     const written = Object.keys(v.files).filter(p => !p.startsWith(".obsidian/"));
     expect(written.sort()).toEqual(preview.create.sort());
@@ -317,11 +321,11 @@ describe("lab kit completion (Phase 2)", () => {
   const NEW = ["tpl-chemical-database-template-md", "note-chemical-database-base", "note-lab-book-base-base"];
   const byId = (items: { file: { id: string } }[], id: string) => items.find(i => i.file.id === id) as any;
 
-  it("Lab Book Template: Status is text (issue #32) and the title box uses vtAsk with Templater's prompt as fallback", () => {
+  it("Lab Book Template: Status is text (issue #32), written once; the title is a field of the template (Phase 5)", () => {
     const text = real.contents["tpl-lab-book-template-md"];
-    expect(text).toMatch(/^Status: <% .*status.* %>$/m);   // plain text, written once; Planned unless the board's column gave one
-    expect(text).toContain('const status = foundStatus || "Planned";');
-    expect(text).toContain('tp.user.vtAsk ? tp.user.vtAsk(tp, "Experiment title") : tp.system.prompt("Experiment title")');
+    expect(text).toMatch(/^Status: \{\{yaml:status\}\}$/m);   // plain text, written once; Planned unless the board's column gave one
+    expect(text).toContain("key: title\n    label: Experiment title");
+    expect(text).not.toContain("<%");
   });
 
   it("a fresh vault (default folders) installs the chemical template and both bases next to the default folders", async () => {
@@ -351,7 +355,7 @@ describe("lab kit completion (Phase 2)", () => {
     const rig = readRig(text);
     expect(rig.problems).toEqual([]);
     expect(rig.tables.map(t => t.heading)).toEqual(["Pumps", "Reactor line", "Analysis"]);
-    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds"]);
+    expect(rig.tables[0].header).toEqual(["ID", "Model", "Carries", "Tubing in", "Tubing out", "Pressure limit", "Feeds", "Control"]);
   });
 
   it("the bases' filters follow the folder settings", async () => {
@@ -397,25 +401,21 @@ describe("lab kit completion (Phase 2)", () => {
   it("files you switch off stay off even with the folder set", () => {
     expect(offIds(real, { "note-chemical-database-base": true }, KIT_DEFAULTS).has("note-chemical-database-base")).toBe(true);
     expect([...offIds(real, {}, KIT_DEFAULTS)]).toEqual([]);   // every folder setting has a default now, including the Rigs folder
-    expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })]).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
+    expect([...offIds(real, {}, { ...KIT_DEFAULTS, rigsFolder: "" })].sort()).toEqual(["tpl-rig-template-md", "tpl-snippets-14-rig-md"]);
   });
 
-  it("New lab entry: says what is missing, else gives the template and folder", () => {
-    const ok = { templater: true, template: "Extras/Templates/Lab Kit/Lab Book Template.md", labFolder: " 03 Lab Book/Notes/ " };
-    expect(newLabEntryTarget(ok)).toEqual({ template: ok.template, folder: "03 Lab Book/Notes" });
-    expect(newLabEntryTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
+  it("New lab entry: says what is missing, else gives the folder (no Templater needed)", () => {
+    const ok = { labFolder: " 03 Lab Book/Notes/ " };
+    expect(newLabEntryTarget(ok)).toEqual({ folder: "03 Lab Book/Notes" });
     expect(newLabEntryTarget({ ...ok, labFolder: "" })).toHaveProperty("error", expect.stringContaining("Lab notes folder"));
-    expect(newLabEntryTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Lab Book Template"));
   });
 });
 
 describe("New chemical", () => {
-  it("says what is missing, else gives the template and folder", () => {
-    const ok = { templater: true, template: "Extras/Templates/Lab Kit/Chemical database template.md", chemicalFolder: " 05 Chemicals/Chemicals/ " };
-    expect(newChemicalTarget(ok)).toEqual({ template: ok.template, folder: "05 Chemicals/Chemicals" });
-    expect(newChemicalTarget({ ...ok, templater: false })).toHaveProperty("error", expect.stringContaining("Templater"));
+  it("says what is missing, else gives the folder (no Templater needed)", () => {
+    const ok = { chemicalFolder: " 05 Chemicals/Chemicals/ " };
+    expect(newChemicalTarget(ok)).toEqual({ folder: "05 Chemicals/Chemicals" });
     expect(newChemicalTarget({ ...ok, chemicalFolder: "" })).toHaveProperty("error", expect.stringContaining("Chemical folder"));
-    expect(newChemicalTarget({ ...ok, template: null })).toHaveProperty("error", expect.stringContaining("Chemical database template"));
   });
 });
 
@@ -438,19 +438,18 @@ describe("New rig", () => {
 
 describe("New lab entry needs initials (Phase 6e)", () => {
   it("refuses without initials, before Templater runs; with initials it goes ahead", () => {
-    const base = { templater: true, template: "T/Lab Book Template.md", labFolder: "03 Lab Book/Notes" };
+    const base = { labFolder: "03 Lab Book/Notes" };
     expect(newLabEntryTarget({ ...base, initials: " " })).toEqual({ error: expect.stringContaining("initials") });
-    expect(newLabEntryTarget({ ...base, initials: "ABC" })).toEqual({ template: base.template, folder: "03 Lab Book/Notes" });
+    expect(newLabEntryTarget({ ...base, initials: "ABC" })).toEqual({ folder: "03 Lab Book/Notes" });
   });
 
-  it("the Lab Book Template names notes by initials and stops without them", () => {
+  it("the Lab Book Template names notes by initials + number + title", () => {
     const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
-    expect(tpl).toContain("`${initials}${next} - ${title}`");
-    expect(tpl).toMatch(/if \(!initials\) \{[\s\S]*throw new Error/);
+    expect(tpl).toContain('name: "{{initials}}{{number}} - {{title}}"');
   });
 
-  it("the template's note-number pattern counts 0014 and ABC0014 notes, not other names", () => {
-    const tpl = readFileSync("kits/lab/Templates/Lab Book Template.md", "utf8");
+  it("the old Templater template's note-number pattern (kept as a fixture) counts 0014 and ABC0014 notes, not other names", () => {
+    const tpl = readFileSync("tests/fixtures/templates/old/Lab Book Template.md", "utf8");
     const line = tpl.split("\n").find(l => l.startsWith("const numbered = "))!;
     const make = new Function("initials", `${line.replace("const numbered = ", "return ")}`) as (i: string) => RegExp;
     const num = (i: string, name: string) => parseInt(name.match(make(i))?.[1] ?? "0", 10);
@@ -462,13 +461,16 @@ describe("New lab entry needs initials (Phase 6e)", () => {
   });
 });
 
-describe("Snippet icons page follows the Snippets folder", () => {
-  it("only notes directly in the templates folder's Snippets folder count", () => {
-    const t = "Extras/Templates/Lab Kit";
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/05 Sample list.md", t)).toBe(true);
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/Old/05 Sample list.md", t)).toBe(false);
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Insert snippet.md", t)).toBe(false);
-    expect(inSnippetsFolder("Extras/Templates/Lab Kit/Snippets/notes.txt", t)).toBe(false);
-    expect(inSnippetsFolder("Snippets/05 Sample list.md", "")).toBe(true);
+describe("Figures folder", () => {
+  it("is empty by default, which means the rig note's own folder", () => {
+    expect(KIT_DEFAULTS.figuresFolder).toBe("");
+    expect(kitLoad(undefined).figuresFolder).toBe("");
+    expect(kitLoad({ figuresFolder: 5 }).figuresFolder).toBe("");
+    expect(figuresTarget({ figuresFolder: "", notePath: "03 Lab Book/Rigs/Rig A.md" })).toBe("03 Lab Book/Rigs");
+    expect(figuresTarget({ figuresFolder: "  ", notePath: "Rig A.md" })).toBe("");
+  });
+  it("uses the setting when set, trimmed of slashes", () => {
+    expect(kitLoad({ figuresFolder: "Posters/Figures" }).figuresFolder).toBe("Posters/Figures");
+    expect(figuresTarget({ figuresFolder: " /Posters/Figures/ ", notePath: "03 Lab Book/Rigs/Rig A.md" })).toBe("Posters/Figures");
   });
 });

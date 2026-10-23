@@ -1,10 +1,17 @@
 // Alt+S for token templates: the runner (header → form → filled text) on a stub app, and the chemical-class filter.
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { Notice, TFile, TFolder } from "obsidian";
 import { SnippetTemplates, type SnippetTp } from "../src/kit/snippet-run";
 import { chemicalClasses, classFilter, codeFormParts, codeSources, makeEnv, resolveCodes, type Chem } from "../src/kit/snippet-env";
 import { parseTemplate, TemplateError } from "../src/kit/snippet-template";
 import { KIT_DEFAULTS, type KitData } from "../src/kit/paths";
+import type { FormFn } from "../src/kit/snippet-form";
+import type { SetupFn, SetupInit } from "../src/solution/setup";
+import { DEFAULT_SETUP, solutionBlock } from "../src/solution/setup-text";
+
+// The calculators themselves are tested in snippet-port.test.ts; here only which key SnippetTemplates hands them, and with what.
+const calc = vi.hoisted(() => ({ out: "", calls: [] as { key: string; ctx: { file: unknown; form: unknown; today: () => string } }[] }));
+vi.mock("../src/snippets/run", () => ({ runCalculator: async (ctx: never, key: string) => { calc.calls.push({ key, ctx }); return calc.out; } }));
 
 const json = (s: string): unknown => JSON.parse(s);
 const header = (o: object, body: string): string => `---\n${JSON.stringify(o)}\n---\n${body}`;
@@ -142,7 +149,7 @@ describe("makeEnv", () => {
 
 const file = (path: string): TFile => { const base = path.replace(/\.md$/, "").split("/").pop()!; return new TFile({ path, basename: base }); };
 
-function setup(opts: { files: Record<string, string>; note?: string; kit?: Partial<KitData>; chems?: { path: string; fm: Record<string, unknown> }[] }) {
+function setup(opts: { files: Record<string, string>; note?: string; kit?: Partial<KitData>; chems?: { path: string; fm: Record<string, unknown> }[]; window?: SetupFn; cursor?: { ch: number }; form?: FormFn }) {
   const folder = new TFolder({ path: "Chem", children: [] });
   for (const c of opts.chems ?? []) folder.children.push(file(c.path));
   const fmOf = new Map((opts.chems ?? []).map((c, i) => [folder.children[i], c.fm]));
@@ -151,14 +158,14 @@ function setup(opts: { files: Record<string, string>; note?: string; kit?: Parti
       cachedRead: async (f: TFile) => opts.files[f.path],
       getFolderByPath: (p: string) => (p === "Chem" ? folder : null),
     },
-    workspace: { activeEditor: { editor: { getValue: () => opts.note ?? "" } }, getActiveFile: () => file("ABC0016 - test.md") },
+    workspace: { activeEditor: { editor: { getValue: () => opts.note ?? "", getCursor: () => opts.cursor ?? { line: 0, ch: 0 } } }, getActiveFile: () => file("ABC0016 - test.md") },
     metadataCache: {
       getFileCache: (f: TFile) => ({ frontmatter: f.basename === "toluene" ? { density: "0,867" } : fmOf.get(f) }),
       getFirstLinkpathDest: (name: string) => (name === "toluene" ? file("toluene.md") : null),
     },
   };
   const kit = { ...KIT_DEFAULTS, initials: "ABC", chemicalFolder: "Chem", ...opts.kit } as KitData;
-  return { st: new SnippetTemplates(app as never, () => kit), app };
+  return { st: new SnippetTemplates(app as never, () => kit, undefined, opts.form, opts.window), app };
 }
 
 type FormCall = { title: string; fields: { key: string; value: string; required?: boolean; suggest?: { name: string }[] }[] };
@@ -196,6 +203,22 @@ describe("SnippetTemplates", () => {
     await st.run(tpWith({ a: "x" }, calls), file("S/m.md"));
     expect(calls[0].fields[0].required).toBe(true);
     expect("required" in calls[0].fields[1]).toBe(false);
+  });
+
+  it("run: toggle, select and list are asked as such and come back as tokens", async () => {
+    const t = header({ title: "T", fields: [
+      { key: "t", label: "T", type: "toggle", value: "yes" },
+      { key: "s", label: "S", type: "select", options: ["x", { value: "y", label: "Why" }] },
+      { key: "l", label: "L", type: "list" },
+    ] }, "{{#if t}}on{{else}}off{{/if}} {{s}} {{#each l}}<{{.}}>{{/each}}");
+    const { st } = setup({ files: { "S/n.md": t } });
+    const calls: FormCall[] = [];
+    expect(await st.run(tpWith({ t: false, s: "y", l: "A,  B" }, calls), file("S/n.md"))).toBe("off y <A><B>");
+    const f = calls[0].fields as unknown as { type: string; value: unknown; options?: unknown }[];
+    expect(f[0]).toMatchObject({ type: "toggle", value: true });
+    expect(f[1]).toMatchObject({ type: "select", options: [{ value: "x" }, { value: "y", label: "Why" }] });
+    expect(f[2].type).toBe("text");
+    expect(await st.run(tpWith({ t: true, s: "x" }), file("S/n.md"))).toBe("on x ");
   });
 
   it("run: cancel and an empty required list insert nothing", async () => {
@@ -277,5 +300,136 @@ describe("SnippetTemplates", () => {
     const calls2: FormCall[] = [];
     await fresh.st.run(tpWith({ s: "x" }, calls2), file("S/c.md"));
     expect(calls2[0].fields[0].suggest).toEqual([]);
+  });
+});
+
+describe("SnippetTemplates: run: calculators", () => {
+  const stub = (key: string, extra: object = {}) => header({ title: "Solution prep", icon: "test-tube", desc: "d", group: "Make up", run: key, ...extra }, "");
+  const target = { basename: "ABC0016 - test", path: "ABC0016 - test.md" };
+  const calcTp = (md = "## Out\n") => {
+    calc.out = md;
+    return { config: { target_file: target }, date: { now: () => "2026-10-02" }, user: { labForm: async () => ({}) } } as unknown as SnippetTp;
+  };
+  beforeEach(() => { calc.calls.length = 0; });
+
+  it("meta: a run header lists like a token template and carries its group", async () => {
+    const { st } = setup({ files: { "S/01.md": stub("solution") } });
+    expect(await st.meta(file("S/01.md"))).toEqual({ title: "Solution prep", icon: "test-tube", desc: "d", group: "Make up" });
+  });
+
+  it("run: hands the key, the note and the date to the calculator and inserts exactly what it returns", async () => {
+    for (const key of ["recipe", "results", "nmr", "gpc", "dls"]) {
+      const { st } = setup({ files: { "S/s.md": stub(key) } });
+      calc.calls.length = 0;
+      expect(await st.run(calcTp(`## ${key}\n| a |\n\n`), file("S/s.md"))).toBe(`## ${key}\n| a |\n\n`);
+      expect(calc.calls).toHaveLength(1);
+      expect(calc.calls[0].key).toBe(key);
+      expect(calc.calls[0].ctx.file).toBe(target);
+      expect(calc.calls[0].ctx.today()).toBe("2026-10-02");
+    }
+    expect(Notice.messages).toEqual([]);
+  });
+
+  it("run: the plugin's own question window is the calculator's form; without it the tp's labForm is", async () => {
+    const mine: FormFn = async () => ({ mine: true });
+    const { st } = setup({ files: { "S/s.md": stub("recipe") }, form: mine });
+    await st.run(calcTp(), file("S/s.md"));
+    expect(calc.calls[0].ctx.form).toBe(mine);
+    const bare = setup({ files: { "S/s.md": stub("recipe") } });
+    await bare.st.run(calcTp(), file("S/s.md"));
+    expect(await (calc.calls[1].ctx.form as FormFn)("t", [])).toEqual({});
+  });
+
+  it("run: raft-table is the old RAFT calc-table generator; run: raft is the live block", async () => {
+    const { st } = setup({ files: { "S/s.md": stub("raft-table") } });
+    expect(await st.run(calcTp("## raft\n"), file("S/s.md"))).toBe("## raft\n");
+    expect(calc.calls.map(c => c.key)).toEqual(["raft-table"]);
+  });
+
+  it("run: solution is the live block: its own window, no calculator; solution-volume is the old volume form", async () => {
+    const asked: SetupInit[] = [];
+    const lines = { reagent: "Acetic acid", aqueous: "15.00 g", pH: "4.00", share: "60 %", use: "50 %", balance: "0.1 mg" };
+    const window: SetupFn = async (_app, init) => { asked.push(init); return { values: init.values, lines }; };
+    const { st } = setup({ files: { "S/s.md": stub("solution"), "S/v.md": stub("solution-volume") }, window });
+    const out = await st.run(calcTp(), file("S/s.md"));
+    expect(out).toBe(solutionBlock(lines));
+    expect(out.startsWith("```solution\nformat: 1\n")).toBe(true);
+    expect(calc.calls).toEqual([]);
+    expect(asked[0].submit).toBe("Insert");
+    expect(asked[0].values).toEqual(DEFAULT_SETUP);
+    expect(await st.run(calcTp("old\n"), file("S/v.md"))).toBe("old\n");
+    expect(calc.calls.map(c => c.key)).toEqual(["solution-volume"]);
+  });
+
+  it("run: solution, Method: by volume in the window gives the old volume form, the window offers the choice", async () => {
+    const asked: SetupInit[] = [];
+    const window: SetupFn = async (_app, init) => { asked.push(init); return { values: init.values, lines: {} as never, method: "volume" }; };
+    const { st } = setup({ files: { "S/s.md": stub("solution") }, window });
+    expect(await st.run(calcTp("old volume table\n"), file("S/s.md"))).toBe("old volume table\n");
+    expect(calc.calls.map(c => c.key)).toEqual(["solution-volume"]);
+    expect(asked[0].methods).toBe(true);
+  });
+
+  it("run: solution starts the block on a line of its own and gives nothing when the window is closed", async () => {
+    const lines = { reagent: "A", aqueous: "1 g", pH: "4", share: "60 %", use: "50 %", balance: "0.1 mg" };
+    const { st } = setup({ files: { "S/s.md": stub("solution") }, cursor: { ch: 5 }, window: async (_a, i) => ({ values: i.values, lines }) });
+    expect((await st.run(calcTp(), file("S/s.md"))).startsWith("\n```solution\n")).toBe(true);
+    const closed = setup({ files: { "S/s.md": stub("solution") }, window: async () => null });
+    expect(await closed.st.run(calcTp(), file("S/s.md"))).toBe("");
+  });
+
+  it("run: an unknown key shows the Notice and inserts nothing; no calculator is called", async () => {
+    const { st } = setup({ files: { "S/s.md": stub("nope") } });
+    expect(await st.run(calcTp(), file("S/s.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toBe("“Solution prep”: Lab Kit has no calculator called “nope”.");
+    expect(calc.calls).toEqual([]);
+  });
+
+  it("run: without the question window and without a labForm a Notice says so", async () => {
+    const { st } = setup({ files: { "S/s.md": stub("recipe") } });
+    expect(await st.run({ user: {} }, file("S/s.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toContain("question window");
+    expect(calc.calls).toEqual([]);
+  });
+
+  it("run: a header with run: and fields, or an empty run:, is an error with a Notice", async () => {
+    const { st } = setup({ files: { "S/a.md": stub("recipe", { fields: [] }), "S/b.md": stub("  ") } });
+    expect(await st.run(calcTp(), file("S/a.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toContain("has no fields");
+    expect(await st.run(calcTp(), file("S/b.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toContain("needs the name of a Lab Kit calculator");
+  });
+});
+
+describe("SnippetTemplates: old calculator stubs kept in a vault", () => {
+  const OLD = (key: string, extra = "") => `<%*\n// icon: wand\n// desc: My words\n${extra}tR += await tp.user.labSnippets(tp, "${key}");\n%>`;
+  const calls = (): string[] => calc.calls.map(c => c.key);
+  const calcTp = () => ({ user: { labForm: async () => ({}) } }) as unknown as SnippetTp;
+  beforeEach(() => { calc.calls.length = 0; calc.out = "out\n"; });
+
+  it("meta: the key, icon and description of the old form; no title (the menu uses the file name)", async () => {
+    const { st } = setup({ files: { "S/07 NMR samples.md": OLD("nmr") } });
+    expect(await st.meta(file("S/07 NMR samples.md"))).toEqual({ icon: "wand", desc: "My words", oldStub: "nmr" });
+  });
+
+  it("run: an old stub runs its calculator, an edited icon or an extra comment line changes nothing", async () => {
+    const { st } = setup({ files: { "S/a.md": OLD("gpc"), "S/b.md": OLD("recipe", "// remember to check MW\n") } });
+    expect(await st.run(calcTp(), file("S/a.md"))).toBe("out\n");
+    expect(await st.run(calcTp(), file("S/b.md"))).toBe("out\n");
+    expect(calls()).toEqual(["gpc", "recipe"]);
+  });
+
+  it("run: an old stub with an unknown key shows the Notice and inserts nothing", async () => {
+    const { st } = setup({ files: { "S/07 Mine.md": OLD("mine") } });
+    expect(await st.run(calcTp(), file("S/07 Mine.md"))).toBe("");
+    expect(Notice.messages.at(-1)).toBe("“Mine”: Lab Kit has no calculator called “mine”.");
+    expect(calls()).toEqual([]);
+  });
+
+  it("a snippet with other code in it is a plain snippet: inserted as it is (Templater runs it)", async () => {
+    const code = '<%*\nconst x = 1;\ntR += await tp.user.labSnippets(tp, "nmr");\n%>';
+    const { st } = setup({ files: { "S/c.md": code } });
+    expect(await st.meta(file("S/c.md"))).toBeNull();
+    expect(await st.run(calcTp(), file("S/c.md"))).toBe(code);
   });
 });
